@@ -76,9 +76,11 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     registry_ns: naming.registryNamespace,
     frontend_bucket: naming.frontendBucket,
     state_bucket: naming.pulumiStateBucket,
-    // Deterministic IAM application name for the VM reader identity. CI's
-    // "Verify VM reader IAM grant" step resolves the application id by this name.
-    vm_reader_app: `${appConfig.slug}-vm-reader`,
+    // Deterministic IAM application name for the VM reader identity (per-mode;
+    // assert-vm-grants falls back to the legacy `<slug>-vm-reader` name for
+    // pre-migration stacks). CI's "Verify VM reader IAM grant" step resolves
+    // the application id by this name.
+    vm_reader_app: `${appConfig.slug}-${appConfig.mode}-vm-reader`,
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),

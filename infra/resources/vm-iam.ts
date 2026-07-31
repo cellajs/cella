@@ -1,41 +1,77 @@
+import * as pulumi from '@pulumi/pulumi'
 import * as scaleway from '@pulumiverse/scaleway'
 import { engineConfig } from '../config/engine-config'
 const appConfig = engineConfig()
+import { principalNames } from '../lib/scaleway/principals'
 import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions'
-import { naming, organizationId, projectId, tags } from '../pulumi-context'
+import { naming, mode, organizationId, projectId, tags } from '../pulumi-context'
 
-// The two non-human IAM principals bootstrap creates, resolved from IAM by
-// name. Owned here because IAM is this module's concern; other resource
-// modules (storage bucket policies, compute) import them from here.
+const names = principalNames(appConfig.slug, mode)
 
-/** CI deploy application id: the `<slug>-ci-deploy` principal CI authenticates as. */
-export const ciDeployApplicationId = scaleway.iam
-  .getApplicationOutput({ name: `${appConfig.slug}-ci-deploy`, organizationId })
-  .apply((app) => {
-    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-ci-deploy' not found — run the infra CLI bootstrap first.`)
-    return app.applicationId
+// The engine's IAM principals, resolved from IAM by name. Owned here because
+// IAM is this module's concern; other resource modules (storage bucket
+// policies, compute) import them from here.
+//
+// Per-mode names (`<slug>-<mode>-…`) are canonical; legacy names fall back so
+// pre-migration stacks keep deploying. Resolution failures degrade per
+// principal: required principals throw (a bucket policy without its CI
+// statement would brick the deploy anyway), optional ones drop their
+// statements with a warning instead of failing the whole deploy — a missing
+// admin app must never block a production release (the 0.7.0 incident).
+
+/** Resolve an application id by name, or undefined when the app is absent. */
+function findApplicationId(name: string): pulumi.Output<string | undefined> {
+  return pulumi.output(
+    scaleway.iam
+      .getApplication({ name, organizationId })
+      .then((app) => app.applicationId || undefined)
+      .catch(() => undefined),
+  )
+}
+
+/** Resolve via the per-mode name first, then the legacy name (with a warning). */
+function resolvePrincipalId(preferred: string, legacy: string): pulumi.Output<string | undefined> {
+  return pulumi.all([findApplicationId(preferred), findApplicationId(legacy)]).apply(([modern, legacyId]) => {
+    if (modern) return modern
+    if (legacyId) {
+      pulumi.log.warn(`IAM application '${preferred}' not found; using legacy '${legacy}'. Run the infra CLI "Migrate IAM model" to adopt per-mode principals.`)
+      return legacyId
+    }
+    return undefined
   })
+}
 
-/** VM reader application id: the `<slug>-vm-reader` principal baked into service VMs. */
-export const vmReaderApplicationId = scaleway.iam
-  .getApplicationOutput({ name: `${appConfig.slug}-vm-reader`, organizationId })
-  .apply((app) => {
-    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-vm-reader' not found — run the infra CLI bootstrap first.`)
-    return app.applicationId
+/** Require a principal: missing means the stack cannot function — fail with guidance. */
+function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
+  return resolved.apply((id) => {
+    if (!id) throw new Error(`IAM application for ${label} not found — run the infra CLI bootstrap first.`)
+    return id
   })
+}
+
+/** CI deploy application id: the principal CI authenticates as. Required. */
+export const ciDeployApplicationId = requirePrincipalId(resolvePrincipalId(names.ciDeploy, names.legacy.ciDeploy), `CI deploy ('${names.ciDeploy}')`)
+
+/** VM reader application id: the principal baked into service VMs. Required. */
+export const vmReaderApplicationId = requirePrincipalId(resolvePrincipalId(names.vmReader, names.legacy.vmReader), `VM reader ('${names.vmReader}')`)
 
 /**
- * Operator application id: the `<slug>-operator` principal human operators key
- * under. Resolved from IAM by name (like the CI/VM principals) so CI ups see
- * the same identity as local ups; the SCW_OPERATOR_APPLICATION_ID env var only
- * feeds the infra CLI, not this program.
+ * Admin application id: the standing human principal (bucket access + infra
+ * reads). OPTIONAL: when absent its bucket-policy statements are dropped with
+ * a warning — never a deploy failure. Falls back to the legacy operator app,
+ * then to the SCW_ADMIN_APPLICATION_ID / SCW_OPERATOR_APPLICATION_ID env vars
+ * (local ups load backend/.env; CI does not carry these).
  */
-export const operatorApplicationId = scaleway.iam
-  .getApplicationOutput({ name: `${appConfig.slug}-operator`, organizationId })
-  .apply((app) => {
-    if (!app.applicationId) throw new Error(`IAM application '${appConfig.slug}-operator' not found — run the infra CLI bootstrap first.`)
-    return app.applicationId
-  })
+export const adminApplicationId: pulumi.Output<string | undefined> = resolvePrincipalId(names.admin, names.legacy.operator).apply((id) => {
+  const fromEnv = process.env.SCW_ADMIN_APPLICATION_ID?.trim() || process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
+  if (id) return id
+  if (fromEnv) return fromEnv
+  pulumi.log.warn(
+    `Admin IAM application '${names.admin}' not found — admin bucket-policy statements are dropped this update. ` +
+      'Run the infra CLI ("Rotate keys" or "Migrate IAM model") to create it; until then bucket access is CI-only.',
+  )
+  return undefined
+})
 
 /** Build the single project-scoped policy rule for the VM reader. */
 function buildVmReaderPolicyRules(scopeProjectId: string): scaleway.types.input.iam.PolicyRule[] {

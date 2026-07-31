@@ -11,7 +11,7 @@ function base(overrides: Partial<StatusInputs> = {}): StatusInputs {
     hasDomain: true,
     credentialsAvailable: true,
     projectId: 'proj-1',
-    operatorAppId: 'app-1',
+    adminAppId: 'app-1',
     github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
     stateBucketExists: true,
     lock: { held: false },

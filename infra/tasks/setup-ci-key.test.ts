@@ -31,8 +31,15 @@ const baseOpts = {
   organizationId: 'org-1',
   projectId: 'proj-1',
   slug: 'demo',
+  mode: 'production',
   log: () => {},
 }
+
+/** Group enrollment routes: find-or-create `demo-production` + add-member. */
+const groupRoutes = [
+  { method: 'GET', match: '/iam/v1alpha1/groups?', body: { groups: [{ id: 'grp-1', name: 'demo-production', application_ids: [] }] } },
+  { method: 'POST', match: '/iam/v1alpha1/groups/grp-1/add-member', body: { id: 'grp-1' } },
+]
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -47,10 +54,11 @@ afterEach(() => {
 describe('setupCiKey', () => {
   it('reuses existing application, recreates policy, mints a new API key', async () => {
     const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-ci-deploy' }] } },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-ci-deploy-policy' }] } },
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-production-ci-deploy' }] } },
+      ...groupRoutes,
+      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] } },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-ci-deploy-policy' } },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
       { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-1' } },
     ])
@@ -59,7 +67,7 @@ describe('setupCiKey', () => {
     const result = await setupCiKey(baseOpts)
 
     expect(result).toMatchObject({ accessKey: 'SCWNEW', secretKey: 'sekret', applicationId: 'app-1' })
-    expect(fn).toHaveBeenCalledTimes(6)
+    expect(fn).toHaveBeenCalledTimes(8)
 
     // Application reused (no POST), policy always recreated (DELETE + POST).
     expect(calls.some((c) => c.url.includes('/applications') && c.init.method === 'POST')).toBe(false)
@@ -82,9 +90,11 @@ describe('setupCiKey', () => {
   it('creates application + policy when neither exists', async () => {
     const { fn, calls } = makeFetch([
       { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/applications', body: { id: 'app-new', name: 'demo-ci-deploy' } },
+      { method: 'POST', match: '/iam/v1alpha1/applications', body: { id: 'app-new', name: 'demo-production-ci-deploy' } },
+      { method: 'GET', match: '/iam/v1alpha1/groups?', body: { groups: [{ id: 'grp-1', name: 'demo-production', application_ids: [] }] } },
+      { method: 'POST', match: '/iam/v1alpha1/groups/grp-1/add-member', body: { id: 'grp-1' } },
       { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-new', name: 'demo-ci-deploy-policy' } },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-new', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
       { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-new' } },
     ])
@@ -93,11 +103,11 @@ describe('setupCiKey', () => {
     const result = await setupCiKey(baseOpts)
 
     expect(result.applicationId).toBe('app-new')
-    expect(fn).toHaveBeenCalledTimes(6)
+    expect(fn).toHaveBeenCalledTimes(8)
 
     const appCreate = calls.find((c) => c.url.endsWith('/applications') && c.init.method === 'POST')!
     expect(JSON.parse(appCreate.init.body as string)).toMatchObject({
-      name: 'demo-ci-deploy',
+      name: 'demo-production-ci-deploy',
       organization_id: 'org-1',
     })
 
@@ -123,10 +133,11 @@ describe('setupCiKey', () => {
   it('resolves organization id from project when not provided', async () => {
     const { fn, calls } = makeFetch([
       { method: 'GET', match: '/account/v3/projects/proj-1', body: { organization_id: 'org-resolved' } },
-      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-ci-deploy' }] } },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-ci-deploy-policy' }] } },
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-production-ci-deploy' }] } },
+      ...groupRoutes,
+      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] } },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-ci-deploy-policy' } },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
       { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
     ])
@@ -146,10 +157,11 @@ describe('setupCiKey', () => {
 
   it('deletes pre-existing API keys before minting a fresh one', async () => {
     const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-ci-deploy' }] } },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-ci-deploy-policy' }] } },
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-production-ci-deploy' }] } },
+      ...groupRoutes,
+      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] } },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-ci-deploy-policy' } },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [{ access_key: 'SCWOLD1' }, { access_key: 'SCWOLD2' }] } },
       { method: 'DELETE', match: '/iam/v1alpha1/api-keys/SCWOLD1', body: {} },
       { method: 'DELETE', match: '/iam/v1alpha1/api-keys/SCWOLD2', body: {} },

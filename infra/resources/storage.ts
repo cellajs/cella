@@ -3,7 +3,7 @@ import * as scaleway from '@pulumiverse/scaleway'
 import { naming, region, tagsAsMap, isProduction, serviceUrl } from '../pulumi-context'
 import { sizing } from '../config/sizing'
 import { services } from '../lib/services'
-import { ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
+import { adminApplicationId, ciDeployApplicationId, vmReaderApplicationId } from './vm-iam'
 
 // The browser app origin allowed to call the upload buckets: the service that
 // owns the LB's default route (the SPA), resolved without naming a service.
@@ -12,27 +12,27 @@ if (!browserOriginSlug) throw new Error('storage: no service owns the LB default
 const browserOrigin = serviceUrl(browserOriginSlug)
 
 /**
- * Optional operator application id (SCW_OPERATOR_APPLICATION_ID). When set, this
- * IAM application is granted full S3 access on the CI-scoped bucket policies, so
- * an operator key under it can read/refresh buckets without being the CI deploy
+ * Admin application S3 access on the CI-scoped bucket policies, so a human key
+ * under the admin app can read/refresh buckets without being the CI deploy
  * app. Bucket policies are deny-by-default: without this, even an org-admin or
  * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
- * Empty = only the CI deploy app + public reads, the default.
+ * Resolved from IAM by name (vm-iam.ts) so local and CI ups produce the SAME
+ * policy — the old env-var source (backend/.env only) made the statement
+ * flip-flop between local and CI updates. Absent admin app = statement
+ * dropped (vm-iam warns once).
  */
-const operatorApplicationId: string | undefined = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined
-
-// Optionally grant the operator application S3 access alongside CI in deny-by-default policies.
-// Omit its statement when unset so existing apps keep their policy unchanged.
-const operatorAccess = (bucketName: pulumi.Input<string>) =>
-  operatorApplicationId
-    ? [{
-        Sid: 'OperatorAccess',
-        Effect: 'Allow',
-        Principal: { SCW: `application_id:${operatorApplicationId}` },
-        Action: ['s3:*'],
-        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-      }]
-    : []
+const adminAccess = (bucketName: pulumi.Input<string>) =>
+  adminApplicationId.apply((adminId) =>
+    adminId
+      ? [{
+          Sid: 'AdminAccess',
+          Effect: 'Allow',
+          Principal: { SCW: `application_id:${adminId}` },
+          Action: ['s3:*'],
+          Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+        }]
+      : [],
+  )
 
 // Full S3 access for the CI deploy application: the same statement on every
 // bucket policy (bucket policies are deny-by-default, so without it even the
@@ -85,7 +85,7 @@ new scaleway.object.BucketPolicy('frontend-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
+    Statement: adminAccess(frontendBucket.name).apply((admin) => [
       {
         Sid: 'PublicRead',
         Effect: 'Allow',
@@ -94,8 +94,8 @@ new scaleway.object.BucketPolicy('frontend-policy', {
         Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
       },
       deployAccess(frontendBucket.name),
-      ...operatorAccess(frontendBucket.name),
-    ],
+      ...admin,
+    ]),
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
@@ -123,7 +123,7 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
+    Statement: adminAccess(publicUploadsBucket.name).apply((admin) => [
       {
         Sid: 'PublicRead',
         Effect: 'Allow',
@@ -132,8 +132,8 @@ new scaleway.object.BucketPolicy('public-uploads-policy', {
         Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
       },
       deployAccess(publicUploadsBucket.name),
-      ...operatorAccess(publicUploadsBucket.name),
-    ],
+      ...admin,
+    ]),
   }),
 }, { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] })
 
@@ -180,7 +180,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: [
+    Statement: adminAccess(bootDiagBucket.name).apply((admin) => [
       {
         Sid: 'VmWriteBootDiagnostics',
         Effect: 'Allow',
@@ -189,8 +189,8 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
         Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
       },
       deployAccess(bootDiagBucket.name),
-      ...operatorAccess(bootDiagBucket.name),
-    ],
+      ...admin,
+    ]),
   }),
 })
 

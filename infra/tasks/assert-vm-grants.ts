@@ -12,6 +12,8 @@ export interface AssertVmGrantsOptions {
   /** Either an explicit id, or a name to resolve via IAM list-applications. */
   applicationId?: string
   applicationName?: string
+  /** Legacy name tried when `applicationName` resolves to nothing (pre-migration stacks). */
+  fallbackApplicationName?: string
   projectId: string
   /** Resolved from projectId when omitted. */
   organizationId?: string
@@ -157,6 +159,13 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   let applicationId = opts.applicationId
   if (!applicationId && opts.applicationName) {
     applicationId = (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.applicationName)) ?? undefined
+    // Per-mode names (`<slug>-<mode>-vm-reader`) are canonical; a pre-migration
+    // stack still runs on the legacy `<slug>-vm-reader` app, so fall back by
+    // stripping the mode segment rather than failing the deploy.
+    if (!applicationId && opts.fallbackApplicationName) {
+      applicationId = (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.fallbackApplicationName)) ?? undefined
+      if (applicationId) log(`~ IAM application '${opts.applicationName}' not found; verified legacy '${opts.fallbackApplicationName}' instead (run "Migrate IAM model")`)
+    }
     if (!applicationId) throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`)
   }
   if (!applicationId) throw new Error('assertVmGrants: provide applicationId or applicationName')
@@ -187,7 +196,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     throw new Error('Required: SCW_SECRET_KEY, --application-id or --application-name, --project-id')
   }
 
-  const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId })
+  const fallbackApplicationName = getFlag(argv, '--fallback-application-name') ?? undefined
+  const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId, fallbackApplicationName })
   if (!result.ok) {
     const problems = [
       result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',

@@ -9,6 +9,8 @@ import { pc, DIVIDER, checkMark, warningMark } from '../lib/utils/cli-output'
 export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   /** The stack's DNS zone; scopes the DNS grant to the projects that serve it. */
   dnsZone?: string
+  /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
+  mode: string
 }
 export type CiKeyResult = ScopedKeyResult
 
@@ -50,7 +52,7 @@ if (isMain(import.meta.url)) {
 
   console.info('\n→ Setting up CI deploy key')
   const { deriveInfra } = await import('../lib/naming')
-  const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, dnsZone: deriveInfra(appConfig).dnsZone })
+  const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, mode: appConfig.mode, dnsZone: deriveInfra(appConfig).dnsZone })
 
   const divider = pc.dim(DIVIDER)
   console.info(`\n${divider}`)

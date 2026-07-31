@@ -11,7 +11,7 @@ import { deriveInfra } from '../../lib/naming'
 import { infraDir } from '../../lib/utils/paths'
 import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions'
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up'
-import { ensureBootstrapDnsGrant, resolveOrganizationId, revokeApiKey } from '../../lib/scaleway/scaleway-iam'
+import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId, revokeApiKey } from '../../lib/scaleway/scaleway-iam'
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets'
 import { managedKeys, type ManagedKeyId } from '../../lib/managed-keys'
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager'
@@ -21,8 +21,8 @@ import { provisionManagedKey } from '../../tasks/provision-managed-key'
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets'
 import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key'
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants'
+import { setupAdminApp } from '../../tasks/setup-admin-app'
 import { setupCiKey } from '../../tasks/setup-ci-key'
-import { setupOperatorApp } from '../../tasks/setup-operator-app'
 import { setupVmKey } from '../../tasks/setup-vm-key'
 import type { CliMode, InfraContext } from '../shared'
 import { acquireStackLockOrExit, autoAcceptDefaults, confirmOrDefault, createStepRunner, envOr, inputOrDefault, nonInteractive, promptRequiredInput, promptStackName, pulumiLoginUrl, resolveOrCreatePassphrase } from '../shared'
@@ -97,7 +97,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
     const liveSets = await fetchAppPermissionSetsByName({
       secretKey: ctx.secretKey,
       projectId: ctx.projectId,
-      applicationName: `${ctx.appConfig.slug}-ci-deploy`,
+      applicationName: `${ctx.appConfig.slug}-${ctx.context.environment}-ci-deploy`,
     })
     if (!liveSets) return
     const expected: string[] = [...PROJECT_PERMISSION_SETS, ...ORG_PERMISSION_SETS].sort()
@@ -119,7 +119,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
 async function mintCiKey(ctx: SetupContext): Promise<CiKeyResult> {
   while (true) {
     try {
-      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, dnsZone: deriveInfra(ctx.appConfig).dnsZone })
+      const key = await setupCiKey({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, mode: ctx.context.environment, dnsZone: deriveInfra(ctx.appConfig).dnsZone })
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId }
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`)
@@ -155,7 +155,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
   console.info('\n→ VM reader key (minimal-privilege identity for service VMs)')
   while (true) {
     try {
-      const key = await setupVmKey({ callerSecretKey: vmCallerSecretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug })
+      const key = await setupVmKey({ callerSecretKey: vmCallerSecretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug, mode: ctx.context.environment })
       // Store the key pair in Secret Manager so the Pulumi program can read
       // it back during `pulumi up` and bake it into VM cloud-init.
       await seedVmReaderKey({
@@ -174,30 +174,35 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
 }
 
 /**
- * Operator IAM application, created on fresh/rotate (bootstrap key has
- * IAMManager). Grants Object Storage access so a key minted under it can
- * read/refresh the CI-scoped buckets (storage.ts OperatorAccess). No key is
- * minted; the dev makes one in the console. The app id is exported as
- * SCW_OPERATOR_APPLICATION_ID into backend/.env (idempotent: reuses the app and
- * only fills a blank id).
+ * Admin IAM application (replaces the keyless operator app), created on
+ * fresh/rotate (bootstrap key has IAMManager). Grants Object Storage full +
+ * read-only infra surfaces so a human can run `pulumi preview --refresh`,
+ * teardown, and bucket recovery — never IAM write. Unlike the operator app it
+ * mints a REAL key, stored in Secret Manager (custody: never printed, never a
+ * GitHub secret). The app id is exported as SCW_ADMIN_APPLICATION_ID into
+ * backend/.env (idempotent: reuses the app and refreshes the id).
  */
-async function ensureOperatorApp(ctx: SetupContext): Promise<string> {
-  let operatorAppId = process.env.SCW_OPERATOR_APPLICATION_ID?.trim() ?? ''
+async function ensureAdminApp(ctx: SetupContext): Promise<string> {
+  let adminAppId = process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? ''
   try {
-    const op = await setupOperatorApp({ callerSecretKey: ctx.secretKey, projectId: ctx.projectId, slug: ctx.appConfig.slug })
-    operatorAppId = op.applicationId
-    if (!process.env.SCW_OPERATOR_APPLICATION_ID?.trim()) {
-      writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_OPERATOR_APPLICATION_ID', operatorAppId)
-      process.env.SCW_OPERATOR_APPLICATION_ID = operatorAppId
-    }
+    const admin = await setupAdminApp({
+      callerSecretKey: ctx.secretKey,
+      projectId: ctx.projectId,
+      slug: ctx.appConfig.slug,
+      mode: ctx.context.environment,
+      region: ctx.appConfig.s3.region,
+    })
+    adminAppId = admin.applicationId
+    writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_ADMIN_APPLICATION_ID', adminAppId)
+    process.env.SCW_ADMIN_APPLICATION_ID = adminAppId
   } catch (error) {
-    console.warn(`${warningMark} Operator app setup failed: ${errorMessage(error)}`)
+    console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`)
   }
-  return operatorAppId
+  return adminAppId
 }
 
-function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccessKey: string; operatorAppId: string; mode: 'resume' | 'rotate' }): void {
-  const { needsCiKey, ciAccessKey, vmAccessKey, operatorAppId, mode } = opts
+function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccessKey: string; adminAppId: string; mode: 'resume' | 'rotate' }): void {
+  const { needsCiKey, ciAccessKey, vmAccessKey, adminAppId, mode } = opts
   const divider = pc.dim(DIVIDER)
   console.info(`\n${divider}`)
   if (!needsCiKey) {
@@ -213,10 +218,10 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; vmAccess
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`)
   }
-  if (operatorAppId) {
+  if (adminAppId) {
     console.info(
-      `  ${checkMark} Operator IAM app: ${pc.cyanBright(operatorAppId)} ${pc.dim('(SCW_OPERATOR_APPLICATION_ID, written to backend/.env)')}\n` +
-        `    ${pc.dim('Create an operator API key under it for bucket/refresh access:')} ${pc.cyanBright('https://console.scaleway.com/iam/api-keys')}`,
+      `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)} ${pc.dim('(SCW_ADMIN_APPLICATION_ID, written to backend/.env)')}\n` +
+        `    ${pc.dim('Its key pair is stored in Secret Manager (admin-key) — retrieve it with a bootstrap key for day-2 pulumi/teardown runs.')}`,
     )
   }
   console.info(divider)
@@ -548,9 +553,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   }
 
   const vmAccessKey = await ensureVmKey(ctx, needsCiKey)
-  const operatorAppId = needsCiKey ? await ensureOperatorApp(ctx) : (process.env.SCW_OPERATOR_APPLICATION_ID?.trim() ?? '')
+  const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : (process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '')
 
-  // Identity ids (applicationId, vmApplicationId, operatorPrincipal) are derived
+  // Identity ids (CI, VM reader, admin application ids) are derived
   // from the IAM API and the VM reader key lives in Secret Manager, so stack
   // config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey
@@ -574,7 +579,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     )
   }
 
-  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, vmAccessKey, operatorAppId, mode })
+  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, vmAccessKey, adminAppId, mode })
 
   // Base infrastructure provisioning
   const canDeploy = context.hasCiKey || !!ciKey.accessKey
@@ -606,6 +611,16 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
   if (needsCiKey && ciKey.accessKey) {
+    // The org-wide bootstrap DNS grant (the widest standing grant the engine
+    // ever creates) must not outlive this wizard: the first `pulumi up` has
+    // run, and CI's own project-scoped DNS grant covers routine deploys.
+    if (childEnv.SCW_DEFAULT_ORGANIZATION_ID) {
+      await removeBootstrapDnsGrant({
+        callerSecretKey: scwSecretKey,
+        organizationId: childEnv.SCW_DEFAULT_ORGANIZATION_ID,
+        slug: appConfig.slug,
+      }).catch((error) => console.warn(`${warningMark} Could not remove the bootstrap DNS grant: ${errorMessage(error)}. Delete the '${appConfig.slug}-bootstrap-dns' policy in the console.`))
+    }
     // The wizard no longer needs the bootstrap key, so offer to revoke it as
     // the last call (a key may delete itself). Declining falls back to the
     // manual reminder; env-supplied keys under automation are never revoked.

@@ -71,9 +71,9 @@ function identityChecks(inputs: StatusInputs): Check[] {
   )
   if (inputs.stackState === 'bootstrapped') {
     checks.push(
-      inputs.operatorAppId
-        ? { id: 'identity.operatorApp', title: 'Operator app', status: 'ok', detail: inputs.operatorAppId, credential: 'none' }
-        : { id: 'identity.operatorApp', title: 'Operator app', status: 'warn', detail: 'SCW_OPERATOR_APPLICATION_ID not set; operator bucket access needs it', credential: 'none', nextAction: runSetup },
+      inputs.adminAppId
+        ? { id: 'identity.adminApp', title: 'Admin app', status: 'ok', detail: inputs.adminAppId, credential: 'none' }
+        : { id: 'identity.adminApp', title: 'Admin app', status: 'warn', detail: 'SCW_ADMIN_APPLICATION_ID not set; admin bucket access needs it', credential: 'none', nextAction: runSetup },
     )
   }
   return checks

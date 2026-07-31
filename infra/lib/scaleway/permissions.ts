@@ -44,6 +44,35 @@ export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
 
+// Admin app (`<slug>-<mode>-admin`): the standing human principal
+
+/**
+ * Permission sets granted to the admin application at project scope. The admin
+ * app replaces the keyless operator app: it is what a human authenticates as
+ * for day-2 operations (`pulumi preview --refresh`, teardown, state-bucket
+ * recovery). Object Storage is the only write (bucket policies are
+ * deny-by-default, so the admin needs both the IAM allow and its bucket-policy
+ * statements); everything else is read-only — deliberately NO IAM write, no
+ * instance/LB/secret writes. Structural changes still go through a transient
+ * bootstrap key ("Apply infra change").
+ */
+export const ADMIN_PROJECT_PERMISSION_SETS = [
+  'ObjectStorageFullAccess', // bucket reads/refresh + state-bucket recovery (s3:* comes from bucket policies)
+  'BlockStorageReadOnly',
+  'ContainerRegistryReadOnly',
+  'DomainsDNSReadOnly',
+  'IPAMReadOnly',
+  'InstancesReadOnly',
+  'LoadBalancersReadOnly',
+  'PrivateNetworksReadOnly',
+  'RelationalDatabasesReadOnly',
+  'SecretManagerReadOnly',
+  'VPCReadOnly',
+] as const
+
+/** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
+export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const
+
 // VM reader key (`<slug>-vm-reader`): project scope
 
 /**

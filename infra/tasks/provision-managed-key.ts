@@ -12,6 +12,8 @@ export interface ProvisionManagedKeyOptions {
   projectId: string
   region: string
   slug: string
+  /** Deploy mode: managed-key apps are per-mode named + grouped. */
+  mode?: string
   /** Secret Manager folder, e.g. `/cella-production/`. */
   path: string
   log?: (message: string) => void
@@ -64,7 +66,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   }
 
   const minted = await provisionScopedKey(
-    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, log },
+    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
     {
       suffix: definition.suffix,
       appDescription: definition.appDescription,
