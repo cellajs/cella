@@ -159,9 +159,13 @@ if (!iamModelV2) {
     ],
     tags,
   }, {
-    // CI intentionally cannot write IAM policies. Keep permission rules managed,
-    // but do not let cosmetic provider/API description drift block deployments.
-    ignoreChanges: ['description'],
+    // CI cannot write IAM policies (bootstrap-owned). Ignore BOTH rules and
+    // description so a CI `pulumi up` never attempts an update it will 403 on:
+    // rules are provisioned by a privileged bootstrap/migration `up`, and the
+    // deploy's assert-vm-grants independently verifies the live grant (failing
+    // loudly on real drift). Also sidesteps the provider's condition
+    // empty-vs-unset diff asymmetry that would otherwise show a phantom ~rules.
+    ignoreChanges: ['rules', 'description'],
   }))
 } else {
   for (const svc of v2Services) {
@@ -185,7 +189,7 @@ if (!iamModelV2) {
           : []),
       ],
       tags,
-    }, { ignoreChanges: ['description'] }))
+    }, { ignoreChanges: ['rules', 'description'] }))
   }
   vmIamPolicies.push(new scaleway.iam.Policy('vm-boot-policy', {
     name: naming.resource('vm-boot-policy'),
@@ -204,7 +208,7 @@ if (!iamModelV2) {
       },
     ],
     tags,
-  }, { ignoreChanges: ['description'] }))
+  }, { ignoreChanges: ['rules', 'description'] }))
 }
 
 /** Backend service app id when it exists (REQ-20 bucket statements); undefined otherwise. */
