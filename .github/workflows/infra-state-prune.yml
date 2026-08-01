@@ -1,0 +1,90 @@
+name: Infra state prune (one-off)
+
+# Manual, surgical `pulumi state delete` for a single URN. Needed when a stack
+# has a resource in Pulumi state that the program no longer declares AND that
+# the CI key cannot delete via the provider API (a bootstrap-owned resource,
+# e.g. an RDB ACL). Pruning it from state is an S3-only operation the CI key
+# CAN do (it has state-bucket access; it just lacks the provider write). The
+# live resource must already be gone, or this orphans it — the operator
+# confirms that before running.
+#
+# One-off by nature: keep it, but expect to use it rarely. Uses the same
+# Environment secrets as the deploy so it needs no extra credentials.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urn:
+        description: 'Pulumi URN to delete from state (verbatim)'
+        required: true
+        type: string
+      environment:
+        description: 'Environment / stack'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions: {}
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prune ${{ inputs.urn }} from ${{ inputs.environment }} state
+        working-directory: infra
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          # S3-protocol state backend authenticates with the same SCW key.
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          ENV: ${{ inputs.environment }}
+          URN: ${{ inputs.urn }}
+        run: |
+          set -euo pipefail
+          # state_bucket + region are the only derived values needed; capture
+          # the deploy-env table once and read those two (plain strings).
+          pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref refs/heads/main > /tmp/denv
+          STATE_BUCKET=$(grep '^state_bucket=' /tmp/denv | cut -d= -f2-)
+          REGION=$(grep '^region=' /tmp/denv | cut -d= -f2-)
+          echo "state bucket: $STATE_BUCKET | region: $REGION"
+          pulumi login "s3://${STATE_BUCKET}?endpoint=s3.${REGION}.scw.cloud&region=${REGION}"
+          pulumi stack select "$ENV"
+          echo "::group::state before"
+          pulumi stack --show-urns | grep -F "$URN" || echo "(urn not currently listed)"
+          echo "::endgroup::"
+          pulumi state delete "$URN" --yes
+          echo "Pruned. Re-run the deploy to converge."
