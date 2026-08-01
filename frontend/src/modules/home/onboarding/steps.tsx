@@ -7,7 +7,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { StepperFooter } from '~/modules/home/onboarding/footer';
-import { onboardingSteps } from '~/modules/home/onboarding/onboarding-config';
+import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
@@ -49,7 +49,10 @@ export function Onboarding({
 
   // Lock steps at mount: if user already has orgs, show only profile step.
   // Don't shrink mid-flow when an org is created during onboarding.
-  const [steps] = useState(() => (hasOrganizations ? [onboardingSteps[0]] : onboardingSteps));
+  const [steps] = useState(() => {
+    const allSteps = getOnboardingSteps();
+    return hasOrganizations ? [allSteps[0]] : allSteps;
+  });
 
   return (
     <div className="flex min-h-[90vh] flex-col items-center sm:min-h-screen">
