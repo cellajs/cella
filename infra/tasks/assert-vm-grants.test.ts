@@ -63,6 +63,23 @@ describe('assertVmGrants', () => {
     expect(result.extra).toEqual(['ObjectStorageFullAccess'])
   })
 
+  it('tolerates an EXTRA read-only set as benign drift (warns, does not fail)', async () => {
+    // The VM policy is bootstrap-owned (CI cannot reconcile it), so a benign
+    // read-only over-grant must not wedge deploys — only escalations (write/
+    // broad grants) do. Mirrors the live cella-vm-reader carrying a lingering
+    // ObjectStorageReadOnly.
+    const fetchImpl = makeFetch([
+      NO_GROUPS,
+      { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'vm-reader-policy', application_id: 'vm-app' }] } },
+      { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: [{ permission_set_names: [...REQUIRED, 'ObjectStorageReadOnly'] }] } },
+    ])
+
+    const result = await assertVmGrants({ ...baseOpts, fetchImpl })
+
+    expect(result.ok).toBe(true)
+    expect(result.extra).toEqual(['ObjectStorageReadOnly'])
+  })
+
   it('excludes policies bound to other principals (shared-organization leakage)', async () => {
     const fetchImpl = makeFetch([
       NO_GROUPS,

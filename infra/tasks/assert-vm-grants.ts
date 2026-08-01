@@ -10,6 +10,18 @@ const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3'
 /** Permission sets that decrypt or enumerate secret values/metadata. */
 const SECRET_PERMISSION_SETS = new Set(['SecretManagerSecretAccess', 'SecretManagerReadOnly', 'SecretManagerFullAccess'])
 
+/**
+ * Whether an EXTRA (unexpected) permission set on the VM key is benign. A
+ * read-only set is drift worth surfacing but not a deploy-blocker — the VM
+ * policy is bootstrap-owned (CI can't reconcile it; see vm-iam.ts
+ * `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until
+ * a manual bootstrap Apply, without reducing any real risk. Any NON-read-only
+ * extra set (a write/broad grant) is a genuine escalation on the VM key and
+ * stays fatal: an operator must strip it (bootstrap Apply / remove a
+ * manually-attached policy).
+ */
+const isBenignExtraSet = (set: string): boolean => set.endsWith('ReadOnly')
+
 export interface AssertVmGrantsOptions {
   secretKey: string
   /** Either an explicit id, or a name to resolve via IAM list-applications. */
@@ -214,6 +226,8 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   const requiredSet = new Set(required)
   const missing = required.filter((r) => !granted.has(r))
   const extra = [...granted].filter((g) => !requiredSet.has(g)).sort()
+  const extraBenign = extra.filter(isBenignExtraSet)
+  const extraFatal = extra.filter((set) => !isBenignExtraSet(set))
 
   const unconditionedSecretRules: string[] = []
   if (opts.requiredSecretCondition) {
@@ -225,14 +239,17 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     }
   }
 
-  const ok = missing.length === 0 && extra.length === 0 && unconditionedSecretRules.length === 0
+  // Missing sets break hydration; a NON-read-only extra set is an escalation;
+  // an un-scoped secret rule leaks secrets — all fatal. Extra READ-ONLY sets
+  // are surfaced as a warning but do not block (see isBenignExtraSet).
+  const ok = missing.length === 0 && extraFatal.length === 0 && unconditionedSecretRules.length === 0
+  if (missing.length > 0) log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`)
+  if (extraFatal.length > 0) log(`✗ VM reader grant TOO BROAD — extra write/broad grant(s): ${extraFatal.join(', ')}`)
+  for (const entry of unconditionedSecretRules) log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`)
+  if (extraBenign.length > 0) log(`⚠ VM reader has extra read-only grant(s) (benign drift; reconcile via a bootstrap "Apply infra change" / "Migrate IAM model"): ${extraBenign.join(', ')}`)
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : ''
-    log(`✓ VM reader grant verified — exactly the ${required.length} required permission sets, nothing more${conditionNote}`)
-  } else {
-    if (missing.length > 0) log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`)
-    if (extra.length > 0) log(`✗ VM reader grant TOO BROAD — extra: ${extra.join(', ')}`)
-    for (const entry of unconditionedSecretRules) log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`)
+    log(`✓ VM reader grant verified — required permission sets present, no escalation${conditionNote}`)
   }
   return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules }
 }
@@ -255,9 +272,14 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const required = requiredSetsCsv ? requiredSetsCsv.split(',').map((set) => set.trim()).filter(Boolean) : undefined
   const result = await assertVmGrants({ secretKey, applicationId, applicationName, projectId, organizationId, fallbackApplicationName, requiredSecretCondition, required })
   if (!result.ok) {
+    // Only fatal problems reach here (ok is false): missing sets, a write/broad
+    // escalation, or an un-scoped secret rule. Benign read-only extras were
+    // warned about but never set ok=false.
     const problems = [
       result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',
-      result.extra.length > 0 ? `granted EXTRA permission sets beyond the minimal VM profile: ${result.extra.join(', ')}` : '',
+      result.extra.filter((set) => !set.endsWith('ReadOnly')).length > 0
+        ? `granted EXTRA write/broad permission sets beyond the minimal VM profile: ${result.extra.filter((set) => !set.endsWith('ReadOnly')).join(', ')}`
+        : '',
       result.unconditionedSecretRules.length > 0 ? `secret rules without the required path condition: ${result.unconditionedSecretRules.join('; ')}` : '',
     ].filter(Boolean)
     throw new Error(
