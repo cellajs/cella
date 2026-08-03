@@ -22,15 +22,18 @@ function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | u
   return { schema: undefined, name };
 }
 
-interface NullableReferenceAlias {
+interface NullableReference {
   type: readonly string[];
+  ref: string;
+  targetDescription?: string;
 }
 
 /**
- * Matches a named alias whose only alternatives are a schema reference and null.
- * Nested uses can retain the alias reference without repeating the referenced schema.
+ * Matches a schema whose only alternatives are a schema reference and null: either inline
+ * (`anyOf: [$ref, {type: 'null'}]`, the emission for unnamed nullable unions) or behind a
+ * named alias. Callers collapse the match to a nullable type without repeating the referenced schema.
  */
-function matchNullableReferenceAlias(schema: OpenApiSchema, spec: OpenApiSpec): NullableReferenceAlias | undefined {
+function matchNullableReference(schema: OpenApiSchema, spec: OpenApiSpec): NullableReference | undefined {
   if (schema.anyOf && schema.oneOf) return undefined;
   const alternatives = schema.anyOf ?? schema.oneOf;
   if (alternatives?.length !== 2) return undefined;
@@ -46,6 +49,8 @@ function matchNullableReferenceAlias(schema: OpenApiSchema, spec: OpenApiSpec): 
   const types = Array.isArray(targetType) ? targetType : [targetType];
   return {
     type: [...new Set([...types, 'null'])],
+    ref: referenced.$ref,
+    ...(target?.description && { targetDescription: target.description }),
   };
 }
 
@@ -158,7 +163,7 @@ export function resolveSchemaProperty(
 
     const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
-      const nullableAlias = matchNullableReferenceAlias(resolved, spec);
+      const nullableAlias = matchNullableReference(resolved, spec);
       if (nullableAlias) {
         return {
           type: nullableAlias.type,
@@ -184,6 +189,21 @@ export function resolveSchemaProperty(
       required: isRequired,
       ref: schema.$ref,
     };
+  }
+
+  // Inline nullable reference (unnamed nullable union): collapse to a nullable type keeping ref metadata
+  const nullableRef = matchNullableReference(schema, spec);
+  if (nullableRef) {
+    const prop: GenSchemaProperty = {
+      type: nullableRef.type,
+      required: isRequired,
+      ref: nullableRef.ref,
+    };
+    if (schema.description) prop.description = schema.description;
+    if (nullableRef.targetDescription && nullableRef.targetDescription !== schema.description) {
+      prop.refDescription = nullableRef.targetDescription;
+    }
+    return prop;
   }
 
   const prop: GenSchemaProperty = {

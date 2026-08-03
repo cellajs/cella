@@ -1,13 +1,16 @@
+import { Link } from '@tanstack/react-router';
 import { GlobeIcon, PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Tenant } from 'sdk';
+import type { TenantWithOrganization } from 'sdk';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openUpdateSheet } from '~/modules/tenants/table/update-row';
 import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
 import { dateShort } from '~/utils/date-short';
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
@@ -18,7 +21,7 @@ const statusOptions = ['active', 'suspended', 'archived'] as const;
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const columns: ColumnOrColumnGroup<Tenant>[] = [
+  const columns: ColumnOrColumnGroup<TenantWithOrganization>[] = [
     {
       key: 'id',
       name: t('c:id'),
@@ -26,6 +29,42 @@ export const useColumns = () => {
       resizable: true,
       width: 100,
       renderCell: ({ row }) => <code className="font-mono text-xs">{row.id}</code>,
+    },
+    {
+      // 1 tenant = 1 organization: link to the org it holds (avatar + name), or flag it as unlinked.
+      key: 'organization',
+      name: t('c:organization'),
+      resizable: true,
+      minWidth: 200,
+      renderCell: ({ row, tabIndex }) => {
+        const org = row.organization;
+        if (!org) return <Badge variant="plain">{t('c:not_linked')}</Badge>;
+        return (
+          <Button
+            variant="cell"
+            size="cell"
+            render={
+              <Link
+                to="/$tenantId/$organizationSlug/organization/members"
+                draggable={false}
+                tabIndex={tabIndex}
+                params={{ tenantId: row.id, organizationSlug: org.slug }}
+              />
+            }
+          >
+            <EntityAvatar
+              type="organization"
+              className="h-8 w-8 group-active:translate-y-[.05rem]"
+              id={org.id}
+              name={org.name}
+              url={org.thumbnailUrl}
+            />
+            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50">
+              {org.name || '-'}
+            </span>
+          </Button>
+        );
+      },
     },
     {
       key: 'status',
@@ -60,11 +99,11 @@ export const useColumns = () => {
       name: '',
       width: 32,
       renderCell: ({ row, tabIndex }) => {
-        const ellipsisOptions: EllipsisOption<Tenant>[] = [
+        const ellipsisOptions: EllipsisOption<TenantWithOrganization>[] = [
           {
             label: t('c:edit'),
             icon: PencilIcon,
-            onSelect: (row: Tenant, triggerRef: React.RefObject<HTMLButtonElement | null>) => {
+            onSelect: (row: TenantWithOrganization, triggerRef: React.RefObject<HTMLButtonElement | null>) => {
               useDropdowner.getState().remove();
               openUpdateSheet(row, triggerRef);
             },
@@ -118,5 +157,5 @@ export const useColumns = () => {
     },
   ];
 
-  return useState<ColumnOrColumnGroup<Tenant>[]>(columns);
+  return useState<ColumnOrColumnGroup<TenantWithOrganization>[]>(columns);
 };

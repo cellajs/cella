@@ -3,7 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Tenant } from 'sdk';
+import type { TenantWithOrganization } from 'sdk';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
@@ -20,8 +20,8 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 interface TenantsTableBarProps {
   queryKey: QueryKey;
-  columns: ColumnOrColumnGroup<Tenant>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Tenant>[]>>;
+  columns: ColumnOrColumnGroup<TenantWithOrganization>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TenantWithOrganization>[]>>;
   searchVars: TenantsRouteSearchParams & { limit: number };
   setSearch: (newValues: Partial<TenantsRouteSearchParams>, saveSearch?: boolean) => void;
 }

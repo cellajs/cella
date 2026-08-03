@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
 /**

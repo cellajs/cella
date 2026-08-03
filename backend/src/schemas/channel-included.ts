@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { type ChannelEntityType, hierarchy, isProduct, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { membershipCountSchema } from '#/schemas/count-schemas';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 
 /**
  * Factory for channel entity included schemas.

@@ -54,7 +54,9 @@ function CollapsibleTagItemBase<T>({
   itemKey,
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
-  const isMobile = useBreakpointBelow('sm', false);
+  // Match the sheet-mode threshold used across the docs sidebar (below `md`); a tag group has
+  // deeper nesting, so in sheet mode expanding it must keep the sheet open, not close it.
+  const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
 

@@ -10,9 +10,9 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { booleanTransformSchema, errorResponses, productBaseSchema, registerAllErrorResponses } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
+import { organizationMinimalBaseSchema, userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
-import { nullableStxBaseSchema, stxBaseSchema } from '#/schemas/sync-transaction-schemas';
-import { nullableUserMinimalBaseSchema, userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 
 /** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint. */
@@ -55,13 +55,12 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
 
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserMinimalBase', userMinimalBaseSchema);
-  registry.register('NullableUserMinimalBase', nullableUserMinimalBaseSchema);
+  registry.register('OrganizationMinimalBase', organizationMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
   registry.register('ChannelBase', channelBaseSchema);
   registry.register('ProductBase', productBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
-  registry.register('NullableStxBase', nullableStxBaseSchema);
   registry.register('BooleanQueryValue', booleanTransformSchema);
   registry.register('StreamNotification', streamNotificationSchema);
 

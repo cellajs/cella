@@ -31,7 +31,7 @@ interface InsertRequestOpts {
  * Insert a request and return the created row (without tokenId).
  * Returns undefined when the unique signup index (waitlist/newsletter per lower(email))
  * rejects the row, so concurrent or case-variant duplicates surface as a duplicate
- * signal instead of a raw constraint violation.
+ * signal, not a raw constraint violation.
  */
 export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
   const { db } = ctx.var;

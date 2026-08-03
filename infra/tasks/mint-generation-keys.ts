@@ -11,8 +11,8 @@ const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1'
 /**
  * How many API keys each service/boot app retains after a mint: the fresh key
  * plus the previous generation's (blue-green overlap AND the presigned-URL
- * floor — URLs signed by the outgoing backend generation stay valid until the
- * key created two deploys ago is pruned, i.e. at least one full deploy cycle).
+ * floor). URLs signed by the outgoing backend generation stay valid until the
+ * key created two deploys ago is pruned, i.e. at least one full deploy cycle.
  */
 const KEYS_TO_KEEP = 2
 
@@ -79,12 +79,12 @@ async function mintAndPrune(secretKey: string, organizationId: string, projectId
 /**
  * Per-deploy credential mint (D3/REQ-7/REQ-10). Runs as CI, allowed by the
  * conditioned IAMApplicationManager grant (key CRUD on exactly the service +
- * boot apps; creating apps/policies stays denied):
+ * boot apps; creating apps/policies stays denied).
  *
  *  1. Mint a fresh boot-fetcher key (baked into cloud-init; registry pull +
  *     handoff-read only) and prune stale ones.
  *  2. Per service: mint a fresh service key, stage it as a SINGLE-ACCESS
- *     secret under /handoff/<service>/ (first read disables the version — a
+ *     secret under /handoff/<service>/ (first read disables the version, so a
  *     VM whose read fails knows the bundle was intercepted and halts), prune
  *     older handoff bundles, prune stale service keys.
  *

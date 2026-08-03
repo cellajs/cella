@@ -44,21 +44,55 @@ export const mockProductBase = (key = 'product-entity:default') =>
   }));
 
 /**
+ * Core of a minimal entity reference mock; only the name/slug generation differs per entity type.
+ * Must be called within withFakerSeed() for deterministic output.
+ */
+const mockMinimalBase = <T extends string>(
+  entityType: T,
+  naming: () => { name: string; slug: string },
+  id?: string,
+) => ({
+  id: id ?? mockUuid(),
+  ...naming(),
+  thumbnailUrl: null,
+  entityType,
+});
+
+/**
  * Generates a mock UserMinimalBase response.
  * Minimal user data for references (e.g. createdBy, updatedBy).
  */
 export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =>
-  withFakerSeed(key, () => {
-    const firstName = faker.person.firstName();
-    const lastName = faker.person.lastName();
-    return {
-      id: id ?? mockUuid(),
-      name: `${firstName} ${lastName}`,
-      slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
-      thumbnailUrl: null,
-      entityType: 'user' as const,
-    };
-  });
+  withFakerSeed(key, () =>
+    mockMinimalBase(
+      'user' as const,
+      () => {
+        const firstName = faker.person.firstName();
+        const lastName = faker.person.lastName();
+        return {
+          name: `${firstName} ${lastName}`,
+          slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
+        };
+      },
+      id,
+    ),
+  );
+
+/**
+ * Generates a mock OrganizationMinimalBase response.
+ * Minimal organization data for references (e.g. the org a tenant holds).
+ */
+export const mockOrganizationMinimalBase = (key = 'organization-minimal:default', id?: string) =>
+  withFakerSeed(key, () =>
+    mockMinimalBase(
+      'organization' as const,
+      () => {
+        const name = faker.company.name();
+        return { name, slug: faker.helpers.slugify(name).toLowerCase() };
+      },
+      id,
+    ),
+  );
 
 /** Hydrates stored audit-user IDs to the minimal wire representation. */
 export const mockAuditUsers = (row: { createdBy: string | null; updatedBy: string | null }, key: string) => {

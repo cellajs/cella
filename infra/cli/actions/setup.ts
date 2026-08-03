@@ -182,7 +182,7 @@ async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<stri
  * Admin IAM application (replaces the keyless operator app), created on
  * fresh/rotate (bootstrap key has IAMManager). Grants Object Storage full +
  * read-only infra surfaces so a human can run `pulumi preview --refresh`,
- * teardown, and bucket recovery — never IAM write. Unlike the operator app it
+ * teardown, and bucket recovery, never IAM write. Unlike the operator app it
  * mints a REAL key, stored in Secret Manager (custody: never printed, never a
  * GitHub secret). The app id is exported as SCW_ADMIN_APPLICATION_ID into
  * backend/.env (idempotent: reuses the app and refreshes the id).
@@ -597,7 +597,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await must('Mark bootstrap complete', 'pulumi', ['config', 'set', 'infra:bootstrapComplete', new Date().toISOString(), '--stack', stackName], spawnSync)
     if (iamV2) {
       // The one flag every consumer branches on (vm-iam.ts, deploy-run):
-      // per-service apps + per-deploy minted keys instead of the vm-reader.
+      // per-service apps + per-deploy minted keys, replacing the vm-reader.
       await must('Mark IAM model v2', 'pulumi', ['config', 'set', 'infra:iamModel', 'v2', '--stack', stackName], spawnSync)
     }
   }

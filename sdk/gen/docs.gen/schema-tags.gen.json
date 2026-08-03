@@ -1,5 +1,5 @@
 [
-  { "name": "data", "description": "Complete data schemas", "count": 11 },
-  { "name": "base", "description": "Schemas with base fields only", "count": 9 },
+  { "name": "data", "description": "Complete data schemas", "count": 12 },
+  { "name": "base", "description": "Schemas with base fields only", "count": 8 },
   { "name": "errors", "description": "Error schemas", "count": 7 }
 ]

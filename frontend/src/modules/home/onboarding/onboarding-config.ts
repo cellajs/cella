@@ -6,8 +6,8 @@ import type { StepItem } from '~/modules/common/stepper/types';
  * so users can skip ahead at any point.
  *
  * Built lazily (a function, not a module-scope const) because the labels call
- * `i18n.t(...)`: evaluating those at module load — before i18next has
- * initialized its namespaces — returns `undefined`, and
+ * `i18n.t(...)`: evaluating those at module load (before i18next has
+ * initialized its namespaces) returns `undefined`, and
  * `i18n.t('c:organization').toLowerCase()` then throws and white-screens the
  * app. Call this at render time, when i18next is ready.
  */

@@ -1018,7 +1018,7 @@
     "path": "/tenants/self",
     "tags": ["tenants"],
     "summary": "Create a tenant for yourself",
-    "description": "Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.",
+    "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,

@@ -345,6 +345,7 @@
   "no_selection": "None selected",
   "node_only": "Node only",
   "not_configured": "Not configured",
+  "not_linked": "Not linked",
   "not_processed": "Not processed",
   "notification_email": "Notification email",
   "notification_email.text": "Receive announcements and product updates through this email address.",

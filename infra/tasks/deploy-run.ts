@@ -215,7 +215,7 @@ export async function runDeploy(
         return
       }
       // Legacy vm-reader is unconditioned (project-wide secret read, as it
-      // was pre-rewrite) — assert the permission sets only, no path condition.
+      // was pre-rewrite): assert the permission sets only, no path condition.
       await fx.task('assert-vm-grants', ['--application-name', env.vm_reader_app, '--fallback-application-name', env.vm_reader_app.replace(`-${env.environment}-`, '-'), '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--organization-id', process.env.SCW_DEFAULT_ORGANIZATION_ID ?? ''])
     })
     await step('Verify runtime secrets are deliverable', () =>

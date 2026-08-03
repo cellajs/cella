@@ -39,7 +39,7 @@ export interface BootPlan {
   /**
    * v2 model: fetch the real service key from a single-access handoff bundle
    * using the (baked) boot credentials. A failed fetch on FIRST boot means the
-   * bundle was already consumed — interception signal, boot halts. Cache-first
+   * bundle was already consumed: interception signal, boot halts. Cache-first
    * on reboots. Absent = legacy model (baked key does everything).
    */
   serviceKeyHandoff?: ServiceKeyHandoff

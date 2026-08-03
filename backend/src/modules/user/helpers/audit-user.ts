@@ -3,7 +3,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import type { DbOrTx } from '#/db/db';
 import { usersTable } from '#/modules/user/user-db';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { pick } from '#/utils/pick';
 
 export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;

@@ -880,8 +880,8 @@
                       "createdBy": {
                         "type": ["object", "null"],
                         "required": true,
-                        "description": "Minimal user data for references, or null when no user is available.",
-                        "ref": "#/components/schemas/NullableUserMinimalBase"
+                        "ref": "#/components/schemas/UserMinimalBase",
+                        "refDescription": "Minimal user data for references."
                       },
                       "organizationId": { "type": "string", "required": true, "format": "uuid" }
                     },

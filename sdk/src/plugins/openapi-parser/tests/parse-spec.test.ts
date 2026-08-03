@@ -89,6 +89,54 @@ describe('parseOpenApiSpec', () => {
     });
   });
 
+  it('collapses inline nullable references (anyOf [$ref, null]) to a nullable type with ref metadata', () => {
+    const spec: OpenApiSpec = {
+      openapi: '3.1.0',
+      info: { title: 'Inline nullable references', version: '1.0.0' },
+      tags: [{ name: 'data', kind: 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
+      paths: {},
+      components: {
+        schemas: {
+          UserMinimal: {
+            type: 'object',
+            description: 'Minimal user data for references.',
+            properties: { id: { type: 'string' }, name: { type: 'string' } },
+            required: ['id', 'name'],
+          },
+          AuditRecord: {
+            type: 'object',
+            properties: {
+              createdBy: {
+                anyOf: [{ $ref: '#/components/schemas/UserMinimal' }, { type: 'null' }],
+              },
+              updatedBy: {
+                anyOf: [{ $ref: '#/components/schemas/UserMinimal' }, { type: 'null' }],
+                description: 'Editing user, or null when never updated.',
+              },
+            },
+            required: ['createdBy'],
+          },
+        },
+      },
+    };
+
+    const schemas = Object.fromEntries(parseOpenApiSpec(spec).schemas.map((schema) => [schema.name, schema]));
+
+    expect(schemas.AuditRecord.schema.properties?.createdBy).toEqual({
+      type: ['object', 'null'],
+      required: true,
+      ref: '#/components/schemas/UserMinimal',
+      refDescription: 'Minimal user data for references.',
+    });
+    expect(schemas.AuditRecord.schema.properties?.updatedBy).toEqual({
+      type: ['object', 'null'],
+      required: false,
+      ref: '#/components/schemas/UserMinimal',
+      description: 'Editing user, or null when never updated.',
+      refDescription: 'Minimal user data for references.',
+    });
+  });
+
   it('drops hidden-tagged operations from the docs while counting the documented/hidden split', () => {
     const spec: OpenApiSpec = {
       openapi: '3.1.0',

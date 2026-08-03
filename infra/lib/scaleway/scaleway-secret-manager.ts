@@ -51,7 +51,7 @@ export interface EnsureSecretInput {
   /**
    * Scaleway ephemeral policy, set at creation and irremovable afterwards.
    * `expires_once_accessed: true` + action 'disable' = single-access versions:
-   * the first read disables the version — the handoff tamper alarm.
+   * the first read disables the version, which is the handoff tamper alarm.
    */
   ephemeralPolicy?: {
     expires_once_accessed: boolean

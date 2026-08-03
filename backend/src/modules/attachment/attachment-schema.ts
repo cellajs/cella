@@ -4,7 +4,7 @@ import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
 /**

@@ -6,11 +6,9 @@ export function secretManagerPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/`
 }
 
-// Per-service path layout (REQ-8). The path hierarchy is the SECURITY BOUNDARY:
-// IAM resource-level conditions grant secret-value reads by
-// `resource.name.startsWith(<path>)`, so where a secret lives decides who can
-// read it. Renames move secrets across the boundary — the engine owns all
-// naming and never renames in place (create + delete instead).
+// Per-service path layout (REQ-8). The path hierarchy is the SECURITY BOUNDARY: IAM
+// conditions grant secret-value reads by `resource.name.startsWith(<path>)`, so where a
+// secret lives decides who reads it; the engine owns all naming and never renames in place.
 
 /** Folder for secrets consumed by exactly one service. */
 export function serviceSecretPath(slug: string, mode: string, service: string): string {
@@ -40,7 +38,7 @@ export function secretPathFor(definition: { services: readonly string[] }, slug:
 
 /**
  * CEL condition string for the VM reader's Secret Manager grant: value reads
- * only under the service and shared folders — engine credentials and any
+ * only under the service and shared folders. Engine credentials and any
  * future sibling stacks in the same project stay unreadable. STRING EQUALITY
  * MATTERS: assert-vm-grants compares the live rule condition against this
  * exact builder output, so producer and checker must share it. No
@@ -78,7 +76,7 @@ export function serviceKeyCondition(slug: string, mode: string, service: string)
 /**
  * Condition for the boot application: ONLY the handoff folder. The boot key is
  * baked into cloud-init, so its secret reach must be exactly the single-access
- * bundles — reading one that a VM already consumed fails, which IS the tamper
+ * bundles: reading one that a VM already consumed fails, which IS the tamper
  * alarm.
  */
 export function bootKeyCondition(slug: string, mode: string): string {

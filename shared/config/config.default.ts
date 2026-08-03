@@ -58,7 +58,10 @@ export const config = {
   /** Default restrictions for tenants (entity quotas and rate limits) */
   defaultRestrictions: {
     quotas: {
-      organization: 5,
+      // 1 tenant = 1 organization. Matches the hard structural cap (unique index on
+      // organizations.tenant_id); keep at 1 so the soft quota never advertises slots the
+      // 1:1 backstop will reject anyway. See create-organizations.ts.
+      organization: 1,
       user: 1000,
       attachment: 100,
     },

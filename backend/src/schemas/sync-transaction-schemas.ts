@@ -24,10 +24,10 @@ export const stxBaseSchema = z
     'x-tags': schemaTags('base', 'cella'),
   });
 
-/** Nullable sync-transaction reference shared by response schemas. */
-export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]).openapi('NullableStxBase', {
-  description: 'Sync transaction metadata, or null when an event has no sync transaction.',
-  'x-tags': schemaTags('base', 'cella'),
-});
+/**
+ * Nullable sync-transaction reference shared by response schemas. Deliberately unnamed so it
+ * emits an inline `anyOf: [$ref, {type: 'null'}]` at each use site instead of a component schema.
+ */
+export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 
 export type StxBase = z.infer<typeof stxBaseSchema>;
