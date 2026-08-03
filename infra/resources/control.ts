@@ -6,8 +6,12 @@ import { errorMessage } from '../lib/utils/errors'
 async function loadControlState(): Promise<ControlState> {
   if (process.env.VITEST) return emptyControlState()
 
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
+  // AWS_* first: they are the state-backend S3 credentials, and Scaleway's S3
+  // gateway only honors project-scoped ObjectStorage grants, which an
+  // API-capable SCW_* identity may lack. Normal deploys set both pairs to the
+  // same key, so the order only matters for split-identity operator runs.
+  const accessKey = process.env.AWS_ACCESS_KEY_ID ?? process.env.SCW_ACCESS_KEY
+  const secretKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SCW_SECRET_KEY
   if (!accessKey || !secretKey) {
     pulumi.log.warn('control-store: no S3 credentials in env; rollout state defaults to first-provision values')
     return emptyControlState()
