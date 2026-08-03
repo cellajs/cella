@@ -15,16 +15,26 @@ const OPENAPI_RELEVANT_PATHS = [
   'src/',
 ];
 
-/** Get hash of git diff for relevant backend paths */
-function getGitDiffHash(): string | null {
+/** Fingerprint of committed content plus uncommitted diff for relevant backend paths */
+function getGitFingerprint(): string | null {
   try {
+    const cwd = resolve(import.meta.dirname, '..');
+    const hash = createHash('sha256');
+    // Committed tree hash per path: a diff against HEAD alone misses commits
+    // arriving via pull/merge (clean tree before and after, same empty diff),
+    // which left a stale cache in place until --force. `./` keeps the path
+    // relative to backend/, matching OPENAPI_RELEVANT_PATHS.
+    for (const path of OPENAPI_RELEVANT_PATHS) {
+      const tree = execSync(`git rev-parse HEAD:./${path.replace(/\/$/, '')}`, { cwd, encoding: 'utf-8' });
+      hash.update(tree);
+    }
     const paths = OPENAPI_RELEVANT_PATHS.join(' ');
     const diff = execSync(`git diff --no-color HEAD -- ${paths}`, {
-      cwd: resolve(import.meta.dirname, '..'),
+      cwd,
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large diffs
     });
-    return createHash('sha256').update(diff).digest('hex').slice(0, 16);
+    return hash.update(diff).digest('hex').slice(0, 16);
   } catch {
     // Git not available or not a git repo - always regenerate
     return null;
@@ -49,7 +59,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
     return { skip: false, reason: 'force flag', hash: null };
   }
 
-  const currentHash = getGitDiffHash();
+  const currentHash = getGitFingerprint();
   if (currentHash === null) {
     return { skip: false, reason: 'git not available', hash: null };
   }
