@@ -16,9 +16,15 @@ export type UserMinimalBase = {
 };
 
 /**
- * Minimal user data for references, or null when no user is available.
+ * Minimal organization data for references.
  */
-export type NullableUserMinimalBase = UserMinimalBase | null;
+export type OrganizationMinimalBase = {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  entityType: 'organization';
+};
 
 /**
  * Base user schema with essential fields for identification and display.
@@ -60,8 +66,8 @@ export type ProductBase = {
   createdAt: string;
   updatedAt: string | null;
   description: string | null;
-  createdBy: NullableUserMinimalBase;
-  updatedBy: NullableUserMinimalBase;
+  createdBy: UserMinimalBase | null;
+  updatedBy: UserMinimalBase | null;
   entityType: 'attachment';
   keywords: string;
 };
@@ -103,11 +109,6 @@ export type StxBase = {
 };
 
 /**
- * Sync transaction metadata, or null when an event has no sync transaction.
- */
-export type NullableStxBase = StxBase | null;
-
-/**
  * Boolean query value accepted as a boolean or its lowercase string representation.
  */
 export type BooleanQueryValue = 'true' | 'false' | boolean;
@@ -145,7 +146,7 @@ export type StreamNotification = {
    * Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)
    */
   channelId: string | null;
-  stx: NullableStxBase;
+  stx: StxBase | null;
   /**
    * Last sequence position for a batched notification — client should fetch range
    */
@@ -338,7 +339,7 @@ export type InactiveMembership = {
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;
-  createdBy: NullableUserMinimalBase;
+  createdBy: UserMinimalBase | null;
   organizationId: string;
 };
 
@@ -357,6 +358,16 @@ export type UploadToken = {
     };
     [key: string]: unknown;
   } | null;
+};
+
+/**
+ * A tenant together with the single organization it holds.
+ */
+export type TenantWithOrganization = Tenant & {
+  /**
+   * The organization this tenant holds, or null if none
+   */
+  organization: OrganizationMinimalBase | null;
 };
 
 /**
@@ -418,8 +429,8 @@ export type Organization = {
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: NullableUserMinimalBase;
-  updatedBy: NullableUserMinimalBase;
+  createdBy: UserMinimalBase | null;
+  updatedBy: UserMinimalBase | null;
   publishedAt: string | null;
   publicAt: string | null;
   path: string | null;
@@ -485,8 +496,8 @@ export type Attachment = {
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: NullableUserMinimalBase;
-  updatedBy: NullableUserMinimalBase;
+  createdBy: UserMinimalBase | null;
+  updatedBy: UserMinimalBase | null;
   deletedAt: string | null;
   deletedBy: string | null;
   publicAt: string | null;
@@ -2690,7 +2701,7 @@ export type GetTenantsResponses = {
    * Tenants list
    */
   200: {
-    items: Array<Tenant>;
+    items: Array<TenantWithOrganization>;
     total: number;
   };
 };
@@ -4687,7 +4698,7 @@ export type GetPendingMembershipsResponses = {
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: NullableUserMinimalBase;
+      createdBy: UserMinimalBase | null;
     }>;
     total: number;
   };

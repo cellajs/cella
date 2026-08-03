@@ -42,7 +42,9 @@ export function PageBranch({
   const isActive = activePageId === page.id;
   const expanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
-  const isMobile = useBreakpointBelow('sm', false);
+  // Sheet-mode threshold (below `md`): keeps the active-indicator animation consistent with the
+  // rest of the docs sidebar across the sm–md band where the sidebar is a sheet.
+  const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
 
@@ -87,7 +89,9 @@ export function PageBranch({
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
-            onClose();
+            // On mobile the sheet only closes when navigating to a leaf; branch nodes keep it
+            // open so the children just revealed by the expand stay explorable in place.
+            if (!hasChildren) onClose();
           }}
         >
           {/* Leading dot (parent tier only), reads expanded state from the row scope */}

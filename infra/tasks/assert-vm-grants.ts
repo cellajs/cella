@@ -12,7 +12,7 @@ const SECRET_PERMISSION_SETS = new Set(['SecretManagerSecretAccess', 'SecretMana
 
 /**
  * Whether an EXTRA (unexpected) permission set on the VM key is benign. A
- * read-only set is drift worth surfacing but not a deploy-blocker — the VM
+ * read-only set is drift worth surfacing but not a deploy-blocker. The VM
  * policy is bootstrap-owned (CI can't reconcile it; see vm-iam.ts
  * `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until
  * a manual bootstrap Apply, without reducing any real risk. Any NON-read-only
@@ -38,7 +38,7 @@ export interface AssertVmGrantsOptions {
    * Exact CEL condition every secret-granting rule must carry (REQ-9,
    * built by vmSecretCondition). IAM conditions only narrow an allow, so a
    * single unconditioned secret rule on this app silently un-scopes the
-   * conditioned one — that is a FAILURE here, not a warning.
+   * conditioned one. That is a FAILURE here, not a warning.
    */
   requiredSecretCondition?: string
   /** Injected for tests; defaults to global fetch. */
@@ -211,7 +211,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     applicationId = (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.applicationName)) ?? undefined
     // Per-mode names (`<slug>-<mode>-vm-reader`) are canonical; a pre-migration
     // stack still runs on the legacy `<slug>-vm-reader` app, so fall back by
-    // stripping the mode segment rather than failing the deploy.
+    // stripping the mode segment to keep the deploy running.
     if (!applicationId && opts.fallbackApplicationName) {
       applicationId = (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.fallbackApplicationName)) ?? undefined
       if (applicationId) log(`~ IAM application '${opts.applicationName}' not found; verified legacy '${opts.fallbackApplicationName}' instead (run "Migrate IAM model")`)
@@ -240,8 +240,8 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   }
 
   // Missing sets break hydration; a NON-read-only extra set is an escalation;
-  // an un-scoped secret rule leaks secrets — all fatal. Extra READ-ONLY sets
-  // are surfaced as a warning but do not block (see isBenignExtraSet).
+  // an un-scoped secret rule leaks secrets. All three are fatal. Extra
+  // READ-ONLY sets are surfaced as a warning but do not block (see isBenignExtraSet).
   const ok = missing.length === 0 && extraFatal.length === 0 && unconditionedSecretRules.length === 0
   if (missing.length > 0) log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`)
   if (extraFatal.length > 0) log(`✗ VM reader grant TOO BROAD — extra write/broad grant(s): ${extraFatal.join(', ')}`)

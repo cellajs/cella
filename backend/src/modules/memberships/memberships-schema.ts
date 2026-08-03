@@ -11,7 +11,8 @@ import {
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
-import { nullableUserMinimalBaseSchema, userBaseSchema } from '#/schemas/user-schema-base';
+import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
 /** Schema for entity roles enum - uses literal types from appConfig */

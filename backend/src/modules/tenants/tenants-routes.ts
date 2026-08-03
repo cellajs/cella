@@ -12,6 +12,7 @@ import {
   selfCreateTenantBodySchema,
   tenantListQuerySchema,
   tenantSchema,
+  tenantWithOrganizationSchema,
   updateTenantBodySchema,
 } from './tenants-schema';
 
@@ -33,7 +34,7 @@ export const tenantRoutes = {
         description: 'Tenants list',
         content: {
           'application/json': {
-            schema: paginationSchema(tenantSchema),
+            schema: paginationSchema(tenantWithOrganizationSchema),
           },
         },
       },
@@ -84,7 +85,7 @@ export const tenantRoutes = {
     tags: ['tenants', 'cella'],
     summary: 'Create a tenant for yourself',
     description:
-      'Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.',
+      'Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.',
     request: {
       body: {
         required: true,

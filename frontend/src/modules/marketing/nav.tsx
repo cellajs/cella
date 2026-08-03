@@ -166,6 +166,21 @@ export const MarketingNav = () => {
           </span>
           <div className="flex flex-col items-stretch gap-2 px-4">
             <UserTheme buttonClassName="xs:hidden bg-accent m-1 self-end" />
+            <Button
+              variant="ghost"
+              size="lg"
+              render={
+                <Link
+                  to="/about"
+                  hash=""
+                  replace={location.pathname === '/about'}
+                  draggable={false}
+                  onClick={closeDrawer}
+                />
+              }
+            >
+              {t('c:home')}
+            </Button>
             {renderNavItems()}
             {appConfig.company.githubUrl && (
               <Button

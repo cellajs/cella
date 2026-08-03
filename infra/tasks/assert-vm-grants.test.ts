@@ -65,7 +65,7 @@ describe('assertVmGrants', () => {
 
   it('tolerates an EXTRA read-only set as benign drift (warns, does not fail)', async () => {
     // The VM policy is bootstrap-owned (CI cannot reconcile it), so a benign
-    // read-only over-grant must not wedge deploys — only escalations (write/
+    // read-only over-grant must not wedge deploys; only escalations (write/
     // broad grants) do. Mirrors the live cella-vm-reader carrying a lingering
     // ObjectStorageReadOnly.
     const fetchImpl = makeFetch([

@@ -2,7 +2,7 @@ import { getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { userMinimalBaseSchema } from '#/schemas/user-minimal-base';
+import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 

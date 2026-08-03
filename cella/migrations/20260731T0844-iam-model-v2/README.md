@@ -15,10 +15,10 @@ requests with its own service key, exported by the boot runner as
 
 ## Blast radius
 
-Infra-only; NOT sync-breaking, no `clientCacheVersion` bump, no database change. Every fork
+Infra-only; NOT sync-breaking, no `clientCacheVersion` bump, no database change. Every app
 with a bootstrapped Scaleway stack is affected operationally: after pulling, existing stacks
 keep deploying on the legacy model (name fallbacks are built in) but should migrate promptly.
-Forks that customized `infra/config/managed-keys.config.ts`, `runtime-secrets.config.ts`, or
+Apps that customized `infra/config/managed-keys.config.ts`, `runtime-secrets.config.ts`, or
 `services.config.ts` merge those files by hand: the s3 entries are gone, and the backend
 service entry gained `s3Access: true`. Apps that never enabled the s3 managed key and never
 customized infra are unaffected until they choose to migrate.

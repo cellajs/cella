@@ -24,16 +24,9 @@ const names = principalNames(appConfig.slug, mode)
  */
 export const iamModelV2 = new pulumi.Config('infra').get('iamModel') === 'v2'
 
-// The engine's IAM principals, resolved from IAM by name. Owned here because
-// IAM is this module's concern; other resource modules (storage bucket
-// policies, compute) import them from here.
-//
-// Per-mode names (`<slug>-<mode>-…`) are canonical; legacy names fall back so
-// pre-migration stacks keep deploying. Resolution failures degrade per
-// principal: required principals throw (a bucket policy without its CI
-// statement would brick the deploy anyway), optional ones drop their
-// statements with a warning instead of failing the whole deploy — a missing
-// admin app must never block a production release (the 0.7.0 incident).
+// The engine's IAM principals, resolved from IAM by name and owned here because IAM is this
+// module's concern (storage bucket policies and compute import them). Per-mode names are canonical;
+// legacy names fall back so pre-migration stacks keep deploying. Required principals throw on a resolution failure; optional ones (e.g. the admin app) only warn and drop their statements, so a missing admin app never blocks a production release (the 0.7.0 incident).
 
 /** Resolve an application id by name, or undefined when the app is absent. */
 function findApplicationId(name: string): pulumi.Output<string | undefined> {
@@ -57,7 +50,7 @@ function resolvePrincipalId(preferred: string, legacy: string): pulumi.Output<st
   })
 }
 
-/** Require a principal: missing means the stack cannot function — fail with guidance. */
+/** Require a principal: missing means the stack cannot function, so fail with guidance. */
 function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
   return resolved.apply((id) => {
     if (!id) throw new Error(`IAM application for ${label} not found — run the infra CLI bootstrap first.`)
@@ -70,7 +63,7 @@ export const ciDeployApplicationId = requirePrincipalId(resolvePrincipalId(names
 
 /**
  * VM reader application id (legacy model). Required under legacy (its policy
- * and every VM depend on it); under v2 it is optional — kept resolvable so the
+ * and every VM depend on it); under v2 it is optional, kept resolvable so the
  * boot-diag bucket statement can retain it through a migration window.
  */
 const vmReaderResolved = resolvePrincipalId(names.vmReader, names.legacy.vmReader)
@@ -81,7 +74,7 @@ export const vmReaderApplicationId: pulumi.Output<string | undefined> = iamModel
 /**
  * Admin application id: the standing human principal (bucket access + infra
  * reads). OPTIONAL: when absent its bucket-policy statements are dropped with
- * a warning — never a deploy failure. Falls back to the legacy operator app,
+ * a warning, never a deploy failure. Falls back to the legacy operator app,
  * then to the SCW_ADMIN_APPLICATION_ID / SCW_OPERATOR_APPLICATION_ID env vars
  * (local ups load backend/.env; CI does not carry these).
  */
@@ -112,7 +105,7 @@ export const bootApplicationId: pulumi.Output<string | undefined> = iamModelV2
 
 /**
  * Legacy `<slug>-s3` managed-key application (retired by REQ-20). Resolved so
- * bucket policies can keep admitting it through a migration window — a stack
+ * bucket policies can keep admitting it through a migration window. A stack
  * whose backend still signs with the old s3 key must not lose uploads the
  * moment a policy lands on the private bucket. Migration deletes the app,
  * after which the statement drops out on the next up.
@@ -150,7 +143,7 @@ if (!iamModelV2) {
     // write IAM), so a legacy stack must see zero diff here or CI's `pulumi up`
     // 403s. Path-scoped secret reads are a v2-only feature (the per-service
     // policies below), applied via the migration's bootstrap `Apply infra
-    // change` — never pushed onto a legacy stack by CI.
+    // change`, never pushed onto a legacy stack by CI.
     rules: [
       {
         permissionSetNames: [...VM_PROJECT_PERMISSION_SETS],

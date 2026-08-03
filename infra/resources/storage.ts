@@ -17,7 +17,7 @@ const browserOrigin = serviceUrl(browserOriginSlug)
  * app. Bucket policies are deny-by-default: without this, even an org-admin or
  * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
  * Resolved from IAM by name (vm-iam.ts) so local and CI ups produce the SAME
- * policy — the old env-var source (backend/.env only) made the statement
+ * policy. The old env-var source (backend/.env only) made the statement
  * flip-flop between local and CI updates. Absent admin app = statement
  * dropped (vm-iam warns once).
  */
@@ -47,11 +47,11 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 
 /**
  * CI access on buckets holding irreplaceable user data (REQ-14): everything a
- * deploy/refresh needs EXCEPT `s3:DeleteObjectVersion` — mirroring the state
+ * deploy/refresh needs EXCEPT `s3:DeleteObjectVersion`. Mirroring the state
  * bucket, a leaked CI key can delete objects (recoverable markers on a
  * versioned bucket) but cannot destroy version history. `PutBucketVersioning`
  * stays granted: Pulumi (as CI) manages the versioning config itself, so
- * denying it would break the up that applies this very posture — accepted
+ * denying it would break the up that applies this very posture. Accepted
  * residual: a leaked key can suspend FUTURE versioning, never erase history.
  * The action list is the riskiest piece of this file: Scaleway's supported
  * bucket-policy action vocabulary is not fully documented, so validate on
@@ -73,7 +73,7 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
     's3:PutBucketTagging',
     's3:GetBucketVersioning',
     's3:PutBucketVersioning',
-    // Scaleway spells CORS all-caps (unlike AWS's s3:GetBucketCors) — the
+    // Scaleway spells CORS all-caps (unlike AWS's s3:GetBucketCors); the
     // AWS casing is rejected as an invalid action (MalformedPolicy 400).
     's3:GetBucketCORS',
     's3:PutBucketCORS',
@@ -88,7 +88,7 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
 
 /**
  * Backend service-app statement on the uploads buckets (REQ-20): object-level
- * only — the backend signs uploads and presigned URLs with its per-deploy
+ * only, since the backend signs uploads and presigned URLs with its per-deploy
  * service key. The legacy `<slug>-s3` managed-key app rides along until
  * migration deletes it, so pre-migration backends keep signing. Both resolve
  * gracefully (absent app = statement dropped).
@@ -176,7 +176,7 @@ const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', 
   tags: tagsAsMap,
   forceDestroy: !isProduction,
   // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
-  // the backup floor (REQ-14) — overwrites/deletes are recoverable for 30
+  // the backup floor (REQ-14). Overwrites/deletes are recoverable for 30
   // days, and the CI statement below cannot delete versions.
   versioning: { enabled: true },
   lifecycleRules: [
@@ -248,11 +248,9 @@ const privateUploadsBucket = new scaleway.object.Bucket('private-uploads-bucket'
 }, { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }] , protect: isProduction })
 
 /**
- * First-ever policy on the private bucket (P3): still NO public statement —
- * signed URLs only — but now deny-by-default like every other bucket. Admitted:
- * the upload signers (backend service app; legacy s3 app until migration),
- * CI (without version deletes, REQ-14), and the admin app. Anything else —
- * including a compromised VM's boot key or another service's key — is denied.
+ * Deny-by-default policy on the private bucket (P3): no public statement, signed URLs only.
+ * Admits the upload signers (backend service app; legacy s3 app until migration), CI without
+ * version deletes (REQ-14), and the admin app; any other key, including a compromised VM boot key or another service's key, is denied.
  */
 new scaleway.object.BucketPolicy('private-uploads-policy', {
   bucket: privateUploadsBucket.name,

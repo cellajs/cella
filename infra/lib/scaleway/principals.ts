@@ -23,7 +23,7 @@ export interface PrincipalNames {
   vmService: (service: string) => string
   /** Boot fetcher application: registry pull + handoff-secret read (P3 model). */
   boot: string
-  /** Pre-per-mode names, used as lookup fallbacks only — never for creation. */
+  /** Pre-per-mode names, used as lookup fallbacks only, never for creation. */
   legacy: {
     ciDeploy: string
     vmReader: string

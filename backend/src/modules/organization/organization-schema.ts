@@ -22,8 +22,8 @@ import {
   validUrlSchema,
 } from '#/schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
+import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { toolsConfigSchema } from '#/schemas/tools-config';
-import { nullableUserMinimalBaseSchema } from '#/schemas/user-minimal-base';
 import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');

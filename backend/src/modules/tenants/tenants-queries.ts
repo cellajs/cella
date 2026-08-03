@@ -2,6 +2,7 @@ import { and, count, eq, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { domainsTable } from '#/modules/domains/domains-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
@@ -49,15 +50,39 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
       domainsCount: sql<number>`coalesce(${domainsCountSq.count}, 0)`.mapWith(Number),
       createdAt: tenantsTable.createdAt,
       updatedAt: tenantsTable.updatedAt,
+      // 1 tenant = 1 organization, so a plain left join yields at most one org row (null if the
+      // tenant is an orphan: created but not yet linked to an org).
+      organizationId: organizationsTable.id,
+      organizationName: organizationsTable.name,
+      organizationSlug: organizationsTable.slug,
+      organizationThumbnailUrl: organizationsTable.thumbnailUrl,
     })
     .from(tenantsTable)
     .leftJoin(domainsCountSq, eq(tenantsTable.id, domainsCountSq.tenantId))
+    .leftJoin(organizationsTable, eq(organizationsTable.tenantId, tenantsTable.id))
     .where(whereClause)
     .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
 
-  return resolveListTotal(itemsQuery, {
+  // Fold the flat org columns into a nested `organization` object (null for orphan tenants).
+  const nestedItemsQuery = itemsQuery.then((rows) =>
+    rows.map(({ organizationId, organizationName, organizationSlug, organizationThumbnailUrl, ...tenant }) => ({
+      ...tenant,
+      organization: organizationId
+        ? {
+            id: organizationId,
+            // Non-null within this branch: the left join returns them on the same row as the id.
+            name: organizationName as string,
+            slug: organizationSlug as string,
+            thumbnailUrl: organizationThumbnailUrl,
+            entityType: 'organization' as const,
+          }
+        : null,
+    })),
+  );
+
+  return resolveListTotal(nestedItemsQuery, {
     kind: 'exact',
     getTotal: async () => {
       const [{ total }] = await db.select({ total: count() }).from(tenantsTable).where(whereClause);

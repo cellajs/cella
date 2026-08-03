@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, notInArray } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
-import { AppError } from '#/core/error';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { countDomainsByTenant } from '#/modules/tenants/tenants-queries';
@@ -12,21 +12,23 @@ interface SelfCreateTenantInput {
 export async function selfCreateTenantOp(ctx: AuthContext, input: SelfCreateTenantInput) {
   const db = ctx.var.db;
   const user = ctx.var.user;
-  const memberships = ctx.var.memberships;
 
-  // Block if user already has memberships (already in a tenant with orgs)
-  if (memberships.length > 0) {
-    throw new AppError(409, 'restrict_by_app', 'warn', {
-      message: 'User already has tenant memberships',
-    });
-  }
+  // Multi-workspace: a user may own several tenants, each holding exactly one org via the 1:1
+  // cap. Every call mints a fresh tenant for the caller.
+  //
+  // Reuse an orphan tenant (one this user created that has no org yet, from a prior attempt where
+  // org creation failed after the tenant was made) to avoid piling up empty tenants on retry.
+  // organizations.tenant_id is NOT NULL, so the NOT IN subquery has no NULL pitfall.
+  const tenantsWithOrg = db.select({ tenantId: organizationsTable.tenantId }).from(organizationsTable);
+  const [orphanTenant] = await db
+    .select()
+    .from(tenantsTable)
+    .where(and(eq(tenantsTable.createdBy, user.id), notInArray(tenantsTable.id, tenantsWithOrg)))
+    .limit(1);
 
-  // If user already created a tenant (e.g. previous attempt where org creation failed), return it
-  const [existingTenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.createdBy, user.id)).limit(1);
-
-  if (existingTenant) {
-    const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: existingTenant.id });
-    return { ...existingTenant, domainsCount };
+  if (orphanTenant) {
+    const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: orphanTenant.id });
+    return { ...orphanTenant, domainsCount };
   }
 
   const tenant = await createTenantForUser(db, {

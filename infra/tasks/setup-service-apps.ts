@@ -18,7 +18,7 @@ export interface ServiceAppsResult {
 
 /**
  * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`) and
- * the boot fetcher application (`<slug>-<mode>-boot`) — applications only:
+ * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
  * their POLICIES are Pulumi-managed (resources/vm-iam.ts, bootstrap-owned) and
  * their KEYS are minted per deploy by CI (tasks/mint-generation-keys.ts) under
  * the conditioned IAMApplicationManager grant. Runs during bootstrap/migration

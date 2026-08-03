@@ -36,7 +36,7 @@ import { pc, checkMark, tildeMark, warningMark } from '../../lib/utils/cli-outpu
  * then prints the two required follow-ups: a bootstrap "Apply infra change"
  * (the new per-service policies are IAM writes CI cannot make) and a deploy.
  * Secret containers move to their per-service folders on that same up
- * (Pulumi updates paths in place; ids — and thus manifests — are unchanged).
+ * (Pulumi updates paths in place; ids, and thus manifests, are unchanged).
  *
  * Cleanup (run AFTER a v2 deploy verified green) deletes the legacy
  * principals: `<slug>-ci-deploy`, `<slug>-vm-reader`, `<slug>-operator`,

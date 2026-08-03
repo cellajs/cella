@@ -52,7 +52,7 @@ export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMIS
  * for day-2 operations (`pulumi preview --refresh`, teardown, state-bucket
  * recovery). Object Storage is the only write (bucket policies are
  * deny-by-default, so the admin needs both the IAM allow and its bucket-policy
- * statements); everything else is read-only — deliberately NO IAM write, no
+ * statements); everything else is read-only: deliberately NO IAM write, no
  * instance/LB/secret writes. Structural changes still go through a transient
  * bootstrap key ("Apply infra change").
  */
@@ -95,7 +95,7 @@ export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretM
 /**
  * Extra sets for the backend service app (REQ-20): S3 request signing for
  * attachment uploads + presigned URLs, replacing the retired `<slug>-s3`
- * managed key. Granular object sets, NOT FullAccess — bucket policies then
+ * managed key. Granular object sets, NOT FullAccess. Bucket policies then
  * scope which buckets.
  */
 export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const
@@ -111,7 +111,7 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  * The CI key-mint grant (D3, live-validated 2026-07-31): IAMApplicationManager
  * conditioned to `resource.id in [<service/boot app ids>]` lets CI rotate
  * those apps' API keys every deploy while creating apps/policies stays denied
- * (create carries no matching resource.id) — the escalation firewall holds.
+ * (create carries no matching resource.id). The escalation firewall holds.
  * STRICT condition: no `!has(resource.id)` escape, listing stays denied.
  */
 export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const

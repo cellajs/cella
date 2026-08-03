@@ -141,7 +141,7 @@ export function AccountSheet() {
             icon={WrenchIcon}
             id="btn-system"
             label={t('c:system_panel')}
-            action="/system/users"
+            action="/system"
           />
         )}
         <AccountButton

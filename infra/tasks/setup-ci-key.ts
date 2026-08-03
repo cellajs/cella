@@ -14,7 +14,7 @@ export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   /**
    * Service + boot application ids (v2 model): adds the conditioned
    * IAMApplicationManager rule so CI can rotate exactly those apps' keys per
-   * deploy — and nothing else (creates carry no matching resource.id).
+   * deploy, and nothing else (creates carry no matching resource.id).
    */
   keyMintAppIds?: readonly string[]
 }

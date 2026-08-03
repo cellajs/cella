@@ -13,7 +13,8 @@
               "type": "array",
               "required": true,
               "itemType": "object",
-              "ref": "#/components/schemas/Tenant",
+              "ref": "#/components/schemas/TenantWithOrganization",
+              "refDescription": "A tenant together with the single organization it holds.",
               "items": {
                 "type": "object",
                 "description": "A tenant representing an isolated data partition for multi-tenancy.",
@@ -84,9 +85,18 @@
                     "type": "integer",
                     "required": true,
                     "description": "Number of domains claimed by this tenant"
+                  },
+                  "organization": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/OrganizationMinimalBase",
+                    "description": "The organization this tenant holds, or null if none",
+                    "refDescription": "Minimal organization data for references."
                   }
                 },
-                "ref": "#/components/schemas/Tenant"
+                "extendsRef": "#/components/schemas/Tenant",
+                "ref": "#/components/schemas/TenantWithOrganization",
+                "refDescription": "A tenant together with the single organization it holds."
               }
             },
             "total": { "type": "number", "required": true }

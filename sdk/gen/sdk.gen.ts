@@ -1995,7 +1995,7 @@ export const createTenant = <ThrowOnError extends boolean = true>(
 /**
  * Create a tenant for yourself
  *
- * Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.
+ * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.
  *
  * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/self) ·· _tenants_cella_
  *

@@ -29,10 +29,10 @@ function parsePair(raw: string, source: string): ServiceKeyPair {
  *
  * Cache-first: reboots read the pair persisted at first boot and never touch
  * IAM or Secret Manager again. First boot fetches the single-access handoff
- * bundle exactly once — Scaleway disables the version on that read, so a
+ * bundle exactly once. Scaleway disables the version on that read, so a
  * SECOND reader always fails. A fetch failure with no cache therefore means
  * the bundle was consumed by someone else (or the deploy staged it wrong):
- * that is a SECURITY SIGNAL, not a retryable error — the thrown message is
+ * that is a SECURITY SIGNAL, not a retryable error. The thrown message is
  * explicit so boot-diag and the deploy surface it as such.
  */
 export async function fetchServiceKey(opts: FetchServiceKeyOptions): Promise<ServiceKeyPair> {

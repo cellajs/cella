@@ -1,23 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation for a self-creation flow with multi-step navigation side-effects.
-import { selfCreateTenant } from 'sdk';
 import { zCreateOrganizationsBody } from 'sdk/zod.gen';
 import { generateId } from 'shared/utils/entity-id';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { SelectTenantFormField } from '~/modules/common/form-fields/select-combobox/tenant';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
+import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/field';
 
@@ -28,46 +24,30 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-// Schema for regular creation with existing tenant
-const withTenantSchema = zCreateOrganizationsBody.element.omit({ id: true }).extend({
-  tenantId: z.string().min(1, 'error:form.required'),
-});
+// 1 tenant = 1 organization, so every org lives in its own tenant (workspace). Creating an org
+// always mints a fresh tenant; there is no "add an org to an existing tenant" case to select for.
+const formSchema = zCreateOrganizationsBody.element.omit({ id: true });
 
-// Schema for first-time creation; a tenant is created automatically.
-const noTenantSchema = zCreateOrganizationsBody.element.omit({ id: true });
+type FormValues = z.infer<typeof formSchema>;
 
-type WithTenantValues = z.infer<typeof withTenantSchema>;
-type NoTenantValues = z.infer<typeof noTenantSchema>;
-type FormValues = WithTenantValues | NoTenantValues;
-
-/** Renders the form for creating organization. */
+/** Renders the form for creating an organization (and its tenant/workspace). */
 export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();
 
-  // Check if user has any memberships (determines if they have tenants)
-  const membershipsQuery = useQuery(myMembershipsQueryOptions());
-  const memberships = membershipsQuery.data?.items ?? [];
-  const hasTenants = memberships.length > 0;
-  const uniqueTenantCount = new Set(memberships.map((m) => m.tenantId)).size;
-
-  const formSchema = hasTenants ? withTenantSchema : noTenantSchema;
-  const singleTenantId = uniqueTenantCount === 1 ? memberships[0].tenantId : '';
-  const defaultValues = hasTenants ? { name: '', slug: '', tenantId: singleTenantId } : { name: '', slug: '' };
-
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: { name: '', slug: '' },
   };
 
   const formContainerId = 'create-organization';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   const name = useWatch({ control: form.control, name: 'name' });
-  const tenantId = (hasTenants ? useWatch({ control: form.control, name: 'tenantId' as never }) : '') as string;
 
   const createMutation = useOrganizationCreateMutation();
+  const selfCreateTenantMutation = useSelfCreateTenantMutation();
 
   const onSuccess = (createdOrganization: Organization) => {
     form.reset();
@@ -77,21 +57,18 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   };
 
   const onSubmit = async (values: FormValues) => {
-    let resolvedTenantId = 'tenantId' in values ? values.tenantId : '';
-
-    // Create a tenant first, then create the org.
-    if (!resolvedTenantId) {
-      try {
-        const tenant = await selfCreateTenant({ body: { name: `${values.name} workspace` } });
-        resolvedTenantId = tenant.id;
-      } catch {
-        toaster.error(t('error:create_resource', { resource: t('c:tenant') }));
-        return;
-      }
+    // Each org gets its own tenant. Mint it first, then create the org inside it.
+    let tenantId: string;
+    try {
+      const tenant = await selfCreateTenantMutation.mutateAsync({ name: `${values.name} workspace` });
+      tenantId = tenant.id;
+    } catch {
+      toaster.error(t('error:create_resource', { resource: t('c:tenant') }));
+      return;
     }
 
     createMutation.mutate(
-      { path: { tenantId: resolvedTenantId }, body: [{ ...values, id: `temp-${generateId()}` }] },
+      { path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] },
       {
         onSuccess: (createdOrganization) => onSuccess(createdOrganization),
         onError: (error) => {
@@ -106,10 +83,6 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   return (
     <Form {...form} labelDirection={labelDirection}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {hasTenants && uniqueTenantCount > 1 && (
-          <SelectTenantFormField control={form.control} name="tenantId" label={t('c:tenant')} required />
-        )}
-
         <InputFormField
           control={form.control}
           name="name"
@@ -120,11 +93,11 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
         <SlugFormField
           control={form.control}
           entityType="organization"
-          tenantId={tenantId}
+          tenantId=""
           label={t('c:resource_handle', { resource: t('c:organization') })}
           description={t('c:resource_handle.text', { resource: t('c:organization').toLowerCase() })}
           nameValue={name}
-          prefix={`/${tenantId || '~'}/`}
+          prefix="/~/"
         />
 
         <div className="flex flex-col gap-2 sm:flex-row">

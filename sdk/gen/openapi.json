@@ -363,25 +363,44 @@
         "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
         "description": "Minimal user data for references.",
         "example": {
-          "id": "d6ecd8ea-406d-4160-8fbd-8407414b54b2",
-          "name": "Alverta Waelchi",
-          "slug": "alverta.waelchi91",
+          "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
+          "name": "Dwight Cummerata",
+          "slug": "dwight.cummerata91",
           "thumbnailUrl": null,
           "entityType": "user"
         },
         "x-tags": ["base", "users", "cella"]
       },
-      "NullableUserMinimalBase": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/UserMinimalBase"
+      "OrganizationMinimalBase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          {
-            "type": "null"
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": ["string", "null"]
+          },
+          "entityType": {
+            "type": "string",
+            "enum": ["organization"]
           }
-        ],
-        "description": "Minimal user data for references, or null when no user is available.",
-        "x-tags": ["base", "users", "cella"]
+        },
+        "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
+        "description": "Minimal organization data for references.",
+        "example": {
+          "id": "a0e12a75-1f11-485a-a581-cfcf45f209ef",
+          "name": "Schuster Inc",
+          "slug": "schuster-inc",
+          "thumbnailUrl": null,
+          "entityType": "organization"
+        },
+        "x-tags": ["base", "organizations", "cella"]
       },
       "UserBase": {
         "type": "object",
@@ -522,10 +541,24 @@
             "type": ["string", "null"]
           },
           "createdBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "updatedBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "entityType": {
             "type": "string",
@@ -555,16 +588,16 @@
           "description": "Veritas itaque basium a. Sufficio ter nostrum cilicium tersus ara. Earum ascit trans somniculosus.",
           "keywords": "sint clementia corrigo",
           "createdBy": {
-            "id": "c50da656-29b0-4d6a-8aa2-323def17f952",
-            "name": "Alexa Runte",
-            "slug": "alexa.runte",
+            "id": "8a080cc5-0da6-4562-89b0-d6aaa2323def",
+            "name": "Lenny Bartell",
+            "slug": "lenny.bartell",
             "thumbnailUrl": null,
             "entityType": "user"
           },
           "updatedBy": {
-            "id": "f48d91fa-25fe-448c-83c3-17d8260c952a",
-            "name": "Lina Abbott",
-            "slug": "lina.abbott19",
+            "id": "6aa2c0f4-8d91-4fa2-85fe-48c3c317d826",
+            "name": "Emmitt Armstrong",
+            "slug": "emmitt.armstrong19",
             "thumbnailUrl": null,
             "entityType": "user"
           },
@@ -672,18 +705,6 @@
         },
         "x-tags": ["base", "cella"]
       },
-      "NullableStxBase": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/StxBase"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "description": "Sync transaction metadata, or null when an event has no sync transaction.",
-        "x-tags": ["base", "cella"]
-      },
       "BooleanQueryValue": {
         "anyOf": [
           {
@@ -746,7 +767,14 @@
             "description": "Channel entity ID for grouping (e.g. projectId for tasks in unseen counts)"
           },
           "stx": {
-            "$ref": "#/components/schemas/NullableStxBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StxBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "batchUntilSeq": {
             "type": ["integer", "null"],
@@ -1471,7 +1499,14 @@
             "type": ["string", "null"]
           },
           "createdBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "organizationId": {
             "type": "string",
@@ -1567,6 +1602,32 @@
           }
         },
         "x-tags": ["data", "me", "cella"]
+      },
+      "TenantWithOrganization": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Tenant"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "organization": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/OrganizationMinimalBase"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The organization this tenant holds, or null if none"
+              }
+            },
+            "required": ["organization"]
+          }
+        ],
+        "description": "A tenant together with the single organization it holds.",
+        "x-tags": ["data", "tenants", "cella"]
       },
       "Tenant": {
         "type": "object",
@@ -1735,10 +1796,24 @@
             "maxLength": 2048
           },
           "createdBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "updatedBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "publishedAt": {
             "type": ["string", "null"]
@@ -2026,10 +2101,24 @@
             "maxLength": 1000000
           },
           "createdBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "updatedBy": {
-            "$ref": "#/components/schemas/NullableUserMinimalBase"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "deletedAt": {
             "type": ["string", "null"]
@@ -5499,7 +5588,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Tenant"
+                        "$ref": "#/components/schemas/TenantWithOrganization"
                       }
                     },
                     "total": {
@@ -5609,7 +5698,7 @@
         "operationId": "selfCreateTenant",
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
-        "description": "Creates a new tenant for the authenticated user. Only allowed if the user has no existing tenant memberships.",
+        "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.",
         "x-guard": ["authGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -10352,7 +10441,14 @@
                             "type": "string"
                           },
                           "createdBy": {
-                            "$ref": "#/components/schemas/NullableUserMinimalBase"
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/UserMinimalBase"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]

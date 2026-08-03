@@ -10,7 +10,7 @@ import { derivedRuntimeSecretData } from './stores'
 // secrets, `/<slug>-<mode>/shared/` for multi-consumer ones. The path is the
 // security boundary (the VM grant is conditioned on these prefixes), so it is
 // derived from the consumer list, never hand-assigned. Path updates apply
-// in-place (same secret id — manifests and hydration are unaffected).
+// in-place (same secret id, so manifests and hydration are unaffected).
 const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode)
 
 /**

@@ -5,7 +5,7 @@ name: Infra state prune (one-off)
 # the CI key cannot delete via the provider API (a bootstrap-owned resource,
 # e.g. an RDB ACL). Pruning it from state is an S3-only operation the CI key
 # CAN do (it has state-bucket access; it just lacks the provider write). The
-# live resource must already be gone, or this orphans it — the operator
+# live resource must already be gone, or this orphans it. The operator
 # confirms that before running.
 #
 # One-off by nature: keep it, but expect to use it rarely. Uses the same

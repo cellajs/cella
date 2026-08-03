@@ -32,7 +32,10 @@ interface DocsSidebarProps {
  */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpointBelow('sm', false);
+  // "Sheet mode" matches the layout: the sidebar renders as a sheet whenever the viewport is
+  // below `md` (docs-layout's isDesktop = above md). Gate close/animation behavior on the same
+  // threshold so the sm–md band behaves like the sheet it actually is, not like desktop.
+  const isMobile = useBreakpointBelow('md', false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   const closeSheet = () => {

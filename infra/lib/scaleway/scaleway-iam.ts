@@ -151,7 +151,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 
   // Enroll the app in the per-mode IAM group. Organizational only (the group
   // carries no grants): it is the one navigable unit in the console's flat
-  // org-wide lists, and teardown enumerates members instead of guessing names.
+  // org-wide lists, and teardown finds members by enumerating the group.
   if (mode) {
     await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch((error) => {
       log(`  ${tildeMark} Group enrollment skipped: ${error instanceof Error ? error.message : String(error)}`)
@@ -275,7 +275,7 @@ async function findGroup(callerSecretKey: string, organizationId: string, name: 
 
 /**
  * Ensure the `<slug>-<mode>` IAM group exists and contains the application.
- * The group is purely organizational (never a policy principal — a group
+ * The group is purely organizational (never a policy principal, since a group
  * policy would grant every member): console navigation + teardown enumeration.
  */
 export async function ensureGroupMembership(opts: {

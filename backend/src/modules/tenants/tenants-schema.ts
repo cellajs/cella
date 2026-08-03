@@ -3,7 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
-import { paginationQuerySchema, validNameSchema } from '#/schemas';
+import { nullableOrganizationMinimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 
 /** Tenant status enum values */
 export type TenantStatus = (typeof tenantStatusValues)[number];
@@ -46,6 +46,19 @@ export const tenantSchema = z
   })
   .openapi('Tenant', {
     description: 'A tenant representing an isolated data partition for multi-tenancy.',
+    'x-tags': schemaTags('data', 'tenants', 'cella'),
+  });
+
+/**
+ * Tenant schema for list responses, carrying the linked organization (null for an orphan tenant
+ * created but not yet linked to an org). 1 tenant = 1 organization.
+ */
+export const tenantWithOrganizationSchema = tenantSchema
+  .extend({
+    organization: nullableOrganizationMinimalBaseSchema.describe('The organization this tenant holds, or null if none'),
+  })
+  .openapi('TenantWithOrganization', {
+    description: 'A tenant together with the single organization it holds.',
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });
 

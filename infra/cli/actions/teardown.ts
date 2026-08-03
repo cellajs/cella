@@ -15,8 +15,8 @@ import { acquireStackLockOrExit, envOr, type InfraContext, promptRequiredInput, 
 import { pc, checkMark, tildeMark, warningMark } from '../../lib/utils/cli-output'
 
 /**
- * First-class environment teardown. Owns the whole ritual that previously had
- * to be hand-reproduced (state-backend login, AWS_*↔SCW_* mapping, stack
+ * First-class environment teardown. Owns the whole ritual that would otherwise
+ * be hand-reproduced (state-backend login, AWS_*↔SCW_* mapping, stack
  * selection, `destroy --refresh`), then offers IAM principal cleanup.
  *
  * Credentials: two halves with different requirements, named explicitly.
@@ -27,7 +27,7 @@ import { pc, checkMark, tildeMark, warningMark } from '../../lib/utils/cli-outpu
  *  - IAM cleanup: needs IAMManager; same bootstrap key when it has it.
  *
  * Production stacks additionally require typing `<slug>-production` and carry
- * `protect: true` on the frontend/private buckets — Pulumi refuses those
+ * `protect: true` on the frontend/private buckets. Pulumi refuses those
  * unless protection is lifted in code first, which is deliberate.
  */
 export async function runTeardown(context: InfraContext): Promise<void> {
@@ -49,7 +49,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
 
   // Named credential pair for the destroy phase. SCW_TEARDOWN_* env vars allow
   // unattended runs; interactive runs are told exactly which key quality is
-  // needed instead of guessing among SCW_*/AWS_* variables.
+  // needed, with no guessing among SCW_*/AWS_* variables.
   console.info(
     `\n${pc.dim('Credentials: a key with FULL PROJECT WRITE (a bootstrap key works; the admin key cannot destroy compute/VPC/DB).')}\n` +
       `${pc.dim(`Reads env ${pc.bold('SCW_TEARDOWN_ACCESS_KEY')}/${pc.bold('SCW_TEARDOWN_SECRET_KEY')} first, then prompts.`)}`,

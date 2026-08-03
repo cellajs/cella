@@ -54,14 +54,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "deletedAt": {
           "type": ["string", "null"],
@@ -243,14 +243,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "entityType": {
           "type": "string",
@@ -275,16 +275,16 @@
       "description": "Veritas itaque basium a. Sufficio ter nostrum cilicium tersus ara. Earum ascit trans somniculosus.",
       "keywords": "sint clementia corrigo",
       "createdBy": {
-        "id": "c50da656-29b0-4d6a-8aa2-323def17f952",
-        "name": "Alexa Runte",
-        "slug": "alexa.runte",
+        "id": "8a080cc5-0da6-4562-89b0-d6aaa2323def",
+        "name": "Lenny Bartell",
+        "slug": "lenny.bartell",
         "thumbnailUrl": null,
         "entityType": "user"
       },
       "updatedBy": {
-        "id": "f48d91fa-25fe-448c-83c3-17d8260c952a",
-        "name": "Lina Abbott",
-        "slug": "lina.abbott19",
+        "id": "6aa2c0f4-8d91-4fa2-85fe-48c3c317d826",
+        "name": "Emmitt Armstrong",
+        "slug": "emmitt.armstrong19",
         "thumbnailUrl": null,
         "entityType": "user"
       },
@@ -356,8 +356,8 @@
         "stx": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Sync transaction metadata, or null when an event has no sync transaction.",
-          "ref": "#/components/schemas/NullableStxBase"
+          "ref": "#/components/schemas/StxBase",
+          "refDescription": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution."
         },
         "batchUntilSeq": {
           "type": ["integer", "null"],
@@ -809,8 +809,8 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" }
       }
@@ -997,14 +997,14 @@
         "createdBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
-          "description": "Minimal user data for references, or null when no user is available.",
-          "ref": "#/components/schemas/NullableUserMinimalBase"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "Minimal user data for references."
         },
         "publishedAt": {
           "type": ["string", "null"],
@@ -1270,6 +1270,42 @@
     }
   },
   {
+    "name": "OrganizationMinimalBase",
+    "ref": "#/components/schemas/OrganizationMinimalBase",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "name": { "type": "string", "required": true },
+        "slug": { "type": "string", "required": true },
+        "thumbnailUrl": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "entityType": {
+          "type": "string",
+          "required": true,
+          "enum": ["organization"]
+        }
+      }
+    },
+    "schemaTag": "base",
+    "tagsByKind": {
+      "schema": ["base"],
+      "module": ["organizations"],
+      "owner": ["cella"]
+    },
+    "description": "Minimal organization data for references.",
+    "example": {
+      "id": "a0e12a75-1f11-485a-a581-cfcf45f209ef",
+      "name": "Schuster Inc",
+      "slug": "schuster-inc",
+      "thumbnailUrl": null,
+      "entityType": "organization"
+    }
+  },
+  {
     "name": "Request",
     "ref": "#/components/schemas/Request",
     "type": "object",
@@ -1393,39 +1429,97 @@
     "description": "A tenant representing an isolated data partition for multi-tenancy."
   },
   {
-    "name": "NullableUserMinimalBase",
-    "ref": "#/components/schemas/NullableUserMinimalBase",
+    "name": "TenantWithOrganization",
+    "ref": "#/components/schemas/TenantWithOrganization",
+    "type": "object",
     "schema": {
-      "anyOf": [
-        {
-          "type": "object",
-          "description": "Minimal user data for references.",
-          "properties": {
-            "id": { "type": "string", "required": true },
-            "name": { "type": "string", "required": true },
-            "slug": { "type": "string", "required": true },
-            "thumbnailUrl": {
-              "type": ["string", "null"],
-              "required": true
-            },
-            "entityType": {
-              "type": "string",
-              "required": true,
-              "enum": ["user"]
-            }
-          },
-          "ref": "#/components/schemas/UserMinimalBase"
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "maxLength": 24 },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["active", "suspended", "archived"]
         },
-        { "type": "null" }
-      ]
+        "restrictions": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "quotas": {
+              "type": "object",
+              "required": true,
+              "description": "Entity quotas (0 = unlimited)",
+              "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
+            },
+            "rateLimits": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "apiPointsPerHour": {
+                  "type": "integer",
+                  "required": true,
+                  "description": "Max API points per hour per user within this tenant (0 = no tenant limit; the global safety ceiling still applies)",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "authStrategies": {
+          "type": "array",
+          "required": true,
+          "itemType": "string",
+          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "subscriptionId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "required": true,
+          "enum": ["none", "trialing", "active", "past_due", "paused", "canceled"]
+        },
+        "subscriptionPlan": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "domainsCount": {
+          "type": "integer",
+          "required": true,
+          "description": "Number of domains claimed by this tenant"
+        },
+        "organization": {
+          "type": ["object", "null"],
+          "required": true,
+          "ref": "#/components/schemas/OrganizationMinimalBase",
+          "description": "The organization this tenant holds, or null if none",
+          "refDescription": "Minimal organization data for references."
+        }
+      },
+      "extendsRef": "#/components/schemas/Tenant"
     },
-    "schemaTag": "base",
+    "schemaTag": "data",
     "tagsByKind": {
-      "schema": ["base"],
-      "module": ["users"],
+      "schema": ["data"],
+      "module": ["tenants"],
       "owner": ["cella"]
     },
-    "description": "Minimal user data for references, or null when no user is available."
+    "description": "A tenant together with the single organization it holds.",
+    "extendsRef": "#/components/schemas/Tenant"
   },
   {
     "name": "User",
@@ -1619,9 +1713,9 @@
     },
     "description": "Minimal user data for references.",
     "example": {
-      "id": "d6ecd8ea-406d-4160-8fbd-8407414b54b2",
-      "name": "Alverta Waelchi",
-      "slug": "alverta.waelchi91",
+      "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
+      "name": "Dwight Cummerata",
+      "slug": "dwight.cummerata91",
       "thumbnailUrl": null,
       "entityType": "user"
     }
@@ -1963,46 +2057,6 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
-  },
-  {
-    "name": "NullableStxBase",
-    "ref": "#/components/schemas/NullableStxBase",
-    "schema": {
-      "anyOf": [
-        {
-          "type": "object",
-          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
-          "properties": {
-            "mutationId": {
-              "type": "string",
-              "required": true,
-              "description": "Unique mutation ID",
-              "maxLength": 36
-            },
-            "sourceId": {
-              "type": "string",
-              "required": true,
-              "description": "Tab/instance identifier for echo prevention",
-              "maxLength": 64
-            },
-            "fieldTimestamps": {
-              "type": "object",
-              "required": true,
-              "description": "Per-field HLC timestamps for scalar fields being changed",
-              "additionalProperties": { "type": "string", "required": false }
-            }
-          },
-          "ref": "#/components/schemas/StxBase"
-        },
-        { "type": "null" }
-      ]
-    },
-    "schemaTag": "base",
-    "tagsByKind": {
-      "schema": ["base"],
-      "owner": ["cella"]
-    },
-    "description": "Sync transaction metadata, or null when an event has no sync transaction."
   },
   {
     "name": "StxBase",

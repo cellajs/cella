@@ -9,7 +9,8 @@ export function Checkbox({ className, ...props }: React.ComponentProps<typeof Ch
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer focus-effect size-5 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-checked:border-primary data-checked:bg-primary data-disabled:bg-muted data-checked:text-primary-foreground data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
+        // Transparent ::before extends the hit area just past the 4px focus/selection ring so edge clicks register.
+        'peer focus-effect relative size-5 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow before:absolute before:-inset-1.25 before:content-[""] aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-checked:border-primary data-checked:bg-primary data-disabled:bg-muted data-checked:text-primary-foreground data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
         className,
       )}
       {...props}

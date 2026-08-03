@@ -7,7 +7,7 @@ import { engineSecretPath } from '../lib/scaleway/vm-reader-secret'
 export const ADMIN_KEY_SECRET_NAME = 'admin-key'
 
 export interface SetupAdminAppOptions extends ProvisionScopedKeyOptions {
-  /** Deploy mode; required — the admin app is always per-mode. */
+  /** Deploy mode; required, since the admin app is always per-mode. */
   mode: string
   /** Scaleway region for the Secret Manager custody write. */
   region: string
@@ -18,12 +18,12 @@ export type AdminAppResult = ScopedKeyResult
  * Provision the standing `<slug>-<mode>-admin` application WITH a real key
  * (the operator app it replaces was keyless, so out of the box no human could
  * run `pulumi` against a bootstrapped stack). Grants: Object Storage full +
- * read-only on every infra surface `pulumi preview --refresh` touches — never
+ * read-only on every infra surface `pulumi preview --refresh` touches, never
  * IAM write; structural changes stay on the transient bootstrap key.
  *
  * Custody: the key pair is stored in Secret Manager (`admin-key` under the
  * stack's folder) so "Rotate keys" covers it and a later operator can retrieve
- * it with a bootstrap key — it is never printed, never in git, never a GitHub
+ * it with a bootstrap key. It is never printed, never in git, never a GitHub
  * secret.
  */
 export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAppResult> {
@@ -40,7 +40,7 @@ export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAp
   const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId })
   const container = await client.ensureSecret({
     name: ADMIN_KEY_SECRET_NAME,
-    // Engine folder: outside the VM secret condition — a VM must never be
+    // Engine folder: outside the VM secret condition, so a VM must never be
     // able to read the admin key.
     path: engineSecretPath(opts.slug, opts.mode),
     description: 'Admin IAM key pair (bucket access + infra reads) — retrieve with a bootstrap key when needed',

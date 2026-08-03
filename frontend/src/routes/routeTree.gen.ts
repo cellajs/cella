@@ -17,6 +17,7 @@ import { Route as AppHomeRouteImport } from './_app/home'
 import { Route as AppSystemRouteRouteImport } from './_app/system/route'
 import { Route as AppWelcomeRouteImport } from './_app/welcome'
 import { Route as PublicContentRouteRouteImport } from './_public/_content/route'
+import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicErrorRouteImport } from './_public/error'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
@@ -89,6 +90,10 @@ const PublicContentRouteRoute = PublicContentRouteRouteImport.update({
   id: '/_content',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicMarketingRoute = PublicMarketingRouteImport.update({
+  id: '/_marketing',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const PublicAuthRouteRoute = PublicAuthRouteRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -136,31 +141,31 @@ const PublicContentDocsRouteRoute = PublicContentDocsRouteRouteImport.update({
   getParentRoute: () => PublicContentRouteRoute,
 } as any)
 const PublicMarketingAboutRoute = PublicMarketingAboutRouteImport.update({
-  id: '/_marketing/about',
+  id: '/about',
   path: '/about',
-  getParentRoute: () => PublicRouteRoute,
+  getParentRoute: () => PublicMarketingRoute,
 } as any)
 const PublicMarketingAccessibilityRoute =
   PublicMarketingAccessibilityRouteImport.update({
-    id: '/_marketing/accessibility',
+    id: '/accessibility',
     path: '/accessibility',
-    getParentRoute: () => PublicRouteRoute,
+    getParentRoute: () => PublicMarketingRoute,
   } as any)
 const PublicMarketingContactRoute = PublicMarketingContactRouteImport.update({
-  id: '/_marketing/contact',
+  id: '/contact',
   path: '/contact',
-  getParentRoute: () => PublicRouteRoute,
+  getParentRoute: () => PublicMarketingRoute,
 } as any)
 const PublicMarketingFeaturesRoute = PublicMarketingFeaturesRouteImport.update({
-  id: '/_marketing/features',
+  id: '/features',
   path: '/features',
-  getParentRoute: () => PublicRouteRoute,
+  getParentRoute: () => PublicMarketingRoute,
 } as any)
 const PublicMarketingSyncEngineRoute =
   PublicMarketingSyncEngineRouteImport.update({
-    id: '/_marketing/sync-engine',
+    id: '/sync-engine',
     path: '/sync-engine',
-    getParentRoute: () => PublicRouteRoute,
+    getParentRoute: () => PublicMarketingRoute,
   } as any)
 const PublicAuthAuthenticateRoute = PublicAuthAuthenticateRouteImport.update({
   id: '/authenticate',
@@ -223,15 +228,15 @@ const PublicContentDocsSchemasRoute =
   } as any)
 const PublicMarketingLegalIndexRoute =
   PublicMarketingLegalIndexRouteImport.update({
-    id: '/_marketing/legal/',
+    id: '/legal/',
     path: '/legal/',
-    getParentRoute: () => PublicRouteRoute,
+    getParentRoute: () => PublicMarketingRoute,
   } as any)
 const PublicMarketingLegalSubjectRoute =
   PublicMarketingLegalSubjectRouteImport.update({
-    id: '/_marketing/legal/$subject',
+    id: '/legal/$subject',
     path: '/legal/$subject',
-    getParentRoute: () => PublicRouteRoute,
+    getParentRoute: () => PublicMarketingRoute,
   } as any)
 const PublicAuthEmailVerificationReasonRoute =
   PublicAuthEmailVerificationReasonRouteImport.update({
@@ -367,6 +372,7 @@ export interface FileRoutesById {
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/_public/_marketing': typeof PublicMarketingRouteWithChildren
   '/_public/error': typeof PublicErrorRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$tenantId/$organizationSlug': typeof AppTenantIdOrganizationSlugRouteRouteWithChildren
@@ -494,6 +500,7 @@ export interface FileRouteTypes {
     | '/_app/account'
     | '/_app/home'
     | '/_app/welcome'
+    | '/_public/_marketing'
     | '/_public/error'
     | '/_app/'
     | '/_app/$tenantId/$organizationSlug'
@@ -593,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicContentRouteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_public/_marketing': {
+      id: '/_public/_marketing'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicMarketingRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/_public/auth': {
       id: '/_public/auth'
       path: '/auth'
@@ -661,35 +675,35 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof PublicMarketingAboutRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/_marketing/accessibility': {
       id: '/_public/_marketing/accessibility'
       path: '/accessibility'
       fullPath: '/accessibility'
       preLoaderRoute: typeof PublicMarketingAccessibilityRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/_marketing/contact': {
       id: '/_public/_marketing/contact'
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof PublicMarketingContactRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/_marketing/features': {
       id: '/_public/_marketing/features'
       path: '/features'
       fullPath: '/features'
       preLoaderRoute: typeof PublicMarketingFeaturesRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/_marketing/sync-engine': {
       id: '/_public/_marketing/sync-engine'
       path: '/sync-engine'
       fullPath: '/sync-engine'
       preLoaderRoute: typeof PublicMarketingSyncEngineRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/auth/authenticate': {
       id: '/_public/auth/authenticate'
@@ -773,14 +787,14 @@ declare module '@tanstack/react-router' {
       path: '/legal'
       fullPath: '/legal/'
       preLoaderRoute: typeof PublicMarketingLegalIndexRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/_marketing/legal/$subject': {
       id: '/_public/_marketing/legal/$subject'
       path: '/legal/$subject'
       fullPath: '/legal/$subject'
       preLoaderRoute: typeof PublicMarketingLegalSubjectRouteImport
-      parentRoute: typeof PublicRouteRoute
+      parentRoute: typeof PublicMarketingRoute
     }
     '/_public/auth/email-verification/$reason': {
       id: '/_public/auth/email-verification/$reason'
@@ -977,10 +991,7 @@ const PublicAuthRouteRouteWithChildren = PublicAuthRouteRoute._addFileChildren(
   PublicAuthRouteRouteChildren,
 )
 
-interface PublicRouteRouteChildren {
-  PublicContentRouteRoute: typeof PublicContentRouteRouteWithChildren
-  PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
-  PublicErrorRoute: typeof PublicErrorRoute
+interface PublicMarketingRouteChildren {
   PublicMarketingAboutRoute: typeof PublicMarketingAboutRoute
   PublicMarketingAccessibilityRoute: typeof PublicMarketingAccessibilityRoute
   PublicMarketingContactRoute: typeof PublicMarketingContactRoute
@@ -990,10 +1001,7 @@ interface PublicRouteRouteChildren {
   PublicMarketingLegalIndexRoute: typeof PublicMarketingLegalIndexRoute
 }
 
-const PublicRouteRouteChildren: PublicRouteRouteChildren = {
-  PublicContentRouteRoute: PublicContentRouteRouteWithChildren,
-  PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
-  PublicErrorRoute: PublicErrorRoute,
+const PublicMarketingRouteChildren: PublicMarketingRouteChildren = {
   PublicMarketingAboutRoute: PublicMarketingAboutRoute,
   PublicMarketingAccessibilityRoute: PublicMarketingAccessibilityRoute,
   PublicMarketingContactRoute: PublicMarketingContactRoute,
@@ -1001,6 +1009,24 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicMarketingSyncEngineRoute: PublicMarketingSyncEngineRoute,
   PublicMarketingLegalSubjectRoute: PublicMarketingLegalSubjectRoute,
   PublicMarketingLegalIndexRoute: PublicMarketingLegalIndexRoute,
+}
+
+const PublicMarketingRouteWithChildren = PublicMarketingRoute._addFileChildren(
+  PublicMarketingRouteChildren,
+)
+
+interface PublicRouteRouteChildren {
+  PublicContentRouteRoute: typeof PublicContentRouteRouteWithChildren
+  PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
+  PublicMarketingRoute: typeof PublicMarketingRouteWithChildren
+  PublicErrorRoute: typeof PublicErrorRoute
+}
+
+const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicContentRouteRoute: PublicContentRouteRouteWithChildren,
+  PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
+  PublicMarketingRoute: PublicMarketingRouteWithChildren,
+  PublicErrorRoute: PublicErrorRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(

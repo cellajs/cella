@@ -11,6 +11,8 @@ import {
   getDomain,
   getDomains,
   getTenants,
+  type SelfCreateTenantData,
+  selfCreateTenant,
   type UpdateTenantData,
   updateTenant,
   type VerifyDomainData,
@@ -35,6 +37,7 @@ const tenantQueryKeys = {
     filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const,
   },
   create: ['tenant', 'create'] as const,
+  selfCreate: ['tenant', 'self-create'] as const,
   update: ['tenant', 'update'] as const,
 };
 
@@ -75,6 +78,22 @@ export const useTenantCreateMutation = () => {
     mutationFn: (body) => createTenant({ body }),
     onSuccess: () => {
       // Invalidate tenant list to refetch
+      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
+    },
+  });
+};
+
+/**
+ * Mutation hook for self-serve tenant creation (each new organization mints its own tenant).
+ * Invalidates the tenant list so the new workspace appears, matching the other tenant mutations.
+ */
+export const useSelfCreateTenantMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Tenant, ApiError, SelfCreateTenantData['body']>({
+    mutationKey: tenantQueryKeys.selfCreate,
+    mutationFn: (body) => selfCreateTenant({ body }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
     },
   });

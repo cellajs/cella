@@ -25,7 +25,7 @@ import { iamModelV2, vmIamPolicies } from './vm-iam'
 // consumer, baking it into each generation's cloud-init. Legacy model only.
 function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
   // Engine folder is canonical; pre-migration stacks seeded the container at
-  // the env root, so fall back rather than failing the deploy.
+  // the env root, so fall back to it to keep the deploy working.
   const container = pulumi.output(
     scaleway.secrets
       .getSecret({ name: VM_READER_SECRET_NAME, path: engineSecretPath(naming.slug, mode), region })
@@ -49,7 +49,7 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
  * tasks/mint-generation-keys.ts and passed via INFRA_GENERATION_KEYS_FILE.
  * Absent on non-deploy ups (apply/preview): pre-existing generations carry
  * `ignoreChanges: ['cloudInit']`, so their inputs may compute from an empty
- * placeholder — but planning a NEW generation without minted keys is refused
+ * placeholder. Planning a NEW generation without minted keys is refused
  * below (createGenerationVm guard).
  */
 interface GenerationKeysFile {
@@ -71,8 +71,8 @@ function readGenerationKeysFile(): GenerationKeysFile | undefined {
 const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined
 
 // The credential pair baked into cloud-init: v2 = the boot fetcher key
-// (registry pull + handoff read + diag write ONLY — the real service key
-// arrives via the single-access handoff bundle); legacy = the vm-reader key.
+// (registry pull + handoff read + diag write ONLY, because the real service
+// key arrives via the single-access handoff bundle); legacy = the vm-reader key.
 const vmReaderKey = sizing.computeEnabled && !iamModelV2 ? readVmReaderKey() : undefined
 const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey) : (vmReaderKey?.accessKey ?? pulumi.secret(''))
 const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : (vmReaderKey?.secretKey ?? pulumi.secret(''))
@@ -305,8 +305,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`)
 
   // v2: a NEW generation must carry its minted handoff reference; planning one
-  // without the keys file means the mint step did not run — refuse rather than
-  // bake an empty credential. Pre-existing generations compute placeholder
+  // without the keys file means the mint step did not run, so refuse it and
+  // do not bake an empty credential. Pre-existing generations compute placeholder
   // inputs safely (their cloudInit is ignored).
   if (iamModelV2 && !generation.preexisting && !generationKeys) {
     throw new Error(`compute: planning a NEW ${svc.slug} generation under iamModel=v2 without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`)
