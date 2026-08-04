@@ -107,6 +107,28 @@ The permission system in `backend/src/permissions/` provides: the `checkAccess*`
 - **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/schema-evolution/`; never edit a shipped module. Until the first lens ships, bump `appConfig.clientCacheVersion` in the same PR as any breaking change to a cached entity's wire shape (`schema-bust-gate` CI enforces this). Playbook: [Schema evolution](/docs/page/architecture/schema-evolution).
 - **Lens seams (new entity modules)**: build update bodies with `createUpdateSchema(entityType, shape)`, create bodies with `widenBodySchema(entityType, schema)`, resolve updates via `resolveUpdateOps(entityType, …)`, and map create items through `normalizeCreateItem(entityType, item)`. These carry the lens widening/normalization; skipping them breaks version tolerance for that entity.
 
+## Cross-product references
+
+Relationships between products are data, never permission indirection (permissions and public
+read always flow through the hierarchy's channel columns). Exactly two mechanisms are sanctioned
+for product-to-product references:
+
+1. **`productEmbeddings` host id arrays**: the host product's table carries an id array column,
+   declared in `appConfig.productEmbeddings`. The generic machinery (CDC embedding cleanup,
+   owned-embedding GC, ref counters, SSE propagation hints, client cache patching) is
+   config-driven; apps extend the registry, the engine code never changes. `lifecycle: 'shared'`
+   (default) means embedded rows live independently and dead references are stripped from hosts;
+   `lifecycle: 'owned'` means the union of host arrays is the row's reason to exist and the CDC
+   worker soft-deletes rows no live host references.
+2. **The mutation bus** (`defineBackendModule` + `onMutation`/`dispatchMutation`): for lifecycle
+   side effects an embedding cannot express, e.g. seeding rows on `project.created` or
+   propagating config edits. Handlers run synchronously, optionally inside the write transaction.
+
+A child-side host FK (a nullable `<host>Id` column on one product pointing at another) is
+deprecated: it is invisible to sync views, CDC, propagation hints, and counters, and it forces
+app edits inside template-owned modules. See
+`cella/migrations/20260730T1009-owned-host-embedding/` for the conversion guide.
+
 ## Coding patterns
 
 - **Entities**: `ChannelEntityType` (has memberships) and `ProductEntityType` (content-related). See `cella/ARCHITECTURE.md`.
