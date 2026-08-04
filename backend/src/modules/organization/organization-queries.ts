@@ -2,6 +2,7 @@ import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizz
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
 import type { AuthContext, DbContext } from '#/core/context';
+import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
@@ -53,15 +54,11 @@ export const updateOrganization = async (ctx: AuthContext, { id, values }: Updat
   const updateData = {
     ...rest,
     ...(organizationFlags && {
-      organizationFlags: sql`${organizationsTable.organizationFlags} || ${JSON.stringify(organizationFlags)}::jsonb`,
+      organizationFlags: mergeJsonbShallow(organizationsTable.organizationFlags, organizationFlags),
     }),
-    ...(setupConfig && {
-      setupConfig: sql`${organizationsTable.setupConfig} || ${JSON.stringify(setupConfig)}::jsonb`,
-    }),
-    // Top-level jsonb merge: each listed slot key replaces that slot's stored arrangement wholesale
-    ...(toolsConfig && {
-      toolsConfig: sql`${organizationsTable.toolsConfig} || ${JSON.stringify(toolsConfig)}::jsonb`,
-    }),
+    ...(setupConfig && { setupConfig: mergeJsonbShallow(organizationsTable.setupConfig, setupConfig) }),
+    // For toolsConfig each listed slot key replaces that slot's stored arrangement wholesale
+    ...(toolsConfig && { toolsConfig: mergeJsonbShallow(organizationsTable.toolsConfig, toolsConfig) }),
   };
 
   const [updated] = await db

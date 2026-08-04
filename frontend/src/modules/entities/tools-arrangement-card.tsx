@@ -25,10 +25,7 @@ export function ToolsArrangementCard({ entity, persist }: ToolsArrangementCardPr
   const slot = `${entity.entityType}.settings`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
-  const tools = orderBySlotConfig(
-    getChannelSettingsTools(entity.entityType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
-    slotConfig,
-  );
+  const tools = orderBySlotConfig(getChannelSettingsTools(entity.entityType), slotConfig);
 
   const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
 

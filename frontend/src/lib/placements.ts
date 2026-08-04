@@ -138,17 +138,18 @@ onFrontendModuleRegister((module) => {
   }
 });
 
-/** Tools registered for a slot, sorted on `order` (default 50). */
-export function getTools<S extends Slot>(slot: S): ToolFor<S>[] {
+/** Tools registered for a slot, sorted on `order`, with the section default (50) applied. */
+export function getTools<S extends Slot>(slot: S): (ToolFor<S> & { order: number })[] {
   const registered = bySlot.get(slot) ?? [];
   // Cast: registration erased the render context; the slot key guarantees the family's shape
-  return registered as ToolFor<S>[];
+  return registered.map((tool) => ({ ...tool, order: tool.order ?? 50 })) as (ToolFor<S> & { order: number })[];
 }
 
 /**
- * Registered tool descriptors for a slot given at runtime (render context erased). Navigation and
- * arrangement consumers use this when the slot id is dynamic (e.g. a tab bar resolving a surface's
- * `tabsSlot`); rendering still goes through {@link getTools} with the statically known slot.
+ * Registered tool descriptors for a slot given at runtime (render context erased, `order` left
+ * raw so each surface applies its own default). Navigation and arrangement consumers use this
+ * when the slot id is dynamic (e.g. a tab bar resolving a surface's `tabsSlot`); rendering still
+ * goes through {@link getTools} with the statically known slot.
  */
 export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
   return bySlot.get(slot) ?? [];
@@ -161,10 +162,14 @@ export type ChannelSettingsToolFor<C extends ChannelEntityType> = PlacementDescr
 };
 
 /** Typed {@link getTools} for a channel type's settings slot, for generic channel components. */
-export function getChannelSettingsTools<C extends ChannelEntityType>(channelType: C): ChannelSettingsToolFor<C>[] {
+export function getChannelSettingsTools<C extends ChannelEntityType>(
+  channelType: C,
+): (ChannelSettingsToolFor<C> & { order: number })[] {
   const registered = bySlot.get(`${channelType}.settings`) ?? [];
   // Cast: registration erased the render context; the slot key guarantees this family's shape
-  return registered as ChannelSettingsToolFor<C>[];
+  return registered.map((tool) => ({ ...tool, order: tool.order ?? 50 })) as (ChannelSettingsToolFor<C> & {
+    order: number;
+  })[];
 }
 
 /**
