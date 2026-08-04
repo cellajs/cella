@@ -1,9 +1,9 @@
 import { defineFrontendModule } from '~/lib/module';
 import {
-  arrangementToolBase,
   dangerToolBase,
   detailsToolBase,
   generalToolBase,
+  tabsToolBase,
 } from '~/modules/entities/channel-settings-tools';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -15,7 +15,7 @@ const OrganizationDetailsCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
   'OrganizationDetailsCard',
 );
-const OrganizationToolsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationToolsCard');
+const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationTabsCard');
 const OrganizationDeleteCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
   'OrganizationDeleteCard',
@@ -38,10 +38,9 @@ defineFrontendModule({
       render: (organization) => <OrganizationDetailsCard organization={organization} />,
     },
     {
-      ...arrangementToolBase,
+      ...tabsToolBase,
       slot: 'organization.settings',
-      visibleTo: ['organization.admin'],
-      render: (organization) => <OrganizationToolsCard organization={organization} />,
+      render: (organization) => <OrganizationTabsCard organization={organization} />,
     },
     {
       ...dangerToolBase('organization', 'c:organization'),

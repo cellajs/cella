@@ -41,7 +41,7 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
 }
 
 /** A resolved nav candidate: a placement descriptor plus where its tab links. */
-type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
+export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
 
 /** Resolution inputs for a tabbed surface (all optional; absent conditions never hide a tab). */
 export interface ResolveNavTabsOptions {
@@ -58,14 +58,13 @@ export interface ResolveNavTabsOptions {
 }
 
 /**
- * Tabs for a tabbed surface, merging two sources into one gated, ordered list:
- * child routes declaring `staticData.navTab` (linked to their own path) and, when the parent
- * route declares `staticData.tabsSlot`, that slot's registry tab tools (linked through the
- * surface's `$tool` host child). App overrides and channel arrangement key by the slot id when
- * present, else the parent route id; `requires` gates on `grants` and `visibleTo` on `pairs`
- * before the stable sort on `order` (default 0, lower first; ties keep registration order).
+ * All tab candidates a surface declares, ungated and unordered by stored config: child routes
+ * with `staticData.navTab` (linked to their own path) plus, when the parent route declares
+ * `staticData.tabsSlot`, that slot's registry tab tools (linked through the surface's `$tool`
+ * host child). Management surfaces (the tabs arrangement card) read this raw list; rendering
+ * goes through {@link resolveNavTabs}, which gates and orders it.
  */
-export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
+export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   if (!parentRouteId) return [];
 
   // Cast: generated FileRoutesById is a closed interface without index signature
@@ -104,8 +103,25 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
         }))
       : [];
 
+  return [...routeCandidates, ...registryCandidates];
+}
+
+/**
+ * Tabs for a tabbed surface: the {@link getNavTabCandidates} list, gated and ordered. App
+ * overrides and channel arrangement key by the slot id when present, else the parent route id;
+ * `requires` gates on `grants` and `visibleTo` on `pairs` before the stable sort on `order`
+ * (default 0, lower first; ties keep registration order).
+ */
+export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
+  if (!parentRouteId) return [];
+
+  // Cast: generated FileRoutesById is a closed interface without index signature
+  const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
+  if (!hasRoute(routesById, parentRouteId)) return [];
+
+  const slot = routesById[parentRouteId].options?.staticData?.tabsSlot;
   const host = slot ?? parentRouteId;
-  const resolved = resolvePlacementList(host, [...routeCandidates, ...registryCandidates], {
+  const resolved = resolvePlacementList(host, getNavTabCandidates(parentRouteId), {
     grants: options.grants,
     pairs: options.pairs,
     slotConfig: options.slotConfig,

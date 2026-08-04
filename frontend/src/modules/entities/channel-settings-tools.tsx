@@ -13,8 +13,8 @@ import { Button } from '~/modules/ui/button';
  * file are pure data for the standard settings tool set: a module spreads one into its `tools`
  * array and attaches the `slot`, app conditions (`visibleTo` audiences, adjusted `requires`), and
  * a `render` returning the full card. Deviating from the standard set means declaring a different
- * tool. Order convention: general 10, details 20, arrangement 80, danger zone 90; module tools
- * default to 50.
+ * tool. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
+ * to 50.
  */
 export const generalToolBase = {
   id: 'general',
@@ -32,12 +32,12 @@ export const detailsToolBase = {
 } satisfies PlacementDescriptor;
 
 /**
- * The tools-arrangement admin card (`ToolsArrangementCard` wired to the channel's update
- * mutation). Elevation is explicit: the module adds `visibleTo` listing every allowed audience.
+ * The tabs-management admin card (`TabsArrangementCard` wired to the channel's update mutation
+ * and its tabbed surface): drag-reorder and visibility toggles for the channel's page tabs.
  */
-export const arrangementToolBase = {
-  id: 'tools',
-  label: 'c:tools',
+export const tabsToolBase = {
+  id: 'tabs',
+  label: 'c:tabs',
   order: 80,
   locked: true,
   requires: 'update',

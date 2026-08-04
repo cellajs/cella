@@ -6,7 +6,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { DeleteToolCard } from '~/modules/entities/channel-settings-tools';
-import { ToolsArrangementCard } from '~/modules/entities/tools-arrangement-card';
+import { TabsArrangementCard } from '~/modules/entities/tabs-arrangement-card';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
@@ -49,12 +49,13 @@ export function OrganizationDetailsCard({ organization }: { organization: Enrich
   );
 }
 
-/** Tools arrangement card wired to the organization update mutation. */
-export function OrganizationToolsCard({ organization }: { organization: EnrichedOrganization }) {
+/** Tabs arrangement card for the organization page surface, wired to the update mutation. */
+export function OrganizationTabsCard({ organization }: { organization: EnrichedOrganization }) {
   const { mutate } = useOrganizationUpdateMutation();
   return (
-    <ToolsArrangementCard
+    <TabsArrangementCard
       entity={organization}
+      parentRouteId="/_app/$tenantId/$organizationSlug/organization"
       persist={(toolsConfig) =>
         mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })
       }
