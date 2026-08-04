@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.8.0](https://github.com/cellajs/cella/compare/0.7.0...0.8.0) (2026-08-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** IAM model rewrite — per-mode principals, per-deploy keys, path-scoped secrets ([#989](https://github.com/cellajs/cella/issues/989))
+
+### 🎉 New features
+
+* **infra:** IAM model rewrite — per-mode principals, per-deploy keys, path-scoped secrets ([#989](https://github.com/cellajs/cella/issues/989)) ([9285462](https://github.com/cellajs/cella/commit/9285462b9a81957626403db0c13c96bfd014ad1a))
+
+
+### 🐞 Bug fixes
+
+* **backend:** include committed tree hash in openapi cache fingerprint ([#996](https://github.com/cellajs/cella/issues/996)) ([bacf716](https://github.com/cellajs/cella/commit/bacf71644dd5113339fd53adbedc2a38597ee611))
+* **frontend:** build onboarding steps lazily to avoid i18n module-load crash ([#994](https://github.com/cellajs/cella/issues/994)) ([ff08151](https://github.com/cellajs/cella/commit/ff08151a1c5239a2f89383e35343a8da00ae3776))
+* **frontend:** splice blocknote-created attachments into the canonical list cache ([#998](https://github.com/cellajs/cella/issues/998)) ([b73ef8d](https://github.com/cellajs/cella/commit/b73ef8da048bdfa0b627b794a708a7cccb0bf29d))
+* **infra:** ignore rule drift on bootstrap-owned VM IAM policies (CI can't write IAM) ([#991](https://github.com/cellajs/cella/issues/991)) ([5578728](https://github.com/cellajs/cella/commit/55787282b219b236fb9f3e650807ccdc1c0cb71c))
+* **infra:** prefer AWS_* credentials for the control-store read ([#995](https://github.com/cellajs/cella/issues/995)) ([3afe85a](https://github.com/cellajs/cella/commit/3afe85a452a41e754a5e01453abd5ffbbe468e96))
+* **infra:** treat extra read-only VM grants as benign drift, not a deploy blocker ([#993](https://github.com/cellajs/cella/issues/993)) ([f02dfda](https://github.com/cellajs/cella/commit/f02dfda462293960ecb7d483959e9179d233723d))
+* **infra:** valid Scaleway CORS action casing + keep legacy vm-reader policy unchanged ([#990](https://github.com/cellajs/cella/issues/990)) ([4db9269](https://github.com/cellajs/cella/commit/4db9269dd216f9d3f3271a4daa68d667753f5193))
+
+
+### 📖 Documentation
+
+* deprecate child-side product host FKs in favor of owned embeddings ([#999](https://github.com/cellajs/cella/issues/999)) ([97230a4](https://github.com/cellajs/cella/commit/97230a47c1bf4ca92e29261719396b41ec6466a5))
+
+
+### 🧹 Chores
+
+* **infra:** decommission staging — drop committed stack config ([#987](https://github.com/cellajs/cella/issues/987)) ([8f5c526](https://github.com/cellajs/cella/commit/8f5c526dc8b0eee05dbd54740562b8d7c9db38ba))
+* **infra:** one-off workflow to prune a URN from Pulumi state ([#992](https://github.com/cellajs/cella/issues/992)) ([ecbf312](https://github.com/cellajs/cella/commit/ecbf312a264851d3811b51e04a0530a1853dca02))
+* ui improvements and fixes ([#997](https://github.com/cellajs/cella/issues/997)) ([82c7616](https://github.com/cellajs/cella/commit/82c761671c432502a3ba4095919ef42dd046865c))
+
 ## [0.7.0](https://github.com/cellajs/cella/compare/0.6.1...0.7.0) (2026-07-30)
 
 
