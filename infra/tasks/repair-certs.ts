@@ -1,37 +1,43 @@
-import { spawnSync } from 'node:child_process'
-import { isMain } from '../lib/utils/is-main'
-import { scwSend, scwFetch, type ScwAuth } from '../lib/scaleway/scw-fetch'
-import { infraDir } from '../lib/utils/paths'
-import { getFlag } from './args'
+import { spawnSync } from 'node:child_process';
+import { type ScwAuth, scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { isMain } from '../lib/utils/is-main';
+import { infraDir } from '../lib/utils/paths';
+import { getFlag } from './args';
 
-const CERT_TYPE = 'scaleway:loadbalancers/certificate:Certificate'
+const CERT_TYPE = 'scaleway:loadbalancers/certificate:Certificate';
 
 export interface StateCert {
-  urn: string
+  urn: string;
   /** Scaleway resource id: `<zone>/<uuid>`. */
-  id: string
+  id: string;
 }
 
-export type LiveCertStatus = { status: string; statusDetails?: string } | 'missing'
+export type LiveCertStatus = { status: string; statusDetails?: string } | 'missing';
 
 export interface CertRepair {
-  urn: string
-  zone: string
-  certId: string
-  deleteLive: boolean
-  reason: string
+  urn: string;
+  zone: string;
+  certId: string;
+  deleteLive: boolean;
+  reason: string;
 }
 
 /** Pure planning core: which certs to repair, given state entries and live status. */
 export function planCertRepairs(stateCerts: StateCert[], liveById: Map<string, LiveCertStatus>): CertRepair[] {
-  const repairs: CertRepair[] = []
+  const repairs: CertRepair[] = [];
   for (const cert of stateCerts) {
-    const [zone, certId] = cert.id.split('/')
-    if (!zone || !certId) continue
-    const live = liveById.get(cert.id)
+    const [zone, certId] = cert.id.split('/');
+    if (!zone || !certId) continue;
+    const live = liveById.get(cert.id);
     if (live === 'missing') {
-      repairs.push({ urn: cert.urn, zone, certId, deleteLive: false, reason: 'live certificate gone; pruning stale state entry' })
-      continue
+      repairs.push({
+        urn: cert.urn,
+        zone,
+        certId,
+        deleteLive: false,
+        reason: 'live certificate gone; pruning stale state entry',
+      });
+      continue;
     }
     if (live && live.status === 'error') {
       repairs.push({
@@ -40,64 +46,85 @@ export function planCertRepairs(stateCerts: StateCert[], liveById: Map<string, L
         certId,
         deleteLive: true,
         reason: `status=error${live.statusDetails ? ` (${live.statusDetails})` : ''}`,
-      })
+      });
     }
   }
-  return repairs
+  return repairs;
 }
 
 /** Certificates currently in the stack's Pulumi state. */
 function certsInState(stack: string): StateCert[] {
-  const result = spawnSync('pulumi', ['stack', 'export', '--stack', stack], { cwd: infraDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-  if (result.status !== 0) throw new Error(`pulumi stack export failed: ${result.stderr}`)
-  const deployment = JSON.parse(result.stdout) as { deployment?: { resources?: Array<{ urn: string; type: string; id?: string }> } }
+  const result = spawnSync('pulumi', ['stack', 'export', '--stack', stack], {
+    cwd: infraDir,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) throw new Error(`pulumi stack export failed: ${result.stderr}`);
+  const deployment = JSON.parse(result.stdout) as {
+    deployment?: { resources?: Array<{ urn: string; type: string; id?: string }> };
+  };
   return (deployment.deployment?.resources ?? [])
     .filter((resource) => resource.type === CERT_TYPE && resource.id)
-    .map((resource) => ({ urn: resource.urn, id: resource.id! }))
+    .map((resource) => ({ urn: resource.urn, id: resource.id! }));
 }
 
 async function liveStatus(auth: ScwAuth, id: string): Promise<LiveCertStatus> {
-  const [zone, certId] = id.split('/')
+  const [zone, certId] = id.split('/');
   try {
-    const cert = await scwFetch<{ status: string; status_details?: string }>(auth, 'GET', `https://api.scaleway.com/lb/v1/zones/${zone}/certificates/${certId}`)
-    return { status: cert.status, statusDetails: cert.status_details }
+    const cert = await scwFetch<{ status: string; status_details?: string }>(
+      auth,
+      'GET',
+      `https://api.scaleway.com/lb/v1/zones/${zone}/certificates/${certId}`,
+    );
+    return { status: cert.status, statusDetails: cert.status_details };
   } catch (error) {
-    if (error instanceof Error && error.message.includes('404')) return 'missing'
-    throw error
+    if (error instanceof Error && error.message.includes('404')) return 'missing';
+    throw error;
   }
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const stack = getFlag(argv, '--stack')
-  if (!stack) throw new Error('Usage: repair-certs --stack <stack>')
-  const secretKey = process.env.SCW_SECRET_KEY
-  if (!secretKey) throw new Error('SCW_SECRET_KEY must be set')
-  const auth: ScwAuth = { secretKey }
+  const stack = getFlag(argv, '--stack');
+  if (!stack) throw new Error('Usage: repair-certs --stack <stack>');
+  const secretKey = process.env.SCW_SECRET_KEY;
+  if (!secretKey) throw new Error('SCW_SECRET_KEY must be set');
+  const auth: ScwAuth = { secretKey };
 
-  const stateCerts = certsInState(stack)
-  const liveById = new Map<string, LiveCertStatus>()
-  for (const cert of stateCerts) liveById.set(cert.id, await liveStatus(auth, cert.id))
+  const stateCerts = certsInState(stack);
+  const liveById = new Map<string, LiveCertStatus>();
+  for (const cert of stateCerts) liveById.set(cert.id, await liveStatus(auth, cert.id));
 
-  const repairs = planCertRepairs(stateCerts, liveById)
+  const repairs = planCertRepairs(stateCerts, liveById);
   if (repairs.length === 0) {
-    console.info(`repair-certs: ${stateCerts.length} certificate(s) in state, none errored — nothing to repair.`)
-    return
+    console.info(`repair-certs: ${stateCerts.length} certificate(s) in state, none errored — nothing to repair.`);
+    return;
   }
 
   for (const repair of repairs) {
-    console.info(`repair-certs: ${repair.certId} — ${repair.reason}`)
-    const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], { cwd: infraDir, encoding: 'utf8' })
+    console.info(`repair-certs: ${repair.certId} — ${repair.reason}`);
+    const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], {
+      cwd: infraDir,
+      encoding: 'utf8',
+    });
     if (stateDelete.status !== 0) {
       // A dependent (attached frontend) still references it: leave the live
       // object alone too: never delete TLS material something may serve.
-      console.warn(`repair-certs: state delete refused for ${repair.urn} (${stateDelete.stderr.trim().slice(0, 300)}) — skipping live delete; resolve the dependent first.`)
-      continue
+      console.warn(
+        `repair-certs: state delete refused for ${repair.urn} (${stateDelete.stderr.trim().slice(0, 300)}) — skipping live delete; resolve the dependent first.`,
+      );
+      continue;
     }
     if (repair.deleteLive) {
-      await scwSend(auth, 'DELETE', `https://api.scaleway.com/lb/v1/zones/${repair.zone}/certificates/${repair.certId}`)
-      console.info(`repair-certs: deleted errored certificate ${repair.certId}; the next pulumi up recreates it behind the DNS gate.`)
+      await scwSend(
+        auth,
+        'DELETE',
+        `https://api.scaleway.com/lb/v1/zones/${repair.zone}/certificates/${repair.certId}`,
+      );
+      console.info(
+        `repair-certs: deleted errored certificate ${repair.certId}; the next pulumi up recreates it behind the DNS gate.`,
+      );
     }
   }
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) await main();

@@ -5,12 +5,12 @@ import {
   type WideProductType,
   type WideRole,
   wideMembership,
-  wideSubject,
   wideOverrides,
+  wideSubject,
 } from '../../testing/wide-fixture';
-import type { AccessMembership, SubjectForPermission } from './types';
 import { getAllDecisions } from './check';
-import { getDecisionsForAccesses, type EngineAccess } from './resolve-access';
+import { type EngineAccess, getDecisionsForAccesses } from './resolve-access';
+import type { AccessMembership, SubjectForPermission } from './types';
 
 /**
  * THE guarantee that lets `checkAccess` collapse accesses into classes: for every access,
@@ -225,8 +225,8 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
   });
 
   it("default ('throw') surfaces the malformed membership like the single-access path", () => {
-    expect(() =>
-      getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides }),
-    ).toThrow(/Membership/);
+    expect(() => getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides })).toThrow(
+      /Membership/,
+    );
   });
 });

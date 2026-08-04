@@ -1,24 +1,26 @@
-import { engineConfig } from './engine-config'
-const appConfig = engineConfig()
-import { enabledServices } from '../lib/services'
+import { engineConfig } from './engine-config';
 
-const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug))
-const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>
+const appConfig = engineConfig();
+
+import { enabledServices } from '../lib/services';
+
+const enabledServiceSlugs = new Set(enabledServices(appConfig.services).map((service) => service.slug));
+const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
 const servicePublicUrl = (slug: string): string => {
-  const url = serviceUrls[slug]?.publicUrl
-  if (!url) throw new Error(`frontend-csp: service '${slug}' has no publicUrl in appConfig.services`)
-  return url
-}
+  const url = serviceUrls[slug]?.publicUrl;
+  if (!url) throw new Error(`frontend-csp: service '${slug}' has no publicUrl in appConfig.services`);
+  return url;
+};
 
 // Same-origin services collapse into connect-src 'self': emit an origin only
 // when it differs from the app origin (an app still on per-service subdomains).
-const appOrigin = new URL(appConfig.frontendUrl).origin
+const appOrigin = new URL(appConfig.frontendUrl).origin;
 const originUnlessSelf = (url: string): string => {
   // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the
   // app origin are covered by 'self' too.
-  const origin = new URL(url.replace(/^ws/, 'http')).origin
-  return origin === appOrigin ? '' : new URL(url).origin
-}
+  const origin = new URL(url.replace(/^ws/, 'http')).origin;
+  return origin === appOrigin ? '' : new URL(url).origin;
+};
 
 const cspOrigins = {
   api: originUnlessSelf(servicePublicUrl('backend')),
@@ -28,7 +30,7 @@ const cspOrigins = {
   s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
   s3Public: appConfig.s3.publicCDNUrl,
   s3Private: appConfig.s3.privateCDNUrl,
-}
+};
 
 const connectSrc = [
   `connect-src 'self' blob:`,
@@ -47,7 +49,7 @@ const connectSrc = [
   'ingest.maple.dev',
 ]
   .filter(Boolean)
-  .join(' ')
+  .join(' ');
 
 export const frontendCsp = [
   `default-src 'self'`,
@@ -62,4 +64,7 @@ export const frontendCsp = [
   `object-src 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,
-].join('; ').replace(/\s+/g, ' ').trim()
+]
+  .join('; ')
+  .replace(/\s+/g, ' ')
+  .trim();

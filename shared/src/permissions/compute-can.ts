@@ -1,10 +1,10 @@
 import type { ChannelEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
 import { recordFromKeys } from '../config-builder/utils';
-import { getPolicyPermissions, getEntityPolicies } from './policy-matrix';
 import { allActionsDenied } from './action-helpers';
-import { isRowCondition } from './row-conditions';
-import type { PolicyMatrix, CanState } from './types';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
+import { getEntityPolicies, getPolicyPermissions } from './policy-matrix';
+import { isRowCondition } from './row-conditions';
+import type { CanState, PolicyMatrix } from './types';
 
 /**
  * Per-action permission state for one entity type. Three-valued to carry row conditions to the UI:
@@ -59,11 +59,23 @@ export const computeCan = (
   const map: EntityCanMap = {};
 
   // Permissions for the channel entity itself
-  map[channelType] = computeEntityPermissions(channelType, membership.channelType, membership.role, policies, entityActions);
+  map[channelType] = computeEntityPermissions(
+    channelType,
+    membership.channelType,
+    membership.role,
+    policies,
+    entityActions,
+  );
 
   // Permissions for all descendant entity types (children + their children)
   for (const descendant of h.getOrderedDescendants(channelType) as EntityType[]) {
-    map[descendant] = computeEntityPermissions(descendant, membership.channelType, membership.role, policies, entityActions);
+    map[descendant] = computeEntityPermissions(
+      descendant,
+      membership.channelType,
+      membership.role,
+      policies,
+      entityActions,
+    );
   }
 
   return map;

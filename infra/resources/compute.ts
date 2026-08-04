@@ -1,24 +1,39 @@
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import * as pulumi from '@pulumi/pulumi'
-import * as scaleway from '@pulumiverse/scaleway'
-import { engineConfig } from '../config/engine-config'
-const appConfig = engineConfig()
-import { naming, zone, region, tags, mode } from '../pulumi-context'
-import { sizing } from '../config/sizing'
-import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
-import type { ServiceDefinition } from '../lib/services'
-import type { ServiceName } from '../compose/compose'
-import { engineSecretPath, secretManagerPath, VM_READER_SECRET_NAME, type VmReaderKeyPayload } from '../lib/scaleway/vm-reader-secret'
-import { resolveBootImage, type ResolvedBootImage } from '../lib/scaleway/boot-image'
-import { renderCloudInit } from './cloud-init'
-import { createComposeEnvBuilder } from './compose-env'
-import { activeGenerations, coHosted, collocated, enabled, hostSlug, secretConsumersFor, type Generation } from './generations'
-import { privateNetworkId } from './network'
-import { registryEndpoint } from './registry'
-import { bootDiagBucketName } from './storage'
-import { secretIds } from './secrets'
-import { iamModelV2, vmIamPolicies } from './vm-iam'
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as pulumi from '@pulumi/pulumi';
+import * as scaleway from '@pulumiverse/scaleway';
+import { engineConfig } from '../config/engine-config';
+
+const appConfig = engineConfig();
+
+import type { ServiceName } from '../compose/compose';
+import { sizing } from '../config/sizing';
+import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
+import { type ResolvedBootImage, resolveBootImage } from '../lib/scaleway/boot-image';
+import {
+  engineSecretPath,
+  secretManagerPath,
+  VM_READER_SECRET_NAME,
+  type VmReaderKeyPayload,
+} from '../lib/scaleway/vm-reader-secret';
+import type { ServiceDefinition } from '../lib/services';
+import { mode, naming, region, tags, zone } from '../pulumi-context';
+import { renderCloudInit } from './cloud-init';
+import { createComposeEnvBuilder } from './compose-env';
+import {
+  activeGenerations,
+  coHosted,
+  collocated,
+  enabled,
+  type Generation,
+  hostSlug,
+  secretConsumersFor,
+} from './generations';
+import { privateNetworkId } from './network';
+import { registryEndpoint } from './registry';
+import { secretIds } from './secrets';
+import { bootDiagBucketName } from './storage';
+import { iamModelV2, vmIamPolicies } from './vm-iam';
 
 // Reads the VM reader key pair (minimal-privilege: registry pull + Secret
 // Manager read) from Scaleway Secret Manager. Owned here: compute is its only
@@ -29,19 +44,23 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
   const container = pulumi.output(
     scaleway.secrets
       .getSecret({ name: VM_READER_SECRET_NAME, path: engineSecretPath(naming.slug, mode), region })
-      .catch(() => scaleway.secrets.getSecret({ name: VM_READER_SECRET_NAME, path: secretManagerPath(naming.slug, mode), region })),
-  )
-  const payload = scaleway.secrets.getVersionOutput({ secretId: container.id, revision: 'latest', region }).data.apply(
-    (data): VmReaderKeyPayload => {
-      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'))
-      const record = parsed as Partial<VmReaderKeyPayload> | null
+      .catch(() =>
+        scaleway.secrets.getSecret({ name: VM_READER_SECRET_NAME, path: secretManagerPath(naming.slug, mode), region }),
+      ),
+  );
+  const payload = scaleway.secrets
+    .getVersionOutput({ secretId: container.id, revision: 'latest', region })
+    .data.apply((data): VmReaderKeyPayload => {
+      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
+      const record = parsed as Partial<VmReaderKeyPayload> | null;
       if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
-        throw new Error(`Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`)
+        throw new Error(
+          `Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`,
+        );
       }
-      return { accessKey: record.accessKey, secretKey: record.secretKey }
-    },
-  )
-  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) }
+      return { accessKey: record.accessKey, secretKey: record.secretKey };
+    });
+  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) };
 }
 
 /**
@@ -53,29 +72,37 @@ function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulum
  * below (createGenerationVm guard).
  */
 interface GenerationKeysFile {
-  bootAccessKey: string
-  bootSecretKey: string
-  handoffSecretIds: Record<string, string>
+  bootAccessKey: string;
+  bootSecretKey: string;
+  handoffSecretIds: Record<string, string>;
 }
 
 function readGenerationKeysFile(): GenerationKeysFile | undefined {
-  const file = process.env.INFRA_GENERATION_KEYS_FILE
-  if (!file) return undefined
-  const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<GenerationKeysFile>
-  if (typeof parsed.bootAccessKey !== 'string' || typeof parsed.bootSecretKey !== 'string' || typeof parsed.handoffSecretIds !== 'object') {
-    throw new Error('INFRA_GENERATION_KEYS_FILE is malformed — re-run the deploy (mint-generation-keys writes it).')
+  const file = process.env.INFRA_GENERATION_KEYS_FILE;
+  if (!file) return undefined;
+  const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<GenerationKeysFile>;
+  if (
+    typeof parsed.bootAccessKey !== 'string' ||
+    typeof parsed.bootSecretKey !== 'string' ||
+    typeof parsed.handoffSecretIds !== 'object'
+  ) {
+    throw new Error('INFRA_GENERATION_KEYS_FILE is malformed — re-run the deploy (mint-generation-keys writes it).');
   }
-  return parsed as GenerationKeysFile
+  return parsed as GenerationKeysFile;
 }
 
-const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined
+const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined;
 
 // The credential pair baked into cloud-init: v2 = the boot fetcher key
 // (registry pull + handoff read + diag write ONLY, because the real service
 // key arrives via the single-access handoff bundle); legacy = the vm-reader key.
-const vmReaderKey = sizing.computeEnabled && !iamModelV2 ? readVmReaderKey() : undefined
-const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey) : (vmReaderKey?.accessKey ?? pulumi.secret(''))
-const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : (vmReaderKey?.secretKey ?? pulumi.secret(''))
+const vmReaderKey = sizing.computeEnabled && !iamModelV2 ? readVmReaderKey() : undefined;
+const vmAccessKey = generationKeys
+  ? pulumi.secret(generationKeys.bootAccessKey)
+  : (vmReaderKey?.accessKey ?? pulumi.secret(''));
+const vmSecretKey = generationKeys
+  ? pulumi.secret(generationKeys.bootSecretKey)
+  : (vmReaderKey?.secretKey ?? pulumi.secret(''));
 
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
@@ -88,17 +115,17 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   inboundRules: [],
   zone,
   tags,
-})
+});
 
 /** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
-  const definitions = unionRuntimeSecrets(consumers)
+  const definitions = unionRuntimeSecrets(consumers);
   return pulumi.all(definitions.map((definition) => secretIds[definition.id])).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
         id: definition.id,
         secretName: definition.secretName,
-// Strip the region from Pulumi's composite secret ID because the access URL already contains it.
+        // Strip the region from Pulumi's composite secret ID because the access URL already contains it.
         secretId: (ids[index] ?? '').split('/').pop(),
         envVar: definition.envVar,
         required: definition.required,
@@ -106,61 +133,58 @@ function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi
       null,
       2,
     ),
-  )
+  );
 }
 
 // Compose file content (the generated deploy artifact, read at deploy time)
 
-const composeContent = fs.readFileSync(
-  path.resolve(import.meta.dirname, '../compose.gen.yml'),
-  'utf-8',
-)
+const composeContent = fs.readFileSync(path.resolve(import.meta.dirname, '../compose.gen.yml'), 'utf-8');
 
 // Cloud-init template
 
 interface ServiceConfig {
-  name: string
-  profile: string
+  name: string;
+  profile: string;
   /**
    * Compose services the boot runner starts on this VM: the service itself
    * plus, on the singleVM host, every collocated (`placement: 'host'`)
    * container. Explicit names keep the one-shot release companion (which
    * shares the host profile) out of `compose up`.
    */
-  startServices: string[]
+  startServices: string[];
   /** Whether this service runs the one-shot release companion before the app. */
-  runRelease: boolean
+  runRelease: boolean;
   /**
    * Runtime-secret consumers whose secrets this VM's `.env.runtime` manifest
    * carries. Usually just the service itself; the singleVM host also lists the
    * co-hosted workers folded into its process.
    */
-  secretConsumers: RuntimeSecretConsumer[]
+  secretConsumers: RuntimeSecretConsumer[];
   /**
    * Compose env var suppliers (REGISTRY, URLs, the baked image tag). Lazy so
    * values backed by Pulumi resources (bucket names, the internal backend IP)
    * are only resolved when VMs are actually created.
    */
-  composeEnv: Record<string, () => pulumi.Input<string>>
+  composeEnv: Record<string, () => pulumi.Input<string>>;
   /** v2: single-access handoff secret id holding this service's minted key. */
-  handoffSecretId?: string
+  handoffSecretId?: string;
   /** v2 + s3Access: the boot runner exports the service key as S3_* env. */
-  exportS3Env?: boolean
+  exportS3Env?: boolean;
 }
 
 // Per-tag boot-image memo: every generation of a release resolves the boot image
 // name+digest once, not once per VM. Stores the raw resolution (which may reject);
 // each caller applies its own dry-run / pin-requirement handling below.
-const bootImageResolutions = new Map<string, Promise<ResolvedBootImage>>()
+const bootImageResolutions = new Map<string, Promise<ResolvedBootImage>>();
 
 function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: string): Promise<ResolvedBootImage> {
-  const memoKey = `${registry}|${releaseSha}`
-  let pending = bootImageResolutions.get(memoKey)
+  const memoKey = `${registry}|${releaseSha}`;
+  let pending = bootImageResolutions.get(memoKey);
   if (!pending) {
-    pending = resolveBootImage({ registry, releaseSha, secretKey })
-    bootImageResolutions.set(memoKey, pending)
+    pending = resolveBootImage({ registry, releaseSha, secretKey });
+    bootImageResolutions.set(memoKey, pending);
   }
-  return pending
+  return pending;
 }
 
 /**
@@ -175,103 +199,114 @@ function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: s
  * so a boot image no longer resolvable in the registry must not block the deploy.
  * A dry run always degrades so previews never require registry availability.
  */
-function bootImageFor(registry: string, releaseSha: string, secretKey: string, requirePinned: boolean): Promise<ResolvedBootImage | undefined> {
+function bootImageFor(
+  registry: string,
+  releaseSha: string,
+  secretKey: string,
+  requirePinned: boolean,
+): Promise<ResolvedBootImage | undefined> {
   return resolveBootImageOnce(registry, releaseSha, secretKey).catch((err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err)
+    const message = err instanceof Error ? err.message : String(err);
     if (pulumi.runtime.isDryRun()) {
-      pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`)
-      return undefined
+      pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`);
+      return undefined;
     }
     if (!requirePinned) {
-      pulumi.log.warn(`boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`)
-      return undefined
+      pulumi.log.warn(
+        `boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`,
+      );
+      return undefined;
     }
-    throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`)
-  })
+    throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`);
+  });
 }
 
-function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
+function buildCloudInit(
+  service: ServiceConfig,
+  releaseSha: string,
+  requirePinnedBootImage: boolean,
+): pulumi.Output<string> {
   const envLines = pulumi.all(
-    Object.entries(service.composeEnv).map(([k, supply]) =>
-      pulumi.output(supply()).apply((val) => `${k}=${val}`),
-    ),
-  )
+    Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`)),
+  );
 
-  const bootImage = pulumi.all([registryEndpoint, vmSecretKey]).apply(([registry, secretKey]) =>
-    bootImageFor(registry, releaseSha, secretKey, requirePinnedBootImage),
-  )
+  const bootImage = pulumi
+    .all([registryEndpoint, vmSecretKey])
+    .apply(([registry, secretKey]) => bootImageFor(registry, releaseSha, secretKey, requirePinnedBootImage));
 
-  return pulumi.all([
-    envLines,
-    buildRuntimeSecretsManifest(service.secretConsumers),
-    // VM reader credentials: minimal-privilege key (registry pull + Secret
-    // Manager read), never the operator/CI key.
-    vmAccessKey,
-    vmSecretKey,
-    registryEndpoint,
-    bootDiagBucketName,
-    bootImage,
-  ]).apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, resolvedBootImage]) =>
-    renderCloudInit({
-      slug: naming.slug,
-      service: service.name,
-      profile: service.profile,
-      startServices: service.startServices,
-      runRelease: service.runRelease,
-      releaseSha,
-      envFileContent: env.join('\n'),
-      manifestContent: manifest,
-      composeContent,
-      registry,
-      bootImageName: resolvedBootImage?.image,
-      bootImageDigest: resolvedBootImage?.digest,
-      accessKey,
-      secretKey,
-      region,
-      bootDiagBucket,
-      handoffSecretId: service.handoffSecretId,
-      exportS3Env: service.exportS3Env,
-      // Deploy trace context (deploy-run exports it before the stack update);
-      // ignoreChanges on cloudInit keeps existing generations untouched.
-      traceparent: process.env.TRACEPARENT,
-    }),
-  )
+  return pulumi
+    .all([
+      envLines,
+      buildRuntimeSecretsManifest(service.secretConsumers),
+      // VM reader credentials: minimal-privilege key (registry pull + Secret
+      // Manager read), never the operator/CI key.
+      vmAccessKey,
+      vmSecretKey,
+      registryEndpoint,
+      bootDiagBucketName,
+      bootImage,
+    ])
+    .apply(([env, manifest, accessKey, secretKey, registry, bootDiagBucket, resolvedBootImage]) =>
+      renderCloudInit({
+        slug: naming.slug,
+        service: service.name,
+        profile: service.profile,
+        startServices: service.startServices,
+        runRelease: service.runRelease,
+        releaseSha,
+        envFileContent: env.join('\n'),
+        manifestContent: manifest,
+        composeContent,
+        registry,
+        bootImageName: resolvedBootImage?.image,
+        bootImageDigest: resolvedBootImage?.digest,
+        accessKey,
+        secretKey,
+        region,
+        bootDiagBucket,
+        handoffSecretId: service.handoffSecretId,
+        exportS3Env: service.exportS3Env,
+        // Deploy trace context (deploy-run exports it before the stack update);
+        // ignoreChanges on cloudInit keeps existing generations untouched.
+        traceparent: process.env.TRACEPARENT,
+      }),
+    );
 }
 
 // Compose env: the `${VAR}` placeholder scan + `@{slug.prop}` binding DSL live
 // in resources/compose-env.ts; the per-generation private-IP supplier is the
 // only piece compute owns (it depends on VM planning state below).
 
-const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted, collocated })
+const buildComposeEnv = createComposeEnvBuilder(currentGenBindingIp, { hostSlug, coHosted, collocated });
 
 // Generation planning owns the service set and content-addressed IDs; this
 // module provisions the resulting VMs.
 export interface GenerationInstance {
   /** Logical service slug. */
-  service: ServiceName
+  service: ServiceName;
   /** Content-addressed generation id. */
-  genId: string
+  genId: string;
   /** Image SHA baked into this generation. */
-  sha: string
+  sha: string;
   /** Pulumi resource name `vm-<svc>-<genId>`. */
-  name: string
-  server: scaleway.instance.Server
+  name: string;
+  server: scaleway.instance.Server;
   /** This generation VM's own private-network IP. */
-  privateIp: pulumi.Output<string>
+  privateIp: pulumi.Output<string>;
   /** Private NIC carrying this generation's own private-network IP. */
-  privateNic: scaleway.instance.PrivateNic
+  privateNic: scaleway.instance.PrivateNic;
 }
 
-const instances: GenerationInstance[] = []
+const instances: GenerationInstance[] = [];
 
 // Reserved private-network IPAM IPs, one per (service, generation), created in a
 // first pass before any VM so inter-service `@{<slug>.privateIp}` bindings can
 // resolve at plan time regardless of VM creation order. Keyed `<slug>-<genId>`.
-const genIps = new Map<string, scaleway.ipam.Ip>()
-const generationsByService = new Map<ServiceName, Generation[]>()
+const genIps = new Map<string, scaleway.ipam.Ip>();
+const generationsByService = new Map<ServiceName, Generation[]>();
 
 function genIpKey(slug: string, genId: string): string {
-  return `${slug}-${genId}`
+  return `${slug}-${genId}`;
 }
 
 /**
@@ -283,33 +318,36 @@ function genIpKey(slug: string, genId: string): string {
  * moved.
  */
 function currentGenBindingIp(slug: ServiceName): pulumi.Output<string> {
-  const liveGen = generationsByService.get(slug)?.[0]
-  if (!liveGen) throw new Error(`compute: @{${slug}.privateIp} requested but '${slug}' has no active generation.`)
-  const ip = genIps.get(genIpKey(slug, liveGen.id))
-  if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.id}.`)
+  const liveGen = generationsByService.get(slug)?.[0];
+  if (!liveGen) throw new Error(`compute: @{${slug}.privateIp} requested but '${slug}' has no active generation.`);
+  const ip = genIps.get(genIpKey(slug, liveGen.id));
+  if (!ip) throw new Error(`compute: @{${slug}.privateIp} — no reserved IP for ${slug} gen ${liveGen.id}.`);
   // Strip any CIDR suffix the provider may include, for example "10.0.0.9/22" to "10.0.0.9".
-  return ip.address.apply((addr) => addr.split('/')[0] ?? addr)
+  return ip.address.apply((addr) => addr.split('/')[0] ?? addr);
 }
 
 // Accept a Scaleway marketplace label or pinned image UUID without a plan-time lookup.
 // The boot runner is pulled at startup, so resolved image rotation is ignored.
-const computeImageId: pulumi.Input<string> = sizing.computeImage
+const computeImageId: pulumi.Input<string> = sizing.computeImage;
 
 function createGenerationVm(svc: ServiceDefinition, generation: Generation): GenerationInstance {
-  const resourceName = `vm-${svc.slug}-${generation.id}`
+  const resourceName = `vm-${svc.slug}-${generation.id}`;
 
   // Public IP for internet egress (image pull) + the per-generation private IP
   // reserved in the first pass (the LB targets the set of active generations).
-  const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags })
-  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id))
-  if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`)
+  const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags });
+  const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id));
+  if (!genPrivateIp)
+    throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
   // v2: a NEW generation must carry its minted handoff reference; planning one
   // without the keys file means the mint step did not run, so refuse it and
   // do not bake an empty credential. Pre-existing generations compute placeholder
   // inputs safely (their cloudInit is ignored).
   if (iamModelV2 && !generation.preexisting && !generationKeys) {
-    throw new Error(`compute: planning a NEW ${svc.slug} generation under iamModel=v2 without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`)
+    throw new Error(
+      `compute: planning a NEW ${svc.slug} generation under iamModel=v2 without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`,
+    );
   }
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
@@ -320,57 +358,73 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     composeEnv: buildComposeEnv(svc, generation.sha),
     handoffSecretId: generationKeys?.handoffSecretIds[svc.slug],
     exportS3Env: svc.s3Access === true,
-  }
+  };
 
-  const server = new scaleway.instance.Server(resourceName, {
-    name: naming.resource(`${svc.slug}-${generation.id}`),
-    type: sizing.instanceTypeFor(svc.slug),
-    image: computeImageId,
-    zone,
-    tags,
-    securityGroupId: securityGroup.id,
-    // A newly rolling generation must have a pinnable boot image; a pre-existing
-    // generation (its VM already booted, cloud-init ignored) degrades gracefully.
-    cloudInit: buildCloudInit(serviceConfig, generation.sha, !generation.preexisting),
-    ipIds: [ip.id],
-  }, {
-    // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
-    // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
-    // in-place replacement outside load-balancer cutover. The IAM grants must
-    // exist before the VM's first runtime-secret hydration.
-    dependsOn: [...vmIamPolicies],
-    ignoreChanges: ['cloudInit', 'image'],
-  })
+  const server = new scaleway.instance.Server(
+    resourceName,
+    {
+      name: naming.resource(`${svc.slug}-${generation.id}`),
+      type: sizing.instanceTypeFor(svc.slug),
+      image: computeImageId,
+      zone,
+      tags,
+      securityGroupId: securityGroup.id,
+      // A newly rolling generation must have a pinnable boot image; a pre-existing
+      // generation (its VM already booted, cloud-init ignored) degrades gracefully.
+      cloudInit: buildCloudInit(serviceConfig, generation.sha, !generation.preexisting),
+      ipIds: [ip.id],
+    },
+    {
+      // Generation VMs keep their initial cloud-init and image; changes create a content-addressed
+      // generation through the rollout path. Ignoring provider image UUID drift prevents destructive
+      // in-place replacement outside load-balancer cutover. The IAM grants must
+      // exist before the VM's first runtime-secret hydration.
+      dependsOn: [...vmIamPolicies],
+      ignoreChanges: ['cloudInit', 'image'],
+    },
+  );
 
   // The generation's own private-network NIC carries exactly one fixed IP.
-  const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id]
-  const privateNic = new scaleway.instance.PrivateNic(`pnic-${svc.slug}-${generation.id}`, {
-    serverId: server.id,
-    privateNetworkId,
-    ipamIpIds,
-    zone,
-    tags,
-  }, {
-    // Scaleway allows only one private NIC per server/private-network pair, so a
-    // one-time transition that does replace a NIC must delete the old one first.
-    deleteBeforeReplace: true,
-  })
+  const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id];
+  const privateNic = new scaleway.instance.PrivateNic(
+    `pnic-${svc.slug}-${generation.id}`,
+    {
+      serverId: server.id,
+      privateNetworkId,
+      ipamIpIds,
+      zone,
+      tags,
+    },
+    {
+      // Scaleway allows only one private NIC per server/private-network pair, so a
+      // one-time transition that does replace a NIC must delete the old one first.
+      deleteBeforeReplace: true,
+    },
+  );
 
-  const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0] ?? addr)
-  const inst: GenerationInstance = { service: svc.slug, genId: generation.id, sha: generation.sha, name: resourceName, server, privateIp, privateNic }
-  instances.push(inst)
-  return inst
+  const privateIp = genPrivateIp.address.apply((addr) => addr.split('/')[0] ?? addr);
+  const inst: GenerationInstance = {
+    service: svc.slug,
+    genId: generation.id,
+    sha: generation.sha,
+    name: resourceName,
+    server,
+    privateIp,
+    privateNic,
+  };
+  instances.push(inst);
+  return inst;
 }
 
 /** Planned generations for a service; throws if planning did not run for it. */
 function generationsFor(slug: ServiceName): Generation[] {
-  const generations = generationsByService.get(slug)
-  if (!generations) throw new Error(`compute: no generation plan for service '${slug}'`)
-  return generations
+  const generations = generationsByService.get(slug);
+  if (!generations) throw new Error(`compute: no generation plan for service '${slug}'`);
+  return generations;
 }
 
 if (sizing.computeEnabled) {
-  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc))
+  for (const svc of enabled) generationsByService.set(svc.slug, activeGenerations(svc));
 
   // Pass 1: reserve every (service, generation) private IP up front so
   // `@{backend.privateIp}` bindings resolve at plan time with no VM
@@ -385,30 +439,34 @@ if (sizing.computeEnabled) {
           region,
           tags,
         }),
-      )
+      );
     }
   }
 
   // Pass 2: create the VMs. Bindings read reserved IPs, so order does not matter.
   for (const svc of enabled) {
-    for (const generation of generationsFor(svc.slug)) createGenerationVm(svc, generation)
+    for (const generation of generationsFor(svc.slug)) createGenerationVm(svc, generation);
   }
 }
 
 // Exports
 
 /** All generation VM instances (one per active generation per enabled service). */
-export const computeInstances = instances
+export const computeInstances = instances;
 
-export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.all([i.server.id, i.privateIp, i.privateNic.id]).apply(([serverId, privateIp, privateNicId]) => ({
-  service: i.service,
-  genId: i.genId,
-  sha: i.sha,
-  name: i.name,
-  serverId,
-  privateIp,
-  privateNicId,
-}))))
+export const computeGenerationMetadata = pulumi.all(
+  instances.map((i) =>
+    pulumi.all([i.server.id, i.privateIp, i.privateNic.id]).apply(([serverId, privateIp, privateNicId]) => ({
+      service: i.service,
+      genId: i.genId,
+      sha: i.sha,
+      name: i.name,
+      serverId,
+      privateIp,
+      privateNicId,
+    })),
+  ),
+);
 
 /**
  * Private IPs of every active generation of a service: the initial LB backend
@@ -423,6 +481,6 @@ export const computeGenerationMetadata = pulumi.all(instances.map((i) => pulumi.
  */
 export function serviceGenerationIps(slug: string): pulumi.Output<string>[] {
   const target =
-    appConfig.singleVM && hostSlug && [...coHosted, ...collocated].some((s) => s.slug === slug) ? hostSlug : slug
-  return instances.filter((i) => i.service === target).map((i) => i.privateIp)
+    appConfig.singleVM && hostSlug && [...coHosted, ...collocated].some((s) => s.slug === slug) ? hostSlug : slug;
+  return instances.filter((i) => i.service === target).map((i) => i.privateIp);
 }

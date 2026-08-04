@@ -1,18 +1,12 @@
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
-import {
-  activityAttrs,
-  cdcAttrs,
-  cdcSpanNames,
-  createSpanStoreProcessor,
-  type TraceContext,
-} from 'shared/tracing';
+import { activityAttrs, cdcAttrs, cdcSpanNames, createSpanStoreProcessor, type TraceContext } from 'shared/tracing';
 import { env } from '../env';
 import { log } from './pino';
 
-export { activityAttrs, cdcAttrs, cdcSpanNames };
 export type { TraceContext };
+export { activityAttrs, cdcAttrs, cdcSpanNames };
 
 // OTel SDK
 
@@ -39,36 +33,44 @@ export const otel: OtelSDK = createOtelSDK({
 
 const meter = otel.meterProvider.getMeter('cdc-health');
 
-meter.createObservableGauge('cdc.ws.connected', {
-  description: 'Whether CDC is connected to backend WebSocket (0/1)',
-}).addCallback(async (result) => {
-  const { wsClient } = await import('../network/websocket-client');
-  result.observe(wsClient.isConnected() ? 1 : 0);
-});
+meter
+  .createObservableGauge('cdc.ws.connected', {
+    description: 'Whether CDC is connected to backend WebSocket (0/1)',
+  })
+  .addCallback(async (result) => {
+    const { wsClient } = await import('../network/websocket-client');
+    result.observe(wsClient.isConnected() ? 1 : 0);
+  });
 
-meter.createObservableGauge('cdc.ws.messages_sent', {
-  description: 'Total messages sent to backend via WebSocket',
-}).addCallback(async (result) => {
-  const { wsClient } = await import('../network/websocket-client');
-  result.observe(wsClient.messagesSent);
-});
+meter
+  .createObservableGauge('cdc.ws.messages_sent', {
+    description: 'Total messages sent to backend via WebSocket',
+  })
+  .addCallback(async (result) => {
+    const { wsClient } = await import('../network/websocket-client');
+    result.observe(wsClient.messagesSent);
+  });
 
-meter.createObservableGauge('cdc.circuit_breaker.open_count', {
-  description: 'Number of open/half-open circuit breakers',
-}).addCallback(async (result) => {
-  const { circuitBreaker } = await import('../services/circuit-breaker');
-  const status = circuitBreaker.getStatus();
-  const openCount = Object.values(status).filter((s) => s.state !== 'closed').length;
-  result.observe(openCount);
-});
+meter
+  .createObservableGauge('cdc.circuit_breaker.open_count', {
+    description: 'Number of open/half-open circuit breakers',
+  })
+  .addCallback(async (result) => {
+    const { circuitBreaker } = await import('../services/circuit-breaker');
+    const status = circuitBreaker.getStatus();
+    const openCount = Object.values(status).filter((s) => s.state !== 'closed').length;
+    result.observe(openCount);
+  });
 
-meter.createObservableGauge('cdc.replication.status', {
-  description: 'Replication status (0=stopped, 1=paused, 2=active)',
-}).addCallback(async (result) => {
-  const { replicationState } = await import('../services/replication-state');
-  const statusMap = { stopped: 0, paused: 1, active: 2 } as const;
-  result.observe(statusMap[replicationState.status]);
-});
+meter
+  .createObservableGauge('cdc.replication.status', {
+    description: 'Replication status (0=stopped, 1=paused, 2=active)',
+  })
+  .addCallback(async (result) => {
+    const { replicationState } = await import('../services/replication-state');
+    const statusMap = { stopped: 0, paused: 1, active: 2 } as const;
+    result.observe(statusMap[replicationState.status]);
+  });
 
 // OTel tracer + withSpan
 
@@ -82,11 +84,7 @@ interface SpanAttrs {
  * Execute an async function within a traced CDC span.
  * Returns W3C-format traceId/spanId for _trace propagation.
  */
-export async function withSpan<T>(
-  name: string,
-  attrs: SpanAttrs,
-  fn: (ctx: TraceContext) => Promise<T>,
-): Promise<T> {
+export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {
       if (value !== undefined && value !== null) {

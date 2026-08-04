@@ -16,7 +16,9 @@ const listeners: ((config: ModuleConfig) => void)[] = [];
 
 export const registerModule = (config: ModuleConfig) => {
   modules.push(config);
-  listeners.forEach((fn) => fn(config));
+  listeners.forEach((fn) => {
+    fn(config);
+  });
 };
 
 export const getModules = (filter?: { scope?: ModuleScope }): ModuleConfig[] => {

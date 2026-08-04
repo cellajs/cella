@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
-import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
+import process from 'node:process';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
+import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from './env';
 import { log } from './lib/pino';
 import { otel } from './lib/tracing';

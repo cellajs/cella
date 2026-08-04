@@ -19,7 +19,7 @@ export const PROJECT_PERMISSION_SETS = [
   // Read-only: bootstrap-owned, refreshed but not mutated by CI.
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
-] as const
+] as const;
 
 // CI deploy key: grants beyond the app project
 
@@ -30,7 +30,7 @@ export const PROJECT_PERMISSION_SETS = [
  * bootstrap grant (scaleway-iam.ts ensureBootstrapDnsGrant) still applies it
  * org-wide until the bootstrap key is revoked.
  */
-export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
+export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
 /**
  * Organization-scoped sets. IAMReadOnly lets `pulumi up` and the deploy's
@@ -39,10 +39,10 @@ export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const
  * A single IAM policy rule may only hold permission sets of ONE scope type, so
  * this stays a separate org-keyed rule in setup-ci-key.ts buildRules.
  */
-export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const
+export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
-export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const
+export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const;
 
 // Admin app (`<slug>-<mode>-admin`): the standing human principal
 
@@ -68,10 +68,10 @@ export const ADMIN_PROJECT_PERMISSION_SETS = [
   'RelationalDatabasesReadOnly',
   'SecretManagerReadOnly',
   'VPCReadOnly',
-] as const
+] as const;
 
 /** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
-export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const
+export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // VM reader key (`<slug>-vm-reader`): project scope
 
@@ -85,12 +85,12 @@ export const VM_PROJECT_PERMISSION_SETS = [
   'ContainerRegistryReadOnly',
   'SecretManagerReadOnly',
   'SecretManagerSecretAccess',
-] as const
+] as const;
 
 // Per-service model (P3): service, boot, and CI key-mint grants
 
 /** Secret-value read sets; always paired with a resource-level path condition. */
-export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const
+export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
 
 /**
  * Extra sets for the backend service app (REQ-20): S3 request signing for
@@ -98,14 +98,18 @@ export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretM
  * managed key. Granular object sets, NOT FullAccess. Bucket policies then
  * scope which buckets.
  */
-export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const
+export const BACKEND_S3_PERMISSION_SETS = [
+  'ObjectStorageObjectsRead',
+  'ObjectStorageObjectsWrite',
+  'ObjectStorageObjectsDelete',
+] as const;
 
 /**
  * Boot application sets: pull images (boot runner + service images) and write
  * boot diagnostics. Its Secret Manager rule is separate and conditioned to the
  * handoff folder only (bootKeyCondition).
  */
-export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const
+export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
 /**
  * The CI key-mint grant (D3, live-validated 2026-07-31): IAMApplicationManager
@@ -114,11 +118,11 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  * (create carries no matching resource.id). The escalation firewall holds.
  * STRICT condition: no `!has(resource.id)` escape, listing stays denied.
  */
-export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const
+export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
 
 /** CEL condition for the CI key-mint rule. */
 export function ciKeyMintCondition(appIds: readonly string[]): string {
-  return `resource.id in [${appIds.map((id) => `"${id}"`).join(', ')}]`
+  return `resource.id in [${appIds.map((id) => `"${id}"`).join(', ')}]`;
 }
 
 // Bootstrap-owned boundary
@@ -137,10 +141,10 @@ export const BOOTSTRAP_OWNED_FRAGMENTS = [
   'instance_db', // DB-bearing instance resources
   'domain_zone', // DNS zone
   'policy', // VM reader IAM policy; IAM write is forbidden for the CI key (perm-escalation)
-] as const
+] as const;
 
 /** True when a Scaleway resource token names a bootstrap-owned resource. */
 export function isBootstrapOwned(resource: string): boolean {
-  const token = resource.toLowerCase()
-  return BOOTSTRAP_OWNED_FRAGMENTS.some((fragment) => token.includes(fragment))
+  const token = resource.toLowerCase();
+  return BOOTSTRAP_OWNED_FRAGMENTS.some((fragment) => token.includes(fragment));
 }

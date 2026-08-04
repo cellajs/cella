@@ -1,4 +1,4 @@
-import { RateLimiterPostgres, RateLimiterMemory } from 'rate-limiter-flexible';
+import { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { pool } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';

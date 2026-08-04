@@ -1,6 +1,6 @@
-import { appConfig } from '../../config-builder/app-config';
 import { hierarchy as appHierarchy } from '../../../config/hierarchy-config';
 import type { ChannelEntityType, EntityActionType } from '../../../types';
+import { appConfig } from '../../config-builder/app-config';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
 
 /** Optional hierarchy and action overrides let tests exercise the engine outside app config. */

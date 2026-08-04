@@ -1,6 +1,6 @@
 import { hierarchy } from '../../config/config.default';
-import { appConfig } from '../config-builder/app-config';
 import type { ChannelEntityType, EntityIdColumnKey, EntityType } from '../../types';
+import { appConfig } from '../config-builder/app-config';
 import { toColumnName, toTableName } from '../permissions';
 
 export interface TestChannelColumn {

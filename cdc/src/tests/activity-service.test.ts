@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockBatchEvent } from './factories';
 
 // Mock dependencies before importing the module under test
@@ -10,9 +10,9 @@ vi.mock('shared/utils/nanoid', () => ({
   nanoidTenant: () => 'mock-t',
 }));
 
-import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
-import { wsClient } from '../network/websocket-client';
 import { log } from '../lib/pino';
+import { wsClient } from '../network/websocket-client';
+import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
 
 describe('generateActivityId', () => {
   it('zero-pads both LSN segments to a fixed 17-char width', () => {
@@ -84,11 +84,14 @@ describe('sendBatchMessageToApi', () => {
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
     expect(wsClient.send).toHaveBeenCalledTimes(2);
-    const payloads = vi.mocked(wsClient.send).mock.calls.map((call) => call[0] as never as {
-      activity: { seq?: number; batchUntilSeq?: number };
-      rowData: Record<string, unknown>;
-      batchRows: { seq?: number }[];
-    });
+    const payloads = vi.mocked(wsClient.send).mock.calls.map(
+      (call) =>
+        call[0] as never as {
+          activity: { seq?: number; batchUntilSeq?: number };
+          rowData: Record<string, unknown>;
+          batchRows: { seq?: number }[];
+        },
+    );
     const orgA = payloads.find((p) => p.rowData.organizationId === 'org-a');
     const orgB = payloads.find((p) => p.rowData.organizationId === 'org-b');
 

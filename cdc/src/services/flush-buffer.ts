@@ -1,6 +1,6 @@
-import type { PendingEvent } from '../types';
-import { log } from '../lib/pino';
 import { RESOURCE_LIMITS } from '../constants';
+import { log } from '../lib/pino';
+import type { PendingEvent } from '../types';
 import { metrics } from './cdc-metrics';
 
 /**

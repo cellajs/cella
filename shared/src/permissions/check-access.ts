@@ -1,11 +1,11 @@
-import { policyMatrix, elevatedRoles, publicReadGrants } from '../../config/permissions-config';
+import { elevatedRoles, policyMatrix, publicReadGrants } from '../../config/permissions-config';
 import type { EntityActionType } from '../../types';
 import { getAllDecisions } from './engine/check';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access';
 import type {
+  AccessMembership,
   PermissionCheckOptions,
   PermissionDecision,
-  AccessMembership,
   SubjectForPermission,
 } from './engine/types';
 

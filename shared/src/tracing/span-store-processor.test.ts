@@ -1,21 +1,23 @@
 import { SpanStatusCode } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { describe, expect, it, vi } from 'vitest';
-import { createSpanStore } from './tracing';
 import { createSpanStoreProcessor } from './span-store-processor';
+import { createSpanStore } from './tracing';
 
 /** Build a minimal ReadableSpan mock for testing. */
-function mockReadableSpan(overrides: Partial<{
-  traceId: string;
-  spanId: string;
-  parentSpanId: string;
-  name: string;
-  startTime: [number, number];
-  endTime: [number, number];
-  status: { code: number; message?: string };
-  attributes: Record<string, string | number | boolean>;
-  events: Array<{ name: string; time: [number, number]; attributes?: Record<string, unknown> }>;
-}> = {}): ReadableSpan {
+function mockReadableSpan(
+  overrides: Partial<{
+    traceId: string;
+    spanId: string;
+    parentSpanId: string;
+    name: string;
+    startTime: [number, number];
+    endTime: [number, number];
+    status: { code: number; message?: string };
+    attributes: Record<string, string | number | boolean>;
+    events: Array<{ name: string; time: [number, number]; attributes?: Record<string, unknown> }>;
+  }> = {},
+): ReadableSpan {
   const traceId = overrides.traceId ?? 'abc123';
   const spanId = overrides.spanId ?? 'def456';
   const parentSpanId = overrides.parentSpanId;
@@ -90,10 +92,12 @@ describe('createSpanStoreProcessor', () => {
 
     // startTime: 2 seconds + 500ms = 2500ms
     // endTime: 2 seconds + 600ms = 2600ms
-    processor.onEnd(mockReadableSpan({
-      startTime: [2, 500_000_000],
-      endTime: [2, 600_000_000],
-    }));
+    processor.onEnd(
+      mockReadableSpan({
+        startTime: [2, 500_000_000],
+        endTime: [2, 600_000_000],
+      }),
+    );
 
     const span = store.getSpans()[0];
     expect(span.startTime).toBe(2500);
@@ -119,9 +123,11 @@ describe('createSpanStoreProcessor', () => {
     const store = createSpanStore();
     const processor = createSpanStoreProcessor({ store });
 
-    processor.onEnd(mockReadableSpan({
-      attributes: { lsn: '0/1234', count: 42, active: true },
-    }));
+    processor.onEnd(
+      mockReadableSpan({
+        attributes: { lsn: '0/1234', count: 42, active: true },
+      }),
+    );
 
     expect(store.getSpans()[0].attributes).toEqual({
       lsn: '0/1234',
@@ -134,9 +140,11 @@ describe('createSpanStoreProcessor', () => {
     const store = createSpanStore();
     const processor = createSpanStoreProcessor({ store });
 
-    processor.onEnd(mockReadableSpan({
-      events: [{ name: 'exception', time: [1, 0], attributes: { 'exception.message': 'boom' } }],
-    }));
+    processor.onEnd(
+      mockReadableSpan({
+        events: [{ name: 'exception', time: [1, 0], attributes: { 'exception.message': 'boom' } }],
+      }),
+    );
 
     const events = store.getSpans()[0].events;
     expect(events).toHaveLength(1);

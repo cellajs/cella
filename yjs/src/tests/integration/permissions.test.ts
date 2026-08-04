@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { testDatabaseUrl } from 'shared/test-db';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DocContext } from '../../constants';
 import { canEditEntity } from '../../data/permissions';
 
@@ -81,7 +81,7 @@ async function cleanupEntityHierarchy(client: pg.Client, plans: TestEntityHierar
 }
 
 async function seedUser(client: pg.Client, id: string, suffix: string) {
-  await client.query(`INSERT INTO users (id, name, slug, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`, [
+  await client.query('INSERT INTO users (id, name, slug, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING', [
     id,
     `YJS Authz ${suffix}`,
     `yjs-authz-${suffix}-${id.slice(0, 8)}`,
@@ -90,12 +90,15 @@ async function seedUser(client: pg.Client, id: string, suffix: string) {
 }
 
 async function seedTenant(client: pg.Client, tenantId: string) {
-  await client.query(`INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`, [tenantId, `Authz ${tenantId}`]);
+  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
+    tenantId,
+    `Authz ${tenantId}`,
+  ]);
 }
 
 async function seedOrg(client: pg.Client, tenantId: string, orgId: string, slug: string) {
   await client.query(
-    `INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
     [orgId, tenantId, slug, `Authz ${slug}`, slug.slice(0, 4)],
   );
 }
@@ -178,12 +181,12 @@ describe('Local entity authorization (canEditEntity)', () => {
   });
 
   afterAll(async () => {
-    await admin.query(`DELETE FROM attachments WHERE id = ANY($1::uuid[])`, [[attachmentA, attachmentC]]);
-    await admin.query(`DELETE FROM memberships WHERE user_id = ANY($1::uuid[])`, [[userA, userB]]);
+    await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentC]]);
+    await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB]]);
     await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
-    await admin.query(`DELETE FROM organizations WHERE id = ANY($1::uuid[])`, [[orgA, orgC]]);
-    await admin.query(`DELETE FROM tenants WHERE id = ANY($1::text[])`, [[tenantA, tenantB]]);
-    await admin.query(`DELETE FROM users WHERE id = ANY($1::uuid[])`, [[userA, userB]]);
+    await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
+    await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
+    await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB]]);
     await admin.end();
   });
 
@@ -192,13 +195,15 @@ describe('Local entity authorization (canEditEntity)', () => {
   });
 
   it('denies editing an entity in a tenant where the user has no membership', async () => {
-    await expect(
-      canEditEntity(ctx({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC })),
-    ).resolves.toBe(false);
+    await expect(canEditEntity(ctx({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBe(
+      false,
+    );
   });
 
   it('denies when the tenant param does not match the entity tenant (defense-in-depth)', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA }))).resolves.toBe(false);
+    await expect(canEditEntity(ctx({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA }))).resolves.toBe(
+      false,
+    );
   });
 
   it('denies access to a non-existent entity', async () => {

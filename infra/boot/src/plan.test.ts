@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { parseBootPlanJson } from './plan'
+import { describe, expect, it } from 'vitest';
+import { parseBootPlanJson } from './plan';
 
 function plan(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
@@ -14,38 +14,48 @@ function plan(overrides: Record<string, unknown> = {}): string {
     bootDiagnostics: { bucket: 'cella-boot-diag', logFile: '/var/log/infra-boot.log' },
     releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', 'backend-release'] },
     docker: { composeFile: '/opt/app/compose.yml' },
-    files: { compose: 'services: {}', env: 'BACKEND_TAG=abc', runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }] },
+    files: {
+      compose: 'services: {}',
+      env: 'BACKEND_TAG=abc',
+      runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }],
+    },
     timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 },
     ...overrides,
-  })
+  });
 }
 
 describe('parseBootPlanJson', () => {
   it('parses a valid schema-v1 boot plan', () => {
-    expect(parseBootPlanJson(plan()).service).toBe('backend')
-  })
+    expect(parseBootPlanJson(plan()).service).toBe('backend');
+  });
 
   it('rejects unsupported schema and image contract', () => {
-    expect(() => parseBootPlanJson(plan({ schemaVersion: 2 }))).toThrow(/unsupported schemaVersion/)
-    expect(() => parseBootPlanJson(plan({ imageContract: 'docker-only' }))).toThrow(/unsupported imageContract/)
-  })
+    expect(() => parseBootPlanJson(plan({ schemaVersion: 2 }))).toThrow(/unsupported schemaVersion/);
+    expect(() => parseBootPlanJson(plan({ imageContract: 'docker-only' }))).toThrow(/unsupported imageContract/);
+  });
 
   it('rejects unknown top-level fields', () => {
-    expect(() => parseBootPlanJson(plan({ surprise: true }))).toThrow(/unknown top-level field/)
-  })
+    expect(() => parseBootPlanJson(plan({ surprise: true }))).toThrow(/unknown top-level field/);
+  });
 
   it('parses the optional start-services list, absent in pre-collocation plans', () => {
-    expect(parseBootPlanJson(plan()).services).toBeUndefined()
-    expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend'])
-    expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/)
-  })
+    expect(parseBootPlanJson(plan()).services).toBeUndefined();
+    expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend']);
+    expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/);
+  });
 
   it('rejects empty release commands', () => {
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(/non-empty command array/)
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(/empty or non-string/)
-  })
+    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(
+      /non-empty command array/,
+    );
+    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(
+      /empty or non-string/,
+    );
+  });
 
   it('rejects paths outside allowed boot locations', () => {
-    expect(() => parseBootPlanJson(plan({ docker: { composeFile: '/tmp/compose.yml' } }))).toThrow(/outside the allowed/)
-  })
-})
+    expect(() => parseBootPlanJson(plan({ docker: { composeFile: '/tmp/compose.yml' } }))).toThrow(
+      /outside the allowed/,
+    );
+  });
+});

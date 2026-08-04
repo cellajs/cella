@@ -12,9 +12,7 @@ describe('findAppVocabularyFindings', () => {
       `${legacyTerm}s`,
     ].join('\n');
 
-    expect(
-      findAppVocabularyFindings('example.ts', source).map(({ line, term }) => ({ line, term })),
-    ).toEqual([
+    expect(findAppVocabularyFindings('example.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
       { line: 1, term: legacyTerm },
       { line: 2, term: legacyTerm },
       { line: 3, term: legacyTerm.toUpperCase() },

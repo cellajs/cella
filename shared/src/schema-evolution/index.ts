@@ -3,9 +3,8 @@
  *
  * @see README.md
  */
-export { lenses } from './lens-list';
+
 export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
-export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';
 export type {
   AddDelta,
   DropDelta,
@@ -19,6 +18,8 @@ export type {
   RetypeDelta,
   SetRenameDelta,
 } from './define';
+export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';
+export type { NormalizeOpsOptions, RegistryHooks } from './engine';
 export {
   configureLensTelemetry,
   currentSchemaVersion,
@@ -30,4 +31,4 @@ export {
   versionNodeFor,
   widenedOpsKeyMap,
 } from './engine';
-export type { NormalizeOpsOptions, RegistryHooks } from './engine';
+export { lenses } from './lens-list';

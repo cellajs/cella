@@ -1,6 +1,6 @@
 import { policyMatrix } from '../../config/permissions-config';
-import { appConfig } from './app-config';
 import { getEntityPolicies, isRowCondition } from '../permissions';
+import { appConfig } from './app-config';
 import type { RequiredConfig } from './types';
 
 // Validate that Config satisfies RequiredConfig (compile-time only).

@@ -1,12 +1,12 @@
-import { readdirSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 interface Finding {
-  resource: string
-  line: number
-  text: string
-  pattern: string
+  resource: string;
+  line: number;
+  text: string;
+  pattern: string;
 }
 
 const PATTERNS: Array<{ name: string; rx: RegExp }> = [
@@ -17,7 +17,7 @@ const PATTERNS: Array<{ name: string; rx: RegExp }> = [
   { name: 'public-bucket-flag', rx: /isPublic:\s*true/ },
   { name: 'public-db-endpoint', rx: /publicEndpoint:\s*true/ },
   { name: 'inbound-accept-default', rx: /inboundDefaultPolicy:\s*['"]accept['"]/ },
-]
+];
 
 // Allowlist: every entry MUST be justified by a real, intentional public
 // surface. Keep this list short. Format: `<resource>:<pattern-name>`.
@@ -26,41 +26,39 @@ const EXPECTED = new Set<string>([
   'storage.ts:principal-wildcard',
   // Public-uploads bucket: user-uploaded assets meant to be public.
   // Same resource, same pattern: counted once because we dedupe per resource.
-])
+]);
 
-const resourcesDir = resolve(__dirname, '../../resources')
+const resourcesDir = resolve(__dirname, '../../resources');
 
 function scan(): Finding[] {
-  const findings: Finding[] = []
+  const findings: Finding[] = [];
   for (const file of readdirSync(resourcesDir)) {
-    if (!file.endsWith('.ts')) continue
-    const src = readFileSync(resolve(resourcesDir, file), 'utf-8')
-    const lines = src.split('\n')
+    if (!file.endsWith('.ts')) continue;
+    const src = readFileSync(resolve(resourcesDir, file), 'utf-8');
+    const lines = src.split('\n');
     for (const [i, line] of lines.entries()) {
       for (const p of PATTERNS) {
         if (p.rx.test(line)) {
-          findings.push({ resource: file, line: i + 1, text: line.trim(), pattern: p.name })
+          findings.push({ resource: file, line: i + 1, text: line.trim(), pattern: p.name });
         }
       }
     }
   }
-  return findings
+  return findings;
 }
 
 // Scans resources for public buckets, registries, DB endpoints, and ingress.
 // Intentional public surfaces must be listed in EXPECTED.
 describe('no-unexpected-public sweep', () => {
   it('every public-surface pattern is in the EXPECTED allowlist', () => {
-    const findings = scan()
-    const keys = new Set(findings.map((f) => `${f.resource}:${f.pattern}`))
+    const findings = scan();
+    const keys = new Set(findings.map((f) => `${f.resource}:${f.pattern}`));
 
-    const unexpected: string[] = []
+    const unexpected: string[] = [];
     for (const k of keys) {
       if (!EXPECTED.has(k)) {
-        const occurrences = findings.filter((f) => `${f.resource}:${f.pattern}` === k)
-        unexpected.push(
-          `  ${k}:\n` + occurrences.map((o) => `    ${o.resource}:${o.line}  ${o.text}`).join('\n'),
-        )
+        const occurrences = findings.filter((f) => `${f.resource}:${f.pattern}` === k);
+        unexpected.push(`  ${k}:\n${occurrences.map((o) => `    ${o.resource}:${o.line}  ${o.text}`).join('\n')}`);
       }
     }
 
@@ -69,32 +67,32 @@ describe('no-unexpected-public sweep', () => {
         `Found ${unexpected.length} unexpected public-surface pattern(s).\n` +
           'Either remove the public surface or add the key to EXPECTED with a justification comment.\n\n' +
           unexpected.join('\n\n'),
-      )
+      );
     }
-  })
+  });
 
   // Exposure keys must only ever live in the gitignored Pulumi.<env>.exposure.yaml
   // overlay (written by the expose/seed flows): a committed key would make every
   // CI deploy re-converge the public endpoint open.
   it('no committed stack config records DB-exposure keys', () => {
-    const infraRoot = resolve(__dirname, '../..')
-    const offenders: string[] = []
+    const infraRoot = resolve(__dirname, '../..');
+    const offenders: string[] = [];
     for (const file of readdirSync(infraRoot)) {
-      if (!/^Pulumi\..+\.yaml$/.test(file) || file.endsWith('.exposure.yaml')) continue
-      const src = readFileSync(resolve(infraRoot, file), 'utf-8')
-      if (/dbPublicEndpoint:\s*["']?true/.test(src) || /dbPublicAcl/.test(src)) offenders.push(file)
+      if (!/^Pulumi\..+\.yaml$/.test(file) || file.endsWith('.exposure.yaml')) continue;
+      const src = readFileSync(resolve(infraRoot, file), 'utf-8');
+      if (/dbPublicEndpoint:\s*["']?true/.test(src) || /dbPublicAcl/.test(src)) offenders.push(file);
     }
     expect(
       offenders,
       `DB-exposure keys found in committed stack config: ${offenders.join(', ')}. ` +
         'Run "Stop public DB exposure" (infra CLI) and remove the keys; exposure belongs in the gitignored overlay.',
-    ).toEqual([])
-  })
+    ).toEqual([]);
+  });
 
   it('does not flag pristine surface — sanity check the scanner itself runs', () => {
     // If PATTERNS array got accidentally emptied, this test catches it.
-    expect(PATTERNS.length).toBeGreaterThan(0)
+    expect(PATTERNS.length).toBeGreaterThan(0);
     // And ensure we're actually scanning resources.
-    expect(readdirSync(resourcesDir).some((f) => f.endsWith('.ts'))).toBe(true)
-  })
-})
+    expect(readdirSync(resourcesDir).some((f) => f.endsWith('.ts'))).toBe(true);
+  });
+});

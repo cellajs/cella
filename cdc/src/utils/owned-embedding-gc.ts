@@ -45,19 +45,23 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     const embeddedTable = getEntityTable(embeddedProduct as Parameters<typeof getEntityTable>[0]);
     const embeddedColumns = getColumns(embeddedTable) as Record<string, AnyPgColumn>;
     for (const required of requiredEmbeddedColumns) {
-      if (!embeddedColumns[required]) throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
+      if (!embeddedColumns[required])
+        throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
     }
 
     // Refcounting is scoped to the root channel: the broadest context both products share,
     // so a host in a sibling subtree still counts as a reference and spares the row.
     const rootChannel = hierarchy.getOrderedAncestors(embeddedProduct).at(-1);
-    if (!rootChannel) throw new Error(`owned embedding: "${embeddedProduct}" has no channel ancestor to scope garbage collection by`);
+    if (!rootChannel)
+      throw new Error(`owned embedding: "${embeddedProduct}" has no channel ancestor to scope garbage collection by`);
 
     const scopeColumnName = appConfig.entityIdColumnKeys[rootChannel];
     const hostScopeColumn = hostColumns[scopeColumnName];
     const embeddedScopeColumn = embeddedColumns[scopeColumnName];
-    if (!hostScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${hostProduct}" table`);
-    if (!embeddedScopeColumn) throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${embeddedProduct}" table`);
+    if (!hostScopeColumn)
+      throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${hostProduct}" table`);
+    if (!embeddedScopeColumn)
+      throw new Error(`owned embedding: column "${scopeColumnName}" not found on "${embeddedProduct}" table`);
 
     const resolved: ResolvedOwnedEmbedding = {
       embeddedProduct,
@@ -81,7 +85,8 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
 /** Owned embeddings keyed by HOST product type (host-side dispatch, unlike embedding-cleanup). */
 const ownedByHostProduct = resolveOwnedEmbeddings();
 
-const toIdArray = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
+const toIdArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 
 /** Per-scope removal candidates with the actor to attribute the soft-delete to. */
 interface ScopeCandidates {
@@ -173,10 +178,17 @@ export async function gcOwnedEmbeddedRows(
               updatedBy: actorId,
               stx: stripChangedFieldsStx(),
             })
-            .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
+            .where(
+              and(
+                inArray(embeddedColumns.id, orphanIds),
+                eq(embeddedScopeColumn, scopeId),
+                isNull(embeddedColumns.deletedAt),
+              ),
+            )
             .returning({ id: embeddedColumns.id });
 
-          if (deleted.length > 0) log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
+          if (deleted.length > 0)
+            log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
         } catch (err) {
           // The flush pipeline acks the WAL position regardless; a failed GC batch is a
           // leak, never a wrong delete. Log the ids so leaks stay diagnosable.

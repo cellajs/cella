@@ -1,10 +1,10 @@
 import type { ChannelEntityType } from '../../../types';
-import type { PolicyMatrix } from '../types';
 import { allActionsDenied, createActionRecord } from '../action-helpers';
 import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions';
+import type { PolicyMatrix } from '../types';
 import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check';
 import { resolveHierarchy } from './resolve-hierarchy';
-import type { PermissionCheckOptions, PermissionDecision, AccessMembership, SubjectForPermission } from './types';
+import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types';
 import { validateSubject } from './validation';
 
 /**

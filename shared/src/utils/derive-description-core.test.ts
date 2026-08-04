@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { blockPlainText, countDescriptionBlocks, type DescriptionBlock, findSummarySource } from './derive-description-core';
+import {
+  blockPlainText,
+  countDescriptionBlocks,
+  type DescriptionBlock,
+  findSummarySource,
+} from './derive-description-core';
 
 const paragraph = (text: string): DescriptionBlock => ({
   type: 'paragraph',

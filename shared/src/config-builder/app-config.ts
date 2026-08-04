@@ -10,7 +10,7 @@ import { mergeDeep } from './utils';
 type Config = Omit<typeof _default, 's3'> & { s3: S3Config };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
-  // APP_MODE selects config independently so production-mode containers can use development naming.
+// APP_MODE selects config independently so production-mode containers can use development naming.
 const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
 // Fail loud on an unknown mode so an undefined `configModes` entry cannot silently boot the
 // default configuration for the wrong environment.
@@ -47,18 +47,22 @@ merged.services = {
   mcp: { ...(merged.services.mcp ?? {}), publicUrl: merged.mcpUrl },
 };
 
-  // Require a URL-safe resource slug with at least four non-hyphen characters for Scaleway.
-  // Apps must provide a valid value; validation never rewrites it.
+// Require a URL-safe resource slug with at least four non-hyphen characters for Scaleway.
+// Apps must provide a valid value; validation never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
-  throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);
+  throw new Error(
+    `Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`,
+  );
 }
 if (merged.slug.replace(/-/g, '').length < 4) {
-  throw new Error(`Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`);
+  throw new Error(
+    `Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`,
+  );
 }
 
-  // Derive environment-specific bucket names, CDN URLs, and Transloadit credentials from the slug.
-  // Explicit bucket config can share storage across applications.
+// Derive environment-specific bucket names, CDN URLs, and Transloadit credentials from the slug.
+// Explicit bucket config can share storage across applications.
 const s3 = merged.s3 as S3Config;
 const bucketPrefix = merged.slug;
 s3.publicBucket ??= `${bucketPrefix}-public`;

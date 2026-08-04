@@ -1,8 +1,7 @@
+import type { ActivityAction, EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
-import type { EntityHierarchy, ActivityAction } from 'shared';
-import type { PendingEvent, TableMeta } from '../types';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { CdcRowData } from '../types';
+import type { CdcRowData, PendingEvent, TableMeta } from '../types';
 import { getCountDeltas, isMaxMergeKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -43,7 +42,9 @@ export function resolveChannelKey(
   const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
-  throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
+  throw new Error(
+    `No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`,
+  );
 }
 
 /**
@@ -97,7 +98,10 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHier
  * sequence; WAL order within the batch is preserved), accumulates all count deltas.
  * Frontier (`e:f:`) deltas are emitted at apply time, once sequence values are assigned.
  */
-export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
+export function computeBatchUnifiedDeltas(
+  events: PendingEvent[],
+  h: EntityHierarchy = hierarchy,
+): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
   const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 

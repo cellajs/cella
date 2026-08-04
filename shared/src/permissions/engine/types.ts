@@ -1,6 +1,12 @@
-import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types';
-import type { PublicReadGrants } from '../public-read';
+import type {
+  ChannelEntityType,
+  EntityActionType,
+  EntityIdColumns,
+  EntityRole,
+  ProductEntityType,
+} from '../../../types';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
+import type { PublicReadGrants } from '../public-read';
 
 /** Database-shaped channel ID columns, such as `organizationId`. */
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;

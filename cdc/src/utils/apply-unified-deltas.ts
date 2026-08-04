@@ -1,8 +1,7 @@
-import { getTableName } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { getTableName, sql } from 'drizzle-orm';
 import format from 'pg-format';
+import type { EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
-import type { EntityHierarchy, } from 'shared';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
@@ -27,6 +26,7 @@ async function mergedUpsert(
   channelKey: string,
   deltas: Record<string, number>,
   returning?: boolean,
+  // biome-ignore lint/suspicious/noConfusingVoidType: void keeps this implementation compatible with the Promise<void> overload above
 ): Promise<Record<string, number> | void> {
   if (Object.keys(deltas).length === 0) return;
 
@@ -78,7 +78,10 @@ export function sumInto(
  * The first phase reserves WAL-ordered sequence ranges; the second writes ancestor frontiers,
  * remaining counts, and row sequence values.
  */
-export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: EntityHierarchy = hierarchy): Promise<void> {
+export async function applyBatchUnifiedDeltas(
+  plan: BatchUnifiedDeltaPlan,
+  h: EntityHierarchy = hierarchy,
+): Promise<void> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
@@ -89,11 +92,11 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: En
   // Phase 1: one sequential RETURNING UPSERT per organization sequence.
   for (const group of orgSequenceGroups) {
     // Merge the sequence reservation with any count deltas for the org row itself.
-    const mergedDeltas = sumInto({ 'sequence': group.count }, countDeltasByChannelKey.get(group.orgKey));
+    const mergedDeltas = sumInto({ sequence: group.count }, countDeltasByChannelKey.get(group.orgKey));
     handledChannelKeys.add(group.orgKey);
 
     const counts = await mergedUpsert(group.orgKey, mergedDeltas, true);
-    const highSeq = counts['sequence'] ?? group.count;
+    const highSeq = counts.sequence ?? group.count;
     const baseSeq = highSeq - group.count;
 
     for (let i = 0; i < group.events.length; i++) {
@@ -102,8 +105,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: En
       rowData.seq = seq;
       allProductStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-  // Roll each delta-fetchable stamped event into organization and populated-ancestor frontiers.
-  // Drafts are filtered, while unpublishes use unstamped delete invalidation.
+      // Roll each delta-fetchable stamped event into organization and populated-ancestor frontiers.
+      // Drafts are filtered, while unpublishes use unstamped delete invalidation.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const frontierKey = `e:f:${tableMeta.type}`;
       for (const node of nodes) {
@@ -120,7 +123,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: En
       orgKey: group.orgKey,
       count: group.count,
       baseSeq: baseSeq + 1,
-      highSeq });
+      highSeq,
+    });
   }
 
   // Phase 2: frontier marks + remaining count UPSERTs + bulk entity stamp, all in parallel.
@@ -146,12 +150,14 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: En
     for (const [tableName, stamps] of byTable) {
       const valuesList = stamps.map((s) => sql`(${s.id}::uuid, ${s.seq}::bigint)`);
       phase2.push(
-        cdcDb.execute(sql`
+        cdcDb
+          .execute(sql`
           UPDATE ${sql.raw(format('%I', tableName))} AS t
           SET seq = v.seq, stx = t.stx - 'changedFields'
           FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
           WHERE t.id = v.id
-        `).then(() => {}),
+        `)
+          .then(() => {}),
       );
     }
   }

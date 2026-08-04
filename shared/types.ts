@@ -1,4 +1,4 @@
-import { hierarchy, roles } from './config/config.default';
+import type { hierarchy, roles } from './config/config.default';
 import { appConfig } from './src/config-builder/app-config';
 
 // Entity types
@@ -91,9 +91,7 @@ export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEven
   );
   const [first, ...rest] = types;
   if (!first) {
-    throw new Error(
-      'FATAL: trackedEventTypes is empty. Config must declare at least one entity or resource type.',
-    );
+    throw new Error('FATAL: trackedEventTypes is empty. Config must declare at least one entity or resource type.');
   }
   return [first, ...rest];
 })();
@@ -165,9 +163,7 @@ export type RootChannelType = {
  * Related (non-ancestor) channel types declared for an entity via `relatedChannels`.
  * Example (Raak): `RelatedChannelType<'chat'>` → `'workspace' | 'project'`.
  */
-export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap
-  ? HierarchyRelatedMap[E]
-  : never;
+export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 
 /** Type-level map of each product to its nullable-ancestor union. */
 type HierarchyNullableMap = typeof hierarchy._nullableMap;

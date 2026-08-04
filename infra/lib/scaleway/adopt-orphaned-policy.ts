@@ -1,9 +1,9 @@
-import { spawnSync } from 'node:child_process'
-import { findPolicyIdByName } from './scaleway-iam'
-import { errorMessage } from '../utils/errors'
+import { spawnSync } from 'node:child_process';
+import { errorMessage } from '../utils/errors';
+import { findPolicyIdByName } from './scaleway-iam';
 
 /** Pulumi type token for `@pulumiverse/scaleway` IAM policies (`pulumi import`). */
-const POLICY_TYPE = 'scaleway:iam/policy:Policy'
+const POLICY_TYPE = 'scaleway:iam/policy:Policy';
 
 /**
  * Pure: does a `pulumi stack export` JSON already contain a resource of the
@@ -11,40 +11,40 @@ const POLICY_TYPE = 'scaleway:iam/policy:Policy'
  * (e.g. an uninitialised stack) is treated as "not present".
  */
 export function stackExportHasResource(stackExportJson: string, type: string, name: string): boolean {
-  let parsed: { deployment?: { resources?: Array<{ urn?: string; type?: string }> } }
+  let parsed: { deployment?: { resources?: Array<{ urn?: string; type?: string }> } };
   try {
-    parsed = JSON.parse(stackExportJson)
+    parsed = JSON.parse(stackExportJson);
   } catch {
-    return false
+    return false;
   }
   return (parsed.deployment?.resources ?? []).some(
     (r) => r.type === type && typeof r.urn === 'string' && r.urn.endsWith(`::${name}`),
-  )
+  );
 }
 
 export type AdoptOutcome =
   | 'in-state' // already managed by Pulumi; nothing to do
   | 'imported' // existed in Scaleway, now adopted into state
   | 'absent' // not in Scaleway either; `pulumi up` will create it
-  | 'unavailable' // could not query Scaleway IAM (skipped; up will report the real error)
+  | 'unavailable'; // could not query Scaleway IAM (skipped; up will report the real error)
 
 export interface AdoptOrphanedPolicyOptions {
   /** Fully-qualified Pulumi stack, e.g. `organization/infra/production`. */
-  stack: string
+  stack: string;
   /** Working directory containing the Pulumi program. */
-  cwd: string
+  cwd: string;
   /** Environment for the pulumi subprocesses (creds + passphrase). */
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv;
   /** Pulumi logical resource name, e.g. `vm-reader-policy`. */
-  pulumiName: string
+  pulumiName: string;
   /** Live Scaleway policy name, e.g. `<slug>-vm-reader-policy`. */
-  policyName: string
+  policyName: string;
   /** Bootstrap secret key (IAM read; the env creds provide state write). */
-  secretKey: string
+  secretKey: string;
   /** Organization the policy lives in. */
-  organizationId: string
+  organizationId: string;
   /** Injected for tests; defaults to console.info. */
-  log?: (msg: string) => void
+  log?: (msg: string) => void;
 }
 
 /**
@@ -53,37 +53,37 @@ export interface AdoptOrphanedPolicyOptions {
  * `pulumi up`.
  */
 export async function adoptOrphanedPolicy(opts: AdoptOrphanedPolicyOptions): Promise<AdoptOutcome> {
-  const log = opts.log ?? ((msg: string) => console.info(msg))
+  const log = opts.log ?? ((msg: string) => console.info(msg));
 
   // 1. Already in Pulumi state? Then `pulumi up` will reconcile it normally.
   const exported = spawnSync('pulumi', ['stack', 'export', '--stack', opts.stack], {
     cwd: opts.cwd,
     env: opts.env,
     encoding: 'utf8',
-  })
+  });
   if (exported.status === 0 && stackExportHasResource(exported.stdout, POLICY_TYPE, opts.pulumiName)) {
-    return 'in-state'
+    return 'in-state';
   }
 
   // 2. Does the policy already exist in Scaleway (the orphan we must adopt)?
-  let policyId: string | undefined
+  let policyId: string | undefined;
   try {
-    policyId = await findPolicyIdByName(opts.secretKey, opts.organizationId, opts.policyName)
+    policyId = await findPolicyIdByName(opts.secretKey, opts.organizationId, opts.policyName);
   } catch (error) {
-    log(`  (skipping policy adoption — could not query Scaleway IAM: ${errorMessage(error)})`)
-    return 'unavailable'
+    log(`  (skipping policy adoption — could not query Scaleway IAM: ${errorMessage(error)})`);
+    return 'unavailable';
   }
-  if (!policyId) return 'absent'
+  if (!policyId) return 'absent';
 
   // 3. Adopt it into state so the next `pulumi up` updates the existing policy.
-  log(`\n→ Adopting existing IAM policy ${opts.policyName} (${policyId}) into Pulumi state before \`pulumi up\``)
+  log(`\n→ Adopting existing IAM policy ${opts.policyName} (${policyId}) into Pulumi state before \`pulumi up\``);
   const imported = spawnSync(
     'pulumi',
     ['import', POLICY_TYPE, opts.pulumiName, policyId, '--stack', opts.stack, '--yes', '--non-interactive'],
     { cwd: opts.cwd, env: opts.env, stdio: 'inherit' },
-  )
+  );
   if (imported.status !== 0) {
-    throw new Error(`pulumi import of ${opts.pulumiName} (${policyId}) failed — adopt it manually then re-run.`)
+    throw new Error(`pulumi import of ${opts.pulumiName} (${policyId}) failed — adopt it manually then re-run.`);
   }
-  return 'imported'
+  return 'imported';
 }

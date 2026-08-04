@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { EntityType } from '../../types';
-import { wideEntityTypes, wideMembership, wideSubject, wideOverrides } from '../testing/wide-fixture';
-import { configurePermissions } from './policy-matrix';
+import { wideEntityTypes, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture';
 import { getAllDecisions } from './engine';
+import { configurePermissions } from './policy-matrix';
 import type { PolicyCallback } from './types';
 
 describe('missing policy rows', () => {

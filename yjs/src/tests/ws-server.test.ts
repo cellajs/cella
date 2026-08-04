@@ -1,9 +1,9 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
 import { MissingScopeError } from 'shared';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
-import { createSignedToken, createExpiredToken } from './helpers';
+import { createExpiredToken, createSignedToken } from './helpers';
 
 const { verifyToken } = await import('../server/auth');
 
@@ -43,8 +43,8 @@ beforeAll(async () => {
 
   wss = new WebSocketServer({ noServer: true });
 
-// Optimistic connect verifies the token and request identity locally, then accepts immediately.
-// Entity access is also decided without a backend round-trip.
+  // Optimistic connect verifies the token and request identity locally, then accepts immediately.
+  // Entity access is also decided without a backend round-trip.
   httpServer.on('upgrade', async (req, socket, head) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
@@ -123,7 +123,9 @@ afterAll(async () => {
 });
 
 /** Connect and wait for either a stable open connection, a close event, or an error. */
-function connectWs(path: string): Promise<{ ws: WsWebSocket; closeCode?: number; closeReason?: string; error?: Error }> {
+function connectWs(
+  path: string,
+): Promise<{ ws: WsWebSocket; closeCode?: number; closeReason?: string; error?: Error }> {
   return new Promise((resolve, reject) => {
     const ws = new WsWebSocket(`${baseUrl}${path}`);
     const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);

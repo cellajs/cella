@@ -1,4 +1,4 @@
-import { defineRuntimeSecrets } from '../lib/runtime-secrets'
+import { defineRuntimeSecrets } from '../lib/runtime-secrets';
 
 /**
  * App-owned mapping from runtime secrets to their consuming services.

@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import { log } from '../lib/pino';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
 import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
-import { log } from '../lib/pino';
 
 // `course` stays non-nullable so the missing-ancestor warning suite below can prove
 // that a null non-nullable ancestor still warns.
@@ -57,8 +57,7 @@ beforeEach(() => {
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
 describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
-  const activity = (organizationId: string | null = 'o1') =>
-    ({ organizationId }) as unknown as ActivityWithoutId;
+  const activity = (organizationId: string | null = 'o1') => ({ organizationId }) as unknown as ActivityWithoutId;
 
   it('full-depth row scopes to its project', () => {
     expect(resolveChannelKey('item', fullDepthRow, activity(), h)).toBe('p1');
@@ -108,7 +107,9 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
   });
 
   it('an org-less row fails the batch loudly instead of inventing a scope', () => {
-    expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(/organization ancestor/);
+    expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(
+      /organization ancestor/,
+    );
   });
 });
 
@@ -174,15 +175,29 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     );
     // Activity stamps land at each row's home context only; org and section stay stamp-free
     expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:item': 2 });
-    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:c:item': 2, 'e:c:h:item': 1, 'e:li:h:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({
+      'e:c:item': 2,
+      'e:c:h:item': 1,
+      'e:li:h:item': expect.any(Number),
+    });
     expect(plan.countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:item': 1 });
-    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({ 'e:c:item': 1, 'e:c:h:item': 1, 'e:li:h:item': expect.any(Number) });
+    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({
+      'e:c:item': 1,
+      'e:c:h:item': 1,
+      'e:li:h:item': expect.any(Number),
+    });
   });
 });
 
 describe('reparent updates re-credit the ancestor diff', () => {
   it('project→project move (same course): only the projects change, lu stamps the new home', () => {
-    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...fullDepthRow, projectId: 'p2' }, fullDepthRow, h);
+    const deltas = getCountDeltas(
+      itemMeta(),
+      itemActivity('update'),
+      { ...fullDepthRow, projectId: 'p2' },
+      fullDepthRow,
+      h,
+    );
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'p2', deltas: { 'e:c:item': 1 } },

@@ -1,46 +1,46 @@
-import { beforeAll, describe, expect, it } from 'vitest'
-import { installPulumiMocks } from '../../tests/helpers/pulumi-mock'
+import { beforeAll, describe, expect, it } from 'vitest';
+import { installPulumiMocks } from '../../tests/helpers/pulumi-mock';
 
 // Importing postgres-managed.ts pulls in the Pulumi resource graph (pulumi-context,
 // network) at module load, so prime the runtime mocks first. We only exercise the
 // pure DSN formatter; the provisioner's resources are created inside provision().
-let formatPostgresUrl: (user: string, pass: string, host: string, port: number | string, database: string) => string
+let formatPostgresUrl: (user: string, pass: string, host: string, port: number | string, database: string) => string;
 
 beforeAll(async () => {
   // `bootstrap:computeDeferred` disables the compute pin-guard so the module
   // imports without requiring pinned image tags.
-  await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } })
-  ;({ formatPostgresUrl } = await import('./postgres-managed'))
-})
+  await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } });
+  ({ formatPostgresUrl } = await import('./postgres-managed'));
+});
 
 describe('formatPostgresUrl', () => {
   it('assembles a DSN with host, port and database in place', () => {
     expect(formatPostgresUrl('admin', 'pw', 'db.internal', 5432, 'app')).toBe(
       'postgresql://admin:pw@db.internal:5432/app?sslmode=require&uselibpqcompat=true',
-    )
-  })
+    );
+  });
 
   it('always pins sslmode=require and uselibpqcompat=true', () => {
-    const url = formatPostgresUrl('u', 'p', 'h', 1234, 'd')
-    expect(url).toContain('?sslmode=require&uselibpqcompat=true')
-  })
+    const url = formatPostgresUrl('u', 'p', 'h', 1234, 'd');
+    expect(url).toContain('?sslmode=require&uselibpqcompat=true');
+  });
 
   it('accepts a string port', () => {
-    expect(formatPostgresUrl('u', 'p', 'h', '6432', 'd')).toContain('@h:6432/d')
-  })
+    expect(formatPostgresUrl('u', 'p', 'h', '6432', 'd')).toContain('@h:6432/d');
+  });
 
   it('percent-encodes credentials that contain URI metacharacters', () => {
-    const url = formatPostgresUrl('user@org', 'p@ss:w/rd?#&', 'h', 5432, 'd')
-    expect(url).toBe('postgresql://user%40org:p%40ss%3Aw%2Frd%3F%23%26@h:5432/d?sslmode=require&uselibpqcompat=true')
-  })
+    const url = formatPostgresUrl('user@org', 'p@ss:w/rd?#&', 'h', 5432, 'd');
+    expect(url).toBe('postgresql://user%40org:p%40ss%3Aw%2Frd%3F%23%26@h:5432/d?sslmode=require&uselibpqcompat=true');
+  });
 
   it('keeps a password with @ and : from breaking out of the userinfo segment', () => {
     // Authority must split into exactly userinfo + host:port. The encoded
     // password cannot inject a second `@` or `:` that re-parses the host.
-    const url = formatPostgresUrl('u', 'p@ss:bad@host', 'real-host', 5432, 'd')
-    const authority = url.slice('postgresql://'.length, url.indexOf('/d?'))
-    const [userinfo, hostport] = authority.split('@')
-    expect(hostport).toBe('real-host:5432')
-    expect(userinfo).toBe('u:p%40ss%3Abad%40host')
-  })
-})
+    const url = formatPostgresUrl('u', 'p@ss:bad@host', 'real-host', 5432, 'd');
+    const authority = url.slice('postgresql://'.length, url.indexOf('/d?'));
+    const [userinfo, hostport] = authority.split('@');
+    expect(hostport).toBe('real-host:5432');
+    expect(userinfo).toBe('u:p%40ss%3Abad%40host');
+  });
+});

@@ -1,14 +1,20 @@
-import { isMain } from '../lib/utils/is-main'
-import { controlContextForStack, emptyRollout, controlActor, readControlState, writeControlState } from '../lib/stack/control-store'
-import type { GenerationMetadata } from '../lib/generation-metadata'
-import { isRecord } from '../lib/utils/guards'
-import { tryStackOutputRaw } from '../lib/stack/run-pulumi'
-import { serviceNames } from '../lib/services'
-import type { ServiceName } from '../compose/compose'
-import { getFlag } from './args'
+import type { ServiceName } from '../compose/compose';
+import type { GenerationMetadata } from '../lib/generation-metadata';
+import { serviceNames } from '../lib/services';
+import {
+  controlActor,
+  controlContextForStack,
+  emptyRollout,
+  readControlState,
+  writeControlState,
+} from '../lib/stack/control-store';
+import { tryStackOutputRaw } from '../lib/stack/run-pulumi';
+import { isRecord } from '../lib/utils/guards';
+import { isMain } from '../lib/utils/is-main';
+import { getFlag } from './args';
 
 /** The subset of the generation metadata this task reads. */
-type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>
+type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>;
 
 /**
  * Validate the raw `computeGenerationMetadata` stack output before
@@ -16,36 +22,36 @@ type RolloutGeneration = Pick<GenerationMetadata, 'service' | 'genId' | 'sha'>
  * normalised to '' and filtered out by `seedCandidates`.
  */
 export function parseRolloutGenerations(raw: string): RolloutGeneration[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) throw new Error('sync-rollout-config: computeGenerationMetadata output is not an array')
-  const rows: RolloutGeneration[] = []
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) throw new Error('sync-rollout-config: computeGenerationMetadata output is not an array');
+  const rows: RolloutGeneration[] = [];
   for (const item of parsed) {
-    if (!isRecord(item)) continue
-    const { service, genId, sha } = item
-    if (typeof service !== 'string' || typeof sha !== 'string') continue
+    if (!isRecord(item)) continue;
+    const { service, genId, sha } = item;
+    if (typeof service !== 'string' || typeof sha !== 'string') continue;
     // Only rows for services the registry knows. A stale output row for a
     // removed service must not enter the control object.
-    if (!(serviceNames as readonly string[]).includes(service)) continue
-    rows.push({ service: service as ServiceName, sha, genId: typeof genId === 'string' ? genId : '' })
+    if (!(serviceNames as readonly string[]).includes(service)) continue;
+    rows.push({ service: service as ServiceName, sha, genId: typeof genId === 'string' ? genId : '' });
   }
-  return rows
+  return rows;
 }
 
 /** Deterministic pick when SEEDING a service that has no active pointer yet. On a
  *  first provision there is exactly one generation per service, so the choice is
  *  unambiguous; the genId sort only makes it stable if that ever changes. */
 export function selectGeneration(items: RolloutGeneration[]): RolloutGeneration {
-  return [...items].sort((a, b) => (a.genId < b.genId ? -1 : a.genId > b.genId ? 1 : 0))[0]!
+  return [...items].sort((a, b) => (a.genId < b.genId ? -1 : a.genId > b.genId ? 1 : 0))[0]!;
 }
 
 export function generationsByService(metadata: RolloutGeneration[]): Map<string, RolloutGeneration[]> {
-  const services = new Map<string, RolloutGeneration[]>()
+  const services = new Map<string, RolloutGeneration[]>();
   for (const item of metadata) {
-    const generations = services.get(item.service) ?? []
-    generations.push(item)
-    services.set(item.service, generations)
+    const generations = services.get(item.service) ?? [];
+    generations.push(item);
+    services.set(item.service, generations);
   }
-  return services
+  return services;
 }
 
 /**
@@ -54,30 +60,30 @@ export function generationsByService(metadata: RolloutGeneration[]): Map<string,
  * stack output and must NOT be seeded. Pure + unit-tested.
  */
 export function seedCandidates(metadata: RolloutGeneration[]): Map<string, RolloutGeneration> {
-  const valid = metadata.filter((item) => typeof item.genId === 'string' && item.genId.length > 0)
-  const byService = generationsByService(valid)
-  const seeds = new Map<string, RolloutGeneration>()
-  for (const [service, generations] of byService) seeds.set(service, selectGeneration(generations))
-  return seeds
+  const valid = metadata.filter((item) => typeof item.genId === 'string' && item.genId.length > 0);
+  const byService = generationsByService(valid);
+  const seeds = new Map<string, RolloutGeneration>();
+  for (const [service, generations] of byService) seeds.set(service, selectGeneration(generations));
+  return seeds;
 }
 
 export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<void> {
-  const stack = getFlag(argv, '--stack')
-  if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack>')
+  const stack = getFlag(argv, '--stack');
+  if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack>');
 
-  const rawMetadata = tryStackOutputRaw(stack, 'computeGenerationMetadata')
+  const rawMetadata = tryStackOutputRaw(stack, 'computeGenerationMetadata');
   if (!rawMetadata) {
-    console.info('[sync-rollout-config] no computeGenerationMetadata output yet; skipping')
-    return
+    console.info('[sync-rollout-config] no computeGenerationMetadata output yet; skipping');
+    return;
   }
 
-  const seeds = seedCandidates(parseRolloutGenerations(rawMetadata))
+  const seeds = seedCandidates(parseRolloutGenerations(rawMetadata));
   if (seeds.size === 0) {
-    console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed')
-    return
+    console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed');
+    return;
   }
 
-  await seedActivePointers(stack, seeds)
+  await seedActivePointers(stack, seeds);
 }
 
 /**
@@ -89,31 +95,33 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
  * is skipped entirely. Skipped (with a warning) when no S3 creds are present.
  */
 async function seedActivePointers(stack: string, seeds: Map<string, RolloutGeneration>): Promise<void> {
-  if (seeds.size === 0) return
-  const ctx = await controlContextForStack(stack, (msg) => console.warn(`[sync-rollout-config] ${msg}`))
-  if (!ctx) return
-  const { s3, bucket, controlKey: key } = ctx
-  const { state, etag } = await readControlState(s3, bucket, key)
+  if (seeds.size === 0) return;
+  const ctx = await controlContextForStack(stack, (msg) => console.warn(`[sync-rollout-config] ${msg}`));
+  if (!ctx) return;
+  const { s3, bucket, controlKey: key } = ctx;
+  const { state, etag } = await readControlState(s3, bucket, key);
 
-  let changed = false
+  let changed = false;
   for (const [svc, gen] of seeds) {
-    const current = state.rollout[svc] ?? emptyRollout()
+    const current = state.rollout[svc] ?? emptyRollout();
     // Do not seed over an existing active, nor while a deploy intent is pending:
     // the orchestrator promotes the pending generation after its health gate.
-    if (current.active || current.pendingSha) continue
-    const seq = current.seq + 1
-    state.rollout[svc] = { ...current, seq, active: { id: gen.genId, sha: gen.sha, seq } }
-    console.info(`[sync-rollout-config] seeded ${svc}: active gen=${gen.genId} sha=${gen.sha}`)
-    changed = true
+    if (current.active || current.pendingSha) continue;
+    const seq = current.seq + 1;
+    state.rollout[svc] = { ...current, seq, active: { id: gen.genId, sha: gen.sha, seq } };
+    console.info(`[sync-rollout-config] seeded ${svc}: active gen=${gen.genId} sha=${gen.sha}`);
+    changed = true;
   }
   if (!changed) {
-    console.info('[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed')
-    return
+    console.info(
+      '[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed',
+    );
+    return;
   }
-  state.updatedAt = new Date().toISOString()
-  state.updatedBy = controlActor()
-  await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {})
-  console.info('[sync-rollout-config] control object updated')
+  state.updatedAt = new Date().toISOString();
+  state.updatedBy = controlActor();
+  await writeControlState(s3, bucket, key, state, etag ? { ifMatch: etag } : {});
+  console.info('[sync-rollout-config] control object updated');
 }
 
-if (isMain(import.meta.url)) await syncRolloutConfig()
+if (isMain(import.meta.url)) await syncRolloutConfig();

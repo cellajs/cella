@@ -3,10 +3,9 @@ import { nonEmpty } from '../src/config-builder/utils';
 import { hierarchy } from './hierarchy-config';
 
 // Re-export for external consumers
-export { roles, hierarchy } from './hierarchy-config';
+export { hierarchy, roles } from './hierarchy-config';
 
 export const config = {
-
   // Entity data model, derived from the hierarchy: the builder in hierarchy-config.ts is the
   // single declaration of the entity taxonomy.
 
@@ -51,9 +50,7 @@ export const config = {
    * User menu structure of channel entities with optional nested subentities.
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
-  menuStructure: [
-    { entityType: 'organization', subentityType: null } as const,
-  ],
+  menuStructure: [{ entityType: 'organization', subentityType: null } as const],
 
   /** Default restrictions for tenants (entity quotas and rate limits) */
   defaultRestrictions: {

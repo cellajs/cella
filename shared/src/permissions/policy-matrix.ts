@@ -1,17 +1,17 @@
 import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
+import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
 import type { PublicReadGrants } from './public-read';
 import { isRowCondition } from './row-conditions';
 import type {
-  PolicyMatrix,
-  PolicyCallback,
-  PolicyConfiguration,
-  PolicyEntry,
   ChannelPolicyBuilder,
   EntityActionPermissions,
-  PolicyCellInput,
   EntityPolicies,
+  PolicyCallback,
+  PolicyCellInput,
+  PolicyConfiguration,
+  PolicyEntry,
+  PolicyMatrix,
 } from './types';
-import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
 
 /**
  * Creates a channel policy builder for fluent role-permission configuration.
@@ -22,7 +22,6 @@ const createChannelPolicyBuilder = (
   entries: PolicyEntry[],
   entityActions: readonly EntityActionType[],
 ): ChannelPolicyBuilder => {
-
   const builder: Record<string, (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => void> = {};
 
   for (const role of roles) {
@@ -37,7 +36,7 @@ const createChannelPolicyBuilder = (
         if (action === 'create' && isRowCondition(value)) {
           throw new Error(
             `[Permission] "${channelType}.${role}" uses a row condition ('${value}') on 'create', ` +
-              `which can never match: the row does not exist yet. Use 1 or 0 for create.`,
+              'which can never match: the row does not exist yet. Use 1 or 0 for create.',
           );
         }
         fullPermissions[action] = value;

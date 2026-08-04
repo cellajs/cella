@@ -1,4 +1,10 @@
 {
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "includes": [
       "backend/src/**",
@@ -9,10 +15,12 @@
       "frontend/storybook/**",
       "frontend/vite/**",
       "packages/data-grid/src/**",
+      "shared/**",
+      "cdc/src/**",
+      "yjs/src/**",
+      "mcp/src/**",
+      "infra/**",
       "bench/src/**",
-      "!bench/src/**/dist",
-      "!.kilo/worktrees/*",
-      "!.claude/worktrees/*",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",
@@ -174,11 +182,6 @@
                     "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
                     "invertImportNamePattern": true,
                     "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
-                  },
-                  {
-                    "group": ["lucide-react"],
-                    "importNamePattern": "(AlertCircle|AlertTriangle|ArrowRightSquare|CheckCircle|CheckSquare|Code2|FileAudio|FileVideo|FilterX|Fingerprint|Grab|HelpCircle|Home|Loader2|MessageCircleQuestion|MoreHorizontal|PlusCircle|Text|UploadCloud|User2|Users2|XCircle|XSquare)Icon",
-                    "message": "Deprecated lucide alias — import the modern name (e.g. LoaderCircleIcon, not Loader2Icon). Mapping: cella/migrations/2026-07-icon-conventions/deprecated-renames.json."
                   }
                 ]
               }
@@ -220,11 +223,6 @@
                     "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
                     "invertImportNamePattern": true,
                     "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
-                  },
-                  {
-                    "group": ["lucide-react"],
-                    "importNamePattern": "(AlertCircle|AlertTriangle|ArrowRightSquare|CheckCircle|CheckSquare|Code2|FileAudio|FileVideo|FilterX|Fingerprint|Grab|HelpCircle|Home|Loader2|MessageCircleQuestion|MoreHorizontal|PlusCircle|Text|UploadCloud|User2|Users2|XCircle|XSquare)Icon",
-                    "message": "Deprecated lucide alias — import the modern name (e.g. LoaderCircleIcon, not Loader2Icon). Mapping: cella/migrations/2026-07-icon-conventions/deprecated-renames.json."
                   }
                 ]
               }

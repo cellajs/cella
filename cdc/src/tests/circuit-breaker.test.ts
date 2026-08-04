@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-import { circuitBreaker } from '../services/circuit-breaker';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { log } from '../lib/pino';
+import { circuitBreaker } from '../services/circuit-breaker';
 
 // Access private state for reset between tests
 function resetCircuitBreaker() {

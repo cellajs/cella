@@ -1,11 +1,11 @@
-import type { ServiceRollout } from './stack/control-store'
+import type { ServiceRollout } from './stack/control-store';
 
 /** A content-addressed VM generation the stack provisions. */
 export interface Generation {
   /** Content-addressed generation id (resource suffix). */
-  id: string
+  id: string;
   /** Image SHA baked into this generation. */
-  sha: string
+  sha: string;
   /**
    * True for the generation already live in the control state (its VM exists and
    * carries `ignoreChanges` on cloud-init and image). A newly rolling generation
@@ -13,14 +13,14 @@ export interface Generation {
    * rolling generations; a pre-existing one keeps running on its own booted image
    * even when that image is no longer resolvable in the registry.
    */
-  preexisting?: boolean
+  preexisting?: boolean;
 }
 
 export interface SelectGenerationsOptions {
   /** Replacement strategy: an exclusive service provisions one VM at a time. */
-  exclusive: boolean
+  exclusive: boolean;
   /** Content-addressed id for a sha under the service's current fingerprint. */
-  genIdFor: (sha: string) => string
+  genIdFor: (sha: string) => string;
 }
 
 /**
@@ -30,37 +30,41 @@ export interface SelectGenerationsOptions {
  * and redeploy. Pure over the control entry; unit-tested in isolation.
  */
 export function selectGenerations(entry: ServiceRollout | undefined, opts: SelectGenerationsOptions): Generation[] {
-  const activeRef = entry?.active
-  const pending: Generation | undefined = entry?.pendingSha ? { id: opts.genIdFor(entry.pendingSha), sha: entry.pendingSha } : undefined
-  const active: Generation | undefined = activeRef ? { id: activeRef.id, sha: activeRef.sha, preexisting: true } : undefined
+  const activeRef = entry?.active;
+  const pending: Generation | undefined = entry?.pendingSha
+    ? { id: opts.genIdFor(entry.pendingSha), sha: entry.pendingSha }
+    : undefined;
+  const active: Generation | undefined = activeRef
+    ? { id: activeRef.id, sha: activeRef.sha, preexisting: true }
+    : undefined;
 
-  const generations: Generation[] = []
-  const seen = new Set<string>()
+  const generations: Generation[] = [];
+  const seen = new Set<string>();
   const add = (g?: Generation) => {
     if (g && !seen.has(g.id)) {
-      seen.add(g.id)
-      generations.push(g)
+      seen.add(g.id);
+      generations.push(g);
     }
-  }
+  };
 
   // First provision, before any deploy initializes the control object: a single
   // default generation.
   const fallback = () => {
-    if (generations.length === 0) add({ id: opts.genIdFor('latest'), sha: 'latest' })
-  }
+    if (generations.length === 0) add({ id: opts.genIdFor('latest'), sha: 'latest' });
+  };
 
   // Provision only the selected generation for exclusive services such as CDC:
   // the replacement happens within one stack update, never as an overlap.
   if (opts.exclusive) {
-    add(pending ?? active)
-    fallback()
-    return generations
+    add(pending ?? active);
+    fallback();
+    return generations;
   }
 
   // Live binding target first: the active generation, or the pending one on a
   // first deploy that has no active yet.
-  add(active ?? pending)
-  add(pending)
-  fallback()
-  return generations
+  add(active ?? pending);
+  add(pending);
+  fallback();
+  return generations;
 }

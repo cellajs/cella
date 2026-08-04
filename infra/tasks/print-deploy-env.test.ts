@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { deployedServices, serviceNames } from '../lib/services'
-import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions'
-import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
-import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env'
+import { describe, expect, it } from 'vitest';
+import {
+  BACKEND_S3_PERMISSION_SETS,
+  BOOT_PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from '../lib/scaleway/permissions';
+import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret';
+import { deployedServices, serviceNames } from '../lib/services';
+import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 
 const fakeAppConfig = {
   slug: 'cella',
@@ -22,13 +26,13 @@ const fakeAppConfig = {
   },
   securityEmail: 'security@cella.example',
   // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
-} as any
+} as any;
 
 describe('buildDeployEnv', () => {
   it('returns exactly the allowlist of keys (no widening)', () => {
-    const out = buildDeployEnv(fakeAppConfig)
-    expect(Object.keys(out).sort()).toEqual([...ALLOWED_KEYS].sort())
-  })
+    const out = buildDeployEnv(fakeAppConfig);
+    expect(Object.keys(out).sort()).toEqual([...ALLOWED_KEYS].sort());
+  });
 
   it('derives values from appConfig', () => {
     expect(buildDeployEnv(fakeAppConfig)).toEqual({
@@ -47,7 +51,11 @@ describe('buildDeployEnv', () => {
           sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
           condition: serviceKeyCondition('cella', 'production', svc.slug),
         })),
-        { app: 'cella-production-boot', sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS], condition: bootKeyCondition('cella', 'production') },
+        {
+          app: 'cella-production-boot',
+          sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
+          condition: bootKeyCondition('cella', 'production'),
+        },
       ]),
       enabled_services_json: JSON.stringify([
         {
@@ -88,17 +96,17 @@ describe('buildDeployEnv', () => {
         { service: 'cdc', health_url: '' },
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
-    })
-  })
+    });
+  });
 
   it('strips hyphens from registry_ns', () => {
-    const cfg = { ...fakeAppConfig, slug: 'my-cool-app' }
-    expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp')
-  })
+    const cfg = { ...fakeAppConfig, slug: 'my-cool-app' };
+    expect(buildDeployEnv(cfg).registry_ns).toBe('mycoolapp');
+  });
 
   it('emits the supplied image tag', () => {
-    expect(buildDeployEnv(fakeAppConfig, { imageTag: 'abc123' }).image_tag).toBe('abc123')
-  })
+    expect(buildDeployEnv(fakeAppConfig, { imageTag: 'abc123' }).image_tag).toBe('abc123');
+  });
 
   it('derives public URLs in enabled_services_json from appConfig.services', () => {
     const cfg = {
@@ -110,34 +118,36 @@ describe('buildDeployEnv', () => {
         frontend: { enabled: true, publicUrl: 'https://service-front.example' },
         backend: { enabled: true, publicUrl: 'https://service-api.example' },
       },
-    }
-    const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[]
-    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://service-front.example')
-    expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example')
-  })
+    };
+    const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[];
+    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe(
+      'https://service-front.example',
+    );
+    expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example');
+  });
 
   it('no emitted value contains a secret-shaped substring', () => {
     // The output is piped into $GITHUB_OUTPUT and rendered in logs; any token,
     // key or password leaking through would be visible.
-    const SECRET_PATTERN = /(SCW|sk_|api_key|bearer\s|password=|secret=)/i
+    const SECRET_PATTERN = /(SCW|sk_|api_key|bearer\s|password=|secret=)/i;
     for (const v of Object.values(buildDeployEnv(fakeAppConfig))) {
-      expect(v, `value "${v}"`).not.toMatch(SECRET_PATTERN)
+      expect(v, `value "${v}"`).not.toMatch(SECRET_PATTERN);
     }
-  })
-})
+  });
+});
 
 describe('isAllowedProductionRef', () => {
   it('allows main', () => {
-    expect(isAllowedProductionRef('refs/heads/main')).toBe(true)
-  })
+    expect(isAllowedProductionRef('refs/heads/main')).toBe(true);
+  });
 
   it('allows release tags (release-triggered deploys run on the tag ref)', () => {
-    expect(isAllowedProductionRef('refs/tags/0.0.2')).toBe(true)
-    expect(isAllowedProductionRef('refs/tags/1.2.3')).toBe(true)
-  })
+    expect(isAllowedProductionRef('refs/tags/0.0.2')).toBe(true);
+    expect(isAllowedProductionRef('refs/tags/1.2.3')).toBe(true);
+  });
 
   it('rejects feature branches', () => {
-    expect(isAllowedProductionRef('refs/heads/feat/foo')).toBe(false)
-    expect(isAllowedProductionRef('refs/heads/develop')).toBe(false)
-  })
-})
+    expect(isAllowedProductionRef('refs/heads/feat/foo')).toBe(false);
+    expect(isAllowedProductionRef('refs/heads/develop')).toBe(false);
+  });
+});

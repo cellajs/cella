@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { snakeToCamel } from '../utils/snake-to-camel';
+import { actionToVerb } from 'shared';
+import { describe, expect, it } from 'vitest';
 import { convertRowKeys } from '../utils/convert-row-keys';
-import { getChangedFields } from '../utils/get-changed-fields';
 import { extractRowData } from '../utils/extract-row-data';
 import { extractStxData } from '../utils/extract-stx-data';
-import { actionToVerb } from 'shared';
+import { getChangedFields } from '../utils/get-changed-fields';
+import { snakeToCamel } from '../utils/snake-to-camel';
 
 describe('snakeToCamel', () => {
   it('should convert snake_case to camelCase', () => {

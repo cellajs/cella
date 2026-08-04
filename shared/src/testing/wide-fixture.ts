@@ -1,15 +1,15 @@
-import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
 import type { EntityActionType, EntityType } from '../../types';
+import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
 import {
-  type PolicyMatrix,
-  type PolicyCallback,
+  type AccessMembership,
   type CanState,
   computeCan,
   configurePermissions,
-  type AccessMembership,
-  type PermissionsConfigResult,
   type HierarchyOverrides,
+  type PermissionsConfigResult,
+  type PolicyCallback,
   type PolicyCellInput,
+  type PolicyMatrix,
   type PublicReadGrants,
   type SubjectForPermission,
 } from '../permissions';
@@ -68,11 +68,8 @@ export const configureWidePermissions = (callback: WidePolicyCallback): Permissi
   );
 
 /** Build a membership over a wide channel. */
-export const wideMembership = (
-  channelType: WideChannelType,
-  channelId: string,
-  role: WideRole,
-): AccessMembership => ({ channelType, channelId, role }) as unknown as AccessMembership;
+export const wideMembership = (channelType: WideChannelType, channelId: string, role: WideRole): AccessMembership =>
+  ({ channelType, channelId, role }) as unknown as AccessMembership;
 
 /** Build a subject over a wide entity. */
 export const wideSubject = (input: {

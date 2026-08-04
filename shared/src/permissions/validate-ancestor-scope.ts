@@ -1,7 +1,7 @@
-import { appConfig } from '../config-builder/app-config';
 import { hierarchy } from '../../config/hierarchy-config';
-import { MissingScopeError } from './missing-scope-error';
+import { appConfig } from '../config-builder/app-config';
 import type { SubjectForPermission } from './engine/types';
+import { MissingScopeError } from './missing-scope-error';
 
 /**
  * Validates that every ancestor ID is present. `null` marks an unused ancestor; `undefined`

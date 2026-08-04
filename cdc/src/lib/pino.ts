@@ -13,4 +13,3 @@ const logger = createLogger({
 });
 
 export const log = createLog(logger);
-

@@ -1,70 +1,70 @@
-import { describe, expect, it } from 'vitest'
-import { fakeConfig } from '../tests/helpers/fake-config'
-import { serviceEndpoints } from './services'
-import { deriveInfra, frontendApexIssue } from './naming'
+import { describe, expect, it } from 'vitest';
+import { fakeConfig } from '../tests/helpers/fake-config';
+import { deriveInfra, frontendApexIssue } from './naming';
+import { serviceEndpoints } from './services';
 
 describe('deriveInfra', () => {
   it('derives stable naming for the canonical production config', () => {
-    const d = deriveInfra(fakeConfig())
-    expect(d.naming.prefix).toBe('cella')
-    expect(d.naming.frontendBucket).toBe('cella-frontend')
-    expect(d.naming.publicBucket).toBe('cella-public')
-    expect(d.naming.privateBucket).toBe('cella-private')
-    expect(d.naming.pulumiStateBucket).toBe('cella-pulumi-state')
-    expect(d.naming.bootDiagBucket).toBe('cella-boot-diag')
-    expect(d.naming.resource('lb')).toBe('cella-lb')
-  })
+    const d = deriveInfra(fakeConfig());
+    expect(d.naming.prefix).toBe('cella');
+    expect(d.naming.frontendBucket).toBe('cella-frontend');
+    expect(d.naming.publicBucket).toBe('cella-public');
+    expect(d.naming.privateBucket).toBe('cella-private');
+    expect(d.naming.pulumiStateBucket).toBe('cella-pulumi-state');
+    expect(d.naming.bootDiagBucket).toBe('cella-boot-diag');
+    expect(d.naming.resource('lb')).toBe('cella-lb');
+  });
 
   it('registryNamespace strips hyphens (Scaleway constraint)', () => {
-    expect(deriveInfra(fakeConfig({ slug: 'my-cool-app' })).naming.registryNamespace).toBe('mycoolapp')
-  })
+    expect(deriveInfra(fakeConfig({ slug: 'my-cool-app' })).naming.registryNamespace).toBe('mycoolapp');
+  });
 
   it('dbName replaces hyphens with underscores (PostgreSQL identifier constraint)', () => {
-    expect(deriveInfra(fakeConfig()).naming.dbName).toBe('cella')
-    expect(deriveInfra(fakeConfig({ slug: 'cella-staging' })).naming.dbName).toBe('cella_staging')
-  })
+    expect(deriveInfra(fakeConfig()).naming.dbName).toBe('cella');
+    expect(deriveInfra(fakeConfig({ slug: 'cella-staging' })).naming.dbName).toBe('cella_staging');
+  });
 
   it('dbName is the single source for the logical database name', () => {
     // The create and reset paths share this name to prevent the reset from
     // addressing the wrong database or creating a second one.
-    const derived = deriveInfra(fakeConfig({ slug: 'my-cool-app' }))
-    expect(derived.naming.dbName).toBe('my_cool_app')
-    expect(derived.naming.dbName).not.toContain('-')
-    expect(derived.naming.resource('postgres')).toBe('my-cool-app-postgres')
-  })
+    const derived = deriveInfra(fakeConfig({ slug: 'my-cool-app' }));
+    expect(derived.naming.dbName).toBe('my_cool_app');
+    expect(derived.naming.dbName).not.toContain('-');
+    expect(derived.naming.resource('postgres')).toBe('my-cool-app-postgres');
+  });
 
   it('all bucket names are unique within a stack', () => {
-    const d = deriveInfra(fakeConfig())
+    const d = deriveInfra(fakeConfig());
     const names = [
       d.naming.frontendBucket,
       d.naming.publicBucket,
       d.naming.privateBucket,
       d.naming.pulumiStateBucket,
       d.naming.bootDiagBucket,
-    ]
-    expect(new Set(names).size).toBe(names.length)
-  })
+    ];
+    expect(new Set(names).size).toBe(names.length);
+  });
 
   it('exposes the DNS zone', () => {
-    expect(deriveInfra(fakeConfig()).dnsZone).toBe('cellajs.com')
-  })
+    expect(deriveInfra(fakeConfig()).dnsZone).toBe('cellajs.com');
+  });
 
   it('derives every public service host from the registry (same-origin: all on the app host)', () => {
-    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.host]))
-    expect(bySlug.get('frontend')).toBe('www.cellajs.com')
-    expect(bySlug.get('backend')).toBe('www.cellajs.com')
-    expect(bySlug.get('yjs')).toBe('www.cellajs.com')
-    expect(bySlug.get('mcp')).toBe('www.cellajs.com')
+    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.host]));
+    expect(bySlug.get('frontend')).toBe('www.cellajs.com');
+    expect(bySlug.get('backend')).toBe('www.cellajs.com');
+    expect(bySlug.get('yjs')).toBe('www.cellajs.com');
+    expect(bySlug.get('mcp')).toBe('www.cellajs.com');
     // cdc is internal-only (no lbRoute) → no endpoint
-    expect(bySlug.has('cdc')).toBe(false)
-  })
+    expect(bySlug.has('cdc')).toBe(false);
+  });
 
   it('path-routed endpoints keep their prefix in the URL', () => {
-    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.url]))
-    expect(bySlug.get('backend')).toBe('https://www.cellajs.com/api')
-    expect(bySlug.get('yjs')).toBe('wss://www.cellajs.com/yjs')
-    expect(bySlug.get('mcp')).toBe('https://www.cellajs.com/mcp')
-  })
+    const bySlug = new Map(serviceEndpoints(fakeConfig()).map((e) => [e.slug, e.url]));
+    expect(bySlug.get('backend')).toBe('https://www.cellajs.com/api');
+    expect(bySlug.get('yjs')).toBe('wss://www.cellajs.com/yjs');
+    expect(bySlug.get('mcp')).toBe('https://www.cellajs.com/mcp');
+  });
 
   it('hasDomain is false for localhost', () => {
     const d = deriveInfra(
@@ -73,40 +73,40 @@ describe('deriveInfra', () => {
         frontendUrl: 'http://localhost:3000',
         backendUrl: 'http://localhost:4000',
       }),
-    )
-    expect(d.hasDomain).toBe(false)
-  })
+    );
+    expect(d.hasDomain).toBe(false);
+  });
 
   it('mode flags reflect appConfig.mode', () => {
-    const dev = deriveInfra(fakeConfig({ mode: 'development' }))
-    expect(dev.isProduction).toBe(false)
+    const dev = deriveInfra(fakeConfig({ mode: 'development' }));
+    expect(dev.isProduction).toBe(false);
 
-    const prod = deriveInfra(fakeConfig({ mode: 'production' }))
-    expect(prod.isProduction).toBe(true)
-  })
+    const prod = deriveInfra(fakeConfig({ mode: 'production' }));
+    expect(prod.isProduction).toBe(true);
+  });
 
   it('tags always include env/app/managed-by', () => {
-    const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }))
-    expect(d.tags).toEqual(['env=staging', 'app=cella', 'managed-by=pulumi'])
-  })
+    const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }));
+    expect(d.tags).toEqual(['env=staging', 'app=cella', 'managed-by=pulumi']);
+  });
 
   it('tagsAsMap carries the same tags as real key→value pairs', () => {
-    const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }))
-    expect(d.tagsAsMap).toEqual({ env: 'staging', app: 'cella', 'managed-by': 'pulumi' })
+    const d = deriveInfra(fakeConfig({ slug: 'cella', mode: 'staging' }));
+    expect(d.tagsAsMap).toEqual({ env: 'staging', app: 'cella', 'managed-by': 'pulumi' });
     // Guard against the historic `split(':')` bug: no key may embed `=`,
     // and no value may be undefined.
     for (const [key, value] of Object.entries(d.tagsAsMap)) {
-      expect(key).not.toContain('=')
-      expect(value).toBeTypeOf('string')
+      expect(key).not.toContain('=');
+      expect(value).toBeTypeOf('string');
     }
-  })
+  });
 
   it('region and zone are consistent (zone = region-1)', () => {
-    const d = deriveInfra(fakeConfig())
-    expect(d.region).toBe('nl-ams')
-    expect(d.zone).toBe('nl-ams-1')
-  })
-})
+    const d = deriveInfra(fakeConfig());
+    expect(d.region).toBe('nl-ams');
+    expect(d.zone).toBe('nl-ams-1');
+  });
+});
 
 describe('frontendApexIssue', () => {
   const apexServices = {
@@ -115,21 +115,23 @@ describe('frontendApexIssue', () => {
     cdc: { enabled: true },
     yjs: { enabled: false, publicUrl: 'https://yjs.cellajs.com' },
     mcp: { enabled: false, publicUrl: 'https://mcp.cellajs.com' },
-  }
+  };
 
   it('deriveInfra rejects an apex-hosted frontend with an actionable error', () => {
-    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/zone apex/)
-    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/www\.cellajs\.com/)
-  })
+    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/zone apex/);
+    expect(() => deriveInfra(fakeConfig({ services: apexServices }))).toThrow(/www\.cellajs\.com/);
+  });
 
   it('is silent for a subdomain frontend (the canonical config)', () => {
-    expect(frontendApexIssue(fakeConfig())).toBeUndefined()
-  })
+    expect(frontendApexIssue(fakeConfig())).toBeUndefined();
+  });
 
   it('is silent without a real domain (dev/test) and for a disabled frontend', () => {
-    expect(frontendApexIssue(fakeConfig({ domain: 'localhost', services: apexServices }))).toBeUndefined()
+    expect(frontendApexIssue(fakeConfig({ domain: 'localhost', services: apexServices }))).toBeUndefined();
     expect(
-      frontendApexIssue(fakeConfig({ services: { ...apexServices, frontend: { enabled: false, publicUrl: 'https://cellajs.com' } } })),
-    ).toBeUndefined()
-  })
-})
+      frontendApexIssue(
+        fakeConfig({ services: { ...apexServices, frontend: { enabled: false, publicUrl: 'https://cellajs.com' } } }),
+      ),
+    ).toBeUndefined();
+  });
+});

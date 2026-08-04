@@ -1,17 +1,20 @@
 import type pg from 'pg';
-import { asRecord } from 'shared/utils/as-record';
-import { isChannel, isProduct,
+import {
+  type AccessMembership,
   appConfig,
   buildSubject,
-  checkAccess,
-  type ChannelIdColumns,
   type ChannelEntityType,
+  type ChannelIdColumns,
+  checkAccess,
   draftVisibleTo,
   hierarchy,
-  type AccessMembership,
+  isChannel,
+  isProduct,
   type ProductEntityType,
   toColumnName,
-  toTableName } from 'shared';
+  toTableName,
+} from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import type { DocContext } from '../constants';
 import { withClient } from './db';
 
@@ -99,10 +102,9 @@ export async function resolveEntityScope(
   const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
 
   const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
-  const { rows } = await client.query<EntityScopeRow>(
-    `SELECT ${projection} FROM "${table}" WHERE "id" = $1 LIMIT 1`,
-    [entityId],
-  );
+  const { rows } = await client.query<EntityScopeRow>(`SELECT ${projection} FROM "${table}" WHERE "id" = $1 LIMIT 1`, [
+    entityId,
+  ]);
   return rows[0] ?? null;
 }
 
@@ -140,7 +142,8 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
       id: entity.id,
       createdBy,
       // The row itself: without it, every row-derived grant ('own', public read) fails closed.
-      row: asRecord(entity) });
+      row: asRecord(entity),
+    });
 
     // Collaborative editing confers no system-admin bypass. The same stance the backend's
     // materialize endpoint takes, so the relay and the write it triggers agree.

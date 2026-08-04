@@ -1,8 +1,8 @@
-import type { FetchLike } from '../utils/fetch-like'
-import { resolveImageDigest } from './registry-digest'
+import type { FetchLike } from '../utils/fetch-like';
+import { resolveImageDigest } from './registry-digest';
 
 /** Current boot runner image repository name (the tag built in tasks/build-images.ts and CI). */
-export const BOOT_IMAGE_NAME = 'infra-boot'
+export const BOOT_IMAGE_NAME = 'infra-boot';
 
 /**
  * Boot runner image names used before the 2026-07 `cella-boot` to `infra-boot`
@@ -14,26 +14,26 @@ export const BOOT_IMAGE_NAME = 'infra-boot'
  * still plan (and pin) pre-rename generations. Removable once no live generation
  * predates the rename, which is one successful deploy per environment.
  */
-export const LEGACY_BOOT_IMAGE_NAMES = ['cella-boot'] as const
+export const LEGACY_BOOT_IMAGE_NAMES = ['cella-boot'] as const;
 
 /** The boot image name a generation's sha resolved under, with its manifest digest. */
 export interface ResolvedBootImage {
-  image: string
-  digest: string
+  image: string;
+  digest: string;
 }
 
 export interface ResolveBootImageOptions {
   /** Registry endpoint including namespace, e.g. `rg.nl-ams.scw.cloud/mynamespace`. */
-  registry: string
+  registry: string;
   /** Release sha (the boot image tag for this generation). */
-  releaseSha: string
+  releaseSha: string;
   /** Scaleway secret key; registry basic auth is `nologin:<secret>`. */
-  secretKey: string
-  fetchImpl?: FetchLike
+  secretKey: string;
+  fetchImpl?: FetchLike;
 }
 
 function statusOf(err: unknown): number | undefined {
-  return (err as { status?: number } | null)?.status
+  return (err as { status?: number } | null)?.status;
 }
 
 /**
@@ -45,18 +45,18 @@ function statusOf(err: unknown): number | undefined {
  * error for the current name is rethrown so the message names the current image.
  */
 export async function resolveBootImage(opts: ResolveBootImageOptions): Promise<ResolvedBootImage> {
-  const { registry, releaseSha, secretKey, fetchImpl } = opts
-  let primaryError: unknown
+  const { registry, releaseSha, secretKey, fetchImpl } = opts;
+  let primaryError: unknown;
   for (const image of [BOOT_IMAGE_NAME, ...LEGACY_BOOT_IMAGE_NAMES]) {
     try {
-      const digest = await resolveImageDigest({ registry, image, tag: releaseSha, secretKey, fetchImpl })
-      return { image, digest }
+      const digest = await resolveImageDigest({ registry, image, tag: releaseSha, secretKey, fetchImpl });
+      return { image, digest };
     } catch (err) {
-      if (image === BOOT_IMAGE_NAME) primaryError = err
+      if (image === BOOT_IMAGE_NAME) primaryError = err;
       // Only a not-found justifies trying an older name; anything else is a real
       // failure that a legacy lookup would hit too.
-      if (statusOf(err) !== 404) throw err
+      if (statusOf(err) !== 404) throw err;
     }
   }
-  throw primaryError ?? new Error(`No boot image manifest for ${BOOT_IMAGE_NAME}:${releaseSha} in ${registry}.`)
+  throw primaryError ?? new Error(`No boot image manifest for ${BOOT_IMAGE_NAME}:${releaseSha} in ${registry}.`);
 }

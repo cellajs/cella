@@ -1,19 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
-import { manageRuntimeSecrets } from './manage-runtime-secrets'
+import { describe, expect, it, vi } from 'vitest';
+import { manageRuntimeSecrets } from './manage-runtime-secrets';
 
 const prompts = {
   select: vi.fn(),
   password: vi.fn(),
   confirm: vi.fn(),
-}
+};
 
-const listSecrets = vi.fn()
-const listSecretsUnder = vi.fn()
-const getSecretByName = vi.fn()
-const ensureSecret = vi.fn()
-const putSecretValue = vi.fn()
-const deleteSecret = vi.fn()
-const provisionManagedKey = vi.fn()
+const listSecrets = vi.fn();
+const listSecretsUnder = vi.fn();
+const getSecretByName = vi.fn();
+const ensureSecret = vi.fn();
+const putSecretValue = vi.fn();
+const deleteSecret = vi.fn();
+const provisionManagedKey = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
   createSecretManagerClient: () => ({
@@ -24,23 +24,23 @@ vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
     putSecretValue,
     deleteSecret,
   }),
-}))
+}));
 
 vi.mock('./provision-managed-key', () => ({
   provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args),
-}))
+}));
 
 function resetMocks() {
-  prompts.select.mockReset()
-  prompts.password.mockReset()
-  prompts.confirm.mockReset()
-  listSecrets.mockReset()
-  listSecretsUnder.mockReset()
-  getSecretByName.mockReset()
-  ensureSecret.mockReset()
-  putSecretValue.mockReset()
-  deleteSecret.mockReset()
-  provisionManagedKey.mockReset()
+  prompts.select.mockReset();
+  prompts.password.mockReset();
+  prompts.confirm.mockReset();
+  listSecrets.mockReset();
+  listSecretsUnder.mockReset();
+  getSecretByName.mockReset();
+  ensureSecret.mockReset();
+  putSecretValue.mockReset();
+  deleteSecret.mockReset();
+  provisionManagedKey.mockReset();
 }
 
 const baseOptions = {
@@ -52,101 +52,114 @@ const baseOptions = {
   path: '/demo-production/',
   prompts,
   log: vi.fn(),
-}
+};
 
 describe('manageRuntimeSecrets', () => {
   it('lists operator-managed secrets and reports presence', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit')
+    resetMocks();
+    prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit');
     // brevo-api-key has a version (content) → present; github-client-id exists as an
     // empty container (0 versions) → empty, not present. Everything else is missing.
     listSecretsUnder.mockResolvedValueOnce([
       { name: 'brevo-api-key', id: 'secret-1', version_count: 1 },
       { name: 'github-client-id', id: 'secret-2', version_count: 0 },
-    ])
+    ]);
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
-    expect(listSecretsUnder).toHaveBeenCalledWith('/demo-production/')
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'))
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/))
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/))
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'))
-  })
+    expect(listSecretsUnder).toHaveBeenCalledWith('/demo-production/');
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Runtime secrets'));
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/brevo-api-key.*present/));
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringMatching(/github-client-id.*empty/));
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'));
+  });
 
   it('updates an existing operator-managed secret', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit')
-    prompts.password.mockResolvedValueOnce('new-api-key')
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' })
-    putSecretValue.mockResolvedValueOnce({ revision: 7, secret_id: 'secret-2' })
+    resetMocks();
+    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
+    prompts.password.mockResolvedValueOnce('new-api-key');
+    getSecretByName.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' });
+    putSecretValue.mockResolvedValueOnce({ revision: 7, secret_id: 'secret-2' });
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
-    expect(ensureSecret).not.toHaveBeenCalled()
-    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }))
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'))
-  })
+    expect(ensureSecret).not.toHaveBeenCalled();
+    expect(putSecretValue).toHaveBeenCalledWith(
+      expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }),
+    );
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'));
+  });
 
   it('refuses to create a missing container and tells the operator to deploy first', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit')
-    getSecretByName.mockResolvedValueOnce(undefined)
+    resetMocks();
+    prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
+    getSecretByName.mockResolvedValueOnce(undefined);
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
     // Creating the container out-of-band would make the next `pulumi up` 409.
-    expect(ensureSecret).not.toHaveBeenCalled()
-    expect(putSecretValue).not.toHaveBeenCalled()
-    expect(prompts.password).not.toHaveBeenCalled()
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deploy first'))
-  })
+    expect(ensureSecret).not.toHaveBeenCalled();
+    expect(putSecretValue).not.toHaveBeenCalled();
+    expect(prompts.password).not.toHaveBeenCalled();
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deploy first'));
+  });
 
   it('deletes an entire secret object only after confirmation', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('exit')
-    prompts.confirm.mockResolvedValueOnce(true)
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-3', name: 'github-client-secret' })
+    resetMocks();
+    prompts.select
+      .mockResolvedValueOnce('delete')
+      .mockResolvedValueOnce('githubClientSecret')
+      .mockResolvedValueOnce('exit');
+    prompts.confirm.mockResolvedValueOnce(true);
+    getSecretByName.mockResolvedValueOnce({ id: 'secret-3', name: 'github-client-secret' });
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
-    expect(deleteSecret).toHaveBeenCalledWith('secret-3')
-  })
+    expect(deleteSecret).toHaveBeenCalledWith('secret-3');
+  });
 
   it('cancels deletion when confirmation is declined', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientId').mockResolvedValueOnce('exit')
-    prompts.confirm.mockResolvedValueOnce(false)
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-4', name: 'github-client-id' })
+    resetMocks();
+    prompts.select
+      .mockResolvedValueOnce('delete')
+      .mockResolvedValueOnce('githubClientId')
+      .mockResolvedValueOnce('exit');
+    prompts.confirm.mockResolvedValueOnce(false);
+    getSecretByName.mockResolvedValueOnce({ id: 'secret-4', name: 'github-client-id' });
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
-    expect(deleteSecret).not.toHaveBeenCalled()
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deletion cancelled'))
-  })
+    expect(deleteSecret).not.toHaveBeenCalled();
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Deletion cancelled'));
+  });
 
   it('mints a managed key after confirmation, passing the caller identity through', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit')
-    prompts.confirm.mockResolvedValueOnce(true)
-    provisionManagedKey.mockResolvedValueOnce({ applicationId: 'app-ai', seeded: { 'scw-ai-api-key': 1 } })
+    resetMocks();
+    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit');
+    prompts.confirm.mockResolvedValueOnce(true);
+    provisionManagedKey.mockResolvedValueOnce({ applicationId: 'app-ai', seeded: { 'scw-ai-api-key': 1 } });
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
     expect(provisionManagedKey).toHaveBeenCalledWith(
-      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo', path: '/demo-production/' }),
-    )
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'))
-  })
+      expect.objectContaining({
+        callerSecretKey: 'caller-secret',
+        projectId: 'proj-1',
+        slug: 'demo',
+        path: '/demo-production/',
+      }),
+    );
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'));
+  });
 
   it('does not mint when the confirmation is declined', async () => {
-    resetMocks()
-    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit')
-    prompts.confirm.mockResolvedValueOnce(false)
+    resetMocks();
+    prompts.select.mockResolvedValueOnce('mint').mockResolvedValueOnce('ai').mockResolvedValueOnce('exit');
+    prompts.confirm.mockResolvedValueOnce(false);
 
-    await manageRuntimeSecrets(baseOptions)
+    await manageRuntimeSecrets(baseOptions);
 
-    expect(provisionManagedKey).not.toHaveBeenCalled()
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Mint cancelled'))
-  })
-})
+    expect(provisionManagedKey).not.toHaveBeenCalled();
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Mint cancelled'));
+  });
+});

@@ -1,6 +1,6 @@
 import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, wideMembership, wideSubject, wideOverrides } from '../../testing/wide-fixture';
+import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture';
 import { getAllDecisions } from './check';
 import type { SubjectForPermission } from './types';
 
@@ -470,23 +470,21 @@ describe('own permission, batch subjects', () => {
 // ── Deep-hierarchy coverage the template's org-only config cannot express ─────
 
 describe('wide hierarchy, guest role, multi-level ancestors', () => {
-  const { policyMatrix: policies } = configureWidePermissions(
-    ({ entityType, channels }) => {
-      switch (entityType) {
-        case 'attachment':
-          // Guests can create at project level. Omitted actions and policy rows deny by default.
-          channels.project.admin({ create: 1, update: 1 });
-          channels.project.member({ create: 1, update: 1 });
-          channels.project.guest({ create: 1 });
-          break;
-        case 'task':
-          channels.organization.admin({ read: 1 });
-          channels.project.admin({ read: 1, update: 1 });
-          channels.project.member({ read: 1, update: 1 });
-          break;
-      }
-    },
-  );
+  const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
+    switch (entityType) {
+      case 'attachment':
+        // Guests can create at project level. Omitted actions and policy rows deny by default.
+        channels.project.admin({ create: 1, update: 1 });
+        channels.project.member({ create: 1, update: 1 });
+        channels.project.guest({ create: 1 });
+        break;
+      case 'task':
+        channels.organization.admin({ read: 1 });
+        channels.project.admin({ read: 1, update: 1 });
+        channels.project.member({ read: 1, update: 1 });
+        break;
+    }
+  });
 
   it('grants a project guest their configured project-level cell', () => {
     const subject = attachmentSubject('att1', 'org1', { project: 'p1' });

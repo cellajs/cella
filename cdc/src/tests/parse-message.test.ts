@@ -31,7 +31,12 @@ function attachmentRow(overrides: Record<string, unknown> = {}): Record<string, 
   return { id: 'att-1', ...ancestorIdColumns, created_at: '2026-07-01T10:00:00.000Z', ...overrides };
 }
 
-function dmlMessage(tag: 'insert' | 'update' | 'delete', table: string, row: Record<string, unknown>, oldRow?: Record<string, unknown>): Pgoutput.Message {
+function dmlMessage(
+  tag: 'insert' | 'update' | 'delete',
+  table: string,
+  row: Record<string, unknown>,
+  oldRow?: Record<string, unknown>,
+): Pgoutput.Message {
   if (tag === 'delete') return { tag, relation: { name: table }, old: row } as unknown as Pgoutput.Message;
   return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as Pgoutput.Message;
 }
@@ -80,7 +85,9 @@ describe('parseMessage — draft entrance guard', () => {
   });
 
   it('passes a published product INSERT (the publish edge as delivered)', () => {
-    const result = parseMessage(dmlMessage('insert', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })));
+    const result = parseMessage(
+      dmlMessage('insert', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })),
+    );
 
     expect(result).not.toBeNull();
     expect(result?.activity.action).toBe('create');
@@ -88,7 +95,9 @@ describe('parseMessage — draft entrance guard', () => {
   });
 
   it('passes an unpublish-as-DELETE (old row is published)', () => {
-    const result = parseMessage(dmlMessage('delete', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })));
+    const result = parseMessage(
+      dmlMessage('delete', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })),
+    );
 
     expect(result).not.toBeNull();
     expect(result?.activity.action).toBe('delete');
@@ -96,7 +105,12 @@ describe('parseMessage — draft entrance guard', () => {
 
   it('never drops channel rows: channel publishedAt gates invitees, not replication', () => {
     const result = parseMessage(
-      dmlMessage('insert', 'organizations', { id: 'org-1', name: 'Org', created_at: '2026-07-01T10:00:00.000Z', published_at: null }),
+      dmlMessage('insert', 'organizations', {
+        id: 'org-1',
+        name: 'Org',
+        created_at: '2026-07-01T10:00:00.000Z',
+        published_at: null,
+      }),
     );
 
     expect(result).not.toBeNull();

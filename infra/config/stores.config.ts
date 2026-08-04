@@ -1,5 +1,5 @@
-import { defineStores } from '../lib/stores'
-import { postgresManaged } from '../resources/stores/postgres-managed'
+import { defineStores } from '../lib/stores';
+import { postgresManaged } from '../resources/stores/postgres-managed';
 
 /**
  * App-owned registry of stateful backing resources, provisioned by the deploy
@@ -24,4 +24,4 @@ export const appStores = defineStores({
       ca: ['backend', 'yjs', 'mcp', 'cdc'],
     },
   }),
-})
+});

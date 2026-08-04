@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { LogicalReplicationService, PgoutputPlugin } from 'pg-logical-replication';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execute = vi.fn();
 
@@ -34,7 +34,10 @@ function makeService(failures: number): LogicalReplicationService {
   return {
     subscribe: vi.fn(() => {
       calls += 1;
-      if (calls <= failures) return Promise.reject(Object.assign(new Error('replication slot "cdc_slot" does not exist'), { code: '42704' }));
+      if (calls <= failures)
+        return Promise.reject(
+          Object.assign(new Error('replication slot "cdc_slot" does not exist'), { code: '42704' }),
+        );
       return new Promise(() => {}); // never resolves: subscribed and streaming
     }),
   } as unknown as LogicalReplicationService;
@@ -112,7 +115,8 @@ function makeStaleService(failures: number): LogicalReplicationService {
   return {
     subscribe: vi.fn(() => {
       calls += 1;
-      if (calls <= failures) return Promise.reject(Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' }));
+      if (calls <= failures)
+        return Promise.reject(Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' }));
       return new Promise(() => {}); // never resolves: subscribed and streaming
     }),
   } as unknown as LogicalReplicationService;

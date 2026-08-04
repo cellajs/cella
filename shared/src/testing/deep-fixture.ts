@@ -1,7 +1,7 @@
-import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
-import type { PolicyMatrix, HierarchyOverrides, PolicyCellInput } from '../permissions';
-import { configurePolicyMatrix } from '../permissions/policy-matrix';
 import type { EntityType } from '../../types';
+import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
+import type { HierarchyOverrides, PolicyCellInput, PolicyMatrix } from '../permissions';
+import { configurePolicyMatrix } from '../permissions/policy-matrix';
 
 // Deep synthetic hierarchy (projectcampus-shaped): 4 channel levels with an `item` product whose
 // rows attach at any depth, typed independently of any app config. Path, home-resolution,

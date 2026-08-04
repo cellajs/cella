@@ -11,15 +11,9 @@ const plural = `${singular}s`;
 
 describe('findDocStyleViolations', () => {
   it('finds singular, plural, case, hyphenated, and code-example uses', () => {
-    const source = [
-      `# ${singular}`,
-      '',
-      plural.toUpperCase(),
-      '',
-      `source-${singular}`,
-      '',
-      `\`${singular}\``,
-    ].join('\n');
+    const source = [`# ${singular}`, '', plural.toUpperCase(), '', `source-${singular}`, '', `\`${singular}\``].join(
+      '\n',
+    );
 
     expect(findDocStyleViolations('guide.md', source)).toEqual([
       { file: 'guide.md', line: 1, column: 3, term: singular },
@@ -85,17 +79,16 @@ describe('findAgentVocabularyFindings', () => {
     const source = 'The wiring silently surfaces a seam.';
 
     expect(findAgentVocabularyFindings('guide.md', source)).toEqual([]);
-    expect(findAgentVocabularyFindings('guide.md', source, 'review').map((item) => item.term)).toEqual(
-      ['wiring', 'silently', 'surfaces', 'seam'],
-    );
+    expect(findAgentVocabularyFindings('guide.md', source, 'review').map((item) => item.term)).toEqual([
+      'wiring',
+      'silently',
+      'surfaces',
+      'seam',
+    ]);
   });
 
   it('formats review findings with the rule and replacement guidance', () => {
-    const finding = findAgentVocabularyFindings(
-      'guide.md',
-      'This lands tomorrow.',
-      'review',
-    )[0]!;
+    const finding = findAgentVocabularyFindings('guide.md', 'This lands tomorrow.', 'review')[0]!;
 
     expect(formatAgentVocabularyFinding(finding)).toBe(
       'guide.md:1:6 [delivery-metaphor] "lands": consider merge, deploy, store, arrive, or take effect',

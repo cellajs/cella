@@ -3,8 +3,8 @@ import type { config as _default } from './config.default';
 
 export const production = {
   mode: 'production',
-  maintenance: false, 
-  
+  maintenance: false,
+
   googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',
 
   singleVM: true,

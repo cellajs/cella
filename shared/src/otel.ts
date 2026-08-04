@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -7,9 +8,8 @@ import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-log
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config';
 
 const MAPLE_INGEST_BASE = 'https://ingest.maple.dev/v1';
@@ -108,8 +108,8 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const traceExporter = hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined;
   const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
 
-// Select stable HTTP semantic attributes before instrumentation is constructed.
-// Preserve any explicit environment override.
+  // Select stable HTTP semantic attributes before instrumentation is constructed.
+  // Preserve any explicit environment override.
   if (autoInstrumentations) {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN ??= 'http';
   }

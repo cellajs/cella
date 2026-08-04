@@ -79,4 +79,3 @@ describe('isUnconditionalCan', () => {
     expect(isUnconditionalCan(undefined)).toBe(false);
   });
 });
-

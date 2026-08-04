@@ -1,24 +1,30 @@
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env'
-import { isMain } from '../lib/utils/is-main'
-import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project'
-import { CI_KEY_MINT_PERMISSION_SETS, DNS_PERMISSION_SETS, ORG_SCOPED_PERMISSION_SETS, PROJECT_PERMISSION_SETS, ciKeyMintCondition } from '../lib/scaleway/permissions'
-import { provisionScopedKey, type ProvisionScopedKeyOptions, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam'
-import { syncGithubEnvironment } from '../lib/github-sync'
-import { pc, DIVIDER, checkMark, warningMark } from '../lib/utils/cli-output'
+import { syncGithubEnvironment } from '../lib/github-sync';
+import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
+import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
+import {
+  CI_KEY_MINT_PERMISSION_SETS,
+  ciKeyMintCondition,
+  DNS_PERMISSION_SETS,
+  ORG_SCOPED_PERMISSION_SETS,
+  PROJECT_PERMISSION_SETS,
+} from '../lib/scaleway/permissions';
+import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
+import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
+import { isMain } from '../lib/utils/is-main';
 
 export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   /** The stack's DNS zone; scopes the DNS grant to the projects that serve it. */
-  dnsZone?: string
+  dnsZone?: string;
   /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
-  mode: string
+  mode: string;
   /**
    * Service + boot application ids (v2 model): adds the conditioned
    * IAMApplicationManager rule so CI can rotate exactly those apps' keys per
    * deploy, and nothing else (creates carry no matching resource.id).
    */
-  keyMintAppIds?: readonly string[]
+  keyMintAppIds?: readonly string[];
 }
-export type CiKeyResult = ScopedKeyResult
+export type CiKeyResult = ScopedKeyResult;
 
 /** Create the scoped CI application, least-privilege policy, and fresh key. */
 export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
@@ -26,7 +32,11 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
   // serving zone's project when records live in a shared parent zone (staging
   // on the production apex). Never org-wide: a compromised CI key must not be
   // able to rewrite unrelated zones.
-  const dnsProjectIds = await resolveDnsProjectIds({ secretKey: opts.callerSecretKey }, opts.dnsZone ?? '', opts.projectId)
+  const dnsProjectIds = await resolveDnsProjectIds(
+    { secretKey: opts.callerSecretKey },
+    opts.dnsZone ?? '',
+    opts.projectId,
+  );
   return provisionScopedKey(opts, {
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
@@ -42,51 +52,73 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
       // create app / create policy DENY). Set via PUT /rules by the API layer;
       // read back + asserted by warnOnCiPolicyDrift and assert-vm-grants.
       ...(opts.keyMintAppIds && opts.keyMintAppIds.length > 0
-        ? [{ permission_set_names: CI_KEY_MINT_PERMISSION_SETS, organization_id: organizationId, condition: ciKeyMintCondition(opts.keyMintAppIds) }]
+        ? [
+            {
+              permission_set_names: CI_KEY_MINT_PERMISSION_SETS,
+              organization_id: organizationId,
+              condition: ciKeyMintCondition(opts.keyMintAppIds),
+            },
+          ]
         : []),
     ],
-  })
+  });
 }
 
 // Standalone entry point.
 if (isMain(import.meta.url)) {
-  const secretKey = process.env.SCW_SECRET_KEY
-  const projectId = resolveProjectId()
-  const organizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID
+  const secretKey = process.env.SCW_SECRET_KEY;
+  const projectId = resolveProjectId();
+  const organizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID;
 
   if (!secretKey || !projectId) {
-    process.stderr.write('Required: SCW_SECRET_KEY, SCW_PROJECT_ID\nOptional: SCW_DEFAULT_ORGANIZATION_ID\n')
-    process.exit(1)
+    process.stderr.write('Required: SCW_SECRET_KEY, SCW_PROJECT_ID\nOptional: SCW_DEFAULT_ORGANIZATION_ID\n');
+    process.exit(1);
   }
 
-  process.env.APP_MODE = process.env.APP_MODE ?? 'production'
-  const { loadEngineConfig } = await import('../config/engine-config')
-  const appConfig = await loadEngineConfig()
+  process.env.APP_MODE = process.env.APP_MODE ?? 'production';
+  const { loadEngineConfig } = await import('../config/engine-config');
+  const appConfig = await loadEngineConfig();
 
-  console.info('\n→ Setting up CI deploy key')
-  const { deriveInfra } = await import('../lib/naming')
-  const result = await setupCiKey({ callerSecretKey: secretKey, organizationId, projectId, slug: appConfig.slug, mode: appConfig.mode, dnsZone: deriveInfra(appConfig).dnsZone })
+  console.info('\n→ Setting up CI deploy key');
+  const { deriveInfra } = await import('../lib/naming');
+  const result = await setupCiKey({
+    callerSecretKey: secretKey,
+    organizationId,
+    projectId,
+    slug: appConfig.slug,
+    mode: appConfig.mode,
+    dnsZone: deriveInfra(appConfig).dnsZone,
+  });
 
-  const divider = pc.dim(DIVIDER)
-  console.info(`\n${divider}`)
-  console.info(`${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim(`access key ${result.accessKey}`)}\n`)
+  const divider = pc.dim(DIVIDER);
+  console.info(`\n${divider}`);
+  console.info(
+    `${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim(`access key ${result.accessKey}`)}\n`,
+  );
 
   // The secret key must stay off stdout (terminal scrollback, CI transcripts);
   // push it straight to the GitHub Environment via gh.
-  const environment = appConfig.mode === 'staging' ? 'staging' : 'production'
+  const environment = appConfig.mode === 'staging' ? 'staging' : 'production';
   const synced = await syncGithubEnvironment({
     repoRoot: process.cwd(),
     environment,
-    ciKey: { accessKey: result.accessKey, secretKey: result.secretKey, projectId, organizationId: result.organizationId },
-  })
+    ciKey: {
+      accessKey: result.accessKey,
+      secretKey: result.secretKey,
+      projectId,
+      organizationId: result.organizationId,
+    },
+  });
   if (synced) {
-    console.info(`\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Then revoke the bootstrap key.')}`)
+    console.info(
+      `\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Then revoke the bootstrap key.')}`,
+    );
   } else {
     console.error(
       `\n${warningMark} Could not push secrets to GitHub (gh unauthenticated or origin is not a GitHub remote).\n` +
         `  The secret key is intentionally not printed. Run ${pc.cyanBright('gh auth login')} and re-run this task: a fresh key is minted each run.`,
-    )
-    process.exitCode = 1
+    );
+    process.exitCode = 1;
   }
-  console.info(divider)
+  console.info(divider);
 }

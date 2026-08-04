@@ -1,9 +1,8 @@
-import { describe, it, expect } from 'vitest';
-
+import { describe, expect, it } from 'vitest';
+import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { EntityTableMeta, ResourceTableMeta } from '../types';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
-import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -11,16 +10,27 @@ import type { InsertActivityModel } from '#/modules/activities/activities-db';
 // organizationId, so seq and entity-count deltas collapse onto a single
 // channelKey (no separate parent delta because parentType === 'organization').
 function attachmentEntry(): EntityTableMeta {
-  return { kind: 'entity', type: 'attachment', table: { [Symbol.for('drizzle:Name')]: 'attachments' } } as unknown as EntityTableMeta;
+  return {
+    kind: 'entity',
+    type: 'attachment',
+    table: { [Symbol.for('drizzle:Name')]: 'attachments' },
+  } as unknown as EntityTableMeta;
 }
 
-
 function membershipEntry(): ResourceTableMeta {
-  return { kind: 'resource', type: 'membership', table: { [Symbol.for('drizzle:Name')]: 'memberships' } } as unknown as ResourceTableMeta;
+  return {
+    kind: 'resource',
+    type: 'membership',
+    table: { [Symbol.for('drizzle:Name')]: 'memberships' },
+  } as unknown as ResourceTableMeta;
 }
 
 function inactiveMembershipEntry(): ResourceTableMeta {
-  return { kind: 'resource', type: 'inactive_membership', table: { [Symbol.for('drizzle:Name')]: 'inactive_memberships' } } as unknown as ResourceTableMeta;
+  return {
+    kind: 'resource',
+    type: 'inactive_membership',
+    table: { [Symbol.for('drizzle:Name')]: 'inactive_memberships' },
+  } as unknown as ResourceTableMeta;
 }
 
 function mockEvent(overrides: {
@@ -56,7 +66,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
     ]);
 
     expect(plan.orgSequenceGroups).toHaveLength(0);
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:admin': 1, 'm:c:total': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:admin': 1, 'm:c:total': 1, membership: 1 });
   });
 
   it('membership delete: decrements role + total', () => {
@@ -68,7 +78,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:total': -1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:total': -1, membership: 1 });
   });
 
   it('membership update (role change): swaps role counts', () => {
@@ -81,7 +91,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:member': -1, 'm:c:admin': 1, membership: 1 });
   });
 
   it('inactive membership create (pending): increments pending count', () => {
@@ -93,7 +103,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': 1, membership: 1 });
   });
 
   it('inactive membership update (rejected): decrements pending', () => {
@@ -106,7 +116,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': -1, 'membership': 1 });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'm:c:pending': -1, membership: 1 });
   });
 });
 
@@ -349,7 +359,14 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: publishedAt, publishedAt, deletedAt: null },
+        rowData: {
+          id: 'att-1',
+          organizationId: 'org-1',
+          createdAt,
+          updatedAt: publishedAt,
+          publishedAt,
+          deletedAt: null,
+        },
       }),
     ]);
 
@@ -379,7 +396,13 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-03T10:00:00.000Z' },
+        rowData: {
+          id: 'att-1',
+          organizationId: 'org-1',
+          createdAt,
+          publishedAt,
+          deletedAt: '2026-07-03T10:00:00.000Z',
+        },
       }),
     ]);
 
@@ -392,7 +415,13 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       mockEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
+        rowData: {
+          id: 'att-1',
+          organizationId: 'org-1',
+          createdAt,
+          publishedAt,
+          deletedAt: '2026-07-05T10:00:00.000Z',
+        },
         oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
       }),
     ]);
@@ -406,7 +435,13 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
-        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
+        oldRowData: {
+          id: 'att-1',
+          organizationId: 'org-1',
+          createdAt,
+          publishedAt,
+          deletedAt: '2026-07-05T10:00:00.000Z',
+        },
       }),
     ]);
 

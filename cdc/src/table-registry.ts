@@ -1,7 +1,6 @@
-import { entityTables } from '#/tables';
-import { resourceTables } from '#/tables';
 import { getColumns, getTableName } from 'drizzle-orm';
 import { typedEntries } from 'shared';
+import { entityTables, resourceTables } from '#/tables';
 import type { EntityTableMeta, ResourceTableMeta, TableMeta } from './types';
 
 /** Convert camelCase to snake_case (used only at startup for column name map building) */
@@ -51,4 +50,3 @@ function buildTableRegistry(): Map<string, TableMeta> {
 
 /** Registry of all tracked tables, keyed by Drizzle table name */
 export const tableRegistry = buildTableRegistry();
-

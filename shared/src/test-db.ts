@@ -1,4 +1,6 @@
 // Load backend/.env so DB_TEST_PORT (app-specific) is available; in CI it's set directly in process.env.
+import process from 'node:process';
+
 try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {

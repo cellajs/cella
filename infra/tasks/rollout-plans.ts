@@ -1,12 +1,12 @@
-import { engineConfig } from '../config/engine-config'
-import { healthContract } from '../config/health.config'
-import type { ServiceName } from '../compose/compose'
-import { coHostedServices, collocatedServices, servicesByName } from '../lib/services'
-import type { RolloutServicePlan } from './rollout'
+import type { ServiceName } from '../compose/compose';
+import { engineConfig } from '../config/engine-config';
+import { healthContract } from '../config/health.config';
+import { coHostedServices, collocatedServices, servicesByName } from '../lib/services';
+import type { RolloutServicePlan } from './rollout';
 
 function normalizeHealthUrl(explicit?: string): string | undefined {
-  if (!explicit) return undefined
-  return explicit.endsWith(healthContract.path) ? explicit : `${explicit.replace(/\/$/, '')}${healthContract.path}`
+  if (!explicit) return undefined;
+  return explicit.endsWith(healthContract.path) ? explicit : `${explicit.replace(/\/$/, '')}${healthContract.path}`;
 }
 
 /**
@@ -15,10 +15,10 @@ function normalizeHealthUrl(explicit?: string): string | undefined {
  * URL (the only defined deploy path).
  */
 export function planForService(serviceFlag: string, healthUrl?: string): RolloutServicePlan {
-  const appConfig = engineConfig()
-  const definition = servicesByName.get(serviceFlag as ServiceName)
-  if (!definition) throw new Error(`Unknown service '${serviceFlag}'`)
-  const service = definition.slug
+  const appConfig = engineConfig();
+  const definition = servicesByName.get(serviceFlag as ServiceName);
+  if (!definition) throw new Error(`Unknown service '${serviceFlag}'`);
+  const service = definition.slug;
 
   const plan: RolloutServicePlan = {
     service,
@@ -26,17 +26,18 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
     drainPolicy: definition.drainPolicy,
     drainSeconds: definition.drainSeconds ?? 10,
     healthUrl: normalizeHealthUrl(healthUrl),
-  }
+  };
 
   if (definition.replacementStrategy !== 'exclusive') {
-    if (!definition.lbRoute) throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`)
-    if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`)
+    if (!definition.lbRoute)
+      throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`);
+    if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`);
   }
 
   // LB pools that must follow this service's cutover because Pulumi ignores
   // their live server lists: co-hosted workers' and collocated containers'
   // pools (singleVM) and the service's own internal pool (internalRoute).
-  const repointKeys: string[] = []
+  const repointKeys: string[] = [];
   if (definition.primaryRollout && appConfig.singleVM) {
     repointKeys.push(
       ...[
@@ -45,10 +46,10 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
       ]
         .filter((follower) => follower.lbRoute)
         .map((follower) => follower.slug),
-    )
+    );
   }
-  if (definition.internalRoute) repointKeys.push(`${service}-internal`)
-  if (repointKeys.length > 0) plan.repointBackendKeys = repointKeys
+  if (definition.internalRoute) repointKeys.push(`${service}-internal`);
+  if (repointKeys.length > 0) plan.repointBackendKeys = repointKeys;
 
-  return plan
+  return plan;
 }

@@ -86,6 +86,4 @@ export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => 
 
 /** Plain-text fallback for summary sources the per-side HTML converters cannot render (custom blocks). */
 export const blockPlainText = (block: DescriptionBlock): string =>
-  Array.isArray(block.content)
-    ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('')
-    : '';
+  Array.isArray(block.content) ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('') : '';

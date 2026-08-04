@@ -1,23 +1,25 @@
 import { isProduct } from 'shared';
 import { activitiesTable } from '#/modules/activities/activities-db';
-
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-
-import { type BatchEvent, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
+import type { TraceContext } from '../lib/tracing';
+import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
+import {
+  type BatchEvent,
+  generateActivityId,
+  sendBatchMessageToApi,
+  sendMessageToApi,
+} from '../services/activity-service';
 import { metrics } from '../services/cdc-metrics';
 import { circuitBreaker } from '../services/circuit-breaker';
-import { withRetry } from '../services/retry';
 import { replicationState } from '../services/replication-state';
-import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
-import type { TraceContext } from '../lib/tracing';
+import { withRetry } from '../services/retry';
+import type { CdcRowData } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
 import { syncChannelPaths } from '../utils/channel-path-sync';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 import { cleanupEmbeddingReferences } from '../utils/embedding-cleanup';
 import { gcOwnedEmbeddedRows } from '../utils/owned-embedding-gc';
-
-import type { CdcRowData } from '../types';
 import type { ParseMessageResult } from './parse-message';
 
 /** An event prepared for persistence + dispatch: activity with a generated id, its row data, and seq. */
@@ -66,23 +68,28 @@ async function persistActivities(
         tableName,
         action: activityWithId.action,
         subjectId: activityWithId.subjectId,
-        err: insertResult.error });
+        err: insertResult.error,
+      });
       circuitBreaker.recordFailure(tableName);
       return false;
     }
 
     if (insertResult.attempts > 1) {
-      log.info(`Activity insert succeeded after retry`, {
+      log.info('Activity insert succeeded after retry', {
         activityId: activityWithId.id,
         attempts: insertResult.attempts,
-        lsn });
+        lsn,
+      });
     }
     return true;
   }
 
   // Multi-row batch insert
   const insertResult = await withRetry(async () => {
-    await cdcDb.insert(activitiesTable).values(infos.map((i) => i.activityWithId)).onConflictDoNothing();
+    await cdcDb
+      .insert(activitiesTable)
+      .values(infos.map((i) => i.activityWithId))
+      .onConflictDoNothing();
   }, 'batch insert activities');
 
   if (!insertResult.success) {
@@ -100,7 +107,8 @@ async function persistActivities(
           tableName,
           action: activityWithId.action,
           subjectId: activityWithId.subjectId,
-          err: singleResult.error });
+          err: singleResult.error,
+        });
         anyFailed = true;
       }
     }
@@ -121,7 +129,8 @@ function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
       activity: activityWithId,
       rowData,
       seq,
-      movedFrom }));
+      movedFrom,
+    }));
     sendBatchMessageToApi(batchInfos, traceCtx);
   } else {
     const { activityWithId, rowData, seq, movedFrom } = stamped[0];
@@ -150,73 +159,87 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     return;
   }
 
-  await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }), async (traceCtx) => {
-    const startMs = performance.now();
+  await withSpan(
+    cdcSpanNames.processWal,
+    cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }),
+    async (traceCtx) => {
+      const startMs = performance.now();
 
-    // Compute unified deltas (pure, no side effects yet)
-    const batchPlan = computeBatchUnifiedDeltas(events);
+      // Compute unified deltas (pure, no side effects yet)
+      const batchPlan = computeBatchUnifiedDeltas(events);
 
-    // Prepare all activities (generate IDs, extract seq)
-    const prepared = events.map(({ lsn, result }) => {
-      replicationState.lastLsn = lsn;
-      const { activityWithId, seq } = prepareActivity(result, lsn);
-      return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
-    });
+      // Prepare all activities (generate IDs, extract seq)
+      const prepared = events.map(({ lsn, result }) => {
+        replicationState.lastLsn = lsn;
+        const { activityWithId, seq } = prepareActivity(result, lsn);
+        return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
+      });
 
-    // Persist activities FIRST: if this fails, no deltas are applied (no side effects)
-    const persisted = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), async () => {
-      return persistActivities(prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })), tableName);
-    });
+      // Persist activities FIRST: if this fails, no deltas are applied (no side effects)
+      const persisted = await withSpan(
+        cdcSpanNames.createActivity,
+        activityAttrs(prepared[0].activityWithId),
+        async () => {
+          return persistActivities(
+            prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })),
+            tableName,
+          );
+        },
+      );
 
-    if (!persisted) {
-      // Activity insert failed permanently: skip deltas and WS send
-      return;
-    }
+      if (!persisted) {
+        // Activity insert failed permanently: skip deltas and WS send
+        return;
+      }
 
-    // Apply deltas SECOND: only after activities are safely persisted
-    await applyBatchUnifiedDeltas(batchPlan);
+      // Apply deltas SECOND: only after activities are safely persisted
+      await applyBatchUnifiedDeltas(batchPlan);
 
-    // Mirror channel paths onto counters rows (view-ancestry verification source)
-    await syncChannelPaths(events);
+      // Mirror channel paths onto counters rows (view-ancestry verification source)
+      await syncChannelPaths(events);
 
-    const stamped = prepared.map((item) => ({
-      ...item,
-      seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq }));
+      const stamped = prepared.map((item) => ({
+        ...item,
+        seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq,
+      }));
 
-    circuitBreaker.recordSuccess(tableName);
+      circuitBreaker.recordSuccess(tableName);
 
-    // Log each activity creation
-    for (const { activityWithId, lsn } of stamped) {
-      log.trace(`Activity created from CDC`, {
-        type: activityWithId.type,
-        subjectId: activityWithId.subjectId,
-        activityId: activityWithId.id,
-        lsn,
-        ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }) });
-    }
+      // Log each activity creation
+      for (const { activityWithId, lsn } of stamped) {
+        log.trace('Activity created from CDC', {
+          type: activityWithId.type,
+          subjectId: activityWithId.subjectId,
+          activityId: activityWithId.id,
+          lsn,
+          ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }),
+        });
+      }
 
-    // Send the real-time sync notification (single vs batch payload)
-    dispatchToApi(stamped, traceCtx);
+      // Send the real-time sync notification (single vs batch payload)
+      dispatchToApi(stamped, traceCtx);
 
-    // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
-    const { tableMeta } = events[0].result;
-    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
-      await cleanupEmbeddingReferences(tableMeta.type, action, events);
-    }
+      // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
+      const { tableMeta } = events[0].result;
+      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
+        await cleanupEmbeddingReferences(tableMeta.type, action, events);
+      }
 
-    // Owned-embedding GC: soft-delete embedded rows their host arrays stopped referencing
-    // (update covers array diffs and host soft-deletes; hard deletes ride FK cascades)
-    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
-      await gcOwnedEmbeddedRows(tableMeta.type, events);
-    }
+      // Owned-embedding GC: soft-delete embedded rows their host arrays stopped referencing
+      // (update covers array diffs and host soft-deletes; hard deletes ride FK cascades)
+      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
+        await gcOwnedEmbeddedRows(tableMeta.type, events);
+      }
 
-    metrics.recordProcessing(events.length, performance.now() - startMs);
+      metrics.recordProcessing(events.length, performance.now() - startMs);
 
-    if (isBatch) {
-      log.trace(`Batch processed`, {
-        batchSize: events.length,
-        entityType: events[0].result.activity.entityType,
-        action });
-    }
-  });
+      if (isBatch) {
+        log.trace('Batch processed', {
+          batchSize: events.length,
+          entityType: events[0].result.activity.entityType,
+          action,
+        });
+      }
+    },
+  );
 }

@@ -1,16 +1,19 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { PgoutputPlugin } from 'pg-logical-replication';
-
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
+import { wsClient } from '../../network/websocket-client';
 import { drainBuffers } from '../../pipeline/handle-message';
 import { createReplicationService, ensureReplicationSlot, setupBackpressure } from '../../pipeline/replication';
-import { wsClient } from '../../network/websocket-client';
 import { replicationState } from '../../services/replication-state';
 
 /** Poll a predicate until it holds or the deadline passes. */
-export async function waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs: number, label: string): Promise<void> {
+export async function waitFor(
+  predicate: () => boolean | Promise<boolean>,
+  timeoutMs: number,
+  label: string,
+): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await predicate()) return;
@@ -69,7 +72,9 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
       await service.stop().catch(() => {});
       await drainBuffers().catch(() => {});
       // service.stop() releases the active flag; wait for it before dropping.
-      await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`).catch(() => {});
+      await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`).catch(
+        () => {},
+      );
       await cdcDb
         .execute(
           sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})

@@ -1,12 +1,12 @@
-import type { ActivityAction } from 'shared';
 import { getTableName } from 'drizzle-orm';
+import type { ActivityAction } from 'shared';
 import { appConfig, hierarchy } from 'shared';
-import type { TableMeta } from '../types';
+import { log } from '../lib/pino';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { TableMeta } from '../types';
 import { actionToVerb, extractStxData } from '../utils';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { getRowValue } from '../utils/get-row-value';
-import { log } from '../lib/pino';
 
 /**
  * Build a standardized InsertActivityModel from row data and table metadata.

@@ -1,11 +1,10 @@
 import { hierarchy } from './config/config.default';
 
+// Entity hierarchy & roles
+export { hierarchy, roles } from './config/config.default';
 // App configuration
 export { appConfig } from './src/config-builder/app-config';
 export type { ConfigMode } from './src/config-builder/types';
-
-// Entity hierarchy & roles
-export { hierarchy, roles } from './config/config.default';
 
 // Bound guard facade: these ARE the app singleton's methods (arrow fields, so binding is
 // preserved), re-exported for the two highest-frequency checks. Everything else stays on
@@ -27,21 +26,91 @@ export {
   createEntityHierarchy,
   createRoleRegistry,
 } from './src/config-builder/entity-hierarchy';
-
 // Row location: home attribution and paths are instance methods on EntityHierarchy.
 // Only the naming rule and the pure path-string helpers remain as free exports.
 export type { ResolvedAncestor } from './src/config-builder/resolve-row-channel';
 export { entityIdColumnKey, entityIdColumnName } from './src/config-builder/resolve-row-channel';
 export { pathHomeId, pathSegments, pathStartsWith } from './src/config-builder/row-path';
-
 // Config builder types
-export type { AppServiceEndpointConfig, RequestLimitsConfig, RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types';
-
+export type {
+  AppServiceEndpointConfig,
+  RequestLimitsConfig,
+  RequiredConfig,
+  S3Config,
+  S3ConfigInput,
+} from './src/config-builder/types';
+export { hasKey, identityRecord, nonEmpty, recordFromKeys, typedEntries, typedKeys } from './src/config-builder/utils';
+// Permissions
+export type {
+  AccessMembership,
+  ActionAttribution,
+  AncestorChannelIds,
+  CanState,
+  ChannelIdColumns,
+  ChannelPolicyBuilder,
+  ConditionActor,
+  EntityActionPermissions,
+  EntityCanMap,
+  EntityPolicies,
+  GrantSource,
+  HierarchyOverrides,
+  PermissionCheckOptions,
+  PermissionDecision,
+  PermissionsConfigResult,
+  PolicyCallback,
+  PolicyCell,
+  PolicyCellInput,
+  PolicyConfiguration,
+  PolicyEntry,
+  PolicyMatrix,
+  PublicReadGrants,
+  ResolvedChannelIds,
+  RowConditionName,
+  RowForCondition,
+  SubjectForPermission,
+} from './src/permissions';
+// Permission engine (tier-neutral decision logic, shared by backend + yjs)
+export {
+  type Access,
+  type Actor,
+  allActionsAllowed,
+  allActionsDenied,
+  type BatchPermissionResult,
+  buildSubject,
+  buildSubjectFromEntity,
+  type CheckAccessFanoutOptions,
+  checkAccess,
+  checkAccessBatch,
+  checkAccessFanout,
+  computeCan,
+  configurePermissions,
+  createActionRecord,
+  elevatedRoles,
+  formatBatchPermissionSummary,
+  formatPermissionDecision,
+  getAllDecisions,
+  getEntityPolicies,
+  getPolicyPermissions,
+  isRowCondition,
+  isUnconditionalCan,
+  MissingScopeError,
+  matchesRowCondition,
+  type PermissionResult,
+  policyMatrix,
+  publicReadGrants,
+  resolveCan,
+  toColumnName,
+  toTableName,
+  validateAncestorScope,
+  validateMembership,
+  validateSubject,
+} from './src/permissions';
+export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
+export { seenWindowMs } from './src/seen-window';
 // App-derived types
 export type {
   ActivityAction,
   ActivityVerb,
-  TrackedEventType,
   AncestorChannelType,
   ChannelEntityType,
   EnabledOAuthProvider,
@@ -57,81 +126,22 @@ export type {
   OrganizationFlags,
   OrganizationSetupConfig,
   ProductEntityType,
-  RootChannelType,
-  SeenTrackedProductType,
+  PropagationHint,
   RelatableChannelEntityType,
   RelatedChannelType,
   ResourceType,
+  RootChannelType,
+  SeenTrackedProductType,
   Severity,
   SystemRole,
   Theme,
   TokenType,
+  TrackedEventType,
   UploadTemplateId,
   UserFlags,
-  PropagationHint,
 } from './types';
-
 // Activity actions and event types (value exports)
-export { activityActions, activityVerbs, actionToVerb, isValidEventType, trackedEventTypes } from './types';
-
-export { hasKey, identityRecord, nonEmpty, recordFromKeys, typedEntries, typedKeys } from './src/config-builder/utils';
-export { seenWindowMs } from './src/seen-window';
-export { draftVisibleTo, isUnpublishedDraft } from './src/published-rows';
-
-// Permissions
-export type {
-  PolicyMatrix,
-  PolicyCallback,
-  PolicyConfiguration,
-  PolicyEntry,
-  ChannelPolicyBuilder,
-  EntityActionPermissions,
-  PolicyCell,
-  PolicyCellInput,
-  EntityPolicies,
-} from './src/permissions';
-export { isRowCondition, matchesRowCondition } from './src/permissions';
-export type { ConditionActor, PublicReadGrants, RowConditionName, RowForCondition } from './src/permissions';
-export { configurePermissions, getPolicyPermissions, getEntityPolicies } from './src/permissions';
-export type { PermissionsConfigResult } from './src/permissions';
-export { allActionsAllowed, allActionsDenied, createActionRecord, isUnconditionalCan, resolveCan } from './src/permissions';
-export { policyMatrix, computeCan, publicReadGrants, elevatedRoles } from './src/permissions';
-export type { CanState, EntityCanMap } from './src/permissions';
-
-// Permission engine (tier-neutral decision logic, shared by backend + yjs)
-export {
-  type Access,
-  type Actor,
-  buildSubject,
-  buildSubjectFromEntity,
-  type BatchPermissionResult,
-  checkAccess,
-  checkAccessBatch,
-  checkAccessFanout,
-  type CheckAccessFanoutOptions,
-  formatBatchPermissionSummary,
-  formatPermissionDecision,
-  getAllDecisions,
-  MissingScopeError,
-  type PermissionResult,
-  toColumnName,
-  toTableName,
-  validateAncestorScope,
-  validateMembership,
-  validateSubject,
-} from './src/permissions';
-export type {
-  ActionAttribution,
-  AncestorChannelIds,
-  ChannelIdColumns,
-  GrantSource,
-  PermissionCheckOptions,
-  PermissionDecision,
-  AccessMembership,
-  HierarchyOverrides,
-  ResolvedChannelIds,
-  SubjectForPermission,
-} from './src/permissions';
+export { actionToVerb, activityActions, activityVerbs, isValidEventType, trackedEventTypes } from './types';
 
 // Side-effect import: compile-time validation that config matches hierarchy
 import './src/config-builder/config-validation';

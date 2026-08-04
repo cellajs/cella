@@ -1,6 +1,6 @@
+import type { AncestorChannelIds, SubjectForPermission } from 'shared';
 import { hierarchy, MissingScopeError, validateAncestorScope } from 'shared';
 import { describe, expect, it } from 'vitest';
-import type { AncestorChannelIds, SubjectForPermission } from 'shared';
 
 /** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (

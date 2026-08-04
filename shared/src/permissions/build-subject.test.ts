@@ -3,8 +3,8 @@ import {
   buildSubject,
   buildSubjectFromEntity,
   hierarchy,
-  matchesRowCondition,
   MissingScopeError,
+  matchesRowCondition,
 } from 'shared';
 import { describe, expect, it } from 'vitest';
 

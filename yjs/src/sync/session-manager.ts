@@ -35,14 +35,14 @@ export function getCollab(entityType: string, entityId: string): CollabSession |
   return collabSessions.get(collabKey(entityType, entityId));
 }
 
-/** 
+/**
  * Number of active collaborative editing sessions.
  */
 export function getActiveDocumentCount(): number {
   return collabSessions.size;
 }
 
-/** 
+/**
  * Total WebSocket clients across all sessions.
  */
 export function getActiveClientCount(): number {
@@ -53,7 +53,7 @@ export function getActiveClientCount(): number {
   return count;
 }
 
-/** 
+/**
  * Registers a WebSocket client for a document. Cancels pending cleanup if reconnecting.
  */
 export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
@@ -74,7 +74,7 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
   return collab;
 }
 
-/** 
+/**
  * Removes a client. When the last client leaves, starts a grace period before deleting stored state.
  */
 export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
@@ -115,8 +115,8 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         }
       }
 
-        // Delete after final blocks persist, or after a permanent failure that cannot converge.
-        // Retry transient backend failures while retaining the session row.
+      // Delete after final blocks persist, or after a permanent failure that cannot converge.
+      // Retry transient backend failures while retaining the session row.
       if (finalState && finalState.length > 0) {
         const result = await materializeState(collab, finalState);
         if (result === 'retry') {
@@ -143,7 +143,12 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
  * Broadcast a message to all clients in the same collab session, excluding the sender if specified.
  * Used for forwarding document updates from one client to all others.
  */
-export function broadcastToCollab(entityType: string, entityId: string, message: Uint8Array, exclude?: WebSocket): void {
+export function broadcastToCollab(
+  entityType: string,
+  entityId: string,
+  message: Uint8Array,
+  exclude?: WebSocket,
+): void {
   const collab = getCollab(entityType, entityId);
   if (!collab) return;
 

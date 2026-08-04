@@ -41,9 +41,7 @@ function lineAndColumn(sourceFile: ts.SourceFile, offset: number): string {
 }
 
 function report(sourceFile: ts.SourceFile, node: ts.Node, rule: string, message: string): void {
-  failures.push(
-    `${sourceFile.fileName}:${lineAndColumn(sourceFile, node.getStart(sourceFile))} [${rule}] ${message}`,
-  );
+  failures.push(`${sourceFile.fileName}:${lineAndColumn(sourceFile, node.getStart(sourceFile))} [${rule}] ${message}`);
 }
 
 function isExported(node: ts.Node): boolean {
@@ -73,9 +71,7 @@ function containsJsx(node: ts.Node): boolean {
 
 function bindingNames(name: ts.BindingName): string[] {
   if (ts.isIdentifier(name)) return [name.text];
-  return name.elements.flatMap((element) =>
-    ts.isOmittedExpression(element) ? [] : bindingNames(element.name),
-  );
+  return name.elements.flatMap((element) => (ts.isOmittedExpression(element) ? [] : bindingNames(element.name)));
 }
 
 function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node): void {
@@ -95,11 +91,7 @@ function checkFunctionExport(
   node: ts.FunctionDeclaration,
   documentedFunctionNames: Set<string>,
 ): void {
-  if (
-    !isExported(node) ||
-    hasJsDoc(node) ||
-    (node.name && documentedFunctionNames.has(node.name.text))
-  ) {
+  if (!isExported(node) || hasJsDoc(node) || (node.name && documentedFunctionNames.has(node.name.text))) {
     return;
   }
   const name = node.name?.text ?? 'default function';
@@ -109,9 +101,7 @@ function checkFunctionExport(
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement): void {
   const isExportedConstant = isExported(node) && (node.declarationList.flags & ts.NodeFlags.Const) !== 0;
   if (isExportedConstant && !hasJsDoc(node)) {
-    const names = node.declarationList.declarations
-      .flatMap((declaration) => bindingNames(declaration.name))
-      .join(', ');
+    const names = node.declarationList.declarations.flatMap((declaration) => bindingNames(declaration.name)).join(', ');
     report(sourceFile, node, 'export-description', `add a concise JSDoc description for ${names}`);
   }
 
@@ -159,10 +149,7 @@ for (const file of trackedFrontendFiles().filter(isRequested)) {
     sourceFile.statements
       .filter(
         (statement): statement is ts.FunctionDeclaration =>
-          ts.isFunctionDeclaration(statement) &&
-          isExported(statement) &&
-          hasJsDoc(statement) &&
-          !!statement.name,
+          ts.isFunctionDeclaration(statement) && isExported(statement) && hasJsDoc(statement) && !!statement.name,
       )
       .map((statement) => statement.name!.text),
   );

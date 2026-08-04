@@ -21,7 +21,11 @@ export interface MaterializableSession {
 }
 
 /** POST blocks JSON to the backend's secret-gated materialize endpoint. */
-export async function postMaterialize(ctx: DocContext, editedBy: string, description: string): Promise<MaterializeResult> {
+export async function postMaterialize(
+  ctx: DocContext,
+  editedBy: string,
+  description: string,
+): Promise<MaterializeResult> {
   try {
     const res = await fetch(`${appConfig.backendUrl}/yjs/materialize`, {
       method: 'POST',

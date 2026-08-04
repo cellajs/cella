@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { mockDocContext, mockWebSocket, buildSyncStep1, buildSyncUpdate, buildAwarenessMessage, decodeSyncStep2, storageMock } from './helpers';
+import {
+  buildAwarenessMessage,
+  buildSyncStep1,
+  buildSyncUpdate,
+  decodeSyncStep2,
+  mockDocContext,
+  mockWebSocket,
+  storageMock,
+} from './helpers';
 
 // Mock dependencies
 vi.mock('../data/storage', () => storageMock());
@@ -41,7 +49,7 @@ const { loadState, saveState, createDoc } = await import('../data/storage');
 const { loadEntityDescription } = await import('../data/entity-content');
 const { materializeState } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
-const { broadcastToCollab, getCollab, joinCollab, _collabs } = await import('../sync/session-manager') as any;
+const { broadcastToCollab, getCollab, joinCollab, _collabs } = (await import('../sync/session-manager')) as any;
 
 const unverifiedCtx = mockDocContext();
 const ctx = mockDocContext({ verified: true });

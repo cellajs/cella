@@ -1,19 +1,19 @@
-import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
-import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
+import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
+import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret';
 
 export interface SeedOperatorSecretsOptions {
-  secretKey: string
-  projectId: string
-  region: string
-  slug: string
-  mode: string
+  secretKey: string;
+  projectId: string;
+  region: string;
+  slug: string;
+  mode: string;
   /** Initial values keyed by runtime secret id (e.g. `adminEmail`). Empty/undefined entries are skipped. */
-  values: Partial<Record<string, string>>
-  log?: (message: string) => void
+  values: Partial<Record<string, string>>;
+  log?: (message: string) => void;
 }
 
-const defaultLog = (message: string) => console.info(message)
+const defaultLog = (message: string) => console.info(message);
 
 /**
  * Seed operator-managed runtime secrets with their first value during bootstrap.
@@ -26,35 +26,37 @@ const defaultLog = (message: string) => console.info(message)
  * @see resources/secrets.ts
  */
 export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): Promise<void> {
-  const log = options.log ?? defaultLog
+  const log = options.log ?? defaultLog;
   const client = createSecretManagerClient({
     secretKey: options.secretKey,
     region: options.region,
     projectId: options.projectId,
-  })
+  });
 
   for (const secret of operatorManagedRuntimeSecrets as RuntimeSecretDefinition[]) {
-    const value = options.values[secret.id]
-    if (!value) continue
+    const value = options.values[secret.id];
+    if (!value) continue;
 
-    const path = secretPathFor(secret, options.slug, options.mode)
-    const existing = await client.getSecretByName(secret.secretName, path)
+    const path = secretPathFor(secret, options.slug, options.mode);
+    const existing = await client.getSecretByName(secret.secretName, path);
     if (existing?.version_count && existing.version_count > 0) {
-      log(`skip ${secret.secretName}: already has ${existing.version_count} version(s)`)
-      continue
+      log(`skip ${secret.secretName}: already has ${existing.version_count} version(s)`);
+      continue;
     }
 
-    const ensured = existing ?? await client.ensureSecret({
-      name: secret.secretName,
-      path,
-      description: secret.description,
-    })
+    const ensured =
+      existing ??
+      (await client.ensureSecret({
+        name: secret.secretName,
+        path,
+        description: secret.description,
+      }));
     await client.putSecretValue({
       secretId: ensured.id,
       value,
       description: 'Seeded during bootstrap',
       disablePrevious: false,
-    })
-    log(`seed ${secret.secretName}`)
+    });
+    log(`seed ${secret.secretName}`);
   }
 }

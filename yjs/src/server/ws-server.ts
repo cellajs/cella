@@ -1,10 +1,10 @@
 import { createServer, type Server } from 'node:http';
 import { WebSocketServer } from 'ws';
+import { closeDb } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
-import { closeDb } from '../data/db';
 import { handleHttpRequest } from './health';
-import { setupUpgradeHandler, setupConnectionHandler } from './upgrade';
+import { setupConnectionHandler, setupUpgradeHandler } from './upgrade';
 
 let httpServer: Server | null = null;
 let wss: WebSocketServer | null = null;
@@ -44,7 +44,7 @@ export async function closeWsServer(): Promise<void> {
   log.info('Yjs worker stopped');
 }
 
-/** 
+/**
  * Number of raw WebSocket connections to the server.
  */
 export function getConnectionCount(): number {

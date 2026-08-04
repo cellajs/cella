@@ -1,6 +1,6 @@
-import { services as composeServices, type ServiceName } from '../compose/compose'
-import type { ServiceMeta } from '../compose/types'
-import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-config'
+import { services as composeServices, type ServiceName } from '../compose/compose';
+import type { ServiceMeta } from '../compose/types';
+import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-config';
 
 /**
  * One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed
@@ -9,20 +9,20 @@ import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-confi
  * this module's header).
  */
 export interface ServiceDefinition extends ServiceMeta {
-  slug: ServiceName
+  slug: ServiceName;
 }
 
 /** Ordered service definitions, derived from the typed Compose model. */
-export const services = composeServices as readonly ServiceDefinition[]
+export const services = composeServices as readonly ServiceDefinition[];
 
 /** Ordered service slugs: the canonical list every consumer derives from. */
-export const serviceNames = services.map((s) => s.slug)
+export const serviceNames = services.map((s) => s.slug);
 
 /** Lookup a service definition by slug. */
-export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.map((s) => [s.slug, s]))
+export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.map((s) => [s.slug, s]));
 
 /** Services that build & push their own image (exclude image-reuse services). */
-export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug)
+export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug);
 
 /**
  * Services enabled for an app given appConfig.services. Services are enabled by
@@ -31,7 +31,7 @@ export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s
  * balancer, and any future deploy-plan artifact all derive from it.
  */
 export function enabledServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
-  return services.filter((s) => serviceConfig[s.slug]?.enabled !== false)
+  return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);
 }
 
 /**
@@ -43,9 +43,9 @@ export function deployedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
 ): readonly ServiceDefinition[] {
-  const enabled = enabledServices(serviceConfig)
-  if (!singleVM) return enabled
-  return enabled.filter((s) => !s.coHosted && s.placement !== 'host')
+  const enabled = enabledServices(serviceConfig);
+  if (!singleVM) return enabled;
+  return enabled.filter((s) => !s.coHosted && s.placement !== 'host');
 }
 
 /**
@@ -59,8 +59,8 @@ export function coHostedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
 ): readonly ServiceDefinition[] {
-  if (!singleVM) return []
-  return enabledServices(serviceConfig).filter((s) => s.coHosted)
+  if (!singleVM) return [];
+  return enabledServices(serviceConfig).filter((s) => s.coHosted);
 }
 
 /**
@@ -74,22 +74,28 @@ export function collocatedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
 ): readonly ServiceDefinition[] {
-  if (!singleVM) return []
-  const collocated = enabledServices(serviceConfig).filter((s) => s.placement === 'host')
+  if (!singleVM) return [];
+  const collocated = enabledServices(serviceConfig).filter((s) => s.placement === 'host');
   for (const svc of collocated) {
-    if (svc.primaryRollout) throw new Error(`services: '${svc.slug}' cannot combine placement 'host' with primaryRollout (the host cannot collocate onto itself).`)
-    if (svc.coHosted) throw new Error(`services: '${svc.slug}' cannot set both coHosted and placement 'host' — in-process fold and container collocation are mutually exclusive.`)
+    if (svc.primaryRollout)
+      throw new Error(
+        `services: '${svc.slug}' cannot combine placement 'host' with primaryRollout (the host cannot collocate onto itself).`,
+      );
+    if (svc.coHosted)
+      throw new Error(
+        `services: '${svc.slug}' cannot set both coHosted and placement 'host' — in-process fold and container collocation are mutually exclusive.`,
+      );
   }
-  return collocated
+  return collocated;
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
 export interface ServiceEndpoint {
-  slug: ServiceName
+  slug: ServiceName;
   /** Full public URL from appConfig (e.g. `https://api.example.com`). */
-  url: string
+  url: string;
   /** Hostname only (e.g. `api.example.com`), for DNS records, certs, LB routes. */
-  host: string
+  host: string;
 }
 
 /**
@@ -101,12 +107,12 @@ export interface ServiceEndpoint {
  * function, not a module-level constant.
  */
 export function serviceEndpoints(cfg: EngineConfig): readonly ServiceEndpoint[] {
-  const serviceUrls = cfg.services as Record<string, EngineServiceEndpoint>
+  const serviceUrls = cfg.services as Record<string, EngineServiceEndpoint>;
   return services
     .filter((s) => s.lbRoute)
     .map((s) => {
-      const url = serviceUrls[s.slug]?.publicUrl
-      if (!url) throw new Error(`Public service '${s.slug}' (lbRoute set) has no URL in appConfig`)
-      return { slug: s.slug, url, host: new URL(url).hostname }
-    })
+      const url = serviceUrls[s.slug]?.publicUrl;
+      if (!url) throw new Error(`Public service '${s.slug}' (lbRoute set) has no URL in appConfig`);
+      return { slug: s.slug, url, host: new URL(url).hostname };
+    });
 }

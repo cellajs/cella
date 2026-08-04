@@ -7,10 +7,10 @@
  * credentials that a full URL round-trip would re-encode.
  */
 export function hardenPublicDsn(dsn: string, caFilePath: string): string {
-  const [base, query = ''] = dsn.split('?')
-  const params = new URLSearchParams(query)
-  params.set('sslmode', 'verify-full')
-  params.set('sslrootcert', caFilePath)
-  params.delete('uselibpqcompat')
-  return `${base}?${params.toString()}`
+  const [base, query = ''] = dsn.split('?');
+  const params = new URLSearchParams(query);
+  params.set('sslmode', 'verify-full');
+  params.set('sslrootcert', caFilePath);
+  params.delete('uselibpqcompat');
+  return `${base}?${params.toString()}`;
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock all heavy dependencies before importing the module under test
 vi.mock('../pipeline/process-events', () => ({
@@ -40,9 +40,9 @@ vi.mock('../network/websocket-client', () => ({
   },
 }));
 
-import { replicationState } from '../services/replication-state';
-import { handleDataMessage } from '../pipeline/handle-message';
 import type { Pgoutput } from 'pg-logical-replication';
+import { handleDataMessage } from '../pipeline/handle-message';
+import { replicationState } from '../services/replication-state';
 
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);

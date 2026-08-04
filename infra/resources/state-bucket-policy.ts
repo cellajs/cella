@@ -1,13 +1,13 @@
-import * as pulumi from '@pulumi/pulumi'
-import * as scaleway from '@pulumiverse/scaleway'
-import { engineConfig } from '../config/engine-config'
-import { stateBucket } from '../lib/stack/control-store'
-import { region } from '../pulumi-context'
-import { adminApplicationId, ciDeployApplicationId } from './vm-iam'
+import * as pulumi from '@pulumi/pulumi';
+import * as scaleway from '@pulumiverse/scaleway';
+import { engineConfig } from '../config/engine-config';
+import { stateBucket } from '../lib/stack/control-store';
+import { region } from '../pulumi-context';
+import { adminApplicationId, ciDeployApplicationId } from './vm-iam';
 
-const appConfig = engineConfig()
+const appConfig = engineConfig();
 
-const stateBucketName = stateBucket(appConfig.slug)
+const stateBucketName = stateBucket(appConfig.slug);
 
 /**
  * Restricted, deny-by-default policy on the Pulumi STATE bucket (created
@@ -37,15 +37,17 @@ export const stateBucketPolicy = new scaleway.object.BucketPolicy('state-bucket-
           Resource: [stateBucketName, `${stateBucketName}/*`],
         },
         ...(adminId
-          ? [{
-              Sid: 'AdminStateAccess',
-              Effect: 'Allow',
-              Principal: { SCW: `application_id:${adminId}` },
-              Action: ['s3:*'],
-              Resource: [stateBucketName, `${stateBucketName}/*`],
-            }]
+          ? [
+              {
+                Sid: 'AdminStateAccess',
+                Effect: 'Allow',
+                Principal: { SCW: `application_id:${adminId}` },
+                Action: ['s3:*'],
+                Resource: [stateBucketName, `${stateBucketName}/*`],
+              },
+            ]
           : []),
       ],
     }),
   ),
-})
+});

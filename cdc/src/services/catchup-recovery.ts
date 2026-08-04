@@ -1,9 +1,8 @@
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
-
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import { replicationState } from './replication-state';
 import { wsClient } from '../network/websocket-client';
+import { replicationState } from './replication-state';
 
 /**
  * Recalculates skipped counters, invalidates backend caches, and resets catchup state.

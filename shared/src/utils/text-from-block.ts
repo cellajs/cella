@@ -76,11 +76,7 @@ export const getTextFromBlock = (block: Block): string => {
       )
       .join(' ')
       .trim();
-  } else if (
-    mediaBlockTypes.has(block.type) &&
-    'name' in block.props &&
-    typeof block.props.name === 'string'
-  ) {
+  } else if (mediaBlockTypes.has(block.type) && 'name' in block.props && typeof block.props.name === 'string') {
     text += block.props.name;
   }
 
@@ -129,9 +125,7 @@ export const getSearchableTextFromBlock = (block: Block): string => {
       content.rows
         .flatMap((row) =>
           row.cells.flatMap((cell) =>
-            'content' in cell && Array.isArray(cell.content)
-              ? getSearchableTextFromInlineContent(cell.content)
-              : '',
+            'content' in cell && Array.isArray(cell.content) ? getSearchableTextFromInlineContent(cell.content) : '',
           ),
         )
         .filter(Boolean)
@@ -148,7 +142,10 @@ export const getSearchableTextFromBlock = (block: Block): string => {
 
   if (Array.isArray(children)) parts.push(...children.map(getSearchableTextFromBlock));
 
-  return parts.filter((text) => text.trim().length > 0).join(' ').trim();
+  return parts
+    .filter((text) => text.trim().length > 0)
+    .join(' ')
+    .trim();
 };
 
 export const getSearchableTextFromBlocks = (blocks: Block[]): string =>

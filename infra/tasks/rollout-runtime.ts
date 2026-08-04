@@ -1,4 +1,4 @@
-import type { GenerationMetadata } from '../lib/generation-metadata'
+import type { GenerationMetadata } from '../lib/generation-metadata';
 import {
   type ControlContext,
   controlContextForStack,
@@ -7,27 +7,27 @@ import {
   type ServiceRollout,
   setPending,
   updateServiceRollout,
-} from '../lib/stack/control-store'
-import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver'
-import { deployEvents, emitDeployEvent } from '../lib/telemetry/deploy-telemetry'
-import { sleep } from './args'
-import { createLbGetServers, createLbSetServers } from './cutover'
-import { createFetchProbe, pollForVersion } from './wait-for-version'
-import type { RolloutRuntime } from './rollout'
+} from '../lib/stack/control-store';
+import { createPulumiDriver, type PulumiDriver } from '../lib/stack/pulumi-driver';
+import { deployEvents, emitDeployEvent } from '../lib/telemetry/deploy-telemetry';
+import { sleep } from './args';
+import { createLbGetServers, createLbSetServers } from './cutover';
+import type { RolloutRuntime } from './rollout';
+import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 // Cold-boot budget: a fresh VM generation pulls its image, runs migrate, and
 // starts the app before it serves the new SHA (~110s observed). The gate must
 // outlast that, so keep a generous attempt count (120 * 3s = 360s).
-const deployHealthAttempts = 120
-const deployHealthIntervalMs = 3000
-const deployHealthTimeoutMs = 8000
+const deployHealthAttempts = 120;
+const deployHealthIntervalMs = 3000;
+const deployHealthTimeoutMs = 8000;
 
 export interface RolloutRuntimeOptions {
-  stack: string
+  stack: string;
   /** Scaleway LB zone; defaults to `<region>-1` from the environment. */
-  lbZone?: string
+  lbZone?: string;
   /** Pulumi driver; defaults to the Automation API driver for the stack. */
-  driver?: PulumiDriver
+  driver?: PulumiDriver;
 }
 
 /**
@@ -37,51 +37,51 @@ export interface RolloutRuntimeOptions {
  * return undefined, writes are skipped with a warning).
  */
 export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRuntime {
-  const { stack } = options
-  const driver = options.driver ?? createPulumiDriver(stack)
-  const zone = options.lbZone ?? `${process.env.SCW_DEFAULT_REGION ?? process.env.REGION ?? 'fr-par'}-1`
-  const secretKey = process.env.SCW_SECRET_KEY
+  const { stack } = options;
+  const driver = options.driver ?? createPulumiDriver(stack);
+  const zone = options.lbZone ?? `${process.env.SCW_DEFAULT_REGION ?? process.env.REGION ?? 'fr-par'}-1`;
+  const secretKey = process.env.SCW_SECRET_KEY;
 
-  let controlCtxPromise: Promise<ControlContext | null> | undefined
+  let controlCtxPromise: Promise<ControlContext | null> | undefined;
   const controlCtx = (): Promise<ControlContext | null> => {
-    controlCtxPromise ??= controlContextForStack(stack, (msg) => console.warn(`[deploy] ${msg}`))
-    return controlCtxPromise
-  }
+    controlCtxPromise ??= controlContextForStack(stack, (msg) => console.warn(`[deploy] ${msg}`));
+    return controlCtxPromise;
+  };
 
   const requireLbKey = (): string => {
-    if (!secretKey) throw new Error('SCW_SECRET_KEY is required for LB cutover')
-    return secretKey
-  }
+    if (!secretKey) throw new Error('SCW_SECRET_KEY is required for LB cutover');
+    return secretKey;
+  };
 
   return {
     async update() {
-      await driver.update()
+      await driver.update();
     },
     readGenerations: () => driver.output<GenerationMetadata[]>('computeGenerationMetadata'),
     readLbBackendIds: () => driver.output<Record<string, string>>('lbBackendIds'),
     async currentRollout(service: string): Promise<ServiceRollout | undefined> {
-      const ctx = await controlCtx()
-      if (!ctx) return undefined
-      const { state } = await readControlState(ctx.s3, ctx.bucket, ctx.controlKey)
-      return state.rollout[service]
+      const ctx = await controlCtx();
+      if (!ctx) return undefined;
+      const { state } = await readControlState(ctx.s3, ctx.bucket, ctx.controlKey);
+      return state.rollout[service];
     },
     async setPending(service: string, sha: string) {
-      emitDeployEvent(deployEvents.servicePending, { service, sha })
-      const ctx = await controlCtx()
-      if (!ctx) return
-      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => setPending(cur, sha))
+      emitDeployEvent(deployEvents.servicePending, { service, sha });
+      const ctx = await controlCtx();
+      if (!ctx) return;
+      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => setPending(cur, sha));
     },
     async promote(service: string, gen: { id: string; sha: string }) {
-      emitDeployEvent(deployEvents.servicePromoted, { service, gen_id: gen.id, sha: gen.sha })
-      const ctx = await controlCtx()
-      if (!ctx) return
-      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => promote(cur, gen))
+      emitDeployEvent(deployEvents.servicePromoted, { service, gen_id: gen.id, sha: gen.sha });
+      const ctx = await controlCtx();
+      if (!ctx) return;
+      await updateServiceRollout(ctx.s3, ctx.bucket, ctx.controlKey, service, (cur) => promote(cur, gen));
     },
     async lbGetServers(backendId: string) {
-      return createLbGetServers({ secretKey: requireLbKey(), zone, backendId })()
+      return createLbGetServers({ secretKey: requireLbKey(), zone, backendId })();
     },
     async lbSetServers(backendId: string, ips: string[]) {
-      return createLbSetServers({ secretKey: requireLbKey(), zone, backendId })(ips)
+      return createLbSetServers({ secretKey: requireLbKey(), zone, backendId })(ips);
     },
     async healthGate(url: string, sha: string) {
       const out = await pollForVersion({
@@ -91,12 +91,12 @@ export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRun
         attempts: deployHealthAttempts,
         intervalMs: deployHealthIntervalMs,
         sleep,
-      })
-      if (out.ok) emitDeployEvent(deployEvents.healthGatePassed, { url, sha })
-      else emitDeployEvent(deployEvents.healthGateFailed, { url, sha }, { severity: 'error' })
-      return out.ok
+      });
+      if (out.ok) emitDeployEvent(deployEvents.healthGatePassed, { url, sha });
+      else emitDeployEvent(deployEvents.healthGateFailed, { url, sha }, { severity: 'error' });
+      return out.ok;
     },
     sleep,
     info: (msg: string) => console.info(msg),
-  }
+  };
 }

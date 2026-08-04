@@ -1,27 +1,38 @@
-import { healthContract } from '../config/health.config'
-import type { AppServiceConfig, AppServices, ServiceMeta, ComposeFile, ComposeService, HealthCheck } from './types'
+import { healthContract } from '../config/health.config';
+import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, HealthCheck, ServiceMeta } from './types';
 
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
-  const seenPrefixes = new Map<string, string>()
+  const seenPrefixes = new Map<string, string>();
   for (const [slug, cfg] of Object.entries(services)) {
-    const prefix = cfg.lbPathBegin
+    const prefix = cfg.lbPathBegin;
     if (prefix === undefined) {
       // A path-routed service is reachable ONLY through its path route.
-      if (cfg.lbRoute === 'path') throw new Error(`services config: '${slug}' has lbRoute 'path' but no lbPathBegin — nothing would route to it.`)
-      continue
+      if (cfg.lbRoute === 'path')
+        throw new Error(
+          `services config: '${slug}' has lbRoute 'path' but no lbPathBegin — nothing would route to it.`,
+        );
+      continue;
     }
     // The LB matches the raw path-begin string, so a malformed prefix silently
     // routes wrong traffic, so validation fails during synth/plan.
-    if (!cfg.lbRoute) throw new Error(`services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`)
+    if (!cfg.lbRoute)
+      throw new Error(
+        `services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`,
+      );
     if (!/^\/[a-z0-9-]+$/.test(prefix)) {
-      throw new Error(`services config: '${slug}' lbPathBegin '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`)
+      throw new Error(
+        `services config: '${slug}' lbPathBegin '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`,
+      );
     }
-    const owner = seenPrefixes.get(prefix)
-    if (owner) throw new Error(`services config: lbPathBegin '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`)
-    seenPrefixes.set(prefix, slug)
+    const owner = seenPrefixes.get(prefix);
+    if (owner)
+      throw new Error(
+        `services config: lbPathBegin '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`,
+      );
+    seenPrefixes.set(prefix, slug);
   }
-  return services
+  return services;
 }
 
 /** Standard environment injected into every app service unless opted out. */
@@ -29,7 +40,7 @@ const STANDARD_ENV = {
   NODE_ENV: 'production',
   APP_MODE: '${APP_MODE:-production}',
   TZ: 'UTC',
-} as const
+} as const;
 
 /** Uniform identity healthcheck injected into every app service. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
@@ -39,7 +50,7 @@ function healthcheck(port: number, startPeriod: string): HealthCheck {
     timeout: '5s',
     retries: 3,
     start_period: startPeriod,
-  }
+  };
 }
 
 /** Build the `x-service` deploy metadata from an app service entry (omit absent optionals). */
@@ -53,21 +64,21 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
     replacementStrategy: cfg.replacementStrategy,
     drainSeconds: cfg.drainSeconds ?? 0,
     instanceType: cfg.instanceType,
-  }
-  if (cfg.primaryRollout) meta.primaryRollout = true
-  if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy
-  if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute
-  if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin
-  if (cfg.lbWebsockets) meta.lbWebsockets = true
-  if (cfg.internalRoute) meta.internalRoute = true
-  if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf
-  if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile
-  if (cfg.target) meta.target = cfg.target
-  if (cfg.coHosted) meta.coHosted = true
-  if (cfg.placement) meta.placement = cfg.placement
-  if (cfg.s3Access) meta.s3Access = true
-  if (cfg.bindings) meta.bindings = cfg.bindings
-  return meta
+  };
+  if (cfg.primaryRollout) meta.primaryRollout = true;
+  if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy;
+  if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute;
+  if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin;
+  if (cfg.lbWebsockets) meta.lbWebsockets = true;
+  if (cfg.internalRoute) meta.internalRoute = true;
+  if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf;
+  if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile;
+  if (cfg.target) meta.target = cfg.target;
+  if (cfg.coHosted) meta.coHosted = true;
+  if (cfg.placement) meta.placement = cfg.placement;
+  if (cfg.s3Access) meta.s3Access = true;
+  if (cfg.bindings) meta.bindings = cfg.bindings;
+  return meta;
 }
 
 /**
@@ -88,7 +99,7 @@ function appBlock(
     ...(cfg.includeStandardEnv === false ? {} : STANDARD_ENV),
     ...(cfg.env ?? {}),
     ...(opts.extraEnv ?? {}),
-  }
+  };
   const block: ComposeService = {
     image: cfg.image,
     profiles: [slug],
@@ -100,14 +111,14 @@ function appBlock(
     ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
     environment,
     healthcheck: healthcheck(cfg.port, cfg.startPeriod),
-  }
-  block['x-service'] = metaFrom(slug, cfg)
-  return block
+  };
+  block['x-service'] = metaFrom(slug, cfg);
+  return block;
 }
 
 /** The one-shot release companion's compose service name (and its own profile). */
 export function releaseServiceName(slug: string): string {
-  return `${slug}-release`
+  return `${slug}-release`;
 }
 
 /**
@@ -121,7 +132,7 @@ export function releaseServiceName(slug: string): string {
  * profile would re-roll every generation.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
-  const release = cfg.release
+  const release = cfg.release;
   return {
     image: cfg.image,
     profiles: [slug],
@@ -129,7 +140,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
     ...(release?.command ? { command: release.command } : {}),
     env_file: ['.env', '.env.runtime'],
     environment: { ...STANDARD_ENV, ...(release?.env ?? {}), ...(cfg.env ?? {}) },
-  }
+  };
 }
 
 // Template machinery for the one-shot release companion and Compose assembly,
@@ -148,16 +159,19 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
  * co-hosted worker into the singleVM host. App-owned so the engine names no
  * app-specific env key.
  */
-export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {
-  const processIdentityEnv = new Set(options.processIdentityEnv ?? [])
-  const services: Record<string, ComposeService> = {}
+export function assembleCompose(
+  appServices: AppServices,
+  options: { processIdentityEnv?: readonly string[] } = {},
+): ComposeFile {
+  const processIdentityEnv = new Set(options.processIdentityEnv ?? []);
+  const services: Record<string, ComposeService> = {};
   for (const [slug, cfg] of Object.entries(appServices)) {
-    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv })
-    if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg)
+    services[slug] = appBlock(slug, cfg, { extraEnv: cfg.release?.appEnv });
+    if (cfg.release) services[releaseServiceName(slug)] = releaseBlock(slug, cfg);
   }
-  publishCoHostedPorts(appServices, services)
-  publishCoHostedEnv(appServices, services, processIdentityEnv)
-  return { services }
+  publishCoHostedPorts(appServices, services);
+  publishCoHostedEnv(appServices, services, processIdentityEnv);
+  return { services };
 }
 
 /**
@@ -167,26 +181,30 @@ export function assembleCompose(appServices: AppServices, options: { processIden
  * env keys are skipped: under `singleVM` the folded workers boot in-process under
  * the host's own identity and read only their service-specific vars.
  */
-function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>, processIdentityEnv: ReadonlySet<string>): void {
-  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
-  if (!hostSlug) return
-  const hostBlock = blocks[hostSlug]
-  if (!hostBlock) return
-  const merged: Record<string, string> = { ...(hostBlock.environment ?? {}) }
+function publishCoHostedEnv(
+  appServices: AppServices,
+  blocks: Record<string, ComposeService>,
+  processIdentityEnv: ReadonlySet<string>,
+): void {
+  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0];
+  if (!hostSlug) return;
+  const hostBlock = blocks[hostSlug];
+  if (!hostBlock) return;
+  const merged: Record<string, string> = { ...(hostBlock.environment ?? {}) };
   for (const [slug, cfg] of Object.entries(appServices)) {
-    if (!cfg.coHosted || !cfg.env) continue
+    if (!cfg.coHosted || !cfg.env) continue;
     for (const [key, value] of Object.entries(cfg.env)) {
-      if (processIdentityEnv.has(key)) continue
-      const existing = merged[key]
+      if (processIdentityEnv.has(key)) continue;
+      const existing = merged[key];
       if (existing !== undefined && existing !== value) {
         throw new Error(
           `compose synth: co-hosted service '${slug}' env '${key}=${value}' conflicts with '${existing}' already on host '${hostSlug}' — rename the worker's variable in services.config.ts (folded env must not overload host keys).`,
-        )
+        );
       }
-      merged[key] = value
+      merged[key] = value;
     }
   }
-  hostBlock.environment = merged
+  hostBlock.environment = merged;
 }
 
 /**
@@ -195,14 +213,14 @@ function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, Com
  * policy keeps them unreachable. Does nothing when no service opts in.
  */
 function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {
-  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0]
-  if (!hostSlug) return
-  const hostBlock = blocks[hostSlug]
-  if (!hostBlock) return
+  const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0];
+  if (!hostSlug) return;
+  const hostBlock = blocks[hostSlug];
+  if (!hostBlock) return;
   const coHostedPorts = Object.values(appServices)
     .filter((cfg) => cfg.coHosted)
-    .map((cfg) => `${cfg.port}:${cfg.port}`)
-  if (coHostedPorts.length === 0) return
-  const existing = new Set(hostBlock.ports ?? [])
-  hostBlock.ports = [...(hostBlock.ports ?? []), ...coHostedPorts.filter((p) => !existing.has(p))]
+    .map((cfg) => `${cfg.port}:${cfg.port}`);
+  if (coHostedPorts.length === 0) return;
+  const existing = new Set(hostBlock.ports ?? []);
+  hostBlock.ports = [...(hostBlock.ports ?? []), ...coHostedPorts.filter((p) => !existing.has(p))];
 }

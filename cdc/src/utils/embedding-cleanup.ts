@@ -1,6 +1,6 @@
 import { and, arrayOverlaps, getColumns, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import { appConfig, type ActivityAction, hierarchy, type ProductEntityType } from 'shared';
+import { type ActivityAction, appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
@@ -41,11 +41,15 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     }
 
     const parentType = hierarchy.getParent(embeddedProduct);
-    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent context — cleanup requires a scoping column`);
+    if (!parentType)
+      throw new Error(
+        `productEmbeddings: "${embeddedProduct}" has no parent context — cleanup requires a scoping column`,
+      );
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
-    if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
+    if (!parentColumn)
+      throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
 
     const resolved: ResolvedEmbedding = { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn };
     const list = map.get(embeddedProduct);
@@ -96,23 +100,22 @@ export async function cleanupEmbeddingReferences(
       else byParent.set(parentId, [id]);
     }
 
-    await Promise.all([...byParent].map(([parentId, embeddedIds]) => {
-      const conditions = [
-        arrayOverlaps(hostColumn, embeddedIds),
-        sql`${parentColumn} = ${parentId}`,
-      ];
+    await Promise.all(
+      [...byParent].map(([parentId, embeddedIds]) => {
+        const conditions = [arrayOverlaps(hostColumn, embeddedIds), sql`${parentColumn} = ${parentId}`];
 
-      return cdcDb
-        .update(hostTable)
-        .set({
-          [hostColumnName]: sql`(
+        return cdcDb
+          .update(hostTable)
+          .set({
+            [hostColumnName]: sql`(
             SELECT coalesce(array_agg(elem), '{}')
             FROM unnest(${hostColumn}) AS elem
             WHERE elem != ALL(${embeddedIds})
           )`,
-          stx: stripChangedFieldsStx(),
-        })
-        .where(and(...conditions));
-    }));
+            stx: stripChangedFieldsStx(),
+          })
+          .where(and(...conditions));
+      }),
+    );
   }
 }

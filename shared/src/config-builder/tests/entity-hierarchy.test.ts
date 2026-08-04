@@ -87,8 +87,8 @@ describe('EntityHierarchyBuilder', () => {
   });
 
   describe('hierarchy queries (raak-like model)', () => {
-// Model organization as root; workspace and project as its channels.
-// Task, label, and attachment are project products inheriting organization permissions.
+    // Model organization as root; workspace and project as its channels.
+    // Task, label, and attachment are project products inheriting organization permissions.
     const hierarchy = createEntityHierarchy(roles)
       .user()
       .channel('organization', { parent: null, roles: [roles.admin, roles.member] })
@@ -190,7 +190,9 @@ describe('EntityHierarchyBuilder', () => {
         .channel('project', { parent: 'courseSection', roles: roles.all });
 
     it('exposes declared nullable ancestors via accessor and product view', () => {
-      const h = deep().product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] }).build();
+      const h = deep()
+        .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
+        .build();
       expect(h.getNullableAncestors('item')).toEqual(['project', 'courseSection']);
       expect(h.getProductConfig('item')?.nullableAncestors).toEqual(['project', 'courseSection']);
     });
@@ -219,9 +221,9 @@ describe('EntityHierarchyBuilder', () => {
     });
 
     it('throws on duplicate nullable ancestors', () => {
-      expect(() =>
-        deep().product('item', { parent: 'project', nullableAncestors: ['project', 'project'] }),
-      ).toThrow('duplicate nullableAncestor');
+      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['project', 'project'] })).toThrow(
+        'duplicate nullableAncestor',
+      );
     });
   });
 });

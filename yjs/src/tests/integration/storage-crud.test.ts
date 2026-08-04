@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { appConfig } from 'shared';
-import * as Y from 'yjs';
-import { createDoc, loadState, saveState, deleteState } from '../../data/storage';
-import type { DocContext } from '../../constants';
 import { testDatabaseUrl } from 'shared/test-db';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import * as Y from 'yjs';
+import type { DocContext } from '../../constants';
+import { createDoc, deleteState, loadState, saveState } from '../../data/storage';
 
 const DATABASE_URL = testDatabaseUrl;
 
@@ -40,22 +40,22 @@ const ids = {
  */
 async function seedTestTenant(client: pg.Client) {
   // Ensure tenant exists (idempotent)
-  await client.query(
-    `INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
-    [testTenantId, 'YJS Integration Test Tenant'],
-  );
+  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
+    testTenantId,
+    'YJS Integration Test Tenant',
+  ]);
   // Ensure organization exists
   await client.query(
-    `INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
     [testOrgId, testTenantId, 'yjs-integ-org', 'YJS Test Org', 'yto'],
   );
 }
 
 /** Remove all test data. */
 async function cleanupTestData(client: pg.Client) {
-  await client.query(`DELETE FROM yjs_documents WHERE tenant_id = $1`, [testTenantId]);
-  await client.query(`DELETE FROM organizations WHERE tenant_id = $1`, [testTenantId]);
-  await client.query(`DELETE FROM tenants WHERE id = $1`, [testTenantId]);
+  await client.query('DELETE FROM yjs_documents WHERE tenant_id = $1', [testTenantId]);
+  await client.query('DELETE FROM organizations WHERE tenant_id = $1', [testTenantId]);
+  await client.query('DELETE FROM tenants WHERE id = $1', [testTenantId]);
 }
 
 describe('6.1 Storage CRUD', () => {
