@@ -28,7 +28,12 @@ export function isTransientError(error: unknown): boolean {
 
 /** Type guard for objects with a string `code` property (e.g., PostgreSQL errors). */
 function hasErrorCode(value: unknown): value is { code: string } {
-  return typeof value === 'object' && value !== null && 'code' in value && typeof (value as { code: unknown }).code === 'string';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'code' in value &&
+    typeof (value as { code: unknown }).code === 'string'
+  );
 }
 
 /**
@@ -69,7 +74,7 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
       }
 
       const delay = Math.min(
-        RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt - 1),
+        RETRY_CONFIG.initialDelayMs * RETRY_CONFIG.backoffMultiplier ** (attempt - 1),
         RETRY_CONFIG.maxDelayMs,
       );
 
@@ -80,7 +85,6 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
         errorCode: getErrorCode(error),
         err: lastError,
       });
-
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

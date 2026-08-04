@@ -1,12 +1,15 @@
 import type { DocContext } from '../constants';
 import { pool, withClient } from './db';
 
-/** 
+/**
  * Returns raw Y.Doc binary state from PG, or null if no document exists yet.
  */
 export async function loadState({ entityType, entityId, tenantId, userId }: DocContext): Promise<Uint8Array | null> {
   return withClient(tenantId, userId, async (client) => {
-    const result = await client.query('SELECT state FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [entityType, entityId]);
+    const result = await client.query('SELECT state FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [
+      entityType,
+      entityId,
+    ]);
     if (result.rows.length === 0) return null;
     return new Uint8Array(result.rows[0].state);
   });

@@ -1,13 +1,10 @@
 import { PgoutputPlugin } from 'pg-logical-replication';
-
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../constants';
 import { log } from '../lib/pino';
-
-import { replicationState } from '../services/replication-state';
-import { metrics } from '../services/cdc-metrics';
-import { wsClient } from '../network/websocket-client';
 import { startHealthReporter, stopHealthReporter } from '../network/health-reporter';
-
+import { wsClient } from '../network/websocket-client';
+import { metrics } from '../services/cdc-metrics';
+import { replicationState } from '../services/replication-state';
 import { drainBuffers } from './handle-message';
 import { createReplicationService, setupBackpressure, subscribeWithReconnect } from './replication';
 
@@ -18,7 +15,7 @@ import { createReplicationService, setupBackpressure, subscribeWithReconnect } f
  * @see cdc/README.md
  */
 export async function startCdcWorker(): Promise<void> {
-  log.info(`CDC worker starting...`, {
+  log.info('CDC worker starting...', {
     publicationName: CDC_PUBLICATION_NAME,
     slotName: CDC_SLOT_NAME,
   });
@@ -43,7 +40,7 @@ export async function startCdcWorker(): Promise<void> {
  * Stop the CDC worker gracefully.
  */
 export async function stopCdcWorker(): Promise<void> {
-  log.info(`CDC worker stopping...`);
+  log.info('CDC worker stopping...');
   stopHealthReporter();
   metrics.stop();
   await drainBuffers();

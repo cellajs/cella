@@ -1,3 +1,4 @@
+import process from 'node:process';
 export interface GracefulShutdownOptions {
   /** Service name for log messages. */
   name: string;

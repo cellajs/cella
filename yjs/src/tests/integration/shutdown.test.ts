@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import { createServer, type Server } from 'node:http';
+import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 
 describe('4.2 Graceful shutdown', () => {

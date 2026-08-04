@@ -1,9 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import process from 'node:process';
 import { URL } from 'node:url';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { env } from '../env';
-import { stripYjsPrefix } from './path-prefix';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
+import { stripYjsPrefix } from './path-prefix';
 import { getConnectionCount } from './ws-server';
 
 const SECURITY_HEADERS = {

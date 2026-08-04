@@ -31,10 +31,7 @@ function isAllowed(file: string): boolean {
 }
 
 /** Find disallowed terminology in one repository path and its text content. */
-export function findAppVocabularyFindings(
-  file: string,
-  source: string,
-): AppVocabularyFinding[] {
+export function findAppVocabularyFindings(file: string, source: string): AppVocabularyFinding[] {
   if (isAllowed(file)) return [];
 
   const findings: AppVocabularyFinding[] = [];
@@ -90,10 +87,7 @@ export function runAppVocabularyCheck(repoRoot = defaultRepoRoot): number {
 
   console.error(`[app-vocabulary] ${findings.length} disallowed occurrence(s):`);
   for (const finding of findings) {
-    const location =
-      finding.location === 'path'
-        ? finding.file
-        : `${finding.file}:${finding.line}:${finding.column}`;
+    const location = finding.location === 'path' ? finding.file : `${finding.file}:${finding.line}:${finding.column}`;
     console.error(`  ${location} replace "${finding.term}" with template/app terminology`);
   }
   return 1;

@@ -1,11 +1,11 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { isChannel, appConfig } from 'shared';
 import type { ChannelIdColumns } from 'shared';
+import { appConfig, isChannel } from 'shared';
+import { RESOURCE_LIMITS } from '../constants';
+import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
-import { log } from '../lib/pino';
-import { RESOURCE_LIMITS } from '../constants';
 
 /** Reverse lookup: hostProduct → embedded products that embed into it (from productEmbeddings) */
 const embeddedByHostProduct = new Map<string, Set<string>>();
@@ -36,9 +36,7 @@ export class TransactionBuffer {
   /** Callback for surviving events after cascade analysis. */
   private onSurvivingEvents: (events: PendingEvent[]) => Promise<void>;
 
-  constructor(
-    onSurvivingEvents: (events: PendingEvent[]) => Promise<void>,
-  ) {
+  constructor(onSurvivingEvents: (events: PendingEvent[]) => Promise<void>) {
     this.onSurvivingEvents = onSurvivingEvents;
   }
 
@@ -51,7 +49,8 @@ export class TransactionBuffer {
       log.warn('BEGIN received while transaction active, flushing previous', {
         prevXid: this.activeXid,
         newXid: msg.xid,
-        pendingCount: this.pendingEvents.length });
+        pendingCount: this.pendingEvents.length,
+      });
       this.flushAll();
     }
 
@@ -126,7 +125,8 @@ export class TransactionBuffer {
       log.info('Suppressed cascaded delete events', {
         suppressedCount,
         processedCount: events.length,
-        deletedChannelIds });
+        deletedChannelIds,
+      });
     }
 
     if (events.length === 0) return;
@@ -150,13 +150,12 @@ export class TransactionBuffer {
       // Mixed type validation: warn about cross-type non-delete mutations
       if (surviving.length > 1) {
         const nonDeleteTypes = new Set(
-          surviving
-            .filter((e) => e.result.activity.action !== 'delete')
-            .map((e) => e.result.tableMeta.type),
+          surviving.filter((e) => e.result.activity.action !== 'delete').map((e) => e.result.tableMeta.type),
         );
         if (nonDeleteTypes.size > 1) {
           log.warn('Transaction contains non-delete mutations across types', {
-            types: [...nonDeleteTypes] });
+            types: [...nonDeleteTypes],
+          });
         }
       }
 
@@ -234,7 +233,8 @@ export class TransactionBuffer {
       log.info('Suppressed soft cascade update events', {
         softSuppressedCount,
         deleteTypes: [...deleteTypes],
-        survivingCount: kept.length });
+        survivingCount: kept.length,
+      });
     }
 
     return kept;
@@ -260,7 +260,8 @@ export class TransactionBuffer {
       if (this.activeXid !== null) {
         log.warn('Transaction buffer timeout, flushing without filtering', {
           xid: this.activeXid,
-          count: this.pendingEvents.length });
+          count: this.pendingEvents.length,
+        });
         this.flushAll();
       }
     }, transactionTimeoutMs);

@@ -18,8 +18,8 @@ const sslCa =
       })()
     : undefined;
 
-  // Pin certificate identity to the dialed host and strip URL SSL options that override the CA.
-  // Backend and CDC use the same helpers.
+// Pin certificate identity to the dialed host and strip URL SSL options that override the CA.
+// Backend and CDC use the same helpers.
 export const pool = new pg.Pool({
   connectionString: stripPostgresSslParams(env.DATABASE_URL),
   max: env.YJS_DB_POOL_MAX,
@@ -28,14 +28,18 @@ export const pool = new pg.Pool({
 
 /** Set RLS session context on a client connection */
 async function setSessionContext(client: pg.PoolClient, tenantId: string, userId: string) {
-  await client.query(
-    "SELECT set_config('app.tenant_id', $1, false), set_config('app.user_id', $2, false)",
-    [tenantId, userId],
-  );
+  await client.query("SELECT set_config('app.tenant_id', $1, false), set_config('app.user_id', $2, false)", [
+    tenantId,
+    userId,
+  ]);
 }
 
 /** Acquire a pooled client with RLS context, execute `fn`, then release. */
-export async function withClient<T>(tenantId: string, userId: string, fn: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+export async function withClient<T>(
+  tenantId: string,
+  userId: string,
+  fn: (client: pg.PoolClient) => Promise<T>,
+): Promise<T> {
   const client = await pool.connect();
   try {
     await setSessionContext(client, tenantId, userId);

@@ -1,71 +1,71 @@
-import { isRecord } from '../../lib/utils/guards'
+import { isRecord } from '../../lib/utils/guards';
 
-export const supportedSchemaVersion = 1
-export const supportedImageContract = 'docker-node-boot-v1'
+export const supportedSchemaVersion = 1;
+export const supportedImageContract = 'docker-node-boot-v1';
 
 export interface RuntimeSecretManifestEntry {
-  envVar: string
-  secretId: string
-  required: boolean
+  envVar: string;
+  secretId: string;
+  required: boolean;
 }
 
 export interface ServiceKeyHandoff {
   /** Single-access secret holding this generation's service key pair. */
-  secretId: string
+  secretId: string;
   /** Where the fetched pair persists (0600) so reboots never re-fetch. */
-  cacheFile: string
+  cacheFile: string;
 }
 
 export interface BootPlan {
-  schemaVersion: typeof supportedSchemaVersion
-  service: string
-  profile: string
+  schemaVersion: typeof supportedSchemaVersion;
+  service: string;
+  profile: string;
   /**
    * Compose services to start (explicit names, so the one-shot release
    * companion sharing the profile is never `up`ed). Absent in plans written
    * before container collocation; the boot runner falls back to [profile].
    */
-  services?: [string, ...string[]]
-  releaseSha: string
+  services?: [string, ...string[]];
+  releaseSha: string;
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
-  traceparent?: string
-  imageContract: typeof supportedImageContract
-  registry: string
-  region: string
+  traceparent?: string;
+  imageContract: typeof supportedImageContract;
+  registry: string;
+  region: string;
   credentials: {
-    scwAccessKeyFile: string
-    scwSecretKeyFile: string
-  }
+    scwAccessKeyFile: string;
+    scwSecretKeyFile: string;
+  };
   /**
    * v2 model: fetch the real service key from a single-access handoff bundle
    * using the (baked) boot credentials. A failed fetch on FIRST boot means the
    * bundle was already consumed: interception signal, boot halts. Cache-first
    * on reboots. Absent = legacy model (baked key does everything).
    */
-  serviceKeyHandoff?: ServiceKeyHandoff
+  serviceKeyHandoff?: ServiceKeyHandoff;
   /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
-  exportS3Env?: boolean
+  exportS3Env?: boolean;
   bootDiagnostics: {
-    bucket: string
-    logFile: string
-  }
+    bucket: string;
+    logFile: string;
+  };
   releaseCommand: {
-    enabled: boolean
-    command: [string, ...string[]]
-  }
+    enabled: boolean;
+    command: [string, ...string[]];
+  };
   docker: {
-    composeFile: string
-  }
+    composeFile: string;
+  };
   files: {
-    compose: string
-    env: string
-    runtimeSecretManifest: RuntimeSecretManifestEntry[]
-  }
+    compose: string;
+    env: string;
+    runtimeSecretManifest: RuntimeSecretManifestEntry[];
+  };
   timeouts: {
-    privateNetworkSeconds: number
-    pullAttempts: number
-    pullRetrySeconds: number
-  }
+    privateNetworkSeconds: number;
+    pullAttempts: number;
+    pullRetrySeconds: number;
+  };
 }
 
 const topLevelKeys = new Set([
@@ -86,109 +86,116 @@ const topLevelKeys = new Set([
   'docker',
   'files',
   'timeouts',
-])
+]);
 
 function stringField(obj: Record<string, unknown>, key: string): string {
-  const value = obj[key]
-  if (typeof value !== 'string' || value.trim() === '') throw new Error(`boot plan: '${key}' must be a non-empty string`)
-  return value
+  const value = obj[key];
+  if (typeof value !== 'string' || value.trim() === '')
+    throw new Error(`boot plan: '${key}' must be a non-empty string`);
+  return value;
 }
 
 function booleanField(obj: Record<string, unknown>, key: string): boolean {
-  const value = obj[key]
-  if (typeof value !== 'boolean') throw new Error(`boot plan: '${key}' must be a boolean`)
-  return value
+  const value = obj[key];
+  if (typeof value !== 'boolean') throw new Error(`boot plan: '${key}' must be a boolean`);
+  return value;
 }
 
 function numberField(obj: Record<string, unknown>, key: string): number {
-  const value = obj[key]
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) throw new Error(`boot plan: '${key}' must be a positive number`)
-  return value
+  const value = obj[key];
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0)
+    throw new Error(`boot plan: '${key}' must be a positive number`);
+  return value;
 }
 
 function objectField(obj: Record<string, unknown>, key: string): Record<string, unknown> {
-  const value = obj[key]
-  if (!isRecord(value)) throw new Error(`boot plan: '${key}' must be an object`)
-  return value
+  const value = obj[key];
+  if (!isRecord(value)) throw new Error(`boot plan: '${key}' must be an object`);
+  return value;
 }
 
 function assertKnownTopLevel(obj: Record<string, unknown>): void {
   for (const key of Object.keys(obj)) {
-    if (!topLevelKeys.has(key)) throw new Error(`boot plan: unknown top-level field '${key}'`)
+    if (!topLevelKeys.has(key)) throw new Error(`boot plan: unknown top-level field '${key}'`);
   }
 }
 
 function assertAllowedPath(path: string): void {
-  const allowedPrefixes = ['/opt/app/', '/var/log/']
+  const allowedPrefixes = ['/opt/app/', '/var/log/'];
   // App config and secrets live under a single `/etc/<name>/` subdirectory (the
   // app slug, or 'runtime-secrets'); accept any single kebab-case segment there.
-  const etcSubdir = /^\/etc\/[a-z0-9-]+\//
-  if (allowedPrefixes.some((prefix) => path.startsWith(prefix)) || etcSubdir.test(path)) return
-  throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`)
+  const etcSubdir = /^\/etc\/[a-z0-9-]+\//;
+  if (allowedPrefixes.some((prefix) => path.startsWith(prefix)) || etcSubdir.test(path)) return;
+  throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`);
 }
 
 function commandField(obj: Record<string, unknown>, key: string): [string, ...string[]] {
-  const value = obj[key]
-  if (!Array.isArray(value) || value.length === 0) throw new Error(`boot plan: '${key}' must be a non-empty command array`)
+  const value = obj[key];
+  if (!Array.isArray(value) || value.length === 0)
+    throw new Error(`boot plan: '${key}' must be a non-empty command array`);
   const command = value.map((part) => {
-    if (typeof part !== 'string' || part === '') throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`)
-    return part
-  })
+    if (typeof part !== 'string' || part === '')
+      throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`);
+    return part;
+  });
   // Validated non-empty above; the tuple type lets consumers destructure the
   // executable without a non-null assertion.
-  return command as [string, ...string[]]
+  return command as [string, ...string[]];
 }
 
 /** Validate a runtime-secret manifest value. Also used by the boot-plan
  *  producer (resources/cloud-init.ts) so a malformed manifest fails at plan
  *  time during planning. */
 export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
-  if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array")
+  if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array");
   return value.map((entry, index) => {
-    if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`)
+    if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`);
     return {
       envVar: stringField(entry, 'envVar'),
       secretId: stringField(entry, 'secretId'),
       required: booleanField(entry, 'required'),
-    }
-  })
+    };
+  });
 }
 
 export function parseBootPlanJson(json: string): BootPlan {
-  const parsed = JSON.parse(json) as unknown
-  if (!isRecord(parsed)) throw new Error('boot plan: root must be an object')
-  assertKnownTopLevel(parsed)
+  const parsed = JSON.parse(json) as unknown;
+  if (!isRecord(parsed)) throw new Error('boot plan: root must be an object');
+  assertKnownTopLevel(parsed);
 
-  const schemaVersion = parsed.schemaVersion
-  if (schemaVersion !== supportedSchemaVersion) throw new Error(`boot plan: unsupported schemaVersion '${String(schemaVersion)}'`)
-  const imageContract = parsed.imageContract
-  if (imageContract !== supportedImageContract) throw new Error(`boot plan: unsupported imageContract '${String(imageContract)}'`)
+  const schemaVersion = parsed.schemaVersion;
+  if (schemaVersion !== supportedSchemaVersion)
+    throw new Error(`boot plan: unsupported schemaVersion '${String(schemaVersion)}'`);
+  const imageContract = parsed.imageContract;
+  if (imageContract !== supportedImageContract)
+    throw new Error(`boot plan: unsupported imageContract '${String(imageContract)}'`);
 
-  const credentials = objectField(parsed, 'credentials')
-  const bootDiagnostics = objectField(parsed, 'bootDiagnostics')
-  const releaseCommand = objectField(parsed, 'releaseCommand')
-  const docker = objectField(parsed, 'docker')
-  const files = objectField(parsed, 'files')
-  const timeouts = objectField(parsed, 'timeouts')
+  const credentials = objectField(parsed, 'credentials');
+  const bootDiagnostics = objectField(parsed, 'bootDiagnostics');
+  const releaseCommand = objectField(parsed, 'releaseCommand');
+  const docker = objectField(parsed, 'docker');
+  const files = objectField(parsed, 'files');
+  const timeouts = objectField(parsed, 'timeouts');
 
-  const scwAccessKeyFile = stringField(credentials, 'scwAccessKeyFile')
-  const scwSecretKeyFile = stringField(credentials, 'scwSecretKeyFile')
-  const logFile = stringField(bootDiagnostics, 'logFile')
-  const composeFile = stringField(docker, 'composeFile')
-  for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path)
+  const scwAccessKeyFile = stringField(credentials, 'scwAccessKeyFile');
+  const scwSecretKeyFile = stringField(credentials, 'scwSecretKeyFile');
+  const logFile = stringField(bootDiagnostics, 'logFile');
+  const composeFile = stringField(docker, 'composeFile');
+  for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path);
 
-  const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined
+  const traceparent =
+    typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
 
-  let serviceKeyHandoff: ServiceKeyHandoff | undefined
+  let serviceKeyHandoff: ServiceKeyHandoff | undefined;
   if (parsed.serviceKeyHandoff !== undefined) {
-    const handoff = objectField(parsed, 'serviceKeyHandoff')
-    const cacheFile = stringField(handoff, 'cacheFile')
-    assertAllowedPath(cacheFile)
-    serviceKeyHandoff = { secretId: stringField(handoff, 'secretId'), cacheFile }
+    const handoff = objectField(parsed, 'serviceKeyHandoff');
+    const cacheFile = stringField(handoff, 'cacheFile');
+    assertAllowedPath(cacheFile);
+    serviceKeyHandoff = { secretId: stringField(handoff, 'secretId'), cacheFile };
   }
-  const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env')
+  const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env');
 
-  const services = parsed.services === undefined ? undefined : commandField(parsed, 'services')
+  const services = parsed.services === undefined ? undefined : commandField(parsed, 'services');
 
   return {
     schemaVersion,
@@ -222,5 +229,5 @@ export function parseBootPlanJson(json: string): BootPlan {
       pullAttempts: numberField(timeouts, 'pullAttempts'),
       pullRetrySeconds: numberField(timeouts, 'pullRetrySeconds'),
     },
-  }
+  };
 }

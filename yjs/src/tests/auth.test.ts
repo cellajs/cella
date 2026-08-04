@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { verifyToken } from '../server/auth';
-import { createSignedToken, createExpiredToken } from './helpers';
+import { createExpiredToken, createSignedToken } from './helpers';
 
 describe('verifyToken', () => {
   it('1.1.1 valid token returns payload', () => {
@@ -27,7 +27,9 @@ describe('verifyToken', () => {
     const token = createSignedToken('user-1');
     const parts = token.split('.');
     // Modify payload but keep original signature
-    const otherPayload = Buffer.from(JSON.stringify({ userId: 'hacker', exp: Date.now() + 60000 })).toString('base64url');
+    const otherPayload = Buffer.from(JSON.stringify({ userId: 'hacker', exp: Date.now() + 60000 })).toString(
+      'base64url',
+    );
     const tampered = `${otherPayload}.${parts[1]}`;
     expect(verifyToken(tampered)).toEqual({ ok: false, reason: 'bad_signature' });
   });

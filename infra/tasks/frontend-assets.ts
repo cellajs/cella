@@ -1,12 +1,12 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
 // The deploy command owns asset semantics (the SST StaticSite pattern): the
 // hashed bundle uploads before the rollout, entry files publish only after
 // version verification (deploy-run.publishEntryFiles).
 
 /** Entry files that must NOT upload with the bundle: they go live last. */
-export const ENTRY_FILE_NAMES = ['index.html', 'sw.js', 'sw.js.map', 'manifest.webmanifest'] as const
+export const ENTRY_FILE_NAMES = ['index.html', 'sw.js', 'sw.js.map', 'manifest.webmanifest'] as const;
 
 const contentTypes: Record<string, string> = {
   '.js': 'text/javascript; charset=utf-8',
@@ -29,41 +29,41 @@ const contentTypes: Record<string, string> = {
   '.woff2': 'font/woff2',
   '.wasm': 'application/wasm',
   '.webmanifest': 'application/manifest+json',
-}
+};
 
 export function contentTypeFor(key: string): string {
-  const dot = key.lastIndexOf('.')
-  return (dot >= 0 ? contentTypes[key.slice(dot)] : undefined) ?? 'application/octet-stream'
+  const dot = key.lastIndexOf('.');
+  return (dot >= 0 ? contentTypes[key.slice(dot)] : undefined) ?? 'application/octet-stream';
 }
 
 /** Hashed, immutable paths: existence of the key proves the content matches. */
 export function isHashedPath(key: string): boolean {
-  return key.startsWith('assets/') || key.startsWith('static/')
+  return key.startsWith('assets/') || key.startsWith('static/');
 }
 
 export function isEntryFile(key: string): boolean {
-  return (ENTRY_FILE_NAMES as readonly string[]).includes(key)
+  return (ENTRY_FILE_NAMES as readonly string[]).includes(key);
 }
 
 /** Recursively list dist files as bucket keys (posix separators). */
 export function listDistKeys(distDir: string): string[] {
-  const keys: string[] = []
+  const keys: string[] = [];
   const walk = (dir: string): void => {
     for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
-      if (statSync(path).isDirectory()) walk(path)
-      else keys.push(relative(distDir, path).split('\\').join('/'))
+      const path = join(dir, entry);
+      if (statSync(path).isDirectory()) walk(path);
+      else keys.push(relative(distDir, path).split('\\').join('/'));
     }
-  }
-  walk(distDir)
-  return keys
+  };
+  walk(distDir);
+  return keys;
 }
 
 export interface UploadAssetsOptions {
-  distDir: string
-  bucket: string
-  region: string
-  log?: (message: string) => void
+  distDir: string;
+  bucket: string;
+  region: string;
+  log?: (message: string) => void;
 }
 
 /**
@@ -74,8 +74,8 @@ export interface UploadAssetsOptions {
  * can change under a stable name.
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
-  const log = opts.log ?? ((message: string) => console.info(message))
-  const { S3Client, HeadObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3')
+  const log = opts.log ?? ((message: string) => console.info(message));
+  const { S3Client, HeadObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
   const s3 = new S3Client({
     region: opts.region,
     endpoint: `https://s3.${opts.region}.scw.cloud`,
@@ -84,26 +84,26 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
       secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
     },
     forcePathStyle: false,
-  })
+  });
 
-  const keys = listDistKeys(opts.distDir).filter((key) => !isEntryFile(key))
-  let uploaded = 0
-  let skipped = 0
+  const keys = listDistKeys(opts.distDir).filter((key) => !isEntryFile(key));
+  let uploaded = 0;
+  let skipped = 0;
   // Modest parallelism: hundreds of small objects, no need for a full pool.
-  const queue = [...keys]
+  const queue = [...keys];
   const workers = Array.from({ length: 8 }, async () => {
     for (let key = queue.shift(); key !== undefined; key = queue.shift()) {
       if (isHashedPath(key)) {
         const exists = await s3
           .send(new HeadObjectCommand({ Bucket: opts.bucket, Key: key }))
           .then(() => true)
-          .catch(() => false)
+          .catch(() => false);
         if (exists) {
-          skipped++
-          continue
+          skipped++;
+          continue;
         }
       }
-      const body = readFileSync(join(opts.distDir, key))
+      const body = readFileSync(join(opts.distDir, key));
       await s3.send(
         new PutObjectCommand({
           Bucket: opts.bucket,
@@ -112,11 +112,11 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
           ContentType: contentTypeFor(key),
           CacheControl: 'public, max-age=31536000, immutable',
         }),
-      )
-      uploaded++
+      );
+      uploaded++;
     }
-  })
-  await Promise.all(workers)
-  log(`[deploy] frontend assets: ${uploaded} uploaded, ${skipped} unchanged (skipped)`)
-  return { uploaded, skipped }
+  });
+  await Promise.all(workers);
+  log(`[deploy] frontend assets: ${uploaded} uploaded, ${skipped} unchanged (skipped)`);
+  return { uploaded, skipped };
 }

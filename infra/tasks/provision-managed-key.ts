@@ -1,40 +1,40 @@
-import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys'
-import { runtimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets'
-import { provisionScopedKey } from '../lib/scaleway/scaleway-iam'
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager'
-import { secretPathFor } from '../lib/scaleway/vm-reader-secret'
-import { checkMark } from '../lib/utils/cli-output'
+import type { ManagedKeyDefinition, MintedKeyField } from '../lib/managed-keys';
+import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
+import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
+import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
+import { secretPathFor } from '../lib/scaleway/vm-reader-secret';
+import { checkMark } from '../lib/utils/cli-output';
 
 export interface ProvisionManagedKeyOptions {
   /** The managed key to mint (from `managedKeys`). */
-  definition: ManagedKeyDefinition
+  definition: ManagedKeyDefinition;
   /** IAM-capable caller key: needs IAMManager to create the app/policy + key. */
-  callerSecretKey: string
-  projectId: string
-  region: string
-  slug: string
+  callerSecretKey: string;
+  projectId: string;
+  region: string;
+  slug: string;
   /** Deploy mode: per-mode app naming/grouping + per-service container paths. */
-  mode: string
+  mode: string;
   /** Env root folder, e.g. `/cella-production/` (display only; containers live in per-service folders). */
-  path: string
-  log?: (message: string) => void
+  path: string;
+  log?: (message: string) => void;
 }
 
 export interface ProvisionManagedKeyResult {
   /** The `<slug>-<suffix>` IAM application the key belongs to. */
-  applicationId: string
+  applicationId: string;
   /** secretName → written revision, one per assigned half. */
-  seeded: Record<string, number>
+  seeded: Record<string, number>;
 }
 
-const defaultLog = (message: string) => console.info(message)
+const defaultLog = (message: string) => console.info(message);
 
 function runtimeSecretById(id: string): RuntimeSecretDefinition {
-  const secret = runtimeSecrets.find((entry) => entry.id === id)
+  const secret = runtimeSecrets.find((entry) => entry.id === id);
   // managed-keys.ts validates every assign target at load time, so this is a
   // config-drift guard, not an expected runtime path.
-  if (!secret) throw new Error(`provision-managed-key: unknown runtime secret id '${id}' (managed-keys.config drift).`)
-  return secret
+  if (!secret) throw new Error(`provision-managed-key: unknown runtime secret id '${id}' (managed-keys.config drift).`);
+  return secret;
 }
 
 /**
@@ -43,27 +43,31 @@ function runtimeSecretById(id: string): RuntimeSecretDefinition {
  * containers. New versions disable prior values; the named IAM application is reused.
  */
 export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Promise<ProvisionManagedKeyResult> {
-  const { definition } = opts
-  const log = opts.log ?? defaultLog
-  const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId })
+  const { definition } = opts;
+  const log = opts.log ?? defaultLog;
+  const client = createSecretManagerClient({
+    secretKey: opts.callerSecretKey,
+    region: opts.region,
+    projectId: opts.projectId,
+  });
 
   const targets = (Object.entries(definition.assign) as [MintedKeyField, string][]).map(([field, secretId]) => ({
     field,
     secret: runtimeSecretById(secretId),
-  }))
+  }));
 
   // Resolve + verify every target container up front. Minting an IAM key is a
   // side effect we cannot cheaply undo, so bail before minting if a container is
   // missing so a live key is never leaked.
-  const containerBySecretName = new Map<string, { id: string }>()
+  const containerBySecretName = new Map<string, { id: string }>();
   for (const { secret } of targets) {
-    const container = await client.getSecretByName(secret.secretName, secretPathFor(secret, opts.slug, opts.mode))
+    const container = await client.getSecretByName(secret.secretName, secretPathFor(secret, opts.slug, opts.mode));
     if (!container) {
       throw new Error(
         `${secret.secretName} (${secret.envVar}) has no container yet — run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
-      )
+      );
     }
-    containerBySecretName.set(secret.secretName, container)
+    containerBySecretName.set(secret.secretName, container);
   }
 
   const minted = await provisionScopedKey(
@@ -72,25 +76,27 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
       suffix: definition.suffix,
       appDescription: definition.appDescription,
       policyDescription: definition.policyDescription,
-      buildRules: ({ projectId }) => [{ permission_set_names: [...definition.permissionSets], project_ids: [projectId] }],
+      buildRules: ({ projectId }) => [
+        { permission_set_names: [...definition.permissionSets], project_ids: [projectId] },
+      ],
       mintKey: true,
     },
-  )
+  );
 
-  const seeded: Record<string, number> = {}
+  const seeded: Record<string, number> = {};
   for (const { field, secret } of targets) {
-    const value = field === 'accessKey' ? minted.accessKey : minted.secretKey
+    const value = field === 'accessKey' ? minted.accessKey : minted.secretKey;
     // biome-ignore lint/style/noNonNullAssertion: populated in the verify loop above.
-    const container = containerBySecretName.get(secret.secretName)!
+    const container = containerBySecretName.get(secret.secretName)!;
     const version = await client.putSecretValue({
       secretId: container.id,
       value,
       description: `Minted by infra CLI (${definition.suffix})`,
       disablePrevious: true,
-    })
-    seeded[secret.secretName] = version.revision
-    log(`  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) → revision ${version.revision}`)
+    });
+    seeded[secret.secretName] = version.revision;
+    log(`  ${checkMark} Wrote ${secret.secretName} (${secret.envVar}) → revision ${version.revision}`);
   }
 
-  return { applicationId: minted.applicationId, seeded }
+  return { applicationId: minted.applicationId, seeded };
 }

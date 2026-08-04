@@ -1,9 +1,9 @@
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
-import type { ParseMessageResult } from '../pipeline/parse-message';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
+import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 
 // Track all DB operations for assertions
 interface DbOp {
@@ -74,7 +74,7 @@ describe('applyBatchUnifiedDeltas', () => {
   }
 
   it('assigns sequential org-sequence values to events from the reserved range', async () => {
-    upsertReturnValue = { 'sequence': 5 }; // highSeq = 5, count = 3, baseSeq = 2
+    upsertReturnValue = { sequence: 5 }; // highSeq = 5, count = 3, baseSeq = 2
 
     const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t3')];
 
@@ -95,7 +95,7 @@ describe('applyBatchUnifiedDeltas', () => {
   });
 
   it('phase 1 merges sequence + org counts; phase 2 writes frontier nodes and the stamp-back', async () => {
-    upsertReturnValue = { 'sequence': 2, 'e:c:task': 2 };
+    upsertReturnValue = { sequence: 2, 'e:c:task': 2 };
 
     const events = [mockEvent('t1'), mockEvent('t2')];
 
@@ -121,7 +121,7 @@ describe('applyBatchUnifiedDeltas', () => {
     // The publication row filter keeps drafts out of the stream entirely (the entrance
     // guard in parse-message drops strays before compute/apply; see parse-message tests),
     // so apply has no draft branch: whatever is stamped is delta-fetchable and bumps.
-    upsertReturnValue = { 'sequence': 2 };
+    upsertReturnValue = { sequence: 2 };
 
     const tombstoneEvent = (id: string) => {
       const event = mockEvent(id);
@@ -157,10 +157,9 @@ describe('applyBatchUnifiedDeltas', () => {
 
 describe('frontierNodeKeys', () => {
   it('org first, then every non-null ancestor, deduplicated', () => {
-    expect(frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual([
-      'org-1',
-      'proj-1',
-    ]);
+    expect(
+      frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH),
+    ).toEqual(['org-1', 'proj-1']);
   });
 
   it('org-homed row rolls up to the org node only', () => {
@@ -170,9 +169,9 @@ describe('frontierNodeKeys', () => {
 
 describe('sumInto', () => {
   it('sums plain delta keys on collision', () => {
-    const target = { 'sequence': 2, 'e:c:task': 1 };
+    const target = { sequence: 2, 'e:c:task': 1 };
     sumInto(target, { 'e:c:task': 2, 'm:c:admin': 1 });
-    expect(target).toEqual({ 'sequence': 2, 'e:c:task': 3, 'm:c:admin': 1 });
+    expect(target).toEqual({ sequence: 2, 'e:c:task': 3, 'm:c:admin': 1 });
   });
 
   it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
@@ -196,8 +195,8 @@ describe('sumInto', () => {
   });
 
   it('max-merge keys pass through unchanged when absent from target', () => {
-    const target: Record<string, number> = { 'sequence': 1 };
+    const target: Record<string, number> = { sequence: 1 };
     sumInto(target, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
-    expect(target).toEqual({ 'sequence': 1, 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
+    expect(target).toEqual({ sequence: 1, 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
   });
 });

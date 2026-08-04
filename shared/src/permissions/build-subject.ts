@@ -1,6 +1,6 @@
-import { appConfig } from '../config-builder/app-config';
 import { hierarchy } from '../../config/hierarchy-config';
 import type { ChannelEntityType, ProductEntityType } from '../../types';
+import { appConfig } from '../config-builder/app-config';
 import { generateId } from '../utils/entity-id';
 import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './engine/types';
 import { validateAncestorScope } from './validate-ancestor-scope';

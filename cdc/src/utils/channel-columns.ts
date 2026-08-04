@@ -1,5 +1,5 @@
-import { appConfig } from 'shared';
 import type { ChannelIdColumns } from 'shared';
+import { appConfig } from 'shared';
 
 /**
  * ID column keys for every channel entity type (e.g. `['organizationId']`),

@@ -1,5 +1,5 @@
-import { entityTables, resourceTables } from '#/tables';
 import { getColumns } from 'drizzle-orm';
+import { entityTables, resourceTables } from '#/tables';
 import type { CdcRowData } from '../types';
 
 /**

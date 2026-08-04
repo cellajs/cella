@@ -1,14 +1,14 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { isChannel, isProduct, appConfig, hierarchy } from 'shared';
+import { appConfig, hierarchy, isChannel, isProduct } from 'shared';
 import type { ParseMessageResult } from '../pipeline/parse-message';
+import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { pickPermissionRowData } from '../utils/permission-row-data';
-import { createActivity } from '../services/create-activity';
 
-/** 
+/**
  * Columns that hold embedded entity ID arrays (e.g. task.labels).
  */
 const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e) => e.hostColumn));
@@ -40,10 +40,7 @@ function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Reco
 /**
  * Handle an UPDATE message and create an activity with entity data.
  */
-export function handleUpdate(
-  tableMeta: TableMeta,
-  message: Pgoutput.MessageUpdate,
-): ParseMessageResult | null {
+export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdate): ParseMessageResult | null {
   const oldRow = extractRowData(message.old);
   const rowData = convertRowKeys(extractRowData(message.new), tableMeta.columnNameMap);
   const hasOldRow = oldRow && Object.keys(oldRow).length > 0;
@@ -67,7 +64,11 @@ export function handleUpdate(
   if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
   // Skip CDC-driven embedding cleanup (e.g. label array stripped after label delete): user edits always include 'updatedAt' in stx.changedFields, so a change touching only embedding columns is cleanup, not a user mutation.
-  if (userChangedFields && !userChangedFields.includes('updatedAt') && userChangedFields.every((k) => embeddingColumns.has(k))) {
+  if (
+    userChangedFields &&
+    !userChangedFields.includes('updatedAt') &&
+    userChangedFields.every((k) => embeddingColumns.has(k))
+  ) {
     return null;
   }
 

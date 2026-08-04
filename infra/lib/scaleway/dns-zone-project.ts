@@ -1,16 +1,16 @@
-import { scwFetch, type ScwAuth } from './scw-fetch'
+import { type ScwAuth, scwFetch } from './scw-fetch';
 
-const DOMAIN_BASE = 'https://api.scaleway.com/domain/v2beta1'
+const DOMAIN_BASE = 'https://api.scaleway.com/domain/v2beta1';
 
 interface DnsZoneItem {
-  domain: string
-  subdomain: string
-  project_id: string
+  domain: string;
+  subdomain: string;
+  project_id: string;
 }
 
 /** Full zone name for a Scaleway DNS zone list item. */
 function zoneName(zone: DnsZoneItem): string {
-  return zone.subdomain ? `${zone.subdomain}.${zone.domain}` : zone.domain
+  return zone.subdomain ? `${zone.subdomain}.${zone.domain}` : zone.domain;
 }
 
 /**
@@ -21,15 +21,19 @@ function zoneName(zone: DnsZoneItem): string {
  * the app project.
  */
 export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): Promise<string | undefined> {
-  if (!dnsZone) return undefined
-  const { dns_zones: zones = [] } = await scwFetch<{ dns_zones?: DnsZoneItem[] }>(auth, 'GET', `${DOMAIN_BASE}/dns-zones?page_size=100`)
+  if (!dnsZone) return undefined;
+  const { dns_zones: zones = [] } = await scwFetch<{ dns_zones?: DnsZoneItem[] }>(
+    auth,
+    'GET',
+    `${DOMAIN_BASE}/dns-zones?page_size=100`,
+  );
   const matches = zones.filter((zone) => {
-    const name = zoneName(zone)
-    return dnsZone === name || dnsZone.endsWith(`.${name}`)
-  })
-  if (matches.length === 0) return undefined
-  matches.sort((a, b) => zoneName(b).length - zoneName(a).length)
-  return matches[0]?.project_id
+    const name = zoneName(zone);
+    return dnsZone === name || dnsZone.endsWith(`.${name}`);
+  });
+  if (matches.length === 0) return undefined;
+  matches.sort((a, b) => zoneName(b).length - zoneName(a).length);
+  return matches[0]?.project_id;
 }
 
 /**
@@ -40,8 +44,10 @@ export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): P
  */
 export async function resolveDnsProjectIds(auth: ScwAuth, dnsZone: string, appProjectId: string): Promise<string[]> {
   const zoneProjectId = await resolveDnsZoneProjectId(auth, dnsZone).catch((err: unknown) => {
-    console.warn(`DNS zone project lookup failed (${err instanceof Error ? err.message : String(err)}); scoping DNS to the app project only.`)
-    return undefined
-  })
-  return zoneProjectId && zoneProjectId !== appProjectId ? [appProjectId, zoneProjectId] : [appProjectId]
+    console.warn(
+      `DNS zone project lookup failed (${err instanceof Error ? err.message : String(err)}); scoping DNS to the app project only.`,
+    );
+    return undefined;
+  });
+  return zoneProjectId && zoneProjectId !== appProjectId ? [appProjectId, zoneProjectId] : [appProjectId];
 }

@@ -1,75 +1,75 @@
-import type { FetchLike } from '../utils/fetch-like'
-import { type ScwAuth, scwFetch, scwSend } from './scw-fetch'
+import type { FetchLike } from '../utils/fetch-like';
+import { type ScwAuth, scwFetch, scwSend } from './scw-fetch';
 
-const SECRET_MANAGER_BASE = 'https://api.scaleway.com/secret-manager/v1beta1'
+const SECRET_MANAGER_BASE = 'https://api.scaleway.com/secret-manager/v1beta1';
 
 export interface SecretManagerSecret {
-  id: string
-  name: string
-  path: string
-  description?: string | null
-  protected?: boolean
-  version_count?: number
-  status?: string
-  region?: string
+  id: string;
+  name: string;
+  path: string;
+  description?: string | null;
+  protected?: boolean;
+  version_count?: number;
+  status?: string;
+  region?: string;
 }
 
 export interface SecretManagerSecretVersion {
-  revision: number
-  secret_id: string
-  status?: string
-  created_at?: string | null
-  updated_at?: string | null
-  description?: string | null
-  latest?: boolean
-  region?: string
+  revision: number;
+  secret_id: string;
+  status?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  description?: string | null;
+  latest?: boolean;
+  region?: string;
 }
 
 interface SecretListResponse {
-  secrets: SecretManagerSecret[]
-  total_count: number
+  secrets: SecretManagerSecret[];
+  total_count: number;
 }
 
 interface AccessSecretVersionResponse {
-  data: string
-  revision: number
-  secret_id: string
+  data: string;
+  revision: number;
+  secret_id: string;
 }
 
 export interface SecretManagerClientOptions {
-  secretKey: string
-  region: string
-  projectId: string
-  fetchImpl?: FetchLike
+  secretKey: string;
+  region: string;
+  projectId: string;
+  fetchImpl?: FetchLike;
 }
 
 export interface EnsureSecretInput {
-  name: string
-  path: string
-  description: string
-  protect?: boolean
+  name: string;
+  path: string;
+  description: string;
+  protect?: boolean;
   /**
    * Scaleway ephemeral policy, set at creation and irremovable afterwards.
    * `expires_once_accessed: true` + action 'disable' = single-access versions:
    * the first read disables the version, which is the handoff tamper alarm.
    */
   ephemeralPolicy?: {
-    expires_once_accessed: boolean
-    action: 'disable' | 'delete'
-    time_to_live?: string
-  }
+    expires_once_accessed: boolean;
+    action: 'disable' | 'delete';
+    time_to_live?: string;
+  };
 }
 
 export interface PutSecretValueInput {
-  secretId: string
-  value: string
-  description?: string
-  disablePrevious?: boolean
+  secretId: string;
+  value: string;
+  description?: string;
+  disablePrevious?: boolean;
 }
 
 function buildSecretsUrl(region: string, query: URLSearchParams) {
-  const suffix = query.size > 0 ? `?${query.toString()}` : ''
-  return `${SECRET_MANAGER_BASE}/regions/${region}/secrets${suffix}`
+  const suffix = query.size > 0 ? `?${query.toString()}` : '';
+  return `${SECRET_MANAGER_BASE}/regions/${region}/secrets${suffix}`;
 }
 
 /**
@@ -81,21 +81,21 @@ function buildSecretsUrl(region: string, query: URLSearchParams) {
  * triggering a `cannot have same secret name in same path` 400 on re-create.
  */
 function normalizeSecretPath(path: string): string {
-  return path === '/' ? path : path.replace(/\/+$/, '')
+  return path === '/' ? path : path.replace(/\/+$/, '');
 }
 
 export function createSecretManagerClient(options: SecretManagerClientOptions) {
-  const auth: ScwAuth = { secretKey: options.secretKey, fetchImpl: options.fetchImpl }
+  const auth: ScwAuth = { secretKey: options.secretKey, fetchImpl: options.fetchImpl };
 
   return {
     async listSecrets(path?: string): Promise<SecretManagerSecret[]> {
       const query = new URLSearchParams({
         project_id: options.projectId,
         scheduled_for_deletion: 'false',
-      })
-      if (path) query.set('path', normalizeSecretPath(path))
-      const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query))
-      return response.secrets
+      });
+      if (path) query.set('path', normalizeSecretPath(path));
+      const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query));
+      return response.secrets;
     },
 
     /**
@@ -104,23 +104,23 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
      * project listing (per-service folders made env listings subtree-shaped).
      */
     async listSecretsUnder(root: string): Promise<SecretManagerSecret[]> {
-      const normalizedRoot = normalizeSecretPath(root)
-      const secrets = await this.listSecrets()
+      const normalizedRoot = normalizeSecretPath(root);
+      const secrets = await this.listSecrets();
       return secrets.filter((secret) => {
-        const path = normalizeSecretPath(secret.path)
-        return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`)
-      })
+        const path = normalizeSecretPath(secret.path);
+        return path === normalizedRoot || path.startsWith(`${normalizedRoot}/`);
+      });
     },
 
     async getSecretByName(name: string, path: string): Promise<SecretManagerSecret | undefined> {
-      const wantPath = normalizeSecretPath(path)
-      const secrets = await this.listSecrets(path)
-      return secrets.find((secret) => secret.name === name && normalizeSecretPath(secret.path) === wantPath)
+      const wantPath = normalizeSecretPath(path);
+      const secrets = await this.listSecrets(path);
+      return secrets.find((secret) => secret.name === name && normalizeSecretPath(secret.path) === wantPath);
     },
 
     async ensureSecret(input: EnsureSecretInput): Promise<SecretManagerSecret> {
-      const existing = await this.getSecretByName(input.name, input.path)
-      if (existing) return existing
+      const existing = await this.getSecretByName(input.name, input.path);
+      if (existing) return existing;
 
       return await scwFetch<SecretManagerSecret>(auth, 'POST', buildSecretsUrl(options.region, new URLSearchParams()), {
         project_id: options.projectId,
@@ -129,7 +129,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         description: input.description,
         protected: input.protect ?? false,
         ...(input.ephemeralPolicy ? { ephemeral_policy: input.ephemeralPolicy } : {}),
-      })
+      });
     },
 
     async putSecretValue(input: PutSecretValueInput): Promise<SecretManagerSecretVersion> {
@@ -142,7 +142,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
           description: input.description,
           disable_previous: input.disablePrevious ?? false,
         },
-      )
+      );
     },
 
     async accessLatestValue(secretId: string): Promise<string> {
@@ -150,12 +150,12 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
         auth,
         'GET',
         `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}/versions/latest/access`,
-      )
-      return Buffer.from(response.data, 'base64').toString('utf8')
+      );
+      return Buffer.from(response.data, 'base64').toString('utf8');
     },
 
     async deleteSecret(secretId: string): Promise<void> {
-      await scwSend(auth, 'DELETE', `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}`)
+      await scwSend(auth, 'DELETE', `${SECRET_MANAGER_BASE}/regions/${options.region}/secrets/${secretId}`);
     },
-  }
+  };
 }

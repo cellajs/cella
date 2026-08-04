@@ -4,10 +4,10 @@ import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
 import { YJS_AWARENESS_RATE_LIMIT, YJS_SAVE_DEBOUNCE_MS } from '../constants';
-import { log } from '../lib/pino';
 import { loadEntityDescription } from '../data/entity-content';
 import { createDoc, loadState, saveState } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
+import { log } from '../lib/pino';
 import { materializeState, stateToBlocksJson } from './materialize';
 import { broadcastToCollab, getCollab } from './session-manager';
 
@@ -190,7 +190,12 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
 }
 
 /** Client sends document updates. Merge into stored state and broadcast to peers. Saves are debounced. */
-async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Array, rawMessage: Uint8Array): Promise<void> {
+async function handleSyncUpdate(
+  ctx: DocContext,
+  ws: WebSocket,
+  update: Uint8Array,
+  rawMessage: Uint8Array,
+): Promise<void> {
   broadcastToCollab(ctx.entityType, ctx.entityId, rawMessage, ws);
 
   const collab = getCollab(ctx.entityType, ctx.entityId);
@@ -222,8 +227,8 @@ async function handleSyncUpdate(ctx: DocContext, ws: WebSocket, update: Uint8Arr
     collab.savingPromise = savePromise;
     try {
       await savePromise;
-    // Persist blocks once per document and save window, regardless of active client count.
-    // Retry failures leave the baseline stale so the next save or cleanup converges it.
+      // Persist blocks once per document and save window, regardless of active client count.
+      // Retry failures leave the baseline stale so the next save or cleanup converges it.
       await materializeState(collab, snapshotToSave);
     } catch (err) {
       log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });

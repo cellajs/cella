@@ -1,10 +1,9 @@
+import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
 import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
-import type { EntityHierarchy, ActivityAction, EntityType } from 'shared';
-import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { TableMeta } from '../types';
-import type { CdcRowData } from '../types';
-import { isCountableRow } from './countability';
 import { log } from '../lib/pino';
+import type { ActivityWithoutId } from '../pipeline/parse-message';
+import type { CdcRowData, TableMeta } from '../types';
+import { isCountableRow } from './countability';
 
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update */
@@ -59,7 +58,7 @@ export function getCountDeltas(
     // Bump the org-level membership signal on every membership / inactive-membership activity so
     // catchup can detect membership changes via O(1) counter screening (no activity scan needed).
     // Pending invitations appear in member lists too, so inactive memberships bump it as well.
-    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { 'membership': 1 } });
+    if (organizationId) deltas.push({ channelKey: organizationId, deltas: { membership: 1 } });
     return deltas;
   }
 
@@ -87,12 +86,13 @@ export function getCountDeltas(
         const parsedMs = stampSource ? Date.parse(stampSource) : Number.NaN;
         deltas.push({
           channelKey: h.resolveDeepestAncestorId(tableMeta.type, newRow) ?? organizationId,
-          deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs } });
+          deltas: { [stampKey]: Number.isNaN(parsedMs) ? Date.now() : parsedMs },
+        });
       }
     }
 
-  // Count host references per embedded ID. Publication filtering supplies draft edges;
-  // embedding cleanup rewrites soft-deleted references and emits their updates.
+    // Count host references per embedded ID. Publication filtering supplies draft edges;
+    // embedding cleanup rewrites soft-deleted references and emits their updates.
     for (const embedding of appConfig.productEmbeddings) {
       if (embedding.hostProduct !== tableMeta.type) continue;
       const col = embedding.hostColumn;
@@ -133,7 +133,11 @@ export function getCountDeltas(
  * inside = update, stay outside = nothing (trash edits). `null` = the
  * event is invisible to counters and stamps.
  */
-function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
+function deriveCountAction(
+  action: ActivityAction,
+  newRow: CdcRowData,
+  oldRow: CdcRowData | null,
+): ActivityAction | null {
   if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
   if (action === 'delete') return isCountableRow(oldRow ?? newRow) ? 'delete' : null;
   // REPLICA IDENTITY FULL always carries the old row on updates; belt-and-braces fallback.
@@ -160,11 +164,7 @@ function getArrayValue(row: CdcRowData, key: string): string[] {
  * channelId and role off the WAL row; both are NOT NULL columns, so a missing
  * value means a malformed row and yields no delta.
  */
-function getMembershipDelta(
-  action: ActivityAction,
-  newRow: CdcRowData,
-  oldRow: CdcRowData | null,
-): CountDelta | null {
+function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
   if (!channelId) return null;
 

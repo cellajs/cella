@@ -1,14 +1,14 @@
+import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
-import { appStores } from '../config/stores.config'
-import { serviceNames } from './services'
-import type { ServiceName } from '../compose/compose'
+import { appStores } from '../config/stores.config';
+import { serviceNames } from './services';
 
-export const runtimeSecretConsumers = serviceNames
+export const runtimeSecretConsumers = serviceNames;
 
-export type RuntimeSecretConsumer = ServiceName
+export type RuntimeSecretConsumer = ServiceName;
 
-export type RuntimeSecretValueSource = 'pulumi' | 'operator'
-export type RuntimeSecretGeneration = 'manual' | 'random'
+export type RuntimeSecretValueSource = 'pulumi' | 'operator';
+export type RuntimeSecretGeneration = 'manual' | 'random';
 
 /**
  * One runtime secret's app-owned mapping data, authored in
@@ -17,19 +17,19 @@ export type RuntimeSecretGeneration = 'manual' | 'random'
  */
 export interface RuntimeSecretConfig {
   /** Scaleway Secret Manager container name (kebab-case). */
-  secretName: string
+  secretName: string;
   /** Human-readable purpose, surfaced in tooling and the container description. */
-  description: string
+  description: string;
   /** Environment variable the consuming service reads the value as. */
-  envVar: string
+  envVar: string;
   /** Whether deploy/health gating treats the value's absence as fatal. */
-  required: boolean
+  required: boolean;
   /** `'pulumi'` = the engine writes a version; `'operator'` = supplied out-of-band. */
-  valueSource: RuntimeSecretValueSource
+  valueSource: RuntimeSecretValueSource;
   /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
-  generation: RuntimeSecretGeneration
+  generation: RuntimeSecretGeneration;
   /** Services that receive the secret in their per-VM `.env.runtime`. */
-  services: readonly RuntimeSecretConsumer[]
+  services: readonly RuntimeSecretConsumer[];
 }
 
 /**
@@ -37,24 +37,24 @@ export interface RuntimeSecretConfig {
  * key union, so this is a plain string; the load-time validation below rejects
  * duplicates and unknown consumers.
  */
-export type RuntimeSecretId = string
+export type RuntimeSecretId = string;
 
 /** A runtime secret definition: registry data plus the id it is addressed by. */
 export interface RuntimeSecretDefinition {
-  id: RuntimeSecretId
-  secretName: string
-  description: string
-  envVar: string
-  required: boolean
-  valueSource: RuntimeSecretValueSource
-  generation: RuntimeSecretGeneration
+  id: RuntimeSecretId;
+  secretName: string;
+  description: string;
+  envVar: string;
+  required: boolean;
+  valueSource: RuntimeSecretValueSource;
+  generation: RuntimeSecretGeneration;
   /** Consuming services; store contributions are runtime-validated against the registry. */
-  services: readonly string[]
+  services: readonly string[];
 }
 
 /** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
 export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecretConfig>>(secrets: T): T {
-  return secrets
+  return secrets;
 }
 
 // Store-owned declarations come first, in store-registry order: cella's
@@ -71,7 +71,7 @@ const storeContributions: RuntimeSecretDefinition[] = Object.values(appStores).f
     generation: 'manual' as const,
     services: contribution.services,
   })),
-)
+);
 
 /**
  * Flattened, ordered runtime secret definitions: store contributions followed
@@ -83,46 +83,52 @@ export const runtimeSecrets: RuntimeSecretDefinition[] = [
     id,
     ...definition,
   })),
-]
+];
 
 // Fail fast at load time on an app misconfiguration, preventing a missing
 // container at deploy time or a missing variable at runtime. Covers store
 // contributions and app-config entries alike (including cross-source clashes).
 {
-  const knownServices = new Set<string>(serviceNames)
-  const seenIds = new Set<string>()
-  const seenEnvVars = new Set<string>()
-  const seenSecretNames = new Set<string>()
+  const knownServices = new Set<string>(serviceNames);
+  const seenIds = new Set<string>();
+  const seenEnvVars = new Set<string>();
+  const seenSecretNames = new Set<string>();
   for (const secret of runtimeSecrets) {
     if (seenIds.has(secret.id)) {
-      throw new Error(`runtime-secrets: duplicate secret id '${secret.id}' — a store contribution clashes with another store or the app config.`)
+      throw new Error(
+        `runtime-secrets: duplicate secret id '${secret.id}' — a store contribution clashes with another store or the app config.`,
+      );
     }
-    seenIds.add(secret.id)
+    seenIds.add(secret.id);
     if (secret.services.length === 0) {
-      throw new Error(`runtime-secrets.config: secret '${secret.id}' has no services — assign at least one consumer or remove it.`)
+      throw new Error(
+        `runtime-secrets.config: secret '${secret.id}' has no services — assign at least one consumer or remove it.`,
+      );
     }
     for (const service of secret.services) {
       if (!knownServices.has(service)) {
         throw new Error(
           `runtime-secrets.config: secret '${secret.id}' targets unknown service '${service}'. Known services: ${[...knownServices].join(', ')}.`,
-        )
+        );
       }
     }
     if (seenEnvVars.has(secret.envVar)) {
-      throw new Error(`runtime-secrets.config: duplicate envVar '${secret.envVar}' (secret '${secret.id}').`)
+      throw new Error(`runtime-secrets.config: duplicate envVar '${secret.envVar}' (secret '${secret.id}').`);
     }
-    seenEnvVars.add(secret.envVar)
+    seenEnvVars.add(secret.envVar);
     if (seenSecretNames.has(secret.secretName)) {
-      throw new Error(`runtime-secrets.config: duplicate secretName '${secret.secretName}' (secret '${secret.id}').`)
+      throw new Error(`runtime-secrets.config: duplicate secretName '${secret.secretName}' (secret '${secret.id}').`);
     }
-    seenSecretNames.add(secret.secretName)
+    seenSecretNames.add(secret.secretName);
   }
 }
 
-export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator')
+export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter(
+  (secret) => secret.valueSource === 'operator',
+);
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {
-  return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer))
+  return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer));
 }
 
 /**
@@ -134,12 +140,12 @@ export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): Runt
  * every generation.
  */
 export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
-  const seen = new Set<string>()
+  const seen = new Set<string>();
   return consumers
     .flatMap((consumer) => runtimeSecretsForConsumer(consumer))
     .filter((definition) => {
-      if (seen.has(definition.id)) return false
-      seen.add(definition.id)
-      return true
-    })
+      if (seen.has(definition.id)) return false;
+      seen.add(definition.id);
+      return true;
+    });
 }

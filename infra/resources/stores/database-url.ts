@@ -1,30 +1,30 @@
-import type { ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores'
+import type { ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
 /** Configuration for an external database reached through an operator-supplied URL. */
 export interface DatabaseUrlConfig {
   /** Services that receive the URL in their per-VM `.env.runtime`. */
-  services: readonly string[]
+  services: readonly string[];
   /** Environment variable the consuming service reads. Defaults to `DATABASE_URL`. */
-  envVar?: string
+  envVar?: string;
   /** Secret Manager container name. Defaults to `database-url`. */
-  secretName?: string
+  secretName?: string;
   /** Runtime-secret id the contribution registers under. Defaults to `databaseUrl`. */
-  id?: string
+  id?: string;
   /** Human-readable purpose shown in tooling. */
-  description?: string
+  description?: string;
   /** Whether deploy gating treats an unset URL as fatal. Defaults to true. */
-  required?: boolean
+  required?: boolean;
   /**
    * Optional CA certificate delivered alongside the URL (base64-encoded PEM,
    * kept single-line for the line-based `.env.runtime`). Provide when the
    * external database uses a private CA the client must trust.
    */
   ca?: {
-    services?: readonly string[]
-    envVar?: string
-    secretName?: string
-    id?: string
-  }
+    services?: readonly string[];
+    envVar?: string;
+    secretName?: string;
+    id?: string;
+  };
 }
 
 /**
@@ -39,7 +39,7 @@ export function databaseUrl(config: DatabaseUrlConfig): StoreProvisioner {
     kind: 'database-url',
 
     provision(): ProvisionedStore {
-      return { outputs: {}, secretValues: {} }
+      return { outputs: {}, secretValues: {} };
     },
 
     secrets(): StoreSecretContribution[] {
@@ -53,7 +53,7 @@ export function databaseUrl(config: DatabaseUrlConfig): StoreProvisioner {
           valueSource: 'operator',
           services: config.services,
         },
-      ]
+      ];
       if (config.ca) {
         contributions.push({
           id: config.ca.id ?? 'databaseSslCa',
@@ -63,9 +63,9 @@ export function databaseUrl(config: DatabaseUrlConfig): StoreProvisioner {
           required: false,
           valueSource: 'operator',
           services: config.ca.services ?? config.services,
-        })
+        });
       }
-      return contributions
+      return contributions;
     },
-  }
+  };
 }

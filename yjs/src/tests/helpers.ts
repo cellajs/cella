@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
-import * as encoding from 'lib0/encoding';
 import * as decoding from 'lib0/decoding';
+import * as encoding from 'lib0/encoding';
 import { vi } from 'vitest';
 import type { DocContext } from '../constants';
 

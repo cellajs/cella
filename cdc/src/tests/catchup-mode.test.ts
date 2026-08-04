@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { replicationState } from '../services/replication-state';
 
 describe('Catchup mode — replicationState', () => {

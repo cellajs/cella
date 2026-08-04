@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { type DeployEffects, type DeployOptions, parseDeployArgs, runDeploy } from './deploy-run'
-import type { AllowedKey } from './print-deploy-env'
+import { describe, expect, it } from 'vitest';
+import { type DeployEffects, type DeployOptions, parseDeployArgs, runDeploy } from './deploy-run';
+import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
 async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, string>> {
@@ -22,54 +22,57 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     ]),
     build_images_matrix: JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]),
     primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://www.cellajs.com/api' }]),
-    roll_rest_matrix: JSON.stringify([{ service: 'cdc', health_url: '' }, { service: 'frontend', health_url: 'https://www.cellajs.com' }]),
-  }
+    roll_rest_matrix: JSON.stringify([
+      { service: 'cdc', health_url: '' },
+      { service: 'frontend', health_url: 'https://www.cellajs.com' },
+    ]),
+  };
 }
 
 function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) {
-  const ops: string[] = []
+  const ops: string[] = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
-      ops.push('telemetry:init')
+      ops.push('telemetry:init');
     },
     uploadAssets: async () => {
-      ops.push('upload-assets')
+      ops.push('upload-assets');
     },
     task: async (name, argv = []) => {
-      ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`)
+      ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
     },
     exec: (cmd, args, execOpts) => {
-      ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`)
+      ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
     },
     stackConfigGet: (_stack, key) => {
-      ops.push(`config-get:${key}`)
-      return ''
+      ops.push(`config-get:${key}`);
+      return '';
     },
     update: async (stack) => {
-      ops.push(`update:${stack}`)
+      ops.push(`update:${stack}`);
     },
     rollout: async () => {
-      ops.push('rollout')
-      if (opts.rolloutFails) throw new Error('cutover failed')
+      ops.push('rollout');
+      if (opts.rolloutFails) throw new Error('cutover failed');
     },
     verifyVersion: async (url) => {
-      ops.push(`verify:${url}`)
-      return !opts.verifyFails
+      ops.push(`verify:${url}`);
+      return !opts.verifyFails;
     },
     publishEntryFiles: async () => {
-      ops.push('publish-entry')
+      ops.push('publish-entry');
     },
     bootDiagnostics: async () => {
-      ops.push('boot-diag')
+      ops.push('boot-diag');
     },
     group: () => {},
     groupEnd: () => {},
     info: () => {},
-  }
-  return { fx, ops }
+  };
+  return { fx, ops };
 }
 
-const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' }
+const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
 
 describe('parseDeployArgs', () => {
   it('parses flags and refuses non-pinned tags', () => {
@@ -79,17 +82,17 @@ describe('parseDeployArgs', () => {
       distDir: 'dist',
       build: false,
       gitRef: undefined,
-    })
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true)
-    expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/)
-    expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/)
-  })
-})
+    });
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true);
+    expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
+    expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
+  });
+});
 
 describe('runDeploy sequencing', () => {
   it('runs preflights, rollout, verification, entry publish, smoke, then releases the lock', async () => {
-    const { fx, ops } = makeFake()
-    await runDeploy(baseOpts, fx, fakeDeployEnv)
+    const { fx, ops } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
 
     // Ordering spine: lock before any stack mutation, rollout after preflights,
     // publish only after verification, lock release last.
@@ -103,67 +106,69 @@ describe('runDeploy sequencing', () => {
       'publish-entry',
       'task:smoke',
       'task:stack-lock:release',
-    ]
-    let cursor = -1
+    ];
+    let cursor = -1;
     for (const op of spine) {
-      const index = ops.indexOf(op, cursor + 1)
-      expect(index, `${op} missing or out of order in: ${ops.join(', ')}`).toBeGreaterThan(cursor)
-      cursor = index
+      const index = ops.indexOf(op, cursor + 1);
+      expect(index, `${op} missing or out of order in: ${ops.join(', ')}`).toBeGreaterThan(cursor);
+      cursor = index;
     }
     // Public version verification covers every LB-exposed service.
-    expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true)
-    expect(ops).not.toContain('boot-diag')
-  })
+    expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
+    expect(ops).not.toContain('boot-diag');
+  });
 
   it('collects boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
-    const { fx, ops } = makeFake({ rolloutFails: true })
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/)
-    expect(ops).toContain('boot-diag')
-    expect(ops).not.toContain('publish-entry')
-    expect(ops.at(-1)).toBe('task:stack-lock:release')
-  })
+    const { fx, ops } = makeFake({ rolloutFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
+    expect(ops).toContain('boot-diag');
+    expect(ops).not.toContain('publish-entry');
+    expect(ops.at(-1)).toBe('task:stack-lock:release');
+  });
 
   it('fails before publishing when a service does not serve the expected version', async () => {
-    const { fx, ops } = makeFake({ verifyFails: true })
-    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/)
-    expect(ops).not.toContain('publish-entry')
-    expect(ops.at(-1)).toBe('task:stack-lock:release')
-  })
+    const { fx, ops } = makeFake({ verifyFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
+    expect(ops).not.toContain('publish-entry');
+    expect(ops.at(-1)).toBe('task:stack-lock:release');
+  });
 
   it('builds the frontend itself when no dist dir is provided', async () => {
-    const { fx, ops } = makeFake()
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)
-    expect(ops).toContain('exec:pnpm:--filter')
-    expect(ops).toContain('upload-assets')
-    expect(ops).toContain('publish-entry')
-    expect(ops).toContain('task:smoke')
-  })
+    const { fx, ops } = makeFake();
+    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
+    expect(ops).toContain('exec:pnpm:--filter');
+    expect(ops).toContain('upload-assets');
+    expect(ops).toContain('publish-entry');
+    expect(ops).toContain('task:smoke');
+  });
 
   it('skips the frontend build (but still uploads) with a prebuilt dist dir', async () => {
-    const { fx, ops } = makeFake()
-    await runDeploy(baseOpts, fx, fakeDeployEnv)
-    expect(ops).not.toContain('exec:pnpm:--filter')
-    expect(ops).toContain('upload-assets')
-  })
+    const { fx, ops } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(ops).not.toContain('exec:pnpm:--filter');
+    expect(ops).toContain('upload-assets');
+  });
 
   it('bakes and pushes images in-process with --build', async () => {
-    const { fx, ops } = makeFake()
-    await runDeploy({ ...baseOpts, build: true }, fx, fakeDeployEnv)
-    expect(ops).toContain('exec:docker:buildx')
-    const bakeIndex = ops.indexOf('exec:docker:buildx')
-    const waitIndex = ops.indexOf('task:wait-for-images')
-    expect(bakeIndex).toBeGreaterThan(-1)
-    expect(waitIndex).toBeGreaterThan(bakeIndex)
-  })
+    const { fx, ops } = makeFake();
+    await runDeploy({ ...baseOpts, build: true }, fx, fakeDeployEnv);
+    expect(ops).toContain('exec:docker:buildx');
+    const bakeIndex = ops.indexOf('exec:docker:buildx');
+    const waitIndex = ops.indexOf('task:wait-for-images');
+    expect(bakeIndex).toBeGreaterThan(-1);
+    expect(waitIndex).toBeGreaterThan(bakeIndex);
+  });
 
   it('rejects production deploys from untrusted refs before touching anything', async () => {
-    const { fx, ops } = makeFake()
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(/only allowed/)
-    expect(ops).toHaveLength(0)
-  })
+    const { fx, ops } = makeFake();
+    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(
+      /only allowed/,
+    );
+    expect(ops).toHaveLength(0);
+  });
 
   it('accepts production deploys from release tags', async () => {
-    const { fx } = makeFake()
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/tags/1.2.3' }, fx, fakeDeployEnv)).resolves.toBeUndefined()
-  })
-})
+    const { fx } = makeFake();
+    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/tags/1.2.3' }, fx, fakeDeployEnv)).resolves.toBeUndefined();
+  });
+});

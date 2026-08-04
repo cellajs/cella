@@ -1,39 +1,45 @@
-import * as pulumi from '@pulumi/pulumi'
-import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/stack/control-store'
-import { mode, naming, region } from '../pulumi-context'
-import { errorMessage } from '../lib/utils/errors'
+import * as pulumi from '@pulumi/pulumi';
+import {
+  type ControlState,
+  controlKey,
+  emptyControlState,
+  readControlState,
+  stateBucket,
+} from '../lib/stack/control-store';
+import { errorMessage } from '../lib/utils/errors';
+import { mode, naming, region } from '../pulumi-context';
 
 async function loadControlState(): Promise<ControlState> {
-  if (process.env.VITEST) return emptyControlState()
+  if (process.env.VITEST) return emptyControlState();
 
   // AWS_* first: they are the state-backend S3 credentials, and Scaleway's S3
   // gateway only honors project-scoped ObjectStorage grants, which an
   // API-capable SCW_* identity may lack. Normal deploys set both pairs to the
   // same key, so the order only matters for split-identity operator runs.
-  const accessKey = process.env.AWS_ACCESS_KEY_ID ?? process.env.SCW_ACCESS_KEY
-  const secretKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SCW_SECRET_KEY
+  const accessKey = process.env.AWS_ACCESS_KEY_ID ?? process.env.SCW_ACCESS_KEY;
+  const secretKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) {
-    pulumi.log.warn('control-store: no S3 credentials in env; rollout state defaults to first-provision values')
-    return emptyControlState()
+    pulumi.log.warn('control-store: no S3 credentials in env; rollout state defaults to first-provision values');
+    return emptyControlState();
   }
 
   try {
-    const { S3Client } = await import('@aws-sdk/client-s3')
+    const { S3Client } = await import('@aws-sdk/client-s3');
     const s3 = new S3Client({
       region,
       endpoint: `https://s3.${region}.scw.cloud`,
       credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
       forcePathStyle: false,
-    })
+    });
     // One control object per deployment, keyed by the stack (= mode).
-    const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode))
-    return state
+    const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode));
+    return state;
   } catch (err) {
     // readControlState returns the empty state for a missing object (fresh stack);
     // only genuine failures reach here. The control object is the sole source of
     // rollout state, so fail closed to protect live compute.
-    throw new Error(`control-store: failed to read rollout state — aborting deploy (${errorMessage(err)})`)
+    throw new Error(`control-store: failed to read rollout state — aborting deploy (${errorMessage(err)})`);
   }
 }
 
-export const controlState = await loadControlState()
+export const controlState = await loadControlState();

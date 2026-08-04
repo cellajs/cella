@@ -1,4 +1,4 @@
-import { defineServices } from '../compose/infrastructure'
+import { defineServices } from '../compose/infrastructure';
 
 /**
  * App-owned registry synthesized into Compose and deployment resources.

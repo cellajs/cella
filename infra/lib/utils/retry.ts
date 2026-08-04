@@ -1,16 +1,16 @@
 /** Dependency-free sleep, so this module can be included by the boot runner
  *  (whose tsup bundle must not reach into the `shared` workspace package). */
-const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface RetryOptions {
   /** Total number of attempts before giving up. */
-  attempts: number
+  attempts: number;
   /** Delay between attempts, in milliseconds. */
-  delayMs: number
+  delayMs: number;
   /** Called after a failed attempt that will be retried (not on the last one). */
-  onRetry?: (attempt: number, error: unknown) => void
+  onRetry?: (attempt: number, error: unknown) => void;
   /** Injectable for tests; defaults to a real setTimeout sleep. */
-  sleep?: (ms: number) => Promise<void>
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /**
@@ -18,29 +18,29 @@ export interface RetryOptions {
  * Resolves with the first success; rejects with the last error if all attempts fail.
  */
 export async function retry<T>(fn: (attempt: number) => Promise<T>, opts: RetryOptions): Promise<T> {
-  const sleep = opts.sleep ?? defaultSleep
-  let lastError: unknown
+  const sleep = opts.sleep ?? defaultSleep;
+  let lastError: unknown;
   for (let attempt = 1; attempt <= opts.attempts; attempt++) {
     try {
-      return await fn(attempt)
+      return await fn(attempt);
     } catch (error) {
-      lastError = error
+      lastError = error;
       if (attempt < opts.attempts) {
-        opts.onRetry?.(attempt, error)
-        await sleep(opts.delayMs)
+        opts.onRetry?.(attempt, error);
+        await sleep(opts.delayMs);
       }
     }
   }
-  throw lastError instanceof Error ? lastError : new Error('retry: all attempts failed')
+  throw lastError instanceof Error ? lastError : new Error('retry: all attempts failed');
 }
 
 export interface PollUntilOptions {
   /** Total number of probe attempts before giving up. */
-  attempts: number
+  attempts: number;
   /** Delay between attempts, in milliseconds (skipped after the last attempt). */
-  intervalMs: number
+  intervalMs: number;
   /** Injectable for tests; defaults to a real setTimeout sleep. */
-  sleep?: (ms: number) => Promise<void>
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /**
@@ -49,12 +49,15 @@ export interface PollUntilOptions {
  * "misses" is not an error: it simply returns undefined to keep polling, so
  * per-attempt logging and terminal fast-fail decisions live inside the probe.
  */
-export async function pollUntil<T>(probe: (attempt: number) => Promise<T | undefined>, opts: PollUntilOptions): Promise<T | undefined> {
-  const sleep = opts.sleep ?? defaultSleep
+export async function pollUntil<T>(
+  probe: (attempt: number) => Promise<T | undefined>,
+  opts: PollUntilOptions,
+): Promise<T | undefined> {
+  const sleep = opts.sleep ?? defaultSleep;
   for (let attempt = 1; attempt <= opts.attempts; attempt++) {
-    const result = await probe(attempt)
-    if (result !== undefined) return result
-    if (attempt < opts.attempts) await sleep(opts.intervalMs)
+    const result = await probe(attempt);
+    if (result !== undefined) return result;
+    if (attempt < opts.attempts) await sleep(opts.intervalMs);
   }
-  return undefined
+  return undefined;
 }

@@ -1,5 +1,5 @@
 import { accessSync, readFileSync } from 'node:fs';
-import { resolve as pathResolve, dirname } from 'node:path';
+import { dirname, resolve as pathResolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import stripJsonComments from 'strip-json-comments';
 
@@ -17,7 +17,12 @@ function findPkgDir(dir) {
 }
 
 function tryFile(path) {
-  try { accessSync(path); return true; } catch { return false; }
+  try {
+    accessSync(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function hasExtension(specifier) {
@@ -58,7 +63,8 @@ function resolvePathAlias(specifier, parentDir) {
       for (const ext of ['.ts', '.tsx']) {
         if (tryFile(`${resolved}${ext}`)) return { url: pathToFileURL(`${resolved}${ext}`).href, shortCircuit: true };
       }
-      if (tryFile(`${resolved}/index.ts`)) return { url: pathToFileURL(`${resolved}/index.ts`).href, shortCircuit: true };
+      if (tryFile(`${resolved}/index.ts`))
+        return { url: pathToFileURL(`${resolved}/index.ts`).href, shortCircuit: true };
       if (tryFile(resolved)) return { url: pathToFileURL(resolved).href, shortCircuit: true };
     }
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeCan } from './compute-can';
 import { computeWideCan, configureWidePermissions, wideMembership, wideOverrides } from '../testing/wide-fixture';
+import { computeCan } from './compute-can';
 
 // Policies with 'own' permission for attachment update/delete, plus project-scoped grants
 // (attachment guest-read, task member-update) used by the wider coverage below.

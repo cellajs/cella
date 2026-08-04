@@ -101,7 +101,9 @@ describe('Permission batch performance', () => {
     });
 
     const speedup = coldTime / warmTime;
-    console.info(`  Warm (stable array): ${warmTime.toFixed(2)}ms, Cold (fresh array/call): ${coldTime.toFixed(2)}ms (${speedup.toFixed(1)}x)`);
+    console.info(
+      `  Warm (stable array): ${warmTime.toFixed(2)}ms, Cold (fresh array/call): ${coldTime.toFixed(2)}ms (${speedup.toFixed(1)}x)`,
+    );
 
     // Reusing a stable array must be meaningfully faster than rebuilding the index every call.
     expect(speedup).toBeGreaterThan(1.5);

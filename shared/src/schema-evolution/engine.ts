@@ -1,6 +1,12 @@
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
-import { deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType, resolveAddDefault } from './define';
+import {
+  deltaRenameMap,
+  type LensContext,
+  type LensDefinition,
+  type LensEntityType,
+  resolveAddDefault,
+} from './define';
 import { lenses } from './lens-list';
 
 /** Re-exported doba type so telemetry consumers don't import dobajs directly. */

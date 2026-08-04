@@ -1,28 +1,28 @@
-import type { ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores'
+import type { ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
 /** Configuration for one operator-supplied external URL secret. */
 export interface ExternalUrlConfig {
   /** Services that receive the URL in their per-VM `.env.runtime`. */
-  services: readonly string[]
+  services: readonly string[];
   /** Environment variable the consuming service reads. */
-  envVar?: string
+  envVar?: string;
   /** Secret Manager container name. */
-  secretName?: string
+  secretName?: string;
   /** Runtime-secret id the contribution registers under. */
-  id?: string
+  id?: string;
   /** Human-readable purpose shown in tooling. */
-  description?: string
+  description?: string;
   /** Whether deploy gating treats an unset URL as fatal. Defaults to true. */
-  required?: boolean
+  required?: boolean;
 }
 
 /** Fully-resolved defaults an external-URL store variant supplies. */
 interface ExternalUrlDefaults {
-  kind: string
-  id: string
-  secretName: string
-  envVar: string
-  description: string
+  kind: string;
+  id: string;
+  secretName: string;
+  envVar: string;
+  description: string;
 }
 
 /**
@@ -36,7 +36,7 @@ export function externalUrl(defaults: ExternalUrlDefaults, config: ExternalUrlCo
     kind: defaults.kind,
 
     provision(): ProvisionedStore {
-      return { outputs: {}, secretValues: {} }
+      return { outputs: {}, secretValues: {} };
     },
 
     secrets(): StoreSecretContribution[] {
@@ -50,9 +50,9 @@ export function externalUrl(defaults: ExternalUrlDefaults, config: ExternalUrlCo
           valueSource: 'operator',
           services: config.services,
         },
-      ]
+      ];
     },
-  }
+  };
 }
 
 /** External Redis reached through an operator-supplied `REDIS_URL`. */
@@ -66,7 +66,7 @@ export function redisUrl(config: ExternalUrlConfig): StoreProvisioner {
       description: 'External Redis connection URL (operator-supplied)',
     },
     config,
-  )
+  );
 }
 
 /** External MongoDB reached through an operator-supplied `MONGO_URL`. */
@@ -80,5 +80,5 @@ export function mongoUrl(config: ExternalUrlConfig): StoreProvisioner {
       description: 'External MongoDB connection URL (operator-supplied)',
     },
     config,
-  )
+  );
 }

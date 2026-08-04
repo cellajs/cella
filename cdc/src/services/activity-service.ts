@@ -1,9 +1,9 @@
-import { isProduct, hierarchy } from 'shared';
+import { hierarchy, isProduct } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
-import type { CdcRowData } from '../types';
 import { wsClient } from '../network/websocket-client';
+import type { CdcRowData } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
@@ -103,10 +103,7 @@ function batchPathKey({ activity, rowData }: BatchEvent): string {
  * range may interleave with other groups' values, so `count` (and per-row seqs in
  * `batchRows`) carry the exact contents: range arithmetic is not row count.
  */
-export function sendBatchMessageToApi(
-  events: BatchEvent[],
-  traceContext: TraceContext,
-): void {
+export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceContext): void {
   if (events.length === 0) return;
 
   const groups = new Map<string, BatchEvent[]>();
@@ -123,10 +120,7 @@ export function sendBatchMessageToApi(
 }
 
 /** Send one per-path batch group as a single message, using the first event as representative. */
-function sendBatchGroupToApi(
-  events: BatchEvent[],
-  traceContext: TraceContext,
-): void {
+function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): void {
   const first = events[0];
 
   // Collect seqs for min/max range (create/update batches). Under the org sequence the
@@ -144,7 +138,8 @@ function sendBatchGroupToApi(
   const batchRows: CdcBatchRow[] = events.map((event) => ({
     seq: event.seq,
     rowData: pickPermissionRowData(event.rowData) as CdcRowData,
-    ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}) }));
+    ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}),
+  }));
 
   // The backend invalidates each row's detail-cache entry from batchRows, so a later detail
   // fetch re-enriches (see cdc-websocket handleMessage).

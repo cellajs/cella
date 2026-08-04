@@ -1,9 +1,9 @@
-export type Environment = 'production' | 'staging'
-export type StackState = 'fresh' | 'partial' | 'bootstrapped'
+export type Environment = 'production' | 'staging';
+export type StackState = 'fresh' | 'partial' | 'bootstrapped';
 
 export interface StackProbe {
   /** Raw YAML text, or undefined if the file does not exist. */
-  yamlText?: string
+  yamlText?: string;
 }
 
 /**
@@ -14,12 +14,12 @@ export interface StackProbe {
  * `infra:bootstrapComplete` is a non-secret breadcrumb. Compat markers
  * (`infra:vmAccessKey`, `infra:applicationId`) also count as bootstrapped.
  */
-const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const
+const BOOTSTRAP_MARKERS = ['infra:bootstrapComplete', 'infra:vmAccessKey', 'infra:applicationId'] as const;
 
 export function detectStackState(probe: StackProbe): StackState {
-  const yamlText = probe.yamlText
-  if (yamlText == null) return 'fresh'
-  return BOOTSTRAP_MARKERS.some((marker) => yamlText.includes(marker)) ? 'bootstrapped' : 'partial'
+  const yamlText = probe.yamlText;
+  if (yamlText == null) return 'fresh';
+  return BOOTSTRAP_MARKERS.some((marker) => yamlText.includes(marker)) ? 'bootstrapped' : 'partial';
 }
 
 /**
@@ -28,8 +28,11 @@ export function detectStackState(probe: StackProbe): StackState {
  * recommended first target for a new install. Pure: caller supplies the
  * existence check.
  */
-export function pickStackShort(exists: (shortName: string) => boolean, candidates: readonly Environment[] = ['production', 'staging']): Environment {
-  return candidates.find(exists) ?? 'staging'
+export function pickStackShort(
+  exists: (shortName: string) => boolean,
+  candidates: readonly Environment[] = ['production', 'staging'],
+): Environment {
+  return candidates.find(exists) ?? 'staging';
 }
 
 /**
@@ -39,7 +42,7 @@ export function pickStackShort(exists: (shortName: string) => boolean, candidate
  * once base infra is up. Returns undefined when not present. Pure.
  */
 export function extractComputeDeferredMarker(yamlText: string): string | undefined {
-  return yamlText.match(/^\s*bootstrap:computeDeferred:\s*(.+)$/m)?.[1]?.trim()
+  return yamlText.match(/^\s*bootstrap:computeDeferred:\s*(.+)$/m)?.[1]?.trim();
 }
 
 /**
@@ -50,7 +53,7 @@ export function extractComputeDeferredMarker(yamlText: string): string | undefin
  * when present, or undefined when clean. Pure.
  */
 export function detectComputeDeferred(yamlText?: string): string | undefined {
-  return yamlText ? extractComputeDeferredMarker(yamlText) : undefined
+  return yamlText ? extractComputeDeferredMarker(yamlText) : undefined;
 }
 
 /**
@@ -62,5 +65,5 @@ export function detectComputeDeferred(yamlText?: string): string | undefined {
  * Pure.
  */
 export function detectDbPublicEndpoint(yamlText?: string): boolean {
-  return yamlText ? /(?:^|\n)\s*infra:dbPublicEndpoint:\s*["']?true/.test(yamlText) : false
+  return yamlText ? /(?:^|\n)\s*infra:dbPublicEndpoint:\s*["']?true/.test(yamlText) : false;
 }

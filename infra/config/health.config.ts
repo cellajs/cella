@@ -10,4 +10,4 @@ export const healthContract = {
   path: '/health',
   /** Response header carrying the running release version (the deploy SHA). */
   versionHeader: 'x-app-version',
-} as const
+} as const;

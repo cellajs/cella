@@ -3,9 +3,8 @@ import { isProduct, isUnpublishedDraft } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { handleDelete, handleInsert, handleUpdate } from '../handlers';
 import { log } from '../lib/pino';
-import type { CdcRowData } from '../types';
-import type { TableMeta } from '../types';
 import { tableRegistry } from '../table-registry';
+import type { CdcRowData, TableMeta } from '../types';
 
 /** Activity without id, assigned later from WAL LSN in prepareActivity. */
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
@@ -37,10 +36,13 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   const now = Date.now();
   if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {
     lastDraftGuardWarnAt = now;
-    log.warn('Draft product row reached CDC — publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).', {
-      entityType: result.tableMeta.type,
-      action: result.activity.action,
-    });
+    log.warn(
+      'Draft product row reached CDC — publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).',
+      {
+        entityType: result.tableMeta.type,
+        action: result.activity.action,
+      },
+    );
   }
   return true;
 }

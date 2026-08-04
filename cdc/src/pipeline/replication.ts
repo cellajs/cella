@@ -1,15 +1,12 @@
-import { LogicalReplicationService, type Pgoutput, PgoutputPlugin } from 'pg-logical-replication';
 import { sql } from 'drizzle-orm';
+import { LogicalReplicationService, type Pgoutput, type PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
-
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
-import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { env } from '../env';
+import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
-
-import { replicationState } from '../services/replication-state';
 import { wsClient } from '../network/websocket-client';
-
+import { replicationState } from '../services/replication-state';
 import { handleDataMessage } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
@@ -41,8 +38,8 @@ export function createReplicationService(): LogicalReplicationService {
     {
       connectionString: connectionUrl.toString(),
       application_name: `${appConfig.slug}-cdc-worker`,
-// Match the query connection's verified TLS for full-row replication data.
-// Certificate identity is pinned to the dialed host in production.
+      // Match the query connection's verified TLS for full-row replication data.
+      // Certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
     },
     {
@@ -56,11 +53,11 @@ export function createReplicationService(): LogicalReplicationService {
   });
 
   service.on('error', (error: Error) => {
-    log.error(`CDC replication error`, { err: error });
+    log.error('CDC replication error', { err: error });
   });
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
-    log.trace(`Heartbeat received`, { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
+    log.trace('Heartbeat received', { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
     if (shouldRespond) {
       await service.acknowledge(lsn);
     }
@@ -76,9 +73,7 @@ export function createReplicationService(): LogicalReplicationService {
  */
 export async function ensureReplicationSlot(): Promise<void> {
   try {
-    const slotCheck = await cdcDb.execute(
-      sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-    );
+    const slotCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
     if (slotCheck.rows.length === 0) {
       log.info(`Replication slot '${CDC_SLOT_NAME}' not found, creating...`);
       await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
@@ -166,15 +161,15 @@ export function setupBackpressure(): void {
     onConnect: () => {
       const wasPaused = replicationState.status === 'paused';
       if (wasPaused) {
-        log.info(`WebSocket reconnected - resuming replication acknowledgment`);
+        log.info('WebSocket reconnected - resuming replication acknowledgment');
       } else {
-        log.info(`WebSocket connected - resuming replication acknowledgment`);
+        log.info('WebSocket connected - resuming replication acknowledgment');
       }
       replicationState.markActive();
     },
     onDisconnect: () => {
       if (!wsClient.inGracePeriod()) {
-        log.warn(`WebSocket disconnected - pausing replication acknowledgment`);
+        log.warn('WebSocket disconnected - pausing replication acknowledgment');
       }
       replicationState.markPaused();
     },
@@ -186,7 +181,10 @@ export function setupBackpressure(): void {
 /**
  * Subscribe to the replication slot with automatic reconnection.
  */
-export async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
+export async function subscribeWithReconnect(
+  service: LogicalReplicationService,
+  plugin: PgoutputPlugin,
+): Promise<never> {
   // Retry quickly during a rolling-deploy slot handoff, then use the normal cadence.
   // This keeps takeover fast without hammering Postgres during sustained contention.
   let attempt = 0;
@@ -197,7 +195,7 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
       // per subscription attempt and is a no-op when another worker already holds the slot.
       await ensureReplicationSlot();
 
-      log.info(`Subscribing to replication slot...`);
+      log.info('Subscribing to replication slot...');
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
     } catch (error) {
@@ -205,7 +203,8 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
       const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
       const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
       const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
-      const slotHolder = (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
+      const slotHolder =
+        (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
       log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, {
         err: error,
         ...(slotHolder && { slotHolder }),

@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAllDecisions } from '../permissions';
-import {
-  configureWidePermissions,
-  wideHierarchy,
-  wideMembership,
-  wideSubject,
-  wideOverrides,
-} from './wide-fixture';
+import { configureWidePermissions, wideHierarchy, wideMembership, wideOverrides, wideSubject } from './wide-fixture';
 
 /**
  * Smoke test for the wide fixture kit: proves the hierarchy-override seam drives the engine over the

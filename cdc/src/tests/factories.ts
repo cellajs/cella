@@ -1,8 +1,8 @@
-import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
+import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { PendingEvent, EntityTableMeta, ResourceTableMeta } from '../types';
 import type { BatchEvent } from '../services/activity-service';
+import type { EntityTableMeta, PendingEvent, ResourceTableMeta } from '../types';
 
 const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
 const DEFAULT_TABLE = 'attachments';
@@ -25,14 +25,16 @@ export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): I
 }
 
 /** ParseMessageResult for transaction-buffer, apply-unified-deltas tests */
-export function mockParseResult(overrides: {
-  action?: InsertActivityModel['action'];
-  entityType?: InsertActivityModel['entityType'];
-  resourceType?: InsertActivityModel['resourceType'];
-  subjectId?: string;
-  organizationId?: string | null;
-  tableMeta?: 'entity' | 'resource';
-} = {}): ParseMessageResult {
+export function mockParseResult(
+  overrides: {
+    action?: InsertActivityModel['action'];
+    entityType?: InsertActivityModel['entityType'];
+    resourceType?: InsertActivityModel['resourceType'];
+    subjectId?: string;
+    organizationId?: string | null;
+    tableMeta?: 'entity' | 'resource';
+  } = {},
+): ParseMessageResult {
   const type = overrides.entityType ?? overrides.resourceType ?? DEFAULT_ENTITY;
   const kind = overrides.tableMeta ?? (overrides.resourceType ? 'resource' : 'entity');
 
@@ -46,9 +48,10 @@ export function mockParseResult(overrides: {
     type: `${type}.${overrides.action === 'delete' ? 'deleted' : 'created'}` as InsertActivityModel['type'],
   });
 
-  const tableMeta = kind === 'entity'
-    ? { kind: 'entity', type, table: {} } as unknown as EntityTableMeta
-    : { kind: 'resource', type, table: {} } as unknown as ResourceTableMeta;
+  const tableMeta =
+    kind === 'entity'
+      ? ({ kind: 'entity', type, table: {} } as unknown as EntityTableMeta)
+      : ({ kind: 'resource', type, table: {} } as unknown as ResourceTableMeta);
 
   return {
     activity,

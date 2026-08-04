@@ -12,28 +12,28 @@
  */
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */
-  group: string
+  group: string;
   /** CI deploy application (GitHub Actions credential). */
-  ciDeploy: string
+  ciDeploy: string;
   /** VM reader application (single-app secret/registry reader; pre-P3 model). */
-  vmReader: string
+  vmReader: string;
   /** Human admin application (bucket access + infra reads; replaces operator). */
-  admin: string
+  admin: string;
   /** Per-service VM application (P3 model). */
-  vmService: (service: string) => string
+  vmService: (service: string) => string;
   /** Boot fetcher application: registry pull + handoff-secret read (P3 model). */
-  boot: string
+  boot: string;
   /** Pre-per-mode names, used as lookup fallbacks only, never for creation. */
   legacy: {
-    ciDeploy: string
-    vmReader: string
-    operator: string
-  }
+    ciDeploy: string;
+    vmReader: string;
+    operator: string;
+  };
 }
 
 /** Derive all principal names for one app×mode. */
 export function principalNames(slug: string, mode: string): PrincipalNames {
-  const prefix = `${slug}-${mode}`
+  const prefix = `${slug}-${mode}`;
   return {
     group: prefix,
     ciDeploy: `${prefix}-ci-deploy`,
@@ -46,10 +46,10 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
       vmReader: `${slug}-vm-reader`,
       operator: `${slug}-operator`,
     },
-  }
+  };
 }
 
 /** Tags stamped on every engine-created IAM resource that supports them. */
 export function principalTags(slug: string, mode: string): string[] {
-  return ['managed-by=cella-infra', `app=${slug}`, `env=${mode}`]
+  return ['managed-by=cella-infra', `app=${slug}`, `env=${mode}`];
 }

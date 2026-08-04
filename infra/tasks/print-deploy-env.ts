@@ -1,13 +1,17 @@
-import { isMain } from '../lib/utils/is-main'
-import type { EngineConfig } from '../config/engine-config'
-import { deriveInfra } from '../lib/naming'
-import { deployedServices, enabledServices, serviceEndpoints, serviceNames } from '../lib/services'
-import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions'
-import { principalNames } from '../lib/scaleway/principals'
-import { getFlag } from './args'
-import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret'
+import type { EngineConfig } from '../config/engine-config';
+import { deriveInfra } from '../lib/naming';
+import {
+  BACKEND_S3_PERMISSION_SETS,
+  BOOT_PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from '../lib/scaleway/permissions';
+import { principalNames } from '../lib/scaleway/principals';
+import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret';
+import { deployedServices, enabledServices, serviceEndpoints, serviceNames } from '../lib/services';
+import { isMain } from '../lib/utils/is-main';
+import { getFlag } from './args';
 
-type Cfg = EngineConfig
+type Cfg = EngineConfig;
 
 /** Exact set of keys this script is allowed to emit. Tests lock this. */
 export const ALLOWED_KEYS = [
@@ -25,8 +29,8 @@ export const ALLOWED_KEYS = [
   'build_images_matrix',
   'primary_rollout_matrix',
   'roll_rest_matrix',
-] as const
-export type AllowedKey = (typeof ALLOWED_KEYS)[number]
+] as const;
+export type AllowedKey = (typeof ALLOWED_KEYS)[number];
 
 /**
  * Production may only deploy from a trusted ref. The deploy workflow triggers on
@@ -36,16 +40,16 @@ export type AllowedKey = (typeof ALLOWED_KEYS)[number]
  * workflow triggers) is rejected.
  */
 export function isAllowedProductionRef(gitRef: string): boolean {
-  return gitRef === 'refs/heads/main' || gitRef.startsWith('refs/tags/')
+  return gitRef === 'refs/heads/main' || gitRef.startsWith('refs/tags/');
 }
 
 /** Pure builder that produces the deploy env table from an appConfig. */
 export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {}): Record<AllowedKey, string> {
-  const { naming } = deriveInfra(appConfig)
-  const enabled = enabledServices(appConfig.services)
-  const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>
-  const serviceUrl = (slug: string): string => serviceUrls[slug]?.publicUrl ?? ''
-  const urls = new Map(serviceEndpoints(appConfig).map((endpoint) => [endpoint.slug, endpoint.url]))
+  const { naming } = deriveInfra(appConfig);
+  const enabled = enabledServices(appConfig.services);
+  const serviceUrls = appConfig.services as Record<string, { publicUrl?: string }>;
+  const serviceUrl = (slug: string): string => serviceUrls[slug]?.publicUrl ?? '';
+  const urls = new Map(serviceEndpoints(appConfig).map((endpoint) => [endpoint.slug, endpoint.url]));
   const enabledServiceRows = enabled.map((service) => ({
     service: service.slug,
     public_url: serviceUrl(service.slug),
@@ -54,24 +58,35 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     dockerfile: service.dockerfile ?? '',
     reuses_image_of: service.reusesImageOf ?? '',
     primary_rollout: service.primaryRollout === true,
-  }))
-  const primaryServices = enabled.filter((service) => service.primaryRollout)
+  }));
+  const primaryServices = enabled.filter((service) => service.primaryRollout);
   if (primaryServices.length > 1) {
-    throw new Error(`At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`)
+    throw new Error(
+      `At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`,
+    );
   }
-  const primaryService = primaryServices[0]
-// Include only services that own VM generations; single-VM workers cut over with their host.
-// This mirrors the compute resource set.
-  const deployedSlugs = new Set(deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug))
-  const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service))
-  const primaryRollout = primaryService ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url })) : []
-  const restRollout = (primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows).map(({ service, health_url }) => ({ service, health_url }))
+  const primaryService = primaryServices[0];
+  // Include only services that own VM generations; single-VM workers cut over with their host.
+  // This mirrors the compute resource set.
+  const deployedSlugs = new Set(
+    deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug),
+  );
+  const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service));
+  const primaryRollout = primaryService
+    ? rolloutRows
+        .filter((item) => item.service === primaryService.slug)
+        .map(({ service, health_url }) => ({ service, health_url }))
+    : [];
+  const restRollout = (
+    primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows
+  ).map(({ service, health_url }) => ({ service, health_url }));
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
-      if (!service.dockerfile) throw new Error(`Service '${service.slug}' builds its own image but has no dockerfile in services.config.ts`)
-      return { service: service.slug, dockerfile: service.dockerfile, target: service.target ?? '' }
-    })
+      if (!service.dockerfile)
+        throw new Error(`Service '${service.slug}' builds its own image but has no dockerfile in services.config.ts`);
+      return { service: service.slug, dockerfile: service.dockerfile, target: service.target ?? '' };
+    });
 
   return {
     environment: appConfig.mode,
@@ -109,31 +124,31 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),
     roll_rest_matrix: JSON.stringify(restRollout),
-  }
+  };
 }
 
 export async function main(): Promise<void> {
-  const mode = process.argv[2]
+  const mode = process.argv[2];
   if (!mode) {
-    console.error('Usage: print-deploy-env.ts <staging|production> [--git-ref refs/heads/main] [--git-sha <sha>]')
-    process.exit(1)
+    console.error('Usage: print-deploy-env.ts <staging|production> [--git-ref refs/heads/main] [--git-sha <sha>]');
+    process.exit(1);
   }
-  const gitRef = getFlag(process.argv, '--git-ref')
-  const gitSha = getFlag(process.argv, '--git-sha')
+  const gitRef = getFlag(process.argv, '--git-ref');
+  const gitSha = getFlag(process.argv, '--git-sha');
   if (mode === 'production' && gitRef && !isAllowedProductionRef(gitRef)) {
-    console.error(`::error::Production deploys are only allowed from the main branch or a release tag (got ${gitRef})`)
-    process.exit(1)
+    console.error(`::error::Production deploys are only allowed from the main branch or a release tag (got ${gitRef})`);
+    process.exit(1);
   }
-  process.env.APP_MODE = mode
-  const { loadEngineConfig } = await import('../config/engine-config')
-  const appConfig = await loadEngineConfig()
+  process.env.APP_MODE = mode;
+  const { loadEngineConfig } = await import('../config/engine-config');
+  const appConfig = await loadEngineConfig();
   if (appConfig.mode !== mode) {
-    console.error(`Mode mismatch: requested "${mode}" but loaded config is "${appConfig.mode}"`)
-    process.exit(1)
+    console.error(`Mode mismatch: requested "${mode}" but loaded config is "${appConfig.mode}"`);
+    process.exit(1);
   }
   for (const [k, v] of Object.entries(buildDeployEnv(appConfig, { imageTag: gitSha }))) {
-    console.info(`${k}=${v}`)
+    console.info(`${k}=${v}`);
   }
 }
 
-if (isMain(import.meta.url)) await main()
+if (isMain(import.meta.url)) await main();

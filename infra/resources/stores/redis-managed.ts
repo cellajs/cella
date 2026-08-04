@@ -1,25 +1,25 @@
-import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores'
+import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
 /** Configuration for a managed Scaleway Redis store. */
 export interface RedisManagedConfig {
   /** Redis engine version, e.g. `'7.0.5'` (Scaleway-supported versions only). */
-  version: string
+  version: string;
   /** Cluster node type, e.g. `'RED1-MICRO'`. */
-  nodeType: string
+  nodeType: string;
   /** Node count. 1 = standalone; 3+ switches to cluster mode. Defaults to 1. */
-  clusterSize?: number
+  clusterSize?: number;
   /** First ACL user name. Defaults to `'default'`. */
-  userName?: string
+  userName?: string;
   /** Terminate connections with TLS (rediss scheme). Defaults to true. */
-  tls?: boolean
+  tls?: boolean;
   /**
    * Services that consume the connection URL (and, with TLS, the cluster CA)
    * as runtime secrets. When set, the store owns the secret declarations.
    */
   secretConsumers?: {
-    url?: readonly string[]
-    ca?: readonly string[]
-  }
+    url?: readonly string[];
+    ca?: readonly string[];
+  };
 }
 
 /**
@@ -29,15 +29,15 @@ export interface RedisManagedConfig {
  * {@link ProvisionContext}.
  */
 export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
-  const tls = config.tls ?? true
+  const tls = config.tls ?? true;
 
   return {
     kind: 'redis-managed',
 
     secrets(): StoreSecretContribution[] {
-      const consumers = config.secretConsumers
-      if (!consumers) return []
-      const contributions: StoreSecretContribution[] = []
+      const consumers = config.secretConsumers;
+      if (!consumers) return [];
+      const contributions: StoreSecretContribution[] = [];
       if (consumers.url) {
         contributions.push({
           id: 'redisUrl',
@@ -47,7 +47,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
           required: true,
           valueSource: 'pulumi',
           services: consumers.url,
-        })
+        });
       }
       if (tls && consumers.ca) {
         contributions.push({
@@ -58,29 +58,33 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
           required: true,
           valueSource: 'pulumi',
           services: consumers.ca,
-        })
+        });
       }
-      return contributions
+      return contributions;
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
-      const { scaleway, naming, zone, isProduction, privateNetworkId, configuredOrRandomSecret } = ctx
+      const { scaleway, naming, zone, isProduction, privateNetworkId, configuredOrRandomSecret } = ctx;
 
       // Stable resource identity for the live credential, mirroring the
       // postgres role passwords.
-      const password = configuredOrRandomSecret('redisPassword', 'redis-password')
+      const password = configuredOrRandomSecret('redisPassword', 'redis-password');
 
-      const cluster = new scaleway.redis.Cluster('main-redis', {
-        name: naming.resource('redis'),
-        version: config.version,
-        nodeType: config.nodeType,
-        clusterSize: config.clusterSize ?? 1,
-        userName: config.userName ?? 'default',
-        password,
-        tlsEnabled: tls,
-        zone,
-        privateNetworks: [{ id: privateNetworkId }],
-      }, { protect: isProduction })
+      const cluster = new scaleway.redis.Cluster(
+        'main-redis',
+        {
+          name: naming.resource('redis'),
+          version: config.version,
+          nodeType: config.nodeType,
+          clusterSize: config.clusterSize ?? 1,
+          userName: config.userName ?? 'default',
+          password,
+          tlsEnabled: tls,
+          zone,
+          privateNetworks: [{ id: privateNetworkId }],
+        },
+        { protect: isProduction },
+      );
 
       return {
         outputs: {
@@ -100,7 +104,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
               }
             : {}),
         },
-      }
+      };
     },
-  }
+  };
 }

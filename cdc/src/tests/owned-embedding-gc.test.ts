@@ -126,7 +126,10 @@ describe('gcOwnedEmbeddedRows', () => {
   it('groups candidates per root channel', async () => {
     await gc('task', [
       hostEvent({ ...base, items: [] }, { ...base, items: ['i1'] }),
-      hostEvent({ ...base, id: 't2', organizationId: 'o2', items: [] }, { ...base, id: 't2', organizationId: 'o2', items: ['i2'] }),
+      hostEvent(
+        { ...base, id: 't2', organizationId: 'o2', items: [] },
+        { ...base, id: 't2', organizationId: 'o2', items: ['i2'] },
+      ),
     ]);
 
     expect(updates).toHaveLength(2);

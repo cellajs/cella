@@ -1,4 +1,4 @@
-import type { ProvisionedStore, StoreProvisioner } from '../../lib/stores'
+import type { ProvisionedStore, StoreProvisioner } from '../../lib/stores';
 
 /**
  * The empty store: provisions nothing and contributes no secrets. For apps
@@ -9,7 +9,7 @@ export function none(): StoreProvisioner {
   return {
     kind: 'none',
     provision(): ProvisionedStore {
-      return { outputs: {}, secretValues: {} }
+      return { outputs: {}, secretValues: {} };
     },
-  }
+  };
 }

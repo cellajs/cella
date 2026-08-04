@@ -35,9 +35,7 @@ describe('6.2 Pool behavior', () => {
     );
 
     expect(results).toHaveLength(concurrency);
-    expect(results.sort((a, b) => a - b)).toEqual(
-      Array.from({ length: concurrency }, (_, i) => i),
-    );
+    expect(results.sort((a, b) => a - b)).toEqual(Array.from({ length: concurrency }, (_, i) => i));
   });
 
   it('RLS context is set per-connection, not shared across concurrent calls', async () => {

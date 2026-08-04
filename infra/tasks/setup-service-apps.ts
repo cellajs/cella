@@ -1,19 +1,19 @@
-import { provisionScopedKey, type ProvisionScopedKeyOptions } from '../lib/scaleway/scaleway-iam'
+import { type ProvisionScopedKeyOptions, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 
 export interface SetupServiceAppsOptions extends ProvisionScopedKeyOptions {
   /** Deploy mode; service apps are always per-mode. */
-  mode: string
+  mode: string;
   /** Deployed service slugs (from the services registry). */
-  services: readonly string[]
+  services: readonly string[];
 }
 
 export interface ServiceAppsResult {
   /** service slug → application id. */
-  serviceAppIds: Record<string, string>
+  serviceAppIds: Record<string, string>;
   /** The boot fetcher application id. */
-  bootAppId: string
+  bootAppId: string;
   /** Every created/reused application id (services + boot), for the CI key-mint condition. */
-  allAppIds: string[]
+  allAppIds: string[];
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ServiceAppsResult {
  * key-mint condition, so this MUST run before setup-ci-key.
  */
 export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<ServiceAppsResult> {
-  const serviceAppIds: Record<string, string> = {}
+  const serviceAppIds: Record<string, string> = {};
   for (const service of opts.services) {
     const app = await provisionScopedKey(opts, {
       suffix: `vm-${service}`,
@@ -34,15 +34,20 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
       policyDescription: 'unused (Pulumi manages the policy)',
       managePolicy: false,
       mintKey: false,
-    })
-    serviceAppIds[service] = app.applicationId
+    });
+    serviceAppIds[service] = app.applicationId;
   }
   const boot = await provisionScopedKey(opts, {
     suffix: 'boot',
-    appDescription: 'Non-human boot fetcher — registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
+    appDescription:
+      'Non-human boot fetcher — registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
     policyDescription: 'unused (Pulumi manages the policy)',
     managePolicy: false,
     mintKey: false,
-  })
-  return { serviceAppIds, bootAppId: boot.applicationId, allAppIds: [...Object.values(serviceAppIds), boot.applicationId] }
+  });
+  return {
+    serviceAppIds,
+    bootAppId: boot.applicationId,
+    allAppIds: [...Object.values(serviceAppIds), boot.applicationId],
+  };
 }

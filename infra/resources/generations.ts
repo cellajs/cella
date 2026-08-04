@@ -1,36 +1,38 @@
-import { engineConfig } from '../config/engine-config'
-const appConfig = engineConfig()
-import { composeConfig } from '../compose/compose'
-import { deriveGenId } from '../lib/gen-id'
-import { unionRuntimeSecrets, type RuntimeSecretConsumer } from '../lib/runtime-secrets'
-import { type Generation, selectGenerations } from '../lib/select-generations'
-import { deployedServices, coHostedServices, collocatedServices, type ServiceDefinition } from '../lib/services'
-import { sizing } from '../config/sizing'
-import { controlState } from './control'
+import { engineConfig } from '../config/engine-config';
+
+const appConfig = engineConfig();
+
+import { composeConfig } from '../compose/compose';
+import { sizing } from '../config/sizing';
+import { deriveGenId } from '../lib/gen-id';
+import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
+import { type Generation, selectGenerations } from '../lib/select-generations';
+import { coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
+import { controlState } from './control';
 
 // Give each service a VM except workers co-hosted on the backend and
 // containers collocated on the host in single-VM mode. Load-balanced co-hosts
 // and collocated containers still route through the host VM.
-export const enabled = deployedServices(appConfig.services, appConfig.singleVM)
+export const enabled = deployedServices(appConfig.services, appConfig.singleVM);
 
 // Workers folded into the host backend process under singleVM. Empty in the
 // normal split-VM deploy. Their runtime secrets are unioned onto the host VM and
 // an `exclusive` one among them forces the host to cut over exclusively.
-export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM)
+export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM);
 
 // Containers the boot runner starts on the host VM next to the host container
 // under singleVM (placement 'host'). Empty in the normal split-VM deploy.
-export const collocated = collocatedServices(appConfig.services, appConfig.singleVM)
-export const hostSlug = enabled.find((s) => s.primaryRollout)?.slug
+export const collocated = collocatedServices(appConfig.services, appConfig.singleVM);
+export const hostSlug = enabled.find((s) => s.primaryRollout)?.slug;
 
 /** Runtime-secret consumers whose secrets a service's VM must carry. In singleVM
  *  the host VM additionally carries every co-hosted worker's and collocated
  *  container's secrets. */
 export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsumer[] {
   if (appConfig.singleVM && svc.slug === hostSlug) {
-    return [svc.slug, ...coHosted.map((s) => s.slug), ...collocated.map((s) => s.slug)] as RuntimeSecretConsumer[]
+    return [svc.slug, ...coHosted.map((s) => s.slug), ...collocated.map((s) => s.slug)] as RuntimeSecretConsumer[];
   }
-  return [svc.slug as RuntimeSecretConsumer]
+  return [svc.slug as RuntimeSecretConsumer];
 }
 
 /**
@@ -44,12 +46,12 @@ export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['re
     svc.slug === hostSlug &&
     [...coHosted, ...collocated].some((s) => s.replacementStrategy === 'exclusive')
   ) {
-    return 'exclusive'
+    return 'exclusive';
   }
-  return svc.replacementStrategy
+  return svc.replacementStrategy;
 }
 
-export type { Generation } from '../lib/select-generations'
+export type { Generation } from '../lib/select-generations';
 
 /**
  * Static, synchronously-known configuration that DEFINES a generation. Hashed
@@ -63,18 +65,18 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   // marker of who is collocated) join the host's fingerprint: a change to a
   // collocated image or env rolls the shared generation. Empty outside
   // singleVM, keeping the split-VM fingerprint byte-stable.
-  const collocatedSlugs = appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : []
-  const blockOwners = new Set<string>([svc.slug, ...collocatedSlugs])
+  const collocatedSlugs = appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : [];
+  const blockOwners = new Set<string>([svc.slug, ...collocatedSlugs]);
   const blocks = Object.values(composeConfig.services)
     .filter((block) => block.profiles.some((profile) => blockOwners.has(profile)))
-    .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }))
+    .map((block) => ({ image: block.image, ports: block.ports ?? [], environment: block.environment ?? {} }));
   // Union across secret consumers so the singleVM host's genId also captures the
   // co-hosted workers' secret manifest (any change rolls a new generation).
   const secrets = unionRuntimeSecrets(secretConsumersFor(svc)).map((definition) => ({
     secretName: definition.secretName,
     envVar: definition.envVar,
     required: definition.required,
-  }))
+  }));
   return {
     slug: svc.slug,
     port: svc.healthPort,
@@ -90,7 +92,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     blocks,
     secrets,
     computeImage: typeof sizing.computeImage === 'string' ? sizing.computeImage : 'dynamic',
-  }
+  };
 }
 
 /**
@@ -101,9 +103,9 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
  * are reaped after promotion; rollback uses a revert and redeploy.
  */
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
-  const fingerprint = serviceFingerprint(svc)
+  const fingerprint = serviceFingerprint(svc);
   return selectGenerations(controlState.rollout[svc.slug], {
     exclusive: effectiveStrategy(svc) === 'exclusive',
     genIdFor: (sha) => deriveGenId(sha, fingerprint),
-  })
+  });
 }

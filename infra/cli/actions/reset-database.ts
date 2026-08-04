@@ -1,7 +1,8 @@
-import { input } from '@inquirer/prompts'
-import { deriveInfra } from '../../lib/naming'
-import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb'
-import { errorMessage } from '../../lib/utils/errors'
+import { input } from '@inquirer/prompts';
+import { deriveInfra } from '../../lib/naming';
+import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
+import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import {
   backupName,
   ResetIrrecoverableError,
@@ -9,22 +10,21 @@ import {
   restoreHint,
   sequenceDatabaseReset,
   serialConsoleSteps,
-} from '../../tasks/reset-database'
-import { maskedSecret } from '../prompts/masked-secret'
-import { envOr, type InfraContext } from '../shared'
-import { pc, checkMark, crossMark, warningMark } from '../../lib/utils/cli-output'
+} from '../../tasks/reset-database';
+import { maskedSecret } from '../prompts/masked-secret';
+import { envOr, type InfraContext } from '../shared';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
-const ROLES = ['admin_role', 'runtime_role'] as const
+const ROLES = ['admin_role', 'runtime_role'] as const;
 
 /** Retention for the pre-reset backup. Long enough to notice a bad reset the next working week. */
-const BACKUP_RETENTION_DAYS = 7
+const BACKUP_RETENTION_DAYS = 7;
 
 /** Render live instance data so an incorrectly targeted RDB instance is visible before approval. */
 function describeTarget(target: ResetTarget, region: string): string {
   const others = target.databases
     .filter((database) => database.name !== target.databaseName)
-    .map((database) => database.name)
+    .map((database) => database.name);
 
   return [
     '',
@@ -34,10 +34,10 @@ function describeTarget(target: ResetTarget, region: string): string {
     `  survives   ${others.length ? others.join(', ') : pc.dim('(none)')}`,
     '',
     `${warningMark} ${pc.bold('Everything in')} ${pc.red(target.databaseName)} ${pc.bold('is destroyed.')} A backup is taken first, and the`,
-    `  reset aborts unless it reports ready. Nothing else stops this: Scaleway deletes a live`,
-    `  database with connected clients and an active replication slot without complaint.`,
+    '  reset aborts unless it reports ready. Nothing else stops this: Scaleway deletes a live',
+    '  database with connected clients and an active replication slot without complaint.',
     '',
-  ].join('\n')
+  ].join('\n');
 }
 
 /**
@@ -47,23 +47,25 @@ function describeTarget(target: ResetTarget, region: string): string {
  */
 export async function runResetDatabase(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
-    console.error(`${warningMark} "Reset database" requires a fully bootstrapped stack (state=${context.state}).`)
-    process.exit(1)
+    console.error(`${warningMark} "Reset database" requires a fully bootstrapped stack (state=${context.state}).`);
+    process.exit(1);
   }
 
-  const { appConfig } = context
-  const { naming, region } = deriveInfra(appConfig)
-  const instanceName = naming.resource('postgres')
-  const databaseName = naming.dbName
+  const { appConfig } = context;
+  const { naming, region } = deriveInfra(appConfig);
+  const instanceName = naming.resource('postgres');
+  const databaseName = naming.dbName;
 
-  console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'))
-  console.info(pc.dim('Pre-production use, or with services quiesced — this is a hard outage.\n'))
+  console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
+  console.info(pc.dim('Pre-production use, or with services quiesced — this is a hard outage.\n'));
 
   // Only the secret key is needed: the Scaleway API authenticates with X-Auth-Token alone.
-  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () => maskedSecret({ message: 'Scaleway bootstrap secret key' }))
+  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
+    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
+  );
 
-  const client = createRdbClient({ secretKey: bootSecret, region })
-  const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString()
+  const client = createRdbClient({ secretKey: bootSecret, region });
+  const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 
   try {
     const result = await sequenceDatabaseReset({
@@ -80,31 +82,34 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
       waitForBackup: (backupId) => waitForBackupReady(client, backupId),
       deleteDatabase: (instanceId, name) => client.deleteDatabase(instanceId, name),
       createDatabase: (instanceId, name) => client.createDatabase(instanceId, name),
-      setPrivilege: (instanceId, database, user, permission) => client.setPrivilege(instanceId, database, user, permission),
+      setPrivilege: (instanceId, database, user, permission) =>
+        client.setPrivilege(instanceId, database, user, permission),
       log: (message) => console.info(`  ${message}`),
 
       confirm: async (target) => {
-        console.info(describeTarget(target, region))
+        console.info(describeTarget(target, region));
         const typed = await input({
           message: `Type ${pc.bold(target.token)} to reset it, anything else to abort:`,
-        })
-        return typed.trim() === target.token
+        });
+        return typed.trim() === target.token;
       },
-    })
+    });
 
-    if (result.aborted) return
+    if (result.aborted) return;
 
-    console.info(`\n${checkMark} ${pc.green(`${databaseName} recreated`)} — empty, with ${result.granted.join(' + ')} re-granted.`)
-    console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`)
-    console.info(serialConsoleSteps(databaseName))
-    console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`)
+    console.info(
+      `\n${checkMark} ${pc.green(`${databaseName} recreated`)} — empty, with ${result.granted.join(' + ')} re-granted.`,
+    );
+    console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
+    console.info(serialConsoleSteps(databaseName));
+    console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
   } catch (error) {
     if (error instanceof ResetIrrecoverableError) {
-      console.error(`\n${restoreHint(error, region)}\n`)
-      process.exit(1)
+      console.error(`\n${restoreHint(error, region)}\n`);
+      process.exit(1);
     }
-    console.error(`\n${crossMark} Reset aborted: ${errorMessage(error)}`)
-    console.error(`  ${pc.dim('Nothing was destroyed — the guards run before the delete.')}\n`)
-    process.exit(1)
+    console.error(`\n${crossMark} Reset aborted: ${errorMessage(error)}`);
+    console.error(`  ${pc.dim('Nothing was destroyed — the guards run before the delete.')}\n`);
+    process.exit(1);
   }
 }

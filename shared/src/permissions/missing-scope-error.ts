@@ -12,7 +12,11 @@ export class MissingScopeError extends Error {
   readonly missingChannel: ChannelEntityType;
   readonly missingKey: string;
 
-  constructor(entityType: ChannelEntityType | ProductEntityType, missingChannel: ChannelEntityType, missingKey: string) {
+  constructor(
+    entityType: ChannelEntityType | ProductEntityType,
+    missingChannel: ChannelEntityType,
+    missingKey: string,
+  ) {
     super(`[Permission] ${entityType} missing required ancestor scope for ${missingChannel} (${missingKey})`);
     this.name = 'MissingScopeError';
     this.entityType = entityType;

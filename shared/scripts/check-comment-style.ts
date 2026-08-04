@@ -7,10 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import {
-  requiredAgentVocabularyRules,
-  reviewAgentVocabularyRules,
-} from './agent-vocabulary.ts';
+import { requiredAgentVocabularyRules, reviewAgentVocabularyRules } from './agent-vocabulary.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
@@ -36,12 +33,7 @@ const sourceExtensions = new Set([
   '.yml',
 ]);
 const typedExtensions = new Set(['.cjs', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
-const excludedPrefixes = [
-  'backend/drizzle/',
-  'cella/migrations/',
-  'locales/',
-  'sdk/gen/',
-];
+const excludedPrefixes = ['backend/drizzle/', 'cella/migrations/', 'locales/', 'sdk/gen/'];
 
 interface Comment {
   file: string;
@@ -70,8 +62,7 @@ const requiredRules: Rule[] = [
   {
     name: 'concrete-language',
     pattern: /\binvariants?\b/i,
-    message:
-      'name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
+    message: 'name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
   },
   {
     name: 'change-history',
@@ -245,9 +236,7 @@ function proseLineCount(text: string): number {
 }
 
 function isRequiredHeader(text: string): boolean {
-  return /\b(?:copyright|licensed under|permission is hereby granted|the software is provided)\b/i.test(
-    text,
-  );
+  return /\b(?:copyright|licensed under|permission is hereby granted|the software is provided)\b/i.test(text);
 }
 
 const declarationKinds = new Set([
@@ -271,9 +260,7 @@ function hasDirectDeclarationOwner(file: string, source: string, comment: Commen
   );
   if (containingStatement) return true;
 
-  const nextStatement = sourceFile.statements.find(
-    (statement) => statement.getStart(sourceFile) >= comment.end,
-  );
+  const nextStatement = sourceFile.statements.find((statement) => statement.getStart(sourceFile) >= comment.end);
   if (!nextStatement || !declarationKinds.has(nextStatement.kind)) return false;
 
   const gap = source.slice(comment.end, nextStatement.getStart(sourceFile));

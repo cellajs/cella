@@ -25,8 +25,8 @@ export const stxBaseSchema = z
   });
 
 /**
- * Nullable sync-transaction reference shared by response schemas. Deliberately unnamed so it
- * emits an inline `anyOf: [$ref, {type: 'null'}]` at each use site instead of a component schema.
+ * Nullable sync-transaction reference shared by response schemas. Unnamed so each
+ * use site emits an inline `anyOf: [$ref, {type: 'null'}]`.
  */
 export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 

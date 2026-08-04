@@ -1,5 +1,5 @@
-import { appConfig } from '../config-builder/app-config';
 import type { EntityActionType } from '../../types';
+import { appConfig } from '../config-builder/app-config';
 import { recordFromKeys } from '../config-builder/utils';
 import type { CanState } from './types';
 
@@ -47,5 +47,4 @@ export const resolveCan = (
  * Returns true only for unconditional permission.
  * Channel-wide features use this secure default; row affordances should call `resolveCan`.
  */
-export const isUnconditionalCan = (permission: CanState | undefined): boolean =>
-  permission === true;
+export const isUnconditionalCan = (permission: CanState | undefined): boolean => permission === true;

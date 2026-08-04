@@ -1,11 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
-import { replicationState } from '../../services/replication-state';
 import { wsClient } from '../../network/websocket-client';
+import { replicationState } from '../../services/replication-state';
 import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const WS_PORT = Number(new URL(process.env.API_WS_URL ?? 'ws://127.0.0.1:4788').port || 4788);
@@ -142,7 +141,11 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     await waitFor(() => replicationState.status === 'active', 20_000, 'replication resumed');
 
     // Acks resume → retained WAL drains well below the WS-down peak.
-    await waitFor(async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2), 30_000, 'slot drained after reconnect');
+    await waitFor(
+      async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2),
+      30_000,
+      'slot drained after reconnect',
+    );
 
     // Drain to the floor before probing a fresh change: the previous threshold still allows
     // half the burst to be in flight, whose replay competes with the probe on a slow runner.

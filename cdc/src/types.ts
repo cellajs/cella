@@ -1,5 +1,4 @@
-import { entityTables } from '#/tables';
-import { resourceTables } from '#/tables';
+import type { entityTables, resourceTables } from '#/tables';
 import type { ParseMessageResult } from './pipeline/parse-message';
 
 /** Row data from pgoutput message */

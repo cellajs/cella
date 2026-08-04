@@ -1,6 +1,6 @@
-import type { AttrValue } from './otlp'
-import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter'
-import { defineEvent, type EventDef, type Placeholders } from './events'
+import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter';
+import { defineEvent, type EventDef, type Placeholders } from './events';
+import type { AttrValue } from './otlp';
 
 /**
  * Audit/error event catalog for the deploy pipeline. Names are stable: maple
@@ -18,7 +18,7 @@ export const deployEvents = {
   rolloutFailed: defineEvent('deploy.rollout.failed', 'rollout failed: {error}'),
   completed: defineEvent('deploy.completed', 'deploy of {sha} to {mode} succeeded'),
   failed: defineEvent('deploy.failed', 'deploy of {sha} to {mode} FAILED'),
-} as const
+} as const;
 
 /** Boot runner events (same stream, VM side). */
 export const bootEvents = {
@@ -27,26 +27,26 @@ export const bootEvents = {
   stepFailed: defineEvent('boot.step.failed', '{service} boot step {step} FAILED: {error}'),
   completed: defineEvent('boot.completed', '{service} booted {sha} successfully'),
   failed: defineEvent('boot.failed', '{service} boot FAILED: {error}'),
-} as const
+} as const;
 
 // One emitter per deploy process. rollout-runtime emits through the accessor
 // without plumbing the instance through every seam; absent init (unit tests,
 // disabled telemetry) every call is a safe no-op.
-let active: Telemetry | undefined
+let active: Telemetry | undefined;
 
 export interface DeployTelemetryInit {
-  mode: string
-  sha: string
+  mode: string;
+  sha: string;
   /** Extra resource attributes (e.g. the app slug). */
-  resource?: Record<string, AttrValue>
-  endpoint?: string
-  headers?: Record<string, string>
-  onError?: (message: string) => void
+  resource?: Record<string, AttrValue>;
+  endpoint?: string;
+  headers?: Record<string, string>;
+  onError?: (message: string) => void;
 }
 
 /** Create and activate the deploy-run emitter. Joins a CI TRACEPARENT when present. */
 export function initDeployTelemetry(init: DeployTelemetryInit): Telemetry {
-  const fromEnv = otlpConfigFromEnv()
+  const fromEnv = otlpConfigFromEnv();
   active = createTelemetry({
     resource: {
       'service.name': 'infra-deploy',
@@ -58,13 +58,13 @@ export function initDeployTelemetry(init: DeployTelemetryInit): Telemetry {
     headers: init.headers ?? fromEnv?.headers,
     traceparent: process.env.TRACEPARENT,
     onError: init.onError,
-  })
-  return active
+  });
+  return active;
 }
 
 /** The active deploy emitter, if any (undefined outside a deploy run). */
 export function deployTelemetry(): Telemetry | undefined {
-  return active
+  return active;
 }
 
 /** Emit a cataloged event on the active deploy emitter; no-op when telemetry is off. */
@@ -73,10 +73,10 @@ export function emitDeployEvent<T extends string>(
   attrs: Record<Placeholders<T>, AttrValue> & Record<string, AttrValue>,
   opts: { severity?: 'info' | 'warn' | 'error'; body?: string } = {},
 ): void {
-  active?.event(def, attrs, opts)
+  active?.event(def, attrs, opts);
 }
 
 /** Deactivate (tests). */
 export function resetDeployTelemetry(): void {
-  active = undefined
+  active = undefined;
 }

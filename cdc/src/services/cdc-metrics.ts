@@ -1,8 +1,8 @@
-import { sql } from "drizzle-orm";
-import { cdcDb } from "../lib/db";
-import { CDC_SLOT_NAME, RESOURCE_LIMITS } from "../constants";
-import { wsClient } from "../network/websocket-client";
-import { log } from "../lib/pino";
+import { sql } from 'drizzle-orm';
+import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { cdcDb } from '../lib/db';
+import { log } from '../lib/pino';
+import { wsClient } from '../network/websocket-client';
 
 const BUCKET_MS = 10_000; // 10s per bucket
 const BUCKET_COUNT = 6; // 6 buckets = 60s rolling window
@@ -118,21 +118,14 @@ class Metrics {
       eventsProcessed: totalEvents,
       throughput: Math.round((totalEvents / windowSec) * 10) / 10,
       processingLatency: {
-        avg: sortedProc.length
-          ? Math.round(
-              (sortedProc.reduce((a, b) => a + b, 0) / sortedProc.length) * 10,
-            ) / 10
-          : 0,
+        avg: sortedProc.length ? Math.round((sortedProc.reduce((a, b) => a + b, 0) / sortedProc.length) * 10) / 10 : 0,
         p50: Math.round(percentile(sortedProc, 50) * 10) / 10,
         p95: Math.round(percentile(sortedProc, 95) * 10) / 10,
         p99: Math.round(percentile(sortedProc, 99) * 10) / 10,
       },
       batchSize: {
         avg: sortedBatch.length
-          ? Math.round(
-              (sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) *
-                10,
-            ) / 10
+          ? Math.round((sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) * 10) / 10
           : 0,
         max: sortedBatch.length ? sortedBatch[sortedBatch.length - 1] : 0,
       },
@@ -169,28 +162,28 @@ class Metrics {
     // Warn threshold crossed
     if (currentBytes >= warnBytes && !this.hasWarned) {
       this.hasWarned = true;
-      log.warn("WAL lag approaching backpressure limit", {
+      log.warn('WAL lag approaching backpressure limit', {
         lagBytes: currentBytes,
         warnThreshold: warnBytes,
         unhealthyThreshold: unhealthyBytes,
       });
-      this.emitLagControl("wal_lag_warn");
+      this.emitLagControl('wal_lag_warn');
     }
 
     // Unhealthy threshold crossed
     if (currentBytes >= unhealthyBytes && !this.hasGoneUnhealthy) {
       this.hasGoneUnhealthy = true;
-      log.error("WAL lag exceeded backpressure limit — CDC unhealthy", {
+      log.error('WAL lag exceeded backpressure limit — CDC unhealthy', {
         lagBytes: currentBytes,
         unhealthyThreshold: unhealthyBytes,
       });
-      this.emitLagControl("wal_lag_unhealthy");
+      this.emitLagControl('wal_lag_unhealthy');
     }
   }
 
-  private emitLagControl(severity: "wal_lag_warn" | "wal_lag_unhealthy"): void {
+  private emitLagControl(severity: 'wal_lag_warn' | 'wal_lag_unhealthy'): void {
     const payload = {
-      _control: "wal_lag_alert",
+      _control: 'wal_lag_alert',
       severity,
       lagBytes: this.walLagBytes,
       warnThreshold: warnBytes,
@@ -198,7 +191,7 @@ class Metrics {
       slotStatus: this.walSlotStatus,
     };
     if (!wsClient.send(payload)) {
-      log.warn("Failed to send WAL lag control message to backend");
+      log.warn('Failed to send WAL lag control message to backend');
     }
   }
 

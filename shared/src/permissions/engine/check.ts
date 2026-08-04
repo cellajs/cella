@@ -2,14 +2,14 @@ import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../
 import { allActionsAllowed, createActionRecord } from '../action-helpers';
 import type { PublicReadGrants } from '../public-read';
 import { type ConditionActor, isRowCondition, matchesRowCondition, type RowForCondition } from '../row-conditions';
-import type { PolicyMatrix, EntityActionPermissions } from '../types';
+import type { EntityActionPermissions, PolicyMatrix } from '../types';
 import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
 import { resolveHierarchy } from './resolve-hierarchy';
 import type {
+  AccessMembership,
   ActionAttribution,
   PermissionCheckOptions,
   PermissionDecision,
-  AccessMembership,
   ResolvedChannelIds,
   SubjectForPermission,
 } from './types';
@@ -47,7 +47,9 @@ export const getMembershipIndex = <T extends AccessMembership>(memberships: T[])
   const cached = membershipIndexMemo.get(memberships);
   if (cached) return cached as MembershipIndex<T>;
 
-  memberships.forEach((m, i) => validateMembership(m, i));
+  memberships.forEach((m, i) => {
+    validateMembership(m, i);
+  });
   const index = buildMembershipIndex(memberships);
   membershipIndexMemo.set(memberships, index as MembershipIndex<AccessMembership>);
   return index;
@@ -254,7 +256,9 @@ export function getAllDecisions<T extends AccessMembership>(
     return isSingle ? results.get(subjects.id ?? '_idx:0')! : results;
   }
 
-  subjectArray.forEach((subject, i) => validateSubject(subject, i, resolvedHierarchy));
+  subjectArray.forEach((subject, i) => {
+    validateSubject(subject, i, resolvedHierarchy);
+  });
 
   const membershipIndex = getMembershipIndex(memberships);
 

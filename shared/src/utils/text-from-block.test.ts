@@ -60,4 +60,3 @@ describe('getSearchableTextFromBlock', () => {
     expect(text).not.toContain('attachments/private');
   });
 });
-

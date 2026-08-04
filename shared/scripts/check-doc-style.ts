@@ -3,10 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  requiredAgentVocabularyRules,
-  reviewAgentVocabularyRules,
-} from './agent-vocabulary.ts';
+import { requiredAgentVocabularyRules, reviewAgentVocabularyRules } from './agent-vocabulary.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = join(here, '..', '..');
@@ -131,9 +128,7 @@ function checksAgentVocabulary(file: string): boolean {
 /** Check every tracked or untracked, nonignored Markdown and MDX file in a repository. */
 export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): number {
   const docs = trackedDocs(repoRoot);
-  const violations = docs.flatMap((file) =>
-    findDocStyleViolations(file, readFileSync(join(repoRoot, file), 'utf8')),
-  );
+  const violations = docs.flatMap((file) => findDocStyleViolations(file, readFileSync(join(repoRoot, file), 'utf8')));
   const vocabularyDocs = docs.filter(checksAgentVocabulary);
   const requiredVocabulary = vocabularyDocs.flatMap((file) =>
     findAgentVocabularyFindings(file, readFileSync(join(repoRoot, file), 'utf8')),
@@ -154,9 +149,7 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): num
       }
     }
     if (requiredVocabulary.length > 0) {
-      console.error(
-        `[docs:style] ${requiredVocabulary.length} required vocabulary replacement(s):`,
-      );
+      console.error(`[docs:style] ${requiredVocabulary.length} required vocabulary replacement(s):`);
       for (const finding of requiredVocabulary) {
         console.error(`  ${formatAgentVocabularyFinding(finding)}`);
       }

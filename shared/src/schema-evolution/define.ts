@@ -28,7 +28,9 @@ export type AddDelta = { add: { field: string; default: unknown } };
 
 /** Resolves an `add` delta's default for a row (plain value or computed). */
 export function resolveAddDefault(add: AddDelta['add'], row: Record<string, unknown>): unknown {
-  return typeof add.default === 'function' ? (add.default as (row: Record<string, unknown>) => unknown)(row) : add.default;
+  return typeof add.default === 'function'
+    ? (add.default as (row: Record<string, unknown>) => unknown)(row)
+    : add.default;
 }
 
 /** Drop a field. Backward migration cannot restore the value (lossy). */
@@ -89,7 +91,9 @@ export function defineLens(def: LensDefinition): LensDefinition {
   }
   const formatVersion = def.formatVersion ?? LENS_FORMAT_VERSION;
   if (!Number.isInteger(formatVersion) || formatVersion < 1 || formatVersion > LENS_FORMAT_VERSION) {
-    throw new Error(`Lens "${def.id}" declares unsupported formatVersion ${def.formatVersion} (current: ${LENS_FORMAT_VERSION})`);
+    throw new Error(
+      `Lens "${def.id}" declares unsupported formatVersion ${def.formatVersion} (current: ${LENS_FORMAT_VERSION})`,
+    );
   }
   if ('retype' in def.delta && !def.custom?.opsConvert) {
     throw new Error(`Lens "${def.id}" uses a retype delta and must declare custom.opsConvert`);

@@ -1,16 +1,16 @@
-import { URL } from 'node:url';
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
+import { URL } from 'node:url';
 import { MissingScopeError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
 import type { DocContext } from '../constants';
 import { canEditEntity } from '../data/permissions';
 import { log } from '../lib/pino';
+import { discardPendingBuffer, handleMessage, releaseBufferedMessages } from '../sync/relay';
+import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
-import { joinCollab, leaveCollab } from '../sync/session-manager';
-import { handleMessage, releaseBufferedMessages, discardPendingBuffer } from '../sync/relay';
 
 /**
  * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
@@ -68,7 +68,9 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
  * Handle the HTTP→WS upgrade: validate params, verify token, accept connection optimistically.
  * Entity-level access is verified asynchronously: all sync messages are buffered until verified.
  */
-export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
+export function setupUpgradeHandler(
+  server: WebSocketServer,
+): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return async (req, socket, head) => {
     // Same-origin migration: accept both '/<entityId>' (direct LB or subdomain
     // origin) and '/yjs/<entityId>' (path-routed app origin; the LB does not
@@ -148,7 +150,7 @@ export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMess
   };
 }
 
-/** 
+/**
  * Wire up connection event: join collab, handle messages, handle close/error.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {

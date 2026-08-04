@@ -1,4 +1,4 @@
-import type { EngineConfig } from '../../config/engine-config'
+import type { EngineConfig } from '../../config/engine-config';
 
 /** Minimal cella-shaped EngineConfig fixture for pure derivation tests. */
 export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {
@@ -25,5 +25,5 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
       privateCDNUrl: 'https://cella-private.s3.nl-ams.scw.cloud',
     },
     ...overrides,
-  }
+  };
 }

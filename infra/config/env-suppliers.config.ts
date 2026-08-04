@@ -1,8 +1,8 @@
-import * as pulumi from '@pulumi/pulumi'
-import { defineEnvSuppliers } from '../lib/env-suppliers'
-import { frontendCsp } from './frontend-csp.config'
-import { region, serviceUrl } from '../pulumi-context'
-import { frontendBucketName } from '../resources/storage'
+import * as pulumi from '@pulumi/pulumi';
+import { defineEnvSuppliers } from '../lib/env-suppliers';
+import { region, serviceUrl } from '../pulumi-context';
+import { frontendBucketName } from '../resources/storage';
+import { frontendCsp } from './frontend-csp.config';
 
 /**
  * App-owned suppliers for the app-wide compose `${VAR}` placeholders that are
@@ -18,4 +18,4 @@ export const appEnvSuppliers = defineEnvSuppliers({
   BACKEND_URL: () => serviceUrl('backend'),
   FRONTEND_CSP: () => frontendCsp,
   ORIGIN_HOST: () => pulumi.interpolate`${frontendBucketName}.s3.${region}.scw.cloud`,
-})
+});

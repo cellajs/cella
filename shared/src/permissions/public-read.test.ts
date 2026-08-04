@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, widePublicGrants, wideSubject, wideOverrides } from '../testing/wide-fixture';
+import { configureWidePermissions, wideOverrides, widePublicGrants, wideSubject } from '../testing/wide-fixture';
 import { getAllDecisions } from './engine/check';
 import type { SubjectForPermission } from './engine/types';
 import { matchesRowCondition } from './row-conditions';
@@ -40,9 +40,7 @@ describe('public read grants — anonymous actor', () => {
     ).toBe(false);
 
     const noRow = wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } });
-    expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, ...wideOverrides }).can.read).toBe(
-      false,
-    );
+    expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
   });
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
@@ -54,9 +52,7 @@ describe('public read grants — anonymous actor', () => {
       channelIds: { organization: 'org1', project: 'p1' },
       row: { publicAt: null },
     });
-    expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(
-      false,
-    );
+    expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
     // ...and once the child row itself carries publicAt, it is readable.
     const publishedTask = wideSubject({
@@ -65,9 +61,9 @@ describe('public read grants — anonymous actor', () => {
       channelIds: { organization: 'org1', project: 'p1' },
       row: { publicAt: NOW },
     });
-    expect(
-      getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read,
-    ).toBe(true);
+    expect(getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read).toBe(
+      true,
+    );
   });
 
   it('grants read only — other actions stay denied', () => {

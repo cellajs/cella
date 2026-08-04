@@ -1,6 +1,7 @@
-export const CDC_PUBLICATION_NAME = "cdc_pub";
+import process from 'node:process';
+export const CDC_PUBLICATION_NAME = 'cdc_pub';
 
-export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? "cdc_slot";
+export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
 export const RESOURCE_LIMITS = {
   // Runtime monitoring thresholds
@@ -27,8 +28,8 @@ export const RESOURCE_LIMITS = {
     retryDelayMs: 5000,
   },
 
-// Retry quickly while a rolling deployment hands off the singleton slot, then return to the
-// normal reconnection cadence.
+  // Retry quickly while a rolling deployment hands off the singleton slot, then return to the
+  // normal reconnection cadence.
   slotTakeover: {
     /** Number of fast retries that make up the handoff window. */
     maxAttempts: 12,
@@ -72,14 +73,14 @@ export const RESOURCE_LIMITS = {
 
 /** PostgreSQL error codes that indicate transient failures and should trigger retry. */
 export const TRANSIENT_ERROR_CODES = new Set([
-  "40001", // serialization_failure
-  "40P01", // deadlock_detected
-  "53000", // insufficient_resources
-  "53100", // disk_full
-  "53200", // out_of_memory
-  "53300", // too_many_connections
-  "57P03", // cannot_connect_now
-  "08000", // connection_exception
-  "08003", // connection_does_not_exist
-  "08006", // connection_failure
+  '40001', // serialization_failure
+  '40P01', // deadlock_detected
+  '53000', // insufficient_resources
+  '53100', // disk_full
+  '53200', // out_of_memory
+  '53300', // too_many_connections
+  '57P03', // cannot_connect_now
+  '08000', // connection_exception
+  '08003', // connection_does_not_exist
+  '08006', // connection_failure
 ]);

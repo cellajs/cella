@@ -1,19 +1,17 @@
 import type { Pgoutput } from 'pg-logical-replication';
-
+import { RESOURCE_LIMITS } from '../constants';
 import { log } from '../lib/pino';
-
+import { wsClient } from '../network/websocket-client';
+import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
-import { FlushBuffer } from '../services/flush-buffer';
-import { wsClient } from '../network/websocket-client';
-import { RESOURCE_LIMITS } from '../constants';
 
 // PostgreSQL epoch: 2000-01-01T00:00:00Z in Unix ms
 const PG_EPOCH_MS = 946684800000n;
 
+import { runPostCatchupRecovery } from '../services/catchup-recovery';
 import { parseMessage } from './parse-message';
 import { processEvents } from './process-events';
-import { runPostCatchupRecovery } from '../services/catchup-recovery';
 
 // Message helpers
 
@@ -52,7 +50,7 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
     await replicationState.service?.acknowledge(lsn);
   } else {
-    log.debug(`Holding LSN acknowledgment - WebSocket disconnected`, { lsn });
+    log.debug('Holding LSN acknowledgment - WebSocket disconnected', { lsn });
   }
 }
 
@@ -118,7 +116,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
   }
 
   try {
-    log.trace(`CDC message received`, { lsn, tag, table: tableName });
+    log.trace('CDC message received', { lsn, tag, table: tableName });
 
     const parseResult = parseMessage(msg);
     if (!parseResult) {
@@ -131,7 +129,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     // Buffer the event (or process immediately if no active transaction)
     await txBuffer.onEvent(lsn, parseResult);
   } catch (error) {
-    log.error(`Error processing CDC message - LSN NOT acknowledged`, { err: error });
+    log.error('Error processing CDC message - LSN NOT acknowledged', { err: error });
   }
 }
 

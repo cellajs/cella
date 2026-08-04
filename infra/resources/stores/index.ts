@@ -1,11 +1,11 @@
-import * as pulumi from '@pulumi/pulumi'
-import * as scaleway from '@pulumiverse/scaleway'
-import { appStores } from '../../config/stores.config'
-import { sizing } from '../../config/sizing'
-import type { ProvisionContext, StoreOutputs } from '../../lib/stores'
-import { isProduction, naming, region, zone } from '../../pulumi-context'
-import { configuredOrRandomSecret } from '../configured-secret'
-import { privateNetworkId } from '../network'
+import * as pulumi from '@pulumi/pulumi';
+import * as scaleway from '@pulumiverse/scaleway';
+import { sizing } from '../../config/sizing';
+import { appStores } from '../../config/stores.config';
+import type { ProvisionContext, StoreOutputs } from '../../lib/stores';
+import { isProduction, naming, region, zone } from '../../pulumi-context';
+import { configuredOrRandomSecret } from '../configured-secret';
+import { privateNetworkId } from '../network';
 
 // The engine facilities handed to every store's provision(). Store modules are
 // pure at import time; this module is the single place that binds them to the
@@ -20,18 +20,18 @@ const provisionContext: ProvisionContext = {
   sizing: { dbNodeType: sizing.dbNodeType, dbVolumeSize: sizing.dbVolumeSize },
   privateNetworkId,
   configuredOrRandomSecret,
-}
+};
 
 // Provision every registered store exactly once (importing this module triggers
 // it). Registry order is stable; the first store is primary. This is the single
 // seam between the app's store registry and the rest of the Pulumi program.
 const results = Object.entries(appStores).map(([id, store]) => {
-  store.validate?.()
-  return [id, store.provision(provisionContext)] as const
-})
+  store.validate?.();
+  return [id, store.provision(provisionContext)] as const;
+});
 
 /** The primary store's outputs (empty only if no store is registered). */
-export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {}
+export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
 
 /**
  * Runtime-secret values merged across all stores, keyed by runtime-secret id.
@@ -40,14 +40,14 @@ export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {}
  * same secret, an app misconfiguration.
  */
 export const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = (() => {
-  const merged: Record<string, pulumi.Input<string>> = {}
+  const merged: Record<string, pulumi.Input<string>> = {};
   for (const [id, provisioned] of results) {
     for (const [secretId, value] of Object.entries(provisioned.secretValues)) {
       if (secretId in merged) {
-        throw new Error(`stores: runtime secret '${secretId}' is bound by more than one store (last: '${id}').`)
+        throw new Error(`stores: runtime secret '${secretId}' is bound by more than one store (last: '${id}').`);
       }
-      merged[secretId] = value
+      merged[secretId] = value;
     }
   }
-  return merged
-})()
+  return merged;
+})();

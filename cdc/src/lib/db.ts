@@ -1,4 +1,4 @@
-import { type DrizzleConfig } from 'drizzle-orm';
+import type { DrizzleConfig } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import type { PgDB } from '#/db/db';
@@ -39,6 +39,11 @@ const connectionString = stripPostgresSslParams(env.DATABASE_CDC_URL);
  * privileges.
  */
 export const cdcDb: PgDB = drizzle({
-  connection: { connectionString, connectionTimeoutMillis: 10_000, max: 20, ssl: buildVerifiedSsl(env.DATABASE_CDC_URL) },
+  connection: {
+    connectionString,
+    connectionTimeoutMillis: 10_000,
+    max: 20,
+    ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
+  },
   ...dbConfig,
 });

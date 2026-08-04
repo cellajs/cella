@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockPendingEvent } from './factories';
 
 // Mock cdc-metrics to avoid db/env import chain
@@ -121,8 +121,22 @@ describe('FlushBuffer', () => {
     it('handles resource types in grouping', async () => {
       const buffer = new FlushBuffer(processEvents, acknowledgeLsn, 10);
 
-      const e1 = mockPendingEvent({ lsn: '0/1', action: 'create', resourceType: 'membership', entityType: null, organizationId: 'org-1', tableMeta: 'resource' });
-      const e2 = mockPendingEvent({ lsn: '0/2', action: 'create', resourceType: 'membership', entityType: null, organizationId: 'org-1', tableMeta: 'resource' });
+      const e1 = mockPendingEvent({
+        lsn: '0/1',
+        action: 'create',
+        resourceType: 'membership',
+        entityType: null,
+        organizationId: 'org-1',
+        tableMeta: 'resource',
+      });
+      const e2 = mockPendingEvent({
+        lsn: '0/2',
+        action: 'create',
+        resourceType: 'membership',
+        entityType: null,
+        organizationId: 'org-1',
+        tableMeta: 'resource',
+      });
 
       await buffer.enqueue([e1, e2]);
 

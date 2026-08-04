@@ -1,16 +1,20 @@
-import { describe, expect, it } from 'vitest'
-import type { FetchLike } from '../lib/utils/fetch-like'
-import { type SecretToCheck, assertSecretsDeliverable, serviceNamesFromServicesJson } from './assert-secrets-deliverable'
+import { describe, expect, it } from 'vitest';
+import type { FetchLike } from '../lib/utils/fetch-like';
+import {
+  assertSecretsDeliverable,
+  type SecretToCheck,
+  serviceNamesFromServicesJson,
+} from './assert-secrets-deliverable';
 
-const REGION = 'fr-par'
-const PROJECT = 'proj-1'
-const KEY = 'scw-secret-key'
+const REGION = 'fr-par';
+const PROJECT = 'proj-1';
+const KEY = 'scw-secret-key';
 
-const b64 = (value: string) => Buffer.from(value, 'utf-8').toString('base64')
+const b64 = (value: string) => Buffer.from(value, 'utf-8').toString('base64');
 
 interface FakeSecret {
   /** Secret value as stored; null = no accessible version (404 on access). */
-  value: string | null
+  value: string | null;
 }
 
 /**
@@ -19,32 +23,32 @@ interface FakeSecret {
  * from the map lists empty (secret does not exist).
  */
 function fakeFetch(secrets: Record<string, FakeSecret>): FetchLike {
-  const idByName = new Map(Object.keys(secrets).map((name, i) => [name, `id-${i}`]))
-  const byId = new Map([...idByName].map(([name, id]) => [id, secrets[name]!]))
+  const idByName = new Map(Object.keys(secrets).map((name, i) => [name, `id-${i}`]));
+  const byId = new Map([...idByName].map(([name, id]) => [id, secrets[name]!]));
   return async (url) => {
     if (url.includes('/secrets?')) {
-      const name = decodeURIComponent(new URL(url).searchParams.get('name') ?? '')
-      const id = idByName.get(name)
-      const body = JSON.stringify({ secrets: id ? [{ id, name }] : [] })
-      return { ok: true, status: 200, text: async () => body }
+      const name = decodeURIComponent(new URL(url).searchParams.get('name') ?? '');
+      const id = idByName.get(name);
+      const body = JSON.stringify({ secrets: id ? [{ id, name }] : [] });
+      return { ok: true, status: 200, text: async () => body };
     }
-    const id = url.match(/secrets\/([^/]+)\/versions/)?.[1] ?? ''
-    const secret = byId.get(id)
+    const id = url.match(/secrets\/([^/]+)\/versions/)?.[1] ?? '';
+    const secret = byId.get(id);
     if (!secret || secret.value === null) {
-      return { ok: false, status: 404, text: async () => 'NoSuchVersion' }
+      return { ok: false, status: 404, text: async () => 'NoSuchVersion' };
     }
-    return { ok: true, status: 200, text: async () => JSON.stringify({ data: b64(secret.value!) }) }
-  }
+    return { ok: true, status: 200, text: async () => JSON.stringify({ data: b64(secret.value!) }) };
+  };
 }
 
-const silent = () => {}
+const silent = () => {};
 
 describe('assertSecretsDeliverable', () => {
   it('passes when every required secret is present and single-line', async () => {
     const secrets: SecretToCheck[] = [
       { envVar: 'DATABASE_URL', secretName: 'database-url', required: true },
       { envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: true },
-    ]
+    ];
     const res = await assertSecretsDeliverable({
       secretKey: KEY,
       region: REGION,
@@ -56,11 +60,11 @@ describe('assertSecretsDeliverable', () => {
         // base64-encoded PEM is single-line on the wire: deliverable.
         'database-ssl-ca': { value: b64('-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----') },
       }),
-    })
-    expect(res.ok).toBe(true)
-    expect(res.checked).toBe(2)
-    expect(res.offenders).toEqual([])
-  })
+    });
+    expect(res.ok).toBe(true);
+    expect(res.checked).toBe(2);
+    expect(res.offenders).toEqual([]);
+  });
 
   it('flags a present-but-multiline value regardless of required', async () => {
     const res = await assertSecretsDeliverable({
@@ -70,11 +74,13 @@ describe('assertSecretsDeliverable', () => {
       secrets: [{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: false }],
       log: silent,
       // Stored as a raw multi-line PEM.
-      fetchImpl: fakeFetch({ 'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' } }),
-    })
-    expect(res.ok).toBe(false)
-    expect(res.offenders).toEqual([{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', reason: 'multiline' }])
-  })
+      fetchImpl: fakeFetch({
+        'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' },
+      }),
+    });
+    expect(res.ok).toBe(false);
+    expect(res.offenders).toEqual([{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', reason: 'multiline' }]);
+  });
 
   it('flags a missing required secret but skips a missing optional one', async () => {
     const res = await assertSecretsDeliverable({
@@ -88,15 +94,15 @@ describe('assertSecretsDeliverable', () => {
       log: silent,
       // Neither secret exists; only the required one is an offender.
       fetchImpl: fakeFetch({}),
-    })
-    expect(res.ok).toBe(false)
-    expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }])
-  })
-})
+    });
+    expect(res.ok).toBe(false);
+    expect(res.offenders).toEqual([{ envVar: 'COOKIE_SECRET', secretName: 'cookie-secret', reason: 'missing' }]);
+  });
+});
 
 describe('serviceNamesFromServicesJson', () => {
   it('extracts known service names and drops unknown rows', () => {
-    const raw = JSON.stringify([{ service: 'backend' }, { service: 'bogus' }, { service: 'frontend' }])
-    expect(serviceNamesFromServicesJson(raw)).toEqual(['backend', 'frontend'])
-  })
-})
+    const raw = JSON.stringify([{ service: 'backend' }, { service: 'bogus' }, { service: 'frontend' }]);
+    expect(serviceNamesFromServicesJson(raw)).toEqual(['backend', 'frontend']);
+  });
+});
