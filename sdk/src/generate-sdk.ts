@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -225,15 +225,25 @@ const generate = async () => {
       },
     });
 
-    // Format temp output with biome before comparing
-    // Use try-catch to handle cases where biome may not process files (e.g., new directories)
-    try {
-      execFileSync('pnpm', ['biome', 'check', '--write', tempOutputPath], {
+    // Format temp output with biome before comparing. The temp folder is gitignored and biome's
+    // `vcs.useIgnoreFile` would silently skip it (exit 0, zero files processed), leaving hey-api's
+    // raw output — so disable the VCS ignore file for this invocation. Non-zero exit is fine
+    // (unfixable lint diagnostics can remain; --write still formats), but processing no files
+    // means the output stays unformatted, so surface that instead of continuing silently.
+    const biomeResult = spawnSync(
+      'pnpm',
+      ['biome', 'check', '--write', '--vcs-use-ignore-file=false', tempOutputPath],
+      {
         cwd: rootDir,
-        stdio: 'pipe',
-      });
-    } catch {
-      // Biome may fail if directory is newly created or empty, continue anyway
+        encoding: 'utf-8',
+      },
+    );
+    const biomeOutput = `${biomeResult.stdout ?? ''}${biomeResult.stderr ?? ''}`;
+    if (biomeResult.error || /No files were processed/.test(biomeOutput)) {
+      console.warn(
+        `${timestamp()} [Openapi gen] ${crossMark} Biome formatted no files — generated output left unformatted`,
+        biomeResult.error ?? biomeOutput,
+      );
     }
 
     // Compare temp output (SDK code + openapi.json + docs.gen) with existing output as one tree
