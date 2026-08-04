@@ -7,8 +7,8 @@ import { type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { log } from '#/utils/logger';
 
 /**
- * Shared utility for creating a tenant with associated domain.
- * Used by both system admin tenant creation and auto-tenant creation during org onboarding.
+ * Creates a tenant with an associated domain claim.
+ * Used by self-serve tenant creation during org onboarding.
  */
 export async function createTenantForUser(
   db: DbOrTx,

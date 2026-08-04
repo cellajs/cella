@@ -8,7 +8,6 @@ import { authGuard, sysAdminGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 import {
-  createTenantBodySchema,
   selfCreateTenantBodySchema,
   tenantListQuerySchema,
   tenantSchema,
@@ -35,37 +34,6 @@ export const tenantRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(tenantWithOrganizationSchema),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
-  }),
-
-  /**
-   * Create a new tenant (system admin only)
-   */
-  createTenant: createXRoute({
-    operationId: 'createTenant',
-    method: 'post',
-    path: '/',
-    xGuard: [authGuard, sysAdminGuard],
-    xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
-    summary: 'Create a new tenant',
-    description: 'Creates a new tenant. System admin access required.',
-    request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: createTenantBodySchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Created tenant',
-        content: {
-          'application/json': {
-            schema: tenantSchema,
           },
         },
       },

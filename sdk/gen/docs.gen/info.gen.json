@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 75,
+  "documentedOperationCount": 74,
   "hiddenOperationCount": 0,
   "extensions": [
     {
