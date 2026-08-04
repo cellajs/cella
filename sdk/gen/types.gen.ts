@@ -2708,54 +2708,6 @@ export type GetTenantsResponses = {
 
 export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
 
-export type CreateTenantData = {
-  body: {
-    name: string;
-    status?: 'active' | 'suspended' | 'archived';
-  };
-  path?: never;
-  query?: never;
-  url: '/tenants';
-};
-
-export type CreateTenantErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateTenantError = CreateTenantErrors[keyof CreateTenantErrors];
-
-export type CreateTenantResponses = {
-  /**
-   * Created tenant
-   */
-  200: Tenant;
-};
-
-export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
-
 export type SelfCreateTenantData = {
   body: {
     name: string;

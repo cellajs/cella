@@ -32,9 +32,6 @@ import type {
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
-  CreateTenantData,
-  CreateTenantErrors,
-  CreateTenantResponses,
   CreateTotpData,
   CreateTotpErrors,
   CreateTotpResponses,
@@ -254,8 +251,6 @@ import {
   zCreatePasskeyResponse,
   zCreateRequestBody,
   zCreateRequestResponse,
-  zCreateTenantBody,
-  zCreateTenantResponse,
   zCreateTotpBody,
   zDeleteAttachmentsBody,
   zDeleteAttachmentsPath,
@@ -1949,47 +1944,6 @@ export const getTenants = <ThrowOnError extends boolean = true>(
     ],
     url: '/tenants',
     ...options,
-  });
-
-/**
- * Create a new tenant
- *
- * Creates a new tenant. System admin access required.
- *
- * **POST /tenants** ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants) ·· [createTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants) ·· _tenants_cella_
- *
- * @param {createTenantData} options
- * @param {string=} options.body.name - `string` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const createTenant = <ThrowOnError extends boolean = true>(
-  options: Options<CreateTenantData, ThrowOnError>,
-): RequestResult<CreateTenantResponses, CreateTenantErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateTenantResponses, CreateTenantErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreateTenantBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCreateTenantResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
   });
 
 /**

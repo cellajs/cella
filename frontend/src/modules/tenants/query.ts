@@ -2,9 +2,7 @@ import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from 
 import type { CreateDomainResponse, DeleteDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
 import {
   type CreateDomainData,
-  type CreateTenantData,
   createDomain,
-  createTenant,
   type DeleteDomainData,
   deleteDomain,
   type GetTenantsData,
@@ -36,7 +34,6 @@ const tenantQueryKeys = {
     base: ['tenant', 'list'] as const,
     filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const,
   },
-  create: ['tenant', 'create'] as const,
   selfCreate: ['tenant', 'self-create'] as const,
   update: ['tenant', 'update'] as const,
 };
@@ -64,22 +61,6 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
     },
     ...baseInfiniteQueryOptions,
     refetchOnMount: true,
-  });
-};
-
-/**
- * Mutation hook for creating a new tenant.
- */
-export const useTenantCreateMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<Tenant, ApiError, CreateTenantData['body']>({
-    mutationKey: tenantQueryKeys.create,
-    mutationFn: (body) => createTenant({ body }),
-    onSuccess: () => {
-      // Invalidate tenant list to refetch
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
-    },
   });
 };
 
