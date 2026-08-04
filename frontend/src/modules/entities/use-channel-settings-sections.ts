@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
 import {
   type ChannelEntityContext,
-  type ChannelSettingsToolFor,
-  getChannelSettingsTools,
+  getSlotDescriptors,
+  type PlacementDescriptor,
   resolvePlacementList,
 } from '~/lib/placements';
 import { heldContextRoles } from '~/modules/entities/context-roles';
@@ -17,6 +18,12 @@ export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityCont
   toolsConfig?: ToolsConfig;
 };
 
+/** A resolved settings section: descriptor plus renderer receiving the hosting channel entity. */
+export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor & {
+  order: number;
+  render: (entity: ChannelEntityContext<C>) => ReactNode;
+};
+
 /**
  * Resolves a channel entity's final settings section list: the `${channelType}.settings` slot's
  * registered tools, arranged by app overrides and the entity's stored `toolsConfig`, gated on the
@@ -26,7 +33,7 @@ export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityCont
  */
 export function useChannelSettingsSections<C extends ChannelEntityType>(
   entity: ChannelSettingsHost<C>,
-): (ChannelSettingsToolFor<C> & { order: number })[] {
+): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
   const slot = `${channelType}.settings`;
 
@@ -38,9 +45,12 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const pairs = heldContextRoles(entity, myMemberships?.items ?? []);
 
-  return resolvePlacementList(slot, getChannelSettingsTools(channelType), {
-    grants,
-    pairs,
-    slotConfig: entity.toolsConfig?.[slot],
-  });
+  // Cast: registered settings tools carry a render the descriptor type erases; the slot key
+  // guarantees this family's shape
+  const tools = getSlotDescriptors(slot).map((tool) => ({
+    ...tool,
+    order: tool.order ?? 50,
+  })) as unknown as ChannelSettingsSection<C>[];
+
+  return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig?.[slot] });
 }

@@ -1,7 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon, LockIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
-import { getChannelSettingsTools, orderBySlotConfig } from '~/lib/placements';
+import { getSlotDescriptors, orderBySlotConfig } from '~/lib/placements';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
@@ -25,7 +25,11 @@ export function ToolsArrangementCard({ entity, persist }: ToolsArrangementCardPr
   const slot = `${entity.entityType}.settings`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
-  const tools = orderBySlotConfig(getChannelSettingsTools(entity.entityType), slotConfig);
+  // Descriptors only (never rendered here), including tools the channel currently hides
+  const tools = orderBySlotConfig(
+    getSlotDescriptors(slot).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
+    slotConfig,
+  );
 
   const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
 
