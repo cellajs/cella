@@ -63,13 +63,6 @@ export const tenantWithOrganizationSchema = tenantSchema
   });
 
 /**
- * Schema for creating a new tenant.
- */
-export const createTenantBodySchema = createInsertSchema(tenantsTable, {
-  name: validNameSchema,
-}).pick({ name: true, status: true });
-
-/**
  * Schema for self-serve tenant creation by authenticated users.
  */
 export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, {

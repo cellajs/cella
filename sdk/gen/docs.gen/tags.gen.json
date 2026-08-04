@@ -68,7 +68,7 @@
   {
     "name": "tenants",
     "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level\n    Security (RLS) to partition data. Only system administrators can manage tenants.",
-    "count": 9,
+    "count": 8,
     "kind": "module"
   },
   {

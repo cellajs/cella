@@ -983,20 +983,6 @@ export const zGetTenantsResponse = z.object({
   total: z.number(),
 });
 
-export const zCreateTenantBody = z.object({
-  name: z
-    .string()
-    .min(2)
-    .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
-  status: z.enum(['active', 'suspended', 'archived']).optional(),
-});
-
-/**
- * Created tenant
- */
-export const zCreateTenantResponse = zTenant;
-
 export const zSelfCreateTenantBody = z.object({
   name: z
     .string()

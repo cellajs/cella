@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
-import { createTenantOp } from '#/modules/tenants/operations/create-tenant';
 import { getTenantsOp } from '#/modules/tenants/operations/get-tenants';
 import { selfCreateTenantOp } from '#/modules/tenants/operations/self-create-tenant';
 import { updateTenantOp } from '#/modules/tenants/operations/update-tenant';
@@ -11,11 +10,6 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(tenantRoutes.getTenants, async (ctx) => {
   const data = await getTenantsOp(ctx, ctx.req.valid('query'));
-  return ctx.json(data);
-});
-
-app.openapi(tenantRoutes.createTenant, async (ctx) => {
-  const data = await createTenantOp(ctx, ctx.req.valid('json'));
   return ctx.json(data);
 });
 
