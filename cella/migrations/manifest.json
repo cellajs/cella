@@ -336,6 +336,27 @@
       "summary": "Frontend *-module.ts(x) files switch registerModule -> defineFrontendModule (~/lib/module); a glob composition root frontend/src/modules.ts loads them before first render. UI placements arrive with settled vocabulary: modules declare tools into slots ('${channelType}.settings', 'account.settings'); built-in settings sections are registered tools and the settings pages are pure consumers. Tools render full cards (lazy), gate on requires (grants) and visibleTo context-role pairs ('organization.admin', hierarchy-validated, matched over the ancestor chain; UI-only). Arrangement layers: manifest defaults, pinned placement-config.ts overrides, then the new organizations.tools_config jsonb (per-slot order/hidden/settings, admin Tools card, fail-closed reconciliation; locked tools immune to channel hiding). organizationSettingsSections (pinned file + type) removed. staticData.navTab typed PlacementDescriptor; system default tab derives from first visible tab. nav-buttons id special-cases move to NavItem iconSlot/badgeSlot in pinned nav-config.tsx. DB: additive tools_config column (pnpm generate); wire: additive optional toolsConfig on organization (no cache bump). Needs @cellajs/cli with the define*Module territory-scan matcher."
     },
     {
+      "id": "20260730T1009-owned-host-embedding",
+      "version": "next",
+      "title": "Product host FKs move to owned embeddings",
+      "kind": "manual",
+      "syncBreaking": false,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "backend/src",
+        "backend/drizzle",
+        "frontend/src",
+        "shared"
+      ],
+      "requires": [
+        "pnpm generate",
+        "pnpm sdk",
+        "pnpm check"
+      ],
+      "summary": "Child-side product-to-product host FK columns (taskId-style) are deprecated in favor of host-side id arrays registered as lifecycle 'owned' productEmbeddings. The template machinery (owned-embedding GC in the CDC worker, attachmentId media-block refs, derive-description-core collection, propagation id-array patching) already ships and activates on the first 'owned' entry. Template-side this is docs-only: apps without a host FK are unaffected; apps with one flip on their own schedule (host array + GIN, backfill from FK, drop FK and in-request cascades, own cache bump, feat!)."
+    },
+    {
       "id": "20260730T1258-cella-config-into-cella-folder",
       "version": "next",
       "title": "Move cella sync files into the cella/ folder",
