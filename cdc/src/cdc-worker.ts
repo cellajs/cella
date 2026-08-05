@@ -1,8 +1,9 @@
 import process from 'node:process';
 import { runCdcWorker } from './index';
-import { log } from './lib/pino';
 
-runCdcWorker().catch((error) => {
-  log.error('Failed to start CDC worker', { err: error });
-  process.exit(1);
+void runCdcWorker().catch((error) => {
+  // Write directly to stderr: the crash may be the logger's own init failing.
+  const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  process.stderr.write(`[cdc] failed to start: ${message}\n`);
+  process.exitCode = 1;
 });

@@ -1,7 +1,6 @@
 import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
-import { BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS } from './constants';
 import { env } from './env';
 import { log } from './lib/pino';
 import { otel } from './lib/tracing';
@@ -43,7 +42,7 @@ export async function startYjsWorker(): Promise<void> {
     // Wait for backend, but don't crash if it times out: the server
     // is already listening and can handle requests once backend is up.
     // Sweep crash-orphaned session rows once the backend is reachable.
-    waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS)
+    waitForBackend()
       .then(() => runStartupSweep())
       .catch((err) => {
         log.warn('waitForBackend failed. Yjs will retry per-request.', { err });

@@ -1,4 +1,5 @@
 import process from 'node:process';
+import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { RESOURCE_LIMITS } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
 import { circuitBreaker } from '../services/circuit-breaker';
@@ -12,6 +13,7 @@ export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 interface HealthResponse {
   status: HealthStatus;
   uptime: number;
+  eventLoopLagMs: number;
   replication: {
     status: string;
     lastLsn: string | null;
@@ -58,9 +60,15 @@ export function getHealthResponse(): {
   const hasOpenBreakers = Object.values(circuitStatus).some((s) => s.state !== 'closed');
   if (hasOpenBreakers && status === 'healthy') status = 'degraded';
 
+  // Same saturation thresholds the yjs relay uses for its health status.
+  const eventLoopLagMs = getEventLoopLagMs();
+  if (eventLoopLagMs >= 1000) status = 'unhealthy';
+  else if (eventLoopLagMs >= 100 && status === 'healthy') status = 'degraded';
+
   const response: HealthResponse = {
     status,
     uptime: Math.floor(process.uptime()),
+    eventLoopLagMs,
     replication: {
       status: replStatus,
       lastLsn: replicationState.lastLsn,

@@ -1,31 +1,16 @@
-import { env as dotenv } from '@dotenv-run/core';
+import { loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
 import { z } from 'zod';
 
-// Load .env from backend directory (same .env file, shared across monorepo)
-dotenv({
-  root: '../backend',
-  files: ['.env'],
-});
+loadBackendDotenv();
 
-const envSchema = z.object({
+const envSchema = workerEnvBase.extend({
   DATABASE_CDC_URL: z.url(),
-  // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.
-  // Auto-provisioned by `pulumi up`; required in production.
-  DATABASE_SSL_CA: z.string().optional(),
 
   // Static default: backendUrl is the public URL (a path under the app origin, no
   // port); the internal CDC socket always targets the backend's own listen port.
   API_WS_URL: z.url().default('ws://localhost:4000/internal/cdc'),
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
   CDC_HEALTH_PORT: z.coerce.number().default(4001),
-  MAPLE_SECRET_INGEST_KEY: z.string().optional(),
-
-  NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
-  PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
-  DEBUG: z
-    .string()
-    .default('false')
-    .transform((v) => v === 'true'),
 });
 
 /**

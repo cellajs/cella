@@ -2,6 +2,12 @@ import path from 'node:path';
 import { defineProject } from 'vitest/config';
 import { testDatabaseUrl } from 'shared/test-db';
 
+const testMode = process.env.TEST_MODE || 'core';
+
+// Exclude integration tests unless in full mode (same gating as the yjs worker)
+const excludePatterns = ['**/node_modules/**'];
+if (testMode === 'core') excludePatterns.push('src/tests/integration/**');
+
 export default defineProject({
   resolve: {
     alias: {
@@ -13,6 +19,7 @@ export default defineProject({
     setupFiles: ['./src/tests/setup.ts'],
     testTimeout: 10000,
     include: ['src/**/*.test.ts'],
+    exclude: excludePatterns,
     fileParallelism: true,
     env: {
       NODE_ENV: 'test',

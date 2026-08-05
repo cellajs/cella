@@ -1,34 +1,17 @@
-import { env as dotenv } from '@dotenv-run/core';
+import { loadBackendDotenv, workerEnvBase } from 'shared/utils/worker-env';
 import { z } from 'zod';
 
-// Load .env from backend directory (same .env file, shared across monorepo)
-dotenv({
-  root: '../backend',
-  files: ['.env'],
-});
+loadBackendDotenv();
 
-/**
- * Zod schema for Yjs Worker environment variables.
- */
-const envSchema = z.object({
+const envSchema = workerEnvBase.extend({
   DATABASE_URL: z.url(),
-  // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.
-  // Auto-provisioned by `pulumi up`; required in production.
-  DATABASE_SSL_CA: z.string().optional(),
 
   YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
   // Static default: yjsUrl is the public URL (a path under the app origin, no port).
   YJS_PORT: z.coerce.number().default(4002),
   YJS_DB_POOL_MAX: z.coerce.number().default(20),
-  MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
   NODB: z
-    .string()
-    .default('false')
-    .transform((v) => v === 'true'),
-  NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
-  PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
-  DEBUG: z
     .string()
     .default('false')
     .transform((v) => v === 'true'),
