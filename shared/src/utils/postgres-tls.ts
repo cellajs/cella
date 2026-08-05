@@ -20,6 +20,21 @@ export const stripPostgresSslParams = (url: string): string => {
   }
 };
 
+// Production requires the Pulumi-provisioned database CA and verified TLS.
+// Decode its single-line base64 runtime-secret representation back to PEM.
+// Pure: callers pass the raw env value and whether their mode mandates a CA.
+export const resolvePostgresSslCa = (ca: string | undefined, required: boolean): string | undefined => {
+  if (!ca) {
+    if (!required) return undefined;
+    throw new Error(
+      'FATAL: DATABASE_SSL_CA is required in production for verified TLS to PostgreSQL. ' +
+        'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run the infra ' +
+        "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
+    );
+  }
+  return Buffer.from(ca, 'base64').toString('utf-8');
+};
+
 const postgresHost = (connectionString: string): string | undefined => {
   try {
     return new URL(stripPostgresSslParams(connectionString)).hostname || undefined;

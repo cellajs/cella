@@ -1,7 +1,9 @@
 import type { DrizzleConfig } from 'drizzle-orm';
-import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
+import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
+import { createPgConnection, type DB, type PgDB } from './create-connection';
+
+export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
 
 export const dbConfig = {
   logger: !!env.DEBUG,
@@ -9,39 +11,11 @@ export const dbConfig = {
 
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
-export type PgDB = NodePgDatabase & { $client: NodePgClient };
-export type DB = PgDB;
-
-type TxOf<D extends { transaction: (...args: never[]) => unknown }> = Parameters<Parameters<D['transaction']>[0]>[0];
-
-export type Tx = TxOf<DB>;
-export type DbOrTx = DB | Tx;
-
 // In production we require a verified TLS connection to the managed PostgreSQL.
-const sslCa =
-  env.NODE_ENV === 'production' && !env.NODB
-    ? (() => {
-        if (!env.DATABASE_SSL_CA) {
-          throw new Error(
-            'FATAL: DATABASE_SSL_CA is required in production for verified TLS to PostgreSQL. ' +
-              'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run the infra ' +
-              "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
-          );
-        }
-        return Buffer.from(env.DATABASE_SSL_CA, 'base64').toString('utf-8');
-      })()
-    : undefined;
+const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
-const createPgConnection = (connectionString: string, max: number): PgDB =>
-  pgDrizzle({
-    connection: {
-      connectionString: stripPostgresSslParams(connectionString),
-      connectionTimeoutMillis: 10_000,
-      max,
-      ssl: verifiedPostgresSsl(connectionString, sslCa),
-    },
-    ...dbConfig,
-  });
+const connect = (connectionString: string, max: number): PgDB =>
+  createPgConnection(connectionString, { max, sslCa, logger: dbConfig.logger });
 
 /**
  * Stand-in for `baseDb` when `NODB` is set. Every property access throws with the accessed
@@ -67,9 +41,9 @@ const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
   }
 
   return {
-    db: createPgConnection(env.DATABASE_URL, env.DATABASE_POOL_MAX),
-    migrationDb: createPgConnection(env.DATABASE_ADMIN_URL, 5),
-    adminDb: createPgConnection(env.DATABASE_ADMIN_URL, 5),
+    db: connect(env.DATABASE_URL, env.DATABASE_POOL_MAX),
+    migrationDb: connect(env.DATABASE_ADMIN_URL, 5),
+    adminDb: connect(env.DATABASE_ADMIN_URL, 5),
   };
 };
 
