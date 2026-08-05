@@ -1,40 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
-import { appConfig, type ChannelEntityType } from 'shared';
-import type { ToolsConfig } from 'shared/tools-config';
-import { type ChannelEntityContext, getChannelSettingsTools, resolvePlacementList } from '~/lib/placements';
+import type { ChannelEntityType } from 'shared';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { PageAside } from '~/modules/common/page/aside';
-import { heldContextRoles } from '~/modules/entities/context-roles';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
-import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { type ChannelSettingsHost, useChannelSettingsSections } from '~/modules/entities/use-channel-settings-sections';
 
 interface ChannelSettingsPageProps<C extends ChannelEntityType> {
-  entity: ChannelEntityContext<C> & { entityType: C; toolsConfig?: ToolsConfig };
+  entity: ChannelSettingsHost<C>;
 }
 
 /**
- * Generic settings consumer for a channel entity: hosts its `settings` slot. Sections come
- * from the tool registry, arranged by app overrides and the entity's `toolsConfig`, gated on the
- * actor's resolved action grants (`requires`) and held context-role pairs (`visibleTo`).
+ * Page-hosted consumer for a channel entity's `settings` slot: an aside index next to the
+ * anchored section stack. Section resolution (arrangement, grant and context-role gating) lives
+ * in {@link useChannelSettingsSections}; this component only decides presentation, so apps
+ * needing a different layout write their own map over the same sections.
  */
 export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: ChannelSettingsPageProps<C>) {
-  const channelType = entity.entityType;
-  const slot = `${channelType}.settings`;
-
-  // Grants: every entity action the actor holds on this channel, resolved per row
-  const resolveCan = useResolveCan();
-  const can = entity.can?.[channelType];
-  const grants = appConfig.entityActions.filter((action) => resolveCan(can?.[action], entity.createdBy));
-
-  const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
-  const pairs = heldContextRoles(entity, myMemberships?.items ?? []);
-
-  const sections = resolvePlacementList(
-    slot,
-    getChannelSettingsTools(channelType).map((tool) => ({ ...tool, order: tool.order ?? 50 })),
-    { grants, pairs, slotConfig: entity.toolsConfig?.[slot] },
-  );
+  const sections = useChannelSettingsSections(entity);
 
   return (
     <div className="container mx-auto my-4 gap-4 md:flex md:flex-row">

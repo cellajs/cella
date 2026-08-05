@@ -14,10 +14,7 @@ const slot = 'account.settings';
 function UserAccountPage() {
   const user = useCurrentUser();
 
-  const sections = resolvePlacementList(
-    slot,
-    getTools('account.settings').map((tool) => ({ ...tool, order: tool.order ?? 50 })),
-  );
+  const sections = resolvePlacementList(slot, getTools('account.settings'));
 
   return (
     <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">

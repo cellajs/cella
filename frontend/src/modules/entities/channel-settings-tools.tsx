@@ -3,11 +3,57 @@ import type { ReactNode } from 'react';
 import { Suspense, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
-import type { ContextRole } from 'shared/tools-config';
-import type { ChannelEntityContext, ChannelSettingsToolFor } from '~/lib/placements';
+import type { PlacementDescriptor } from '~/lib/placements';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
+
+/**
+ * The general form tool base: first section, locked, held to the update grant. The bases in this
+ * file are pure data for the standard settings tool set: a module spreads one into its `tools`
+ * array and attaches the `slot`, app conditions (`visibleTo` audiences, adjusted `requires`), and
+ * a `render` returning the full card. Deviating from the standard set means declaring a different
+ * tool. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
+ * to 50.
+ */
+export const generalToolBase = {
+  id: 'general',
+  label: 'c:general',
+  order: 10,
+  locked: true,
+  requires: 'update',
+} satisfies PlacementDescriptor;
+
+/** The details form tool: hideable and reorderable per channel. */
+export const detailsToolBase = {
+  id: 'details',
+  label: 'c:details',
+  order: 20,
+} satisfies PlacementDescriptor;
+
+/**
+ * The tabs-management admin card (`TabsArrangementCard` wired to the channel's update mutation
+ * and its tabbed surface): drag-reorder and visibility toggles for the channel's page tabs.
+ */
+export const tabsToolBase = {
+  id: 'tabs',
+  label: 'c:tabs',
+  order: 80,
+  locked: true,
+  requires: 'update',
+} satisfies PlacementDescriptor;
+
+/** The danger-zone tool for one channel type: last section, locked, held to the delete grant. */
+export function dangerToolBase(channelType: ChannelEntityType, resource: string): PlacementDescriptor {
+  return {
+    id: `delete-${channelType}`,
+    label: 'c:delete_resource',
+    resource,
+    order: 90,
+    locked: true,
+    requires: 'delete',
+  };
+}
 
 interface DeleteToolCardProps {
   /** Entity display name, interpolated into the notice and confirm texts. */
@@ -20,8 +66,8 @@ interface DeleteToolCardProps {
   renderDialog: () => ReactNode;
 }
 
-/** The standard danger-zone tool: a free-form ToolCard body with the confirm-dialog delete button. */
-function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
+/** The standard danger-zone tool card: a free-form ToolCard body with the confirm-dialog delete button. */
+export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
   const { t } = useTranslation();
   const deleteButtonRef = useRef(null);
 
@@ -50,91 +96,4 @@ function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCa
       </Button>
     </ToolCard>
   );
-}
-
-interface ChannelSettingsToolsInput<C extends ChannelEntityType> {
-  channelType: C;
-  /** i18n resource key for the entity, e.g. 'c:organization'. */
-  resource: string;
-  /** Who may see the admin tools-arrangement card (elevation is explicit: list every pair). */
-  toolsCardVisibleTo: ContextRole[];
-  /** Renders the general form body (standard unsaved-badge card provided). */
-  renderGeneral: (entity: ChannelEntityContext<C>) => ReactNode;
-  /** Renders the details form body; omit to skip the details tool. */
-  renderDetails?: (entity: ChannelEntityContext<C>) => ReactNode;
-  /** Renders the tools-arrangement card, wired to the channel's update mutation. */
-  renderTools: (entity: ChannelEntityContext<C>) => ReactNode;
-  /** Renders the danger-zone delete confirmation content (standard card and dialog provided). */
-  renderDeleteDialog: (entity: ChannelEntityContext<C>) => ReactNode;
-}
-
-/**
- * The standard settings tool set for one channel type: general (10, locked), details (20),
- * tools arrangement (80, locked, admin-gated) and danger zone (90, locked, delete-gated).
- * Returns plain tool declarations for the module's `tools` array, so a channel's settings slot
- * costs its forms plus this one call.
- */
-export function channelSettingsTools<C extends ChannelEntityType>(
-  input: ChannelSettingsToolsInput<C>,
-): ChannelSettingsToolFor<C>[] {
-  const { channelType, resource, toolsCardVisibleTo, renderGeneral, renderDetails, renderTools, renderDeleteDialog } =
-    input;
-  const slot: `${C}.settings` = `${channelType}.settings`;
-
-  return [
-    {
-      slot,
-      id: 'general',
-      label: 'c:general',
-      order: 10,
-      locked: true,
-      render: (entity) => (
-        <ToolCard label="c:general" unsaved id={`update-${channelType}`}>
-          {renderGeneral(entity)}
-        </ToolCard>
-      ),
-    },
-    ...(renderDetails
-      ? [
-          {
-            slot,
-            id: 'details',
-            label: 'c:details',
-            order: 20,
-            render: (entity: ChannelEntityContext<C>) => (
-              <ToolCard label="c:details" id={`update-${channelType}-details`}>
-                {renderDetails(entity)}
-              </ToolCard>
-            ),
-          },
-        ]
-      : []),
-    {
-      slot,
-      id: 'tools',
-      label: 'c:tools',
-      order: 80,
-      locked: true,
-      requires: 'update',
-      visibleTo: toolsCardVisibleTo,
-      render: renderTools,
-    },
-    {
-      slot,
-      id: `delete-${channelType}`,
-      label: 'c:delete_resource',
-      resource,
-      order: 90,
-      locked: true,
-      requires: 'delete',
-      render: (entity) => (
-        <DeleteToolCard
-          name={entity.name}
-          resource={resource}
-          dialogId={`delete-${channelType}`}
-          renderDialog={() => renderDeleteDialog(entity)}
-        />
-      ),
-    },
-  ];
 }

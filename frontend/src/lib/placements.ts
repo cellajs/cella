@@ -26,7 +26,8 @@ export interface PlacementDescriptor {
   /**
    * Context-role pairs (e.g. 'organization.admin', 'course.staff') that may see this placement;
    * hidden unless the consumer passes a matching held pair. A UI visibility condition only,
-   * never data authorization. Omit for no identity condition.
+   * never data authorization. Prefer `requires`: capability grants already inherit down the
+   * ancestor chain, so declare `visibleTo` only when the audience is a role, not a capability.
    */
   visibleTo?: ContextRole[];
   /**
@@ -95,16 +96,16 @@ export type ToolFor<S extends Slot> = PlacementDescriptor & {
 /** Union of tool shapes a frontend module can declare under `tools`, discriminated by `slot`. */
 export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 
-/** App adjustment to a declared placement or nav tab (see `~/placement-config`, a pinned file). */
+/**
+ * App adjustment to a declared placement or nav tab (see `~/placement-config`, a pinned file).
+ * Overrides only hide and reorder; changing who sees a tool means declaring the tool differently
+ * in its module.
+ */
 export interface PlacementOverride {
   /** Drops the placement from its host (applies even to `locked` placements: this layer is code). */
   hidden?: boolean;
   /** Replaces the declared sort position. */
   order?: number;
-  /** Replaces the declared grant requirement. */
-  requires?: string;
-  /** Replaces the declared context-role visibility condition. */
-  visibleTo?: ContextRole[];
 }
 
 /** Host-keyed override map: slot id for tools, parent route id for nav tabs. */
@@ -138,33 +139,21 @@ onFrontendModuleRegister((module) => {
   }
 });
 
-/** Tools registered for a slot, sorted on `order` (default 50). */
-export function getTools<S extends Slot>(slot: S): ToolFor<S>[] {
+/** Tools registered for a slot, sorted on `order`, with the section default (50) applied. */
+export function getTools<S extends Slot>(slot: S): (ToolFor<S> & { order: number })[] {
   const registered = bySlot.get(slot) ?? [];
   // Cast: registration erased the render context; the slot key guarantees the family's shape
-  return registered as ToolFor<S>[];
+  return registered.map((tool) => ({ ...tool, order: tool.order ?? 50 })) as (ToolFor<S> & { order: number })[];
 }
 
 /**
- * Registered tool descriptors for a slot given at runtime (render context erased). Navigation and
- * arrangement consumers use this when the slot id is dynamic (e.g. a tab bar resolving a surface's
- * `tabsSlot`); rendering still goes through {@link getTools} with the statically known slot.
+ * Registered tool descriptors for a slot given at runtime (render context erased, `order` left
+ * raw so each surface applies its own default). Navigation and arrangement consumers use this
+ * when the slot id is dynamic (e.g. a tab bar resolving a surface's `tabsSlot`); rendering still
+ * goes through {@link getTools} with the statically known slot.
  */
 export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
   return bySlot.get(slot) ?? [];
-}
-
-/** The settings tool shape for one concrete channel type (sugar over {@link ToolFor}). */
-export type ChannelSettingsToolFor<C extends ChannelEntityType> = PlacementDescriptor & {
-  slot: `${C}.settings`;
-  render: (entity: ChannelEntityContext<C>) => ReactNode;
-};
-
-/** Typed {@link getTools} for a channel type's settings slot, for generic channel components. */
-export function getChannelSettingsTools<C extends ChannelEntityType>(channelType: C): ChannelSettingsToolFor<C>[] {
-  const registered = bySlot.get(`${channelType}.settings`) ?? [];
-  // Cast: registration erased the render context; the slot key guarantees this family's shape
-  return registered as ChannelSettingsToolFor<C>[];
 }
 
 /**
@@ -219,14 +208,8 @@ export function resolvePlacementList<T extends PlacementDescriptor & { order: nu
     .filter((item) => !hostOverrides?.[item.id]?.hidden)
     .filter((item) => item.locked || !channelHidden.has(item.id))
     .map((item) => {
-      const override = hostOverrides?.[item.id];
-      if (!override) return item;
-      return {
-        ...item,
-        ...(override.order !== undefined && { order: override.order }),
-        ...(override.requires !== undefined && { requires: override.requires }),
-        ...(override.visibleTo !== undefined && { visibleTo: override.visibleTo }),
-      };
+      const order = hostOverrides?.[item.id]?.order;
+      return order === undefined ? item : { ...item, order };
     })
     .filter((item) => !item.requires || grants.includes(item.requires))
     .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)));

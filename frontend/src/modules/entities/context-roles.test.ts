@@ -25,13 +25,4 @@ describe('heldContextRoles', () => {
   it('returns no pairs for an actor with no memberships', () => {
     expect(heldContextRoles(entity, [])).toEqual([]);
   });
-
-  it('entity-less form unions every held pair, unscoped by any ancestor chain', () => {
-    const pairs = heldContextRoles([
-      membership('org1', 'admin'),
-      membership('other-org', 'member'),
-      membership('org1', 'admin'),
-    ]);
-    expect(pairs).toEqual(['organization.admin', 'organization.member']);
-  });
 });

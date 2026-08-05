@@ -1,19 +1,24 @@
 import { defineFrontendModule } from '~/lib/module';
-import { channelSettingsTools } from '~/modules/entities/channel-settings-tools';
+import {
+  dangerToolBase,
+  detailsToolBase,
+  generalToolBase,
+  tabsToolBase,
+} from '~/modules/entities/channel-settings-tools';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const OrganizationGeneralForm = lazyNamed(
+const OrganizationGeneralCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
-  'OrganizationGeneralForm',
+  'OrganizationGeneralCard',
 );
-const OrganizationDetailsForm = lazyNamed(
+const OrganizationDetailsCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
-  'OrganizationDetailsForm',
+  'OrganizationDetailsCard',
 );
-const OrganizationToolsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationToolsCard');
-const OrganizationDeleteDialog = lazyNamed(
+const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationTabsCard');
+const OrganizationDeleteCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
-  'OrganizationDeleteDialog',
+  'OrganizationDeleteCard',
 );
 
 defineFrontendModule({
@@ -21,13 +26,26 @@ defineFrontendModule({
   owner: 'cella',
   scope: ['frontend', 'backend'],
   description: 'UI for managing organizations, the highest ancestor in the entity hierarchy.',
-  tools: channelSettingsTools({
-    channelType: 'organization',
-    resource: 'c:organization',
-    toolsCardVisibleTo: ['organization.admin'],
-    renderGeneral: (organization) => <OrganizationGeneralForm organization={organization} />,
-    renderDetails: (organization) => <OrganizationDetailsForm organization={organization} />,
-    renderTools: (organization) => <OrganizationToolsCard organization={organization} />,
-    renderDeleteDialog: (organization) => <OrganizationDeleteDialog organization={organization} />,
-  }),
+  tools: [
+    {
+      ...generalToolBase,
+      slot: 'organization.settings',
+      render: (organization) => <OrganizationGeneralCard organization={organization} />,
+    },
+    {
+      ...detailsToolBase,
+      slot: 'organization.settings',
+      render: (organization) => <OrganizationDetailsCard organization={organization} />,
+    },
+    {
+      ...tabsToolBase,
+      slot: 'organization.settings',
+      render: (organization) => <OrganizationTabsCard organization={organization} />,
+    },
+    {
+      ...dangerToolBase('organization', 'c:organization'),
+      slot: 'organization.settings',
+      render: (organization) => <OrganizationDeleteCard organization={organization} />,
+    },
+  ],
 });

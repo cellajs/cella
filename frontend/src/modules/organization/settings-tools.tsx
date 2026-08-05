@@ -4,7 +4,9 @@ import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { ToolsArrangementCard } from '~/modules/entities/tools-arrangement-card';
+import { ToolCard } from '~/modules/common/tool-card';
+import { DeleteToolCard } from '~/modules/entities/channel-settings-tools';
+import { TabsArrangementCard } from '~/modules/entities/tabs-arrangement-card';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
@@ -27,24 +29,33 @@ function useSlugChangeCallback(organization: EnrichedOrganization) {
   };
 }
 
-/** General organization form body (name, slug, visuals). */
-export function OrganizationGeneralForm({ organization }: { organization: EnrichedOrganization }) {
+/** General organization settings card (name, slug, visuals). */
+export function OrganizationGeneralCard({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
-  return <UpdateOrganizationForm organization={organization} callback={callback} />;
+  return (
+    <ToolCard label="c:general" unsaved id="update-organization">
+      <UpdateOrganizationForm organization={organization} callback={callback} />
+    </ToolCard>
+  );
 }
 
-/** Organization details form body (locale, contact, links). */
-export function OrganizationDetailsForm({ organization }: { organization: EnrichedOrganization }) {
+/** Organization details card (locale, contact, links). */
+export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
-  return <UpdateOrganizationDetailsForm organization={organization} callback={callback} />;
+  return (
+    <ToolCard label="c:details" id="update-organization-details">
+      <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
+    </ToolCard>
+  );
 }
 
-/** Tools arrangement card wired to the organization update mutation. */
-export function OrganizationToolsCard({ organization }: { organization: EnrichedOrganization }) {
+/** Tabs arrangement card for the organization page surface, wired to the update mutation. */
+export function OrganizationTabsCard({ organization }: { organization: EnrichedOrganization }) {
   const { mutate } = useOrganizationUpdateMutation();
   return (
-    <ToolsArrangementCard
+    <TabsArrangementCard
       entity={organization}
+      parentRouteId="/_app/$tenantId/$organizationSlug/organization"
       persist={(toolsConfig) =>
         mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })
       }
@@ -52,22 +63,29 @@ export function OrganizationToolsCard({ organization }: { organization: Enriched
   );
 }
 
-/** Delete confirmation content for the organization danger zone. */
-export function OrganizationDeleteDialog({ organization }: { organization: EnrichedOrganization }) {
+/** Danger-zone card: the standard delete tool with the organization delete confirmation. */
+export function OrganizationDeleteCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
-    <DeleteOrganizations
-      dialog
-      tenantId={organization.tenantId}
-      organizations={[organization]}
-      callback={({ status }: CallbackArgs<Organization[]>) => {
-        if (status === 'success') {
-          toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
-          navigate({ to: appConfig.defaultRedirectPath, replace: true });
-        }
-      }}
+    <DeleteToolCard
+      name={organization.name}
+      resource="c:organization"
+      dialogId="delete-organization"
+      renderDialog={() => (
+        <DeleteOrganizations
+          dialog
+          tenantId={organization.tenantId}
+          organizations={[organization]}
+          callback={({ status }: CallbackArgs<Organization[]>) => {
+            if (status === 'success') {
+              toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
+              navigate({ to: appConfig.defaultRedirectPath, replace: true });
+            }
+          }}
+        />
+      )}
     />
   );
 }

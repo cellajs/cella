@@ -388,6 +388,24 @@
         "pnpm check"
       ],
       "summary": "Operational migration: per-mode IAM principals in a group, admin app replaces operator, per-service secret folders with resource-level conditions, per-deploy key rotation + single-access handoff, s3 managed key and s3AccessKeyId/Secret removed (backend signs with its service key; S3_* env names unchanged). Run the infra CLI 'Migrate IAM model' per environment."
+    },
+    {
+      "id": "20260804T1641-headless-settings-placements",
+      "version": "next",
+      "title": "Headless settings placements: sections hook, descriptor bases, consumers as presentation",
+      "kind": "manual",
+      "syncBreaking": true,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "frontend/src",
+        "backend/src"
+      ],
+      "requires": [
+        "pnpm check",
+        "pnpm test"
+      ],
+      "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
     }
   ]
 }

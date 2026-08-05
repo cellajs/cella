@@ -1,7 +1,7 @@
 import { getModules } from 'shared/module-registry';
 import { describe, expect, it } from 'vitest';
 import { defineFrontendModule } from '~/lib/module';
-import { getChannelSettingsTools, getTools, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
+import { getTools, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
 
 describe('tool registry', () => {
   it('indexes module tools by slot, sorted on order with a default of 50', () => {
@@ -17,7 +17,7 @@ describe('tool registry', () => {
       ],
     });
 
-    const ids = getChannelSettingsTools('organization').map((tool) => tool.id);
+    const ids = getTools('organization.settings').map((tool) => tool.id);
     expect(ids).toEqual(['first', 'middle', 'last']);
   });
 
@@ -37,7 +37,7 @@ describe('tool registry', () => {
     });
 
     expect(getTools('account.settings').map((tool) => tool.id)).toEqual(['api-tokens']);
-    expect(getChannelSettingsTools('organization').some((tool) => tool.id === 'api-tokens')).toBe(false);
+    expect(getTools('organization.settings').some((tool) => tool.id === 'api-tokens')).toBe(false);
   });
 
   it('rejects context-role pairs that name no hierarchy role', () => {
@@ -109,20 +109,18 @@ describe('resolvePlacementList', () => {
     expect(resolved.map((i) => i.id)).toEqual(['danger', 'general', 'staff-only']);
   });
 
-  it('applies app overrides: hide (even locked), reorder, re-gate', () => {
+  it('applies app overrides: hide (even locked) and reorder', () => {
     const resolved = resolvePlacementList('host', items, {
-      grants: ['update'],
-      pairs: ['organization.member'],
+      grants: ['delete'],
+      pairs: ['organization.admin'],
       overrides: {
         host: {
           general: { hidden: true },
-          danger: { requires: 'update', order: 5 },
-          'staff-only': { visibleTo: ['organization.member'] },
+          danger: { order: 5 },
         },
       },
     });
-    // locked 'general' still hidden by the code layer; 'danger' re-gated onto update and moved first;
-    // 'staff-only' re-targeted at members
+    // locked 'general' still hidden by the code layer; 'danger' moved first by the order override
     expect(resolved.map((i) => i.id)).toEqual(['danger', 'staff-only', 'extra']);
   });
 });

@@ -14,8 +14,6 @@ export interface SlotToolsConfig {
   order?: string[];
   /** Tool ids hidden on this channel (`locked` tools are immune). */
   hidden?: string[];
-  /** Per-tool settings payloads, member-readable: presentation data only, never secrets. */
-  settings?: Record<string, unknown>;
 }
 
 /**

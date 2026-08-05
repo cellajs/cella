@@ -7,6 +7,5 @@ export const toolsConfigSchema: z.ZodType<ToolsConfig> = z.record(
   z.object({
     order: z.array(z.string()).optional(),
     hidden: z.array(z.string()).optional(),
-    settings: z.record(z.string(), z.unknown()).optional(),
   }),
 );
