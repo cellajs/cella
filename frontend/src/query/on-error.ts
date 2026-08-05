@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { ApiError } from '~/lib/api';
+import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
@@ -26,12 +27,12 @@ const getFallbackMessage = (status: number): string | undefined => {
 const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   // Priority 1: Resource-specific translation (e.g., resource_not_found with entity interpolation)
   if (entityType && type && i18n.exists(`error:resource_${type}`)) {
-    return i18n.t(`error:resource_${type}`, { resource: i18n.t(entityType) });
+    return i18n.t(`error:resource_${type}` as TKey, { resource: i18n.t(entityType) });
   }
 
   // Priority 2: Direct type translation (e.g., invalid_slug, invalid_cdn_url)
   if (type && i18n.exists(`error:${type}`)) {
-    return i18n.t(`error:${type}`);
+    return i18n.t(`error:${type}` as TKey);
   }
 
   // Priority 3: Use message from backend (contains Zod-translated message for form errors)

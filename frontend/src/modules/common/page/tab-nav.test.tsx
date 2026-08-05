@@ -8,8 +8,12 @@ const fakeRoute = (over: Record<string, unknown>) => ({ children: [], options: {
 const routesById: Record<string, unknown> = {};
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ routesById }) }));
 
+import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
 import { type GuardNavTabsOptions, guardNavTabs, resolveNavTabs } from '~/modules/common/page/tab-nav';
+
+// Fixtures use synthetic labels that are not real translation keys.
+const key = (s: string) => s as TKey;
 
 // Tools register once (the registry is process-global); tests re-seed only the routes.
 defineFrontendModule({
@@ -18,16 +22,16 @@ defineFrontendModule({
   scope: ['frontend'],
   description: 'Registry tab test module.',
   tools: [
-    { slot: 'organization.tabs', id: 'reports', label: 'c:reports', order: 15, render: () => null },
+    { slot: 'organization.tabs', id: 'reports', label: key('c:reports'), order: 15, render: () => null },
     {
       slot: 'organization.tabs',
       id: 'reports-admin',
-      label: 'c:reports',
+      label: key('c:reports'),
       order: 16,
       visibleTo: ['organization.admin'],
       render: () => null,
     },
-    { slot: 'system.tabs', id: 'audit', label: 'c:audit', order: 5, render: () => null },
+    { slot: 'system.tabs', id: 'audit', label: key('c:audit'), order: 5, render: () => null },
   ],
 });
 
@@ -36,12 +40,12 @@ function seedRoutes(id: string, tabsSlot: string) {
   const members = fakeRoute({
     path: 'members',
     fullPath: `${id}/members`,
-    options: { staticData: { navTab: { id: 'members', label: 'c:members', order: 10 } } },
+    options: { staticData: { navTab: { id: 'members', label: key('c:members'), order: 10 } } },
   });
   const settings = fakeRoute({
     path: 'settings',
     fullPath: `${id}/settings`,
-    options: { staticData: { navTab: { id: 'settings', label: 'c:settings', order: 20, requires: 'update' } } },
+    options: { staticData: { navTab: { id: 'settings', label: key('c:settings'), order: 20, requires: 'update' } } },
   });
   const toolHost = fakeRoute({ path: '$tool', fullPath: `${id}/$tool` });
   routesById[id] = fakeRoute({ children: [members, settings, toolHost], options: { staticData: { tabsSlot } } });

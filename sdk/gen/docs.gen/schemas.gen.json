@@ -1089,12 +1089,7 @@
             "required": false,
             "properties": {
               "order": { "type": "array", "required": false, "itemType": "string" },
-              "hidden": { "type": "array", "required": false, "itemType": "string" },
-              "settings": {
-                "type": "object",
-                "required": false,
-                "additionalProperties": { "type": "object", "required": false }
-              }
+              "hidden": { "type": "array", "required": false, "itemType": "string" }
             }
           }
         },

@@ -1,4 +1,5 @@
 import { FileTextIcon, LayoutListIcon, WorkflowIcon } from 'lucide-react';
+import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { DocRenderMode } from '~/modules/page/content';
 
@@ -10,7 +11,7 @@ export const renderModeIcons: Record<DocRenderMode, IconComponent> = {
 };
 
 /** Returns the translation key for a documentation render mode. */
-export const renderModeLabelKey = (mode: string) => `c:render_mode.${mode === 'nodeOnly' ? 'node_only' : mode}`;
+export const renderModeLabelKey = (mode: string) => `c:render_mode.${mode === 'nodeOnly' ? 'node_only' : mode}` as TKey;
 
 interface RenderModeLabelProps {
   mode: DocRenderMode;

@@ -7,6 +7,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import type { LegalSection } from '~/modules/auth/legal/legal-types';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -15,7 +16,7 @@ import { cn } from '~/utils/cn';
 
 interface LegalSubjectConfig {
   id: LegalSubject;
-  label: string;
+  label: TKey;
   sections: readonly LegalSection[];
 }
 

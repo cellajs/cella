@@ -25,7 +25,9 @@ const initOptions: InitOptions = {
   },
   defaultNS: 'c',
   backend: {
-    loadPath: '../../../locales/{{lng}}/{{ns}}.json',
+    // Served by the locales vite plugin in dev and emitted as build assets; both
+    // expose the processed namespaces (common + app merged into `c`) at this path.
+    loadPath: '/locales/{{lng}}/{{ns}}.json',
   },
 };
 

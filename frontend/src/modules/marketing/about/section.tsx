@@ -1,10 +1,11 @@
 import { Trans, useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 
 interface AboutSectionProps {
   /** When set, renders a `spy-<sectionId>` anchor for scroll-spy nav (used on the about page). */
   sectionId?: string;
-  title?: string;
-  text?: string;
+  title?: TKey;
+  text?: TKey;
   /** Optional components to interpolate into `text` (e.g. links) via <Trans>. */
   textComponents?: readonly React.ReactElement[] | Record<string, React.ReactElement>;
   children?: React.ReactNode;
@@ -12,8 +13,8 @@ interface AboutSectionProps {
 }
 
 interface AboutSectionHeaderProps {
-  title?: string;
-  text?: string;
+  title?: TKey;
+  text?: TKey;
   textComponents?: readonly React.ReactElement[] | Record<string, React.ReactElement>;
   className?: string;
 }
@@ -34,7 +35,7 @@ export const AboutSectionHeader = ({ title, text, textComponents, className = ''
       )}
       {text && (
         <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
-          <Trans i18nKey={text} components={textComponents} />
+          <Trans i18nKey={text as never} components={textComponents} />
         </p>
       )}
     </div>

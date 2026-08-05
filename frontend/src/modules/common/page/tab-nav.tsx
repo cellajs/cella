@@ -7,6 +7,7 @@ import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
+import type { TKey } from '~/lib/i18n-locales';
 import {
   getSlotDescriptors,
   isPlacementHidden,
@@ -23,7 +24,7 @@ import { truncateMiddle } from '~/utils/truncate-middle';
 
 export type PageTab = {
   id: string;
-  label: string;
+  label: TKey;
   path: LinkComponentProps['to'];
   params?: LinkComponentProps['params'];
   search?: LinkComponentProps['search'];

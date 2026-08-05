@@ -1,4 +1,5 @@
 import { t } from 'i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
@@ -8,5 +9,5 @@ import { toaster } from '~/modules/common/toaster/toaster';
  * `meta: { suppressGlobalErrorToast: true }` so the user only sees this toast.
  */
 export const createResourceError = (resource: string) => (type: 'create' | 'update' | 'delete') => {
-  toaster.error(t(`error:${type}_resource`, { resource: t(`c:${resource}`) }));
+  toaster.error(t(`error:${type}_resource`, { resource: t(`c:${resource}` as TKey) }));
 };

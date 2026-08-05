@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CircleCheckBigIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
+import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 
 const meta = {
@@ -22,7 +23,7 @@ export const Default: Story = {
 export const WithTitle: Story = {
   args: {
     id: 'story-title',
-    title: 'Heads up!',
+    title: 'Heads up!' as TKey,
     children: 'Something important happened that you should know about.',
   },
 };
@@ -31,7 +32,7 @@ export const WithIcon: Story = {
   args: {
     id: 'story-icon',
     icon: InfoIcon,
-    title: 'Information',
+    title: 'Information' as TKey,
     children: 'This alert includes an icon for additional context.',
   },
 };
@@ -41,7 +42,7 @@ export const Destructive: Story = {
     id: 'story-destructive',
     variant: 'destructive',
     icon: TriangleAlertIcon,
-    title: 'Error',
+    title: 'Error' as TKey,
     children: 'Something went wrong. Please try again.',
   },
 };
@@ -51,7 +52,7 @@ export const Success: Story = {
     id: 'story-success',
     variant: 'success',
     icon: CircleCheckBigIcon,
-    title: 'Success',
+    title: 'Success' as TKey,
     children: 'Your changes have been saved.',
   },
 };
@@ -61,7 +62,7 @@ export const Warning: Story = {
     id: 'story-warning',
     variant: 'warning',
     icon: TriangleAlertIcon,
-    title: 'Warning',
+    title: 'Warning' as TKey,
     children: 'This action cannot be undone.',
   },
 };
@@ -71,7 +72,7 @@ export const Animated: Story = {
     id: 'story-animated',
     animate: true,
     icon: InfoIcon,
-    title: 'Animated alert',
+    title: 'Animated alert' as TKey,
     children: 'This alert uses enter/exit animations.',
   },
 };

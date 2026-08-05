@@ -2,9 +2,10 @@ import { motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
+import type { TKey } from '~/lib/i18n-locales';
 import { Button } from '~/modules/ui/button';
 
-type SheetTab = { id: string; label: string; element: React.ReactNode };
+export type SheetTab = { id: string; label: TKey; element: React.ReactNode };
 
 interface Props {
   tabs: SheetTab[];

@@ -1,7 +1,11 @@
 import { getModules } from 'shared/module-registry';
 import { describe, expect, it } from 'vitest';
+import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
 import { getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
+
+// Fixtures use synthetic labels that are not real translation keys.
+const key = (s: string) => s as TKey;
 
 describe('tool registry', () => {
   it('indexes module tools by slot, sorted on order with a default of 50', () => {
@@ -11,9 +15,9 @@ describe('tool registry', () => {
       scope: ['frontend'],
       description: 'Tool registry test module.',
       tools: [
-        { slot: 'organization.settings', id: 'last', label: 'c:last', order: 60, render: () => null },
-        { slot: 'organization.settings', id: 'first', label: 'c:first', order: 10, render: () => null },
-        { slot: 'organization.settings', id: 'middle', label: 'c:middle', render: () => null },
+        { slot: 'organization.settings', id: 'last', label: key('c:last'), order: 60, render: () => null },
+        { slot: 'organization.settings', id: 'first', label: key('c:first'), order: 10, render: () => null },
+        { slot: 'organization.settings', id: 'middle', label: key('c:middle'), render: () => null },
       ],
     });
 
@@ -33,7 +37,7 @@ describe('tool registry', () => {
       owner: 'app',
       scope: ['frontend'],
       description: 'Account tool registry test module.',
-      tools: [{ slot: 'account.settings', id: 'api-tokens', label: 'c:api_tokens', render: () => null }],
+      tools: [{ slot: 'account.settings', id: 'api-tokens', label: key('c:api_tokens'), render: () => null }],
     });
 
     expect(getTools('account.settings').map((tool) => tool.id)).toEqual(['api-tokens']);
@@ -51,7 +55,7 @@ describe('tool registry', () => {
           {
             slot: 'organization.settings',
             id: 'bad',
-            label: 'c:bad',
+            label: key('c:bad'),
             // Cast: the invalid pair is the point of this test
             visibleTo: ['organization.owner' as 'organization.admin'],
             render: () => null,
@@ -64,9 +68,9 @@ describe('tool registry', () => {
 
 describe('orderBySlotConfig', () => {
   const items = [
-    { id: 'a', label: 'c:a', order: 10 },
-    { id: 'b', label: 'c:b', order: 20 },
-    { id: 'c', label: 'c:c', order: 30 },
+    { id: 'a', label: key('c:a'), order: 10 },
+    { id: 'b', label: key('c:b'), order: 20 },
+    { id: 'c', label: key('c:c'), order: 30 },
   ];
 
   it('puts stored ids first in stored sequence, appends unlisted by declared order', () => {
@@ -99,10 +103,10 @@ describe('isPlacementHidden', () => {
 
 describe('resolvePlacementList', () => {
   const items = [
-    { id: 'general', label: 'c:general', order: 10, locked: true },
-    { id: 'danger', label: 'c:danger', order: 90, requires: 'delete', locked: true },
-    { id: 'extra', label: 'c:extra', order: 50 },
-    { id: 'staff-only', label: 'c:staff', order: 40, visibleTo: ['organization.admin' as const] },
+    { id: 'general', label: key('c:general'), order: 10, locked: true },
+    { id: 'danger', label: key('c:danger'), order: 90, requires: 'delete', locked: true },
+    { id: 'extra', label: key('c:extra'), order: 50 },
+    { id: 'staff-only', label: key('c:staff'), order: 40, visibleTo: ['organization.admin' as const] },
   ];
 
   it('drops entries whose required grant or visibleTo pair is absent', () => {

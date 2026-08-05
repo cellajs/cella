@@ -1,11 +1,13 @@
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { Spinner } from '~/modules/common/spinner';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 
 interface MarketingLayoutProps {
+  /** i18n key or already-translated text (t() renders non-keys verbatim). */
   title?: string;
   children?: React.ReactNode;
 }
@@ -24,7 +26,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
           <section className="rich-gradient relative py-14 pb-16 sm:min-h-40 sm:py-20">
             {title && (
               <h1 className="mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl sm:w-full md:text-5xl">
-                {t(title)}
+                {t(title as TKey)}
               </h1>
             )}
             <BackgroundCurve height="clamp(1.5rem, 4vw, 3rem)" />

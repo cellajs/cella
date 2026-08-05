@@ -1,13 +1,14 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import type { TKey } from '~/lib/i18n-locales';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface HeroProps {
-  title: string;
+  title: TKey;
   children: React.ReactNode;
-  text?: string;
-  chips?: string[];
+  text?: TKey;
+  chips?: TKey[];
 }
 
 export const Hero = ({ title, text, children, chips }: HeroProps) => {
@@ -43,7 +44,7 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
         </h1>
         {text && (
           <h2 className="mx-auto mb-8 max-w-4xl text-foreground/90 text-xl leading-8 md:text-2xl md:leading-10">
-            <Trans t={t} i18nKey={text} components={{ em: <em className="italic" />, strong: <strong /> }} />
+            <Trans t={t} i18nKey={text as never} components={{ em: <em className="italic" />, strong: <strong /> }} />
           </h2>
         )}
         {chips && chips.length > 0 && (

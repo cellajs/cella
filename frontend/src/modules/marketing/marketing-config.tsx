@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
+import type { TKey } from '~/lib/i18n-locales';
 import { ElementIcon } from '~/modules/common/icons/element';
 import { GithubIcon } from '~/modules/common/icons/github';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -30,7 +31,7 @@ export const marketingNavConfig = [
   { id: 'sync_engine', url: '/sync-engine', hash: '' },
   // { id: 'pricing', url: '/about', hash: 'pricing' },
   { id: 'docs', url: '/docs', hash: '' },
-];
+] as const satisfies readonly { id: TKey; url: string; hash: string }[];
 
 // Footer
 
@@ -260,9 +261,9 @@ export const faqsData = [
 // About - Counters
 
 export const counts = [
-  { id: 'user', title: 'c:users', icon: UsersIcon },
+  { id: 'user', title: 'c:user_other', icon: UsersIcon },
   { id: 'organization', title: 'c:organization_other', icon: Building2Icon },
-] as const satisfies readonly { id: EntityType; title: string; icon: IconComponent }[];
+] as const satisfies readonly { id: EntityType; title: TKey; icon: IconComponent }[];
 
 // About - Why
 

@@ -1,21 +1,21 @@
 import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
-import type { HmrContext, ModuleNode, Plugin } from 'vite';
+import type { HmrContext, ModuleNode, Plugin, ViteDevServer } from 'vite';
 
 /** Custom HMR event name sent to the client when locale files change */
 const CUSTOM_EVENT = 'i18next-hmr:update' as const;
 
-/** Configuration options for the LocalesHMR plugin */
-interface LocalesHMROptions {
+/** Configuration options for the locales plugin */
+interface LocalesPluginOptions {
   /** Source directory containing locale files (default: ../locales) */
   srcDir?: string;
   /** Output cache directory for processed locales (default: ../.vscode/.locales-cache) */
   outDir?: string;
   /** Namespace merge configuration - merges source namespaces into target */
   merge?: {
-    /** Target namespace to merge into (e.g., 'common') */
+    /** Target runtime namespace to merge into (e.g., 'c') */
     target: string;
-    /** Source namespaces to merge from (e.g., ['app']) */
+    /** Source namespaces to merge from (e.g., ['common', 'app']) */
     sources: string[];
   };
   /** Enable verbose logging (default: true) */
@@ -25,11 +25,11 @@ interface LocalesHMROptions {
 /**
  * Resolve user options with defaults.
  */
-function resolveOptions(userOptions: LocalesHMROptions = {}): Required<LocalesHMROptions> {
+function resolveOptions(userOptions: LocalesPluginOptions = {}): Required<LocalesPluginOptions> {
   return {
     srcDir: userOptions.srcDir ?? path.resolve(process.cwd(), '../locales'),
     outDir: userOptions.outDir ?? path.resolve(process.cwd(), '../.vscode/.locales-cache'),
-    merge: userOptions.merge ?? { target: 'common', sources: ['app'] },
+    merge: userOptions.merge ?? { target: 'c', sources: ['common', 'app'] },
     verbose: userOptions.verbose ?? true,
   };
 }
@@ -39,7 +39,7 @@ function resolveOptions(userOptions: LocalesHMROptions = {}): Required<LocalesHM
  */
 function log(level: 'info' | 'warn' | 'error', message: string, verbose: boolean, ...args: unknown[]) {
   if (!verbose && level === 'info') return;
-  const prefix = '[locales-hmr]';
+  const prefix = '[locales]';
   switch (level) {
     case 'info':
       console.info(prefix, message, ...args);
@@ -84,7 +84,7 @@ async function readJsonIfExists(file: string): Promise<Record<string, unknown>> 
  * Sync one language directory to the cache: merge configured source namespaces into the target
  * namespace, and copy the remaining namespaces as-is.
  */
-async function syncLanguage(lang: string, options: Required<LocalesHMROptions>): Promise<void> {
+async function syncLanguage(lang: string, options: Required<LocalesPluginOptions>): Promise<void> {
   const { srcDir, outDir, merge, verbose } = options;
   const srcLangDir = path.join(srcDir, lang);
 
@@ -111,28 +111,27 @@ async function syncLanguage(lang: string, options: Required<LocalesHMROptions>):
       }),
   );
 
-  // Merge source namespaces into target namespace
+  // Merge source namespaces into target namespace (later sources override earlier ones)
   const targetNs = merge.target;
   const sourceNamespaces = new Set(merge.sources);
 
-  const targetBase = resources[targetNs] ?? {};
-  const mergedTarget: Record<string, unknown> = { ...targetBase };
-
+  const mergedTarget: Record<string, unknown> = {};
   for (const ns of merge.sources) {
     Object.assign(mergedTarget, resources[ns] ?? {});
   }
 
   // Write merged target namespace
   if (Object.keys(mergedTarget).length > 0) {
-    const commonOut = path.join(outLangDir, `${targetNs}.json`);
-    await fsp.writeFile(commonOut, JSON.stringify(mergedTarget, null, 2), 'utf8');
-    log('info', `wrote merged ${targetNs}.json for "${lang}" → ${commonOut}`, verbose);
+    const targetOut = path.join(outLangDir, `${targetNs}.json`);
+    await fsp.writeFile(targetOut, JSON.stringify(mergedTarget, null, 2), 'utf8');
+    log('info', `wrote merged ${targetNs}.json for "${lang}" → ${targetOut}`, verbose);
   }
 
   // Copy remaining namespaces (those not merged) as-is
   await Promise.all(
     Object.entries(resources).map(async ([ns, data]) => {
-      // Skip target (already written) and source namespaces (merged into target)
+      // Skip source namespaces (merged into target); a source file named after the
+      // target would shadow the merge result, so it is skipped too.
       if (ns === targetNs) return;
       if (sourceNamespaces.has(ns)) return;
 
@@ -144,18 +143,20 @@ async function syncLanguage(lang: string, options: Required<LocalesHMROptions>):
 }
 
 /**
- * Sync all language directories to the cache.
- * Processes each language in parallel for faster startup.
+ * Rebuild the whole cache from scratch. Wiping first prevents stale namespaces
+ * (renamed/removed files or a changed merge target) from lingering in the cache.
  */
-async function syncAllLanguages(options: Required<LocalesHMROptions>): Promise<void> {
-  const { srcDir, verbose } = options;
+async function buildLocalesCache(options: Required<LocalesPluginOptions>): Promise<void> {
+  const { srcDir, outDir, verbose } = options;
 
   if (!fs.existsSync(srcDir)) {
     log('warn', `source dir not found: ${srcDir}`, verbose);
     return;
   }
 
-  // Read all language directories, ignore cache itself
+  await fsp.rm(outDir, { recursive: true, force: true });
+
+  // Read all language directories, ignore hidden dirs
   const entries = await fsp.readdir(srcDir, { withFileTypes: true });
   const langs = entries.filter((d) => d.isDirectory() && !d.name.startsWith('.')).map((d) => d.name);
 
@@ -163,48 +164,87 @@ async function syncAllLanguages(options: Required<LocalesHMROptions>): Promise<v
 }
 
 /**
- * Build the locales cache on-demand.
- * Can be called outside of Vite (e.g., in build scripts).
+ * Serve the processed cache at /locales/{lng}/{ns}.json during dev, so the i18next
+ * HTTP backend loads the same merged namespaces the build ships.
  */
-async function buildLocalesCache(userOptions: LocalesHMROptions = {}) {
-  const options = resolveOptions(userOptions);
-  await syncAllLanguages(options);
+function serveLocalesCache(server: ViteDevServer, options: Required<LocalesPluginOptions>): void {
+  server.middlewares.use('/locales', (req, res, next) => {
+    const url = (req.url ?? '').split('?')[0];
+    // Only serve flat {lng}/{ns}.json paths; anything else falls through
+    const match = /^\/([a-zA-Z0-9-]+)\/([a-zA-Z0-9._-]+\.json)$/.exec(url);
+    if (!match) return next();
+
+    const file = path.join(options.outDir, match[1], match[2]);
+    fsp
+      .readFile(file, 'utf8')
+      .then((content) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(content);
+      })
+      .catch(() => next());
+  });
 }
 
 /**
- * Watches locale assets, rebuilds the merged cache, and emits `i18next-hmr:update`.
- * Clients listen for that event and reload i18next resources.
+ * The single locales pipeline: merges source namespaces (common + app → c) into a
+ * processed cache that is (1) served at /locales in dev, (2) emitted as build assets,
+ * and (3) read by i18n Ally (see locales/README.md).
+ *
+ * Dev additionally watches locale assets and emits `i18next-hmr:update`; clients
+ * listen for that event and reload i18next resources.
  */
-export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
+export function localesPlugin(userOptions: LocalesPluginOptions = {}): Plugin {
   const options = resolveOptions(userOptions);
+  let command: 'build' | 'serve' = 'serve';
 
   return {
-    name: 'locales-hmr',
-    apply: 'serve',
+    name: 'locales',
     enforce: 'post',
 
-    /** Build initial cache when dev server starts */
-    async configureServer() {
+    config(_config, env) {
+      command = env.command;
+    },
+
+    /** Rebuild the cache so emitted assets always reflect the current sources */
+    async buildStart() {
+      if (command !== 'build') return;
       await buildLocalesCache(options);
+    },
+
+    /** Emit the processed cache as locales/{lng}/{ns}.json build assets */
+    async generateBundle() {
+      const langs = fs.existsSync(options.outDir) ? await fsp.readdir(options.outDir, { withFileTypes: true }) : [];
+      for (const lang of langs.filter((d) => d.isDirectory())) {
+        const langDir = path.join(options.outDir, lang.name);
+        const files = await fsp.readdir(langDir);
+        for (const file of files.filter((f) => f.endsWith('.json'))) {
+          this.emitFile({
+            type: 'asset',
+            fileName: `locales/${lang.name}/${file}`,
+            source: await fsp.readFile(path.join(langDir, file), 'utf8'),
+          });
+        }
+      }
+    },
+
+    /** Build initial cache when dev server starts and serve it at /locales */
+    async configureServer(server) {
+      await buildLocalesCache(options);
+      serveLocalesCache(server, options);
     },
 
     /**
      * Handle locale file changes.
-     * Returns empty array to prevent Vite's default full-reload behavior.
+     * Returns nothing so Vite propagates the update through the module graph;
+     * the HMR boundary in i18n-locales.ts handles bundled resources without full reload.
      */
     async handleHotUpdate(ctx: HmrContext): Promise<ModuleNode[] | undefined> {
       if (!isLocaleAsset(ctx.file, options.srcDir)) return;
 
-      // Send custom event to client for i18next to handle
-      ctx.server.ws.send({
-        type: 'custom',
-        event: CUSTOM_EVENT,
-        data: { file: ctx.file },
-      });
-
       log('info', `locale file changed: ${path.relative(options.srcDir, ctx.file)}`, options.verbose);
 
-      // Sync only the affected language to the cache
+      // Sync only the affected language to the cache before notifying clients,
+      // so their reload fetches the updated merged namespaces
       try {
         const rel = path.relative(options.srcDir, ctx.file);
         const [lang] = rel.split(path.sep);
@@ -216,8 +256,12 @@ export function localesHMR(userOptions: LocalesHMROptions = {}): Plugin {
         log('error', 'failed to sync locale cache', options.verbose, err);
       }
 
-      // Let Vite propagate the update through the module graph.
-      // The HMR boundary in i18n-locales.ts handles the update without full reload.
+      // Notify clients so i18next reloads HTTP-loaded resources
+      ctx.server.ws.send({
+        type: 'custom',
+        event: CUSTOM_EVENT,
+        data: { file: ctx.file },
+      });
     },
   };
 }

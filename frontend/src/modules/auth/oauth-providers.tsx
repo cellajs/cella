@@ -79,7 +79,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
               loading="lazy"
             />
             <span>
-              {actionText} {t('c:with').toLowerCase()} {t(providerData.name)}
+              {actionText} {t('c:with').toLowerCase()} {providerData.name}
             </span>
           </Button>
         );

@@ -2,6 +2,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
 import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
@@ -13,7 +14,7 @@ import { cn } from '~/utils/cn';
 
 interface MenuSheetPanelProps {
   id: string;
-  label: string;
+  label: TKey;
   children: ReactNode;
   /** Fired on hover/focus of the panel button to warm data before the panel opens. */
   onPrefetch?: () => void;

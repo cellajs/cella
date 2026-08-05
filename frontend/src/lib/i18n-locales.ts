@@ -1,3 +1,4 @@
+import type { ParseKeys } from 'i18next';
 import enAbout from '../../../locales/en/about.json';
 import enApp from '../../../locales/en/app.json';
 import enCommon from '../../../locales/en/common.json';
@@ -6,15 +7,14 @@ import enError from '../../../locales/en/error.json';
 const enCommonExtended = {
   ...enCommon,
   ...enApp,
-} as const;
+};
 
-type CommonKeys = keyof typeof enCommonExtended;
-type ErrorKeys = keyof typeof enError;
-
-type CommonTranslationKey = `c:${CommonKeys & string}`;
-type ErrorTranslationKey = `error:${ErrorKeys & string}`;
-
-export type TKey = CommonTranslationKey | ErrorTranslationKey;
+/**
+ * Any valid translation key: bare `c` keys plus `c:`/`about:`/`error:` prefixed ones,
+ * derived from the resource declaration in i18next-resources.d.ts. Use it to type
+ * props and variables that flow into t(), and to cast runtime-composed keys.
+ */
+export type TKey = ParseKeys;
 
 /**
  * Import all relevant locales in an object to be used by i18next.

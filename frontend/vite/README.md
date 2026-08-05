@@ -10,4 +10,4 @@ Development builds add `docs-editor.ts`, which lets the pages table rewrite fron
 
 `remark-link-repo-paths.ts` links inline repository paths and relative links in imported repository documents to GitHub. It validates every target against the repository root before emitting a link. Content-root documents keep their authored application routes.
 
-`locales-hmr.ts` is separate from the docs pipeline. It mirrors locale assets into the configured cache, merges namespaces, and sends `i18next-hmr:update` so the client can reload resources without a full page refresh.
+`locales-plugin.ts` is separate from the docs pipeline. It merges locale namespaces (`common` + `app` → `c`) into the configured cache, serves the cache at `/locales/{lng}/{ns}.json` in dev, emits it as build assets, and sends `i18next-hmr:update` on locale changes so the client can reload resources without a full page refresh. The same cache is what i18n Ally reads (see `locales/README.md`).

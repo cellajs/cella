@@ -257,7 +257,7 @@ export function UppyFilePanel({
       <DialogContent className="md:max-w-xl">
         <DialogHeader className="with-close-btn">
           <DialogTitle className="h-6">{t('c:upload_item', { item: t(`c:${blockType}`).toLowerCase() })}</DialogTitle>
-          <DialogDescription className="hidden">{isOnline ? t('c:loading') : t('error:offline')}</DialogDescription>
+          <DialogDescription className="hidden">{isOnline ? t('c:loading') : t('c:offline')}</DialogDescription>
         </DialogHeader>
 
         {uppy ? (
@@ -272,7 +272,7 @@ export function UppyFilePanel({
         ) : (
           <div className="flex h-100 flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
             {isInitializing ? <Spinner noDelay /> : null}
-            <span>{isOnline ? t('c:loading') : t('error:offline')}</span>
+            <span>{isOnline ? t('c:loading') : t('c:offline')}</span>
           </div>
         )}
       </DialogContent>

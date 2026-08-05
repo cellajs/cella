@@ -1,5 +1,6 @@
 import { useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 
 /** Renders the email verification page. */
@@ -14,7 +15,7 @@ export function EmailVerificationPage() {
       <h1 className="text-2xl">{t('c:almost_there')}</h1>
       <p className="my-4">
         {t('c:request_verification.text', {
-          reason: t(`c:request_verification.${reason}`, { providerName: provider }),
+          reason: t(`c:request_verification.${reason}` as TKey, { providerName: provider }),
         })}
       </p>
 

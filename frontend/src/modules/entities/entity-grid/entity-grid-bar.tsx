@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
+import type { TKey } from '~/lib/i18n-locales';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
 import {
@@ -23,7 +24,7 @@ type EntityGridBarSearch = {
 
 /** Sort option for the entity grid bar. Apps pass their own set via the `sortOptions` prop. */
 export type EntityGridSortOption = {
-  name: string;
+  name: TKey;
   icon: IconComponent;
   value: string;
 };
@@ -35,7 +36,7 @@ const entityGridSortOptions: readonly EntityGridSortOption[] = [
 
 type Props = {
   queryKey: QueryKey;
-  label: string;
+  label: TKey;
   searchVars: EntityGridBarSearch;
   setSearch: (search: EntityGridBarSearch) => void;
   isSheet?: boolean;

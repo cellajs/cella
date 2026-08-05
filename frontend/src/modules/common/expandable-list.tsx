@@ -2,6 +2,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
@@ -10,7 +11,7 @@ interface ExpandableListProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
-  expandText: string;
+  expandText: TKey;
 }
 
 /**

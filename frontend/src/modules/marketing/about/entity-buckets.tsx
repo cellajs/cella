@@ -15,15 +15,16 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 // Conceptual illustration of selective sync: channel entities (structural, no sync) and product
 // entities (opt-in sync) share one REST/Postgres/React Query base. Open-top "U" signals it's
 // conceptual, not a closed system.
 
-type Entity = { Icon: LucideIcon; label: string };
+type Entity = { Icon: LucideIcon; label: TKey };
 
-type AppConfig = { label: string; channel: Entity[]; product: Entity[] };
+type AppConfig = { label: TKey; channel: Entity[]; product: Entity[] };
 
 // Each config keeps a structural "Channel entities" bucket (org + a channel entity) and a
 // synced "Product entities" bucket of high-frequency collaborative content typical for that app.
@@ -138,10 +139,10 @@ const Bucket = ({
   badge,
   staggerOffset = 0,
 }: {
-  title: string;
+  title: TKey;
   entities: Entity[];
   animated?: boolean;
-  badge?: string;
+  badge?: TKey;
   // Tiles revealing in other buckets before this one, so the one-by-one order spans buckets.
   staggerOffset?: number;
 }) => {

@@ -1,6 +1,7 @@
 import { GripVerticalIcon, LockIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
+import type { TKey } from '~/lib/i18n-locales';
 import { orderBySlotConfig } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -12,8 +13,8 @@ import { Switch } from '~/modules/ui/switch';
 /** One manageable tab: descriptor fields plus its current visibility on this channel. */
 interface TabRow {
   id: string;
-  label: string;
-  resource?: string;
+  label: TKey;
+  resource?: TKey;
   order: number;
   locked?: boolean;
   visible: boolean;
@@ -86,7 +87,9 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       name: '',
       minWidth: 160,
       renderCell: ({ row }) => (
-        <span className="truncate text-sm">{t(row.label, { resource: t(row.resource || '').toLowerCase() })}</span>
+        <span className="truncate text-sm">
+          {t(row.label, { resource: row.resource ? t(row.resource).toLowerCase() : '' })}
+        </span>
       ),
     },
     {
