@@ -7,7 +7,7 @@ import { SelectSort } from '~/modules/common/form-fields/select-sort';
 const sortOptions = [
   { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
   { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt' },
-  { name: 'c:filters', icon: ListFilterIcon, value: 'manual' },
+  { name: 'c:filter', icon: ListFilterIcon, value: 'manual' },
 ] as const;
 
 const meta = {

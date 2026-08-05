@@ -2,6 +2,7 @@ import type { VariantProps } from 'class-variance-authority';
 import { AnimatePresence, motion } from 'motion/react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { alertVariants } from '~/modules/ui/alert';
@@ -17,7 +18,7 @@ export type AlertBanner = {
   modes?: AlertContextMode[];
   icon?: IconComponent;
   children: React.ReactNode;
-  title?: string;
+  title?: TKey;
   variant?: VariantProps<typeof alertVariants>['variant'];
   animate?: boolean;
   contextMode?: AlertContextMode;
@@ -29,7 +30,7 @@ export function AlertBanner({
   icon: Icon,
   children,
   className = '',
-  title = '',
+  title,
   variant = 'default',
   animate = false,
   contextMode = 'app',

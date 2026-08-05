@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { ChannelEntityType } from 'shared';
 import { hierarchy } from 'shared';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
+import type { TKey } from '~/lib/i18n-locales';
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { MeUser } from '~/modules/me/types';
@@ -16,9 +17,9 @@ export interface PlacementDescriptor {
   /** Stable id: anchors, tab ids, stored config references, and React keys derive from it. */
   id: string;
   /** i18n key for the tab or card label. */
-  label: string;
+  label: TKey;
   /** Optional resource i18n key interpolated into the label. */
-  resource?: string;
+  resource?: TKey;
   /** Sort position within the slot (lower first; each slot documents its default). */
   order?: number;
   /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */

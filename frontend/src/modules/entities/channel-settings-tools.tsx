@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Suspense, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
+import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -44,7 +45,7 @@ export const tabsToolBase = {
 } satisfies PlacementDescriptor;
 
 /** The danger-zone tool for one channel type: last section, locked, held to the delete grant. */
-export function dangerToolBase(channelType: ChannelEntityType, resource: string): PlacementDescriptor {
+export function dangerToolBase(channelType: ChannelEntityType, resource: TKey): PlacementDescriptor {
   return {
     id: `delete-${channelType}`,
     label: 'c:delete_resource',
@@ -59,7 +60,7 @@ interface DeleteToolCardProps {
   /** Entity display name, interpolated into the notice and confirm texts. */
   name: string;
   /** i18n resource key for the entity, e.g. 'c:organization'. */
-  resource: string;
+  resource: TKey;
   /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
   dialogId: string;
   /** Renders the per-entity delete confirmation content inside the dialog. */

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { Logo } from '~/modules/common/logo';
 import { UserLanguage } from '~/modules/me/user-language';
@@ -24,7 +25,7 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
   return (
     <li>
       <Button size="xs" variant="ghost" className="" render={<Link to={href} draggable={false} />}>
-        {t(`c:${id}`)}
+        {t(`c:${id}` as TKey)}
       </Button>
     </li>
   );

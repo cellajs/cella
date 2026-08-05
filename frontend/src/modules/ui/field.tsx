@@ -5,6 +5,7 @@ import * as React from 'react';
 import type { ControllerProps, FieldPath, FieldValues, FormProviderProps } from 'react-hook-form';
 import { Controller, FormProvider, useFormContext, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
@@ -397,7 +398,7 @@ export function FormMessage({ className, children, ...props }: React.ComponentPr
   const { t, i18n } = useTranslation();
   const { error } = useFieldState();
   const message = error?.message ?? '';
-  const body = error ? (message && i18n?.exists?.(message) ? t(message) : message) : children;
+  const body = error ? (message && i18n?.exists?.(message) ? t(message as TKey) : message) : children;
 
   if (!body) return null;
 

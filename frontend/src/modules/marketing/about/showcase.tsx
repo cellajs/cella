@@ -2,6 +2,7 @@ import { ArrowUpRightIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import type { TKey } from '~/lib/i18n-locales';
 import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
@@ -43,8 +44,8 @@ export function Showcase() {
       <div className="w-full">
         <div className="flex flex-wrap">
           {showcaseItems.map((item, index) => {
-            const title = `about:showcase.title_${index + 1}`;
-            const text = `about:showcase.text_${index + 1}`;
+            const title = `about:showcase.title_${index + 1}` as TKey;
+            const text = `about:showcase.text_${index + 1}` as TKey;
 
             return (
               <div className="w-full" key={item.id}>

@@ -3,6 +3,7 @@ import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { createRef, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
@@ -54,9 +55,9 @@ export function Pricing() {
       className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
     >
       {pricingPlans.map(({ id, borderColor, featureCount, popular, discount, action }, planIndex) => {
-        const title = `about:pricing.title_${planIndex + 1}`;
-        const text = `about:pricing.text_${planIndex + 1}`;
-        const price = `about:pricing.plan_${planIndex + 1}.title`;
+        const title = `about:pricing.title_${planIndex + 1}` as TKey;
+        const text = `about:pricing.text_${planIndex + 1}` as TKey;
+        const price = `about:pricing.plan_${planIndex + 1}.title` as TKey;
 
         const ref = buttonRefs.current[planIndex];
 
@@ -99,7 +100,7 @@ export function Pricing() {
                   // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
                     <CheckIcon className="icon-xl mr-2 p-1 text-sm text-success" />
-                    {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}`)}
+                    {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}` as TKey)}
                   </li>
                 ))}
               </ul>

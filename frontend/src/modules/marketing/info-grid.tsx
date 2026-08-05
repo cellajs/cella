@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
+import type { TKey } from '~/lib/i18n-locales';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
@@ -24,8 +25,8 @@ interface InfoTileProps {
 
 function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName = 'bg-card' }: InfoTileProps) {
   const { t } = useTranslation();
-  const title = `about:${namespace}.${id}`;
-  const text = `about:${namespace}.${id}.text`;
+  const title = `about:${namespace}.${id}` as TKey;
+  const text = `about:${namespace}.${id}.text` as TKey;
 
   if (image) {
     return (
@@ -121,7 +122,7 @@ export function InfoGrid<C extends string>({
               {!hideCategoryHeader && (
                 <h2 className="mb-6 flex items-center gap-2 pl-6 font-semibold text-xl">
                   <CategoryIcon className="size-5 text-muted-foreground" />
-                  {t(`about:${namespace}.category_${category}`)}
+                  {t(`about:${namespace}.category_${category}` as TKey)}
                 </h2>
               )}
               <div className="grid gap-4 md:grid-cols-2">

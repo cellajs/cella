@@ -1,12 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
 // Base option type
 type SortOptionBase = {
-  name: string;
+  name: TKey;
   value: string;
   icon: IconComponent;
 };

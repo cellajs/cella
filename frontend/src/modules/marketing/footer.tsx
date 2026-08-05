@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
+import type { TKey } from '~/lib/i18n-locales';
 import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
@@ -20,7 +21,9 @@ function FooterLinks() {
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
-            <div className="font-display font-semibold text-sm text-white/40 tracking-wider">{t(section.title)}</div>
+            <div className="font-display font-semibold text-sm text-white/40 tracking-wider">
+              {t(section.title as TKey)}
+            </div>
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
@@ -32,7 +35,7 @@ function FooterLinks() {
                       target={target}
                       className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline"
                     >
-                      {t(link.title)}
+                      {t(link.title as TKey)}
                     </Link>
                   </li>
                 );
@@ -100,7 +103,7 @@ export const MarketingFooter = () => {
                   draggable={false}
                   className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline"
                 >
-                  {t(link.title)}
+                  {t(link.title as TKey)}
                 </Link>
               </li>
             ))}

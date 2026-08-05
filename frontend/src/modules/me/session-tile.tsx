@@ -72,7 +72,7 @@ export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, is
                 className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline"
                 aria-describedby={t('c:strategy')}
               >
-                {t(session.authStrategy)}
+                {t(`c:${session.authStrategy}`)}
               </p>
             )}
             <p

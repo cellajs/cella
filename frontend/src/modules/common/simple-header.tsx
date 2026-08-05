@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { useHasScrolled } from '~/hooks/use-has-scrolled';
+import type { TKey } from '~/lib/i18n-locales';
 import { cn } from '~/utils/cn';
 
 interface SimpleHeaderProps {
+  /** i18n key or already-translated text (t() renders non-keys verbatim). */
   heading?: string;
   text?: string;
   children?: React.ReactNode;
@@ -32,7 +34,7 @@ export function SimpleHeader({
 
   return (
     <div className={cn('flex h-auto flex-col', useCollapse ? '' : 'gap-2 md:gap-3', className)}>
-      {heading && <h1 className="font-heading font-semibold text-xl">{t(heading)}</h1>}
+      {heading && <h1 className="font-heading font-semibold text-xl">{t(heading as TKey)}</h1>}
       {text && (
         <p
           className={cn(
@@ -41,7 +43,7 @@ export function SimpleHeader({
             textClassName,
           )}
         >
-          {t(text)}
+          {t(text as TKey)}
         </p>
       )}
       {children}

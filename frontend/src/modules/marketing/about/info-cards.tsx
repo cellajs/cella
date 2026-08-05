@@ -1,5 +1,6 @@
 import { ArrowUpRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -21,8 +22,8 @@ export function InfoCards() {
     <ScrollArea className="w-full" horizontalScroll>
       <div className="flex w-max space-x-4 px-2 py-8">
         {cards.map(({ url, id, name, invert, country }) => {
-          const text = `about:cards.${id}.text`;
-          const purpose = `about:cards.${id}.purpose`;
+          const text = `about:cards.${id}.text` as TKey;
+          const purpose = `about:cards.${id}.purpose` as TKey;
 
           return (
             <a

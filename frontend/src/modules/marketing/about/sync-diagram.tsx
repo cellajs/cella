@@ -2,6 +2,7 @@ import { ArrowRightIcon, DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-re
 import { AnimatePresence, motion } from 'motion/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 // The diagram can be viewed in three sync modes, toggled by the user.
@@ -82,7 +83,7 @@ const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
 
 // Short explanation shown between the toggle and the diagram, per part.
 // `label` and `text` are i18n keys (about namespace); `text` carries inline <strong> markup.
-const modeText: Record<SyncMode, { label: string; text: string }> = {
+const modeText: Record<SyncMode, { label: TKey; text: TKey }> = {
   rest: { label: 'about:sync_diagram.part_1.label', text: 'about:sync_diagram.part_1.text' },
   cdc: { label: 'about:sync_diagram.part_2.label', text: 'about:sync_diagram.part_2.text' },
   yjs: { label: 'about:sync_diagram.part_3.label', text: 'about:sync_diagram.part_3.text' },
@@ -311,7 +312,7 @@ export const SyncDiagram = () => {
         >
           <Trans
             t={t}
-            i18nKey={modeText[mode].text}
+            i18nKey={modeText[mode].text as never}
             components={{ strong: <strong className="font-normal text-foreground" /> }}
           />
         </motion.p>

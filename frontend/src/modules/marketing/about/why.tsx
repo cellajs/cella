@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { Spinner } from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -14,8 +15,8 @@ export function Why() {
       <div className="w-full lg:w-5/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {
-            const title = `about:why.title_${index + 1}`;
-            const text = `about:why.text_${index + 1}`;
+            const title = `about:why.title_${index + 1}` as TKey;
+            const text = `about:why.text_${index + 1}` as TKey;
 
             return (
               <div className="w-full" key={item.id}>
@@ -28,7 +29,7 @@ export function Why() {
                     <p className="leading-relaxed">
                       <Trans
                         t={t}
-                        i18nKey={text}
+                        i18nKey={text as never}
                         components={{
                           featuresLink: (
                             <Link to="/features" className="underline underline-offset-4 hover:text-primary" />

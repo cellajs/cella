@@ -4,6 +4,7 @@ import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -16,7 +17,7 @@ import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-butto
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 
 export type MenuSectionOptions = {
-  label: string;
+  label: TKey;
   entityType: ChannelEntityType;
   createAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
   icon?: IconComponent;

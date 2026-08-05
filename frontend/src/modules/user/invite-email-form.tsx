@@ -41,7 +41,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
     if (isDialog) useDialoger.getState().remove();
 
     if (invitesSentCount > 0) {
-      const resource = t(`c:${invitesSentCount === 1 ? 'user' : 'users'}`).toLowerCase();
+      const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
       toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
     }
     if (rejectedIds.length)

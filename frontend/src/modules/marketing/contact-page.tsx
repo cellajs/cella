@@ -1,10 +1,13 @@
 import { ArrowUpRightIcon, CalendarCheckIcon, MailIcon, MapPinIcon, PhoneCallIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import type { TKey } from '~/lib/i18n-locales';
 import { ContactForm } from '~/modules/common/contact-form/contact-form';
 import { MarketingLayout } from '~/modules/marketing/layout';
 
-const methods = [
+type ContactMethod = { icon: typeof MapPinIcon; title: TKey; link: string; textKey?: TKey; text?: string };
+
+const methods: ContactMethod[] = [
   {
     icon: MapPinIcon,
     title: 'c:visit',
@@ -19,7 +22,7 @@ if (appConfig.company.scheduleCallUrl)
     icon: CalendarCheckIcon,
     title: 'c:book',
     link: appConfig.company.scheduleCallUrl,
-    text: 'c:schedule_call.text',
+    textKey: 'c:schedule_call.text',
   });
 if (appConfig.company.tel)
   methods.push({
@@ -44,7 +47,7 @@ export function ContactPage() {
       <div className="container mb-12">
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
-            <div key={t(method.title)} className="mb-10 h-48 w-40 text-center sm:w-48">
+            <div key={method.title} className="mb-10 h-48 w-40 text-center sm:w-48">
               <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:h-32 sm:w-32">
                 <method.icon className="size-12" strokeWidth={1} />
               </div>
@@ -57,7 +60,7 @@ export function ContactPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {t(method.text)}
+                    {method.textKey ? t(method.textKey) : method.text}
                     <ArrowUpRightIcon className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
                   </a>
                 </p>

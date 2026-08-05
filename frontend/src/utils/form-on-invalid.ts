@@ -1,6 +1,7 @@
 import { t } from 'i18next';
 import { createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
+import type { TKey } from '~/lib/i18n-locales';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
@@ -65,7 +66,7 @@ const resolveFieldLabel = (fieldName: string): string => {
   const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
   // Convert camelCase to snake_case (e.g. 'shortName' -> 'short_name')
   const key = leaf.replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`);
-  const translated = t(`c:${key}`);
+  const translated = t(`c:${key}` as TKey);
   // If i18next returns the key itself, fall back to the raw field name
   return translated !== key && translated !== `c:${key}` ? translated : fieldName;
 };

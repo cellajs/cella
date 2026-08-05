@@ -2,6 +2,7 @@ import { SearchParamError } from '@tanstack/react-router';
 import i18n from 'i18next';
 import type { RefObject } from 'react';
 import { ApiError } from '~/lib/api';
+import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 
 export type ErrorNoticeError = ApiError | Error | null;
@@ -44,13 +45,13 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const defaultMessage = error?.message || '';
 
   // Title translation
-  const title = i18n.t(localeKey, { ...translationOptions, defaultValue: defaultTitle });
+  const title = i18n.t(localeKey as TKey, { ...translationOptions, defaultValue: defaultTitle });
 
   // Message translation with severity check (type-safe)
   const message =
     error && 'severity' in error && error.severity === 'info'
       ? error.message
-      : i18n.t(`${localeKey}.text`, { ...translationOptions, defaultValue: defaultMessage });
+      : i18n.t(`${localeKey}.text` as TKey, { ...translationOptions, defaultValue: defaultMessage });
 
   return { title, message };
 };

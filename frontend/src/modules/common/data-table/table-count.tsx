@@ -1,11 +1,12 @@
 import { FunnelXIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface TableCountProps {
-  label: string;
+  label: TKey;
   count: number | null;
   className?: string;
   isFiltered?: boolean;

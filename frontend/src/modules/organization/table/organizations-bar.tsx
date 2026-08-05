@@ -13,7 +13,7 @@ import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectionActionBar } from '~/modules/common/selection-action-bar';
-import { SheetTabs } from '~/modules/common/sheet-tabs';
+import { type SheetTab, SheetTabs } from '~/modules/common/sheet-tabs';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
@@ -65,7 +65,7 @@ export function OrganizationsTableBar({
 
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
-    const newsletterTabs = [
+    const newsletterTabs: SheetTab[] = [
       {
         id: 'write',
         label: 'c:write',
