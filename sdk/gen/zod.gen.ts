@@ -396,7 +396,6 @@ export const zOrganization = z.object({
     z.object({
       order: z.array(z.string()).optional(),
       hidden: z.array(z.string()).optional(),
-      settings: z.record(z.string(), z.unknown()).optional(),
     }),
   ),
   included: z.object({
@@ -1413,7 +1412,6 @@ export const zUpdateOrganizationBody = z.object({
       z.object({
         order: z.array(z.string()).optional(),
         hidden: z.array(z.string()).optional(),
-        settings: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),
