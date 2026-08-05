@@ -23,7 +23,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('issues a Lets Encrypt certificate per DNS record, gated on public propagation', () => {
-    expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(`\$\{base\}-cert`/);
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(\s*`\$\{base\}-cert`/);
     expect(src).toMatch(/commonName:\s*host/);
     // Cert creation waits for the record to answer publicly (not merely exist),
     // and the frontend attach waits for the cert to be `ready`. Both via the
@@ -35,7 +35,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('creates one LB backend per exposed service on its declared port', () => {
-    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(`\$\{service\.slug\}-lb-backend`/);
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(\s*`\$\{service\.slug\}-lb-backend`/);
     expect(src).toMatch(/forwardPort:\s*service\.healthPort/);
     expect(src).toMatch(/serverIps:\s*serviceGenerationIps\(service\.slug\)/);
   });
@@ -121,7 +121,7 @@ describe('loadbalancer module — internal routes', () => {
   });
 
   it('gives internal traffic its own pool with WebSocket-grade timeouts and session kill on mark-down', () => {
-    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(`\$\{service\.slug\}-internal-lb-backend`/);
+    expect(src).toMatch(/new scaleway\.loadbalancers\.Backend\(\s*`\$\{service\.slug\}-internal-lb-backend`/);
     expect(src).toMatch(/onMarkedDownAction: 'shutdown_sessions'/);
     // The internal pool block carries its own 1h timeouts (not lbWebsockets-gated).
     const internalBlock = src.match(/internal-lb-backend[\s\S]*?ignoreChanges: \['serverIps'\]/)?.[0] ?? '';

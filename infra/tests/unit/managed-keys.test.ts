@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { managedKeysConfig } from '../../config/managed-keys.config';
 import { defineManagedKeys, managedKeyById, managedKeys } from '../../lib/managed-keys';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
+
+// The config module and lib/managed-keys form an import cycle (config imports the
+// define helper, lib derives the registry from config), so the cycle must be entered
+// from the lib side. A static import sorts alphabetically ahead of the lib imports.
+const { managedKeysConfig } = await import('../../config/managed-keys.config');
 
 describe('managed key registry', () => {
   it('derives managedKeys from the app config, keyed by id, preserving order', () => {
