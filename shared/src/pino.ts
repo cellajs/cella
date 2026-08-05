@@ -179,3 +179,25 @@ export const createLog = (logger: pino.Logger): Log => {
     fatal: emitAt('fatal'),
   };
 };
+
+interface WorkerLogEnv {
+  NODE_ENV: string;
+  PINO_LOG_LEVEL?: string;
+  MAPLE_SECRET_INGEST_KEY?: string;
+}
+
+/**
+ * Log facade for worker processes (cdc, yjs): identical logger construction, differing
+ * only in the service-name suffix reported to OTel (`<app-slug>-<suffix>`).
+ */
+export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv): Log =>
+  createLog(
+    createLogger({
+      level: env.PINO_LOG_LEVEL,
+      isProduction: env.NODE_ENV === 'production',
+      isTest: env.NODE_ENV === 'test',
+      enableOtelTransport: true,
+      mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+      serviceName: `${appConfig.slug}-${serviceSuffix}`,
+    }),
+  );

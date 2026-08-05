@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
+import { createHealthApp } from 'shared/health-app';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
@@ -23,22 +24,16 @@ baseApp.route('/', middlewares);
 
 // Shallow health checks return 204; full checks return diagnostics with 200 or 503.
 // Both include the release SHA so deployment verification preserves the LB contract.
-baseApp.get('/health', async (c) => {
-  const depth = c.req.query('depth') ?? 'shallow';
-  const version = env.RELEASE_SHA;
-  c.header('X-App-Version', version);
-
-  if (depth === 'shallow') {
-    c.header('Cache-Control', 'public, max-age=5');
-    return c.body(null, 204);
-  }
-
-  const { response, httpStatus } = await getHealthResponse();
-  if (httpStatus >= 200 && httpStatus < 300) {
-    c.header('Cache-Control', 'public, max-age=10, stale-while-revalidate=5');
-  }
-  return c.json({ ...response, version }, httpStatus as 200);
-});
+baseApp.route(
+  '/',
+  createHealthApp({
+    version: env.RELEASE_SHA,
+    full: async () => {
+      const { response, httpStatus } = await getHealthResponse();
+      return { httpStatus, body: { ...response, version: env.RELEASE_SHA } };
+    },
+  }),
+);
 
 // Not found handler
 baseApp.notFound(() => {

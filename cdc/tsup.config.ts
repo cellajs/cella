@@ -21,6 +21,7 @@ export default defineConfig({
       'shared/tracing': '../shared/src/tracing/tracing.ts',
       'shared/config-builder': '../shared/src/config-builder/index.ts',
       'shared/blocknote': '../shared/src/utils/text-from-block.ts',
+      'shared/health-app': '../shared/src/health-app.ts',
       'shared/utils/is-cdn-url': '../shared/src/utils/is-cdn-url.ts',
       'shared/utils/ascii': '../shared/src/utils/ascii.ts',
     };

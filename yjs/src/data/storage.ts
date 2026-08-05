@@ -1,17 +1,22 @@
+import { and, eq, lt, sql } from 'drizzle-orm';
+import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import type { DocContext } from '../constants';
-import { pool, withClient } from './db';
+import { db, withRlsTx } from './db';
+
+// Access split: per-document reads/writes run inside `withRlsTx` (tenant + user scoped),
+// while the crash-orphan sweep queries run system-scope on `db` directly (cross-tenant).
 
 /**
  * Returns raw Y.Doc binary state from PG, or null if no document exists yet.
  */
 export async function loadState({ entityType, entityId, tenantId, userId }: DocContext): Promise<Uint8Array | null> {
-  return withClient(tenantId, userId, async (client) => {
-    const result = await client.query('SELECT state FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [
-      entityType,
-      entityId,
-    ]);
-    if (result.rows.length === 0) return null;
-    return new Uint8Array(result.rows[0].state);
+  return withRlsTx(tenantId, userId, async (tx) => {
+    const rows = await tx
+      .select({ state: yjsDocumentsTable.state })
+      .from(yjsDocumentsTable)
+      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
+    if (rows.length === 0) return null;
+    return new Uint8Array(rows[0].state);
   });
 }
 
@@ -25,12 +30,11 @@ export async function saveState(
   state: Uint8Array,
   lastEditedBy: string | null = null,
 ): Promise<void> {
-  await withClient(tenantId, userId, async (client) => {
-    await client.query(
-      `UPDATE yjs_documents SET state = $1, last_edited_by = $4, updated_at = now()
-       WHERE entity_type = $2 AND entity_id = $3`,
-      [Buffer.from(state), entityType, entityId, lastEditedBy],
-    );
+  await withRlsTx(tenantId, userId, async (tx) => {
+    await tx
+      .update(yjsDocumentsTable)
+      .set({ state: Buffer.from(state), lastEditedBy, updatedAt: sql`now()` })
+      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
   });
 }
 
@@ -44,13 +48,18 @@ export async function createDoc(
   { entityType, entityId, tenantId, userId, organizationId }: DocContext,
   initialState?: Uint8Array | null,
 ): Promise<void> {
-  await withClient(tenantId, userId, async (client) => {
-    await client.query(
-      `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state, updated_at)
-       VALUES ($1, $2, $3, $4, $5, now())
-       ON CONFLICT (entity_type, entity_id) DO NOTHING`,
-      [entityType, entityId, tenantId, organizationId, initialState ? Buffer.from(initialState) : Buffer.alloc(0)],
-    );
+  await withRlsTx(tenantId, userId, async (tx) => {
+    await tx
+      .insert(yjsDocumentsTable)
+      .values({
+        entityType,
+        entityId,
+        tenantId,
+        organizationId,
+        state: initialState ? Buffer.from(initialState) : Buffer.alloc(0),
+        updatedAt: sql`now()`,
+      })
+      .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
   });
 }
 
@@ -58,8 +67,10 @@ export async function createDoc(
  * Removes the document row after the cleanup grace period (all clients disconnected).
  */
 export async function deleteState({ entityType, entityId, tenantId, userId }: DocContext): Promise<void> {
-  await withClient(tenantId, userId, async (client) => {
-    await client.query('DELETE FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [entityType, entityId]);
+  await withRlsTx(tenantId, userId, async (tx) => {
+    await tx
+      .delete(yjsDocumentsTable)
+      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
   });
 }
 
@@ -75,27 +86,34 @@ export interface StaleDocRow {
 /**
  * List document rows untouched for longer than the cleanup grace: orphans left by a
  * relay crash between last-disconnect and cleanup. Cross-tenant by design, so this runs
- * on the pool directly (no tenant context). If the DB role enforces RLS it returns no
- * rows and the sweep degrades to a no-op, and normal gated cleanup is unaffected.
+ * system-scope on `db` directly (no tenant context). If the DB role enforces RLS it returns
+ * no rows and the sweep degrades to a no-op, and normal gated cleanup is unaffected.
  */
 export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
-  const result = await pool.query(
-    `SELECT entity_type, entity_id, tenant_id, organization_id, state, last_edited_by
-     FROM yjs_documents
-     WHERE updated_at < now() - ($1::bigint * interval '1 millisecond')`,
-    [olderThanMs],
-  );
-  return result.rows.map((row) => ({
-    entityType: row.entity_type,
-    entityId: row.entity_id,
-    tenantId: row.tenant_id,
-    organizationId: row.organization_id,
+  const rows = await db
+    .select({
+      entityType: yjsDocumentsTable.entityType,
+      entityId: yjsDocumentsTable.entityId,
+      tenantId: yjsDocumentsTable.tenantId,
+      organizationId: yjsDocumentsTable.organizationId,
+      state: yjsDocumentsTable.state,
+      lastEditedBy: yjsDocumentsTable.lastEditedBy,
+    })
+    .from(yjsDocumentsTable)
+    .where(lt(yjsDocumentsTable.updatedAt, sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`));
+  return rows.map((row) => ({
+    entityType: row.entityType,
+    entityId: row.entityId,
+    tenantId: row.tenantId,
+    organizationId: row.organizationId,
     state: new Uint8Array(row.state),
-    lastEditedBy: row.last_edited_by,
+    lastEditedBy: row.lastEditedBy,
   }));
 }
 
-/** Delete a swept orphan row (pool-direct, same cross-tenant caveat as {@link listStaleDocs}). */
+/** Delete a swept orphan row (system-scope on `db`, same cross-tenant caveat as {@link listStaleDocs}). */
 export async function deleteStaleDoc(entityType: string, entityId: string): Promise<void> {
-  await pool.query('DELETE FROM yjs_documents WHERE entity_type = $1 AND entity_id = $2', [entityType, entityId]);
+  await db
+    .delete(yjsDocumentsTable)
+    .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
 }

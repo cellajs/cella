@@ -1,19 +1,20 @@
-import { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
-import { pool } from '../data/db';
+import { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexible';
+import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
+import { db } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
 
 /**
  * DB-backed per-user WebSocket connection rate limiter.
- * Shares the backend's `rate_limits` table via a raw pg.Pool, no Drizzle needed.
- * Falls back to in-memory limiting when the DB is unreachable (fail-open with safety net).
+ * Shares the backend's `rate_limits` table through its drizzle schema, mirroring the
+ * backend rate-limiter helpers. Falls back to in-memory limiting when the DB is
+ * unreachable (fail-open with safety net).
  */
 const connectionLimiter = env.NODB
   ? new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 })
-  : new RateLimiterPostgres({
-      storeClient: pool,
-      tableName: 'rate_limits',
-      tableCreated: true, // Table managed by backend Drizzle migrations
+  : new RateLimiterDrizzle({
+      storeClient: db,
+      schema: rateLimitsTable,
       keyPrefix: 'yjs_ws',
       points: 20, // 20 connections per minute per user
       duration: 60,

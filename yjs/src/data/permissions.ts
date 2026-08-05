@@ -1,4 +1,4 @@
-import type pg from 'pg';
+import { eq, sql } from 'drizzle-orm';
 import {
   type AccessMembership,
   appConfig,
@@ -15,25 +15,29 @@ import {
   toTableName,
 } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { DocContext } from '../constants';
-import { withClient } from './db';
+import { type Tx, withRlsTx } from './db';
+
+// Constraint: no fork-owned entity schema imports. Cella-owned tables (memberships) are
+// queried through their typed drizzle schema; app-declared entity tables are resolved
+// dynamically from the DB so this file works for every fork unchanged.
 
 /**
  * Column names that exist on a table, read once from Postgres and cached per process.
  *
  * Lets the relay select only the columns a table actually has (each app's entities differ)
- * without importing backend drizzle schema. The DB is
+ * without importing fork-owned entity schema. The DB is
  * the source of truth, so this stays correct across apps and migrations.
  */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();
 
-export function getTableColumnNames(client: pg.PoolClient, table: string): Promise<Set<string>> {
+export function getTableColumnNames(tx: Tx, table: string): Promise<Set<string>> {
   let cached = tableColumnsCache.get(table);
   if (!cached) {
-    cached = client
-      .query<{ column_name: string }>(
-        `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
-        [table],
+    cached = tx
+      .execute<{ column_name: string }>(
+        sql`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${table}`,
       )
       .then((r) => new Set(r.rows.map((row) => row.column_name)))
       .catch((err) => {
@@ -48,21 +52,19 @@ export function getTableColumnNames(client: pg.PoolClient, table: string): Promi
 /**
  * Load the user's memberships in the shape the permission engine expects.
  *
- * Runs on an RLS-scoped client (tenant + user already set by {@link withClient}), so the result is
- * naturally limited to the active tenant. Only the three columns the engine reads are selected.
+ * Runs on an RLS-scoped transaction (tenant + user already set by {@link withRlsTx}), so the
+ * result is naturally limited to the active tenant. Memberships are cella-owned, so the typed
+ * drizzle schema applies; only the three columns the engine reads are selected.
  */
-export async function loadMemberships(client: pg.PoolClient, userId: string): Promise<AccessMembership[]> {
-  const table = toTableName('membership');
-  const channelType = toColumnName('channelType');
-  const channelId = toColumnName('channelId');
-  const role = toColumnName('role');
-  const userIdColumn = toColumnName('userId');
-  const projection = `"${channelType}" AS "channelType", "${channelId}" AS "channelId", "${role}" AS "role"`;
-  const { rows } = await client.query<AccessMembership>(
-    `SELECT ${projection} FROM "${table}" WHERE "${userIdColumn}" = $1`,
-    [userId],
-  );
-  return rows;
+export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
+  return tx
+    .select({
+      channelType: membershipsTable.channelType,
+      channelId: membershipsTable.channelId,
+      role: membershipsTable.role,
+    })
+    .from(membershipsTable)
+    .where(eq(membershipsTable.userId, userId));
 }
 
 /** Entity row carrying just the ancestor scope and ownership columns the permission engine needs. */
@@ -78,11 +80,11 @@ export interface EntityScopeRow extends Partial<ChannelIdColumns> {
  * Reads only the columns the permission engine needs. Table and column names are derived from the
  * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
  * test) and filtered to the columns the table actually has via {@link getTableColumnNames}, so it
- * works for every app's entity types without importing backend drizzle schema. The entity id is
+ * works for every app's entity types without importing fork-owned entity schema. The entity id is
  * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
  */
 export async function resolveEntityScope(
-  client: pg.PoolClient,
+  tx: Tx,
   entityType: ChannelEntityType | ProductEntityType,
   entityId: string,
 ): Promise<EntityScopeRow | null> {
@@ -90,7 +92,7 @@ export async function resolveEntityScope(
   if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
 
   const table = toTableName(entityType);
-  const existing = await getTableColumnNames(client, table);
+  const existing = await getTableColumnNames(tx, table);
   if (!existing.has('id')) return null; // unknown / non-conforming table
 
   // Logical keys the permission engine may read, filtered to columns the table actually has.
@@ -102,17 +104,17 @@ export async function resolveEntityScope(
   const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
 
   const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
-  const { rows } = await client.query<EntityScopeRow>(`SELECT ${projection} FROM "${table}" WHERE "id" = $1 LIMIT 1`, [
-    entityId,
-  ]);
-  return rows[0] ?? null;
+  const { rows } = await tx.execute(
+    sql`SELECT ${sql.raw(projection)} FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${entityId} LIMIT 1`,
+  );
+  return (rows[0] as unknown as EntityScopeRow | undefined) ?? null;
 }
 
 /**
  * Decide locally whether the user may edit the document's entity.
  *
  * Mirrors the backend `verifyEntityOp`: resolves the entity scope and memberships in one RLS-scoped
- * connection, then runs the shared permission engine for the `update` action. The decision is computed
+ * transaction, then runs the shared permission engine for the `update` action. The decision is computed
  * by exactly the same engine the backend uses, no HTTP round-trip.
  *
  * @throws MissingScopeError if the resolved entity is missing a required ancestor scope.
@@ -121,10 +123,10 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
   const { entityType } = ctx;
   if (!isChannel(entityType) && !isProduct(entityType)) return false;
 
-  return withClient(ctx.tenantId, ctx.userId, async (client) => {
+  return withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
     const [entity, memberships] = await Promise.all([
-      resolveEntityScope(client, entityType, ctx.entityId),
-      loadMemberships(client, ctx.userId),
+      resolveEntityScope(tx, entityType, ctx.entityId),
+      loadMemberships(tx, ctx.userId),
     ]);
 
     if (!entity) return false;
