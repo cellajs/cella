@@ -71,7 +71,7 @@ export function AttachmentDialog() {
   const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
   if (blocking && !hasRenderedRef.current) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-dvh items-center justify-center">
         <Spinner className="h-12 w-12" />
       </div>
     );
@@ -97,7 +97,7 @@ export function AttachmentDialog() {
   // Success state - show carousel with resolved attachments
   hasRenderedRef.current = true;
   return (
-    <div className="relative -z-1 flex h-screen grow flex-wrap justify-center p-2">
+    <div className="relative -z-1 flex h-dvh grow flex-wrap justify-center p-2">
       <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />
     </div>
   );

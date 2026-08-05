@@ -52,7 +52,7 @@ export function LegalPage() {
         </div>
 
         {/* Main legal content */}
-        <div className="flex min-h-screen flex-col gap-8 md:w-[75%]">
+        <div className="flex min-h-svh flex-col gap-8 md:w-[75%]">
           {subjects.map(({ id }) => {
             const isActive = id === currentSubject;
             const Component = legalConfig[id].component;
@@ -60,7 +60,7 @@ export function LegalPage() {
               isActive && (
                 <div
                   key={id}
-                  className="prose dark:prose-invert mb-40 min-h-screen max-w-full bg-background px-4 pt-4 text-foreground antialiased md:px-8 lg:mx-auto lg:max-w-4xl"
+                  className="prose dark:prose-invert mb-40 min-h-svh max-w-full bg-background px-4 pt-4 text-foreground antialiased md:px-8 lg:mx-auto lg:max-w-4xl"
                 >
                   <h2 className="pt-8 pb-4 font-bold text-2xl">{t(legalConfig[id].label)}</h2>
                   <Component />

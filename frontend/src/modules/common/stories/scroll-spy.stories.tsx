@@ -235,7 +235,7 @@ const ScrollSpyPage = ({
   label?: string;
   showTests?: boolean;
 }) => (
-  <div className="min-h-screen bg-background text-foreground">
+  <div className="min-h-svh bg-background text-foreground">
     {/* Sticky header */}
     <div className="sticky top-0 z-10 border-b bg-background/95 p-3 backdrop-blur">
       <h1 className="font-semibold text-base">{label ?? 'Scroll Spy Test'}</h1>
@@ -246,7 +246,7 @@ const ScrollSpyPage = ({
 
     <div className="flex">
       {/* Sidebar */}
-      <div className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r p-4 md:block">
+      <div className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r p-4 md:block">
         <Sidebar withRouter={withRouter} />
         {showTests && (
           <div className="mt-4">

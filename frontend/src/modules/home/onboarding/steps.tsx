@@ -55,7 +55,7 @@ export function Onboarding({
   });
 
   return (
-    <div className="flex min-h-[90vh] flex-col items-center sm:min-h-screen">
+    <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
       <div className="mt-auto mb-auto w-full">
         {onboarding === 'start' && <WelcomeText onboardingToStepper={() => setOnboardingState('stepper')} />}
         {onboarding === 'stepper' && (

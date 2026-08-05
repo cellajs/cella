@@ -11,7 +11,7 @@ const ATTACHMENT_DIALOG_EXTRA_PARAMS = ['groupId'] as const;
 export const attachmentDialogClassName = 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0';
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = 'relative -z-1 flex h-screen grow flex-wrap justify-center p-2';
+export const attachmentDialogContentClassName = 'relative -z-1 flex h-dvh grow flex-wrap justify-center p-2';
 
 /** Search-param patch that opens the dialog on `attachmentId`. */
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {

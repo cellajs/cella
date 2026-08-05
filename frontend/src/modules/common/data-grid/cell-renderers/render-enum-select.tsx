@@ -90,7 +90,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
       <>
         <span ref={probeRef} aria-hidden className="hidden" />
         <Drawer open onOpenChange={handleOpenChange}>
-          <DrawerContent className="max-h-[70vh]">
+          <DrawerContent className="max-h-[70dvh]">
             <DrawerHeader className="p-0">
               <span className="sr-only">
                 <DrawerTitle>Choose</DrawerTitle>

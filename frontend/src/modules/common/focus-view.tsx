@@ -57,7 +57,7 @@ export function FocusViewContainer({ children, className = '', disabled }: Focus
   return (
     <div
       className={cn(
-        'focus-view-container container flex min-h-screen flex-col gap-2 pt-3',
+        'focus-view-container container flex min-h-svh flex-col gap-2 pt-3',
         className,
         isActive ? 'focused min-h-full w-full min-w-full max-w-none' : '',
       )}

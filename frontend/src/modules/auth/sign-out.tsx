@@ -38,5 +38,5 @@ export function SignOut() {
     handleSignOut();
   }, []);
 
-  return <ContentPlaceholder className="h-screen" icon={HeartIcon} title="c:signing_out" />;
+  return <ContentPlaceholder className="h-svh" icon={HeartIcon} title="c:signing_out" />;
 }
