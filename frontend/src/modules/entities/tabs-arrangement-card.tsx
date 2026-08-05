@@ -91,9 +91,10 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     },
     {
       key: 'visible',
-      name: '',
+      name: t('c:visible'),
       width: 64,
       cellClass: 'flex items-center justify-center',
+      headerCellClass: 'text-center',
       renderCell: ({ row }) =>
         row.locked ? (
           <LockIcon className="icon-sm opacity-50" aria-label={t('c:locked')} />
@@ -111,7 +112,6 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
         columns={columns}
         hasNextPage={false}
         readOnly
-        hideHeader
         enableVirtualization={false}
         onRowReorder={onRowReorder}
       />
