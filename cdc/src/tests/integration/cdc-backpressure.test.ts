@@ -9,9 +9,8 @@ import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from '
 
 const WS_PORT = Number(new URL(process.env.API_WS_URL ?? 'ws://127.0.0.1:4788').port || 4788);
 
-/** Probe whether the configured DB can support this suite. */
+/** Probe whether the configured DB can support this suite. TEST_MODE gating lives in vitest.config.ts. */
 async function probeReady(): Promise<boolean> {
-  if (process.env.TEST_MODE === 'core') return false;
   try {
     const wal = await cdcDb.execute<{ wal_level: string }>(sql`SHOW wal_level`);
     if (wal.rows[0]?.wal_level !== 'logical') return false;

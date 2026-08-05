@@ -11,9 +11,6 @@ import { startCdcWorker, stopCdcWorker } from './pipeline/worker';
 
 export { startCdcWorker, stopCdcWorker };
 
-const BACKEND_POLL_INTERVAL_MS = 2000;
-const BACKEND_POLL_TIMEOUT_MS = 60_000;
-
 /**
  * Boot the CDC worker as a standalone process: wait for the backend (dev),
  * start OTel, expose the health server, register graceful shutdown, and start
@@ -22,7 +19,7 @@ const BACKEND_POLL_TIMEOUT_MS = 60_000;
  */
 export async function runCdcWorker(): Promise<void> {
   if (env.NODE_ENV === 'development') {
-    await waitForBackend(BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS);
+    await waitForBackend();
   }
 
   otel.start();
