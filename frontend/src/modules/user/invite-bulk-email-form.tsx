@@ -81,17 +81,17 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormItem name="bulk-emails">
-          <FormLabel>{t('app:paste_emails')}</FormLabel>
-          <FormDescription>{t('app:paste_emails.text')}</FormDescription>
+          <FormLabel>{t('c:paste_emails')}</FormLabel>
+          <FormDescription>{t('c:paste_emails.text')}</FormDescription>
           <Textarea
             value={rawText}
             onChange={(event) => onTextChange(event.target.value)}
-            placeholder={t('app:paste_emails.placeholder')}
+            placeholder={t('c:paste_emails.placeholder')}
             autoResize
             className="min-h-24"
             autoComplete="off"
           />
-          <div className="text-muted-foreground text-sm">{t('app:emails_recognized', { count: emails.length })}</div>
+          <div className="text-muted-foreground text-sm">{t('c:emails_recognized', { count: emails.length })}</div>
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
 

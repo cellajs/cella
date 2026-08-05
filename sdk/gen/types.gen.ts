@@ -455,9 +455,6 @@ export type Organization = {
     [key: string]: {
       order?: Array<string>;
       hidden?: Array<string>;
-      settings?: {
-        [key: string]: unknown;
-      };
     };
   };
   included: {
@@ -3785,9 +3782,6 @@ export type UpdateOrganizationData = {
       [key: string]: {
         order?: Array<string>;
         hidden?: Array<string>;
-        settings?: {
-          [key: string]: unknown;
-        };
       };
     };
   };

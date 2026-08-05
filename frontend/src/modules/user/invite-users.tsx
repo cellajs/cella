@@ -82,7 +82,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
               >
                 <ChevronRightIcon className="opacity-50" />
                 <UnsavedBadge
-                  title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('app:email_bulk') : t('c:email')}
+                  title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('c:email_bulk') : t('c:email')}
                 />
               </motion.span>
             )}
@@ -149,12 +149,12 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                 inviteMode === 'search'
                   ? 'c:explain.invite_search.text'
                   : inviteMode === 'bulk'
-                    ? 'app:explain.invite_bulk.text'
+                    ? 'c:explain.invite_bulk.text'
                     : 'c:explain.invite_email.text',
               )}
               {inviteMode === 'email' && (
                 <button type="button" className="ml-1 underline" onClick={() => updateMode(['bulk'])}>
-                  {t('app:invite_bulk_link')}
+                  {t('c:invite_bulk_link')}
                 </button>
               )}
             </AlertBanner>

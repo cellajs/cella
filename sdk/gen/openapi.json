@@ -1895,10 +1895,6 @@
                   "items": {
                     "type": "string"
                   }
-                },
-                "settings": {
-                  "type": "object",
-                  "additionalProperties": {}
                 }
               }
             }
@@ -8168,10 +8164,6 @@
                           "items": {
                             "type": "string"
                           }
-                        },
-                        "settings": {
-                          "type": "object",
-                          "additionalProperties": {}
                         }
                       }
                     }
