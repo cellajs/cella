@@ -19,7 +19,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { DocContext } from '../constants';
 import { type Tx, withRlsTx } from './db';
 
-// Invariant: no fork-owned entity schema imports. Cella-owned tables (memberships) are
+// Constraint: no fork-owned entity schema imports. Cella-owned tables (memberships) are
 // queried through their typed drizzle schema; app-declared entity tables are resolved
 // dynamically from the DB so this file works for every fork unchanged.
 
