@@ -106,7 +106,8 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
               key={contentKey}
-              className="flex flex-1 flex-col"
+              // h-full keeps the height definite so sheet content can resolve min-h-full against it
+              className="flex h-full flex-1 flex-col"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
