@@ -1,13 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { runtimeSecretsConfig } from '../../config/runtime-secrets.config';
 import {
   defineRuntimeSecrets,
   runtimeSecretConsumers,
   runtimeSecrets,
   runtimeSecretsForConsumer,
 } from '../../lib/runtime-secrets';
+
+// The config module and lib/runtime-secrets form an import cycle (config imports the
+// define helper, lib derives the registry from config), so the cycle must be entered
+// from the lib side. A static import sorts alphabetically ahead of the lib import.
+const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.config');
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8');
 const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'), 'utf-8');
