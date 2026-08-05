@@ -47,7 +47,12 @@ ReactDOM.createRoot(root, {
 }).render(
   <StrictMode>
     <Themer />
-    <LucideProvider strokeWidth={appConfig.theme.strokeWidth}>
+    {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
+        `:where(svg.lucide)` CSS default instead of lucide's misleading px 24. Sizing itself
+        stays class-based (icon-* utilities); classes override both the rule and the attrs.
+        The cast bridges a lucide-react typing gap: LucideConfig narrows size to number,
+        while the icons consuming the context accept LucideProps' string | number. */}
+    <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
       <QueryClientProvider>
         <AppRouter />
       </QueryClientProvider>

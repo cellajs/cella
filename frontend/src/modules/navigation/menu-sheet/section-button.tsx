@@ -91,7 +91,7 @@ export function MenuSectionButton({
                     size="icon"
                     onClick={() => toggleIsEditing()}
                   >
-                    <Settings2Icon />
+                    <Settings2Icon className="icon-lg" />
                   </Button>
                 </TooltipButton>
               </motion.div>
@@ -117,7 +117,7 @@ export function MenuSectionButton({
                     size="icon"
                     onClick={() => handleCreateAction(createButtonRef)}
                   >
-                    <PlusIcon />
+                    <PlusIcon className="icon-lg" />
                   </Button>
                 </TooltipButton>
               </motion.div>
