@@ -41,7 +41,7 @@ export function FloatingNavButton({
       variant="secondary"
       onClick={onClick}
       className={cn(
-        'fixed bottom-4 z-105 flex h-14 w-14 transform items-center justify-center rounded-full bg-secondary opacity-100 shadow-xl transition-all duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex h-14 w-14 transform items-center justify-center rounded-full bg-secondary opacity-100 shadow-xl transition-all duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
         // Animate out while the floating selection action bar is shown
         'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:-bottom-12 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
         className,

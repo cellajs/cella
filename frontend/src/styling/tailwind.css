@@ -281,6 +281,13 @@
 }
 
 @layer base {
+  /* Bottom inset for fixed-to-bottom UI: layout-viewport bottom hidden behind the on-screen
+     keyboard or overlaying browser chrome (--vv-bottom, see viewport-observer.ts) + device
+     safe area (home indicator, requires viewport-fit=cover). */
+  :root {
+    --bottom-inset: calc(var(--vv-bottom, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
   html {
     @apply font-sans overscroll-none max-sm:text-[18px];

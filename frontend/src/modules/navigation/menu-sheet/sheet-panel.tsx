@@ -106,7 +106,7 @@ export function MenuSheetPanels() {
       <FocusTrap active={hasOpenPanel} disableInactive={false}>
         <div
           className={cn(
-            'flex flex-col gap-1 border-t border-dashed bg-card px-3 py-2',
+            'flex flex-col gap-1 border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
             hasOpenPanel && 'max-h-dvh overflow-y-auto rounded-t-md shadow-lg',
           )}
         >

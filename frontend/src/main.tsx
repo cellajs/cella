@@ -16,6 +16,7 @@ import { reportReactError } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { QueryClientProvider } from '~/query/provider';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
+import { initViewportObserver } from '~/utils/viewport-observer';
 
 // Configure the SDK client with runtime settings (credentials, error handling, etc.)
 client.setConfig(createClientConfig());
@@ -26,6 +27,8 @@ if (!root) throw new Error('Root element not found');
 renderAscii();
 
 initFaviconBadge(appConfig.mode);
+
+initViewportObserver();
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.
 // `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.

@@ -16,7 +16,7 @@ import { TabCoordinator } from '~/query/realtime/tab-coordinator';
 
 function AppLayout() {
   return (
-    <div id="appLayout" className="in-[.floating-nav]:mb-0 max-sm:mb-16">
+    <div id="appLayout" className="in-[.floating-nav]:mb-0 max-sm:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => (
           <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
