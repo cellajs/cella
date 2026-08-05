@@ -1,6 +1,7 @@
+import { sql } from 'drizzle-orm';
 import { appConfig, toTableName } from 'shared';
 import type { DocContext } from '../constants';
-import { withClient } from './db';
+import { withRlsTx } from './db';
 import { getTableColumnNames } from './permissions';
 
 /**
@@ -9,20 +10,20 @@ import { getTableColumnNames } from './permissions';
  *
  * Convention (mirrors {@link resolveEntityScope}'s configuration-independent approach): the
  * Yjs-edited column is `description`. Entity types whose table lacks it (or
- * that this app doesn't declare) simply don't seed. Runs on an RLS-scoped
- * client, and only after entity access has been verified.
+ * that this app doesn't declare) simply don't seed. The entity table is fork-owned, so it is
+ * queried dynamically (never through imported schema), on an RLS-scoped
+ * transaction, and only after entity access has been verified.
  */
 export async function loadEntityDescription(ctx: DocContext): Promise<string | null> {
   if (!(appConfig.entityTypes as readonly string[]).includes(ctx.entityType)) return null;
 
-  return withClient(ctx.tenantId, ctx.userId, async (client) => {
+  return withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
     const table = toTableName(ctx.entityType);
-    const existing = await getTableColumnNames(client, table);
+    const existing = await getTableColumnNames(tx, table);
     if (!existing.has('description') || !existing.has('id')) return null;
 
-    const { rows } = await client.query<{ description: string | null }>(
-      `SELECT "description" FROM "${table}" WHERE "id" = $1 LIMIT 1`,
-      [ctx.entityId],
+    const { rows } = await tx.execute<{ description: string | null }>(
+      sql`SELECT "description" FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${ctx.entityId} LIMIT 1`,
     );
     return rows[0]?.description ?? null;
   });

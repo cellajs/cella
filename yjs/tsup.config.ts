@@ -12,6 +12,7 @@ export default defineConfig({
   noExternal: ['shared'],
   esbuildOptions(options) {
     options.alias = {
+      '#': '../backend/src',
       // Explicit shared subpath aliases so esbuild resolves them during bundling.
       // Without these, tsup/esbuild can't follow the package.json "exports" map
       // because noExternal inlines the package but doesn't resolve subpath exports.

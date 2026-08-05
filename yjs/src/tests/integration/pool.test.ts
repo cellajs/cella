@@ -1,14 +1,15 @@
+import { sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { withClient } from '../../data/db';
+import { withRlsTx } from '../../data/db';
 
 describe('6.2 Pool behavior', () => {
-  it('withClient releases connection back to pool even on error', async () => {
+  it('withRlsTx releases connection back to pool even on error', async () => {
     // Run 50 iterations: if pool leaks, it will hang (pool exhausted at 20)
     for (let i = 0; i < 50; i++) {
       try {
-        await withClient('test-tenant', 'test-user', async (client) => {
+        await withRlsTx('test-tenant', 'test-user', async (tx) => {
           if (i % 5 === 0) throw new Error('Simulated failure');
-          await client.query('SELECT 1');
+          await tx.execute(sql`SELECT 1`);
         });
       } catch {
         // Expected for every 5th iteration
@@ -16,20 +17,20 @@ describe('6.2 Pool behavior', () => {
     }
 
     // Verify pool is still functional
-    await withClient('test-tenant', 'test-user', async (client) => {
-      const result = await client.query('SELECT 1 AS ok');
+    await withRlsTx('test-tenant', 'test-user', async (tx) => {
+      const result = await tx.execute(sql`SELECT 1 AS ok`);
       expect(result.rows[0].ok).toBe(1);
     });
   });
 
-  it('concurrent withClient calls up to pool max', async () => {
+  it('concurrent withRlsTx calls up to pool max', async () => {
     const concurrency = 20; // matches YJS_DB_POOL_MAX default
 
     const results = await Promise.all(
       Array.from({ length: concurrency }, (_, i) =>
-        withClient('test-tenant', 'test-user', async (client) => {
-          const res = await client.query('SELECT $1::int AS idx', [i]);
-          return res.rows[0].idx;
+        withRlsTx('test-tenant', 'test-user', async (tx) => {
+          const res = await tx.execute(sql`SELECT ${i}::int AS idx`);
+          return res.rows[0].idx as number;
         }),
       ),
     );
@@ -38,14 +39,14 @@ describe('6.2 Pool behavior', () => {
     expect(results.sort((a, b) => a - b)).toEqual(Array.from({ length: concurrency }, (_, i) => i));
   });
 
-  it('RLS context is set per-connection, not shared across concurrent calls', async () => {
+  it('RLS context is transaction-local, not shared across concurrent calls', async () => {
     const [ctxA, ctxB] = await Promise.all([
-      withClient('tenant-a', 'user-a', async (client) => {
-        const res = await client.query("SELECT current_setting('app.tenant_id') AS tid");
+      withRlsTx('tenant-a', 'user-a', async (tx) => {
+        const res = await tx.execute(sql`SELECT current_setting('app.tenant_id') AS tid`);
         return res.rows[0].tid;
       }),
-      withClient('tenant-b', 'user-b', async (client) => {
-        const res = await client.query("SELECT current_setting('app.tenant_id') AS tid");
+      withRlsTx('tenant-b', 'user-b', async (tx) => {
+        const res = await tx.execute(sql`SELECT current_setting('app.tenant_id') AS tid`);
         return res.rows[0].tid;
       }),
     ]);
@@ -54,14 +55,27 @@ describe('6.2 Pool behavior', () => {
     expect(ctxB).toBe('tenant-b');
   });
 
-  it('withClient sets both tenant_id and user_id in session', async () => {
-    await withClient('my-tenant', 'my-user', async (client) => {
-      const res = await client.query(`
+  it('withRlsTx sets both tenant_id and user_id for the transaction', async () => {
+    await withRlsTx('my-tenant', 'my-user', async (tx) => {
+      const res = await tx.execute(sql`
         SELECT current_setting('app.tenant_id') AS tid,
                current_setting('app.user_id') AS uid
       `);
       expect(res.rows[0].tid).toBe('my-tenant');
       expect(res.rows[0].uid).toBe('my-user');
+    });
+  });
+
+  it('RLS config does not leak onto the session after the transaction commits', async () => {
+    await withRlsTx('leak-tenant', 'leak-user', async (tx) => {
+      await tx.execute(sql`SELECT 1`);
+    });
+
+    // `set_config(..., true)` is transaction-local: a fresh transaction on the same
+    // pool must not observe the previous transaction's tenant context.
+    await withRlsTx('other-tenant', 'other-user', async (tx) => {
+      const res = await tx.execute(sql`SELECT current_setting('app.tenant_id') AS tid`);
+      expect(res.rows[0].tid).toBe('other-tenant');
     });
   });
 });
