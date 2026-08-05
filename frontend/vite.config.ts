@@ -21,7 +21,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 
 import { execSync } from 'node:child_process';
 import { sdkWatch } from './vite/sdk-watch';
-import { localesHMR } from './vite/locales-hmr';
+import { localesPlugin } from './vite/locales-plugin';
 import { docsFrontmatter } from './vite/docs-frontmatter';
 import { docsEditor } from './vite/docs-editor';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths';
@@ -260,9 +260,17 @@ const viteConfig = {
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),
+    // Locales pipeline: merges common.json + app.json into the runtime `c` namespace,
+    // serves the result at /locales/{lng}/{ns}.json in dev and emits it into the build.
+    // The processed cache in .vscode/.locales-cache is also what i18n Ally reads.
+    localesPlugin({
+      srcDir: path.resolve(__dirname, '../locales'),
+      outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
+      merge: { target: 'c', sources: ['common', 'app'] },
+      verbose: false,
+    }),
     viteStaticCopy({
       targets: [
-        { src: '../locales/**/*', dest: 'locales' },
         // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
         // stripBase: 2 drops the `sdk/gen` prefix so files land at /static/... (and /static/docs.gen/...).
         { src: '../sdk/gen/openapi.json', dest: 'static', rename: { stripBase: 2 } },
@@ -384,12 +392,6 @@ if (frontendUrl.protocol === 'https:' && !isTunneled) {
 // Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook) {
   viteConfig.plugins?.push(
-    localesHMR({
-      srcDir: path.resolve(__dirname, '../locales'),
-      outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
-      merge: { target: 'common', sources: ['app'] },
-      verbose: false,
-    }),
     sdkWatch(),
     reactScan({
       enable: false,
