@@ -1,7 +1,7 @@
 import { getModules } from 'shared/module-registry';
 import { describe, expect, it } from 'vitest';
 import { defineFrontendModule } from '~/lib/module';
-import { getTools, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
+import { getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
 
 describe('tool registry', () => {
   it('indexes module tools by slot, sorted on order with a default of 50', () => {
@@ -77,6 +77,23 @@ describe('orderBySlotConfig', () => {
   it('ignores stored ids with no matching placement', () => {
     const ordered = orderBySlotConfig(items, { order: ['removed-tool', 'b'] });
     expect(ordered.map((i) => i.id)).toEqual(['b', 'a', 'c']);
+  });
+});
+
+describe('isPlacementHidden', () => {
+  const item = { id: 'extra', label: 'c:extra', order: 50 };
+
+  it('reports channel-stored hiding, with locked immune to it', () => {
+    const slotConfig = { order: [], hidden: ['extra'] };
+    expect(isPlacementHidden('host', item, { overrides: {}, slotConfig })).toBe(true);
+    expect(isPlacementHidden('host', { ...item, locked: true }, { overrides: {}, slotConfig })).toBe(false);
+    expect(isPlacementHidden('host', item, { overrides: {} })).toBe(false);
+  });
+
+  it('reports app-override hiding even for locked placements', () => {
+    const overrides = { host: { extra: { hidden: true } } };
+    expect(isPlacementHidden('host', { ...item, locked: true }, { overrides })).toBe(true);
+    expect(isPlacementHidden('other-host', item, { overrides })).toBe(false);
   });
 });
 

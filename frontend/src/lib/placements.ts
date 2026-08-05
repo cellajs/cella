@@ -191,6 +191,23 @@ export interface ResolvePlacementOptions {
 }
 
 /**
+ * Whether the arrangement layers alone drop a placement from its host: an app override or the
+ * channel-stored hidden list (`locked` placements ignore the latter). Grant (`requires`) and
+ * context-role (`visibleTo`) gating are viewer conditions, not arrangement, and are deliberately
+ * excluded — this answers "is this placement disabled on the surface", e.g. to forward away from
+ * a hidden tab a viewer navigated to directly.
+ */
+export function isPlacementHidden(
+  host: string,
+  item: PlacementDescriptor,
+  options: Pick<ResolvePlacementOptions, 'slotConfig' | 'overrides'> = {},
+): boolean {
+  const { slotConfig, overrides = placementOverrides } = options;
+  if (overrides[host]?.[item.id]?.hidden) return true;
+  return !item.locked && (slotConfig?.hidden ?? []).includes(item.id);
+}
+
+/**
  * Resolves a host's final placement list: applies app overrides, channel-stored hiding, grant
  * (`requires`) and context-role (`visibleTo`) gating, then channel-stored ordering with the
  * stable `order` sort as fallback. `locked` placements ignore channel-stored hiding only.
@@ -202,11 +219,9 @@ export function resolvePlacementList<T extends PlacementDescriptor & { order: nu
 ): T[] {
   const { grants = [], pairs = [], slotConfig, overrides = placementOverrides } = options;
   const hostOverrides = overrides[host];
-  const channelHidden = new Set(slotConfig?.hidden ?? []);
 
   const adjusted = items
-    .filter((item) => !hostOverrides?.[item.id]?.hidden)
-    .filter((item) => item.locked || !channelHidden.has(item.id))
+    .filter((item) => !isPlacementHidden(host, item, { slotConfig, overrides }))
     .map((item) => {
       const order = hostOverrides?.[item.id]?.order;
       return order === undefined ? item : { ...item, order };

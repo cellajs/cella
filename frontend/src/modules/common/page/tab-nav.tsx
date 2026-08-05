@@ -1,5 +1,5 @@
 import type { AnyRoute } from '@tanstack/react-router';
-import { Link, type LinkComponentProps } from '@tanstack/react-router';
+import { Link, type LinkComponentProps, useNavigate, useRouterState } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import {
   getSlotDescriptors,
+  isPlacementHidden,
   type PlacementDescriptor,
   type PlacementOverrides,
   resolvePlacementList,
@@ -38,6 +39,14 @@ function hasRoute<TRoutes extends Record<string, AnyRoute>>(
 
 function getChildRoutes(route: AnyRoute): AnyRoute[] {
   return Array.isArray(route.children) ? route.children : [];
+}
+
+/** Override/arrangement host key for a tabbed surface: its tabs slot id when declared, else the parent route id. */
+function getTabsHost(parentRouteId: string): string {
+  // Cast: generated FileRoutesById is a closed interface without index signature
+  const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
+  if (!hasRoute(routesById, parentRouteId)) return parentRouteId;
+  return routesById[parentRouteId].options?.staticData?.tabsSlot ?? parentRouteId;
 }
 
 /** A resolved nav candidate: a placement descriptor plus where its tab links. */
@@ -119,9 +128,7 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
-  const slot = routesById[parentRouteId].options?.staticData?.tabsSlot;
-  const host = slot ?? parentRouteId;
-  const resolved = resolvePlacementList(host, getNavTabCandidates(parentRouteId), {
+  const resolved = resolvePlacementList(getTabsHost(parentRouteId), getNavTabCandidates(parentRouteId), {
     grants: options.grants,
     pairs: options.pairs,
     slotConfig: options.slotConfig,
@@ -143,6 +150,34 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
  */
 export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTabsOptions): string | undefined {
   return resolveNavTabs(parentRouteId, options)[0]?.path;
+}
+
+/**
+ * Forwards off a disabled tab: when the current location sits on a tab candidate that app
+ * overrides or channel-stored arrangement hide, replace-navigates to the surface's first
+ * resolved tab. Detection uses {@link isPlacementHidden} — the arrangement layers only, never
+ * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
+ * to the API. No-ops when the surface resolves no tabs to forward to. {@link PageTabNav} runs
+ * this for route-derived tab bars, so every channel surface gets the forwarding without wiring.
+ */
+export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabsOptions = {}): void {
+  const navigate = useNavigate();
+  const leaf = useRouterState({ select: (state) => state.matches[state.matches.length - 1] });
+
+  // Active candidate: registry tabs match on the leaf's `$tool` param, route tabs on its path
+  const toolId = (leaf?.params as { tool?: string } | undefined)?.tool;
+  const candidates = parentRouteId ? getNavTabCandidates(parentRouteId) : [];
+  const active = toolId
+    ? candidates.find((tab) => tab.id === toolId)
+    : candidates.find((tab) => tab.path === leaf?.fullPath);
+
+  const disabled = active !== undefined && isPlacementHidden(getTabsHost(parentRouteId), active, options);
+  const target = disabled ? resolveNavTabs(parentRouteId, options)[0] : undefined;
+
+  const targetId = target?.id;
+  useEffect(() => {
+    if (target) navigate({ to: target.path, params: target.params, replace: true });
+  }, [navigate, targetId]);
 }
 
 interface Props {
@@ -190,6 +225,9 @@ export function PageTabNav({
   // Use explicit tabs or auto-generate from parent route's children
   const autoTabs = resolveNavTabs(parentRouteId ?? '', { filterTabIds, grants, pairs, slotConfig });
   const tabs = explicitTabs ?? autoTabs;
+
+  // Forward off a tab this surface has disabled (explicit tab lists opt out of route derivation)
+  useNavTabRedirect(explicitTabs ? '' : (parentRouteId ?? ''), { filterTabIds, grants, pairs, slotConfig });
 
   const layoutId = useRef(nanoid()).current;
 
