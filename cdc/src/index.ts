@@ -1,5 +1,6 @@
-import { createServer } from 'node:http';
 import process from 'node:process';
+import { serve } from '@hono/node-server';
+import { createHealthApp } from 'shared/health-app';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from './env';
@@ -27,26 +28,17 @@ export async function runCdcWorker(): Promise<void> {
   otel.start();
   otel.verifyConnection();
 
-  const healthServer = createServer((req, res) => {
-    if (req.url?.startsWith('/health')) {
-      const version = process.env.RELEASE_SHA ?? 'unknown';
-      const url = new URL(req.url, `http://localhost:${env.CDC_HEALTH_PORT}`);
-      if (url.searchParams.get('depth') === 'full') {
-        const { response, httpStatus } = getHealthResponse();
-        res.writeHead(httpStatus, {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=5',
-          'X-App-Version': version,
-        });
-        res.end(JSON.stringify({ ...response, version }));
-        return;
-      }
-      res.writeHead(204, { 'Cache-Control': 'public, max-age=5', 'X-App-Version': version });
-      res.end();
-      return;
-    }
-    res.writeHead(404);
-    res.end();
+  const version = process.env.RELEASE_SHA ?? 'unknown';
+  const healthApp = createHealthApp({
+    version,
+    full: () => {
+      const { response, httpStatus } = getHealthResponse();
+      return { httpStatus, body: { ...response, version } };
+    },
+  });
+
+  const healthServer = serve({ fetch: healthApp.fetch, port: env.CDC_HEALTH_PORT }, () => {
+    log.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
   });
 
   setupGracefulShutdown({
@@ -57,10 +49,6 @@ export async function runCdcWorker(): Promise<void> {
       await otel.shutdown();
     },
     log: (msg) => log.info(msg),
-  });
-
-  healthServer.listen(env.CDC_HEALTH_PORT, () => {
-    log.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
   });
 
   await startCdcWorker();

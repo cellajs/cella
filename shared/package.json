@@ -15,6 +15,7 @@
     "./cli-utils/*": "./src/cli-utils/*.ts",
     "./testing/*": "./src/testing/*.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
+    "./health-app": "./src/health-app.ts",
     "./transloadit-config": "./config/transloadit-config.ts"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "@opentelemetry/sdk-trace-base": "^2.10.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
     "dobajs": "0.1.0",
+    "hono": "^4.12.32",
     "nanoid": "^6.0.0",
     "picocolors": "^1.1.1",
     "pino": "^10.3.1",

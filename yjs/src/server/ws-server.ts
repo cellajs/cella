@@ -1,26 +1,64 @@
-import { createServer, type Server } from 'node:http';
+import type { Server } from 'node:http';
+import process from 'node:process';
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { createHealthApp } from 'shared/health-app';
+import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { WebSocketServer } from 'ws';
 import { closeDb } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
-import { handleHttpRequest } from './health';
+import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
 import { setupConnectionHandler, setupUpgradeHandler } from './upgrade';
 
 let httpServer: Server | null = null;
 let wss: WebSocketServer | null = null;
 
-export function startWsServer(): void {
-  httpServer = createServer(handleHttpRequest);
-
-  const server = new WebSocketServer({ noServer: true, maxPayload: 2 * 1024 * 1024 });
-  wss = server;
-
-  httpServer.on('upgrade', setupUpgradeHandler(server));
-  setupConnectionHandler(server);
-
-  httpServer.listen(env.YJS_PORT, () => {
-    log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
+/**
+ * HTTP side of the relay: the shared health app, mounted on both the bare path and
+ * the `/yjs` prefix (same-origin migration — the LB forwards `/yjs/...` without
+ * stripping; the WS upgrade path keeps its own prefix handling).
+ */
+function buildHttpApp(): Hono {
+  const version = process.env.RELEASE_SHA ?? 'unknown';
+  const healthApp = createHealthApp({
+    version,
+    full: () => {
+      const eventLoopLagMs = getEventLoopLagMs();
+      const status = eventLoopLagMs >= 1000 ? 'unhealthy' : eventLoopLagMs >= 100 ? 'degraded' : 'healthy';
+      return {
+        httpStatus: 200,
+        body: {
+          status,
+          version,
+          uptime: Math.floor(process.uptime()),
+          connections: getConnectionCount(),
+          documents: getActiveDocumentCount(),
+          clients: getActiveClientCount(),
+          eventLoopLagMs,
+        },
+      };
+    },
   });
+
+  const app = new Hono();
+  app.route('/', healthApp);
+  app.route('/yjs', healthApp);
+  return app;
+}
+
+export function startWsServer(): void {
+  // serve() uses node:http's createServer by default, so the upgrade event is available.
+  const server = serve({ fetch: buildHttpApp().fetch, port: env.YJS_PORT }, () => {
+    log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
+  }) as Server;
+  httpServer = server;
+
+  const wsServer = new WebSocketServer({ noServer: true, maxPayload: 2 * 1024 * 1024 });
+  wss = wsServer;
+
+  server.on('upgrade', setupUpgradeHandler(wsServer));
+  setupConnectionHandler(wsServer);
 }
 
 export async function closeWsServer(): Promise<void> {
