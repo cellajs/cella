@@ -49,10 +49,8 @@ describe('Health endpoint', () => {
   it('GET /health?depth=full response has cache headers', async () => {
     const res = await fetchHealth('?depth=full');
 
-    // Only healthy/degraded (200) get cache headers
-    if (res.status === 200) {
-      expect(res.headers.get('cache-control')).toContain('max-age=10');
-    }
+    // The shared health app sets short-lived caching regardless of status
+    expect(res.headers.get('cache-control')).toContain('max-age=5');
   });
 
   it('GET /health?depth=full cdc section has expected shape', async () => {
