@@ -1107,6 +1107,9 @@ importers:
       uuidv7:
         specifier: ^1.2.1
         version: 1.2.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
