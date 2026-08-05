@@ -1,5 +1,5 @@
 import type { AnyRoute } from '@tanstack/react-router';
-import { Link, type LinkComponentProps, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -150,6 +150,58 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
  */
 export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTabsOptions): string | undefined {
   return resolveNavTabs(parentRouteId, options)[0]?.path;
+}
+
+/** Landing preference for {@link guardNavTabs} (arrangement inputs only; see the guard's doc). */
+export interface GuardNavTabsOptions {
+  /** Channel-stored arrangement for the surface's tabs slot (order + hidden). */
+  slotConfig?: SlotToolsConfig;
+  /** Preferred landing tab id; falls back to the first resolved tab when absent or disabled. */
+  defaultTabId?: string;
+}
+
+/**
+ * `beforeLoad` guard for a tabbed surface: forwards a navigation that would land nowhere useful
+ * before any tab route mounts or fetches. Two cases redirect to the surface's landing tab: the
+ * bare parent layout (links and deep URLs stay tab-less), and a tab candidate that app overrides
+ * or channel-stored arrangement disable — without this, the disabled tab's route would mount,
+ * fire its suspense queries, and only then forward, costing a second transition and a wasted
+ * fetch. Detection uses {@link isPlacementHidden}: the arrangement layers only, never
+ * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
+ * to the API. The landing tab prefers `defaultTabId` when the arrangement resolves it, else the
+ * first resolved tab; with no resolved tabs the guard no-ops. Live config changes while sitting
+ * on a tab are covered separately by {@link useNavTabRedirect}, since `beforeLoad` only reruns
+ * on navigation.
+ * @throws A history-replacing redirect preserving params, search, and hash.
+ */
+export function guardNavTabs(
+  matches: readonly { routeId: string; fullPath: string; params: unknown }[],
+  parentRouteId: string,
+  options: GuardNavTabsOptions = {},
+): void {
+  const deepest = matches[matches.length - 1];
+  if (!deepest) return;
+
+  const { slotConfig, defaultTabId } = options;
+
+  // Targeted candidate: registry tabs match on the deepest match's `$tool` param, route tabs on
+  // its route path. A bare parent match (no tab in the URL) always needs the landing redirect.
+  let needsLanding = deepest.routeId === parentRouteId;
+  if (!needsLanding) {
+    const candidates = getNavTabCandidates(parentRouteId);
+    const toolId = (deepest.params as { tool?: string } | undefined)?.tool;
+    const target = toolId
+      ? candidates.find((tab) => tab.id === toolId)
+      : candidates.find((tab) => tab.path === deepest.fullPath);
+    needsLanding = target !== undefined && isPlacementHidden(getTabsHost(parentRouteId), target, { slotConfig });
+  }
+  if (!needsLanding) return;
+
+  const tabs = resolveNavTabs(parentRouteId, { slotConfig });
+  const landing = tabs.find((tab) => tab.id === defaultTabId) ?? tabs[0];
+  if (!landing) return;
+
+  throw redirect({ to: landing.path, params: landing.params, search: true, replace: true, hash: true });
 }
 
 /**

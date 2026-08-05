@@ -1,11 +1,14 @@
 import type { ChannelEntityType } from 'shared';
 
 export type ChannelRouteEntry = {
-  /** Route path template for this entity: its canonical landing surface. Also the redirect
-   *  target when the entity's tabbed layout route is visited directly (default tab). */
+  /** Route path template for this entity: its tabbed layout route, so links stay tab-less and
+   *  the layout's `beforeLoad` picks the landing tab against the channel's stored arrangement. */
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
+  /** Preferred landing tab id when the layout route is visited without a tab; falls back to the
+   *  first tab the channel's arrangement resolves when absent or disabled. */
+  defaultTabId?: string;
   /** When shown as a subitem, navigate to a parent entity's route. */
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
@@ -16,7 +19,8 @@ export type ChannelRouteEntry = {
  */
 export const channelRouteConfig = {
   organization: {
-    path: '/$tenantId/$organizationSlug/organization/attachments',
+    path: '/$tenantId/$organizationSlug/organization',
     paramName: 'organizationSlug',
+    defaultTabId: 'attachments',
   },
 } as const satisfies Record<ChannelEntityType, ChannelRouteEntry>;
