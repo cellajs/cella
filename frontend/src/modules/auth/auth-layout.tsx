@@ -23,7 +23,7 @@ export function AuthLayout() {
     <div
       data-started={hasStarted}
       data-waited={hasWaited}
-      className="group rich-gradient container flex min-h-[90vh] flex-col items-center before:fixed after:fixed sm:min-h-screen"
+      className="group rich-gradient container flex min-h-[90svh] flex-col items-center before:fixed after:fixed sm:min-h-svh"
     >
       {/* Render bg animation */}
       <Suspense fallback={<div className="fixed top-0 left-0 h-full w-full bg-loading-placeholder" />}>

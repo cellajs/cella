@@ -22,7 +22,7 @@ export function ScrollReset({ children }: { children: ReactNode }) {
   return (
     <ScrollResetContext.Provider value={scrollToReset}>
       <div ref={ref} className="h-0" aria-hidden />
-      <div className="min-h-screen">{children}</div>
+      <div className="min-h-svh">{children}</div>
     </ScrollResetContext.Provider>
   );
 }

@@ -38,7 +38,7 @@ export function OnboardingCompleted() {
   }, [mutate, setSectionsDefault, hasOrganization, orgQuery.isFetching]);
 
   return (
-    <div className="relative z-1 mx-auto flex h-screen min-w-full max-w-3xl flex-col items-center justify-center space-y-6 p-4 text-center">
+    <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center space-y-6 p-4 text-center">
       {isExploding && <Confetti fire />}
 
       {user.userFlags.finishedOnboarding && (

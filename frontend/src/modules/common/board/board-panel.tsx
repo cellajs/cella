@@ -61,7 +61,7 @@ export function BoardPanelBody({
         'group/panel relative flex max-w-full flex-1 shrink-0 snap-center flex-col rounded-b-none bg-transparent opacity-100 sm:border',
         // Highlight border when an ancestor wrapper is marked as a drop-target hover (see board-panel.tsx)
         'group-data-[highlighted=true]/paneldrop:border-primary',
-        !windowScroll && 'sm:h-[calc(100vh-var(--board-panel-offset))]',
+        !windowScroll && 'sm:h-[calc(100dvh-var(--board-panel-offset))]',
         hasSelection && 'is-selected',
         className,
       )}

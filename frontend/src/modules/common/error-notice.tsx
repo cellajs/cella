@@ -59,7 +59,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   return (
     <>
       {boundary === 'root' && <Dialoger />}
-      <div className="error-notice container flex min-h-[calc(100vh-10rem)] flex-col items-center">
+      <div className="error-notice container flex min-h-[calc(100svh-10rem)] flex-col items-center">
         <div className="mx-auto my-auto">
           <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
             <CardHeader className="p-0 text-center">
