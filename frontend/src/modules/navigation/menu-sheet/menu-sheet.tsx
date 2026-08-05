@@ -80,7 +80,7 @@ export function MenuSheet() {
     .filter((el) => el !== null);
 
   return (
-    <div className="group/menu flex min-h-full w-full flex-col bg-card">
+    <div className="group/menu flex min-h-dvh w-full flex-col bg-card">
       <FocusTarget target="sheet" />
 
       <MenuSheetHeader />

@@ -80,7 +80,7 @@ export function AccountSheet() {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="group/menu flex min-h-full w-full flex-col bg-card">
+    <div ref={buttonWrapper} className="group/menu flex min-h-dvh w-full flex-col bg-card">
       <FocusTarget target="sheet" />
       <div className="flex items-center justify-between px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
