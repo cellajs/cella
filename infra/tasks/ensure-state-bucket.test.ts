@@ -25,7 +25,6 @@ function makeS3(responses: { head?: Array<true | { status: number }>; create?: A
     }
     throw new Error(`unexpected command ${kind}`);
   });
-  // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
   return { send } as any;
 }
 
@@ -87,7 +86,6 @@ describe('hardenStateBucket', () => {
       }
       return {};
     });
-    // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
     return { send } as any;
   };
 

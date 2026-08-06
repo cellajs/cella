@@ -1,6 +1,7 @@
 import process from 'node:process';
 export const CDC_PUBLICATION_NAME = 'cdc_pub';
 
+// biome-ignore lint/style/noProcessEnv: constants must stay import-safe; pulling in the env module here would run its validation on every import
 export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
 export const RESOURCE_LIMITS = {

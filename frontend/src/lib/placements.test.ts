@@ -85,7 +85,7 @@ describe('orderBySlotConfig', () => {
 });
 
 describe('isPlacementHidden', () => {
-  const item = { id: 'extra', label: 'c:extra', order: 50 };
+  const item = { id: 'extra', label: key('c:extra'), order: 50 };
 
   it('reports channel-stored hiding, with locked immune to it', () => {
     const slotConfig = { order: [], hidden: ['extra'] };

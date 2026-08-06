@@ -20,8 +20,6 @@ function resetMocks() {
   provisionScopedKey.mockReset();
 }
 
-// biome-ignore lint/style/noNonNullAssertion: fixtures come straight from the real registry.
-// biome-ignore lint/style/noNonNullAssertion: fixture comes straight from the real registry.
 const aiKey = managedKeys.find((key) => key.id === 'ai')!;
 
 /** Synthetic two-half definition: the registry's s3 key is retired (REQ-20),
@@ -65,7 +63,6 @@ describe('provisionManagedKey', () => {
 
     // Scoped to Object Storage, in the caller's project, minting a key.
     expect(provisionScopedKey).toHaveBeenCalledTimes(1);
-    // biome-ignore lint/style/noNonNullAssertion: asserted called exactly once above.
     const config = provisionScopedKey.mock.calls[0]![1];
     expect(config).toMatchObject({ suffix: 'pair', mintKey: true });
     expect(config.buildRules({ projectId: 'proj-1', organizationId: 'org-1' })).toEqual([

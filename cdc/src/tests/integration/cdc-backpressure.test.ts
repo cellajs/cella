@@ -48,9 +48,7 @@ async function insertTenant(name: string): Promise<string> {
  * Skipped unless `DATABASE_CDC_URL` runs with `wal_level = logical` and `cdc_pub` exists.
  */
 describe.skipIf(!READY)('CDC backpressure (integration)', () => {
-  // biome-ignore lint/suspicious/noExplicitAny: lightweight ws stub typing
   let WebSocketServer: any;
-  // biome-ignore lint/suspicious/noExplicitAny: lightweight ws stub typing
   let wss: any = null;
   /** Activity messages received by the stub WS receiver (excludes health pushes). */
   let activityMsgs: Array<{ subjectId: string | null }> = [];
@@ -60,9 +58,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   async function startStubWs(): Promise<void> {
     await new Promise<void>((resolve) => {
       wss = new WebSocketServer({ port: WS_PORT });
-      // biome-ignore lint/suspicious/noExplicitAny: ws socket
       wss.on('connection', (socket: any) => {
-        // biome-ignore lint/suspicious/noExplicitAny: ws data
         socket.on('message', (data: any) => {
           try {
             const parsed = JSON.parse(data.toString());
@@ -80,7 +76,6 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   /** Close the stub WS receiver and forcibly drop all sockets. */
   async function stopStubWs(): Promise<void> {
     if (!wss) return;
-    // biome-ignore lint/suspicious/noExplicitAny: ws clients set
     for (const client of wss.clients as Set<any>) client.terminate();
     await new Promise<void>((resolve) => wss.close(() => resolve()));
     wss = null;

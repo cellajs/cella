@@ -16,10 +16,11 @@ let wss: WebSocketServer | null = null;
 
 /**
  * HTTP side of the relay: the shared health app, mounted on both the bare path and
- * the `/yjs` prefix (same-origin migration — the LB forwards `/yjs/...` without
+ * the `/yjs` prefix (same-origin migration: the LB forwards `/yjs/...` without
  * stripping; the WS upgrade path keeps its own prefix handling).
  */
 function buildHttpApp(): Hono {
+  // biome-ignore lint/style/noProcessEnv: RELEASE_SHA is baked into the image by Docker, not part of the validated env schema
   const version = process.env.RELEASE_SHA ?? 'unknown';
   const healthApp = createHealthApp({
     version,

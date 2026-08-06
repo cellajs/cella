@@ -195,7 +195,7 @@ export interface ResolvePlacementOptions {
  * Whether the arrangement layers alone drop a placement from its host: an app override or the
  * channel-stored hidden list (`locked` placements ignore the latter). Grant (`requires`) and
  * context-role (`visibleTo`) gating are viewer conditions, not arrangement, and are deliberately
- * excluded — this answers "is this placement disabled on the surface", e.g. to forward away from
+ * excluded. This answers "is this placement disabled on the surface", e.g. to forward away from
  * a hidden tab a viewer navigated to directly.
  */
 export function isPlacementHidden(

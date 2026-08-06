@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -350,6 +350,18 @@
             "useButtonType": "off",
             "useKeyWithClickEvents": "off",
             "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      // Literal ${VAR} placeholders consumed by other interpolators (docker-compose
+      // env substitution, Transloadit assembly variables), not JS template strings.
+      "includes": ["infra/**", "shared/config/transloadit-config.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noTemplateCurlyInString": "off"
           }
         }
       }

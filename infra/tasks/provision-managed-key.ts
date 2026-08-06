@@ -86,7 +86,6 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   const seeded: Record<string, number> = {};
   for (const { field, secret } of targets) {
     const value = field === 'accessKey' ? minted.accessKey : minted.secretKey;
-    // biome-ignore lint/style/noNonNullAssertion: populated in the verify loop above.
     const container = containerBySecretName.get(secret.secretName)!;
     const version = await client.putSecretValue({
       secretId: container.id,
