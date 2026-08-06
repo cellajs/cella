@@ -85,7 +85,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/
 COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
-COPY locales/package.json ./locales/
 COPY cdc/package.json ./cdc/
 COPY yjs/package.json ./yjs/
 COPY patches/ ./patches/
