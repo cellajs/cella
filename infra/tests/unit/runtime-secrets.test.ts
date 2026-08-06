@@ -16,11 +16,14 @@ const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.conf
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8');
 const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'), 'utf-8');
 const yjsEnvSource = readFileSync(resolve(__dirname, '../../../yjs/src/env.ts'), 'utf-8');
+const workerEnvBaseSource = readFileSync(resolve(__dirname, '../../../shared/src/utils/worker-env.ts'), 'utf-8');
 
+// The worker env schemas extend workerEnvBase, so shared declarations (e.g.
+// DATABASE_SSL_CA) count as declared for cdc and yjs.
 const envSources = {
   backend: backendEnvSource,
-  cdc: cdcEnvSource,
-  yjs: yjsEnvSource,
+  cdc: `${workerEnvBaseSource}\n${cdcEnvSource}`,
+  yjs: `${workerEnvBaseSource}\n${yjsEnvSource}`,
 } as const;
 
 describe('runtime secret registry', () => {
