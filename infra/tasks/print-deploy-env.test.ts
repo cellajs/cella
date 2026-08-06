@@ -25,7 +25,6 @@ const fakeAppConfig = {
     mcp: { enabled: false, publicUrl: 'https://mcp.cella.example' },
   },
   securityEmail: 'security@cella.example',
-  // biome-ignore lint/suspicious/noExplicitAny: typed via cast for test fixture
 } as any;
 
 describe('buildDeployEnv', () => {

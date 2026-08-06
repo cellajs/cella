@@ -42,7 +42,6 @@ function makeS3(opts: {
     }
     throw new Error(`unexpected command ${kind}`);
   });
-  // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
   return { s3: { send } as any, puts };
 }
 
@@ -175,7 +174,6 @@ function makeLockS3(initial?: LockInfo) {
     }
     throw new Error(`unexpected command ${kind}`);
   });
-  // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
   return { s3: { send } as any, current: () => obj };
 }
 
@@ -317,7 +315,6 @@ function makeRacingControlS3(initial: ControlState) {
     }
     throw new Error(`unexpected command ${kind}`);
   });
-  // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
   return { s3: { send } as any, read: () => parseControlState(obj.body) };
 }
 
@@ -345,7 +342,6 @@ describe('updateServiceRollout', () => {
       }
       throw fail412();
     });
-    // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
     const s3 = { send } as any;
     await expect(
       updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }), 2),

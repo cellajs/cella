@@ -44,7 +44,6 @@ export default defineConfig({
       'backend/src/routes.ts',
       'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/memberships/memberships-db.ts',
-      'backend/src/modules/organization/organization-hooks.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
       'frontend/src/query/extra-local-user-stores.ts',
       'frontend/public/favicon.ico',

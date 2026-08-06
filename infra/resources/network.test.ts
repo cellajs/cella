@@ -25,7 +25,6 @@ describe('network module', () => {
   it('private network is scoped to an RFC1918 IPv4 range', () => {
     const pn = h.resources.find((r) => /privateNetwork/i.test(r.type));
     expect(pn).toBeDefined();
-    // biome-ignore lint/suspicious/noExplicitAny: raw pulumi mock input state
     const subnet = (pn!.inputs.ipv4Subnet as any)?.subnet as string;
     expect(subnet).toMatch(/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/);
   });

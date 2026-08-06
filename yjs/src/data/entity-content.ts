@@ -10,7 +10,7 @@ import { getTableColumnNames } from './permissions';
  *
  * Convention (mirrors {@link resolveEntityScope}'s configuration-independent approach): the
  * Yjs-edited column is `description`. Entity types whose table lacks it (or
- * that this app doesn't declare) simply don't seed. The entity table is fork-owned, so it is
+ * that this app doesn't declare) simply don't seed. The entity table is app-owned, so it is
  * queried dynamically (never through imported schema), on an RLS-scoped
  * transaction, and only after entity access has been verified.
  */

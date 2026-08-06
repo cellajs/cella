@@ -7,6 +7,7 @@ try {
   // CI and other environments without .env must provide DB_TEST_PORT through process.env.
 }
 
+// biome-ignore lint/style/noProcessEnv: test bootstrap runs before any env module exists; CI provides DB_TEST_PORT directly
 const port = process.env.DB_TEST_PORT;
 if (!port) {
   throw new Error('DB_TEST_PORT is required (set it in backend/.env or the environment) to run database tests.');

@@ -67,7 +67,6 @@ describe('validateStateBucketPolicy', () => {
         return { Versions: [{ Key: 'probe', VersionId: 'v1' }], DeleteMarkers: [] };
       return {};
     });
-    // biome-ignore lint/suspicious/noExplicitAny: minimal mock surface
     return { send } as any;
   };
 

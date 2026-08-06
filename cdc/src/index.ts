@@ -25,6 +25,7 @@ export async function runCdcWorker(): Promise<void> {
   otel.start();
   otel.verifyConnection();
 
+  // biome-ignore lint/style/noProcessEnv: RELEASE_SHA is baked into the image by Docker, not part of the validated env schema
   const version = process.env.RELEASE_SHA ?? 'unknown';
   const healthApp = createHealthApp({
     version,

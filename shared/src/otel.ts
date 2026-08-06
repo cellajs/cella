@@ -111,6 +111,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   // Select stable HTTP semantic attributes before instrumentation is constructed.
   // Preserve any explicit environment override.
   if (autoInstrumentations) {
+    // biome-ignore lint/style/noProcessEnv: the OTel SDK reads this env var itself; writing it is the only way to pass the setting through
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN ??= 'http';
   }
 

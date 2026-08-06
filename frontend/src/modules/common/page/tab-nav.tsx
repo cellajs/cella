@@ -165,7 +165,7 @@ export interface GuardNavTabsOptions {
  * `beforeLoad` guard for a tabbed surface: forwards a navigation that would land nowhere useful
  * before any tab route mounts or fetches. Two cases redirect to the surface's landing tab: the
  * bare parent layout (links and deep URLs stay tab-less), and a tab candidate that app overrides
- * or channel-stored arrangement disable — without this, the disabled tab's route would mount,
+ * or channel-stored arrangement disable. Without the guard, the disabled tab's route would mount,
  * fire its suspense queries, and only then forward, costing a second transition and a wasted
  * fetch. Detection uses {@link isPlacementHidden}: the arrangement layers only, never
  * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
@@ -208,7 +208,7 @@ export function guardNavTabs(
 /**
  * Forwards off a disabled tab: when the current location sits on a tab candidate that app
  * overrides or channel-stored arrangement hide, replace-navigates to the surface's first
- * resolved tab. Detection uses {@link isPlacementHidden} — the arrangement layers only, never
+ * resolved tab. Detection uses {@link isPlacementHidden} with the arrangement layers only, never
  * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
  * to the API. No-ops when the surface resolves no tabs to forward to. {@link PageTabNav} runs
  * this for route-derived tab bars, so every channel surface gets the forwarding without wiring.

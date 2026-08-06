@@ -6,7 +6,7 @@ The child-side host FK pattern for product-to-product ownership (a nullable `<ho
 one product row pointing at another product, e.g. `attachments.taskId`) is deprecated in favor of
 a host-side id array registered in `appConfig.productEmbeddings` with `lifecycle: 'owned'`. A
 child-side FK is invisible to every generic layer (sync view declarations, CDC embedding cleanup,
-SSE propagation hints, counters, client cache patching) and forces the fork to edit
+SSE propagation hints, counters, client cache patching) and forces the app to edit
 template-owned module files, which is exactly where sync friction concentrates.
 
 The template already ships everything the flip needs: the `lifecycle: 'shared' | 'owned'`

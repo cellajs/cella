@@ -19,15 +19,15 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { DocContext } from '../constants';
 import { type Tx, withRlsTx } from './db';
 
-// Constraint: no fork-owned entity schema imports. Cella-owned tables (memberships) are
+// Constraint: no app-owned entity schema imports. Cella-owned tables (memberships) are
 // queried through their typed drizzle schema; app-declared entity tables are resolved
-// dynamically from the DB so this file works for every fork unchanged.
+// dynamically from the DB so this file works for every app unchanged.
 
 /**
  * Column names that exist on a table, read once from Postgres and cached per process.
  *
  * Lets the relay select only the columns a table actually has (each app's entities differ)
- * without importing fork-owned entity schema. The DB is
+ * without importing app-owned entity schema. The DB is
  * the source of truth, so this stays correct across apps and migrations.
  */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();
@@ -80,7 +80,7 @@ export interface EntityScopeRow extends Partial<ChannelIdColumns> {
  * Reads only the columns the permission engine needs. Table and column names are derived from the
  * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
  * test) and filtered to the columns the table actually has via {@link getTableColumnNames}, so it
- * works for every app's entity types without importing fork-owned entity schema. The entity id is
+ * works for every app's entity types without importing app-owned entity schema. The entity id is
  * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
  */
 export async function resolveEntityScope(

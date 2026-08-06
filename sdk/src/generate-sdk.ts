@@ -227,9 +227,9 @@ const generate = async () => {
 
     // Format temp output with biome before comparing. The temp folder is gitignored and biome's
     // `vcs.useIgnoreFile` would silently skip it (exit 0, zero files processed), leaving hey-api's
-    // raw output — so disable the VCS ignore file for this invocation. Non-zero exit is fine
+    // raw output, so this invocation disables the VCS ignore file. Non-zero exit is fine
     // (unfixable lint diagnostics can remain; --write still formats), but processing no files
-    // means the output stays unformatted, so surface that instead of continuing silently.
+    // means the output stays unformatted, so that case logs a warning.
     const biomeResult = spawnSync(
       'pnpm',
       ['biome', 'check', '--write', '--vcs-use-ignore-file=false', tempOutputPath],

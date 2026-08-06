@@ -81,7 +81,6 @@ describe('storage module', () => {
     );
     expect(uploadBuckets.length).toBeGreaterThan(0);
     for (const b of uploadBuckets) {
-      // biome-ignore lint/suspicious/noExplicitAny: raw input shape
       const cors = (b.inputs.corsRules as any[]) ?? [];
       expect(cors.length, `${b.name} should have CORS rules`).toBeGreaterThan(0);
       for (const rule of cors) {
@@ -98,7 +97,6 @@ describe('storage module', () => {
   it('frontend bucket expires stale assets/ chunks but never root entry files', () => {
     const bucket = h.resources.find((r) => r.name === 'frontend-bucket');
     expect(bucket).toBeDefined();
-    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
     const rules = (bucket?.inputs.lifecycleRules as any[]) ?? [];
     const assetRule = rules.find((r) => r.id === 'expire-stale-assets');
     expect(assetRule, 'expire-stale-assets lifecycle rule must exist').toBeDefined();
@@ -111,7 +109,6 @@ describe('storage module', () => {
   it('frontend bucket purges noncurrent versions and orphaned delete markers', () => {
     const bucket = h.resources.find((r) => r.name === 'frontend-bucket');
     expect(bucket).toBeDefined();
-    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
     const rules = (bucket?.inputs.lifecycleRules as any[]) ?? [];
     const rule = rules.find((r) => r.id === 'cleanup-old-versions');
     expect(rule, 'cleanup-old-versions lifecycle rule must exist').toBeDefined();
@@ -128,7 +125,6 @@ describe('storage module', () => {
   it('boot diagnostics bucket expires old boot-diag objects', () => {
     const bucket = h.resources.find((r) => r.name === 'boot-diag-bucket');
     expect(bucket).toBeDefined();
-    // biome-ignore lint/suspicious/noExplicitAny: raw input shape
     const rules = (bucket?.inputs.lifecycleRules as any[]) ?? [];
     const rule = rules.find((r) => r.id === 'expire-boot-diag');
     expect(rule).toBeDefined();
