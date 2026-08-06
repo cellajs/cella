@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.2](https://github.com/cellajs/cella/compare/0.8.1...0.8.2) (2026-08-06)
+
+
+### 🐞 Bug fixes
+
+* **deploy:** drop deleted locales/package.json from Dockerfile manifests stage ([#1016](https://github.com/cellajs/cella/issues/1016)) ([8245b23](https://github.com/cellajs/cella/commit/8245b2378bee391bdc611f636cc86f85bf99da5b))
+
+
+### 🧹 Chores
+
+* deps ([#1018](https://github.com/cellajs/cella/issues/1018)) ([8dd0912](https://github.com/cellajs/cella/commit/8dd0912c2517f7c18e747c90e3f52311638f3918))
+
 ## [0.8.1](https://github.com/cellajs/cella/compare/0.8.0...0.8.1) (2026-08-06)
 
 
