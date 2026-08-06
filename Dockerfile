@@ -203,12 +203,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter yjs-worker...
 
 # Install all dependencies (including dev for build) and build with tsup
+# Install yjs and shared deps; backend deps needed for bundling backend/src imports
 FROM manifests AS yjs-builder
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts --filter yjs-worker...
+    pnpm install --frozen-lockfile --ignore-scripts --filter yjs-worker... --filter backend...
 
 COPY yjs/ ./yjs/
+COPY backend/src ./backend/src
 COPY shared/ ./shared/
 
 WORKDIR /app/yjs
