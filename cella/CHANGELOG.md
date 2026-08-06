@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/cellajs/cella/compare/0.8.2...0.8.3) (2026-08-06)
+
+
+### 🐞 Bug fixes
+
+* yjs docker ([#1019](https://github.com/cellajs/cella/issues/1019)) ([83b95fb](https://github.com/cellajs/cella/commit/83b95fb03a4612e6b205f603a74c77de6dd13276))
+
 ## [0.8.2](https://github.com/cellajs/cella/compare/0.8.1...0.8.2) (2026-08-06)
 
 
