@@ -30,7 +30,7 @@ export function SectionArchiveButton({
         className="group focus-effect w-full bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
       >
         <div className="flex w-12 items-center justify-center py-2">
-          <ArchiveIcon className="ml-2 items-center opacity-75" />
+          <ArchiveIcon className="icon-lg ml-2 items-center opacity-75" />
         </div>
         <div className="grow truncate p-2 pl-2 text-left opacity-75">
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{t('c:archived')}</span>
