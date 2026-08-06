@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.8.1](https://github.com/cellajs/cella/compare/0.8.0...0.8.1) (2026-08-06)
+
+
+### 🎉 New features
+
+* **frontend:** resolve tab landing and disabled-tab guard at route level ([#1009](https://github.com/cellajs/cella/issues/1009)) ([17492bb](https://github.com/cellajs/cella/commit/17492bb4e8be656eff0cfe258d830f5258507519))
+* **frontend:** visible header on tabs card + forward off disabled tabs ([#1007](https://github.com/cellajs/cella/issues/1007)) ([615fc5b](https://github.com/cellajs/cella/commit/615fc5ba116c374e30174038b37ceb07dec36a11))
+
+
+### 🐞 Bug fixes
+
+* **frontend:** mobile viewport height strategy ([#1005](https://github.com/cellajs/cella/issues/1005)) ([00993fc](https://github.com/cellajs/cella/commit/00993fce50d2c7e3de13b5495f453c563b127947))
+* **frontend:** truthful lucide size attrs and icon-lg on menu-sheet buttons ([#1014](https://github.com/cellajs/cella/issues/1014)) ([d7fca0c](https://github.com/cellajs/cella/commit/d7fca0c9ab9bfb900022387e3bb3ce3dbc388abb))
+* **i18n:** repair locales pipeline, i18n Ally resolution, and remove dead locale code ([#1008](https://github.com/cellajs/cella/issues/1008)) ([a705ea0](https://github.com/cellajs/cella/commit/a705ea01e233b902132da0af917189aeae6fb16b))
+* **infra:** repair full-mode tests broken by lint consolidation ([#1006](https://github.com/cellajs/cella/issues/1006)) ([947527a](https://github.com/cellajs/cella/commit/947527a96398a04a20f6ea1a9ebc03d07e21c4ba))
+* **sdk:** format generated output again by bypassing VCS ignore in biome step ([#1004](https://github.com/cellajs/cella/issues/1004)) ([06b228b](https://github.com/cellajs/cella/commit/06b228bf32c76965e920d13df7059d5f85a9bbf6))
+* **tests:** repair full-mode tests broken by worker env dedupe ([#1013](https://github.com/cellajs/cella/issues/1013)) ([ea59464](https://github.com/cellajs/cella/commit/ea59464368fccc331ff8bc40ca3d706d98c996fb))
+
+
+### 🔧 Small improvements
+
+* **frontend:** headless settings placements ([#1002](https://github.com/cellajs/cella/issues/1002)) ([ca17240](https://github.com/cellajs/cella/commit/ca172401a7ed863349aa9652185467eae2cec974))
+* **tenants:** remove manual tenant creation ([#1003](https://github.com/cellajs/cella/issues/1003)) ([df8f14d](https://github.com/cellajs/cella/commit/df8f14dcb3c0f6427696030b829efa210732e8eb))
+* **workers:** align backend/cdc/yjs on drizzle + hono ([#1010](https://github.com/cellajs/cella/issues/1010)) ([9fafabc](https://github.com/cellajs/cella/commit/9fafabc5c1af3e25a2c3e9f325cf12fbaa9fff09))
+
+
+### 🧹 Chores
+
+* **lint:** consolidate style checks + simplify biome and extend lint scope ([#1000](https://github.com/cellajs/cella/issues/1000)) ([cdcb70a](https://github.com/cellajs/cella/commit/cdcb70a2e466d22af9c347403a8ae61d48db6e50))
+* **workers:** dedupe cdc/yjs env, poll defaults, health lag + test gating ([#1011](https://github.com/cellajs/cella/issues/1011)) ([2e18afc](https://github.com/cellajs/cella/commit/2e18afc1711acee5e9080f564866e01742d52d48))
+
 ## [0.8.0](https://github.com/cellajs/cella/compare/0.7.0...0.8.0) (2026-08-04)
 
 
