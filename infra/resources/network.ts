@@ -3,15 +3,11 @@ import { naming, region, tags } from '../pulumi-context';
 
 // VPC
 
-const vpc = new scaleway.network.Vpc(
-  'main-vpc',
-  {
-    name: naming.resource('vpc'),
-    region,
-    tags,
-  },
-  { aliases: [{ type: 'scaleway:index/vpc:Vpc' }] },
-);
+const vpc = new scaleway.network.Vpc('main-vpc', {
+  name: naming.resource('vpc'),
+  region,
+  tags,
+});
 
 // Private Network
 
@@ -19,19 +15,15 @@ const vpc = new scaleway.network.Vpc(
  *  ACL-guarded internal LB frontends (resources/loadbalancer.ts). */
 export const privateNetworkSubnet = '10.0.0.0/24';
 
-const privateNetwork = new scaleway.network.PrivateNetwork(
-  'main-private-network',
-  {
-    name: naming.resource('private-network'),
-    vpcId: vpc.id,
-    region,
-    tags,
-    ipv4Subnet: {
-      subnet: privateNetworkSubnet,
-    },
+const privateNetwork = new scaleway.network.PrivateNetwork('main-private-network', {
+  name: naming.resource('private-network'),
+  vpcId: vpc.id,
+  region,
+  tags,
+  ipv4Subnet: {
+    subnet: privateNetworkSubnet,
   },
-  { aliases: [{ type: 'scaleway:index/vpcPrivateNetwork:VpcPrivateNetwork' }] },
-);
+});
 
 // Exports
 

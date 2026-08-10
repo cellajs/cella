@@ -6,8 +6,8 @@ import {
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret';
-import { deployedServices, enabledServices, secretScopeSlugs, serviceEndpoints, serviceNames } from '../lib/services';
+import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret';
+import { deployedServices, enabledServices, secretScopeSlugs, serviceEndpoints } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
@@ -22,8 +22,6 @@ export const ALLOWED_KEYS = [
   'registry_ns',
   'frontend_bucket',
   'state_bucket',
-  'vm_reader_app',
-  'vm_secret_condition',
   'vm_assert_json',
   'enabled_services_json',
   'build_images_matrix',
@@ -96,18 +94,10 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     registry_ns: naming.registryNamespace,
     frontend_bucket: naming.frontendBucket,
     state_bucket: naming.pulumiStateBucket,
-    // Deterministic IAM application name for the VM reader identity (per-mode;
-    // assert-vm-grants falls back to the legacy `<slug>-vm-reader` name for
-    // pre-migration stacks). CI's "Verify VM reader IAM grant" step resolves
-    // the application id by this name.
-    vm_reader_app: `${appConfig.slug}-${appConfig.mode}-vm-reader`,
-    // Exact CEL condition the VM secret rules must carry (REQ-9); built by the
-    // same shared builder the Pulumi program uses, so the deploy's
-    // assert-vm-grants step compares strings, not semantics.
-    vm_secret_condition: vmSecretCondition(appConfig.slug, appConfig.mode, serviceNames),
-    // v2 model: one assertion row per principal (exact sets + exact
-    // condition), consumed by the deploy's grant-verification step when the
-    // stack config says iamModel=v2.
+    // One assertion row per principal (exact sets + exact condition, built by
+    // the same shared builders the Pulumi program uses so the deploy's
+    // assert-vm-grants step compares strings, not semantics), consumed by the
+    // deploy's grant-verification step when the stack config says iamModel=v2.
     vm_assert_json: JSON.stringify([
       ...deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => ({
         app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),

@@ -10,14 +10,8 @@ import type { ServiceName } from '../compose/compose';
 import { sizing } from '../config/sizing';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
 import { type ResolvedBootImage, resolveBootImage } from '../lib/scaleway/boot-image';
-import {
-  engineSecretPath,
-  secretManagerPath,
-  VM_READER_SECRET_NAME,
-  type VmReaderKeyPayload,
-} from '../lib/scaleway/vm-reader-secret';
 import type { ServiceDefinition } from '../lib/services';
-import { mode, naming, region, tags, zone } from '../pulumi-context';
+import { naming, region, tags, zone } from '../pulumi-context';
 import { renderCloudInit } from './cloud-init';
 import { createComposeEnvBuilder } from './compose-env';
 import {
@@ -34,34 +28,6 @@ import { registryEndpoint } from './registry';
 import { secretIds } from './secrets';
 import { bootDiagBucketName } from './storage';
 import { iamModelV2, vmIamPolicies } from './vm-iam';
-
-// Reads the VM reader key pair (minimal-privilege: registry pull + Secret
-// Manager read) from Scaleway Secret Manager. Owned here: compute is its only
-// consumer, baking it into each generation's cloud-init. Legacy model only.
-function readVmReaderKey(): { accessKey: pulumi.Output<string>; secretKey: pulumi.Output<string> } {
-  // Engine folder is canonical; pre-migration stacks seeded the container at
-  // the env root, so fall back to it to keep the deploy working.
-  const container = pulumi.output(
-    scaleway.secrets
-      .getSecret({ name: VM_READER_SECRET_NAME, path: engineSecretPath(naming.slug, mode), region })
-      .catch(() =>
-        scaleway.secrets.getSecret({ name: VM_READER_SECRET_NAME, path: secretManagerPath(naming.slug, mode), region }),
-      ),
-  );
-  const payload = scaleway.secrets
-    .getVersionOutput({ secretId: container.id, revision: 'latest', region })
-    .data.apply((data): VmReaderKeyPayload => {
-      const parsed: unknown = JSON.parse(Buffer.from(data, 'base64').toString('utf8'));
-      const record = parsed as Partial<VmReaderKeyPayload> | null;
-      if (typeof record?.accessKey !== 'string' || typeof record?.secretKey !== 'string') {
-        throw new Error(
-          `Secret '${VM_READER_SECRET_NAME}' does not contain {accessKey, secretKey} — re-run the infra CLI bootstrap to reseed it.`,
-        );
-      }
-      return { accessKey: record.accessKey, secretKey: record.secretKey };
-    });
-  return { accessKey: pulumi.secret(payload.accessKey), secretKey: pulumi.secret(payload.secretKey) };
-}
 
 /**
  * v2 model: this deploy's minted credentials, written by
@@ -93,16 +59,12 @@ function readGenerationKeysFile(): GenerationKeysFile | undefined {
 
 const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined;
 
-// The credential pair baked into cloud-init: v2 = the boot fetcher key
-// (registry pull + handoff read + diag write ONLY, because the real service
-// key arrives via the single-access handoff bundle); legacy = the vm-reader key.
-const vmReaderKey = sizing.computeEnabled && !iamModelV2 ? readVmReaderKey() : undefined;
-const vmAccessKey = generationKeys
-  ? pulumi.secret(generationKeys.bootAccessKey)
-  : (vmReaderKey?.accessKey ?? pulumi.secret(''));
-const vmSecretKey = generationKeys
-  ? pulumi.secret(generationKeys.bootSecretKey)
-  : (vmReaderKey?.secretKey ?? pulumi.secret(''));
+// The credential pair baked into cloud-init: the boot fetcher key (registry
+// pull + handoff read + diag write ONLY, because the real service key arrives
+// via the single-access handoff bundle). Empty placeholder on non-deploy ups
+// (pre-existing generations ignore cloudInit changes).
+const vmAccessKey = generationKeys ? pulumi.secret(generationKeys.bootAccessKey) : pulumi.secret('');
+const vmSecretKey = generationKeys ? pulumi.secret(generationKeys.bootSecretKey) : pulumi.secret('');
 
 // Security Group: fully closed inbound; LB reaches VMs via private network.
 // Break-glass access is via Scaleway's serial console (no SSH on the public
@@ -190,8 +152,7 @@ function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: s
 /**
  * Resolve the boot runner tag to the name+digest it is pullable by, so the
  * launcher pins the root-equivalent (socket-mounted) image against later registry
- * pushes. Falls back to the legacy image name for generations deployed before the
- * boot-image rename (see resolveBootImage).
+ * pushes.
  *
  * `requirePinned` fails closed on a real `up` for a newly rolling generation whose
  * boot image must exist. A pre-existing generation degrades to an unpinned tag
@@ -238,8 +199,8 @@ function buildCloudInit(
     .all([
       envLines,
       buildRuntimeSecretsManifest(service.secretConsumers),
-      // VM reader credentials: minimal-privilege key (registry pull + Secret
-      // Manager read), never the operator/CI key.
+      // Boot fetcher credentials: minimal-privilege key (registry pull +
+      // handoff read + diag write), never the operator/CI key.
       vmAccessKey,
       vmSecretKey,
       registryEndpoint,

@@ -15,7 +15,7 @@ each stage has only the permissions it needs.
 The deployment setup is built around three principles:
 
 1. **Create-then-replace.** A release and an infra change are the same operation: every deploy bakes the image SHA into a _new_ VM generation's cloud-init, brings it up, cuts traffic over, then reaps the old one.
-2. **Descending-privilege credentials.** Three keys, each creating the next (bootstrap → CI deploy → VM reader), so no privileged key ever lives on your laptop. CI only holds what it needs.
+2. **Descending-privilege credentials.** Keys descend in privilege (bootstrap → CI deploy → per-deploy VM keys), so no privileged key ever lives on your laptop. CI only holds what it needs.
 3. **Automation without kubernetes.** IaC is great to organize semi-complex configurations without needing a DevOps expert. See also [config files](#configuration).
 
 The key resources and how traffic flows between them:
@@ -99,17 +99,17 @@ The primary rollout service (the one that owns migrations) promotes first; the r
 
 ## Credentials
 
-The security model is defined by exactly three Scaleway API keys, in strictly descending privilege, each in a different store. Each key creates or provisions the next:
+The security model is defined by Scaleway API keys in strictly descending privilege, each in a different store. Each key creates or provisions the next:
 
 ```
 Bootstrap key      (broad, short-lived; in your password manager only)
     │ creates
     ▼
 CI deploy key      (project-scoped write; in GitHub Environment)
-    │ provisions
+    │ mints per deploy
     ▼
-VM reader key      (read-only; baked into each VM)
-    │ reads
+boot + service keys (scoped per principal; boot key baked into the VM,
+    │ reads          the service key arrives via a single-access handoff bundle)
     ▼
 runtime secrets + images on VM
 ```
@@ -118,7 +118,7 @@ runtime secrets + images on VM
 | --- | --- | --- | --- |
 | **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes: revoked immediately after each use (initial bootstrap or manual rotation). Also required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
 | **CI deploy key** (`<slug>-ci-deploy`) | Write on compute / LB / edge / secrets / object storage / registry; **read-only** on VPC / private network / RDB (those are bootstrap-owned). Project-scoped, plus DNS at org scope. | Long-lived; rotate manually by re-running the CLI's **Rotate keys** action (see [Key rotation](#key-rotation)) | The `production` GitHub Environment secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (environment-scoped, not repo-scoped). The Scaleway provider authenticates from those env vars. |
-| **VM reader key** (`<slug>-vm-reader`) | Read-only registry / Secret Manager (incl. `SecretManagerSecretAccess` for decrypt-read). Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Long-lived; rotates with the CI key | Seeded into Scaleway Secret Manager at bootstrap (the `vm-reader-key` secret), read back at `pulumi up`, and baked into VM cloud-init. Not in stack config. |
+| **Boot + service keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own + shared folders); the backend additionally gets granular S3 object sets. Just enough for a VM to pull images and hydrate `/opt/app/.env.runtime`. | Minted per deploy by the CI key; superseded keys are pruned on the next mint | Boot key baked into VM cloud-init; each service key delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
 
 A fourth secret sits outside this chain: the **Pulumi passphrase**, which encrypts the stack's secret outputs in the state bucket. It is not an IAM identity: the CLI generates it at bootstrap and syncs it to the GitHub Environment; your only job is storing it in your password manager when shown (see [Passphrase rotation](#passphrase-rotation)).
 
@@ -167,7 +167,7 @@ Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `en
 Two safeguards keep a runtime-secret change from causing the kind of full outage a mis-delivered secret would otherwise trigger. They sit alongside the single-line/base64 contract above:
 
 1. **The secret _manifest_ is baked into the new generation's cloud-init.** The per-service manifest (the list of which secrets a VM hydrates; metadata only, never values) is built by Pulumi ([resources/compute.ts](../infra/resources/compute.ts)) and written into cloud-init. Because every deploy already replaces the VM, there is no out-of-band channel to maintain; at first boot the boot runner reads the manifest and hydrates `/opt/app/.env.runtime` before the app starts.
-2. **Deliverability is preflighted before rolling.** Right after the base stack update, and before any VM is rolled or replaced, the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](../infra/tasks/assert-secrets-deliverable.ts), the **Verify runtime secrets are deliverable** step, next to the **Verify VM reader IAM grant** preflight). The single-line rule itself lives in one place, [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the on-VM boot runner that performs the hydration.
+2. **Deliverability is preflighted before rolling.** Right after the base stack update, and before any VM is rolled or replaced, the deploy asserts that every `required` secret can actually be hydrated the way a VM will (fetched from Secret Manager and single-line / decodable), failing loudly with the offending env vars instead of bricking the fleet ([tasks/assert-secrets-deliverable.ts](../infra/tasks/assert-secrets-deliverable.ts), the **Verify runtime secrets are deliverable** step, next to the **Verify VM IAM grants** preflight). The single-line rule itself lives in one place, [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the on-VM boot runner that performs the hydration.
 
 ### Certificate issuance and recovery
 
@@ -441,9 +441,9 @@ Renaming the boot image is a sync-breaking change with a built-in migration, and
    pnpm infra
    ```
 
-   This mints a fresh `<slug>-ci-deploy` key and (if `gh` is authenticated) pushes it to the `production` GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also mints a fresh `<slug>-vm-reader` key and writes it to Secret Manager. Neither key is written to stack config.
+   This mints a fresh `<slug>-<mode>-ci-deploy` key and (if `gh` is authenticated) pushes it to the `production` GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. The key is not written to stack config.
 
-3. The next CI deploy authenticates with the new CI key from the GitHub Environment; no commit needed. The new VM reader key is baked into VM cloud-init on the next stack update; because that changes the boot script, the VMs are replaced (the LB health checks bridge the transition).
+3. The next CI deploy authenticates with the new CI key from the GitHub Environment; no commit needed. VM-side credentials need no rotation of their own: every deploy mints fresh boot + service keys.
 
 4. **Revoke the bootstrap key** in the Scaleway console.
 

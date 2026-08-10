@@ -245,37 +245,25 @@ export async function runDeploy(
       await fx.update(stack);
     });
     await step('Verify VM IAM grants', async () => {
-      if (iamV2) {
-        // One assertion per principal: exact sets AND exact path condition.
-        const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
-        for (const row of rows) {
-          await fx.task('assert-vm-grants', [
-            '--application-name',
-            row.app,
-            '--required-sets',
-            row.sets.join(','),
-            '--secret-condition',
-            row.condition,
-            '--project-id',
-            process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-            '--organization-id',
-            process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-          ]);
-        }
-        return;
+      // v2 only: one assertion per principal, exact sets AND exact path
+      // condition. A stack without the flag has no per-service principals to
+      // verify (the legacy vm-reader model was removed).
+      if (!iamV2) return;
+      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
+      for (const row of rows) {
+        await fx.task('assert-vm-grants', [
+          '--application-name',
+          row.app,
+          '--required-sets',
+          row.sets.join(','),
+          '--secret-condition',
+          row.condition,
+          '--project-id',
+          process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+          '--organization-id',
+          process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
+        ]);
       }
-      // Legacy vm-reader is unconditioned (project-wide secret read, as it
-      // was pre-rewrite): assert the permission sets only, no path condition.
-      await fx.task('assert-vm-grants', [
-        '--application-name',
-        env.vm_reader_app,
-        '--fallback-application-name',
-        env.vm_reader_app.replace(`-${env.environment}-`, '-'),
-        '--project-id',
-        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
-        '--organization-id',
-        process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-      ]);
     });
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', [

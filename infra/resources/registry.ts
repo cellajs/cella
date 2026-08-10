@@ -3,16 +3,12 @@ import { naming, region } from '../pulumi-context';
 
 // Container Registry Namespace
 
-const registry = new scaleway.registry.Namespace(
-  'main-registry',
-  {
-    name: naming.registryNamespace,
-    region,
-    description: `Container images for ${naming.slug}`,
-    isPublic: false,
-  },
-  { aliases: [{ type: 'scaleway:index/registryNamespace:RegistryNamespace' }] },
-);
+const registry = new scaleway.registry.Namespace('main-registry', {
+  name: naming.registryNamespace,
+  region,
+  description: `Container images for ${naming.slug}`,
+  isPublic: false,
+});
 
 // Exports
 

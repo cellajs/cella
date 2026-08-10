@@ -54,7 +54,6 @@ function createSecretContainer(
       tags,
     },
     {
-      aliases: [{ type: 'scaleway:index/secret:Secret' }],
       retainOnDelete: opts?.retainOnDelete,
       import: opts?.importId,
     },
@@ -62,15 +61,11 @@ function createSecretContainer(
 }
 
 function createSecretVersion(name: string, secretId: pulumi.Input<string>, data: pulumi.Input<string>) {
-  return new scaleway.secrets.Version(
-    `secret-version-${name}`,
-    {
-      secretId,
-      data,
-      region,
-    },
-    { aliases: [{ type: 'scaleway:index/secretVersion:SecretVersion' }] },
-  );
+  return new scaleway.secrets.Version(`secret-version-${name}`, {
+    secretId,
+    data,
+    region,
+  });
 }
 
 // Resource names (`generated-<secretName>`) are load-bearing: they are the

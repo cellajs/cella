@@ -120,10 +120,9 @@ async function loadContext(): Promise<InfraContext> {
     throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.');
   }
 
-  // Bootstrap creates the operator application and writes its id to backend/.env.
-  // Bootstrapped stacks require it for operator access to CI-scoped buckets.
-  const adminApplicationId =
-    process.env.SCW_ADMIN_APPLICATION_ID?.trim() || process.env.SCW_OPERATOR_APPLICATION_ID?.trim();
+  // Bootstrap creates the admin application and writes its id to backend/.env.
+  // Bootstrapped stacks require it for admin access to CI-scoped buckets.
+  const adminApplicationId = process.env.SCW_ADMIN_APPLICATION_ID?.trim();
   if (!adminApplicationId && state === 'bootstrapped') {
     console.warn(
       'SCW_ADMIN_APPLICATION_ID is not set — admin bucket-policy statements will be dropped on the next up. Run "Rotate keys" to create the admin app.',
@@ -217,7 +216,7 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
       {
         name: 'Rotate keys',
         value: 'rotate',
-        description: 'Replace the CI deploy and VM reader keys with fresh ones.',
+        description: 'Replace the CI deploy key with a fresh one.',
       },
       {
         name: 'Rotate passphrase',

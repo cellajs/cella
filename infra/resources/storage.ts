@@ -3,14 +3,7 @@ import * as scaleway from '@pulumiverse/scaleway';
 import { sizing } from '../config/sizing';
 import { services } from '../lib/services';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
-import {
-  adminApplicationId,
-  backendServiceApplicationId,
-  bootApplicationId,
-  ciDeployApplicationId,
-  legacyS3ApplicationId,
-  vmReaderApplicationId,
-} from './vm-iam';
+import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciDeployApplicationId } from './vm-iam';
 
 // The browser app origin allowed to call the upload buckets: the service that
 // owns the LB's default route (the SPA), resolved without naming a service.
@@ -99,29 +92,29 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
 /**
  * Backend service-app statement on the uploads buckets (REQ-20): object-level
  * only, since the backend signs uploads and presigned URLs with its per-deploy
- * service key. The legacy `<slug>-s3` managed-key app rides along until
- * migration deletes it, so pre-migration backends keep signing. Both resolve
- * gracefully (absent app = statement dropped).
+ * service key. Resolves gracefully (absent app = statement dropped).
  */
 const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
-  pulumi.all([backendServiceApplicationId, legacyS3ApplicationId]).apply(([backendId, s3Id]) =>
-    [backendId, s3Id]
-      .filter((id): id is string => !!id)
-      .map((id, index) => ({
-        Sid: index === 0 && backendId ? 'BackendObjectAccess' : 'LegacyS3ObjectAccess',
-        Effect: 'Allow',
-        Principal: { SCW: `application_id:${id}` },
-        Action: [
-          's3:ListBucket',
-          's3:ListBucketMultipartUploads',
-          's3:ListMultipartUploadParts',
-          's3:GetObject',
-          's3:PutObject',
-          's3:DeleteObject',
-          's3:AbortMultipartUpload',
-        ],
-        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-      })),
+  backendServiceApplicationId.apply((backendId) =>
+    backendId
+      ? [
+          {
+            Sid: 'BackendObjectAccess',
+            Effect: 'Allow',
+            Principal: { SCW: `application_id:${backendId}` },
+            Action: [
+              's3:ListBucket',
+              's3:ListBucketMultipartUploads',
+              's3:ListMultipartUploadParts',
+              's3:GetObject',
+              's3:PutObject',
+              's3:DeleteObject',
+              's3:AbortMultipartUpload',
+            ],
+            Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+          },
+        ]
+      : [],
   );
 
 // Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
@@ -157,94 +150,82 @@ const frontendBucket = new scaleway.object.Bucket(
       },
     ],
   },
-  { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction },
+  { protect: isProduction },
 );
 
 // Public read via bucket policy only: the SPA is served by the Caddy frontend
 // VMs proxying the S3 REST endpoint (with their own index.html fallback), so
 // no S3 website hosting configuration is needed.
-new scaleway.object.BucketPolicy(
-  'frontend-policy',
-  {
-    bucket: frontendBucket.name,
-    region,
-    policy: pulumi.jsonStringify({
-      Version: '2023-04-17',
-      Statement: adminAccess(frontendBucket.name).apply((admin) => [
+new scaleway.object.BucketPolicy('frontend-policy', {
+  bucket: frontendBucket.name,
+  region,
+  policy: pulumi.jsonStringify({
+    Version: '2023-04-17',
+    Statement: adminAccess(frontendBucket.name).apply((admin) => [
+      {
+        Sid: 'PublicRead',
+        Effect: 'Allow',
+        Principal: '*',
+        Action: ['s3:GetObject'],
+        Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
+      },
+      deployAccess(frontendBucket.name),
+      ...admin,
+    ]),
+  }),
+});
+
+// Public uploads bucket (user-uploaded public assets)
+
+const publicUploadsBucket = new scaleway.object.Bucket('public-uploads-bucket', {
+  name: naming.publicBucket,
+  region,
+  tags: tagsAsMap,
+  forceDestroy: !isProduction,
+  // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
+  // the backup floor (REQ-14). Overwrites/deletes are recoverable for 30
+  // days, and the CI statement below cannot delete versions.
+  versioning: { enabled: true },
+  lifecycleRules: [
+    {
+      id: 'cleanup-old-versions',
+      enabled: true,
+      noncurrentVersionExpiration: { noncurrentDays: 30 },
+      expiration: { expiredObjectDeleteMarker: true },
+    },
+  ],
+  corsRules: [
+    {
+      allowedHeaders: ['*'],
+      allowedMethods: ['GET', 'PUT', 'POST'],
+      allowedOrigins: [browserOrigin],
+      maxAgeSeconds: 3600,
+    },
+  ],
+});
+
+// Public read access for public uploads
+new scaleway.object.BucketPolicy('public-uploads-policy', {
+  bucket: publicUploadsBucket.name,
+  region,
+  policy: pulumi.jsonStringify({
+    Version: '2023-04-17',
+    Statement: pulumi
+      .all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)])
+      .apply(([admin, signers]) => [
         {
           Sid: 'PublicRead',
           Effect: 'Allow',
           Principal: '*',
           Action: ['s3:GetObject'],
-          Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
+          Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
         },
-        deployAccess(frontendBucket.name),
+        deployAccessNoVersionDelete(publicUploadsBucket.name),
         ...admin,
+        ...signers,
       ]),
-    }),
-  },
-  { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] },
-);
-
-// Public uploads bucket (user-uploaded public assets)
-
-const publicUploadsBucket = new scaleway.object.Bucket(
-  'public-uploads-bucket',
-  {
-    name: naming.publicBucket,
-    region,
-    tags: tagsAsMap,
-    forceDestroy: !isProduction,
-    // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
-    // the backup floor (REQ-14). Overwrites/deletes are recoverable for 30
-    // days, and the CI statement below cannot delete versions.
-    versioning: { enabled: true },
-    lifecycleRules: [
-      {
-        id: 'cleanup-old-versions',
-        enabled: true,
-        noncurrentVersionExpiration: { noncurrentDays: 30 },
-        expiration: { expiredObjectDeleteMarker: true },
-      },
-    ],
-    corsRules: [
-      {
-        allowedHeaders: ['*'],
-        allowedMethods: ['GET', 'PUT', 'POST'],
-        allowedOrigins: [browserOrigin],
-        maxAgeSeconds: 3600,
-      },
-    ],
-  },
-  { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }] },
-);
-
-// Public read access for public uploads
-new scaleway.object.BucketPolicy(
-  'public-uploads-policy',
-  {
-    bucket: publicUploadsBucket.name,
-    region,
-    policy: pulumi.jsonStringify({
-      Version: '2023-04-17',
-      Statement: pulumi
-        .all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)])
-        .apply(([admin, signers]) => [
-          {
-            Sid: 'PublicRead',
-            Effect: 'Allow',
-            Principal: '*',
-            Action: ['s3:GetObject'],
-            Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
-          },
-          deployAccessNoVersionDelete(publicUploadsBucket.name),
-          ...admin,
-          ...signers,
-        ]),
-    }),
-  },
-  { aliases: [{ type: 'scaleway:index/objectBucketPolicy:ObjectBucketPolicy' }] },
-);
+  }),
+});
 
 // Private uploads bucket (user-uploaded private assets, signed URL access)
 
@@ -276,13 +257,13 @@ const privateUploadsBucket = new scaleway.object.Bucket(
       },
     ],
   },
-  { aliases: [{ type: 'scaleway:index/objectBucket:ObjectBucket' }], protect: isProduction },
+  { protect: isProduction },
 );
 
 /**
  * Deny-by-default policy on the private bucket (P3): no public statement, signed URLs only.
- * Admits the upload signers (backend service app; legacy s3 app until migration), CI without
- * version deletes (REQ-14), and the admin app; any other key, including a compromised VM boot key or another service's key, is denied.
+ * Admits the upload signer (backend service app), CI without version deletes (REQ-14),
+ * and the admin app; any other key, including a compromised VM boot key or another service's key, is denied.
  */
 new scaleway.object.BucketPolicy('private-uploads-policy', {
   bucket: privateUploadsBucket.name,
@@ -322,24 +303,22 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: pulumi
-      .all([adminAccess(bootDiagBucket.name), vmReaderApplicationId, bootApplicationId])
-      .apply(([admin, vmReaderId, bootId]) => [
-        // Whichever VM-side principal exists writes diagnostics: the vm-reader
-        // (legacy) and/or the boot fetcher (v2). Both statements during a
-        // migration window is harmless overlap.
-        ...[vmReaderId, bootId]
-          .filter((id): id is string => !!id)
-          .map((id) => ({
-            Sid: id === bootId ? 'BootWriteBootDiagnostics' : 'VmWriteBootDiagnostics',
-            Effect: 'Allow',
-            Principal: { SCW: `application_id:${id}` },
-            Action: ['s3:PutObject'],
-            Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
-          })),
-        deployAccess(bootDiagBucket.name),
-        ...admin,
-      ]),
+    Statement: pulumi.all([adminAccess(bootDiagBucket.name), bootApplicationId]).apply(([admin, bootId]) => [
+      // The boot fetcher writes diagnostics during VM startup.
+      ...(bootId
+        ? [
+            {
+              Sid: 'BootWriteBootDiagnostics',
+              Effect: 'Allow',
+              Principal: { SCW: `application_id:${bootId}` },
+              Action: ['s3:PutObject'],
+              Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
+            },
+          ]
+        : []),
+      deployAccess(bootDiagBucket.name),
+      ...admin,
+    ]),
   }),
 });
 

@@ -37,7 +37,6 @@ jobs:
       registry_ns: ${{ steps.derive.outputs.registry_ns }}
       frontend_bucket: ${{ steps.derive.outputs.frontend_bucket }}
       state_bucket: ${{ steps.derive.outputs.state_bucket }}
-      vm_reader_app: ${{ steps.derive.outputs.vm_reader_app }}
       region: ${{ steps.derive.outputs.region }}
       enabled_services_json: ${{ steps.derive.outputs.enabled_services_json }}
       image_tag: ${{ steps.derive.outputs.image_tag }}

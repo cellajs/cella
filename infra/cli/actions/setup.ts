@@ -16,7 +16,7 @@ import {
   revokeApiKey,
 } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { engineSecretPath, secretManagerPath, VM_READER_SECRET_NAME } from '../../lib/scaleway/vm-reader-secret';
+import { secretManagerPath } from '../../lib/scaleway/vm-reader-secret';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { writeEnvVar } from '../../lib/utils/env-file';
@@ -25,11 +25,9 @@ import { infraDir } from '../../lib/utils/paths';
 import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
-import { seedVmReaderKey } from '../../tasks/seed-vm-reader-key';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { setupServiceApps } from '../../tasks/setup-service-apps';
-import { setupVmKey } from '../../tasks/setup-vm-key';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { CliMode, InfraContext } from '../shared';
 import {
@@ -163,66 +161,6 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
 }
 
 /**
- * Ensures service VMs have a minimal-privilege reader key, minting one during setup
- * or when resume detects no versioned secret. Provisioning reuses the named IAM app,
- * so recovery rotates credentials without duplicating the identity. Lookup errors defer
- * validation to `pulumi up`; an empty result means no key was minted.
- */
-async function ensureVmKey(ctx: SetupContext, needsCiKey: boolean): Promise<string> {
-  let hasVmKey = false;
-  if (!needsCiKey) {
-    try {
-      const client = createSecretManagerClient({
-        secretKey: ctx.secretKey,
-        region: ctx.appConfig.s3.region,
-        projectId: ctx.projectId,
-      });
-      const enginePath = engineSecretPath(ctx.appConfig.slug, ctx.context.environment);
-      const existing =
-        (await client.getSecretByName(VM_READER_SECRET_NAME, enginePath)) ??
-        // Pre-migration stacks seeded the key at the env root.
-        (await client.getSecretByName(VM_READER_SECRET_NAME, ctx.runtimeSecretPath));
-      hasVmKey = (existing?.version_count ?? 0) > 0;
-    } catch {
-      hasVmKey = true;
-    }
-  }
-  if (!needsCiKey && hasVmKey) return '';
-
-  const vmCallerSecretKey = needsCiKey
-    ? ctx.secretKey
-    : await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-        maskedSecret({
-          message: 'Scaleway bootstrap secret key (needs IAMManager — to provision the missing VM reader key)',
-        }),
-      );
-  console.info('\n→ VM reader key (minimal-privilege identity for service VMs)');
-  while (true) {
-    try {
-      const key = await setupVmKey({
-        callerSecretKey: vmCallerSecretKey,
-        projectId: ctx.projectId,
-        slug: ctx.appConfig.slug,
-        mode: ctx.context.environment,
-      });
-      // Store the key pair in Secret Manager so the Pulumi program can read
-      // it back during `pulumi up` and bake it into VM cloud-init.
-      await seedVmReaderKey({
-        secretKey: vmCallerSecretKey,
-        projectId: ctx.projectId,
-        region: ctx.appConfig.s3.region,
-        path: engineSecretPath(ctx.appConfig.slug, ctx.context.environment),
-        key: { accessKey: key.accessKey, secretKey: key.secretKey },
-      });
-      return key.accessKey;
-    } catch (error) {
-      console.error(`\n${warningMark} VM key setup failed: ${errorMessage(error)}`);
-      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return '';
-    }
-  }
-}
-
-/**
  * Admin IAM application (replaces the keyless operator app), created on
  * fresh/rotate (bootstrap key has IAMManager). Grants Object Storage full +
  * read-only infra surfaces so a human can run `pulumi preview --refresh`,
@@ -250,30 +188,16 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
   return adminAppId;
 }
 
-function printSummary(opts: {
-  needsCiKey: boolean;
-  ciAccessKey: string;
-  vmAccessKey: string;
-  adminAppId: string;
-  mode: 'resume' | 'rotate';
-}): void {
-  const { needsCiKey, ciAccessKey, vmAccessKey, adminAppId, mode } = opts;
+function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string }): void {
+  const { needsCiKey, ciAccessKey, adminAppId } = opts;
   const divider = pc.dim(DIVIDER);
   console.info(`\n${divider}`);
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing deploy credentials left unchanged.`);
-    if (vmAccessKey) {
-      console.info(`  ${checkMark} Provisioned previously-missing VM reader key: ${pc.cyanBright(vmAccessKey)}`);
-    }
-  } else if (ciAccessKey && vmAccessKey) {
-    console.info(
-      `${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)} · VM reader: ${pc.cyanBright(vmAccessKey)}`,
-    );
   } else if (ciAccessKey) {
     console.info(
       `${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`,
     );
-    console.info(`  ${warningMark} VM reader key was not created. Re-run and choose ${pc.italic('"Rotate keys"')}.`);
   } else {
     console.info(
       `${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`,
@@ -286,15 +210,6 @@ function printSummary(opts: {
     );
   }
   console.info(divider);
-
-  // The VM reader IAM *policy* is Pulumi-managed (resources/vm-iam.ts), not minted
-  // here. If a CI deploy fails with "insufficient permissions: write policy",
-  // run "Apply infra change" once to adopt the existing Scaleway policy into state.
-  if (mode === 'rotate' && vmAccessKey) {
-    console.info(
-      `  ${pc.dim(`Note: the VM reader IAM policy is reconciled by \`pulumi up\`. If a deploy reports ${pc.italic('"write policy"')}, run ${pc.italic('"Apply infra change"')} once to adopt it.`)}`,
-    );
-  }
 }
 
 /**
@@ -672,9 +587,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // "Migrate IAM model" action flips the stack config.
   const iamV2 = isInitialBootstrap || /\biamModel:\s*["']?v2["']?/.test(context.stackYaml ?? '');
 
-  // Identities: per-service + boot apps (v2), CI deploy key, VM reader key
-  // (legacy only), admin app. Service apps come FIRST: their ids feed the CI
-  // policy's conditioned key-mint rule.
+  // Identities: per-service + boot apps (v2), CI deploy key, admin app.
+  // Service apps come FIRST: their ids feed the CI policy's key-mint rule.
   let serviceAppIds: readonly string[] = [];
   if (iamV2 && needsCiKey) {
     console.info('\n→ Service VM applications (per-service principals; keys minted per deploy)');
@@ -704,13 +618,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await warnOnCiPolicyDrift(ctx);
   }
 
-  // Legacy model only: v2 VMs never hold a standing reader key.
-  const vmAccessKey = iamV2 ? '' : await ensureVmKey(ctx, needsCiKey);
   const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : (process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '');
 
-  // Identity ids (CI, VM reader, admin application ids) are derived
-  // from the IAM API and the VM reader key lives in Secret Manager, so stack
-  // config only needs a non-secret bootstrap marker.
+  // Identity ids (CI and admin application ids) are derived from the IAM API,
+  // so stack config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey;
   if (bootstrapComplete) {
     await must(
@@ -754,7 +665,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     );
   }
 
-  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, vmAccessKey, adminAppId, mode });
+  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, adminAppId });
 
   // Base infrastructure provisioning
   const canDeploy = context.hasCiKey || !!ciKey.accessKey;

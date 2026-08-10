@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
+import {
+  ORG_PERMISSION_SETS,
+  PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from '../lib/scaleway/permissions';
 
 // Exact snapshots make every CI privilege change reviewable. Explicit forbidden
 // permissions prevent the key from gaining IAM authority to escalate itself.
@@ -51,29 +55,25 @@ describe('CI key permission sets', () => {
   });
 });
 
-describe('VM reader key permission sets', () => {
-  it('VM_PROJECT_PERMISSION_SETS exact membership snapshot', () => {
-    // Lock the VM to these read-scoped grants; additions require security review.
+describe('service VM key permission sets', () => {
+  it('SERVICE_SECRET_PERMISSION_SETS exact membership snapshot', () => {
+    // Lock service VMs to these read-scoped secret grants; additions require security review.
     // SecretManagerSecretAccess decrypts values without mutation, unlike metadata-only ReadOnly.
-    expect([...VM_PROJECT_PERMISSION_SETS].sort()).toEqual([
-      'ContainerRegistryReadOnly',
-      'SecretManagerReadOnly',
-      'SecretManagerSecretAccess',
-    ]);
+    expect([...SERVICE_SECRET_PERMISSION_SETS].sort()).toEqual(['SecretManagerReadOnly', 'SecretManagerSecretAccess']);
   });
 
   it('does not include any write or privilege-escalation permission', () => {
-    const all = [...VM_PROJECT_PERMISSION_SETS];
+    const all = [...SERVICE_SECRET_PERMISSION_SETS];
     for (const forbidden of [...FORBIDDEN, 'FullAccess', 'InstancesFullAccess', 'LoadBalancersFullAccess']) {
-      expect(all, `VM key must not hold '${forbidden}'`).not.toContain(forbidden);
+      expect(all, `service VM key must not hold '${forbidden}'`).not.toContain(forbidden);
     }
   });
 
-  it('every VM permission set is read-scoped (ReadOnly, or the SecretAccess decrypt-read grant)', () => {
+  it('every service VM permission set is read-scoped (ReadOnly, or the SecretAccess decrypt-read grant)', () => {
     // SecretManagerSecretAccess reads (decrypts) secret values but grants no
     // write/escalation; everything else must be a plain `ReadOnly` grant.
-    for (const p of VM_PROJECT_PERMISSION_SETS) {
-      expect(p, `VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(
+    for (const p of SERVICE_SECRET_PERMISSION_SETS) {
+      expect(p, `service VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(
         /(ReadOnly$|^SecretManagerSecretAccess$)/,
       );
     }

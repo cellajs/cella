@@ -7,8 +7,9 @@
  * in Scaleway's flat org-wide console lists.
  *
  * Legacy names (`<slug>-ci-deploy`, `<slug>-vm-reader`, `<slug>-operator`)
- * predate the per-mode split; lookups fall back to them so pre-migration
- * stacks keep deploying. `pnpm infra` → "Migrate IAM model" retires them.
+ * predate the per-mode split. They are no longer lookup fallbacks: only the
+ * migrate-iam cleanup and teardown enumeration still reference them, to find
+ * and delete leftover pre-migration principals.
  */
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */
@@ -23,7 +24,7 @@ export interface PrincipalNames {
   vmService: (service: string) => string;
   /** Boot fetcher application: registry pull + handoff-secret read (P3 model). */
   boot: string;
-  /** Pre-per-mode names, used as lookup fallbacks only, never for creation. */
+  /** Pre-per-mode names; only migrate-iam cleanup / teardown enumerate them. */
   legacy: {
     ciDeploy: string;
     vmReader: string;

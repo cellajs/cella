@@ -12,9 +12,18 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     registry_ns: 'cella-registry',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
-    vm_reader_app: 'cella-production-vm-reader',
-    vm_secret_condition: 'resource.name.startsWith("/cella-production/backend/")',
-    vm_assert_json: JSON.stringify([]),
+    vm_assert_json: JSON.stringify([
+      {
+        app: 'cella-production-vm-backend',
+        sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
+        condition: 'resource.name.startsWith("/cella-production/backend/")',
+      },
+      {
+        app: 'cella-production-boot',
+        sets: ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'],
+        condition: 'resource.name.startsWith("/cella-production/handoff/")',
+      },
+    ]),
     enabled_services_json: JSON.stringify([
       { service: 'backend', public_url: 'https://www.cellajs.com/api' },
       { service: 'cdc', public_url: '' },
@@ -46,7 +55,9 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
     },
     stackConfigGet: (_stack, key) => {
       ops.push(`config-get:${key}`);
-      return '';
+      // v2 is the only IAM model deploys exercise (the legacy vm-reader model
+      // was removed); the flag read itself stays until every fork is migrated.
+      return key === 'infra:iamModel' ? 'v2' : '';
     },
     update: async (stack) => {
       ops.push(`update:${stack}`);
@@ -94,14 +105,18 @@ describe('runDeploy sequencing', () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
 
-    // Ordering spine: lock before any stack mutation, rollout after preflights,
-    // publish only after verification, lock release last.
+    // Ordering spine: lock before any stack mutation, generation keys minted
+    // before the stack update bakes their references, per-principal grant
+    // verification after the update, rollout after preflights, publish only
+    // after verification, lock release last.
     const spine = [
       'task:ensure-state-bucket',
       'exec:pulumi:login',
       'task:stack-lock:acquire',
       'task:wait-for-images',
+      'task:mint-generation-keys',
       'update:production',
+      'task:assert-vm-grants',
       'rollout',
       'publish-entry',
       'task:smoke',
