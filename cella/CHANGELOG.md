@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.3](https://github.com/cellajs/cella/compare/0.8.2...0.8.3) (2026-08-10)
+
+
+### 🐞 Bug fixes
+
+* **infra:** IAM v2 migration prep — state-identity override, key-mint fix, worker health probes ([#1021](https://github.com/cellajs/cella/issues/1021)) ([542c9aa](https://github.com/cellajs/cella/commit/542c9aa31ac222085d161c8007432a49e7b9e539))
+* **infra:** union folded services into the singleVM host's secret-path grant ([#1022](https://github.com/cellajs/cella/issues/1022)) ([40626c0](https://github.com/cellajs/cella/commit/40626c0cb17231e4434b5eed5428ccf453f5d987))
+* yjs docker ([#1019](https://github.com/cellajs/cella/issues/1019)) ([83b95fb](https://github.com/cellajs/cella/commit/83b95fb03a4612e6b205f603a74c77de6dd13276))
+
+
+### 🔧 Small improvements
+
+* **infra:** IAM v2 only — delete the migration machinery (sweep tranche 2) ([#1024](https://github.com/cellajs/cella/issues/1024)) ([d446aca](https://github.com/cellajs/cella/commit/d446acae2e44dc2b2b5ba8a1b1c5f4096f88dc02))
+* **infra:** strip IAM v1 legacy model (deprecation sweep tranche 1) ([#1023](https://github.com/cellajs/cella/issues/1023)) ([a391433](https://github.com/cellajs/cella/commit/a39143386cf95dda0167721c4752055351970278))
+
 ## [0.8.2](https://github.com/cellajs/cella/compare/0.8.1...0.8.2) (2026-08-06)
 
 
