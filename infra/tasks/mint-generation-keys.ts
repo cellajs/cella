@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
-import { handoffServicePath } from '../lib/scaleway/vm-reader-secret';
+import { handoffServicePath } from '../lib/scaleway/secret-paths';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 

@@ -16,7 +16,7 @@ import {
   revokeApiKey,
 } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
-import { secretManagerPath } from '../../lib/scaleway/vm-reader-secret';
+import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { writeEnvVar } from '../../lib/utils/env-file';

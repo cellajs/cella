@@ -1,7 +1,7 @@
 import { ADMIN_ORG_PERMISSION_SETS, ADMIN_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { engineSecretPath } from '../lib/scaleway/vm-reader-secret';
+import { engineSecretPath } from '../lib/scaleway/secret-paths';
 
 /** Secret Manager container name for the admin key pair. */
 export const ADMIN_KEY_SECRET_NAME = 'admin-key';

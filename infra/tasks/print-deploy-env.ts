@@ -6,7 +6,7 @@ import {
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret';
+import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
 import { deployedServices, enabledServices, secretScopeSlugs, serviceEndpoints } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';

@@ -1,6 +1,6 @@
 import { engineConfig } from '../../config/engine-config';
 import { createSecretManagerClient } from '../scaleway/scaleway-secret-manager';
-import { secretManagerPath } from '../scaleway/vm-reader-secret';
+import { secretManagerPath } from '../scaleway/secret-paths';
 
 /**
  * Best-effort read of the operator-seeded maple ingest key from Secret Manager,

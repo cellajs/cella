@@ -13,7 +13,7 @@ const db = read('stores/postgres-managed.ts');
 const reg = read('registry.ts');
 const secrets = read('secrets.ts');
 const configuredSecret = read('configured-secret.ts');
-const vmReaderSecret = readInfra('lib/scaleway/vm-reader-secret.ts');
+const vmReaderSecret = readInfra('lib/scaleway/secret-paths.ts');
 
 // Source-shape checks pin security contracts that are brittle in live renders.
 // Scope: TLS, CAA, DB privacy, public registry leaks, and secret handling.

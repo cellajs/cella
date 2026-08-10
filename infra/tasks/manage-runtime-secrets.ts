@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { managedKeys } from '../lib/managed-keys';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../lib/scaleway/vm-reader-secret';
+import { secretPathFor } from '../lib/scaleway/secret-paths';
 import { checkMark, pc, tildeMark, warningMark } from '../lib/utils/cli-output';
 import { isMain } from '../lib/utils/is-main';
 import { provisionManagedKey } from './provision-managed-key';
