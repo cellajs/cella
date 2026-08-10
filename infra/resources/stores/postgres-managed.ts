@@ -226,24 +226,37 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         region,
       });
 
-      // Privileges: each role gets 'all' on the database (fine-grained table
-      // permissions are enforced by the RLS migration, not Scaleway-level grants)
+      // Privileges: each role gets 'all' on the database at creation; the
+      // effective grants are owned by the role/RLS migrations from then on
+      // (their REVOKEs make Scaleway read the privilege back as 'custom').
+      // ignoreChanges keeps a refreshed state from arming an enforcement of
+      // 'all' that would clobber migration-owned grants — and that CI cannot
+      // execute anyway (RelationalDatabasesReadOnly), which would fail the
+      // deploy (seen live 2026-08-10 after the IAM v2 reconcile refresh).
 
-      new scaleway.databases.Privilege('admin-privilege', {
-        instanceId: instance.id,
-        databaseName: database.name,
-        userName: adminUser.name,
-        permission: 'all',
-        region,
-      });
+      new scaleway.databases.Privilege(
+        'admin-privilege',
+        {
+          instanceId: instance.id,
+          databaseName: database.name,
+          userName: adminUser.name,
+          permission: 'all',
+          region,
+        },
+        { ignoreChanges: ['permission'] },
+      );
 
-      new scaleway.databases.Privilege('runtime-privilege', {
-        instanceId: instance.id,
-        databaseName: database.name,
-        userName: runtimeUser.name,
-        permission: 'all',
-        region,
-      });
+      new scaleway.databases.Privilege(
+        'runtime-privilege',
+        {
+          instanceId: instance.id,
+          databaseName: database.name,
+          userName: runtimeUser.name,
+          permission: 'all',
+          region,
+        },
+        { ignoreChanges: ['permission'] },
+      );
 
       // The instance is created with a privateNetwork block, so this only trips if
       // Scaleway ever returns an instance without one, fail with a real error
