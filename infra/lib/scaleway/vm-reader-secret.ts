@@ -66,12 +66,15 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for ONE service application: its own folder + shared. Narrower
+ * Condition for one service application: its folder(s) + shared. Narrower
  * than {@link vmSecretCondition} (the single-app P2 grant), which unions all
- * services.
+ * services. Pass the full secret scope (lib/services.ts secretScopeSlugs) —
+ * for the singleVM host that includes the folded co-hosted/collocated
+ * services, whose secrets hydrate on the host VM.
  */
-export function serviceKeyCondition(slug: string, mode: string, service: string): string {
-  return [serviceSecretPath(slug, mode, service), sharedSecretPath(slug, mode)]
+export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {
+  const scope = typeof services === 'string' ? [services] : services;
+  return [...scope.map((service) => serviceSecretPath(slug, mode, service)), sharedSecretPath(slug, mode)]
     .map((path) => `resource.name.startsWith("${path}")`)
     .join(' || ');
 }

@@ -7,7 +7,7 @@ import {
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
 import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret';
-import { deployedServices, enabledServices, serviceEndpoints, serviceNames } from '../lib/services';
+import { deployedServices, enabledServices, secretScopeSlugs, serviceEndpoints, serviceNames } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
@@ -112,7 +112,11 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
       ...deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => ({
         app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),
         sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-        condition: serviceKeyCondition(appConfig.slug, appConfig.mode, svc.slug),
+        condition: serviceKeyCondition(
+          appConfig.slug,
+          appConfig.mode,
+          secretScopeSlugs(appConfig.services, appConfig.singleVM ?? false, svc.slug),
+        ),
       })),
       {
         app: principalNames(appConfig.slug, appConfig.mode).boot,

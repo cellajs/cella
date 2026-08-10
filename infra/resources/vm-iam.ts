@@ -12,7 +12,7 @@ import {
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
 import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret';
-import { deployedServices } from '../lib/services';
+import { deployedServices, secretScopeSlugs } from '../lib/services';
 import { mode, naming, organizationId, projectId, tags } from '../pulumi-context';
 
 const names = principalNames(appConfig.slug, mode);
@@ -198,7 +198,11 @@ if (!iamModelV2) {
             {
               permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
               projectIds: [projectId],
-              condition: serviceKeyCondition(naming.slug, mode, svc.slug),
+              condition: serviceKeyCondition(
+                naming.slug,
+                mode,
+                secretScopeSlugs(appConfig.services, appConfig.singleVM ?? false, svc.slug),
+              ),
             },
             ...(isBackend
               ? [
