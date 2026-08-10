@@ -1,4 +1,3 @@
-import { VM_PROJECT_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { scwFetch } from '../lib/scaleway/scw-fetch';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { isMain } from '../lib/utils/is-main';
@@ -31,16 +30,14 @@ export interface AssertVmGrantsOptions {
   /** Either an explicit id, or a name to resolve via IAM list-applications. */
   applicationId?: string;
   applicationName?: string;
-  /** Legacy name tried when `applicationName` resolves to nothing (pre-migration stacks). */
-  fallbackApplicationName?: string;
   projectId: string;
   /** Resolved from projectId when omitted. */
   organizationId?: string;
-  /** Permission sets the VM must hold. Defaults to the canonical VM set. */
-  required?: readonly string[];
+  /** Permission sets the VM must hold (the caller derives the per-principal set). */
+  required: readonly string[];
   /**
-   * Exact CEL condition every secret-granting rule must carry (REQ-9,
-   * built by vmSecretCondition). IAM conditions only narrow an allow, so a
+   * Exact CEL condition every secret-granting rule must carry (REQ-9, built
+   * by serviceKeyCondition / bootKeyCondition). IAM conditions only narrow an allow, so a
    * single unconditioned secret rule on this app silently un-scopes the
    * conditioned one. That is a FAILURE here, not a warning.
    */
@@ -244,25 +241,13 @@ export async function fetchGrantedRules(
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   const log = opts.log ?? ((msg) => console.info(msg));
-  const required = opts.required ?? VM_PROJECT_PERMISSION_SETS;
+  const required = opts.required;
   const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId));
 
   let applicationId = opts.applicationId;
   if (!applicationId && opts.applicationName) {
     applicationId =
       (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.applicationName)) ?? undefined;
-    // Per-mode names (`<slug>-<mode>-vm-reader`) are canonical; a pre-migration
-    // stack still runs on the legacy `<slug>-vm-reader` app, so fall back by
-    // stripping the mode segment to keep the deploy running.
-    if (!applicationId && opts.fallbackApplicationName) {
-      applicationId =
-        (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.fallbackApplicationName)) ??
-        undefined;
-      if (applicationId)
-        log(
-          `~ IAM application '${opts.applicationName}' not found; verified legacy '${opts.fallbackApplicationName}' instead (run "Migrate IAM model")`,
-        );
-    }
     if (!applicationId)
       throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`);
   }
@@ -293,17 +278,17 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   // an un-scoped secret rule leaks secrets. All three are fatal. Extra
   // READ-ONLY sets are surfaced as a warning but do not block (see isBenignExtraSet).
   const ok = missing.length === 0 && extraFatal.length === 0 && unconditionedSecretRules.length === 0;
-  if (missing.length > 0) log(`✗ VM reader grant INCOMPLETE — missing: ${missing.join(', ')}`);
-  if (extraFatal.length > 0) log(`✗ VM reader grant TOO BROAD — extra write/broad grant(s): ${extraFatal.join(', ')}`);
+  if (missing.length > 0) log(`✗ VM grant INCOMPLETE — missing: ${missing.join(', ')}`);
+  if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD — extra write/broad grant(s): ${extraFatal.join(', ')}`);
   for (const entry of unconditionedSecretRules)
     log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
   if (extraBenign.length > 0)
     log(
-      `⚠ VM reader has extra read-only grant(s) (benign drift; reconcile via a bootstrap "Apply infra change" / "Migrate IAM model"): ${extraBenign.join(', ')}`,
+      `⚠ VM application has extra read-only grant(s) (benign drift; reconcile via a bootstrap "Apply infra change"): ${extraBenign.join(', ')}`,
     );
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
-    log(`✓ VM reader grant verified — required permission sets present, no escalation${conditionNote}`);
+    log(`✓ VM grant verified — required permission sets present, no escalation${conditionNote}`);
   }
   return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules };
 }
@@ -320,22 +305,19 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     throw new Error('Required: SCW_SECRET_KEY, --application-id or --application-name, --project-id');
   }
 
-  const fallbackApplicationName = getFlag(argv, '--fallback-application-name') ?? undefined;
   const requiredSecretCondition = getFlag(argv, '--secret-condition') ?? undefined;
   const requiredSetsCsv = getFlag(argv, '--required-sets');
-  const required = requiredSetsCsv
-    ? requiredSetsCsv
-        .split(',')
-        .map((set) => set.trim())
-        .filter(Boolean)
-    : undefined;
+  const required = (requiredSetsCsv ?? '')
+    .split(',')
+    .map((set) => set.trim())
+    .filter(Boolean);
+  if (required.length === 0) throw new Error('Required: --required-sets <csv of permission sets>');
   const result = await assertVmGrants({
     secretKey,
     applicationId,
     applicationName,
     projectId,
     organizationId,
-    fallbackApplicationName,
     requiredSecretCondition,
     required,
   });
@@ -353,7 +335,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         : '',
     ].filter(Boolean);
     throw new Error(
-      `VM reader application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
+      `VM application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
         'The Pulumi-managed policy (infra/resources/vm-iam.ts) defines the exact grant; check that `pulumi up` succeeded and remove any manually-attached policies.',
     );
   }

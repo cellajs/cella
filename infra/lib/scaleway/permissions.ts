@@ -34,7 +34,7 @@ export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
 /**
  * Organization-scoped sets. IAMReadOnly lets `pulumi up` and the deploy's
- * "Verify VM reader IAM grant" step look up the CI/VM applications by name
+ * "Verify VM IAM grants" step look up the CI/VM applications by name
  * (org-scoped IAM reads); self-introspection alone doesn't cover listing others.
  * A single IAM policy rule may only hold permission sets of ONE scope type, so
  * this stays a separate org-keyed rule in setup-ci-key.ts buildRules.
@@ -73,23 +73,13 @@ export const ADMIN_PROJECT_PERMISSION_SETS = [
 /** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
 export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// VM reader key (`<slug>-vm-reader`): project scope
-
-/**
- * Permission sets granted to the VM reader key at project scope. Deliberately
- * minimal: VMs only pull images and fetch runtime
- * secrets. SecretManagerSecretAccess decrypts secret VALUES (read-only, no
- * write); SecretManagerReadOnly alone is metadata-only and 403s the sync.
- */
-export const VM_PROJECT_PERMISSION_SETS = [
-  'ContainerRegistryReadOnly',
-  'SecretManagerReadOnly',
-  'SecretManagerSecretAccess',
-] as const;
-
 // Per-service model (P3): service, boot, and CI key-mint grants
 
-/** Secret-value read sets; always paired with a resource-level path condition. */
+/**
+ * Secret-value read sets; always paired with a resource-level path condition.
+ * SecretManagerSecretAccess decrypts secret VALUES (read-only, no write);
+ * SecretManagerReadOnly alone is metadata-only and 403s the sync.
+ */
 export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
 
 /**
@@ -140,7 +130,7 @@ export const BOOTSTRAP_OWNED_FRAGMENTS = [
   'rdb', // managed PostgreSQL (rdb_instance, rdb_acl, rdb_user, …)
   'instance_db', // DB-bearing instance resources
   'domain_zone', // DNS zone
-  'policy', // VM reader IAM policy; IAM write is forbidden for the CI key (perm-escalation)
+  'policy', // VM IAM policies; IAM write is forbidden for the CI key (perm-escalation)
 ] as const;
 
 /** True when a Scaleway resource token names a bootstrap-owned resource. */

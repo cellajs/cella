@@ -27,9 +27,9 @@ export interface CloudInitParams {
   /** Registry endpoint (`<host>/<namespace>`); login uses the host part. */
   registry: string;
   /**
-   * Boot runner image repository name. Defaults to the current name; a generation
-   * deployed before the boot-image rename resolves under its legacy name, and the
-   * digest below is only pullable from that repository, so the ref must use it.
+   * Boot runner image repository name the digest below resolved under; the
+   * digest is only pullable from that repository, so the ref must use it.
+   * Defaults to the current name.
    */
   bootImageName?: string;
   /**

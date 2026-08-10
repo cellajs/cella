@@ -182,7 +182,6 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
         {
-          aliases: [{ type: 'scaleway:index/databaseInstance:DatabaseInstance' }],
           deleteBeforeReplace: true,
           protect: isProduction,
         },
@@ -201,31 +200,23 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       // Database
 
-      const database = new scaleway.databases.Database(
-        'main-database',
-        {
-          instanceId: instance.id,
-          name: dbSlug,
-          region,
-        },
-        { aliases: [{ type: 'scaleway:index/database:Database' }] },
-      );
+      const database = new scaleway.databases.Database('main-database', {
+        instanceId: instance.id,
+        name: dbSlug,
+        region,
+      });
 
       // Users: one per role, matching the PostgreSQL roles used by the application.
       // admin_role: migrations, seeds, system jobs, CDC worker (isAdmin gives BYPASSRLS + REPLICATION)
       // runtime_role: authenticated app requests, subject to RLS
 
-      const adminUser = new scaleway.databases.User(
-        'admin-user',
-        {
-          instanceId: instance.id,
-          name: 'admin_role',
-          password: adminPassword,
-          isAdmin: true, // grants BYPASSRLS + REPLICATION at Scaleway level
-          region,
-        },
-        { aliases: [{ type: 'scaleway:index/databaseUser:DatabaseUser' }] },
-      );
+      const adminUser = new scaleway.databases.User('admin-user', {
+        instanceId: instance.id,
+        name: 'admin_role',
+        password: adminPassword,
+        isAdmin: true, // grants BYPASSRLS + REPLICATION at Scaleway level
+        region,
+      });
 
       const runtimeUser = new scaleway.databases.User('runtime-user', {
         instanceId: instance.id,

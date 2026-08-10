@@ -87,9 +87,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
             defaultProjectId: 'mock-project-id',
           };
         }
-        // Secret Manager data sources used by pulumi-context.ts readVmReaderKey to
-        // read the VM reader key. getVersion
-        // returns the base64 JSON payload that readVmReaderKey decodes.
+        // Secret Manager data sources: deterministic stubs so any module
+        // reading a secret container/version renders without talking to Scaleway.
         if (args.token.includes('getSecret')) {
           const name = String((args.inputs as { name?: string }).name ?? 'secret');
           return { id: `fr-par/${name}-id`, name };

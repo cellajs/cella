@@ -251,8 +251,7 @@ export async function gatherInputs(ctx: StatusContext): Promise<StatusInputs> {
     hasDomain,
     credentialsAvailable,
     projectId,
-    adminAppId:
-      process.env.SCW_ADMIN_APPLICATION_ID?.trim() || process.env.SCW_OPERATOR_APPLICATION_ID?.trim() || undefined,
+    adminAppId: process.env.SCW_ADMIN_APPLICATION_ID?.trim() || undefined,
     github,
     stateBucketExists: scaleway.stateBucketExists,
     lock: scaleway.lock,

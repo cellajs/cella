@@ -18,7 +18,7 @@ Infra CLI makes is easy to set up a full-stack app on European cloud provider [S
 
 **Releases can't break what is running.** Every release starts on fresh servers and traffic only moves once the new version provably serves.
 
-**Secure by default.** No need to log into a machine. Credentials descend in privilege (bootstrap → CI deploy → VM reader), key rotation is a menu action.
+**Secure by default.** No need to log into a machine. Credentials descend in privilege (bootstrap → CI deploy → per-deploy VM keys), key rotation is a menu action.
 
 **Observable by default.** Every deploy emits an OpenTelemetry trace with audit and error events; VMs report boot progress and crash logs to the same stream.
 
@@ -53,7 +53,7 @@ verify SHAs, publish frontend entry files, smoke checks
 one final stack update reaps every displaced generation
 ```
 
-**Manage** is the same `pnpm infra` entrypoint on an existing stack: instead of the wizard it opens an operator menu for day-2 work. From there you re-sync config and GitHub Environment secrets (Resume), rotate the CI and VM reader keys or the Pulumi passphrase, run a privileged `pulumi up` for protected infra (database, VPC, private network), preview drift, manage runtime secrets in Secret Manager (list, set, rotate, delete), run database actions (reset, seed, temporary public exposure), and clear a stale stack lock. See [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md#advanced-operations) for the step-by-steps.
+**Manage** is the same `pnpm infra` entrypoint on an existing stack: instead of the wizard it opens an operator menu for day-2 work. From there you re-sync config and GitHub Environment secrets (Resume), rotate the CI deploy key or the Pulumi passphrase, run a privileged `pulumi up` for protected infra (database, VPC, private network), preview drift, manage runtime secrets in Secret Manager (list, set, rotate, delete), run database actions (reset, seed, temporary public exposure), and clear a stale stack lock. See [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md#advanced-operations) for the step-by-steps.
 
 ## Core philosophy
 

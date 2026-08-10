@@ -4,8 +4,8 @@ import {
   BOOT_PROJECT_PERMISSION_SETS,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
-import { bootKeyCondition, serviceKeyCondition, vmSecretCondition } from '../lib/scaleway/vm-reader-secret';
-import { deployedServices, serviceNames } from '../lib/services';
+import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret';
+import { deployedServices } from '../lib/services';
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 
 const fakeAppConfig = {
@@ -42,8 +42,6 @@ describe('buildDeployEnv', () => {
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
-      vm_reader_app: 'cella-production-vm-reader',
-      vm_secret_condition: vmSecretCondition('cella', 'production', serviceNames),
       vm_assert_json: JSON.stringify([
         ...deployedServices(fakeAppConfig.services, false).map((svc) => ({
           app: `cella-production-vm-${svc.slug}`,
