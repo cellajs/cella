@@ -89,6 +89,28 @@ export function collocatedServices(
   return collocated;
 }
 
+/**
+ * Service slugs whose secret folders a service's VMs must be able to read: the
+ * service itself, plus — for the singleVM host — every co-hosted worker and
+ * collocated container folded onto it. Their runtime secrets union onto the
+ * host VM (resources/generations.ts secretConsumersFor), so the host's
+ * secret-path grant must union identically or hydration 403s on the folded
+ * services' secrets.
+ */
+export function secretScopeSlugs(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+  service: ServiceName,
+): readonly ServiceName[] {
+  const host = deployedServices(serviceConfig, singleVM).find((s) => s.primaryRollout)?.slug;
+  if (!singleVM || service !== host) return [service];
+  return [
+    service,
+    ...coHostedServices(serviceConfig, singleVM).map((s) => s.slug),
+    ...collocatedServices(serviceConfig, singleVM).map((s) => s.slug),
+  ];
+}
+
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
 export interface ServiceEndpoint {
   slug: ServiceName;
