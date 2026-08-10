@@ -112,18 +112,18 @@ export const BACKEND_S3_PERMISSION_SETS = [
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
 /**
- * The CI key-mint grant (D3, live-validated 2026-07-31): IAMApplicationManager
- * conditioned to `resource.id in [<service/boot app ids>]` lets CI rotate
- * those apps' API keys every deploy while creating apps/policies stays denied
- * (create carries no matching resource.id). The escalation firewall holds.
- * STRICT condition: no `!has(resource.id)` escape, listing stays denied.
+ * The CI key-mint grant (D3): IAMApplicationManager, unconditioned. The
+ * former `resource.id in [<app ids>]` condition is disproven on live
+ * Scaleway (probe 2026-08-10: api-key POST on a LISTED app id → 403; the
+ * api-key request carries no `resource.id` for the condition to match) —
+ * raak's live rule has run unconditioned since its migration and its repo
+ * condition was live/repo drift, not validation. Documented widening: CI can
+ * manage applications/api-keys org-wide; the remaining firewall is the
+ * absent IAMPolicyManager (CI cannot grant permissions). Re-narrow when the
+ * condition vocabulary can address an api-key's parent application
+ * (IAM_PRIVILEGE_RETHINK).
  */
 export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
-
-/** CEL condition for the CI key-mint rule. */
-export function ciKeyMintCondition(appIds: readonly string[]): string {
-  return `resource.id in [${appIds.map((id) => `"${id}"`).join(', ')}]`;
-}
 
 // Bootstrap-owned boundary
 

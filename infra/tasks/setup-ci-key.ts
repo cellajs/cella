@@ -3,7 +3,6 @@ import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import {
   CI_KEY_MINT_PERMISSION_SETS,
-  ciKeyMintCondition,
   DNS_PERMISSION_SETS,
   ORG_SCOPED_PERMISSION_SETS,
   PROJECT_PERMISSION_SETS,
@@ -18,9 +17,11 @@ export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
   mode: string;
   /**
-   * Service + boot application ids (v2 model): adds the conditioned
-   * IAMApplicationManager rule so CI can rotate exactly those apps' keys per
-   * deploy, and nothing else (creates carry no matching resource.id).
+   * Service + boot application ids (v2 model): presence adds the key-mint
+   * rule so CI can rotate service keys per deploy. The ids intentionally no
+   * longer narrow the rule (see CI_KEY_MINT_PERMISSION_SETS for why and the
+   * trade-off); they remain declared as the intended scope for a future
+   * re-narrowing.
    */
   keyMintAppIds?: readonly string[];
 }
@@ -47,16 +48,14 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
       // rule): DNS is project-scoped, IAMReadOnly is organization-scoped.
       { permission_set_names: DNS_PERMISSION_SETS, project_ids: dnsProjectIds },
       { permission_set_names: ORG_SCOPED_PERMISSION_SETS, organization_id: organizationId },
-      // v2: per-deploy service-key rotation. STRICTLY conditioned to the
-      // known app ids (live-validated: mint on target ALLOW, mint elsewhere /
-      // create app / create policy DENY). Set via PUT /rules by the API layer;
-      // read back + asserted by warnOnCiPolicyDrift and assert-vm-grants.
+      // v2: per-deploy service-key rotation. Unconditioned — the resource.id
+      // condition 403s real api-key mints on live Scaleway (disproven
+      // 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS for the trade-off).
       ...(opts.keyMintAppIds && opts.keyMintAppIds.length > 0
         ? [
             {
               permission_set_names: CI_KEY_MINT_PERMISSION_SETS,
               organization_id: organizationId,
-              condition: ciKeyMintCondition(opts.keyMintAppIds),
             },
           ]
         : []),
