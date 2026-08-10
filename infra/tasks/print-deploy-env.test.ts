@@ -4,7 +4,7 @@ import {
   BOOT_PROJECT_PERMISSION_SETS,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/vm-reader-secret';
+import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
 import { deployedServices } from '../lib/services';
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 

@@ -1,6 +1,6 @@
 import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../lib/scaleway/vm-reader-secret';
+import { secretPathFor } from '../lib/scaleway/secret-paths';
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string;

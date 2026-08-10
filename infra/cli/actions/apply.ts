@@ -82,74 +82,85 @@ export async function runApply(context: InfraContext): Promise<void> {
     stack: targetStack,
     operation: 'apply',
   });
-
-  // Resolve the organization ID for Pulumi's IAM environment.
-  // Failure is non-fatal because the program can derive it at runtime.
-  try {
-    applyEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
-  } catch (error) {
-    console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
-  }
-
-  // Adopt operator-secret containers missing from restored Pulumi state before `up`.
-  // This prevents duplicate-name failures during Pulumi reconciliation.
-  try {
-    await adoptOrphanedSecrets({
-      stack: targetStack,
-      cwd: infraDir,
-      env: applyEnv,
-      secretKey: bootSecret,
-      projectId,
-      region: appConfig.s3.region,
-      path: `/${appConfig.slug}-${context.environment}/`,
-    });
-  } catch (error) {
-    console.warn(`${warningMark} ${errorMessage(error)}`);
-  }
-
-  // Reconcile generation and SHA from live state so stale local config cannot replace newer VMs.
-  // Missing compute output is harmless; credential or passphrase failures abort the apply.
-  console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-  const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', targetStack], {
-    cwd: infraDir,
-    env: applyEnv,
-    stdio: 'inherit',
-  });
-  if (sync.status !== 0) {
+  // Every exit path must release: a thrown error or an aborted prompt (Ctrl-C
+  // raises ExitPromptError) would otherwise strand the lock until expiry and
+  // block the next CI deploy. release() never throws, but guard anyway so the
+  // explicit pre-process.exit release cannot double-fire with the finally.
+  let lockReleased = false;
+  const releaseLock = async () => {
+    if (lockReleased) return;
+    lockReleased = true;
     await stackLock.release();
-    console.error(
-      `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
-    );
-    process.exit(sync.status ?? 1);
-  }
-
-  // Established stacks apply compute directly and recover from interruption by rerunning `up`.
-  // Fresh-provision deferral here would tear down the existing VMs and load balancer.
-  while (true) {
-    const { code, output } = await runPulumiUpWithHint(targetStack, infraDir, applyEnv);
-    if (code === 0) break;
-
-    // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
-    const orphans = parseOrphanedDeletes(output);
-    if (orphans.length > 0) {
-      console.warn(
-        `\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`,
-      );
-      for (const urn of orphans) console.warn(`  ${pc.dim('-')} ${urn}`);
-      if (
-        await confirm({
-          message: `Prune ${orphans.length === 1 ? 'this stale entry' : 'these stale entries'} from state and retry pulumi up?`,
-          default: true,
-        })
-      ) {
-        pruneOrphanedDeletes(orphans, targetStack, infraDir, applyEnv);
-        continue;
-      }
+  };
+  try {
+    // Resolve the organization ID for Pulumi's IAM environment.
+    // Failure is non-fatal because the program can derive it at runtime.
+    try {
+      applyEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
+    } catch (error) {
+      console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
     }
 
-    if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
-  }
+    // Adopt operator-secret containers missing from restored Pulumi state before `up`.
+    // This prevents duplicate-name failures during Pulumi reconciliation.
+    try {
+      await adoptOrphanedSecrets({
+        stack: targetStack,
+        cwd: infraDir,
+        env: applyEnv,
+        secretKey: bootSecret,
+        projectId,
+        region: appConfig.s3.region,
+        path: `/${appConfig.slug}-${context.environment}/`,
+      });
+    } catch (error) {
+      console.warn(`${warningMark} ${errorMessage(error)}`);
+    }
 
-  await stackLock.release();
+    // Reconcile generation and SHA from live state so stale local config cannot replace newer VMs.
+    // Missing compute output is harmless; credential or passphrase failures abort the apply.
+    console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
+    const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', targetStack], {
+      cwd: infraDir,
+      env: applyEnv,
+      stdio: 'inherit',
+    });
+    if (sync.status !== 0) {
+      await releaseLock();
+      console.error(
+        `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
+      );
+      process.exit(sync.status ?? 1);
+    }
+
+    // Established stacks apply compute directly and recover from interruption by rerunning `up`.
+    // Fresh-provision deferral here would tear down the existing VMs and load balancer.
+    while (true) {
+      const { code, output } = await runPulumiUpWithHint(targetStack, infraDir, applyEnv);
+      if (code === 0) break;
+
+      // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
+      const orphans = parseOrphanedDeletes(output);
+      if (orphans.length > 0) {
+        console.warn(
+          `\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`,
+        );
+        for (const urn of orphans) console.warn(`  ${pc.dim('-')} ${urn}`);
+        if (
+          await confirm({
+            message: `Prune ${orphans.length === 1 ? 'this stale entry' : 'these stale entries'} from state and retry pulumi up?`,
+            default: true,
+          })
+        ) {
+          pruneOrphanedDeletes(orphans, targetStack, infraDir, applyEnv);
+          continue;
+        }
+      }
+
+      if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
+    }
+  } finally {
+    await releaseLock();
+  }
   console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now (Scaleway console → IAM → API keys).`);
 }
