@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.4](https://github.com/cellajs/cella/compare/0.8.3...0.8.4) (2026-08-10)
+
+
+### 🐞 Bug fixes
+
+* **infra:** release the apply stack lock on every exit + secret-paths rename ([#1025](https://github.com/cellajs/cella/issues/1025)) ([7aac0ab](https://github.com/cellajs/cella/commit/7aac0ab315c5c17e8a2c3b20cea551f17d1b53c8))
+* **infra:** tolerate migration-owned privilege drift on managed postgres ([#1027](https://github.com/cellajs/cella/issues/1027)) ([2c51730](https://github.com/cellajs/cella/commit/2c5173088e540d4bbac7e26784deb852b8e12224))
+
 ## [0.8.3](https://github.com/cellajs/cella/compare/0.8.2...0.8.3) (2026-08-10)
 
 
