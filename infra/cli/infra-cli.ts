@@ -13,7 +13,6 @@ import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-out
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
-import { runMigrateIam } from './actions/migrate-iam';
 import { runPreview } from './actions/preview';
 import { runResetDatabase } from './actions/reset-database';
 import { runRotatePassphrase } from './actions/rotate-passphrase';
@@ -228,11 +227,6 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         value: 'secrets',
         description: 'List, set, rotate, or delete the runtime secrets.',
       },
-      {
-        name: 'Migrate IAM model',
-        value: 'migrate-iam',
-        description: 'Adopt per-mode/per-service principals (v2), or clean up legacy ones afterwards.',
-      },
       backChoice,
     ],
   });
@@ -363,11 +357,6 @@ if (mode === 'unlock') {
 
 if (mode === 'teardown') {
   await runTeardown(context);
-  process.exit(0);
-}
-
-if (mode === 'migrate-iam') {
-  await runMigrateIam(context);
   process.exit(0);
 }
 

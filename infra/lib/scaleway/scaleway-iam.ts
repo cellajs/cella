@@ -340,9 +340,8 @@ export async function ensureGroupMembership(opts: {
 }
 
 /**
- * IAM principal inventory for one app×mode: the per-mode group's members plus
- * any legacy-named (pre-per-mode) applications. Drives teardown and migration
- * cleanup, so nothing is deleted by name-guessing alone.
+ * IAM principal inventory for one app×mode: the per-mode group's members.
+ * Drives teardown, so nothing is deleted by name-guessing alone.
  */
 export async function listManagedPrincipals(opts: {
   callerSecretKey: string;
@@ -354,33 +353,19 @@ export async function listManagedPrincipals(opts: {
   const group = await findGroup(opts.callerSecretKey, opts.organizationId, names.group);
   const applications: ScwApp[] = [];
   const seen = new Set<string>();
-  const addByName = async (name: string) => {
-    const { applications: found = [] } = await scwFetch<{ applications?: ScwApp[] }>(
-      { secretKey: opts.callerSecretKey },
-      'GET',
-      `${IAM_BASE}/applications?name=${encodeURIComponent(name)}&organization_id=${opts.organizationId}&page_size=20`,
-    );
-    for (const app of found) {
-      if (app.name === name && !seen.has(app.id)) {
-        seen.add(app.id);
-        applications.push(app);
-      }
-    }
-  };
   for (const id of group?.application_ids ?? []) {
     if (seen.has(id)) continue;
     seen.add(id);
     const app = await scwFetch<ScwApp>({ secretKey: opts.callerSecretKey }, 'GET', `${IAM_BASE}/applications/${id}`);
     applications.push(app);
   }
-  for (const name of [names.legacy.ciDeploy, names.legacy.vmReader, names.legacy.operator]) await addByName(name);
   return { group, applications };
 }
 
 /**
  * Delete one application and everything hanging off it: its API keys and the
- * policies bound to it. Used by teardown and by migration cleanup of legacy
- * principals. Requires IAMManager (+ IAMReadOnly for the listings).
+ * policies bound to it. Used by teardown. Requires IAMManager (+ IAMReadOnly
+ * for the listings).
  */
 export async function deleteApplicationCascade(opts: {
   callerSecretKey: string;

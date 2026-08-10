@@ -582,15 +582,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // The pre-apply gap check is read-only.
   if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
 
-  // IAM model: fresh bootstraps start on v2 (per-service apps + per-deploy
-  // minted keys); existing stacks stay on their recorded model until the
-  // "Migrate IAM model" action flips the stack config.
-  const iamV2 = isInitialBootstrap || /\biamModel:\s*["']?v2["']?/.test(context.stackYaml ?? '');
-
-  // Identities: per-service + boot apps (v2), CI deploy key, admin app.
+  // Identities: per-service + boot apps, CI deploy key, admin app.
   // Service apps come FIRST: their ids feed the CI policy's key-mint rule.
   let serviceAppIds: readonly string[] = [];
-  if (iamV2 && needsCiKey) {
+  if (needsCiKey) {
     console.info('\n→ Service VM applications (per-service principals; keys minted per deploy)');
     try {
       const { deployedServices } = await import('../../lib/services');
@@ -630,16 +625,6 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       ['config', 'set', 'infra:bootstrapComplete', new Date().toISOString(), '--stack', stackName],
       spawnSync,
     );
-    if (iamV2) {
-      // The one flag every consumer branches on (vm-iam.ts, deploy-run):
-      // per-service apps + per-deploy minted keys, replacing the vm-reader.
-      await must(
-        'Mark IAM model v2',
-        'pulumi',
-        ['config', 'set', 'infra:iamModel', 'v2', '--stack', stackName],
-        spawnSync,
-      );
-    }
   }
 
   // The passphrase is synced on every run (idempotent): it is verified against

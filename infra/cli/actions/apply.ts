@@ -1,7 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
-import { deriveInfra } from '../../lib/naming';
-import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy';
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets';
 import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
@@ -85,33 +83,12 @@ export async function runApply(context: InfraContext): Promise<void> {
     operation: 'apply',
   });
 
-  // Resolve the organization ID for Pulumi's IAM environment and orphan-policy adoption.
+  // Resolve the organization ID for Pulumi's IAM environment.
   // Failure is non-fatal because the program can derive it at runtime.
-  let organizationId: string | undefined;
   try {
-    organizationId = await resolveOrganizationId(bootSecret, projectId);
-    applyEnv.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
+    applyEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
   } catch (error) {
     console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
-  }
-
-  // Adopt a bootstrap-created VM reader policy that exists outside Pulumi state.
-  // This prevents a duplicate-create conflict and is idempotent after import.
-  if (organizationId) {
-    try {
-      const policyName = deriveInfra(appConfig).naming.resource('vm-reader-policy');
-      await adoptOrphanedPolicy({
-        stack: targetStack,
-        cwd: infraDir,
-        env: applyEnv,
-        pulumiName: 'vm-reader-policy',
-        policyName,
-        secretKey: bootSecret,
-        organizationId,
-      });
-    } catch (error) {
-      console.warn(`${warningMark} ${errorMessage(error)}`);
-    }
   }
 
   // Adopt operator-secret containers missing from restored Pulumi state before `up`.

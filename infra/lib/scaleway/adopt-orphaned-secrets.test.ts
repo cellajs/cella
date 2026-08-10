@@ -17,13 +17,34 @@ vi.mock('../runtime-secrets', () => ({
   ],
 }));
 
-import { adoptOrphanedSecrets } from './adopt-orphaned-secrets';
+import { adoptOrphanedSecrets, stackExportHasResource } from './adopt-orphaned-secrets';
 
 const SECRET_TYPE = 'scaleway:secrets/secret:Secret';
 const exportWith = (resources: Array<{ urn: string; type: string }>) => JSON.stringify({ deployment: { resources } });
 const stateResource = (name: string) => ({
   urn: `urn:pulumi:production::infra::${SECRET_TYPE}::${name}`,
   type: SECRET_TYPE,
+});
+
+describe('stackExportHasResource', () => {
+  it('finds a resource by type and urn suffix', () => {
+    const json = exportWith([
+      { urn: 'urn:pulumi:production::infra::pulumi:pulumi:Stack::infra-production', type: 'pulumi:pulumi:Stack' },
+      stateResource('secret-admin-email'),
+    ]);
+    expect(stackExportHasResource(json, SECRET_TYPE, 'secret-admin-email')).toBe(true);
+  });
+
+  it('returns false when the type matches but the name does not', () => {
+    const json = exportWith([stateResource('secret-other')]);
+    expect(stackExportHasResource(json, SECRET_TYPE, 'secret-admin-email')).toBe(false);
+  });
+
+  it('returns false on empty or malformed export', () => {
+    expect(stackExportHasResource('', SECRET_TYPE, 'secret-admin-email')).toBe(false);
+    expect(stackExportHasResource('{}', SECRET_TYPE, 'secret-admin-email')).toBe(false);
+    expect(stackExportHasResource('not json', SECRET_TYPE, 'secret-admin-email')).toBe(false);
+  });
 });
 
 const opts = {

@@ -203,6 +203,8 @@ To apply a bootstrap-owned change (e.g. resize the database), run the CLI (`pnpm
 3. Runs `pulumi up` against the already-bootstrapped stack. Compute stays up: unlike the fresh-provision flow, Apply infra change does **not** set the `bootstrap:computeDeferred` marker, so the running VMs/LB are left in place.
 4. Reminds you to revoke the bootstrap key.
 
+> **Upgrading from the legacy IAM model (v1):** the engine now assumes the per-service IAM model (v2) unconditionally; the migration tooling has been removed. A stack still on the legacy single vm-reader model must first run `pnpm infra` → **Migrate IAM model** (migrate, deploy, then clean up legacy principals) from a checkout *prior* to this change before syncing past it.
+
 ## Fresh installation
 
 The interactive CLI ([cli/infra-cli.ts](../infra/cli/infra-cli.ts)) is launched with `pnpm infra`. It inspects the local `Pulumi.<stack>.yaml` to decide whether this is the start of a fresh installation or to manage an existing setup. On a fresh stack it skips the menu and runs a fresh install directly.
@@ -339,7 +341,7 @@ The infrastructure is organised in 6 phases, deployed in dependency order ([inde
 | 2 | `dns` | CAA records (restrict cert issuance to Let's Encrypt; TLS itself is terminated at the LB) |
 | 3 | `network`, `registry` | VPC, private networks, container registry |
 | 4 | `database` | Managed PostgreSQL 17 (17+ required: the sync engine's draft boundary uses logical-replication row filters with `REPLICA IDENTITY FULL`) |
-| 5 | `secrets`, `compute`, `vm-iam` | Secret Manager, Docker Compose VMs, VM-reader IAM grant |
+| 5 | `secrets`, `compute`, `vm-iam` | Secret Manager, Docker Compose VMs, per-service VM IAM policies |
 | 6 | `loadbalancer` | Scaleway LB with TLS termination, same-origin path routing, DNS |
 
 ### How config flows

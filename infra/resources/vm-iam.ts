@@ -16,18 +16,6 @@ import { mode, naming, organizationId, projectId, tags } from '../pulumi-context
 
 const names = principalNames(appConfig.slug, mode);
 
-/**
- * IAM model gate. `infra:iamModel = 'v2'` (set by a fresh bootstrap or the
- * "Migrate IAM model" CLI action) enables the per-service applications with
- * per-deploy minted keys and single-access handoff bundles. Absent = the
- * retired legacy (single vm-reader) model, whose code has been removed: an
- * unmigrated stack renders no VM principals/policies and must run "Migrate
- * IAM model" before deploying. Every consumer branches on this ONE flag so a
- * stack flips atomically with its config; the flag itself is removed once all
- * forks are migrated.
- */
-export const iamModelV2 = new pulumi.Config('infra').get('iamModel') === 'v2';
-
 // The engine's IAM principals, resolved from IAM by name and owned here because IAM is this
 // module's concern (storage bucket policies and compute import them). Per-mode names
 // (`<slug>-<mode>-…`) are canonical. Required principals throw on a resolution failure; optional ones (e.g. the admin app) only warn and drop their statements, so a missing admin app never blocks a production release (the 0.7.0 incident).
@@ -73,22 +61,23 @@ export const adminApplicationId: pulumi.Output<string | undefined> = findApplica
   return undefined;
 });
 
-// v2 principals: one application per deployed service + the boot fetcher.
+// VM-side principals: one application per deployed service + the boot fetcher.
 
-const v2Services = iamModelV2 ? deployedServices(appConfig.services, appConfig.singleVM ?? false) : [];
+const vmServices = deployedServices(appConfig.services, appConfig.singleVM ?? false);
 
-/** Per-service application ids (v2; empty map under legacy). Required when v2. */
+/** Per-service application ids. Required. */
 export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(
-  v2Services.map((svc) => [
+  vmServices.map((svc) => [
     svc.slug,
     requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`),
   ]),
 );
 
-/** Boot fetcher application id (v2). Required when v2, undefined under legacy. */
-export const bootApplicationId: pulumi.Output<string | undefined> = iamModelV2
-  ? requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`)
-  : pulumi.output(undefined);
+/** Boot fetcher application id. Required. */
+export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(
+  findApplicationId(names.boot),
+  `boot fetcher ('${names.boot}')`,
+);
 
 /**
  * Pulumi-managed IAM policies for the VM-side principals, reconciled on every
@@ -114,61 +103,34 @@ export const bootApplicationId: pulumi.Output<string | undefined> = iamModelV2
  */
 export const vmIamPolicies: scaleway.iam.Policy[] = [];
 
-if (iamModelV2) {
-  for (const svc of v2Services) {
-    const isBackend = svc.s3Access === true;
-    vmIamPolicies.push(
-      new scaleway.iam.Policy(
-        `vm-${svc.slug}-policy`,
-        {
-          name: naming.resource(`vm-${svc.slug}-policy`),
-          description: `Path-conditioned secret read${isBackend ? ' + S3 object access' : ''} for the ${svc.slug} service VMs (managed by Pulumi)`,
-          applicationId: serviceApplicationIds[svc.slug],
-          organizationId,
-          rules: [
-            {
-              permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
-              projectIds: [projectId],
-              condition: serviceKeyCondition(
-                naming.slug,
-                mode,
-                secretScopeSlugs(appConfig.services, appConfig.singleVM ?? false, svc.slug),
-              ),
-            },
-            ...(isBackend
-              ? [
-                  {
-                    permissionSetNames: [...BACKEND_S3_PERMISSION_SETS],
-                    projectIds: [projectId],
-                  },
-                ]
-              : []),
-          ],
-          tags,
-        },
-        { ignoreChanges: ['rules', 'description'] },
-      ),
-    );
-  }
+for (const svc of vmServices) {
+  const isBackend = svc.s3Access === true;
   vmIamPolicies.push(
     new scaleway.iam.Policy(
-      'vm-boot-policy',
+      `vm-${svc.slug}-policy`,
       {
-        name: naming.resource('vm-boot-policy'),
-        description:
-          'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
-        applicationId: bootApplicationId.apply((id) => id ?? ''),
+        name: naming.resource(`vm-${svc.slug}-policy`),
+        description: `Path-conditioned secret read${isBackend ? ' + S3 object access' : ''} for the ${svc.slug} service VMs (managed by Pulumi)`,
+        applicationId: serviceApplicationIds[svc.slug],
         organizationId,
         rules: [
           {
-            permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS],
-            projectIds: [projectId],
-          },
-          {
             permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
             projectIds: [projectId],
-            condition: bootKeyCondition(naming.slug, mode),
+            condition: serviceKeyCondition(
+              naming.slug,
+              mode,
+              secretScopeSlugs(appConfig.services, appConfig.singleVM ?? false, svc.slug),
+            ),
           },
+          ...(isBackend
+            ? [
+                {
+                  permissionSetNames: [...BACKEND_S3_PERMISSION_SETS],
+                  projectIds: [projectId],
+                },
+              ]
+            : []),
         ],
         tags,
       },
@@ -176,7 +138,32 @@ if (iamModelV2) {
     ),
   );
 }
+vmIamPolicies.push(
+  new scaleway.iam.Policy(
+    'vm-boot-policy',
+    {
+      name: naming.resource('vm-boot-policy'),
+      description:
+        'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
+      applicationId: bootApplicationId,
+      organizationId,
+      rules: [
+        {
+          permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS],
+          projectIds: [projectId],
+        },
+        {
+          permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
+          projectIds: [projectId],
+          condition: bootKeyCondition(naming.slug, mode),
+        },
+      ],
+      tags,
+    },
+    { ignoreChanges: ['rules', 'description'] },
+  ),
+);
 
-/** Backend service app id when it exists (REQ-20 bucket statements); undefined otherwise. */
+/** Backend service app id when the backend service is deployed (REQ-20 bucket statements); undefined otherwise. */
 export const backendServiceApplicationId: pulumi.Output<string | undefined> =
-  iamModelV2 && serviceApplicationIds.backend ? serviceApplicationIds.backend : pulumi.output(undefined);
+  serviceApplicationIds.backend ?? pulumi.output(undefined);

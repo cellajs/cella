@@ -125,9 +125,9 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   });
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
-  // IAM principal cleanup: group members + legacy-named apps + the org-wide
-  // bootstrap DNS residue. Enumerated via the per-mode group (REQ-1), never by
-  // name-guessing alone. Requires IAMManager + IAMReadOnly on the same key.
+  // IAM principal cleanup: group members + the org-wide bootstrap DNS residue.
+  // Enumerated via the per-mode group (REQ-1), never by name-guessing alone.
+  // Requires IAMManager + IAMReadOnly on the same key.
   if (!organizationId) return;
   const cleanupIam = await confirm({
     message: `Also delete the IAM principals (group ${confirmToken}, its applications, keys, and policies)? Requires IAMManager on this key.`,

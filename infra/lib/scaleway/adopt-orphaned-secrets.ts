@@ -1,11 +1,27 @@
 import { spawnSync } from 'node:child_process';
 import { operatorManagedRuntimeSecrets } from '../runtime-secrets';
 import { errorMessage } from '../utils/errors';
-import { stackExportHasResource } from './adopt-orphaned-policy';
 import { createSecretManagerClient } from './scaleway-secret-manager';
 
 /** Pulumi type token for `@pulumiverse/scaleway` secret containers (`pulumi import`). */
 const SECRET_TYPE = 'scaleway:secrets/secret:Secret';
+
+/**
+ * Pure: does a `pulumi stack export` JSON already contain a resource of the
+ * given Pulumi type whose URN ends in `::<name>`? A malformed/empty export
+ * (e.g. an uninitialised stack) is treated as "not present".
+ */
+export function stackExportHasResource(stackExportJson: string, type: string, name: string): boolean {
+  let parsed: { deployment?: { resources?: Array<{ urn?: string; type?: string }> } };
+  try {
+    parsed = JSON.parse(stackExportJson);
+  } catch {
+    return false;
+  }
+  return (parsed.deployment?.resources ?? []).some(
+    (r) => r.type === type && typeof r.urn === 'string' && r.urn.endsWith(`::${name}`),
+  );
+}
 
 export type SecretAdoptOutcome =
   | 'in-state' // already managed by Pulumi; nothing to do

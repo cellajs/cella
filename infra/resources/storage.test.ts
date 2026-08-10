@@ -8,8 +8,7 @@ beforeAll(async () => {
     stack: 'production',
     // Deferring compute skips image-pin validation because these tests render only storage.
     // The mock IAM API supplies CI and VM application IDs normally absent from stack config.
-    // iamModel v2 is the only model bucket policies render statements for.
-    config: { 'bootstrap:computeDeferred': 'test', 'infra:iamModel': 'v2' },
+    config: { 'bootstrap:computeDeferred': 'test' },
   });
   await import('./storage');
   await flushPulumi();

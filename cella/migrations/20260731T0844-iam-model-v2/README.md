@@ -1,5 +1,10 @@
 # IAM model v2: per-mode/per-service principals, per-deploy keys, S3 key retirement
 
+> **2026-08 update:** the legacy (v1) code paths, the `infra:iamModel` flag, and the
+> **Migrate IAM model** CLI action have since been removed — v2 is the only model. A stack
+> still on v1 must run the steps below from a checkout *prior* to that removal (any commit
+> before cella's `refactor/iam-v2-only` change) before syncing past it.
+
 ## What & why
 
 The infra engine's credential model was rebuilt (cella `refactor/iam-rewrite`, P1–P4). IAM

@@ -31,8 +31,7 @@ export type CliMode =
   | 'expose-db'
   | 'unexpose-db'
   | 'unlock'
-  | 'teardown'
-  | 'migrate-iam';
+  | 'teardown';
 
 /**
  * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
