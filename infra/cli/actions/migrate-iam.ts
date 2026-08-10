@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { confirm, select } from '@inquirer/prompts';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { deriveInfra } from '../../lib/naming';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { principalNames } from '../../lib/scaleway/principals';
 import {
   deleteApplicationCascade,
@@ -124,6 +124,7 @@ export async function runMigrateIam(context: InfraContext): Promise<void> {
     projectId: context.projectId,
     passphrase,
     organizationId,
+    ...stateKeyOverrideFromEnv(),
   });
 
   console.info(`\n→ Admin app (${names.admin})`);

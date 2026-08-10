@@ -281,16 +281,20 @@ export interface ControlContext {
 /**
  * Resolve the control-object context for a fully-qualified stack from the
  * environment: sets APP_MODE from the stack's short name (so `shared`'s
- * appConfig resolves the right mode), builds the S3 client from SCW_* (or
- * AWS_*) credentials, and derives bucket + keys. Returns null (with a warning)
+ * appConfig resolves the right mode), builds the S3 client from AWS_* (or
+ * SCW_*) credentials, and derives bucket + keys. Returns null (with a warning)
  * when no credentials are present; the caller then skips control-store writes.
+ * AWS-first: the control object lives in the state bucket, whose
+ * deny-by-default policy admits the state-backend identity (what AWS_*
+ * carries on split-identity runs), not necessarily the SCW provider key.
  */
 export async function controlContextForStack(
   stack: string,
   log: (msg: string) => void = console.warn,
 ): Promise<ControlContext | null> {
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID;
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
+  const fromAws = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+  const accessKey = fromAws ? process.env.AWS_ACCESS_KEY_ID : process.env.SCW_ACCESS_KEY;
+  const secretKey = fromAws ? process.env.AWS_SECRET_ACCESS_KEY : process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) {
     log('control-store: no S3 credentials (SCW_* or AWS_*); cannot read/write rollout state');
     return null;

@@ -35,7 +35,9 @@ export async function runCdcWorker(): Promise<void> {
     },
   });
 
-  const healthServer = serve({ fetch: healthApp.fetch, port: env.CDC_HEALTH_PORT }, () => {
+  // hostname doubles as the Host fallback for the LB's host-less HTTP/1.0 health
+  // probe: without it @hono/node-server rejects the probe with 400 Missing host header.
+  const healthServer = serve({ fetch: healthApp.fetch, hostname: '0.0.0.0', port: env.CDC_HEALTH_PORT }, () => {
     log.info(`CDC health server listening on port ${env.CDC_HEALTH_PORT}`);
   });
 
