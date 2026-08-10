@@ -97,7 +97,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     // One assertion row per principal (exact sets + exact condition, built by
     // the same shared builders the Pulumi program uses so the deploy's
     // assert-vm-grants step compares strings, not semantics), consumed by the
-    // deploy's grant-verification step when the stack config says iamModel=v2.
+    // deploy's grant-verification step.
     vm_assert_json: JSON.stringify([
       ...deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => ({
         app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),

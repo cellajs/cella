@@ -54,9 +54,7 @@ async function resolveAppId(secretKey: string, organizationId: string, name: str
   );
   const app = applications.find((a) => a.name === name);
   if (!app)
-    throw new Error(
-      `mint-generation-keys: IAM application '${name}' not found — run the infra CLI "Migrate IAM model" / bootstrap first.`,
-    );
+    throw new Error(`mint-generation-keys: IAM application '${name}' not found — run the infra CLI bootstrap first.`);
   return app.id;
 }
 

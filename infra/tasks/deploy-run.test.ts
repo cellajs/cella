@@ -53,12 +53,6 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
     exec: (cmd, args, execOpts) => {
       ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
     },
-    stackConfigGet: (_stack, key) => {
-      ops.push(`config-get:${key}`);
-      // v2 is the only IAM model deploys exercise (the legacy vm-reader model
-      // was removed); the flag read itself stays until every fork is migrated.
-      return key === 'infra:iamModel' ? 'v2' : '';
-    },
     update: async (stack) => {
       ops.push(`update:${stack}`);
     },

@@ -27,10 +27,10 @@ import { privateNetworkId } from './network';
 import { registryEndpoint } from './registry';
 import { secretIds } from './secrets';
 import { bootDiagBucketName } from './storage';
-import { iamModelV2, vmIamPolicies } from './vm-iam';
+import { vmIamPolicies } from './vm-iam';
 
 /**
- * v2 model: this deploy's minted credentials, written by
+ * This deploy's minted credentials, written by
  * tasks/mint-generation-keys.ts and passed via INFRA_GENERATION_KEYS_FILE.
  * Absent on non-deploy ups (apply/preview): pre-existing generations carry
  * `ignoreChanges: ['cloudInit']`, so their inputs may compute from an empty
@@ -57,7 +57,7 @@ function readGenerationKeysFile(): GenerationKeysFile | undefined {
   return parsed as GenerationKeysFile;
 }
 
-const generationKeys = iamModelV2 ? readGenerationKeysFile() : undefined;
+const generationKeys = readGenerationKeysFile();
 
 // The credential pair baked into cloud-init: the boot fetcher key (registry
 // pull + handoff read + diag write ONLY, because the real service key arrives
@@ -301,13 +301,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   if (!genPrivateIp)
     throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
-  // v2: a NEW generation must carry its minted handoff reference; planning one
+  // A NEW generation must carry its minted handoff reference; planning one
   // without the keys file means the mint step did not run, so refuse it and
   // do not bake an empty credential. Pre-existing generations compute placeholder
   // inputs safely (their cloudInit is ignored).
-  if (iamModelV2 && !generation.preexisting && !generationKeys) {
+  if (!generation.preexisting && !generationKeys) {
     throw new Error(
-      `compute: planning a NEW ${svc.slug} generation under iamModel=v2 without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`,
+      `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE — deploy via the deploy task (it runs mint-generation-keys first).`,
     );
   }
   const serviceConfig: ServiceConfig = {

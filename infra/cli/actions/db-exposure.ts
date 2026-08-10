@@ -3,8 +3,6 @@ import { copyFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
-import { deriveInfra } from '../../lib/naming';
-import { adoptOrphanedPolicy } from '../../lib/scaleway/adopt-orphaned-policy';
 import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
@@ -138,7 +136,7 @@ export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment
 
 /**
  * The privileged bootstrap-key converge shared by expose/unexpose: acquire keys
- * and the stack lock, adopt any orphaned IAM/secret state, reconcile rollout
+ * and the stack lock, adopt any orphaned secret state, reconcile rollout
  * config from live state (so a local `up` cannot revert compute to a stale
  * generation), apply the caller's config mutation, then run `pulumi up`.
  * `prepare` may return an alternate stack config file (the exposure overlay)
@@ -180,22 +178,11 @@ export async function convergePublicEndpoint(
     operation,
   });
 
-  // Adopt IAM/secret state that exists in Scaleway but is missing from Pulumi
+  // Adopt secret state that exists in Scaleway but is missing from Pulumi
   // state, so `pulumi up` does not fail trying to recreate it. Best-effort,
   // exactly as the apply path does.
   try {
-    const organizationId = await resolveOrganizationId(bootSecret, projectId);
-    env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
-    const policyName = deriveInfra(appConfig).naming.resource('vm-reader-policy');
-    await adoptOrphanedPolicy({
-      stack,
-      cwd: infraDir,
-      env,
-      pulumiName: 'vm-reader-policy',
-      policyName,
-      secretKey: bootSecret,
-      organizationId,
-    });
+    env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
     await adoptOrphanedSecrets({
       stack,
       cwd: infraDir,
