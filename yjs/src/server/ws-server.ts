@@ -50,7 +50,9 @@ function buildHttpApp(): Hono {
 
 export function startWsServer(): void {
   // serve() uses node:http's createServer by default, so the upgrade event is available.
-  const server = serve({ fetch: buildHttpApp().fetch, port: env.YJS_PORT }, () => {
+  // hostname doubles as the Host fallback for the LB's host-less HTTP/1.0 health
+  // probe: without it @hono/node-server rejects the probe with 400 Missing host header.
+  const server = serve({ fetch: buildHttpApp().fetch, hostname: '0.0.0.0', port: env.YJS_PORT }, () => {
     log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
   }) as Server;
   httpServer = server;

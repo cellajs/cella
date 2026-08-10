@@ -40,6 +40,22 @@ export interface ProviderEnvInput {
 }
 
 /**
+ * State-backend credential override from `SCW_STATE_ACCESS_KEY` /
+ * `SCW_STATE_SECRET_KEY`, for split-identity runs: the state-bucket policy is
+ * deny-by-default and admits only the CI and admin principals, so a
+ * bootstrap-key run 403s on `pulumi login` unless an admitted key (e.g. an
+ * ephemeral operator/admin key) is supplied for the `AWS_*` side.
+ */
+export function stateKeyOverrideFromEnv(): Pick<ProviderEnvInput, 'stateAccessKey' | 'stateSecretKey'> {
+  const stateAccessKey = process.env.SCW_STATE_ACCESS_KEY?.trim() || undefined;
+  const stateSecretKey = process.env.SCW_STATE_SECRET_KEY?.trim() || undefined;
+  if (!!stateAccessKey !== !!stateSecretKey) {
+    throw new Error('SCW_STATE_ACCESS_KEY and SCW_STATE_SECRET_KEY must be set together');
+  }
+  return { stateAccessKey, stateSecretKey };
+}
+
+/**
  * Builds a child environment with explicit Scaleway, S3-state, and Pulumi credentials.
  * It inherits process utilities but overrides credential variables and disables local
  * Scaleway profiles so operator configuration cannot shadow the supplied identity.
