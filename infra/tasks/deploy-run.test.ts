@@ -141,6 +141,17 @@ describe('runDeploy sequencing', () => {
     expect(ops.at(-1)).toBe('task:stack-lock:release');
   });
 
+  it('a frontend-less registry (empty frontend_bucket) skips build, asset upload, and entry publish', async () => {
+    const { fx, ops } = makeFake();
+    const frontendless = async (opts: DeployOptions) => ({ ...(await fakeDeployEnv(opts)), frontend_bucket: '' });
+    await runDeploy({ ...baseOpts, distDir: undefined as unknown as string }, fx, frontendless);
+    expect(ops).not.toContain('exec:pnpm:--filter');
+    expect(ops).not.toContain('upload-assets');
+    expect(ops).not.toContain('publish-entry');
+    expect(ops).toContain('task:smoke');
+    expect(ops.at(-1)).toBe('task:stack-lock:release');
+  });
+
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);

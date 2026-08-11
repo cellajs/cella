@@ -111,6 +111,28 @@ export function secretScopeSlugs(
   ];
 }
 
+/**
+ * Which app-owned object storage the service registry implies (P2). The SPA
+ * bucket follows the default-route service; the upload buckets follow any
+ * service that signs S3 requests (`s3Access`); browser CORS on the upload
+ * buckets exists only when both do. Engine-owned buckets (Pulumi state,
+ * boot-diag) are unconditional and not represented here. A registry with no
+ * default route and no s3Access service provisions NO app buckets — the
+ * frontend-less consumer scenario.
+ */
+export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {
+  spaBucket: boolean;
+  uploadBuckets: boolean;
+  browserOriginSlug?: ServiceName;
+} {
+  const browserOriginSlug = definitions.find((s) => s.lbRoute === 'default')?.slug;
+  return {
+    spaBucket: browserOriginSlug !== undefined,
+    uploadBuckets: definitions.some((s) => s.s3Access),
+    browserOriginSlug,
+  };
+}
+
 /** A public service's resolved endpoint, derived from appConfig by the registry. */
 export interface ServiceEndpoint {
   slug: ServiceName;

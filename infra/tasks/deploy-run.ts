@@ -207,6 +207,8 @@ export async function runDeploy(
       );
     })();
     const frontendReady = (async () => {
+      // No SPA bucket (frontend-less registry): nothing to build or upload.
+      if (!env.frontend_bucket) return;
       if (!opts.distDir) {
         await step('Build frontend', () =>
           fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
@@ -304,18 +306,22 @@ export async function runDeploy(
     });
 
     // Strictly after rollout verification: users only load the new entry
-    // files once every service already serves the new release.
-    await step('Publish frontend entry files', () =>
-      fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }),
-    );
+    // files once every service already serves the new release. Skipped for a
+    // frontend-less registry (no SPA bucket).
+    if (env.frontend_bucket) {
+      await step('Publish frontend entry files', () =>
+        fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }),
+      );
+    }
     await step('Smoke tests', () =>
       fx.task('smoke', [
         '--sha',
         opts.sha,
         '--services-json',
         env.enabled_services_json,
-        '--dist',
-        resolve(distDir, 'index.html'),
+        // A provided-but-unreadable --dist is a hard failure in smoke, so a
+        // frontend-less registry omits it instead of pointing at nothing.
+        ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
       ]),
     );
   } catch (err) {

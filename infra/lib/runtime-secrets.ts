@@ -2,6 +2,7 @@ import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
 import { serviceNames } from './services';
+import type { StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
 
@@ -57,43 +58,47 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
   return secrets;
 }
 
-// Store-owned declarations come first, in store-registry order: database
-// secrets historically led the app config, and the per-consumer union order
-// is genId-fingerprinted, so the merge position is deliberate.
-const storeContributions: RuntimeSecretDefinition[] = Object.values(appStores).flatMap((store) =>
-  (store.secrets?.() ?? []).map((contribution) => ({
-    id: contribution.id,
-    secretName: contribution.secretName,
-    description: contribution.description,
-    envVar: contribution.envVar,
-    required: contribution.required,
-    valueSource: contribution.valueSource,
-    generation: 'manual' as const,
-    services: contribution.services,
-  })),
-);
+/**
+ * Pure merge of a store registry's secret contributions with an app's
+ * `runtime-secrets.config.ts` entries. Store-owned declarations come first,
+ * in store-registry order: database secrets historically led the app config,
+ * and the per-consumer union order is genId-fingerprinted, so the merge
+ * position is deliberate. Extracted (rather than inlined on the module-level
+ * registry) so a non-postgres registry — external `databaseUrl`, `none` — is
+ * testable without swapping the app config.
+ */
+export function buildRuntimeSecrets(
+  stores: Record<string, Pick<StoreProvisioner, 'secrets'>>,
+  appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>>,
+): RuntimeSecretDefinition[] {
+  const storeContributions: RuntimeSecretDefinition[] = Object.values(stores).flatMap((store) =>
+    (store.secrets?.() ?? []).map((contribution) => ({
+      id: contribution.id,
+      secretName: contribution.secretName,
+      description: contribution.description,
+      envVar: contribution.envVar,
+      required: contribution.required,
+      valueSource: contribution.valueSource,
+      generation: 'manual' as const,
+      services: contribution.services,
+    })),
+  );
+  return [...storeContributions, ...Object.entries(appSecrets).map(([id, definition]) => ({ id, ...definition }))];
+}
 
 /**
- * Flattened, ordered runtime secret definitions: store contributions followed
- * by the app's `runtime-secrets.config.ts` entries.
+ * Fail fast on an app misconfiguration, preventing a missing container at
+ * deploy time or a missing variable at runtime. Covers store contributions
+ * and app-config entries alike (including cross-source clashes).
  */
-export const runtimeSecrets: RuntimeSecretDefinition[] = [
-  ...storeContributions,
-  ...Object.entries(runtimeSecretsConfig).map(([id, definition]) => ({
-    id,
-    ...definition,
-  })),
-];
-
-// Fail fast at load time on an app misconfiguration, preventing a missing
-// container at deploy time or a missing variable at runtime. Covers store
-// contributions and app-config entries alike (including cross-source clashes).
-{
-  const knownServices = new Set<string>(serviceNames);
+export function validateRuntimeSecrets(
+  secrets: readonly RuntimeSecretDefinition[],
+  knownServices: ReadonlySet<string>,
+): void {
   const seenIds = new Set<string>();
   const seenEnvVars = new Set<string>();
   const seenSecretNames = new Set<string>();
-  for (const secret of runtimeSecrets) {
+  for (const secret of secrets) {
     if (seenIds.has(secret.id)) {
       throw new Error(
         `runtime-secrets: duplicate secret id '${secret.id}' — a store contribution clashes with another store or the app config.`,
@@ -122,6 +127,14 @@ export const runtimeSecrets: RuntimeSecretDefinition[] = [
     seenSecretNames.add(secret.secretName);
   }
 }
+
+/**
+ * Flattened, ordered runtime secret definitions for THIS app: store
+ * contributions followed by the `runtime-secrets.config.ts` entries,
+ * validated at load time.
+ */
+export const runtimeSecrets: RuntimeSecretDefinition[] = buildRuntimeSecrets(appStores, runtimeSecretsConfig);
+validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
 
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter(
   (secret) => secret.valueSource === 'operator',
