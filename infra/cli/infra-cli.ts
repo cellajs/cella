@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
@@ -10,6 +10,7 @@ import {
   pickStackShort,
 } from '../lib/stack/bootstrap-stack-state';
 import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output';
+import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
@@ -26,20 +27,7 @@ import { autoAcceptDefaults, nonInteractive } from './shared';
 
 // Load backend/.env before the root fallback so infra child tasks share the app's
 // local config. Existing environment variables keep precedence over both files.
-for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
-  if (existsSync(envFile)) process.loadEnvFile(envFile);
-}
-
-/** Parse a dotenv-style file into key/value pairs (no interpolation). */
-function parseEnvFile(path: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-    if (!match) continue;
-    out[match[1]!] = (match[2] ?? '').replace(/^['"]|['"]$/g, '');
-  }
-  return out;
-}
+loadBaseEnvFiles();
 
 /**
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a
@@ -86,20 +74,7 @@ async function resolveMode(): Promise<'production' | 'staging'> {
 
 async function loadContext(): Promise<InfraContext> {
   const environment = await resolveMode();
-  const modeEnvPath = resolve(infraDir, `.env.${environment}`);
-  if (existsSync(modeEnvPath)) {
-    // These files hold a live secret key + Pulumi passphrase; group/other read
-    // bits hand them to every local user, backup agent, and sync client.
-    const mode = statSync(modeEnvPath).mode;
-    if ((mode & 0o077) !== 0) {
-      chmodSync(modeEnvPath, 0o600);
-      console.info(
-        pc.dim(`Tightened ${modeEnvPath} to 600 (was ${(mode & 0o777).toString(8)}): it carries live credentials.`),
-      );
-    }
-    for (const [key, value] of Object.entries(parseEnvFile(modeEnvPath))) process.env[key] = value;
-    console.info(pc.dim(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`));
-  }
+  loadModeEnvFile(environment, (message) => console.info(pc.dim(message)));
   const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`);
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
   const state = detectStackState({ yamlText: stackYaml });
