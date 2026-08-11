@@ -57,9 +57,9 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
   return secrets;
 }
 
-// Store-owned declarations come first, in store-registry order: cella's
-// database secrets historically led the app config, and the per-consumer union
-// order is genId-fingerprinted, so the merge position is deliberate.
+// Store-owned declarations come first, in store-registry order: database
+// secrets historically led the app config, and the per-consumer union order
+// is genId-fingerprinted, so the merge position is deliberate.
 const storeContributions: RuntimeSecretDefinition[] = Object.values(appStores).flatMap((store) =>
   (store.secrets?.() ?? []).map((contribution) => ({
     id: contribution.id,
