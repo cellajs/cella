@@ -8,7 +8,13 @@ import {
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
 import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import { deployedServices, enabledServices, secretScopeSlugs, serviceEndpoints } from '../lib/services';
+import {
+  appStorageNeeds,
+  deployedServices,
+  enabledServices,
+  secretScopeSlugs,
+  serviceEndpoints,
+} from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
@@ -93,7 +99,9 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     pulumi_stack: appConfig.mode,
     region: appConfig.s3.region,
     registry_ns: naming.registryNamespace,
-    frontend_bucket: naming.frontendBucket,
+    // Empty when the registry implies no SPA bucket (frontend-less app); the
+    // deploy skips asset upload + entry publish on ''.
+    frontend_bucket: appStorageNeeds(enabled).spaBucket ? naming.frontendBucket : '',
     state_bucket: naming.pulumiStateBucket,
     // One assertion row per principal (exact sets + exact condition, built by
     // the same shared builders the Pulumi program uses so the deploy's

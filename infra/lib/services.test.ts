@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { coHostedServices, collocatedServices, deployedServices, enabledServices, services } from './services';
+import {
+  appStorageNeeds,
+  coHostedServices,
+  collocatedServices,
+  deployedServices,
+  enabledServices,
+  type ServiceDefinition,
+  services,
+} from './services';
 
 const allOn = { yjs: { enabled: true }, mcp: { enabled: true } };
 const allOff = { yjs: { enabled: false }, mcp: { enabled: false } };
@@ -95,5 +103,25 @@ describe('service registry — lbRoute contract', () => {
     expect(services.find((s) => s.slug === 'yjs')).not.toHaveProperty('enabled');
     expect(services.find((s) => s.slug === 'mcp')).not.toHaveProperty('enabled');
     expect(services.find((s) => s.slug === 'backend')).not.toHaveProperty('enabled');
+  });
+});
+
+describe('appStorageNeeds (P2 optional app storage)', () => {
+  const svc = (partial: { slug: string; lbRoute?: string; s3Access?: boolean }) =>
+    partial as unknown as ServiceDefinition;
+
+  it("cella's registry needs everything: SPA bucket, upload buckets, browser origin", () => {
+    const needs = appStorageNeeds(services);
+    expect(needs).toEqual({ spaBucket: true, uploadBuckets: true, browserOriginSlug: 'frontend' });
+  });
+
+  it('a frontend-less API+worker registry needs no app buckets at all', () => {
+    const needs = appStorageNeeds([svc({ slug: 'api', lbRoute: 'path' }), svc({ slug: 'worker' })]);
+    expect(needs).toEqual({ spaBucket: false, uploadBuckets: false, browserOriginSlug: undefined });
+  });
+
+  it('an s3Access service without a browser app gets upload buckets but no CORS origin', () => {
+    const needs = appStorageNeeds([svc({ slug: 'api', lbRoute: 'path', s3Access: true })]);
+    expect(needs).toEqual({ spaBucket: false, uploadBuckets: true, browserOriginSlug: undefined });
   });
 });
