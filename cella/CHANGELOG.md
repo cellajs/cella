@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.7](https://github.com/cellajs/cella/compare/0.8.6...0.8.7) (2026-08-11)
+
+
+### 🎉 New features
+
+* **infra:** P2 — external stores + optional app object storage ([#1034](https://github.com/cellajs/cella/issues/1034)) ([d09a693](https://github.com/cellajs/cella/commit/d09a6938fb5bab6dc029478ffa11d2c5afeb4b96))
+
+
+### 🐞 Bug fixes
+
+* **config:** explicit .ts import extensions for Vite 8 'native' config loader ([#1033](https://github.com/cellajs/cella/issues/1033)) ([f599554](https://github.com/cellajs/cella/commit/f599554b897635fb3f057d63d3efb9818c496084))
+
 ## [0.8.6](https://github.com/cellajs/cella/compare/0.8.5...0.8.6) (2026-08-11)
 
 
