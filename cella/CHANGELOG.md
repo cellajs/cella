@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.6](https://github.com/cellajs/cella/compare/0.8.5...0.8.6) (2026-08-11)
+
+
+### 🐞 Bug fixes
+
+* **infra:** correctness batch — apex derivation, teardown lock, engine gate, redis posture ([#1030](https://github.com/cellajs/cella/issues/1030)) ([7a01592](https://github.com/cellajs/cella/commit/7a01592bcc874ba173c7aed442f2bcca1cb2b7fd))
+* **infra:** deploy-path guardrails — mint staging, per-rule drift, CI assert row, follower gate ([#1032](https://github.com/cellajs/cella/issues/1032)) ([50723d5](https://github.com/cellajs/cella/commit/50723d5a828448941f9369040476c9d3fcb1b693))
+
 ## [0.8.5](https://github.com/cellajs/cella/compare/0.8.4...0.8.5) (2026-08-11)
 
 
