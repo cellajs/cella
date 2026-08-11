@@ -1,6 +1,6 @@
-import type { DeepPartial } from '../src/config-builder/types';
-import type { config as _default } from './config.default';
-import { development } from './config.development';
+import type { DeepPartial } from '../src/config-builder/types.ts';
+import type { config as _default } from './config.default.ts';
+import { development } from './config.development.ts';
 
 /**
  * Ensure that this file does not include or use any sensitive information.

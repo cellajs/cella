@@ -1,39 +1,39 @@
+import { execSync } from 'node:child_process';
+import path from 'node:path';
 import mdx from '@mdx-js/rollup';
 import reactScan from '@react-scan/vite-plugin-react-scan';
+import babel from '@rolldown/plugin-babel';
 import terser from '@rollup/plugin-terser';
+import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
-import babel from '@rolldown/plugin-babel';
-import path from 'node:path';
-import rehypeShiki from '@shikijs/rehype';
 import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 // import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig, Plugin, type UserConfig } from 'vite';
+import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
-import { appConfig } from '../shared';
-import { tanstackRouter } from '@tanstack/router-plugin/vite';
-
-import { execSync } from 'node:child_process';
-import { sdkWatch } from './vite/sdk-watch';
-import { localesPlugin } from './vite/locales-plugin';
-import { docsFrontmatter } from './vite/docs-frontmatter';
-import { docsEditor } from './vite/docs-editor';
-import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths';
+import { appConfig } from '../shared/index.ts';
+import { docsEditor } from './vite/docs-editor.ts';
+import { docsFrontmatter } from './vite/docs-frontmatter.ts';
+import { localesPlugin } from './vite/locales-plugin.ts';
+import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
+import { sdkWatch } from './vite/sdk-watch.ts';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
 // already renders the frontmatter title as h1. Drop the leading h1 when such a file
 // is compiled as page content. Content-root files are authored without an h1.
-const remarkStripRepoDocH1 = () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
-  if (!file.path || file.path.includes('/src/content/docs/')) return;
-  const index = tree.children.findIndex((node) => node.type === 'heading');
-  if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
-};
+const remarkStripRepoDocH1 =
+  () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
+    if (!file.path || file.path.includes('/src/content/docs/')) return;
+    const index = tree.children.findIndex((node) => node.type === 'heading');
+    if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
+  };
 
 const isStorybook = process.env.STORYBOOK === 'true';
 const isDev = appConfig.mode === 'development';
@@ -69,7 +69,9 @@ const isTunneled = frontendUrl.hostname !== 'localhost';
 // when available (local/CI builds), 'unknown' otherwise (e.g. sourceless container).
 const gitSha = (() => {
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
   } catch {
     return 'unknown';
   }
@@ -91,7 +93,9 @@ const viteConfig = {
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.
-    ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
+    ...(isTunneled
+      ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } }
+      : {}),
     watch: {
       ignored: ['**/backend/**', '**/sdk/**'],
     },
@@ -117,7 +121,7 @@ const viteConfig = {
                 // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
                 if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
                 const m = id.match(
-                  /node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/
+                  /node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/,
                 );
                 if (!m || m[2] === 'index') return null;
                 const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
@@ -191,7 +195,7 @@ const viteConfig = {
     // Production source maps are public by choice (open-source frontend): Maple has no
     // sourcemap upload/symbolication, so public maps are what make minified stacks in error
     // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
-    sourcemap: isDev ? false : true,
+    sourcemap: !isDev,
     manifest: true,
     minify: isDev ? false : 'esbuild',
   },
@@ -229,15 +233,19 @@ const viteConfig = {
           // Autolink inline code that names a real repo file to its GitHub blob URL.
           [
             remarkLinkRepoPaths,
-            { repoRoot: path.resolve(__dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes },
+            {
+              repoRoot: path.resolve(import.meta.dirname, '..'),
+              repoUrl: appConfig.company.githubUrl,
+              docRoutes: repoDocRoutes,
+            },
           ],
         ],
-      // Generate GitHub-compatible heading slugs with the scroll-spy's DOM prefix.
-      // Keep aligned with frontmatter heading extraction.
+        // Generate GitHub-compatible heading slugs with the scroll-spy's DOM prefix.
+        // Keep aligned with frontmatter heading extraction.
         rehypePlugins: [
           [rehypeSlug, { prefix: 'spy-' }],
-      // Highlight Markdown at build time with dual GitHub themes selected by CSS variables.
-      // No runtime highlighter or CSP/WASM handling is required.
+          // Highlight Markdown at build time with dual GitHub themes selected by CSS variables.
+          // No runtime highlighter or CSP/WASM handling is required.
           [
             rehypeShiki,
             {
@@ -264,8 +272,8 @@ const viteConfig = {
     // serves the result at /locales/{lng}/{ns}.json in dev and emits it into the build.
     // The processed cache in .vscode/.locales-cache is also what i18n Ally reads.
     localesPlugin({
-      srcDir: path.resolve(__dirname, '../locales'),
-      outDir: path.resolve(__dirname, '../.vscode/.locales-cache'),
+      srcDir: path.resolve(import.meta.dirname, '../locales'),
+      outDir: path.resolve(import.meta.dirname, '../.vscode/.locales-cache'),
       merge: { target: 'c', sources: ['common', 'app'] },
       verbose: false,
     }),
@@ -311,8 +319,8 @@ const viteConfig = {
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
     alias: {
-      '#json': path.resolve(__dirname, '../json'),
-      '~': path.resolve(__dirname, './src'),
+      '#json': path.resolve(import.meta.dirname, '../json'),
+      '~': path.resolve(import.meta.dirname, './src'),
     },
   },
   define: {
@@ -325,9 +333,9 @@ const viteConfig = {
         .map((key) => [key, process.env[key]]),
     ),
     // Injected into lib/sw.ts for periodic badge sync
-    '__BACKEND_URL__': JSON.stringify(appConfig.backendUrl),
+    __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)
-    '__APP_VERSION__': JSON.stringify(gitSha),
+    __APP_VERSION__: JSON.stringify(gitSha),
   },
 } satisfies UserConfig;
 
@@ -380,7 +388,7 @@ viteConfig.plugins?.push(
       globIgnores: ['**/grammars-*.js', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
-  })
+  }),
 );
 
 // Enable HTTPS only when serving https on localhost directly. Tunnel mode is https at
@@ -398,7 +406,7 @@ if (appConfig.mode === 'development' && !isStorybook) {
       scanOptions: {
         showToolbar: false,
       },
-    })
+    }),
   );
 }
 

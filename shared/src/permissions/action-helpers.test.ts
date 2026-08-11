@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isUnconditionalCan, resolveCan } from './action-helpers';
+import { isUnconditionalCan, resolveCan } from './action-helpers.ts';
 
 describe('resolveCan', () => {
   // --- Pass cases: permission should be granted ---

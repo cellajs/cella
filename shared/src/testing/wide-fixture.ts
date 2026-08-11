@@ -1,5 +1,5 @@
-import type { EntityActionType, EntityType } from '../../types';
-import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy';
+import type { EntityActionType, EntityType } from '../../types.ts';
+import { createEntityHierarchy, createRoleRegistry } from '../config-builder/entity-hierarchy.ts';
 import {
   type AccessMembership,
   type CanState,
@@ -12,7 +12,7 @@ import {
   type PolicyMatrix,
   type PublicReadGrants,
   type SubjectForPermission,
-} from '../permissions';
+} from '../permissions/index.ts';
 
 // Wide entity/role vocabulary typed independently of any app config so the tests that
 // use these names compile in every app (an app whose real config lacks `project` still builds).

@@ -1,4 +1,4 @@
-import { mediaBlockTypes } from './text-from-block';
+import { mediaBlockTypes } from './text-from-block.ts';
 
 /** Loose block shape for parsed description JSON, tolerant of custom block types. */
 export type DescriptionBlock = {

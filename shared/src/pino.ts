@@ -1,7 +1,7 @@
 import { trace } from '@opentelemetry/api';
 import pino from 'pino';
-import type { Severity } from '../types';
-import { appConfig } from './config-builder/app-config';
+import type { Severity } from '../types.ts';
+import { appConfig } from './config-builder/app-config.ts';
 
 export type { Logger } from 'pino';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { deepHierarchy } from '../../testing/deep-fixture';
-import { pathHomeId, pathSegments, pathStartsWith } from '../row-path';
+import { deepHierarchy } from '../../testing/deep-fixture.ts';
+import { pathHomeId, pathSegments, pathStartsWith } from '../row-path.ts';
 
 /**
  * The path rule must stay equivalent to the deepest-non-null-ancestor rule

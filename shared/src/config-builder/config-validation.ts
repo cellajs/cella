@@ -1,7 +1,7 @@
-import { policyMatrix } from '../../config/permissions-config';
-import { getEntityPolicies, isRowCondition } from '../permissions';
-import { appConfig } from './app-config';
-import type { RequiredConfig } from './types';
+import { policyMatrix } from '../../config/permissions-config.ts';
+import { getEntityPolicies, isRowCondition } from '../permissions/index.ts';
+import { appConfig } from './app-config.ts';
+import type { RequiredConfig } from './types.ts';
 
 // Validate that Config satisfies RequiredConfig (compile-time only).
 type Config = typeof appConfig;

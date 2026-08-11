@@ -4,7 +4,7 @@ import {
   countDescriptionBlocks,
   type DescriptionBlock,
   findSummarySource,
-} from './derive-description-core';
+} from './derive-description-core.ts';
 
 const paragraph = (text: string): DescriptionBlock => ({
   type: 'paragraph',

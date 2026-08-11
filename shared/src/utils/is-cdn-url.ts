@@ -1,4 +1,4 @@
-import { appConfig } from '../config-builder/app-config';
+import { appConfig } from '../config-builder/app-config.ts';
 
 /**
  * Validate if a URL is a CDN URL. Its valid if it starts with the public CDN or private CDN URL.

@@ -1,13 +1,13 @@
-import { elevatedRoles, policyMatrix, publicReadGrants } from '../../config/permissions-config';
-import type { EntityActionType } from '../../types';
-import { getAllDecisions } from './engine/check';
-import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access';
+import { elevatedRoles, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
+import type { EntityActionType } from '../../types.ts';
+import { getAllDecisions } from './engine/check.ts';
+import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 import type {
   AccessMembership,
   PermissionCheckOptions,
   PermissionDecision,
   SubjectForPermission,
-} from './engine/types';
+} from './engine/types.ts';
 
 /**
  * Explicit authenticated or anonymous actor used by SQL permission predicates.

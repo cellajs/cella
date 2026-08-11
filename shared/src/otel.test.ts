@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createOtelSDK } from './otel';
+import { createOtelSDK } from './otel.ts';
 
 describe('createOtelSDK', () => {
   it('creates meterProvider without Maple key', () => {

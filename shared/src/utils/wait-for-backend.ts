@@ -1,5 +1,5 @@
-import { appConfig } from '../config-builder/app-config';
-import { sleep } from './sleep';
+import { appConfig } from '../config-builder/app-config.ts';
+import { sleep } from './sleep.ts';
 
 /**
  * Wait for the backend health endpoint to be available.

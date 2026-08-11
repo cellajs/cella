@@ -10,7 +10,7 @@ afterEach(() => {
 async function loadAppConfig(env: Record<string, string>) {
   vi.resetModules();
   process.env = { ...originalEnv, ...env };
-  return (await import('./app-config')).appConfig;
+  return (await import('./app-config.ts')).appConfig;
 }
 
 describe('appConfig service endpoints', () => {

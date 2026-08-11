@@ -1,5 +1,5 @@
 // Split from config.default.ts so its types can be inferred before the config object is built.
-import { createEntityHierarchy, createRoleRegistry } from '../src/config-builder/entity-hierarchy';
+import { createEntityHierarchy, createRoleRegistry } from '../src/config-builder/entity-hierarchy.ts';
 
 /** Single source of truth for all entity roles used in memberships and permissions. */
 export const roles = createRoleRegistry(['admin', 'member'] as const);

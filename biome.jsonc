@@ -14,6 +14,7 @@
       "!frontend/src/routes/routeTree.gen.ts",
       "frontend/storybook/**",
       "frontend/vite/**",
+      "frontend/vite.config.ts",
       "packages/data-grid/src/**",
       "shared/**",
       "cdc/src/**",
@@ -131,6 +132,18 @@
     }
   },
   "overrides": [
+    {
+      // The vite config pulls in the whole shared/ module graph at config-load
+      // time; Vite 8's future 'native' loader requires explicit .ts extensions there.
+      "includes": ["shared/**", "frontend/vite/**", "frontend/vite.config.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useImportExtensions": "error"
+          }
+        }
+      }
+    },
     {
       // Default exports remain only where external tooling expects them.
       "includes": [

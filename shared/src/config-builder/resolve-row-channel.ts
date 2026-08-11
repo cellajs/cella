@@ -1,4 +1,4 @@
-import { toColumnName } from '../permissions/schema-naming';
+import { toColumnName } from '../permissions/schema-naming.ts';
 
 /** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
 export interface AncestorSource {

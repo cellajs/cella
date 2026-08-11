@@ -1,7 +1,7 @@
-import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types';
-import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
-import type { PublicReadGrants } from './public-read';
-import { isRowCondition } from './row-conditions';
+import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types.ts';
+import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
+import type { PublicReadGrants } from './public-read.ts';
+import { isRowCondition } from './row-conditions.ts';
 import type {
   ChannelPolicyBuilder,
   EntityActionPermissions,
@@ -11,7 +11,7 @@ import type {
   PolicyConfiguration,
   PolicyEntry,
   PolicyMatrix,
-} from './types';
+} from './types.ts';
 
 /**
  * Creates a channel policy builder for fluent role-permission configuration.

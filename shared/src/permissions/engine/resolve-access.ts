@@ -1,11 +1,11 @@
-import type { ChannelEntityType } from '../../../types';
-import { allActionsDenied, createActionRecord } from '../action-helpers';
-import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions';
-import type { PolicyMatrix } from '../types';
-import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check';
-import { resolveHierarchy } from './resolve-hierarchy';
-import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types';
-import { validateSubject } from './validation';
+import type { ChannelEntityType } from '../../../types.ts';
+import { allActionsDenied, createActionRecord } from '../action-helpers.ts';
+import { isRowCondition, matchesRowCondition, type RowConditionName, type RowForCondition } from '../row-conditions.ts';
+import type { PolicyMatrix } from '../types.ts';
+import { buildPolicyIndex, checkWithIndices, getMembershipIndex, getSubjectChannelId } from './check.ts';
+import { resolveHierarchy } from './resolve-hierarchy.ts';
+import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './types.ts';
+import { validateSubject } from './validation.ts';
 
 /**
  * One actor's inputs to a decision, engine-shaped: the memberships plus the two actor

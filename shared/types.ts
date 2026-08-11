@@ -1,5 +1,5 @@
-import type { hierarchy, roles } from './config/config.default';
-import { appConfig } from './src/config-builder/app-config';
+import type { hierarchy, roles } from './config/config.default.ts';
+import { appConfig } from './src/config-builder/app-config.ts';
 
 // Entity types
 

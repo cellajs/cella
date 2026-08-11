@@ -406,6 +406,24 @@
         "pnpm test"
       ],
       "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
+    },
+    {
+      "id": "20260811T0905-ts-import-extensions",
+      "version": "next",
+      "title": "Explicit .ts import extensions in the Vite config-load graph",
+      "kind": "manual",
+      "syncBreaking": false,
+      "clientCacheBump": false,
+      "script": null,
+      "roots": [
+        "shared",
+        "frontend/vite",
+        "frontend/vite.config.ts"
+      ],
+      "requires": [
+        "pnpm check"
+      ],
+      "summary": "Vite 8's future-default configLoader 'native' needs fully-specified ESM imports; vite.config.ts loads the whole shared/ graph at config time. All relative imports in shared/ and frontend/vite/ gain .ts extensions, directory-index imports name index.ts explicitly, __dirname becomes import.meta.dirname, allowImportingTsExtensions hoists to root tsconfig, and a biome.jsonc override enforces correctness/useImportExtensions over the territory. Codemod = Biome's own fixer (see README Run). Not sync-breaking, no cache bump, no DB."
     }
   ]
 }

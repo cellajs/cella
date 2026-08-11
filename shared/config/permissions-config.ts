@@ -1,5 +1,5 @@
-import { appConfig } from '../src/config-builder/app-config';
-import { configurePermissions } from '../src/permissions/policy-matrix';
+import { appConfig } from '../src/config-builder/app-config.ts';
+import { configurePermissions } from '../src/permissions/policy-matrix.ts';
 
 // Access policies per entity type: `1` = allowed, `0`/omitted = denied. Elevation vs. self rows,
 // product home rows, publicRead and row conditions are all explained in cella/PERMISSIONS.md.

@@ -6,7 +6,7 @@ import {
   getOrderBetween,
   getRelativeOrder,
   orderGap,
-} from './display-order';
+} from './display-order.ts';
 
 describe('getOrderBetween', () => {
   it('returns defaultOrder when both bounds are undefined', () => {

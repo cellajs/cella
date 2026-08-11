@@ -7,10 +7,10 @@ import {
   wideMembership,
   wideOverrides,
   wideSubject,
-} from '../../testing/wide-fixture';
-import { getAllDecisions } from './check';
-import { type EngineAccess, getDecisionsForAccesses } from './resolve-access';
-import type { AccessMembership, SubjectForPermission } from './types';
+} from '../../testing/wide-fixture.ts';
+import { getAllDecisions } from './check.ts';
+import { type EngineAccess, getDecisionsForAccesses } from './resolve-access.ts';
+import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 /**
  * THE guarantee that lets `checkAccess` collapse accesses into classes: for every access,

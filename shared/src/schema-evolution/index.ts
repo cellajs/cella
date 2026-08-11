@@ -4,7 +4,7 @@
  * @see README.md
  */
 
-export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config';
+export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
 export type {
   AddDelta,
   DropDelta,
@@ -17,9 +17,9 @@ export type {
   RenameDelta,
   RetypeDelta,
   SetRenameDelta,
-} from './define';
-export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define';
-export type { NormalizeOpsOptions, RegistryHooks } from './engine';
+} from './define.ts';
+export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define.ts';
+export type { NormalizeOpsOptions, RegistryHooks } from './engine.ts';
 export {
   configureLensTelemetry,
   currentSchemaVersion,
@@ -30,5 +30,5 @@ export {
   resetLensEngine,
   versionNodeFor,
   widenedOpsKeyMap,
-} from './engine';
-export { lenses } from './lens-list';
+} from './engine.ts';
+export { lenses } from './lens-list.ts';

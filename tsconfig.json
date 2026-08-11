@@ -9,6 +9,10 @@
     /* Bundler mode */
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
+    // Relative imports in shared/ and frontend/vite/ carry explicit .ts
+    // extensions (Vite 8 'native' config loader). Any program that pulls in
+    // shared source needs this, so it lives at the root.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,

@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
 
 /**
  * Per-subject public read opt-in, keyed by entity type. A present key grants actor-independent

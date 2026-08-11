@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
 
 /**
  * Entity types lenses can target. Product entities get the full artifact set

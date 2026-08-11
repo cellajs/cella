@@ -1,11 +1,11 @@
-import { config as _default } from '../../config/config.default';
-import { development } from '../../config/config.development';
-import { production } from '../../config/config.production';
-import { staging } from '../../config/config.staging';
-import { test } from '../../config/config.test';
-import { tunnel } from '../../config/config.tunnel';
-import type { S3Config } from './types';
-import { mergeDeep } from './utils';
+import { config as _default } from '../../config/config.default.ts';
+import { development } from '../../config/config.development.ts';
+import { production } from '../../config/config.production.ts';
+import { staging } from '../../config/config.staging.ts';
+import { test } from '../../config/config.test.ts';
+import { tunnel } from '../../config/config.tunnel.ts';
+import type { S3Config } from './types.ts';
+import { mergeDeep } from './utils.ts';
 
 type Config = Omit<typeof _default, 's3'> & { s3: S3Config };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;

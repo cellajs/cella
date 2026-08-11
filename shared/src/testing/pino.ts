@@ -1,4 +1,4 @@
-import type { Log } from '../pino';
+import type { Log } from '../pino.ts';
 
 export type MockLog<TMock> = Record<keyof Log, TMock>;
 

@@ -1,7 +1,7 @@
-import type { EntityType } from '../../types';
+import type { EntityType } from '../../types.ts';
 
-export * from './span-names';
-export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor';
+export * from './span-names.ts';
+export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor.ts';
 
 // Types
 /** Span status aligned with OTel conventions. */

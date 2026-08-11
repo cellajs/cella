@@ -1,4 +1,4 @@
-import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel';
+import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel.ts';
 
 /**
  * Builds a root-first path from populated ancestor IDs, optionally appending a channel row's ID.

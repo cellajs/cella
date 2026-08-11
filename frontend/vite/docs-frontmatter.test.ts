@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { extractHeadings, extractStructure, pageStructure } from './docs-frontmatter';
+import { extractHeadings, extractStructure, pageStructure } from './docs-frontmatter.ts';
 
 /**
  * The extracted heading ids must match what rehype-slug (prefix: 'spy-') assigns when
@@ -68,7 +68,7 @@ describe('extractHeadings', () => {
   });
 
   it('extracts from a real repo doc (wrapper page body)', () => {
-    const source = readFileSync(path.resolve(__dirname, '../../cella/TESTING.md'), 'utf8');
+    const source = readFileSync(path.resolve(import.meta.dirname, '../../cella/TESTING.md'), 'utf8');
     const headings = extractHeadings(source, { stripLeadingH1: true });
     const ids = headings.map((h) => h.id);
     expect(ids).toContain('spy-running-tests');
@@ -170,7 +170,7 @@ describe('extractStructure sections', () => {
   });
 
   it('follows wrapper-page imports for sections (real repo doc)', () => {
-    const wrapperPath = path.resolve(__dirname, '../src/content/docs/fixture.mdx');
+    const wrapperPath = path.resolve(import.meta.dirname, '../src/content/docs/fixture.mdx');
     const wrapperSource = "import Content from '../../../../cella/TESTING.md'\n\n<Content />\n";
     const { headings, sections } = pageStructure(wrapperPath, wrapperSource);
     expect(headings.length).toBeGreaterThan(0);

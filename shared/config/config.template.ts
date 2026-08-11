@@ -1,9 +1,9 @@
-import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types';
-import { nonEmpty } from '../src/config-builder/utils';
-import { hierarchy } from './hierarchy-config';
+import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
+import { nonEmpty } from '../src/config-builder/utils.ts';
+import { hierarchy } from './hierarchy-config.ts';
 
 // Re-export for external consumers
-export { hierarchy, roles } from './hierarchy-config';
+export { hierarchy, roles } from './hierarchy-config.ts';
 
 export const config = {
   // Entity data model, derived from the hierarchy: the builder in hierarchy-config.ts is the

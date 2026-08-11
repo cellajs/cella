@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createHealthApp } from './health-app';
+import { createHealthApp } from './health-app.ts';
 
 const app = createHealthApp({
   version: 'sha-123',

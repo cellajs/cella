@@ -1,4 +1,4 @@
-import type { ChannelEntityType, EntityRole } from '../types';
+import type { ChannelEntityType, EntityRole } from '../types.ts';
 
 /**
  * A context-role pair: a membership role qualified by the channel type that holds it. Tools use

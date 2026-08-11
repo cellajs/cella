@@ -1,7 +1,7 @@
-import type { EntityActionType } from '../../../types';
-import { appConfig } from '../../config-builder/app-config';
-import { createActionRecord } from '../action-helpers';
-import type { AccessMembership, GrantSource, PermissionDecision } from './types';
+import type { EntityActionType } from '../../../types.ts';
+import { appConfig } from '../../config-builder/app-config.ts';
+import { createActionRecord } from '../action-helpers.ts';
+import type { AccessMembership, GrantSource, PermissionDecision } from './types.ts';
 
 const formatGrant = (g: GrantSource): string => {
   if (g.type === 'membership') return `${g.channelType}:${g.channelId}/${g.role}`;
