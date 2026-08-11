@@ -56,6 +56,18 @@ export function classifyPermissionError(stderr: string): PermissionHint {
 }
 
 /**
+ * Detects a Scaleway "secret ... already exists" conflict: a secret container
+ * live in Scaleway but missing from Pulumi state (e.g. after a state restore),
+ * so `up` fails trying to recreate it. Returns the secret name when the error
+ * text carries one. Pure.
+ */
+export function classifyDuplicateSecretError(output: string): { name?: string } | undefined {
+  const m = output.match(/secret[^\n]*already exists/i);
+  if (!m) return undefined;
+  return { name: m[0].match(/['"]([A-Za-z0-9][\w./-]*)['"]/)?.[1] };
+}
+
+/**
  * Extracts delete URNs whose provider returned not-found, making state pruning safe.
  * Update/read failures remain excluded because those resources should still exist.
  */
@@ -135,6 +147,16 @@ export async function runPulumiUpWithHint(
 
   const exitCode = await waitForExitCode(child);
   if (exitCode !== 0) {
+    const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
+    if (dup) {
+      console.error(
+        `\n${warningMark} ${pc.bold('State hint:')} a secret container exists in Scaleway but is missing from Pulumi state.`,
+      );
+      console.error('  Adopt it into state, then re-run:');
+      console.error(
+        `  ${pc.cyan(`pulumi import scaleway:secrets/secret:Secret secret-${dup.name ?? '<secret-name>'} <region>/<secret-uuid> --stack ${stack} --yes`)}`,
+      );
+    }
     const hint = classifyPermissionError(stderrBuf);
     if (hint) {
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);

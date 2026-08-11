@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
-import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets';
 import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -40,12 +39,12 @@ export interface PrivilegedConvergeResult {
 /**
  * The privileged bootstrap-key converge shared by "Apply infra change", the
  * DB-exposure toggle, and seeding: resolve the passphrase, acquire a
- * freshly-supplied bootstrap key and the stack lock, adopt any orphaned secret
- * state, reconcile rollout config from live state (so a local `up` cannot
- * revert compute to a stale generation), apply the caller's config mutation,
- * then run `pulumi up` with an orphan-prune/retry loop. Returns the provider
- * env and stack so the caller can read outputs after the lock is released.
- * Exits the process on hard failures before the `up` loop.
+ * freshly-supplied bootstrap key and the stack lock, reconcile rollout config
+ * from live state (so a local `up` cannot revert compute to a stale
+ * generation), apply the caller's config mutation, then run `pulumi up` with
+ * an orphan-prune/retry loop. Returns the provider env and stack so the
+ * caller can read outputs after the lock is released. Exits the process on
+ * hard failures before the `up` loop.
  */
 export async function runPrivilegedConverge(
   context: InfraContext,
@@ -107,22 +106,6 @@ export async function runPrivilegedConverge(
       env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
     } catch (error) {
       console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
-    }
-
-    // Adopt secret state that exists in Scaleway but is missing from Pulumi
-    // state, so `pulumi up` does not fail trying to recreate it. Best-effort.
-    try {
-      await adoptOrphanedSecrets({
-        stack,
-        cwd: infraDir,
-        env,
-        secretKey: bootSecret,
-        projectId,
-        region: appConfig.s3.region,
-        path: `/${appConfig.slug}-${context.environment}/`,
-      });
-    } catch (error) {
-      console.warn(`${warningMark} orphan-state adoption skipped: ${errorMessage(error)}`);
     }
 
     // Reconcile gen/sha into local config from live state before `up`, so a
