@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/cellajs/cella/compare/0.8.4...0.8.5) (2026-08-11)
+
+
+### 🔧 Small improvements
+
+* **infra:** trim sweep — converge dedup, orphan-adoption removal, status compression ([#1028](https://github.com/cellajs/cella/issues/1028)) ([c9daca6](https://github.com/cellajs/cella/commit/c9daca6231f6e4b04ae8f95f9fe6c784db55d26b))
+
 ## [0.8.4](https://github.com/cellajs/cella/compare/0.8.3...0.8.4) (2026-08-10)
 
 
