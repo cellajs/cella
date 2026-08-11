@@ -29,6 +29,16 @@ export interface BootPlan {
   releaseSha: string;
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
   traceparent?: string;
+  /**
+   * App-declared telemetry sink: boot events export here once the runtime env
+   * delivers the key under `keyEnvVar`. Absent = black box only (the boot
+   * runner carries NO baked-in vendor endpoint).
+   */
+  telemetry?: {
+    endpoint: string;
+    keyHeader: string;
+    keyEnvVar: string;
+  };
   imageContract: typeof supportedImageContract;
   registry: string;
   region: string;
@@ -72,6 +82,7 @@ const topLevelKeys = new Set([
   'schemaVersion',
   'service',
   'traceparent',
+  'telemetry',
   'profile',
   'services',
   'releaseSha',
@@ -195,6 +206,16 @@ export function parseBootPlanJson(json: string): BootPlan {
   }
   const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env');
 
+  let telemetry: BootPlan['telemetry'];
+  if (parsed.telemetry !== undefined) {
+    const sink = objectField(parsed, 'telemetry');
+    telemetry = {
+      endpoint: stringField(sink, 'endpoint'),
+      keyHeader: stringField(sink, 'keyHeader'),
+      keyEnvVar: stringField(sink, 'keyEnvVar'),
+    };
+  }
+
   const services = parsed.services === undefined ? undefined : commandField(parsed, 'services');
 
   return {
@@ -204,6 +225,7 @@ export function parseBootPlanJson(json: string): BootPlan {
     ...(services ? { services } : {}),
     releaseSha: stringField(parsed, 'releaseSha'),
     ...(traceparent ? { traceparent } : {}),
+    ...(telemetry ? { telemetry } : {}),
     imageContract,
     registry: stringField(parsed, 'registry'),
     region: stringField(parsed, 'region'),

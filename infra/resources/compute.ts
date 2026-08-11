@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineConfig } from '../config/engine-config';
+import { telemetrySink } from '../config/telemetry.config';
 
 const appConfig = engineConfig();
 
@@ -230,6 +231,13 @@ function buildCloudInit(
         // Deploy trace context (deploy-run exports it before the stack update);
         // ignoreChanges on cloudInit keeps existing generations untouched.
         traceparent: process.env.TRACEPARENT,
+        // The app's telemetry sink travels via the boot plan; the boot runner
+        // carries no vendor endpoint of its own (S20/P-F3).
+        telemetry: {
+          endpoint: telemetrySink.endpoint,
+          keyHeader: telemetrySink.keyHeader,
+          keyEnvVar: telemetrySink.keyEnvVar,
+        },
       }),
     );
 }

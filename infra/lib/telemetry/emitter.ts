@@ -1,3 +1,4 @@
+import { telemetrySink } from '../../config/telemetry.config';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { type EventDef, type Placeholders, renderEvent } from './events';
@@ -21,7 +22,7 @@ import {
 export interface TelemetryOptions {
   /** Resource attributes stamped on every span and event. */
   resource: Record<string, AttrValue>;
-  /** OTLP/HTTP base ending in /v1 (e.g. https://ingest.maple.dev/v1). Absent = build-only (black box still works). */
+  /** OTLP/HTTP base ending in /v1 (the app-configured sink). Absent = build-only (black box still works). */
   endpoint?: string;
   headers?: Record<string, string>;
   /** Parent context (a W3C traceparent) this emitter's root joins, e.g. the deploy trace from the boot plan. */
@@ -165,7 +166,9 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   };
 }
 
-/** OTLP endpoint + headers from the environment: explicit OTLP vars win, a maple ingest key implies the maple endpoint. */
+/** OTLP endpoint + headers from the environment: explicit OTLP vars win, an
+ *  app-configured sink ingest key (config/telemetry.config.ts) implies that
+ *  sink's endpoint. */
 export function otlpConfigFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): { endpoint: string; headers: Record<string, string> } | undefined {
@@ -178,7 +181,7 @@ export function otlpConfigFromEnv(
     }
     return { endpoint: explicit.replace(/\/$/, ''), headers };
   }
-  const mapleKey = env.MAPLE_SECRET_INGEST_KEY;
-  if (mapleKey) return { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': mapleKey } };
+  const sinkKey = env[telemetrySink.keyEnvVar];
+  if (sinkKey) return { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: sinkKey } };
   return undefined;
 }

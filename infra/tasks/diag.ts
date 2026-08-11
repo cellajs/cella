@@ -50,9 +50,12 @@ async function replayEvents(
 ): Promise<void> {
   const { otlpConfigFromEnv } = await import('../lib/telemetry/emitter');
   const { logsPayload } = await import('../lib/telemetry/otlp');
+  const { telemetrySink } = await import('../config/telemetry.config');
   const config = otlpConfigFromEnv();
   if (!config)
-    throw new Error('diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY');
+    throw new Error(
+      `diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or ${telemetrySink.keyEnvVar}`,
+    );
   const eventKeys = keys.filter((key) => {
     if (!key.endsWith('-events.jsonl') || !services.some((service) => key.includes(`/${service}-`))) return false;
     if (!sinceIso) return true;

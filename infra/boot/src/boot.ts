@@ -133,10 +133,10 @@ async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string>
   return scrubSecretLines((res.stdout || res.stderr || '').trim());
 }
 
-/** Read the maple ingest key from the hydrated runtime env file, if delivered. */
-async function mapleKeyFromRuntimeEnv(path: string): Promise<string | undefined> {
+/** Read the plan-declared ingest-key env var from the hydrated runtime env file, if delivered. */
+async function sinkKeyFromRuntimeEnv(path: string, keyEnvVar: string): Promise<string | undefined> {
   const content = await readFile(path, 'utf-8').catch(() => '');
-  const line = content.split('\n').find((entry) => entry.startsWith('MAPLE_SECRET_INGEST_KEY='));
+  const line = content.split('\n').find((entry) => entry.startsWith(`${keyEnvVar}=`));
   const value = line?.slice(line.indexOf('=') + 1).trim();
   return value || undefined;
 }
@@ -209,11 +209,14 @@ export async function boot(opts: BootOptions): Promise<void> {
           : [],
       }),
     );
-    const mapleKey = await mapleKeyFromRuntimeEnv('/opt/app/.env.runtime');
-    if (mapleKey)
+    // Export only where the plan declares a sink (config/telemetry.config.ts
+    // on the engine side); no vendor endpoint is baked into the boot runner.
+    const sink = plan.telemetry;
+    const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
+    if (sink && sinkKey)
       telemetry.configureExport({
-        endpoint: 'https://ingest.maple.dev/v1',
-        headers: { 'x-maple-ingest-key': mapleKey },
+        endpoint: sink.endpoint,
+        headers: { [sink.keyHeader]: sinkKey },
       });
     await phase('pull-image', () => pullImage(plan, exec));
     await phase('release-command', () => runReleaseCommand(plan, exec));

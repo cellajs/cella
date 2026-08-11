@@ -3,7 +3,7 @@ import { defineEvent, type EventDef, type Placeholders } from './events';
 import type { AttrValue } from './otlp';
 
 /**
- * Audit/error event catalog for the deploy pipeline. Names are stable: maple
+ * Audit/error event catalog for the deploy pipeline. Names are stable: sink
  * alert rules and the black-box replay key on them. New events belong here
  * first (mirrors the EngineConfig rule: the catalog IS the contract).
  */

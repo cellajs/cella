@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { telemetrySink } from '../../config/telemetry.config';
 import { createTelemetry, otlpConfigFromEnv } from './emitter';
 import { buildEvent, formatTraceparent, newSpanId, newTraceId, parseTraceparent, toKeyValues, unixNano } from './otlp';
 
@@ -110,9 +111,9 @@ describe('otlpConfigFromEnv', () => {
     expect(config).toEqual({ endpoint: 'https://col:4318/v1', headers: { a: '1', b: '2' } });
   });
 
-  it('maps a maple ingest key to the maple endpoint', () => {
-    const config = otlpConfigFromEnv({ MAPLE_SECRET_INGEST_KEY: 'mk' });
-    expect(config).toEqual({ endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': 'mk' } });
+  it('maps the app-configured sink ingest key to the sink endpoint', () => {
+    const config = otlpConfigFromEnv({ [telemetrySink.keyEnvVar]: 'mk' });
+    expect(config).toEqual({ endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: 'mk' } });
   });
 
   it('returns undefined when nothing is configured', () => {
