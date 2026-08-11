@@ -115,6 +115,26 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  */
 export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
 
+/**
+ * The CI policy's full per-rule shape (permission sets + scope kind), shared
+ * by the rule builder (setup-ci-key.ts) and the advisory drift check
+ * (setup.ts warnOnCiPolicyDrift) so the two cannot diverge. Every CI rule is
+ * UNCONDITIONED by design (the key-mint resource.id condition is disproven on
+ * live Scaleway — see CI_KEY_MINT_PERMISSION_SETS); a condition appearing on
+ * any CI rule is drift worth surfacing.
+ */
+export interface CiRuleShape {
+  id: 'project' | 'dns' | 'org-read' | 'key-mint';
+  scope: 'project' | 'dns-projects' | 'organization';
+  permissionSets: readonly string[];
+}
+export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
+  { id: 'project', scope: 'project', permissionSets: PROJECT_PERMISSION_SETS },
+  { id: 'dns', scope: 'dns-projects', permissionSets: DNS_PERMISSION_SETS },
+  { id: 'org-read', scope: 'organization', permissionSets: ORG_SCOPED_PERMISSION_SETS },
+  { id: 'key-mint', scope: 'organization', permissionSets: CI_KEY_MINT_PERMISSION_SETS },
+];
+
 // Bootstrap-owned boundary
 
 /**

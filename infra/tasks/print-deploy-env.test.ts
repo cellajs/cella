@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
+  CI_RULE_SHAPES,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
@@ -52,6 +53,11 @@ describe('buildDeployEnv', () => {
           app: 'cella-production-boot',
           sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
           condition: bootKeyCondition('cella', 'production'),
+        },
+        {
+          app: 'cella-production-ci-deploy',
+          sets: CI_RULE_SHAPES.flatMap((shape) => [...shape.permissionSets]),
+          condition: '',
         },
       ]),
       enabled_services_json: JSON.stringify([

@@ -143,50 +143,19 @@ async function fetchApplicationGroupIds(
 }
 
 /**
- * Union of permission set names actually granted to an application: the rules of
- * every policy whose principal is the application itself or a group it belongs to.
- * Policies bound to other principals (other applications, users, or unrelated
- * groups) are excluded, so a shared organization's policies do not leak in.
+ * Every rule (permission sets + condition) granted to an application resolved
+ * by name. Returns null when the application does not exist. Convenience
+ * wrapper (resolve org → resolve app id → collect rules) for callers that only
+ * have the deterministic `<slug>-<suffix>` name (the CLI's per-rule CI-policy
+ * drift check).
  */
-export async function fetchGrantedPermissionSets(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  organizationId: string,
-  applicationId: string,
-): Promise<string[]> {
-  const groupIds = await fetchApplicationGroupIds(fetchImpl, secretKey, organizationId, applicationId);
-  const policies = await listOrganizationPolicies(fetchImpl, secretKey, organizationId);
-  const bound = policies.filter(
-    (policy) =>
-      policy.application_id === applicationId || (policy.group_id !== undefined && groupIds.has(policy.group_id)),
-  );
-  const granted = new Set<string>();
-  for (const policy of bound) {
-    const { rules = [] } = await scwGet<{ rules?: Array<{ permission_set_names?: string[] }> }>(
-      fetchImpl,
-      secretKey,
-      `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`,
-    );
-    for (const rule of rules) {
-      for (const name of rule.permission_set_names ?? []) granted.add(name);
-    }
-  }
-  return [...granted];
-}
-
-/**
- * Sorted union of permission set names granted to an application resolved by
- * name. Returns null when the application does not exist. Convenience wrapper
- * (resolve org → resolve app id → collect sets) for callers that only have the
- * deterministic `<slug>-<suffix>` name (e.g. the CLI's CI-policy drift check).
- */
-export async function fetchAppPermissionSetsByName(opts: {
+export async function fetchAppRulesByName(opts: {
   secretKey: string;
   projectId: string;
   applicationName: string;
   organizationId?: string;
   fetchImpl?: FetchLike;
-}): Promise<string[] | null> {
+}): Promise<Array<{ policyName: string; permissionSets: string[]; condition: string }> | null> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId));
   const applicationId = await resolveApplicationIdByName(
@@ -196,7 +165,7 @@ export async function fetchAppPermissionSetsByName(opts: {
     opts.applicationName,
   );
   if (!applicationId) return null;
-  return (await fetchGrantedPermissionSets(fetchImpl, opts.secretKey, organizationId, applicationId)).sort();
+  return fetchGrantedRules(fetchImpl, opts.secretKey, organizationId, applicationId);
 }
 
 /** Every rule (permission sets + condition) granted to an application across its policies. */

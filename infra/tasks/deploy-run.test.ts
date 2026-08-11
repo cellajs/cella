@@ -25,9 +25,13 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
       },
     ]),
     enabled_services_json: JSON.stringify([
-      { service: 'backend', public_url: 'https://www.cellajs.com/api' },
-      { service: 'cdc', public_url: '' },
-      { service: 'frontend', public_url: 'https://www.cellajs.com' },
+      // health_url mirrors print-deploy-env: set for LB-exposed services
+      // (including co-hosted followers), '' for internal-only ones. The
+      // version-verification step reads THESE rows, not the rollout matrices.
+      { service: 'backend', public_url: 'https://www.cellajs.com/api', health_url: 'https://www.cellajs.com/api' },
+      { service: 'cdc', public_url: '', health_url: '' },
+      { service: 'yjs', public_url: 'https://www.cellajs.com/yjs', health_url: 'https://www.cellajs.com/yjs' },
+      { service: 'frontend', public_url: 'https://www.cellajs.com', health_url: 'https://www.cellajs.com' },
     ]),
     build_images_matrix: JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]),
     primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://www.cellajs.com/api' }]),
@@ -122,8 +126,10 @@ describe('runDeploy sequencing', () => {
       expect(index, `${op} missing or out of order in: ${ops.join(', ')}`).toBeGreaterThan(cursor);
       cursor = index;
     }
-    // Public version verification covers every LB-exposed service.
+    // Public version verification covers every LB-exposed service — including
+    // the co-hosted follower (yjs), which is absent from the rollout matrices.
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
+    expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
     expect(ops).not.toContain('boot-diag');
   });
 

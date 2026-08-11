@@ -7,7 +7,8 @@ import { deriveInfra } from '../../lib/naming';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS } from '../../lib/scaleway/permissions';
+import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
+import { principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
 import {
   ensureBootstrapDnsGrant,
@@ -22,7 +23,7 @@ import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpin
 import { writeEnvVar } from '../../lib/utils/env-file';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { fetchAppPermissionSetsByName } from '../../tasks/assert-vm-grants';
+import { fetchAppRulesByName } from '../../tasks/assert-vm-grants';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
@@ -115,22 +116,40 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
   }
 }
 
-/** Advisory-only drift check of the live CI grant against the code-defined sets. */
+/**
+ * Advisory-only drift check of the live CI grant against the code-defined
+ * rule shapes. Per-rule (sets AND condition), not a permission-set union: a
+ * union compare cannot see a rule that went missing while its sets survive on
+ * another rule, nor a condition appearing on a rule that must stay
+ * unconditioned (the disproven key-mint condition resurfacing).
+ */
 async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
   try {
-    const liveSets = await fetchAppPermissionSetsByName({
+    const liveRules = await fetchAppRulesByName({
       secretKey: ctx.secretKey,
       projectId: ctx.projectId,
-      applicationName: `${ctx.appConfig.slug}-${ctx.context.environment}-ci-deploy`,
+      applicationName: principalNames(ctx.appConfig.slug, ctx.context.environment).ciDeploy,
     });
-    if (!liveSets) return;
-    const expected: string[] = [...PROJECT_PERMISSION_SETS, ...ORG_PERMISSION_SETS].sort();
-    const missing = expected.filter((s) => !liveSets.includes(s));
-    const extra = liveSets.filter((s) => !expected.includes(s));
-    if (missing.length || extra.length) {
+    if (!liveRules) return;
+    const setKey = (sets: readonly string[]): string => [...sets].sort().join(',');
+    const liveByKey = new Map(liveRules.map((rule) => [setKey(rule.permissionSets), rule]));
+    const problems: string[] = [];
+    for (const shape of CI_RULE_SHAPES) {
+      const live = liveByKey.get(setKey(shape.permissionSets));
+      if (!live) {
+        problems.push(`missing rule [${shape.id}: ${shape.permissionSets.join(', ')}]`);
+        continue;
+      }
+      if (live.condition)
+        problems.push(
+          `rule [${shape.id}] carries a condition '${live.condition}' (CI rules are unconditioned by design)`,
+        );
+      liveByKey.delete(setKey(shape.permissionSets));
+    }
+    for (const [key, rule] of liveByKey) problems.push(`unexpected rule [${rule.policyName}: ${key}]`);
+    if (problems.length > 0) {
       console.warn(
-        `  ${warningMark} CI policy permission sets have drifted from code` +
-          `${missing.length ? ` (missing: ${missing.join(', ')})` : ''}${extra.length ? ` (extra: ${extra.join(', ')})` : ''}. ` +
+        `  ${warningMark} CI policy has drifted from code: ${problems.join('; ')}. ` +
           `Re-run bootstrap and choose ${pc.italic('"Rotate keys"')} to reconcile.`,
       );
     }
