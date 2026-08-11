@@ -1,8 +1,8 @@
 import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture';
-import { getAllDecisions } from './check';
-import type { SubjectForPermission } from './types';
+import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
+import { getAllDecisions } from './check.ts';
+import type { SubjectForPermission } from './types.ts';
 
 const organizationSubject = (id: string): SubjectForPermission =>
   wideSubject({ entityType: 'organization', id, channelIds: {} });

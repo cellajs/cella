@@ -1,9 +1,9 @@
-import { hierarchy } from '../../config/hierarchy-config';
-import type { ChannelEntityType, ProductEntityType } from '../../types';
-import { appConfig } from '../config-builder/app-config';
-import { generateId } from '../utils/entity-id';
-import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './engine/types';
-import { validateAncestorScope } from './validate-ancestor-scope';
+import { hierarchy } from '../../config/hierarchy-config.ts';
+import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
+import { appConfig } from '../config-builder/app-config.ts';
+import { generateId } from '../utils/entity-id.ts';
+import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from './engine/types.ts';
+import { validateAncestorScope } from './validate-ancestor-scope.ts';
 
 /**
  * Builds a permission subject from database-shaped ancestor ID columns, ignoring unrelated

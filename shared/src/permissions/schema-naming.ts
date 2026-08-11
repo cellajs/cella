@@ -1,4 +1,4 @@
-import type { EntityType } from '../../types';
+import type { EntityType } from '../../types.ts';
 
 /**
  * Naming conventions shared by the backend (drizzle source of truth) and the standalone yjs

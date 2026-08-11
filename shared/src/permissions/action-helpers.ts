@@ -1,7 +1,7 @@
-import type { EntityActionType } from '../../types';
-import { appConfig } from '../config-builder/app-config';
-import { recordFromKeys } from '../config-builder/utils';
-import type { CanState } from './types';
+import type { EntityActionType } from '../../types.ts';
+import { appConfig } from '../config-builder/app-config.ts';
+import { recordFromKeys } from '../config-builder/utils.ts';
+import type { CanState } from './types.ts';
 
 /**
  * Creates a typed record mapping each entity action to a value.

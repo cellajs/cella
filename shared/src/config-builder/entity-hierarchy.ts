@@ -5,14 +5,14 @@ import {
   type ResolvedAncestor,
   resolveDeepestAncestorId,
   resolveNonNullAncestors,
-} from './resolve-row-channel';
+} from './resolve-row-channel.ts';
 import {
   computeAncestorPath,
   computeChannelPath,
   computeProductPath,
   deepestAncestorSql,
   pathColumnSql,
-} from './row-path';
+} from './row-path.ts';
 
 // Role Registry
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {

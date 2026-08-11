@@ -3,7 +3,7 @@ import path from 'node:path';
 import GithubSlugger from 'github-slugger';
 import type { Plugin } from 'vite';
 import { parse } from 'yaml';
-import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-at';
+import { createUpdatedAtResolver, type UpdatedAtResolver } from './git-updated-at.ts';
 
 const VIRTUAL_ID = 'virtual:docs-frontmatter';
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;

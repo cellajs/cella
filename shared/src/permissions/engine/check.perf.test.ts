@@ -1,8 +1,8 @@
 import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configurePolicyMatrix } from '../../testing/policies';
-import { getAllDecisions } from './check';
-import type { SubjectForPermission } from './types';
+import { configurePolicyMatrix } from '../../testing/policies.ts';
+import { getAllDecisions } from './check.ts';
+import type { SubjectForPermission } from './types.ts';
 
 /** Minimal test membership matching MembershipBaseModel structure */
 type TestMembership = {

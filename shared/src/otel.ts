@@ -10,7 +10,7 @@ import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
-import { appConfig } from './config-builder/app-config';
+import { appConfig } from './config-builder/app-config.ts';
 
 const MAPLE_INGEST_BASE = 'https://ingest.maple.dev/v1';
 const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set — skipping Maple.dev';

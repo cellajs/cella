@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeDeepHierarchy } from '../../testing/deep-fixture';
+import { makeDeepHierarchy } from '../../testing/deep-fixture.ts';
 
 /**
  * Variable-depth `item` rows attach at any depth; raak/cella configs cannot exhibit this

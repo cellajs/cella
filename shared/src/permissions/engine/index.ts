@@ -1,5 +1,5 @@
-export { getAllDecisions } from './check';
-export { formatBatchPermissionSummary, formatPermissionDecision } from './format';
+export { getAllDecisions } from './check.ts';
+export { formatBatchPermissionSummary, formatPermissionDecision } from './format.ts';
 export type {
   AccessMembership,
   ActionAttribution,
@@ -10,5 +10,5 @@ export type {
   PermissionDecision,
   ResolvedChannelIds,
   SubjectForPermission,
-} from './types';
-export { validateMembership, validateSubject } from './validation';
+} from './types.ts';
+export { validateMembership, validateSubject } from './validation.ts';

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { applyFrontmatter, editDocPage, resolveSlugPath } from './docs-editor';
+import { applyFrontmatter, editDocPage, resolveSlugPath } from './docs-editor.ts';
 
 const NOW = '2026-07-07T00:00:00.000Z';
 

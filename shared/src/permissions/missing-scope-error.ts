@@ -1,4 +1,4 @@
-import type { ChannelEntityType, ProductEntityType } from '../../types';
+import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
 
 /**
  * Thrown by `validateAncestorScope` when a required ancestor channel ID is missing (`undefined`).

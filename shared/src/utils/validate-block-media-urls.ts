@@ -1,6 +1,6 @@
-import { appConfig } from '../config-builder/app-config';
-import { isCDNUrl } from './is-cdn-url';
-import { mediaBlockTypes } from './text-from-block';
+import { appConfig } from '../config-builder/app-config.ts';
+import { isCDNUrl } from './is-cdn-url.ts';
+import { mediaBlockTypes } from './text-from-block.ts';
 
 const isAllowedDomain = (url: string, domains: string[]): boolean => {
   try {

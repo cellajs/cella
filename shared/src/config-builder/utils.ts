@@ -1,4 +1,4 @@
-import type { DeepPartial } from './types';
+import type { DeepPartial } from './types.ts';
 
 function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);

@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { remarkLinkRepoPaths } from './remark-link-repo-paths';
+import { remarkLinkRepoPaths } from './remark-link-repo-paths.ts';
 
-const repoRoot = path.resolve(__dirname, '../..');
+const repoRoot = path.resolve(import.meta.dirname, '../..');
 const repoUrl = 'https://github.com/cellajs/cella';
 const transform = remarkLinkRepoPaths({ repoRoot, repoUrl });
 const docsTransform = remarkLinkRepoPaths({

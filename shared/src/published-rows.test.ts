@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { draftVisibleTo, isUnpublishedDraft } from './published-rows';
+import { draftVisibleTo, isUnpublishedDraft } from './published-rows.ts';
 
 describe('isUnpublishedDraft', () => {
   it('is true only for an explicit null publishedAt', () => {

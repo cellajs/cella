@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defineLens, LENS_FORMAT_VERSION } from '../define';
-import { currentSchemaVersion, migrateCachedEntity, normalizeOps } from '../engine';
+import { defineLens, LENS_FORMAT_VERSION } from '../define.ts';
+import { currentSchemaVersion, migrateCachedEntity, normalizeOps } from '../engine.ts';
 
 // No mock here: exercises the real (empty) lens list shipped in lens-list.ts.
 // Every runtime touch point must be a safe passthrough until a lens is appended.

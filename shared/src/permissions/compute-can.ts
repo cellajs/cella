@@ -1,10 +1,10 @@
-import type { ChannelEntityType, EntityActionType, EntityRole, EntityType } from '../../types';
-import { recordFromKeys } from '../config-builder/utils';
-import { allActionsDenied } from './action-helpers';
-import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy';
-import { getEntityPolicies, getPolicyPermissions } from './policy-matrix';
-import { isRowCondition } from './row-conditions';
-import type { CanState, PolicyMatrix } from './types';
+import type { ChannelEntityType, EntityActionType, EntityRole, EntityType } from '../../types.ts';
+import { recordFromKeys } from '../config-builder/utils.ts';
+import { allActionsDenied } from './action-helpers.ts';
+import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
+import { getEntityPolicies, getPolicyPermissions } from './policy-matrix.ts';
+import { isRowCondition } from './row-conditions.ts';
+import type { CanState, PolicyMatrix } from './types.ts';
 
 /**
  * Per-action permission state for one entity type. Three-valued to carry row conditions to the UI:

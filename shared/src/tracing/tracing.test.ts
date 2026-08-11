@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { activityAttrs, cdcAttrs, computeSpanStats, createSpanStore, eventAttrs, type SpanData } from './tracing';
+import { activityAttrs, cdcAttrs, computeSpanStats, createSpanStore, eventAttrs, type SpanData } from './tracing.ts';
 
 function makeSpan(overrides: Partial<SpanData> = {}): SpanData {
   return {

@@ -1,4 +1,4 @@
-import type { LensDefinition } from './define';
+import type { LensDefinition } from './define.ts';
 
 // ── Ordered lens modules (append new imports at the end) ──
 // example:

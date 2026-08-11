@@ -8,9 +8,9 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { appConfig } from '../index';
-import { deltaRenameMap } from '../src/schema-evolution/define';
-import { lenses } from '../src/schema-evolution/lens-list';
+import { appConfig } from '../index.ts';
+import { deltaRenameMap } from '../src/schema-evolution/define.ts';
+import { lenses } from '../src/schema-evolution/lens-list.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const lensDir = join(here, '..', 'src', 'schema-evolution');

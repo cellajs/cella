@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { EntityType } from '../../types';
-import { wideEntityTypes, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture';
-import { getAllDecisions } from './engine';
-import { configurePermissions } from './policy-matrix';
-import type { PolicyCallback } from './types';
+import type { EntityType } from '../../types.ts';
+import { wideEntityTypes, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture.ts';
+import { getAllDecisions } from './engine/index.ts';
+import { configurePermissions } from './policy-matrix.ts';
+import type { PolicyCallback } from './types.ts';
 
 describe('missing policy rows', () => {
   it('denies every action instead of requiring explicit all-zero rows', () => {

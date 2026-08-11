@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, wideOverrides, widePublicGrants, wideSubject } from '../testing/wide-fixture';
-import { getAllDecisions } from './engine/check';
-import type { SubjectForPermission } from './engine/types';
-import { matchesRowCondition } from './row-conditions';
+import { configureWidePermissions, wideOverrides, widePublicGrants, wideSubject } from '../testing/wide-fixture.ts';
+import { getAllDecisions } from './engine/check.ts';
+import type { SubjectForPermission } from './engine/types.ts';
+import { matchesRowCondition } from './row-conditions.ts';
 
 /**
  * Verifies membership-independent public reads from the row's own `publicAt` across the wide

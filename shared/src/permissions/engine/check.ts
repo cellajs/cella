@@ -1,10 +1,10 @@
-import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types';
-import { allActionsAllowed, createActionRecord } from '../action-helpers';
-import type { PublicReadGrants } from '../public-read';
-import { type ConditionActor, isRowCondition, matchesRowCondition, type RowForCondition } from '../row-conditions';
-import type { EntityActionPermissions, PolicyMatrix } from '../types';
-import { formatBatchPermissionSummary, formatPermissionDecision } from './format';
-import { resolveHierarchy } from './resolve-hierarchy';
+import type { ChannelEntityType, EntityActionType, ProductEntityType } from '../../../types.ts';
+import { allActionsAllowed, createActionRecord } from '../action-helpers.ts';
+import type { PublicReadGrants } from '../public-read.ts';
+import { type ConditionActor, isRowCondition, matchesRowCondition, type RowForCondition } from '../row-conditions.ts';
+import type { EntityActionPermissions, PolicyMatrix } from '../types.ts';
+import { formatBatchPermissionSummary, formatPermissionDecision } from './format.ts';
+import { resolveHierarchy } from './resolve-hierarchy.ts';
 import type {
   AccessMembership,
   ActionAttribution,
@@ -12,8 +12,8 @@ import type {
   PermissionDecision,
   ResolvedChannelIds,
   SubjectForPermission,
-} from './types';
-import { validateMembership, validateSubject } from './validation';
+} from './types.ts';
+import { validateMembership, validateSubject } from './validation.ts';
 
 /** Memberships keyed by `${channelType}:${channelId}`. */
 export type MembershipIndex<T extends AccessMembership> = Map<string, T[]>;

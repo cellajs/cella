@@ -1,6 +1,6 @@
 import type { Block } from '@blocknote/core';
 import { describe, expect, it } from 'vitest';
-import { getSearchableTextFromBlock, getSearchableTextFromUrl } from './text-from-block';
+import { getSearchableTextFromBlock, getSearchableTextFromUrl } from './text-from-block.ts';
 
 describe('getSearchableTextFromUrl', () => {
   it('extracts host and path tokens but skips query strings and fragments', () => {

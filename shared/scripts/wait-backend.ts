@@ -3,7 +3,7 @@
  *
  * @see README.md
  */
-import { waitForBackend } from '../src/utils/wait-for-backend';
+import { waitForBackend } from '../src/utils/wait-for-backend.ts';
 
 const args = process.argv.slice(2);
 let interval = 1000;

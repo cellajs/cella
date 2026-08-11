@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findAppVocabularyFindings } from './check-app-vocabulary';
+import { findAppVocabularyFindings } from './check-app-vocabulary.ts';
 
 const legacyTerm = ['fo', 'rk'].join('');
 

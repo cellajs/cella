@@ -1,5 +1,5 @@
-import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types';
-import type { RowConditionName } from './row-conditions';
+import type { ChannelEntityType, EntityActionType, EntityRole, EntityType, ProductEntityType } from '../../types.ts';
+import type { RowConditionName } from './row-conditions.ts';
 
 /**
  * Policy cell value the engine and downstream consumers read. A cell is the config literal

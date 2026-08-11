@@ -1,5 +1,5 @@
-import type { DeepPartial } from '../src/config-builder/types';
-import type { config as _default } from './config.default';
+import type { DeepPartial } from '../src/config-builder/types.ts';
+import type { config as _default } from './config.default.ts';
 
 export const staging = {
   mode: 'staging',

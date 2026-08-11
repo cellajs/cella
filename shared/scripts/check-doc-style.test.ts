@@ -4,7 +4,7 @@ import {
   findDocStyleViolations,
   formatAgentVocabularyFinding,
   formatDocStyleViolation,
-} from './check-doc-style';
+} from './check-doc-style.ts';
 
 const singular = ['invar', 'iant'].join('');
 const plural = `${singular}s`;

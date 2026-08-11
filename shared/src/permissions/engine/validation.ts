@@ -1,6 +1,6 @@
-import { hierarchy } from '../../../config/hierarchy-config';
-import type { EntityHierarchy } from '../../config-builder/entity-hierarchy';
-import type { AccessMembership, SubjectForPermission } from './types';
+import { hierarchy } from '../../../config/hierarchy-config.ts';
+import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
+import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 /**
  * Validates a subject has required fields for permission checking. `entityGuards` defaults to

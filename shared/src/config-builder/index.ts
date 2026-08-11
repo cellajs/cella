@@ -7,15 +7,15 @@ export type {
   ProductView,
   RoleFromRegistry,
   UserEntityView,
-} from './entity-hierarchy';
+} from './entity-hierarchy.ts';
 export {
   createEntityHierarchy,
   createRoleRegistry,
-} from './entity-hierarchy';
+} from './entity-hierarchy.ts';
 // Row location: home attribution and paths are instance methods on EntityHierarchy.
-export type { ResolvedAncestor } from './resolve-row-channel';
-export { entityIdColumnKey, entityIdColumnName } from './resolve-row-channel';
-export { pathHomeId, pathSegments, pathStartsWith } from './row-path';
+export type { ResolvedAncestor } from './resolve-row-channel.ts';
+export { entityIdColumnKey, entityIdColumnName } from './resolve-row-channel.ts';
+export { pathHomeId, pathSegments, pathStartsWith } from './row-path.ts';
 // Config types
 export type {
   BaseAuthStrategies,
@@ -34,6 +34,6 @@ export type {
   ThemeNavigationConfig,
   TotpConfig,
   UppyRestrictionsConfig,
-} from './types';
+} from './types.ts';
 // Utility functions
-export { hasKey, identityRecord, mergeDeep, nonEmpty, recordFromKeys } from './utils';
+export { hasKey, identityRecord, mergeDeep, nonEmpty, recordFromKeys } from './utils.ts';

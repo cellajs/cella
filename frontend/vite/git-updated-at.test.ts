@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createUpdatedAtResolver } from './git-updated-at';
+import { createUpdatedAtResolver } from './git-updated-at.ts';
 
 describe('createUpdatedAtResolver', () => {
-  const resolver = createUpdatedAtResolver(__dirname);
-  const existing = path.resolve(__dirname, 'docs-frontmatter.ts');
-  const alsoExisting = path.resolve(__dirname, 'git-updated-at.ts');
-  const missing = path.resolve(__dirname, 'does-not-exist.xyz');
+  const resolver = createUpdatedAtResolver(import.meta.dirname);
+  const existing = path.resolve(import.meta.dirname, 'docs-frontmatter.ts');
+  const alsoExisting = path.resolve(import.meta.dirname, 'git-updated-at.ts');
+  const missing = path.resolve(import.meta.dirname, 'does-not-exist.xyz');
 
   const asMs = (iso: string | undefined) => (iso ? Date.parse(iso) : Number.NaN);
 
