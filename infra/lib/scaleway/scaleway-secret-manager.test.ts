@@ -202,3 +202,27 @@ describe('createSecretManagerClient', () => {
     await expect(client.listSecrets('/demo-production/')).rejects.toThrow(/403.*forbidden/);
   });
 });
+
+describe('listSecretsUnder prefix boundaries', () => {
+  it("'/p' matches '/p' and '/p/x' but never the sibling '/p2' (REQ-8 subtree semantics)", async () => {
+    const { fn } = makeFetch([
+      {
+        method: 'GET',
+        match: '/secret-manager/v1beta1/regions/nl-ams/secrets?',
+        body: {
+          secrets: [
+            { id: 's-root', name: 'at-root', path: '/p' },
+            { id: 's-child', name: 'child', path: '/p/handoff' },
+            { id: 's-sibling', name: 'sibling', path: '/p2' },
+            { id: 's-sibling-child', name: 'sibling-child', path: '/p2/handoff' },
+          ],
+          total_count: 4,
+        },
+      },
+    ]);
+    vi.stubGlobal('fetch', fn);
+    const client = createSecretManagerClient(baseOptions);
+    const under = await client.listSecretsUnder('/p');
+    expect(under.map((secret) => secret.id).sort()).toEqual(['s-child', 's-root']);
+  });
+});

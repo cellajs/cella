@@ -209,13 +209,23 @@ export async function provisionScopedKey(
     log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource) — skipping`);
   }
 
-  // 3. Replace existing API keys because Scaleway reveals each secret only at creation.
-  //    Purging first prevents reruns from accumulating unusable keys.
   if (config.mintKey === false) {
     log(`  ${checkMark} Key minting skipped — create one in the console for ${app.name}`);
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId };
   }
 
+  // 3. Mint the fresh API key FIRST (Scaleway reveals each secret only at
+  //    creation), THEN purge the older keys. The old purge-then-mint order
+  //    left the principal keyless when the mint failed — for the CI app that
+  //    wedges every deploy until a manual rotate.
+  const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
+    application_id: app.id,
+    description: `${config.suffix} — rotated ${new Date().toISOString().slice(0, 10)}`,
+    default_project_id: projectId,
+  });
+  log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
+
+  // 4. Purge the replaced keys so reruns do not accumulate unusable keys.
   try {
     const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
       { secretKey: callerSecretKey },
@@ -223,6 +233,7 @@ export async function provisionScopedKey(
       `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
     );
     for (const key of existingKeys) {
+      if (key.access_key === apiKey.access_key) continue;
       await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`);
       log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`);
     }
@@ -230,14 +241,6 @@ export async function provisionScopedKey(
     if (!isPermissionDenied(error)) throw error;
     log(`  ${tildeMark} Cannot list API keys (IAMManager without IAMReadOnly) — skipping the orphan purge`);
   }
-
-  // 4. Mint a fresh API key.
-  const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: app.id,
-    description: `${config.suffix} — rotated ${new Date().toISOString().slice(0, 10)}`,
-    default_project_id: projectId,
-  });
-  log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
 
   return {
     accessKey: apiKey.access_key,
