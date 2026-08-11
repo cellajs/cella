@@ -1,6 +1,40 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { isBootstrapOwned } from '../scaleway/permissions';
-import { pc, warningMark } from '../utils/cli-output';
+import { crossMark, pc, warningMark } from '../utils/cli-output';
+import { infraDir } from '../utils/paths';
+
+/** Set one stack config key, exiting on failure. `secret` encrypts the value;
+ *  `configFile` targets an alternate stack config file (the exposure overlay). */
+export function pulumiConfigSet(
+  env: NodeJS.ProcessEnv,
+  stack: string,
+  key: string,
+  value: string,
+  opts: { secret?: boolean; configFile?: string } = {},
+): void {
+  const args = [
+    'config',
+    'set',
+    ...(opts.secret ? ['--secret'] : []),
+    key,
+    value,
+    '--stack',
+    stack,
+    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
+  ];
+  const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' });
+  if (result.status !== 0) {
+    console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`);
+    process.exit(result.status ?? 1);
+  }
+}
+
+/** Remove one stack config key. Best-effort: a missing key is not an error here. */
+export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
+  const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+  if (result.status !== 0)
+    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`);
+}
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
