@@ -1,4 +1,4 @@
-import type { Check, CheckStatus, NextAction, StatusInputs, StatusReport } from './types';
+import type { Check, CheckStatus, CredentialTier, NextAction, StatusInputs, StatusReport } from './types';
 import { STATUS_SCHEMA_VERSION } from './types';
 
 /** First 7 chars of a git SHA, the length humans and logs use. */
@@ -35,388 +35,181 @@ function diagAction(mode: string): NextAction {
   };
 }
 
+type Verdict = (detail: string, nextAction?: NextAction) => Check;
+interface CheckBuilder {
+  ok: Verdict;
+  warn: Verdict;
+  missing: Verdict;
+  error: Verdict;
+  unknown: Verdict;
+}
+
+/** One verdict closure per status, so each check branch is a single call
+ *  instead of a repeated object literal. */
+function check(id: string, title: string, credential: CredentialTier = 'none'): CheckBuilder {
+  const verdict =
+    (status: CheckStatus): Verdict =>
+    (detail, nextAction) => ({ id, title, status, detail, credential, ...(nextAction ? { nextAction } : {}) });
+  return {
+    ok: verdict('ok'),
+    warn: verdict('warn'),
+    missing: verdict('missing'),
+    error: verdict('error'),
+    unknown: verdict('unknown'),
+  };
+}
+
+/** Evaluate a `scaleway`-tier probe result: `unknown` without credentials or
+ *  when the gatherer left the value undefined (the probe could not run). */
+function probed<T>(
+  builder: CheckBuilder,
+  inputs: StatusInputs,
+  value: T | undefined,
+  unknownDetail: string,
+  evaluate: (value: T) => Check,
+): Check {
+  if (!inputs.credentialsAvailable) return builder.unknown('no SCW_*/AWS_* credentials available to this run');
+  if (value === undefined) return builder.unknown(unknownDetail);
+  return evaluate(value);
+}
+
 function toolingChecks(inputs: StatusInputs): Check[] {
-  const checks: Check[] = [];
-  checks.push(
+  const pulumi = check('tooling.pulumi', 'Pulumi CLI');
+  const docker = check('tooling.docker', 'Docker buildx');
+  const gh = check('tooling.gh', 'GitHub CLI');
+  return [
     inputs.tooling.pulumi
-      ? { id: 'tooling.pulumi', title: 'Pulumi CLI', status: 'ok', detail: 'installed', credential: 'none' }
-      : {
-          id: 'tooling.pulumi',
-          title: 'Pulumi CLI',
-          status: 'error',
-          detail: 'not found on PATH; every stack operation needs it',
-          credential: 'none',
-          nextAction: installPulumi,
-        },
-  );
-  checks.push(
+      ? pulumi.ok('installed')
+      : pulumi.error('not found on PATH; every stack operation needs it', installPulumi),
     inputs.tooling.dockerBuildx
-      ? { id: 'tooling.docker', title: 'Docker buildx', status: 'ok', detail: 'available', credential: 'none' }
-      : {
-          id: 'tooling.docker',
-          title: 'Docker buildx',
-          status: 'warn',
-          detail: 'not found; local `deploy --build` unavailable (CI builds still work)',
-          credential: 'none',
-        },
-  );
-  checks.push(
+      ? docker.ok('available')
+      : docker.warn('not found; local `deploy --build` unavailable (CI builds still work)'),
     inputs.tooling.gh
-      ? { id: 'tooling.gh', title: 'GitHub CLI', status: 'ok', detail: 'authenticated', credential: 'none' }
-      : {
-          id: 'tooling.gh',
-          title: 'GitHub CLI',
-          status: 'warn',
-          detail: 'not authenticated; Environment secret sync is skipped (set them by hand)',
-          credential: 'none',
-        },
-  );
-  return checks;
+      ? gh.ok('authenticated')
+      : gh.warn('not authenticated; Environment secret sync is skipped (set them by hand)'),
+  ];
 }
 
 function configChecks(inputs: StatusInputs): Check[] {
-  const checks: Check[] = [];
-  const stateCheck: Check = { id: 'config.stackState', title: 'Stack', status: 'ok', detail: '', credential: 'none' };
-  if (inputs.stackState === 'fresh') {
-    Object.assign(stateCheck, {
-      status: 'missing',
-      detail: `no Pulumi.${inputs.mode}.yaml; this stack has not been set up`,
-      nextAction: runSetup,
-    });
-  } else if (inputs.stackState === 'partial') {
-    Object.assign(stateCheck, {
-      status: 'warn',
-      detail: 'stack file exists but bootstrap is incomplete (no CI deploy key)',
-      nextAction: runSetup,
-    });
-  } else {
-    stateCheck.detail = `bootstrapped (${inputs.mode})`;
-  }
-  checks.push(stateCheck);
-
+  const stack = check('config.stackState', 'Stack');
+  const checks = [
+    inputs.stackState === 'fresh'
+      ? stack.missing(`no Pulumi.${inputs.mode}.yaml; this stack has not been set up`, runSetup)
+      : inputs.stackState === 'partial'
+        ? stack.warn('stack file exists but bootstrap is incomplete (no CI deploy key)', runSetup)
+        : stack.ok(`bootstrapped (${inputs.mode})`),
+  ];
   if (inputs.stackState === 'bootstrapped') {
+    const compute = check('config.computeDeferred', 'Compute');
     checks.push(
       inputs.computeDeferredSince
-        ? {
-            id: 'config.computeDeferred',
-            title: 'Compute',
-            status: 'warn',
-            detail: `deferred since ${inputs.computeDeferredSince}; the first deploy brings the VMs up`,
-            credential: 'none',
-            nextAction: deployAction(inputs.mode),
-          }
-        : {
-            id: 'config.computeDeferred',
-            title: 'Compute',
-            status: 'ok',
-            detail: 'declared (not deferred)',
-            credential: 'none',
-          },
+        ? compute.warn(
+            `deferred since ${inputs.computeDeferredSince}; the first deploy brings the VMs up`,
+            deployAction(inputs.mode),
+          )
+        : compute.ok('declared (not deferred)'),
     );
   }
   return checks;
 }
 
 function identityChecks(inputs: StatusInputs): Check[] {
-  const checks: Check[] = [];
-  checks.push(
+  const project = check('identity.project', 'Scaleway project');
+  const checks = [
     inputs.projectId
-      ? {
-          id: 'identity.project',
-          title: 'Scaleway project',
-          status: 'ok',
-          detail: inputs.projectId,
-          credential: 'none',
-        }
-      : {
-          id: 'identity.project',
-          title: 'Scaleway project',
-          status: 'missing',
-          detail: 'SCW_PROJECT_ID not set; setup picks or creates the project',
-          credential: 'none',
-          nextAction: runSetup,
-        },
-  );
+      ? project.ok(inputs.projectId)
+      : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
+  ];
   if (inputs.stackState === 'bootstrapped') {
+    const admin = check('identity.adminApp', 'Admin app');
     checks.push(
       inputs.adminAppId
-        ? { id: 'identity.adminApp', title: 'Admin app', status: 'ok', detail: inputs.adminAppId, credential: 'none' }
-        : {
-            id: 'identity.adminApp',
-            title: 'Admin app',
-            status: 'warn',
-            detail: 'SCW_ADMIN_APPLICATION_ID not set; admin bucket access needs it',
-            credential: 'none',
-            nextAction: runSetup,
-          },
+        ? admin.ok(inputs.adminAppId)
+        : admin.warn('SCW_ADMIN_APPLICATION_ID not set; admin bucket access needs it', runSetup),
     );
   }
   return checks;
 }
 
 function githubCheck(inputs: StatusInputs): Check[] {
+  const env = check('github.environment', 'GitHub Environment');
   const gh = inputs.github;
-  if (!gh?.authenticated) {
-    return [
-      {
-        id: 'github.environment',
-        title: 'GitHub Environment',
-        status: 'unknown',
-        detail: 'gh not authenticated; cannot verify Environment secrets',
-        credential: 'none',
-      },
-    ];
-  }
-  if (!gh.repo) {
-    return [
-      {
-        id: 'github.environment',
-        title: 'GitHub Environment',
-        status: 'warn',
-        detail: 'origin is not a GitHub remote; CI deploys are unavailable',
-        credential: 'none',
-      },
-    ];
-  }
+  if (!gh?.authenticated) return [env.unknown('gh not authenticated; cannot verify Environment secrets')];
+  if (!gh.repo) return [env.warn('origin is not a GitHub remote; CI deploys are unavailable')];
+  if (!gh.environmentExists)
+    return [env.missing(`no "${inputs.mode}" Environment in ${gh.repo}; CI cannot deploy`, runSetup)];
   const missing = gh.missingSecrets ?? [];
-  if (!gh.environmentExists) {
-    return [
-      {
-        id: 'github.environment',
-        title: 'GitHub Environment',
-        status: 'missing',
-        detail: `no "${inputs.mode}" Environment in ${gh.repo}; CI cannot deploy`,
-        credential: 'none',
-        nextAction: runSetup,
-      },
-    ];
-  }
-  if (missing.length > 0) {
-    return [
-      {
-        id: 'github.environment',
-        title: 'GitHub Environment',
-        status: 'missing',
-        detail: `${gh.repo} "${inputs.mode}" is missing secret(s): ${missing.join(', ')}`,
-        credential: 'none',
-        nextAction: runSetup,
-      },
-    ];
-  }
-  return [
-    {
-      id: 'github.environment',
-      title: 'GitHub Environment',
-      status: 'ok',
-      detail: `${gh.repo} "${inputs.mode}" secrets present`,
-      credential: 'none',
-    },
-  ];
-}
-
-/** Build a `scaleway`-tier check, short-circuiting to `unknown` without creds. */
-function scalewayCheck(inputs: StatusInputs, id: string, title: string, evaluate: () => Check): Check {
-  if (!inputs.credentialsAvailable) {
-    return {
-      id,
-      title,
-      status: 'unknown',
-      detail: 'no SCW_*/AWS_* credentials available to this run',
-      credential: 'scaleway',
-    };
-  }
-  return evaluate();
+  if (missing.length > 0)
+    return [env.missing(`${gh.repo} "${inputs.mode}" is missing secret(s): ${missing.join(', ')}`, runSetup)];
+  return [env.ok(`${gh.repo} "${inputs.mode}" secrets present`)];
 }
 
 function stateChecks(inputs: StatusInputs): Check[] {
-  const bucket = scalewayCheck(inputs, 'state.bucket', 'State bucket', () => {
-    if (inputs.stateBucketExists === undefined)
-      return {
-        id: 'state.bucket',
-        title: 'State bucket',
-        status: 'unknown',
-        detail: 'could not read the state bucket',
-        credential: 'scaleway',
-      };
-    return inputs.stateBucketExists
-      ? { id: 'state.bucket', title: 'State bucket', status: 'ok', detail: 'present', credential: 'scaleway' }
-      : {
-          id: 'state.bucket',
-          title: 'State bucket',
-          status: 'missing',
-          detail: 'absent; run setup to create it',
-          credential: 'scaleway',
-          nextAction: runSetup,
-        };
-  });
-
-  const lock = scalewayCheck(inputs, 'state.lock', 'Stack lock', () => {
-    if (inputs.lock === undefined)
-      return {
-        id: 'state.lock',
-        title: 'Stack lock',
-        status: 'unknown',
-        detail: 'could not read the lock object',
-        credential: 'scaleway',
-      };
-    if (!inputs.lock.held)
-      return { id: 'state.lock', title: 'Stack lock', status: 'ok', detail: 'unlocked', credential: 'scaleway' };
-    const who = `${inputs.lock.owner ?? 'unknown'} (${inputs.lock.operation ?? 'unknown op'})`;
-    return inputs.lock.stale
-      ? {
-          id: 'state.lock',
-          title: 'Stack lock',
-          status: 'warn',
-          detail: `stale lock held by ${who}, expired ${inputs.lock.expiresAt ?? '?'}`,
-          credential: 'scaleway',
-          nextAction: unlock,
-        }
-      : {
-          id: 'state.lock',
-          title: 'Stack lock',
-          status: 'warn',
-          detail: `locked by ${who} since ${inputs.lock.acquiredAt ?? '?'} (a run may be in progress)`,
-          credential: 'scaleway',
-        };
-  });
-
-  const rollout = scalewayCheck(inputs, 'rollout', 'Rollout', () => {
-    if (inputs.rollout === undefined)
-      return {
-        id: 'rollout',
-        title: 'Rollout',
-        status: 'unknown',
-        detail: 'could not read the control object',
-        credential: 'scaleway',
-      };
-    if (inputs.rollout.length === 0)
-      return {
-        id: 'rollout',
-        title: 'Rollout',
-        status: 'missing',
-        detail: 'no services deployed yet',
-        credential: 'scaleway',
-        nextAction: deployAction(inputs.mode),
-      };
-    const active = inputs.rollout.filter((r) => r.activeSha);
-    const pending = inputs.rollout.filter((r) => r.pendingSha);
-    if (active.length === 0)
-      return {
-        id: 'rollout',
-        title: 'Rollout',
-        status: 'missing',
-        detail: 'no active generation for any service',
-        credential: 'scaleway',
-        nextAction: deployAction(inputs.mode),
-      };
-    const summary = inputs.rollout
-      .map((r) => `${r.slug}=${r.activeSha ? short(r.activeSha) : '-'}${r.pendingSha ? `→${short(r.pendingSha)}` : ''}`)
-      .join(' ');
-    return pending.length > 0
-      ? {
-          id: 'rollout',
-          title: 'Rollout',
-          status: 'warn',
-          detail: `pending rollout: ${summary}`,
-          credential: 'scaleway',
-          nextAction: deployAction(inputs.mode),
-        }
-      : { id: 'rollout', title: 'Rollout', status: 'ok', detail: summary, credential: 'scaleway' };
-  });
-
-  return [bucket, lock, rollout];
+  const bucket = check('state.bucket', 'State bucket', 'scaleway');
+  const lock = check('state.lock', 'Stack lock', 'scaleway');
+  const rollout = check('rollout', 'Rollout', 'scaleway');
+  return [
+    probed(bucket, inputs, inputs.stateBucketExists, 'could not read the state bucket', (exists) =>
+      exists ? bucket.ok('present') : bucket.missing('absent; run setup to create it', runSetup),
+    ),
+    probed(lock, inputs, inputs.lock, 'could not read the lock object', (held) => {
+      if (!held.held) return lock.ok('unlocked');
+      const who = `${held.owner ?? 'unknown'} (${held.operation ?? 'unknown op'})`;
+      return held.stale
+        ? lock.warn(`stale lock held by ${who}, expired ${held.expiresAt ?? '?'}`, unlock)
+        : lock.warn(`locked by ${who} since ${held.acquiredAt ?? '?'} (a run may be in progress)`);
+    }),
+    probed(rollout, inputs, inputs.rollout, 'could not read the control object', (services) => {
+      if (services.length === 0) return rollout.missing('no services deployed yet', deployAction(inputs.mode));
+      if (!services.some((r) => r.activeSha))
+        return rollout.missing('no active generation for any service', deployAction(inputs.mode));
+      const summary = services
+        .map(
+          (r) => `${r.slug}=${r.activeSha ? short(r.activeSha) : '-'}${r.pendingSha ? `→${short(r.pendingSha)}` : ''}`,
+        )
+        .join(' ');
+      return services.some((r) => r.pendingSha)
+        ? rollout.warn(`pending rollout: ${summary}`, deployAction(inputs.mode))
+        : rollout.ok(summary);
+    }),
+  ];
 }
 
 function secretChecks(inputs: StatusInputs): Check[] {
+  const secrets = check('secrets.required', 'Runtime secrets', 'scaleway');
   return [
-    scalewayCheck(inputs, 'secrets.required', 'Runtime secrets', () => {
-      if (inputs.requiredSecretsMissing === undefined)
-        return {
-          id: 'secrets.required',
-          title: 'Runtime secrets',
-          status: 'unknown',
-          detail: 'could not read Secret Manager',
-          credential: 'scaleway',
-        };
-      return inputs.requiredSecretsMissing.length === 0
-        ? {
-            id: 'secrets.required',
-            title: 'Runtime secrets',
-            status: 'ok',
-            detail: 'all required secrets set',
-            credential: 'scaleway',
-          }
-        : {
-            id: 'secrets.required',
-            title: 'Runtime secrets',
-            status: 'missing',
-            detail: `unset required secret(s): ${inputs.requiredSecretsMissing.join(', ')}`,
-            credential: 'scaleway',
-            nextAction: manageSecrets,
-          };
-    }),
+    probed(secrets, inputs, inputs.requiredSecretsMissing, 'could not read Secret Manager', (missing) =>
+      missing.length === 0
+        ? secrets.ok('all required secrets set')
+        : secrets.missing(`unset required secret(s): ${missing.join(', ')}`, manageSecrets),
+    ),
   ];
 }
 
 function liveChecks(inputs: StatusInputs): Check[] {
   if (!inputs.live) return [];
   return inputs.live.map((svc): Check => {
-    const id = `live.${svc.slug}`;
-    const title = `Service ${svc.slug}`;
-    if (!svc.probe)
-      return { id, title, status: 'unknown', detail: `not probed (${svc.healthUrl})`, credential: 'none' };
-    const reachable = svc.probe.status === 200 || svc.probe.status === 204;
-    if (!reachable) {
+    const service = check(`live.${svc.slug}`, `Service ${svc.slug}`);
+    if (!svc.probe) return service.unknown(`not probed (${svc.healthUrl})`);
+    if (svc.probe.status !== 200 && svc.probe.status !== 204) {
       const how = svc.probe.status === 0 ? 'unreachable' : `unhealthy (HTTP ${svc.probe.status})`;
-      return {
-        id,
-        title,
-        status: 'missing',
-        detail: `${how} at ${svc.healthUrl}`,
-        credential: 'none',
-        nextAction: diagAction(inputs.mode),
-      };
+      return service.missing(`${how} at ${svc.healthUrl}`, diagAction(inputs.mode));
     }
     const served = svc.probe.version ?? '<none>';
-    if (svc.expectedSha && svc.probe.version !== svc.expectedSha) {
-      return {
-        id,
-        title,
-        status: 'warn',
-        detail: `serving ${short(served)}, expected ${short(svc.expectedSha)}`,
-        credential: 'none',
-        nextAction: deployAction(inputs.mode),
-      };
-    }
-    return {
-      id,
-      title,
-      status: 'ok',
-      detail: `serving ${served === '<none>' ? served : short(served)}`,
-      credential: 'none',
-    };
+    if (svc.expectedSha && svc.probe.version !== svc.expectedSha)
+      return service.warn(`serving ${short(served)}, expected ${short(svc.expectedSha)}`, deployAction(inputs.mode));
+    return service.ok(`serving ${served === '<none>' ? served : short(served)}`);
   });
 }
 
 function dnsCheck(inputs: StatusInputs): Check[] {
   if (!inputs.hasDomain || !inputs.dns) return [];
+  const dns = check('dns.zone', 'DNS');
   const { host, resolvedIps } = inputs.dns;
-  if (resolvedIps === undefined)
-    return [{ id: 'dns.zone', title: 'DNS', status: 'unknown', detail: `did not resolve ${host}`, credential: 'none' }];
+  if (resolvedIps === undefined) return [dns.unknown(`did not resolve ${host}`)];
   if (resolvedIps.length === 0)
-    return [
-      {
-        id: 'dns.zone',
-        title: 'DNS',
-        status: 'warn',
-        detail: `${host} does not resolve (NXDOMAIN); certificate issuance and traffic need it`,
-        credential: 'none',
-        nextAction: runSetup,
-      },
-    ];
-  return [
-    { id: 'dns.zone', title: 'DNS', status: 'ok', detail: `${host} → ${resolvedIps.join(', ')}`, credential: 'none' },
-  ];
+    return [dns.warn(`${host} does not resolve (NXDOMAIN); certificate issuance and traffic need it`, runSetup)];
+  return [dns.ok(`${host} → ${resolvedIps.join(', ')}`)];
 }
 
 /**

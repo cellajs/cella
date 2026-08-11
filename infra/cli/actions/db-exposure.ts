@@ -3,25 +3,13 @@ import { copyFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
-import { adoptOrphanedSecrets } from '../../lib/scaleway/adopt-orphaned-secrets';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
-import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
-import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
-import { maskedSecret } from '../prompts/masked-secret';
-import {
-  acquireStackLockOrExit,
-  envOr,
-  type InfraContext,
-  promptRequiredInput,
-  promptStackName,
-  pulumiLoginAndSelect,
-  resolveVerifiedPassphrase,
-} from '../shared';
+import type { InfraContext } from '../shared';
 import { parseAclInput } from './db-exposure-acl';
+import { printRevokeReminder, runPrivilegedConverge } from './privileged-converge';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
@@ -68,57 +56,24 @@ export async function detectPublicIp(): Promise<string | undefined> {
   }
 }
 
-/** Set one stack config key, exiting on failure. `secret` encrypts the value;
- *  `configFile` targets an alternate stack config file (the exposure overlay). */
-export function pulumiConfigSet(
-  env: NodeJS.ProcessEnv,
-  stack: string,
-  key: string,
-  value: string,
-  opts: { secret?: boolean; configFile?: string } = {},
-): void {
-  const args = [
-    'config',
-    'set',
-    ...(opts.secret ? ['--secret'] : []),
-    key,
-    value,
-    '--stack',
-    stack,
-    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
-  ];
-  const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' });
-  if (result.status !== 0) {
-    console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`);
-    process.exit(result.status ?? 1);
-  }
-}
-
-/** Remove one stack config key. Best-effort: a missing key is not an error here. */
-export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
-  const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
-  if (result.status !== 0)
-    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`);
+/** Read a (secret) stack output as raw text; empty when absent or unreadable. */
+function readSecretOutput(env: NodeJS.ProcessEnv, stack: string, name: string): string {
+  const result = spawnSync('pulumi', ['stack', 'output', name, '--show-secrets', '--stack', stack], {
+    cwd: infraDir,
+    env,
+    encoding: 'utf8',
+  });
+  return result.status === 0 ? (result.stdout ?? '').trim() : '';
 }
 
 /** Read the public admin DSN stack output (empty when the endpoint is disabled). */
 export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
-  const result = spawnSync('pulumi', ['stack', 'output', PUBLIC_DSN_OUTPUT, '--show-secrets', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    encoding: 'utf8',
-  });
-  return result.status === 0 ? (result.stdout ?? '').trim() : '';
+  return readSecretOutput(env, stack, PUBLIC_DSN_OUTPUT);
 }
 
 /** Read the database instance CA certificate stack output (PEM; empty when unavailable). */
 export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
-  const result = spawnSync('pulumi', ['stack', 'output', DB_CA_OUTPUT, '--show-secrets', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    encoding: 'utf8',
-  });
-  return result.status === 0 ? (result.stdout ?? '').trim() : '';
+  return readSecretOutput(env, stack, DB_CA_OUTPUT);
 }
 
 /**
@@ -134,115 +89,18 @@ export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment
   return caPath;
 }
 
-/**
- * The privileged bootstrap-key converge shared by expose/unexpose: acquire keys
- * and the stack lock, adopt any orphaned secret state, reconcile rollout
- * config from live state (so a local `up` cannot revert compute to a stale
- * generation), apply the caller's config mutation, then run `pulumi up`.
- * `prepare` may return an alternate stack config file (the exposure overlay)
- * that the `up` then runs with; returning undefined converges the committed
- * config. Returns the provider env and stack so the caller can read outputs
- * after the lock is released. Exits the process on any hard failure.
- */
-export async function convergePublicEndpoint(
+/** Converge with the exposure semantics: a declined retry loop is a hard stop. */
+async function convergeOrExit(
   context: InfraContext,
   operation: string,
   prepare: (env: NodeJS.ProcessEnv, stack: string) => string | undefined,
 ): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
-  if (context.state !== 'bootstrapped') {
-    console.error(
-      `${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`,
-    );
+  const { env, stack, completed } = await runPrivilegedConverge(context, { operation, prepare });
+  if (!completed) {
+    console.error(`${crossMark} converge did not complete; stack config may be partially applied. Re-run to finish.`);
     process.exit(1);
   }
-
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  const { projectId, appConfig } = context;
-
-  const bootAccess = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway bootstrap access key'),
-  );
-  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
-  );
-  const stack = await promptStackName(context);
-
-  const env = buildProviderEnv(infraDir, { accessKey: bootAccess, secretKey: bootSecret, projectId, passphrase });
-  pulumiLoginAndSelect(infraDir, env, appConfig, stack);
-
-  const stackLock = await acquireStackLockOrExit({
-    appConfig,
-    accessKey: bootAccess,
-    secretKey: bootSecret,
-    stack,
-    operation,
-  });
-
-  // Adopt secret state that exists in Scaleway but is missing from Pulumi
-  // state, so `pulumi up` does not fail trying to recreate it. Best-effort,
-  // exactly as the apply path does.
-  try {
-    env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
-    await adoptOrphanedSecrets({
-      stack,
-      cwd: infraDir,
-      env,
-      secretKey: bootSecret,
-      projectId,
-      region: appConfig.s3.region,
-      path: `/${appConfig.slug}-${context.environment}/`,
-    });
-  } catch (error) {
-    console.warn(`${warningMark} orphan-state adoption skipped: ${errorMessage(error)}`);
-  }
-
-  // Reconcile gen/sha into local config from live state before `up`, so a stale
-  // committed Pulumi.<stack>.yaml cannot converge compute back to an old
-  // generation and destroy newer live VMs. A hard failure aborts.
-  console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-  const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    stdio: 'inherit',
-  });
-  if (sync.status !== 0) {
-    await stackLock.release();
-    console.error(
-      `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
-    );
-    process.exit(sync.status ?? 1);
-  }
-
-  const configFile = prepare(env, stack);
-
-  while (true) {
-    const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, configFile);
-    if (code === 0) break;
-    const orphans = parseOrphanedDeletes(output);
-    if (
-      orphans.length > 0 &&
-      (await confirm({
-        message: `Prune ${orphans.length} stale state entr${orphans.length === 1 ? 'y' : 'ies'} and retry?`,
-        default: true,
-      }))
-    ) {
-      pruneOrphanedDeletes(orphans, stack, infraDir, env);
-      continue;
-    }
-    if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) {
-      await stackLock.release();
-      console.error(`${crossMark} converge did not complete; stack config may be partially applied. Re-run to finish.`);
-      process.exit(1);
-    }
-  }
-
-  await stackLock.release();
   return { env, stack };
-}
-
-/** Loud reminder to revoke the short-lived bootstrap key after the run. */
-function revokeReminder(): void {
-  console.info(`\n${pc.dim('Reminder:')} revoke the bootstrap key now (Scaleway console → IAM → API keys).`);
 }
 
 /**
@@ -285,7 +143,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     return;
   }
 
-  const { env, stack } = await convergePublicEndpoint(context, 'expose-db', (e, s) => {
+  const { env, stack } = await convergeOrExit(context, 'expose-db', (e, s) => {
     const overlay = writeExposureOverlay(context.stackPath, context.environment);
     pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
     // Encrypt the ACL: it records the operator's source IP and should not sit in
@@ -318,7 +176,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
       );
   }
   console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`);
-  revokeReminder();
+  printRevokeReminder();
 }
 
 /**
@@ -332,7 +190,7 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
     return;
   }
 
-  const { env, stack } = await convergePublicEndpoint(context, 'unexpose-db', (e, s) => {
+  const { env, stack } = await convergeOrExit(context, 'unexpose-db', (e, s) => {
     // Compat: stacks that predate the overlay recorded the exposure keys in the
     // committed stack config; remove them so the plain converge closes the
     // endpoint. Overlay-based exposure needs no config change here: converging
@@ -351,5 +209,5 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }
-  revokeReminder();
+  printRevokeReminder();
 }

@@ -35,6 +35,7 @@ import type {
   StatusReport,
 } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -326,20 +327,6 @@ export async function runStatus(context: {
   printReport(report, { json: false });
 }
 
-/** Load backend/.env, root .env, then the mode-scoped override (matching the CLI). */
-function loadEnvForMode(mode: string): void {
-  for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
-    if (existsSync(envFile)) process.loadEnvFile(envFile);
-  }
-  const modeEnvPath = resolve(infraDir, `.env.${mode}`);
-  if (existsSync(modeEnvPath)) {
-    for (const line of readFileSync(modeEnvPath, 'utf8').split('\n')) {
-      const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-      if (match) process.env[match[1]!] = (match[2] ?? '').replace(/^['"]|['"]$/g, '');
-    }
-  }
-}
-
 /** Standalone entry: `pnpm --filter infra status [--mode <m>] [--json]`. */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const flagMode = getFlag(argv, '--mode') ?? process.env.INFRA_MODE;
@@ -350,7 +337,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   const json = argv.includes('--json');
 
-  loadEnvForMode(mode);
+  // Same loading order as the CLI; silent so `--json` output stays parseable.
+  loadBaseEnvFiles();
+  loadModeEnvFile(mode);
   process.env.APP_MODE = mode;
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();

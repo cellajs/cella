@@ -1,6 +1,40 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { isBootstrapOwned } from '../scaleway/permissions';
-import { pc, warningMark } from '../utils/cli-output';
+import { crossMark, pc, warningMark } from '../utils/cli-output';
+import { infraDir } from '../utils/paths';
+
+/** Set one stack config key, exiting on failure. `secret` encrypts the value;
+ *  `configFile` targets an alternate stack config file (the exposure overlay). */
+export function pulumiConfigSet(
+  env: NodeJS.ProcessEnv,
+  stack: string,
+  key: string,
+  value: string,
+  opts: { secret?: boolean; configFile?: string } = {},
+): void {
+  const args = [
+    'config',
+    'set',
+    ...(opts.secret ? ['--secret'] : []),
+    key,
+    value,
+    '--stack',
+    stack,
+    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
+  ];
+  const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' });
+  if (result.status !== 0) {
+    console.error(`${crossMark} pulumi config set ${key} failed (exit ${result.status}).`);
+    process.exit(result.status ?? 1);
+  }
+}
+
+/** Remove one stack config key. Best-effort: a missing key is not an error here. */
+export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
+  const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+  if (result.status !== 0)
+    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`);
+}
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
@@ -19,6 +53,18 @@ export function classifyPermissionError(stderr: string): PermissionHint {
   if (!m?.[1]) return undefined;
   const resource = m[1];
   return isBootstrapOwned(resource) ? { kind: 'bootstrap-owned', resource } : { kind: 'ci-grantable', resource };
+}
+
+/**
+ * Detects a Scaleway "secret ... already exists" conflict: a secret container
+ * live in Scaleway but missing from Pulumi state (e.g. after a state restore),
+ * so `up` fails trying to recreate it. Returns the secret name when the error
+ * text carries one. Pure.
+ */
+export function classifyDuplicateSecretError(output: string): { name?: string } | undefined {
+  const m = output.match(/secret[^\n]*already exists/i);
+  if (!m) return undefined;
+  return { name: m[0].match(/['"]([A-Za-z0-9][\w./-]*)['"]/)?.[1] };
 }
 
 /**
@@ -101,6 +147,16 @@ export async function runPulumiUpWithHint(
 
   const exitCode = await waitForExitCode(child);
   if (exitCode !== 0) {
+    const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
+    if (dup) {
+      console.error(
+        `\n${warningMark} ${pc.bold('State hint:')} a secret container exists in Scaleway but is missing from Pulumi state.`,
+      );
+      console.error('  Adopt it into state, then re-run:');
+      console.error(
+        `  ${pc.cyan(`pulumi import scaleway:secrets/secret:Secret secret-${dup.name ?? '<secret-name>'} <region>/<secret-uuid> --stack ${stack} --yes`)}`,
+      );
+    }
     const hint = classifyPermissionError(stderrBuf);
     if (hint) {
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);
