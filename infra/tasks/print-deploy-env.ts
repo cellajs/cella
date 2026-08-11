@@ -3,6 +3,7 @@ import { deriveInfra } from '../lib/naming';
 import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
+  CI_RULE_SHAPES,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
@@ -112,6 +113,15 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
         app: principalNames(appConfig.slug, appConfig.mode).boot,
         sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
         condition: bootKeyCondition(appConfig.slug, appConfig.mode),
+      },
+      // The CI app asserts its own grant too: exact set union (missing sets
+      // fail deploys later and non-read-only extras are an escalation).
+      // condition '' skips the secret-condition check — CI rules are
+      // unconditioned by design (see CI_RULE_SHAPES).
+      {
+        app: principalNames(appConfig.slug, appConfig.mode).ciDeploy,
+        sets: CI_RULE_SHAPES.flatMap((shape) => [...shape.permissionSets]),
+        condition: '',
       },
     ]),
     enabled_services_json: JSON.stringify(enabledServiceRows),

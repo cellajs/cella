@@ -291,7 +291,11 @@ export async function runDeploy(
     }
 
     await step('Verify public versions', async () => {
-      const rows: RolloutRow[] = [...JSON.parse(env.primary_rollout_matrix), ...JSON.parse(env.roll_rest_matrix)];
+      // Every LB-exposed service, not just the VM-owning rollout rows:
+      // co-hosted and collocated followers are repointed by cutover without
+      // their own version probe, so they gate here too, before the new entry
+      // files publish.
+      const rows: RolloutRow[] = JSON.parse(env.enabled_services_json);
       for (const row of rows) {
         if (!row.health_url) continue;
         const ok = await fx.verifyVersion(`${row.health_url.replace(/\/$/, '')}${healthContract.path}`, opts.sha);

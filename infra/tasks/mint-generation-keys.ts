@@ -58,21 +58,30 @@ async function resolveAppId(secretKey: string, organizationId: string, name: str
   return app.id;
 }
 
-/** Mint a fresh key on the app, then prune all but the newest KEYS_TO_KEEP. */
-async function mintAndPrune(
+/** Mint a fresh key on the app. Pruning happens separately, AFTER every
+ *  handoff bundle is staged — see pruneStaleKeys. */
+async function mintKey(
   secretKey: string,
-  organizationId: string,
   projectId: string,
   appId: string,
   label: string,
   sha: string,
-  log: (msg: string) => void,
 ): Promise<ScwApiKey> {
-  const fresh = await scwFetch<ScwApiKey>({ secretKey }, 'POST', `${IAM_BASE}/api-keys`, {
+  return scwFetch<ScwApiKey>({ secretKey }, 'POST', `${IAM_BASE}/api-keys`, {
     application_id: appId,
     description: `${label} gen ${sha.slice(0, 10)}`,
     default_project_id: projectId,
   });
+}
+
+/** Delete all but the newest KEYS_TO_KEEP keys on the app. */
+async function pruneStaleKeys(
+  secretKey: string,
+  organizationId: string,
+  appId: string,
+  label: string,
+  log: (msg: string) => void,
+): Promise<void> {
   const { api_keys = [] } = await scwFetch<{ api_keys?: ScwApiKey[] }>(
     { secretKey },
     'GET',
@@ -83,7 +92,6 @@ async function mintAndPrune(
     await scwSend({ secretKey }, 'DELETE', `${IAM_BASE}/api-keys/${stale.access_key}`);
     log(`  ~ pruned ${label} key ${stale.access_key}`);
   }
-  return fresh;
 }
 
 /**
@@ -112,31 +120,28 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     projectId: opts.projectId,
   });
 
+  // Resolve every app id first: a missing principal fails before anything is
+  // minted or pruned.
   const bootAppId = await resolveAppId(opts.callerSecretKey, opts.organizationId, names.boot);
-  const bootKey = await mintAndPrune(
-    opts.callerSecretKey,
-    opts.organizationId,
-    opts.projectId,
-    bootAppId,
-    names.boot,
-    opts.sha,
-    log,
-  );
+  const serviceAppIds = new Map<string, string>();
+  for (const service of opts.services) {
+    serviceAppIds.set(service, await resolveAppId(opts.callerSecretKey, opts.organizationId, names.vmService(service)));
+  }
+
+  // Transactional-ish ordering: mint and stage EVERYTHING first, prune keys
+  // LAST. A failure mid-staging then aborts with all existing keys intact —
+  // the old generation keeps hydrating/signing, and a retry re-mints cleanly.
+  // (The keep-newest-2 window can still age out the live key after repeated
+  // failed attempts within one deploy; bounded, documented, accepted.)
+  const bootKey = await mintKey(opts.callerSecretKey, opts.projectId, bootAppId, names.boot, opts.sha);
   log(`✓ minted boot key ${bootKey.access_key}`);
 
   const handoffSecretIds: Record<string, string> = {};
   for (const service of opts.services) {
     const appName = names.vmService(service);
-    const appId = await resolveAppId(opts.callerSecretKey, opts.organizationId, appName);
-    const serviceKey = await mintAndPrune(
-      opts.callerSecretKey,
-      opts.organizationId,
-      opts.projectId,
-      appId,
-      appName,
-      opts.sha,
-      log,
-    );
+    const appId = serviceAppIds.get(service);
+    if (!appId) throw new Error(`mint-generation-keys: no app id resolved for ${appName}`);
+    const serviceKey = await mintKey(opts.callerSecretKey, opts.projectId, appId, appName, opts.sha);
 
     // Prune older handoff bundles first: an unconsumed bundle from a failed
     // deploy is stale (VMs cache the key after their single read), and leaving
@@ -160,6 +165,13 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     });
     handoffSecretIds[service] = bundle.id;
     log(`✓ staged handoff bundle for ${service} (${bundle.id})`);
+  }
+
+  // Every bundle is staged; only now retire stale keys.
+  await pruneStaleKeys(opts.callerSecretKey, opts.organizationId, bootAppId, names.boot, log);
+  for (const service of opts.services) {
+    const appId = serviceAppIds.get(service);
+    if (appId) await pruneStaleKeys(opts.callerSecretKey, opts.organizationId, appId, names.vmService(service), log);
   }
 
   const result: GenerationKeys = {

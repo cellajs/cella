@@ -1,12 +1,7 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
-import {
-  CI_KEY_MINT_PERMISSION_SETS,
-  DNS_PERMISSION_SETS,
-  ORG_SCOPED_PERMISSION_SETS,
-  PROJECT_PERMISSION_SETS,
-} from '../lib/scaleway/permissions';
+import { CI_RULE_SHAPES } from '../lib/scaleway/permissions';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
 import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
 import { isMain } from '../lib/utils/is-main';
@@ -42,24 +37,20 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
-    buildRules: ({ projectId, organizationId }) => [
-      { permission_set_names: PROJECT_PERMISSION_SETS, project_ids: [projectId] },
-      // Separate rules per scope type (Scaleway rejects mixing them in one
-      // rule): DNS is project-scoped, IAMReadOnly is organization-scoped.
-      { permission_set_names: DNS_PERMISSION_SETS, project_ids: dnsProjectIds },
-      { permission_set_names: ORG_SCOPED_PERMISSION_SETS, organization_id: organizationId },
-      // v2: per-deploy service-key rotation. Unconditioned — the resource.id
-      // condition 403s real api-key mints on live Scaleway (disproven
-      // 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS for the trade-off).
-      ...(opts.keyMintAppIds && opts.keyMintAppIds.length > 0
-        ? [
-            {
-              permission_set_names: CI_KEY_MINT_PERMISSION_SETS,
-              organization_id: organizationId,
-            },
-          ]
-        : []),
-    ],
+    // One rule per CI_RULE_SHAPES entry (separate rules per scope type:
+    // Scaleway rejects mixing scopes in one rule). The key-mint rule is
+    // unconditioned — the resource.id condition 403s real api-key mints on
+    // live Scaleway (disproven 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS).
+    buildRules: ({ projectId, organizationId }) =>
+      CI_RULE_SHAPES.filter(
+        (shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds && opts.keyMintAppIds.length > 0),
+      ).map((shape) =>
+        shape.scope === 'project'
+          ? { permission_set_names: [...shape.permissionSets], project_ids: [projectId] }
+          : shape.scope === 'dns-projects'
+            ? { permission_set_names: [...shape.permissionSets], project_ids: dnsProjectIds }
+            : { permission_set_names: [...shape.permissionSets], organization_id: organizationId },
+      ),
   });
 }
 
