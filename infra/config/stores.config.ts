@@ -1,5 +1,5 @@
 import { defineStores } from '../lib/stores';
-import { postgresManaged } from '../resources/stores/postgres-managed';
+import { postgresManaged } from '../resources/stores/catalog';
 
 /**
  * App-owned registry of stateful backing resources, provisioned by the deploy

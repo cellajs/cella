@@ -1,4 +1,5 @@
-import type * as pulumi from '@pulumi/pulumi';
+import * as pulumi from '@pulumi/pulumi';
+import { readStoreOutput } from '../lib/stores';
 import * as storage from './storage';
 import './dns';
 import * as compute from './compute';
@@ -11,11 +12,15 @@ import './vm-iam';
 import { mode, naming, region } from '../pulumi-context';
 import * as lb from './loadbalancer';
 
-/** Read a named output from the primary store, failing loudly if it is absent. */
+/**
+ * Read a named output from the primary store. A provisioning store (postgres)
+ * must expose the full db contract — a missing key throws. A provision-less
+ * primary (external `databaseUrl`, `none`) has no outputs at all, so every
+ * `db*` export becomes an empty string and consumers (db-exposure CLI, seed)
+ * treat the feature as unavailable.
+ */
 function primaryStoreOutput(name: string): pulumi.Output<string> {
-  const value = stores.primaryStoreOutputs[name];
-  if (value === undefined) throw new Error(`program: primary store did not expose output '${name}'`);
-  return value;
+  return readStoreOutput(stores.primaryStoreOutputs, name) ?? pulumi.output('');
 }
 
 // The whole deployment program: one stack per mode, long-lived base resources

@@ -116,3 +116,19 @@ export interface StoreProvisioner {
 export function defineStores<const T extends Record<string, StoreProvisioner>>(stores: T): T {
   return stores;
 }
+
+/**
+ * Read a named output from a store's outputs under the P2 contract: a
+ * provision-less store (external URL / none — no outputs at all) yields
+ * undefined for every name, and the caller substitutes an empty export; a
+ * PROVISIONING store must expose every requested name — a missing key there
+ * is a store bug (or a typo at the call site), so it throws loudly. Full
+ * store-agnostic output namespacing (`store.<id>.<key>`) is the P3/P4 fix;
+ * this rule only makes provision-less primaries loadable.
+ */
+export function readStoreOutput(outputs: StoreOutputs, name: string): pulumi.Output<string> | undefined {
+  const value = outputs[name];
+  if (value !== undefined) return value;
+  if (Object.keys(outputs).length === 0) return undefined;
+  throw new Error(`store: provisioning store did not expose output '${name}'`);
+}
