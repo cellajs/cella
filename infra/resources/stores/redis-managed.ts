@@ -13,6 +13,13 @@ export interface RedisManagedConfig {
   /** Terminate connections with TLS (rediss scheme). Defaults to true. */
   tls?: boolean;
   /**
+   * Permit a public cluster endpoint. Off by default: the provider-formatted
+   * `connectionString` prefers a public endpoint when one exists, so an
+   * unnoticed public network would silently switch the emitted REDIS_URL from
+   * private to internet-reachable.
+   */
+  allowPublicEndpoint?: boolean;
+  /**
    * Services that consume the connection URL (and, with TLS, the cluster CA)
    * as runtime secrets. When set, the store owns the secret declarations.
    */
@@ -33,6 +40,14 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
 
   return {
     kind: 'redis-managed',
+
+    validate(): void {
+      if (!tls && config.secretConsumers?.ca?.length) {
+        throw new Error(
+          'redisManaged: secretConsumers.ca declared but tls is disabled — no CA secret would be emitted. Enable tls or drop the ca consumers.',
+        );
+      }
+    },
 
     secrets(): StoreSecretContribution[] {
       const consumers = config.secretConsumers;
@@ -86,16 +101,27 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
         { protect: isProduction },
       );
 
+      // Provider-formatted URI for the first reachable endpoint; rediss scheme
+      // when TLS is enabled, userinfo included. Posture guard: the provider
+      // prefers a public endpoint when one exists, so fail the deploy rather
+      // than silently emit an internet-reachable REDIS_URL (O-F5).
+      const connectionString = cluster.publicNetwork.apply((publicNetwork) => {
+        if (!config.allowPublicEndpoint && (publicNetwork?.ips?.length ?? 0) > 0) {
+          throw new Error(
+            'redisManaged: the cluster has a public endpoint but allowPublicEndpoint is not set — the emitted REDIS_URL would prefer it. Opt in explicitly or remove the public network.',
+          );
+        }
+        return cluster.connectionString;
+      });
+
       return {
         outputs: {
           clusterId: cluster.id,
-          // Provider-formatted URI for the first reachable endpoint; rediss
-          // scheme when TLS is enabled, userinfo included.
-          connectionString: cluster.connectionString,
+          connectionString,
           certificate: cluster.certificate,
         },
         secretValues: {
-          redisUrl: cluster.connectionString,
+          redisUrl: connectionString,
           ...(tls
             ? {
                 // Base64-encode the multiline CA for line-based `.env.runtime`

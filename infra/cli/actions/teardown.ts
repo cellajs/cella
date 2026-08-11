@@ -99,14 +99,19 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   });
 
   // --refresh first so the destroy plan matches live state (a stale local view
-  // of generations/LB must not orphan real resources).
-  console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));
-  const destroy = spawnSync('pulumi', ['destroy', '--refresh', '--yes', '--stack', targetStack], {
-    cwd: infraDir,
-    env,
-    stdio: 'inherit',
-  });
-  await stackLock.release();
+  // of generations/LB must not orphan real resources). The lock releases in a
+  // finally so a throw between acquire and release cannot strand it until TTL.
+  let destroy: ReturnType<typeof spawnSync>;
+  try {
+    console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));
+    destroy = spawnSync('pulumi', ['destroy', '--refresh', '--yes', '--stack', targetStack], {
+      cwd: infraDir,
+      env,
+      stdio: 'inherit',
+    });
+  } finally {
+    await stackLock.release();
+  }
   if (destroy.status !== 0) {
     console.error(
       `\n${warningMark} pulumi destroy exited ${destroy.status}. Common causes: protected resources (lift 'protect' in code for a real teardown), ` +

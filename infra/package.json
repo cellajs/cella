@@ -33,6 +33,7 @@
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
     "smoke": "tsx tasks/smoke.ts",
+    "engine-gate": "bash scripts/engine-gate.sh",
     "ts": "cd .. && tsgo -p infra/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },

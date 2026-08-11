@@ -42,7 +42,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     );
   }
 
-  const appHost = serviceHost('frontend');
+  // The default-route service owns the app host (S14 pattern: derive, never
+  // name a service literal in the engine).
+  const appHost = serviceHost(defaultService.slug);
   // Zone-apex resources (apex A record, apex cert, apex-to-www redirect) belong
   // to exactly ONE stack per zone: the one serving `www.<zone>`. A staging
   // stack on the shared zone (staging.<zone>) must never manage the apex, or
