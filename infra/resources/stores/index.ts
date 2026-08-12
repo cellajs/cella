@@ -36,8 +36,8 @@ export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
 /**
  * Every store's outputs, keyed by store id (S11 generic namespacing: the
  * stack exports these as one `storeOutputs` object, `<storeId>.<key>`). The
- * legacy flat `db*` exports remain as the primary store's aliases for the
- * db-exposure CLI; consumers of non-primary or non-postgres stores read this.
+ * db-exposure/seed CLI reads the primary store's keys from here; the flat
+ * db* aliases were retired in the 2026-08 planned break.
  */
 export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(
   results.map(([id, provisioned]) => [id, provisioned.outputs]),

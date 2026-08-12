@@ -20,7 +20,7 @@ export const appServices = defineServices({
     // companion runs at the new generation's boot (expand-before-cutover): it
     // applies migrations via MODE=migrate, and the app block is told not to
     // migrate on its own boot.
-    replacementStrategy: 'lb-overlap',
+    replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     release: { env: { MODE: 'migrate' }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
     primaryRollout: true,
@@ -28,7 +28,7 @@ export const appServices = defineServices({
     // Same-origin: reached at https://<app-host>/api/... via an LB path-begin
     // route; the backend self-mounts '/api' (no LB stripping).
     lbRoute: 'path',
-    lbPathBegin: '/api',
+    pathPrefix: '/api',
     // Private ACL-guarded LB frontend: in-network consumers (cdc) dial a stable
     // address that follows every cutover.
     internalRoute: true,
@@ -53,7 +53,7 @@ export const appServices = defineServices({
     startPeriod: '10s',
     // CDC must cut over exclusively because it owns one PostgreSQL replication slot.
     // It is internal-only and reached through the private network.
-    replacementStrategy: 'exclusive',
+    replacementStrategy: 'stop-first',
     instanceType: 'DEV1-S',
     // singleVM: fold into the backend process in-process (holds the same slot).
     coHosted: true,
@@ -80,7 +80,7 @@ export const appServices = defineServices({
     healthExpectStatus: 204,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    replacementStrategy: 'lb-overlap',
+    replacementStrategy: 'start-first',
     // WebSocket clients reconnect to the new generation and resync from durable
     // CRDT state while sessions close during drain.
     drainPolicy: 'reconnect',
@@ -88,7 +88,7 @@ export const appServices = defineServices({
     // Same-origin: reached at wss://<app-host>/yjs/... via an LB path-begin
     // route; the yjs server accepts the unstripped prefix.
     lbRoute: 'path',
-    lbPathBegin: '/yjs',
+    pathPrefix: '/yjs',
     // WebSocket service: LB keeps connections open for up to an hour.
     lbWebsockets: true,
     // Only deployed when appConfig.services.yjs.enabled is true.
@@ -107,7 +107,7 @@ export const appServices = defineServices({
     healthExpectStatus: 204,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
-    replacementStrategy: 'lb-overlap',
+    replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     drainSeconds: 10,
     // Reuses the backend image at the same SHA; CI builds no separate mcp image.
@@ -115,7 +115,7 @@ export const appServices = defineServices({
     // Same-origin: reached at https://<app-host>/mcp/... via an LB path-begin
     // route; the shared base app self-mounts '/mcp'.
     lbRoute: 'path',
-    lbPathBegin: '/mcp',
+    pathPrefix: '/mcp',
     // Only deployed when appConfig.services.mcp.enabled is true.
     instanceType: 'DEV1-S',
     // singleVM: fold into the backend process (LB still routes to the host VM).
@@ -141,7 +141,7 @@ export const appServices = defineServices({
     port: 80,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    replacementStrategy: 'lb-overlap',
+    replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     // The app origin: the LB's fallback backend. Everything no path route
     // matches (/api, /yjs, /mcp) lands on the SPA proxy.

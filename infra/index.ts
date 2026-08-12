@@ -22,14 +22,9 @@ export const privateUploadsBucketName = program.privateUploadsBucketName;
 export const privateUploadsBucketEndpoint = program.privateUploadsBucketEndpoint;
 export const bootDiagBucketName = program.bootDiagBucketName;
 export const bootDiagBucketEndpoint = program.bootDiagBucketEndpoint;
-export const dbInstanceId = program.dbInstanceId;
-export const dbName = program.dbName;
-export const dbHost = program.dbHost;
-export const dbConnectionStringAdmin = program.dbConnectionStringAdmin;
-export const dbConnectionStringRuntime = program.dbConnectionStringRuntime;
-export const dbConnectionStringCdc = program.dbConnectionStringCdc;
-export const dbConnectionStringAdminPublic = program.dbConnectionStringAdminPublic;
-export const dbCaCertificate = program.dbCaCertificate;
+// Generic per-store outputs (S11): `storeOutputs.<storeId>.<key>`. The flat
+// db* outputs were retired in the 2026-08 planned break.
+export const storeOutputs = program.storeOutputs;
 export const computeInstances = program.computeInstances;
 export const computeGenerationMetadata = program.computeGenerationMetadata;
 export const serviceDomainUrls = program.serviceDomainUrls;

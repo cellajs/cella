@@ -5,30 +5,28 @@ import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, Health
 export function defineServices<const T extends AppServices>(services: T): T {
   const seenPrefixes = new Map<string, string>();
   for (const [slug, cfg] of Object.entries(services)) {
-    const prefix = cfg.lbPathBegin;
+    const prefix = cfg.pathPrefix;
     if (prefix === undefined) {
       // A path-routed service is reachable ONLY through its path route.
       if (cfg.lbRoute === 'path')
-        throw new Error(
-          `services config: '${slug}' has lbRoute 'path' but no lbPathBegin — nothing would route to it.`,
-        );
+        throw new Error(`services config: '${slug}' has lbRoute 'path' but no pathPrefix — nothing would route to it.`);
       continue;
     }
     // The LB matches the raw path-begin string, so a malformed prefix silently
     // routes wrong traffic, so validation fails during synth/plan.
     if (!cfg.lbRoute)
       throw new Error(
-        `services config: '${slug}' declares lbPathBegin without lbRoute — an internal-only service has no LB backend to route to.`,
+        `services config: '${slug}' declares pathPrefix without lbRoute — an internal-only service has no LB backend to route to.`,
       );
     if (!/^\/[a-z0-9-]+$/.test(prefix)) {
       throw new Error(
-        `services config: '${slug}' lbPathBegin '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`,
+        `services config: '${slug}' pathPrefix '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`,
       );
     }
     const owner = seenPrefixes.get(prefix);
     if (owner)
       throw new Error(
-        `services config: lbPathBegin '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`,
+        `services config: pathPrefix '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`,
       );
     seenPrefixes.set(prefix, slug);
   }
@@ -68,7 +66,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.primaryRollout) meta.primaryRollout = true;
   if (cfg.drainPolicy) meta.drainPolicy = cfg.drainPolicy;
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute;
-  if (cfg.lbPathBegin) meta.lbPathBegin = cfg.lbPathBegin;
+  if (cfg.pathPrefix) meta.pathPrefix = cfg.pathPrefix;
   if (cfg.lbWebsockets) meta.lbWebsockets = true;
   if (cfg.internalRoute) meta.internalRoute = true;
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf;

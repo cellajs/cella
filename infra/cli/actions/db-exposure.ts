@@ -3,6 +3,7 @@ import { copyFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
+import { appStores } from '../../config/stores.config';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
@@ -14,8 +15,11 @@ import { printRevokeReminder, runPrivilegedConverge } from './privileged-converg
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
 export const DB_ACL_KEY = 'infra:dbPublicAcl';
-const PUBLIC_DSN_OUTPUT = 'dbConnectionStringAdminPublic';
-const DB_CA_OUTPUT = 'dbCaCertificate';
+// Keys within the primary store's entry of the `storeOutputs` stack output
+// (the flat db* outputs were retired in the 2026-08 planned break).
+const PUBLIC_DSN_OUTPUT = 'connectionStringAdminPublic';
+const DB_CA_OUTPUT = 'caCertificate';
+const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
 
 /**
  * Gitignored per-environment stack config overlay that carries the DB-exposure
@@ -56,24 +60,30 @@ export async function detectPublicIp(): Promise<string | undefined> {
   }
 }
 
-/** Read a (secret) stack output as raw text; empty when absent or unreadable. */
-function readSecretOutput(env: NodeJS.ProcessEnv, stack: string, name: string): string {
-  const result = spawnSync('pulumi', ['stack', 'output', name, '--show-secrets', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    encoding: 'utf8',
-  });
-  return result.status === 0 ? (result.stdout ?? '').trim() : '';
+/** Read one key of the primary store's `storeOutputs` entry; empty when absent or unreadable. */
+function readPrimaryStoreOutput(env: NodeJS.ProcessEnv, stack: string, key: string): string {
+  const result = spawnSync(
+    'pulumi',
+    ['stack', 'output', 'storeOutputs', '--show-secrets', '--json', '--stack', stack],
+    { cwd: infraDir, env, encoding: 'utf8' },
+  );
+  if (result.status !== 0) return '';
+  try {
+    const parsed = JSON.parse(result.stdout ?? '{}') as Record<string, Record<string, string> | undefined>;
+    return (parsed?.[PRIMARY_STORE_ID]?.[key] ?? '').trim();
+  } catch {
+    return '';
+  }
 }
 
-/** Read the public admin DSN stack output (empty when the endpoint is disabled). */
+/** Read the public admin DSN store output (empty when the endpoint is disabled). */
 export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
-  return readSecretOutput(env, stack, PUBLIC_DSN_OUTPUT);
+  return readPrimaryStoreOutput(env, stack, PUBLIC_DSN_OUTPUT);
 }
 
-/** Read the database instance CA certificate stack output (PEM; empty when unavailable). */
+/** Read the database instance CA certificate store output (PEM; empty when unavailable). */
 export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
-  return readSecretOutput(env, stack, DB_CA_OUTPUT);
+  return readPrimaryStoreOutput(env, stack, DB_CA_OUTPUT);
 }
 
 /**

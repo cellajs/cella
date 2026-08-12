@@ -337,11 +337,11 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   // Same-origin path routes preserve their prefix and otherwise fall through to the app backend.
   // Scaleway routes match one criterion, so service prefixes are registry-declared and validated.
   for (const service of lbServices) {
-    if (!service.lbPathBegin) continue;
+    if (!service.pathPrefix) continue;
     new scaleway.loadbalancers.Route(`${baseName(service.slug)}-path-route`, {
       frontendId: httpsFrontend.id,
       backendId: backends.get(service.slug)!.id,
-      matchPathBegin: service.lbPathBegin,
+      matchPathBegin: service.pathPrefix,
     });
   }
 

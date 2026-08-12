@@ -39,7 +39,7 @@ services:
       healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: true
-      replacementStrategy: lb-overlap
+      replacementStrategy: start-first
       drainSeconds: 10
       instanceType:
         production: DEV1-S
@@ -47,7 +47,7 @@ services:
       primaryRollout: true
       drainPolicy: requests
       lbRoute: path
-      lbPathBegin: /api
+      pathPrefix: /api
       internalRoute: true
       dockerfile: Dockerfile
       target: backend
@@ -95,7 +95,7 @@ services:
       healthTimeoutSeconds: 90
       healthExpectStatus: 204
       runRelease: false
-      replacementStrategy: exclusive
+      replacementStrategy: stop-first
       drainSeconds: 0
       instanceType: DEV1-S
       dockerfile: Dockerfile
@@ -131,12 +131,12 @@ services:
       healthTimeoutSeconds: 90
       healthExpectStatus: 204
       runRelease: false
-      replacementStrategy: lb-overlap
+      replacementStrategy: start-first
       drainSeconds: 5
       instanceType: DEV1-S
       drainPolicy: reconnect
       lbRoute: path
-      lbPathBegin: /yjs
+      pathPrefix: /yjs
       lbWebsockets: true
       dockerfile: Dockerfile
       target: yjs
@@ -172,12 +172,12 @@ services:
       healthTimeoutSeconds: 240
       healthExpectStatus: 204
       runRelease: false
-      replacementStrategy: lb-overlap
+      replacementStrategy: start-first
       drainSeconds: 10
       instanceType: DEV1-S
       drainPolicy: requests
       lbRoute: path
-      lbPathBegin: /mcp
+      pathPrefix: /mcp
       reusesImageOf: backend
       coHosted: true
       bindings:
@@ -204,7 +204,7 @@ services:
       healthTimeoutSeconds: 90
       healthExpectStatus: 200
       runRelease: false
-      replacementStrategy: lb-overlap
+      replacementStrategy: start-first
       drainSeconds: 0
       instanceType: DEV1-S
       drainPolicy: requests

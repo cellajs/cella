@@ -28,7 +28,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
     healthUrl: normalizeHealthUrl(healthUrl),
   };
 
-  if (definition.replacementStrategy !== 'exclusive') {
+  if (definition.replacementStrategy !== 'stop-first') {
     if (!definition.lbRoute)
       throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`);
     if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`);

@@ -10,7 +10,7 @@ export interface RolloutServicePlan {
   strategy: ReplacementStrategy;
   drainPolicy?: DrainPolicy;
   drainSeconds: number;
-  /** Public health URL; required for lb-overlap services. */
+  /** Public health URL; required for start-first services. */
   healthUrl?: string;
   /** Co-hosted worker slugs (singleVM) whose LB backends follow this VM. */
   repointBackendKeys?: string[];
@@ -78,7 +78,7 @@ export async function activateService(
   const current = await rt.currentRollout(service);
   const target = resolvePendingGen(generations, service, sha, current?.active?.id);
 
-  if (plan.strategy === 'exclusive') {
+  if (plan.strategy === 'stop-first') {
     // cdc: no LB, no overlap. The stack update provisioned only the new
     // generation (the old one is replaced/destroyed in the same update); the new
     // worker reports healthy once it acquires the slot the old one releases.
@@ -105,7 +105,7 @@ export async function activateService(
   const healthUrl = plan.healthUrl;
   const cutover = await sequenceCutover({
     service,
-    strategy: 'lb-overlap',
+    strategy: 'start-first',
     drainPolicy: plan.drainPolicy,
     oldIps,
     newIps: [target.privateIp],
@@ -157,9 +157,9 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
   const { sha } = plan;
 
   // LB backend ids are only defined (and only needed) when a wave contains an
-  // lb-overlap service; exclusive-only waves skip the stack-output read.
+  // start-first service; stop-first-only waves skip the stack-output read.
   const backendIdsFor = async (wave: RolloutServicePlan[]): Promise<Record<string, string>> =>
-    wave.some((item) => item.strategy !== 'exclusive' || (item.repointBackendKeys?.length ?? 0) > 0)
+    wave.some((item) => item.strategy !== 'stop-first' || (item.repointBackendKeys?.length ?? 0) > 0)
       ? rt.readLbBackendIds()
       : {};
 

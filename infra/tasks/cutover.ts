@@ -77,7 +77,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     log(`[cutover ${plan.service}] ${step}`);
   };
 
-  if (plan.strategy === 'exclusive') {
+  if (plan.strategy === 'stop-first') {
     // cdc: no LB, no overlap. The new worker is warm and idle-contending for the
     // slot; the old worker must release it first (deploy-service.ts destroys the
     // old generation and re-gates health after this returns).
@@ -243,8 +243,8 @@ if (isMain(import.meta.url)) {
     process.stderr.write('Required: --service, --sha, --strategy, --health-url\n');
     process.exit(2);
   }
-  if (strategy !== 'lb-overlap' && strategy !== 'exclusive') {
-    process.stderr.write(`Unknown --strategy '${strategy}' (expected lb-overlap | exclusive)\n`);
+  if (strategy !== 'start-first' && strategy !== 'stop-first') {
+    process.stderr.write(`Unknown --strategy '${strategy}' (expected start-first | stop-first)\n`);
     process.exit(2);
   }
   if (drainPolicyRaw !== 'requests' && drainPolicyRaw !== 'reconnect') {
@@ -266,7 +266,7 @@ if (isMain(import.meta.url)) {
   // flags are read (and checked) exactly once.
   let setServers: SetServersFn | undefined;
   let getServers: GetServersFn | undefined;
-  if (strategy === 'lb-overlap') {
+  if (strategy === 'start-first') {
     const zone = getFlag(argv, '--lb-zone');
     const backendId = getFlag(argv, '--backend-id');
     if (!zone || !backendId || !secretKey) {

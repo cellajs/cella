@@ -17,7 +17,7 @@ export const enabled = deployedServices(appConfig.services, appConfig.singleVM);
 
 // Workers folded into the host backend process under singleVM. Empty in the
 // normal split-VM deploy. Their runtime secrets are unioned onto the host VM and
-// an `exclusive` one among them forces the host to cut over exclusively.
+// a `stop-first` one among them forces the host to cut over stop-first.
 export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM);
 
 // Containers the boot runner starts on the host VM next to the host container
@@ -36,17 +36,17 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
 }
 
 /**
- * Resolves the VM replacement strategy. A single-VM host containing an exclusive worker
- * must also cut over exclusively to avoid concurrent replication-slot consumers.
+ * Resolves the VM replacement strategy. A single-VM host containing a stop-first worker
+ * must also cut over stop-first to avoid concurrent replication-slot consumers.
  * The level-triggered load-balancer reconciler then repairs traffic onto the replacement.
  */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
   if (
     appConfig.singleVM &&
     svc.slug === hostSlug &&
-    [...coHosted, ...collocated].some((s) => s.replacementStrategy === 'exclusive')
+    [...coHosted, ...collocated].some((s) => s.replacementStrategy === 'stop-first')
   ) {
-    return 'exclusive';
+    return 'stop-first';
   }
   return svc.replacementStrategy;
 }
@@ -80,11 +80,13 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   return {
     slug: svc.slug,
     port: svc.healthPort,
-    // Fingerprint key pinned to its original name: the key itself is hashed
-    // into every live genId, so renaming it would re-roll every generation.
-    runMigrate: svc.runRelease ?? false,
-    // Only fold in the strategy when singleVM changes it (host co-hosting an
-    // exclusive worker). Keeps the split-VM fingerprint byte-stable so this
+    // Renamed from the pinned legacy `runMigrate` key in the 2026-08 planned
+    // generation roll (fingerprint keys are hashed into every genId, so this
+    // rename deliberately re-rolls all generations, together with the
+    // start-first/stop-first vocabulary).
+    runRelease: svc.runRelease ?? false,
+    // Only fold in the strategy when singleVM changes it (host co-hosting a
+    // stop-first worker). Keeps the split-VM fingerprint byte-stable so this
     // feature doesn't churn every existing service's genId.
     ...(effectiveStrategy(svc) !== svc.replacementStrategy ? { singleVmStrategy: effectiveStrategy(svc) } : {}),
     bindings: svc.bindings ?? {},
@@ -97,7 +99,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 
 /**
  * The live and pending content-addressed generations for a service. Selection
- * (exclusive collapse, first-provision fallback) lives in
+ * (stop-first collapse, first-provision fallback) lives in
  * lib/select-generations.ts as a pure function; single-VM hosts inherit
  * exclusivity when they own the replication slot in-process. Old generations
  * are reaped after promotion; rollback uses a revert and redeploy.
@@ -105,7 +107,7 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
   const fingerprint = serviceFingerprint(svc);
   return selectGenerations(controlState.rollout[svc.slug], {
-    exclusive: effectiveStrategy(svc) === 'exclusive',
+    exclusive: effectiveStrategy(svc) === 'stop-first',
     genIdFor: (sha) => deriveGenId(sha, fingerprint),
   });
 }
