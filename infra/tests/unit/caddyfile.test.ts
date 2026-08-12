@@ -57,9 +57,15 @@ describe('frontend Caddyfile', () => {
     expect(caddyfile).toMatch(/@notfound\s+status\s+404/);
   });
 
-  it('long-caches versioned /assets/* and /static/* paths', () => {
-    expect(caddyfile).toMatch(/@assets\s+path\s+\/assets\/\*\s+\/static\/\*/);
+  it('long-caches content-hashed /assets/* only', () => {
+    expect(caddyfile).toMatch(/@assets\s+path\s+\/assets\/\*\s*\n/);
     expect(caddyfile).toMatch(/Cache-Control\s+"public,\s*max-age=31536000,\s*immutable"/);
+  });
+
+  it('short-caches stable-named /static/* (docs.gen etc. change per release)', () => {
+    // Marking /static/* immutable froze docs data in browser caches for a year.
+    expect(caddyfile).toMatch(/@static\s+path\s+\/static\/\*/);
+    expect(caddyfile).toMatch(/@static\s+path[^{]*\{\s*\n\s*header Cache-Control "public, max-age=3600"/);
   });
 
   it('reverse-proxies to the {$ORIGIN_HOST} env, not a hardcoded bucket', () => {

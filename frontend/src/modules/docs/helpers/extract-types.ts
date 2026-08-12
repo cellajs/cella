@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { appConfig } from 'shared';
+import { versionedUrl } from '~/modules/docs/query';
 
 export type DefinitionIndex = Map<string, string>;
 
@@ -64,7 +65,7 @@ function buildIndex(content: string): DefinitionIndex {
 export const zodIndexQueryOptions = queryOptions({
   queryKey: ['docs', 'zod-index'],
   queryFn: async () => {
-    const res = await fetch(`${appConfig.frontendUrl}/static/zod.gen.ts`);
+    const res = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/zod.gen.ts`));
     return buildIndex(await res.text());
   },
   staleTime: Number.POSITIVE_INFINITY,
@@ -77,7 +78,7 @@ export const zodIndexQueryOptions = queryOptions({
 export const typesIndexQueryOptions = queryOptions({
   queryKey: ['docs', 'types-index'],
   queryFn: async () => {
-    const res = await fetch(`${appConfig.frontendUrl}/static/types.gen.ts`);
+    const res = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/types.gen.ts`));
     return buildIndex(await res.text());
   },
   staleTime: Number.POSITIVE_INFINITY,

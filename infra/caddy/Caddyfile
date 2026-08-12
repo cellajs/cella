@@ -55,10 +55,21 @@
 	}
 
 	# Long-cache versioned assets. The frontend build hashes filenames under
-	# /assets/ and /static/, so a year cache is safe.
-	@assets path /assets/* /static/*
+	# /assets/, so a year cache is safe there.
+	@assets path /assets/*
 	handle @assets {
 		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy https://{$ORIGIN_HOST} {
+			header_up Host {$ORIGIN_HOST}
+		}
+	}
+
+	# /static/ keys keep stable names with changing content (docs.gen JSON,
+	# openapi.json, flags), so never mark them immutable: a short cache plus the
+	# ?v=<sha> param the app appends to mutable fetches keeps them fresh.
+	@static path /static/*
+	handle @static {
+		header Cache-Control "public, max-age=3600"
 		reverse_proxy https://{$ORIGIN_HOST} {
 			header_up Host {$ORIGIN_HOST}
 		}
