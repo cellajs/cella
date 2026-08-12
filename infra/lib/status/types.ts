@@ -52,85 +52,66 @@ export interface StatusReport {
   summary: Record<CheckStatus, number>;
 }
 
-/** Whether the three external tools `infra` shells out to are on PATH. */
-export interface ToolingInputs {
-  pulumi: boolean;
-  dockerBuildx: boolean;
-  gh: boolean;
-}
-
-/** GitHub Environment facts, gathered via `gh` when authenticated. */
-export interface GithubInputs {
-  authenticated: boolean;
-  /** `owner/repo`, or undefined when origin is not a GitHub remote. */
-  repo?: string;
-  /** undefined when not checked (gh absent). */
-  environmentExists?: boolean;
-  /** Names of required Environment secrets that are absent. */
-  missingSecrets?: string[];
-}
-
 /** The held stack lock, if any. */
-export interface LockInputs {
+export interface LockFacts {
   held: boolean;
   owner?: string;
   operation?: string;
   acquiredAt?: string;
   /** ISO expiry. */
   expiresAt?: string;
-  /** True when `expiresAt` is in the past (breakable). The task computes this
-   *  against the wall clock so the evaluator stays pure. */
+  /** True when `expiresAt` is in the past (breakable). The gatherer computes
+   *  this against the wall clock so evaluation stays pure. */
   stale?: boolean;
 }
 
 /** Per-service rollout pointers read from the S3 control object. */
-export interface RolloutServiceInput {
+export interface RolloutRowFact {
   slug: string;
   activeSha?: string;
   pendingSha?: string;
 }
 
-/** A public service's live health/version probe, cross-referenced with control. */
-export interface LiveServiceInput {
-  slug: string;
-  healthUrl: string;
-  /** undefined when the probe was not run. `status: 0` means unreachable. */
-  probe?: { status: number; version?: string };
-  /** Expected SHA from the control object's active generation, when known. */
-  expectedSha?: string;
-}
-
-/** DNS resolution of the app's frontend host. */
-export interface DnsInputs {
-  host: string;
-  /** Resolved A records; empty array = NXDOMAIN; undefined = not checked. */
-  resolvedIps?: string[];
+/** Control-bucket facts shared by the state and live providers (one read). */
+export interface ScalewayFacts {
+  /** undefined = not checked (no creds or error). */
+  stateBucketExists?: boolean;
+  lock?: LockFacts;
+  /** undefined = control object could not be read. */
+  rollout?: RolloutRowFact[];
 }
 
 /**
- * Everything the pure evaluator needs. The task gathers these with best-effort
- * I/O; any field left `undefined` means "not gathered" (no credential, or the
- * probe threw). The evaluator maps that to an `unknown` check and never throws,
- * so `evaluateStatus` stays a total, pure function.
+ * Everything a provider's `gather` may draw on: the resolved stack context,
+ * credentials, and the memoized control-store read (so the state and live
+ * providers share one S3 round-trip). Built once per report by
+ * `tasks/status.ts`.
  */
-export interface StatusInputs {
+export interface ProbeSession {
   mode: string;
+  appConfig: import('../../config/engine-config').EngineConfig;
   stackState: StackState;
-  computeDeferredSince?: string;
-  tooling: ToolingInputs;
-  hasDomain: boolean;
-  /** True when SCW_ or AWS_ credentials are present for `scaleway`-tier checks. */
-  credentialsAvailable: boolean;
+  stackYaml?: string;
   projectId?: string;
   adminAppId?: string;
-  github?: GithubInputs;
-  /** undefined = not checked (no creds or error). */
-  stateBucketExists?: boolean;
-  lock?: LockInputs;
-  /** undefined = control object could not be read. */
-  rollout?: RolloutServiceInput[];
-  /** Required operator-managed secrets with zero versions; undefined = not checked. */
-  requiredSecretsMissing?: string[];
-  live?: LiveServiceInput[];
-  dns?: DnsInputs;
+  /** True when SCW_ or AWS_ credentials are present for `scaleway`-tier checks. */
+  credentialsAvailable: boolean;
+  accessKey?: string;
+  secretKey?: string;
+  hasDomain: boolean;
+  computeDeferredSince?: string;
+  /** Memoized best-effort control-store read; never rejects. */
+  scalewayFacts(): Promise<ScalewayFacts>;
+}
+
+/**
+ * One status domain: `gather` does best-effort I/O (undefined = could not
+ * probe), `evaluate` turns facts into checks and never throws — a
+ * partially-credentialed run still produces a complete report. Providers are
+ * registered in `registry.ts`; registry order is report order.
+ */
+export interface StatusProvider<F> {
+  domain: string;
+  gather(session: ProbeSession): Promise<F | undefined>;
+  evaluate(facts: F | undefined, session: ProbeSession): Check[];
 }

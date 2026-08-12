@@ -207,7 +207,7 @@ describe('setupCiKey', () => {
     }
   });
 
-  it('deletes pre-existing API keys before minting a fresh one', async () => {
+  it('mints the fresh key BEFORE deleting the replaced ones (no keyless window on mint failure)', async () => {
     const { fn, calls } = makeFetch([
       {
         method: 'GET',
@@ -248,6 +248,10 @@ describe('setupCiKey', () => {
       expect.stringContaining('/api-keys/SCWOLD1'),
       expect.stringContaining('/api-keys/SCWOLD2'),
     ]);
+    const mintIndex = calls.findIndex((c) => c.init.method === 'POST' && c.url.endsWith('/api-keys'));
+    const firstDeleteIndex = calls.findIndex((c) => c.init.method === 'DELETE' && c.url.includes('/api-keys/'));
+    expect(mintIndex).toBeGreaterThanOrEqual(0);
+    expect(firstDeleteIndex).toBeGreaterThan(mintIndex);
   });
 
   it('throws with a useful message on Scaleway error responses', async () => {

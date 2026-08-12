@@ -34,6 +34,16 @@ const results = Object.entries(appStores).map(([id, store]) => {
 export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
 
 /**
+ * Every store's outputs, keyed by store id (S11 generic namespacing: the
+ * stack exports these as one `storeOutputs` object, `<storeId>.<key>`). The
+ * legacy flat `db*` exports remain as the primary store's aliases for the
+ * db-exposure CLI; consumers of non-primary or non-postgres stores read this.
+ */
+export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(
+  results.map(([id, provisioned]) => [id, provisioned.outputs]),
+);
+
+/**
  * Runtime-secret values merged across all stores, keyed by runtime-secret id.
  * `secrets.ts` looks these up by the ids the registry (store contributions +
  * `runtime-secrets.config.ts`) declares. A collision means two stores bind the

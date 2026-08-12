@@ -46,6 +46,11 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 export const bootDiagBucketName = storage.bootDiagBucketName;
 export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint;
 
+// S11: generic store outputs, `storeOutputs.<storeId>.<key>`. Additive — the
+// flat db* exports below stay as the primary store's aliases (db-exposure and
+// seed read them by name) until a planned break retires them.
+export const storeOutputs = stores.allStoreOutputs;
+
 export const dbInstanceId = primaryStoreOutput('instanceId');
 export const dbName = primaryStoreOutput('databaseName');
 export const dbHost = primaryStoreOutput('host');

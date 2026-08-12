@@ -1,25 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateStatus } from './evaluate';
-import type { Check, StatusInputs } from './types';
+import type { GithubFacts } from './providers/github';
+import type { LiveServiceFact } from './providers/live';
+import type { StoreValidationFact } from './providers/stores';
+import type { ToolingFacts } from './providers/tooling';
+import { assembleReport, statusProviders } from './registry';
+import type { Check, ProbeSession, ScalewayFacts } from './types';
+
+/**
+ * Port of the pre-registry evaluate.test.ts: the same assertions, driven by
+ * per-provider facts instead of the retired StatusInputs bag. `reportFor`
+ * evaluates every registered provider against the given facts, exactly what
+ * buildStatusReport does after its gather phase.
+ */
+
+interface Facts {
+  tooling?: ToolingFacts;
+  github?: GithubFacts;
+  state?: ScalewayFacts;
+  secrets?: string[];
+  live?: LiveServiceFact[];
+  dns?: { host: string; resolvedIps?: string[] };
+  stores?: StoreValidationFact[];
+}
 
 /** A fully-healthy bootstrapped staging stack; override per test. */
-function base(overrides: Partial<StatusInputs> = {}): StatusInputs {
+function base(overrides: Partial<Facts> = {}): Facts {
   return {
-    mode: 'staging',
-    stackState: 'bootstrapped',
     tooling: { pulumi: true, dockerBuildx: true, gh: true },
-    hasDomain: true,
-    credentialsAvailable: true,
-    projectId: 'proj-1',
-    adminAppId: 'app-1',
     github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
-    stateBucketExists: true,
-    lock: { held: false },
-    rollout: [
-      { slug: 'backend', activeSha: 'abc123def456' },
-      { slug: 'frontend', activeSha: 'abc123def456' },
-    ],
-    requiredSecretsMissing: [],
+    state: {
+      stateBucketExists: true,
+      lock: { held: false },
+      rollout: [
+        { slug: 'backend', activeSha: 'abc123def456' },
+        { slug: 'frontend', activeSha: 'abc123def456' },
+      ],
+    },
+    secrets: [],
     live: [
       {
         slug: 'backend',
@@ -35,15 +52,47 @@ function base(overrides: Partial<StatusInputs> = {}): StatusInputs {
       },
     ],
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
+    stores: [{ id: 'primary', kind: 'postgres-managed' }],
     ...overrides,
   };
 }
 
+function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
+  return {
+    mode: 'staging',
+    appConfig: {} as ProbeSession['appConfig'],
+    stackState: 'bootstrapped',
+    projectId: 'proj-1',
+    adminAppId: 'app-1',
+    credentialsAvailable: true,
+    hasDomain: true,
+    scalewayFacts: async () => ({}),
+    ...overrides,
+  };
+}
+
+function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
+  const s = session(sessionOverrides);
+  const factsByDomain: Record<string, unknown> = {
+    tooling: facts.tooling,
+    config: {},
+    identity: {},
+    github: facts.github,
+    state: facts.state,
+    secrets: facts.secrets,
+    live: facts.live,
+    dns: facts.dns,
+    stores: facts.stores,
+  };
+  const checks = statusProviders.flatMap((provider) => provider.evaluate(factsByDomain[provider.domain] as never, s));
+  return assembleReport(s, checks);
+}
+
 const find = (checks: Check[], id: string): Check | undefined => checks.find((c) => c.id === id);
 
-describe('evaluateStatus envelope (public contract)', () => {
+describe('report envelope (public contract)', () => {
   it('has the documented top-level shape and schema version', () => {
-    const report = evaluateStatus(base());
+    const report = reportFor(base());
     expect(Object.keys(report).sort()).toEqual([
       'checks',
       'mode',
@@ -58,14 +107,14 @@ describe('evaluateStatus envelope (public contract)', () => {
   });
 
   it('summary counts every status bucket and sums to the check count', () => {
-    const report = evaluateStatus(base());
+    const report = reportFor(base());
     expect(Object.keys(report.summary).sort()).toEqual(['error', 'missing', 'ok', 'unknown', 'warn']);
     const total = Object.values(report.summary).reduce((a, b) => a + b, 0);
     expect(total).toBe(report.checks.length);
   });
 
   it('every check carries id, title, status, detail, credential', () => {
-    for (const check of evaluateStatus(base()).checks) {
+    for (const check of reportFor(base()).checks) {
       expect(check.id).toBeTruthy();
       expect(check.title).toBeTruthy();
       expect(['ok', 'warn', 'missing', 'unknown', 'error']).toContain(check.status);
@@ -74,7 +123,7 @@ describe('evaluateStatus envelope (public contract)', () => {
   });
 
   it('a healthy stack is all-ok with no next action', () => {
-    const report = evaluateStatus(base());
+    const report = reportFor(base());
     expect(report.nextAction).toBeUndefined();
     expect(report.summary.ok).toBe(report.checks.length);
   });
@@ -82,15 +131,7 @@ describe('evaluateStatus envelope (public contract)', () => {
 
 describe('credential degradation', () => {
   it('scaleway-tier checks are unknown (not error) without credentials', () => {
-    const report = evaluateStatus(
-      base({
-        credentialsAvailable: false,
-        stateBucketExists: undefined,
-        lock: undefined,
-        rollout: undefined,
-        requiredSecretsMissing: undefined,
-      }),
-    );
+    const report = reportFor(base({ state: {}, secrets: undefined }), { credentialsAvailable: false });
     for (const id of ['state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
@@ -103,48 +144,54 @@ describe('credential degradation', () => {
 
 describe('nextAction priority (lifecycle order)', () => {
   it('missing pulumi outranks everything', () => {
-    const report = evaluateStatus(
-      base({ tooling: { pulumi: false, dockerBuildx: true, gh: true }, stackState: 'fresh', projectId: undefined }),
-    );
+    const report = reportFor(base({ tooling: { pulumi: false, dockerBuildx: true, gh: true } }), {
+      stackState: 'fresh',
+      projectId: undefined,
+    });
     expect(find(report.checks, 'tooling.pulumi')?.status).toBe('error');
     expect(report.nextAction?.command).toBe('brew install pulumi/tap/pulumi');
   });
 
   it('a fresh stack points at setup', () => {
-    const report = evaluateStatus(
-      base({
-        stackState: 'fresh',
-        projectId: undefined,
-        stateBucketExists: false,
-        rollout: undefined,
-        requiredSecretsMissing: undefined,
-        lock: undefined,
-      }),
-    );
+    const report = reportFor(base({ state: { stateBucketExists: false }, secrets: undefined, live: undefined }), {
+      stackState: 'fresh',
+      projectId: undefined,
+    });
     expect(report.nextAction?.command).toBe('pnpm infra');
     expect(find(report.checks, 'config.stackState')?.status).toBe('missing');
   });
 
   it('bootstrapped with nothing deployed points at deploy', () => {
-    const report = evaluateStatus(base({ rollout: [], live: undefined }));
+    const report = reportFor(
+      base({ state: { stateBucketExists: true, lock: { held: false }, rollout: [] }, live: undefined }),
+    );
     expect(find(report.checks, 'rollout')?.status).toBe('missing');
     expect(report.nextAction?.command).toContain('deploy --mode staging');
   });
 
   it('an unset required secret outranks rollout/live', () => {
-    const report = evaluateStatus(base({ requiredSecretsMissing: ['admin-email'] }));
+    const report = reportFor(base({ secrets: ['admin-email'] }));
     expect(find(report.checks, 'secrets.required')?.status).toBe('missing');
     expect(report.nextAction?.description).toContain('runtime secret');
+  });
+
+  it('a store misconfiguration outranks deploy-stage actions', () => {
+    const report = reportFor(
+      base({ stores: [{ id: 'primary', kind: 'redis-managed', error: 'tls is disabled' }], secrets: ['x'] }),
+    );
+    const check = find(report.checks, 'stores.primary');
+    expect(check?.status).toBe('error');
+    expect(check?.detail).toBe('tls is disabled');
   });
 });
 
 describe('live service checks', () => {
   it('serving the expected sha is ok', () => {
-    expect(find(evaluateStatus(base()).checks, 'live.backend')?.status).toBe('ok');
+    expect(find(reportFor(base()).checks, 'live.backend')?.status).toBe('ok');
   });
 
   it('serving a stale sha warns and points at deploy', () => {
-    const report = evaluateStatus(
+    const report = reportFor(
       base({
         live: [
           {
@@ -162,39 +209,43 @@ describe('live service checks', () => {
   });
 
   it('an unreachable service is missing', () => {
-    const report = evaluateStatus(
+    const report = reportFor(
       base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 0 } }] }),
     );
     expect(find(report.checks, 'live.backend')?.status).toBe('missing');
   });
 
   it('a service that was not probed is unknown', () => {
-    const report = evaluateStatus(base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health' }] }));
+    const report = reportFor(base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health' }] }));
     expect(find(report.checks, 'live.backend')?.status).toBe('unknown');
   });
 });
 
 describe('dns check', () => {
   it('resolving is ok', () => {
-    expect(find(evaluateStatus(base()).checks, 'dns.zone')?.status).toBe('ok');
+    expect(find(reportFor(base()).checks, 'dns.zone')?.status).toBe('ok');
   });
 
   it('NXDOMAIN warns', () => {
-    const report = evaluateStatus(base({ dns: { host: 'app.example.com', resolvedIps: [] } }));
+    const report = reportFor(base({ dns: { host: 'app.example.com', resolvedIps: [] } }));
     expect(find(report.checks, 'dns.zone')?.status).toBe('warn');
   });
 
   it('is omitted when the app has no domain', () => {
-    const report = evaluateStatus(base({ hasDomain: false, dns: undefined }));
+    const report = reportFor(base({ dns: undefined }), { hasDomain: false });
     expect(find(report.checks, 'dns.zone')).toBeUndefined();
   });
 });
 
 describe('stack lock', () => {
   it('a stale lock warns and points at unlock', () => {
-    const report = evaluateStatus(
+    const report = reportFor(
       base({
-        lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2020-01-01T00:00:00Z', stale: true },
+        state: {
+          stateBucketExists: true,
+          lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2020-01-01T00:00:00Z', stale: true },
+          rollout: [{ slug: 'backend', activeSha: 'abc123def456' }],
+        },
       }),
     );
     const check = find(report.checks, 'state.lock');
@@ -203,9 +254,13 @@ describe('stack lock', () => {
   });
 
   it('a live lock warns without an action (a run may be in progress)', () => {
-    const report = evaluateStatus(
+    const report = reportFor(
       base({
-        lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2999-01-01T00:00:00Z', stale: false },
+        state: {
+          stateBucketExists: true,
+          lock: { held: true, owner: 'ci:run-5', operation: 'deploy', expiresAt: '2999-01-01T00:00:00Z', stale: false },
+          rollout: [{ slug: 'backend', activeSha: 'abc123def456' }],
+        },
       }),
     );
     const check = find(report.checks, 'state.lock');

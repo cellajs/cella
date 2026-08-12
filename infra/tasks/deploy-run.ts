@@ -402,19 +402,21 @@ function createRealEffects(): DeployEffects {
     async initTelemetry({ mode, sha }) {
       let config = otlpConfigFromEnv();
       if (!config) {
-        const { mapleKeyFromSecretManager } = await import('../lib/telemetry/maple-key');
-        const key = await mapleKeyFromSecretManager().catch((err) => {
-          console.warn(`[deploy] maple ingest key lookup failed: ${errorMessage(err)}`);
+        const [{ sinkIngestKeyFromSecretManager }, { telemetrySink }] = await Promise.all([
+          import('../lib/telemetry/sink-key'),
+          import('../config/telemetry.config'),
+        ]);
+        const key = await sinkIngestKeyFromSecretManager().catch((err) => {
+          console.warn(`[deploy] telemetry ingest key lookup failed: ${errorMessage(err)}`);
           return undefined;
         });
         if (key) {
-          config = { endpoint: 'https://ingest.maple.dev/v1', headers: { 'x-maple-ingest-key': key } };
+          config = { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: key } };
           // In-process consumers (black-box replay on failure) resolve via env.
-          process.env.MAPLE_SECRET_INGEST_KEY ??= key;
+          process.env[telemetrySink.keyEnvVar] ??= key;
         }
       }
-      if (!config)
-        console.info('[deploy] telemetry export disabled (no OTLP endpoint or maple ingest key); black box only');
+      if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or ingest key); black box only');
       initDeployTelemetry({
         mode,
         sha,

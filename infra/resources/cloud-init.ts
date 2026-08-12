@@ -53,6 +53,8 @@ export interface CloudInitParams {
   exportS3Env?: boolean;
   /** Deploy trace context baked into the boot plan (absent outside a deploy run). */
   traceparent?: string;
+  /** App-declared telemetry sink for boot events (config/telemetry.config.ts). */
+  telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
 }
 
 /** VM config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
@@ -110,6 +112,7 @@ function bootPlan(p: CloudInitParams): string {
       ...(p.startServices.length > 0 ? { services: p.startServices as [string, ...string[]] } : {}),
       releaseSha: p.releaseSha,
       ...(p.traceparent ? { traceparent: p.traceparent } : {}),
+      ...(p.telemetry ? { telemetry: p.telemetry } : {}),
       imageContract: supportedImageContract,
       registry: p.registry,
       region: p.region,

@@ -1,16 +1,8 @@
-import { spawnSync } from 'node:child_process';
-import { promises as dns } from 'node:dns';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
-import { healthContract } from '../config/health.config';
-import { parseGithubOriginRepo } from '../lib/github-sync';
 import { deriveInfra } from '../lib/naming';
-import { operatorManagedRuntimeSecrets } from '../lib/runtime-secrets';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
-import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretManagerPath } from '../lib/scaleway/secret-paths';
-import { serviceEndpoints } from '../lib/services';
 import {
   detectComputeDeferred,
   detectStackState,
@@ -25,30 +17,13 @@ import {
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
-import { evaluateStatus } from '../lib/status/evaluate';
-import type {
-  CheckStatus,
-  GithubInputs,
-  LiveServiceInput,
-  RolloutServiceInput,
-  StatusInputs,
-  StatusReport,
-} from '../lib/status/types';
+import { buildStatusReport } from '../lib/status/registry';
+import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
-import { createFetchProbe } from './wait-for-version';
-
-/** GitHub Environment secrets a deploy needs; mirrors github-sync's write set. */
-const REQUIRED_ENV_SECRETS = [
-  'SCW_ACCESS_KEY',
-  'SCW_SECRET_KEY',
-  'SCW_PROJECT_ID',
-  'SCW_ORGANIZATION_ID',
-  'PULUMI_CONFIG_PASSPHRASE',
-];
 
 /** Everything the report needs about the target stack, from the menu or standalone. */
 export interface StatusContext {
@@ -59,214 +34,91 @@ export interface StatusContext {
   projectId?: string;
 }
 
-/** True when `cmd args` exits 0 (a presence probe). */
-function hasTool(cmd: string, args: string[]): boolean {
-  return spawnSync(cmd, args, { stdio: 'ignore' }).status === 0;
-}
-
 /** An S3-style NoSuchBucket, distinct from a missing control object (bucket exists). */
 function isNoSuchBucket(err: unknown): boolean {
   const e = err as { name?: string };
   return e?.name === 'NoSuchBucket';
 }
 
-async function gatherGithub(ghAuthed: boolean, mode: string): Promise<GithubInputs> {
-  if (!ghAuthed) return { authenticated: false };
-  const origin =
-    spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: infraDir, encoding: 'utf8' }).stdout?.trim() ?? '';
-  const repo = parseGithubOriginRepo(origin);
-  if (!repo) return { authenticated: true };
-  const envRes = spawnSync('gh', ['api', `repos/${repo}/environments/${mode}`], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'ignore', 'ignore'],
-  });
-  const environmentExists = envRes.status === 0;
-  let missingSecrets: string[] | undefined;
-  if (environmentExists) {
-    const secRes = spawnSync('gh', ['api', `repos/${repo}/environments/${mode}/secrets`, '--jq', '.secrets[].name'], {
-      encoding: 'utf8',
-    });
-    if (secRes.status === 0) {
-      const present = new Set(
-        (secRes.stdout ?? '')
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean),
-      );
-      missingSecrets = REQUIRED_ENV_SECRETS.filter((name) => !present.has(name));
-    }
-  }
-  return { authenticated: true, repo, environmentExists, missingSecrets };
-}
-
-interface ScalewayFacts {
-  stateBucketExists?: boolean;
-  lock?: StatusInputs['lock'];
-  rollout?: RolloutServiceInput[];
-  requiredSecretsMissing?: string[];
-}
-
-async function gatherScaleway(opts: {
-  region: string;
-  slug: string;
-  projectId?: string;
-  accessKey: string;
-  secretKey: string;
-  mode: string;
-}): Promise<ScalewayFacts> {
-  const out: ScalewayFacts = {};
-  const s3 = await makeControlClient(opts.region, opts.accessKey, opts.secretKey);
-  const bucket = stateBucket(opts.slug);
-
-  try {
-    const { state } = await readControlState(s3, bucket, controlKey(opts.mode));
-    out.stateBucketExists = true;
-    out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
-      slug,
-      activeSha: r.active?.sha,
-      pendingSha: r.pendingSha,
-    }));
-  } catch (err) {
-    if (isNoSuchBucket(err)) out.stateBucketExists = false;
-  }
-
-  if (out.stateBucketExists) {
-    try {
-      const info = await peekLock(s3, bucket, lockKey(opts.mode));
-      out.lock = info
-        ? {
-            held: true,
-            owner: info.owner,
-            operation: info.operation,
-            acquiredAt: info.acquiredAt,
-            expiresAt: info.expiresAt,
-            stale: Date.parse(info.expiresAt) < Date.now(),
-          }
-        : { held: false };
-    } catch {
-      // Leave lock undefined (reported as unknown).
-    }
-  }
-
-  if (opts.projectId) {
-    try {
-      const client = createSecretManagerClient({
-        secretKey: opts.secretKey,
-        region: opts.region,
-        projectId: opts.projectId,
-      });
-      const existing = await client.listSecretsUnder(secretManagerPath(opts.slug, opts.mode));
-      const versioned = new Set(existing.filter((s) => (s.version_count ?? 0) > 0).map((s) => s.name));
-      out.requiredSecretsMissing = operatorManagedRuntimeSecrets
-        .filter((s) => s.required && !versioned.has(s.secretName))
-        .map((s) => s.secretName);
-    } catch {
-      // Leave requiredSecretsMissing undefined (reported as unknown).
-    }
-  }
-  return out;
-}
-
-async function gatherLive(appConfig: EngineConfig): Promise<LiveServiceInput[] | undefined> {
-  let endpoints: ReturnType<typeof serviceEndpoints>;
-  try {
-    endpoints = serviceEndpoints(appConfig);
-  } catch {
-    return undefined;
-  }
-  // Status is a snapshot, not a rollout gate, so a shorter timeout than the
-  // deploy poller keeps the worst-case wait small when a service is down.
-  const probe = createFetchProbe(3000);
-  return Promise.all(
-    endpoints.map(async (endpoint): Promise<LiveServiceInput> => {
-      const healthUrl = `${endpoint.url.replace(/\/$/, '')}${healthContract.path}`;
-      const result = await probe(healthUrl);
-      return { slug: endpoint.slug, healthUrl, probe: { status: result.status, version: result.version } };
-    }),
-  );
-}
-
-async function gatherDns(appConfig: EngineConfig): Promise<StatusInputs['dns']> {
-  let host: string | undefined;
-  try {
-    const endpoints = serviceEndpoints(appConfig);
-    host = (endpoints.find((e) => e.slug === 'frontend') ?? endpoints[0])?.host;
-  } catch {
-    return undefined;
-  }
-  if (!host) return undefined;
-  try {
-    const ips = await dns.resolve4(host);
-    return { host, resolvedIps: ips };
-  } catch (err) {
-    const code = (err as { code?: string }).code;
-    if (code === 'ENOTFOUND' || code === 'NODATA') return { host, resolvedIps: [] };
-    return { host };
-  }
-}
-
-/** Best-effort I/O gather. Any probe that cannot run leaves its field undefined. */
-export async function gatherInputs(ctx: StatusContext): Promise<StatusInputs> {
-  const tooling = {
-    pulumi: hasTool('pulumi', ['version']),
-    dockerBuildx: hasTool('docker', ['buildx', 'version']),
-    gh: hasTool('gh', ['auth', 'status']),
-  };
+/**
+ * Build the probe session the providers draw on: resolved stack context,
+ * credentials, and one memoized best-effort control-store read shared by the
+ * state and live providers.
+ */
+export function buildSession(ctx: StatusContext): ProbeSession {
+  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID;
+  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
+  const credentialsAvailable = Boolean(accessKey && secretKey);
   let hasDomain = false;
   try {
     hasDomain = deriveInfra(ctx.appConfig).hasDomain;
   } catch {
     hasDomain = Boolean(ctx.appConfig.domain && ctx.appConfig.domain !== 'localhost');
   }
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID;
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
-  const credentialsAvailable = Boolean(accessKey && secretKey);
-  const projectId = ctx.projectId ?? resolveProjectId();
 
-  const [github, scaleway, liveRaw, dnsInputs] = await Promise.all([
-    gatherGithub(tooling.gh, ctx.mode).catch(() => ({ authenticated: tooling.gh }) as GithubInputs),
-    credentialsAvailable && accessKey && secretKey
-      ? gatherScaleway({
-          region: ctx.appConfig.s3.region,
-          slug: ctx.appConfig.slug,
-          projectId,
-          accessKey,
-          secretKey,
-          mode: ctx.mode,
-        }).catch(() => ({}) as ScalewayFacts)
-      : Promise.resolve({} as ScalewayFacts),
-    gatherLive(ctx.appConfig).catch(() => undefined),
-    hasDomain ? gatherDns(ctx.appConfig).catch(() => undefined) : Promise.resolve(undefined),
-  ]);
-
-  const live = liveRaw?.map((l) => ({
-    ...l,
-    expectedSha: scaleway.rollout?.find((r) => r.slug === l.slug)?.activeSha,
-  }));
+  let memo: Promise<ScalewayFacts> | undefined;
+  const scalewayFacts = (): Promise<ScalewayFacts> => {
+    memo ??= (async () => {
+      const out: ScalewayFacts = {};
+      if (!credentialsAvailable || !accessKey || !secretKey) return out;
+      try {
+        const s3 = await makeControlClient(ctx.appConfig.s3.region, accessKey, secretKey);
+        const bucket = stateBucket(ctx.appConfig.slug);
+        try {
+          const { state } = await readControlState(s3, bucket, controlKey(ctx.mode));
+          out.stateBucketExists = true;
+          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
+            slug,
+            activeSha: r.active?.sha,
+            pendingSha: r.pendingSha,
+          }));
+        } catch (err) {
+          if (isNoSuchBucket(err)) out.stateBucketExists = false;
+        }
+        if (out.stateBucketExists) {
+          try {
+            const info = await peekLock(s3, bucket, lockKey(ctx.mode));
+            out.lock = info
+              ? {
+                  held: true,
+                  owner: info.owner,
+                  operation: info.operation,
+                  acquiredAt: info.acquiredAt,
+                  expiresAt: info.expiresAt,
+                  stale: Date.parse(info.expiresAt) < Date.now(),
+                }
+              : { held: false };
+          } catch {
+            // Leave lock undefined (reported as unknown).
+          }
+        }
+      } catch {
+        // Leave every field undefined (reported as unknown).
+      }
+      return out;
+    })();
+    return memo;
+  };
 
   return {
     mode: ctx.mode,
+    appConfig: ctx.appConfig,
     stackState: ctx.stackState,
-    computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
-    tooling,
-    hasDomain,
-    credentialsAvailable,
-    projectId,
+    stackYaml: ctx.stackYaml,
+    projectId: ctx.projectId ?? resolveProjectId(),
     adminAppId: process.env.SCW_ADMIN_APPLICATION_ID?.trim() || undefined,
-    github,
-    stateBucketExists: scaleway.stateBucketExists,
-    lock: scaleway.lock,
-    rollout: scaleway.rollout,
-    requiredSecretsMissing: scaleway.requiredSecretsMissing,
-    live,
-    dns: dnsInputs,
+    credentialsAvailable,
+    accessKey,
+    secretKey,
+    hasDomain,
+    computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
+    scalewayFacts,
   };
 }
 
-/** Build the full report (evaluator + wall-clock stamp). */
+/** Build the full report (provider registry + wall-clock stamp). */
 export async function buildReport(ctx: StatusContext): Promise<StatusReport> {
-  const evaluated = evaluateStatus(await gatherInputs(ctx));
-  return { ...evaluated, generatedAt: new Date().toISOString() };
+  return buildStatusReport(buildSession(ctx));
 }
 
 const MARKS: Record<CheckStatus, string> = {
