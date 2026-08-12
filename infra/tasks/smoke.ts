@@ -117,8 +117,12 @@ export function createFetchGet(timeoutMs: number): HttpGet {
 }
 
 export interface SmokeOptions {
-  frontendUrl: string;
-  backendUrl: string;
+  /** Public URL of the default-route (browser) service; absent for a
+   *  frontend-less registry — the SPA/security-header checks then skip. */
+  defaultRouteUrl?: string;
+  /** Public URL of the primary-rollout service (the API that serves the
+   *  aggregate /health?depth=full and /openapi.json). */
+  primaryUrl: string;
   expectedSha: string;
   /** Enabled rollout services; public services carry health_url, internal-only services have ''. */
   services?: readonly SmokeService[];
@@ -157,7 +161,7 @@ export interface SmokeResult {
 
 /** Run all smoke checks, collecting every result (no short-circuit). */
 export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
-  const { frontendUrl, backendUrl, expectedSha, get } = opts;
+  const { defaultRouteUrl, primaryUrl, expectedSha, get } = opts;
   const sleep = opts.sleep ?? defaultSleep;
   const componentsRetryAttempts = opts.componentsRetryAttempts ?? COMPONENTS_RETRY_ATTEMPTS;
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS;
@@ -174,32 +178,34 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     }
   };
 
-  // 1. Require the exact local entry hash when available, otherwise any hashed frontend asset.
-  await check(
-    opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset',
-    async () => {
-      const res = await get(`${frontendUrl}/`);
-      const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body);
-      // Detail mirrors the branch that actually failed: a bad status, or a 200
-      // whose HTML lacks the expected (or any) hashed entry asset.
-      const detail = !res.ok
-        ? `status=${res.status}`
-        : opts.expectedAsset
-          ? `served does not reference ${opts.expectedAsset}`
-          : 'no hashed entry asset found in served index.html';
-      return { ok: res.ok && matched, detail };
-    },
-  );
+  // 1. Require the exact local entry hash when available, otherwise any hashed
+  // entry asset. Skipped (with 4 and 5) when no default-route service exists.
+  if (defaultRouteUrl)
+    await check(
+      opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset',
+      async () => {
+        const res = await get(`${defaultRouteUrl}/`);
+        const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body);
+        // Detail mirrors the branch that actually failed: a bad status, or a 200
+        // whose HTML lacks the expected (or any) hashed entry asset.
+        const detail = !res.ok
+          ? `status=${res.status}`
+          : opts.expectedAsset
+            ? `served does not reference ${opts.expectedAsset}`
+            : 'no hashed entry asset found in served index.html';
+        return { ok: res.ok && matched, detail };
+      },
+    );
 
-  // 2. Backend OpenAPI spec is reachable.
-  await check('backend /openapi.json reachable', async () => {
-    const res = await get(`${backendUrl}/openapi.json`);
+  // 2. Primary service OpenAPI spec is reachable.
+  await check('primary /openapi.json reachable', async () => {
+    const res = await get(`${primaryUrl}/openapi.json`);
     return { ok: res.ok, detail: `status=${res.status}` };
   });
 
   // 3. Public services report the deployed release SHA. Internal-only services
-  // (cdc) have no health_url and are covered by the aggregate backend health.
-  const publicServices = (opts.services ?? [{ service: 'backend', health_url: backendUrl }]).filter(
+  // have no health_url and are covered by the aggregate primary health.
+  const publicServices = (opts.services ?? [{ service: 'primary', health_url: primaryUrl }]).filter(
     (service) => service.health_url,
   );
   for (const service of publicServices) {
@@ -214,26 +220,29 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   }
 
   // 4. SPA route fallback returns an HTML document.
-  await check('SPA fallback returns HTML', async () => {
-    const res = await get(`${frontendUrl}/__smoke_${Date.now()}`);
-    return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` };
-  });
+  if (defaultRouteUrl)
+    await check('SPA fallback returns HTML', async () => {
+      const res = await get(`${defaultRouteUrl}/__smoke_${Date.now()}`);
+      return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` };
+    });
 
-  // 5. Frontend security headers are present.
-  await check('security headers present', async () => {
-    const res = await get(`${frontendUrl}/`);
-    const missing = missingSecurityHeaders(res.headers);
-    return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` };
-  });
+  // 5. Default-route security headers are present.
+  if (defaultRouteUrl)
+    await check('security headers present', async () => {
+      const res = await get(`${defaultRouteUrl}/`);
+      const missing = missingSecurityHeaders(res.headers);
+      return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` };
+    });
 
-  // 6. Retry aggregate health across one CDC reconnect interval after rollout.
-  // Pass on the first clean read; persistent component failures exhaust the budget.
-  await check('backend components healthy', async () => {
+  // 6. Retry aggregate health across one worker reconnect interval after
+  // rollout. Pass on the first clean read; persistent component failures
+  // exhaust the budget.
+  await check('primary components healthy', async () => {
     let lastDetail = 'no response';
     const healthy = await pollUntil(
       async () => {
         try {
-          const res = await get(`${backendUrl}${healthContract.path}?depth=full`);
+          const res = await get(`${primaryUrl}${healthContract.path}?depth=full`);
           if (!res.ok) {
             lastDetail = `status=${res.status}`;
             return undefined;
@@ -255,8 +264,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
 }
 
 interface CliArgs {
-  frontendUrl: string;
-  backendUrl: string;
+  defaultRouteUrl?: string;
+  primaryUrl: string;
   sha: string;
   services?: SmokeService[];
   /** Path to the freshly built local index.html for deriving the expected bundle hash. */
@@ -264,28 +273,39 @@ interface CliArgs {
   timeoutMs: number;
 }
 
-export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string }> {
-  return parseServiceRows(raw, '--services-json', { required: ['service', 'health_url'], optional: ['public_url'] });
+export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string; lb_route?: string }> {
+  return parseServiceRows(raw, '--services-json', {
+    required: ['service', 'health_url'],
+    optional: ['public_url', 'lb_route'],
+  });
 }
 
 /** Parse `--key value` flags. Exported for testing. */
 export function parseArgs(argv: string[]): CliArgs {
   const servicesRaw = getFlag(argv, '--services-json');
   const services = servicesRaw ? parseServicesJson(servicesRaw) : undefined;
-  const frontendUrl =
-    getFlag(argv, '--frontend') ?? services?.find((service) => service.service === 'frontend')?.public_url;
-  const backendUrl =
-    getFlag(argv, '--backend') ?? services?.find((service) => service.service === 'backend')?.public_url;
+  // Roles, not names (S9): the default-route service owns the browser checks;
+  // the primary service (named via --primary, passed by the deploy from its
+  // rollout matrix) owns the aggregate health + OpenAPI checks. Fallback for
+  // standalone runs without --primary: the first non-default-route service
+  // with a health URL.
+  const defaultRouteRow = services?.find((service) => service.lb_route === 'default');
+  const primarySlug = getFlag(argv, '--primary');
+  const primaryRow = primarySlug
+    ? services?.find((service) => service.service === primarySlug)
+    : services?.find((service) => service.health_url && service.lb_route !== 'default');
+  const defaultRouteUrl = getFlag(argv, '--frontend') ?? defaultRouteRow?.public_url;
+  const primaryUrl = getFlag(argv, '--backend') ?? primaryRow?.public_url;
   const sha = getFlag(argv, '--sha');
-  if (!frontendUrl || !backendUrl || !sha) {
+  if (!primaryUrl || !sha) {
     throw new Error(
-      'Usage: smoke.ts --frontend <url> --backend <url> --sha <git-sha> [--services-json <json>] [--timeout ms]',
+      'Usage: smoke.ts [--frontend <url>] --backend <url> | --primary <slug> --sha <git-sha> [--services-json <json>] [--timeout ms]',
     );
   }
   const timeoutRaw = getFlag(argv, '--timeout');
   return {
-    frontendUrl,
-    backendUrl,
+    ...(defaultRouteUrl ? { defaultRouteUrl } : {}),
+    primaryUrl,
     sha,
     services,
     dist: getFlag(argv, '--dist'),
@@ -319,8 +339,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv);
   const expectedAsset = resolveExpectedAsset(args.dist);
   const results = await runSmoke({
-    frontendUrl: args.frontendUrl,
-    backendUrl: args.backendUrl,
+    defaultRouteUrl: args.defaultRouteUrl,
+    primaryUrl: args.primaryUrl,
     expectedSha: args.sha,
     services: args.services,
     expectedAsset,
