@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.8](https://github.com/cellajs/cella/compare/0.8.7...0.8.8) (2026-08-12)
+
+
+### 🎉 New features
+
+* **infra:** P3 — status provider registry, generic store outputs, config-owned telemetry sink ([#1036](https://github.com/cellajs/cella/issues/1036)) ([6a8484f](https://github.com/cellajs/cella/commit/6a8484f71e8ecf2e5a14381151794ef3d4f37c3b))
+
 ## [0.8.7](https://github.com/cellajs/cella/compare/0.8.6...0.8.7) (2026-08-11)
 
 
