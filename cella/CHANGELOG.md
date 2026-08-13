@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.0](https://github.com/cellajs/cella/compare/0.8.8...0.9.0) (2026-08-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **infra:** deploy vocabulary roll — start-first/stop-first, pathPrefix, storeOutputs ([#1038](https://github.com/cellajs/cella/issues/1038))
+
+### 🎉 New features
+
+* **infra:** deploy vocabulary roll — start-first/stop-first, pathPrefix, storeOutputs ([#1038](https://github.com/cellajs/cella/issues/1038)) ([373534c](https://github.com/cellajs/cella/commit/373534c67435643513b252f4c22473b6a0c7ba5f))
+
+
+### 🐞 Bug fixes
+
+* **deploy:** stop freezing stable-named /static files behind immutable caches ([#1040](https://github.com/cellajs/cella/issues/1040)) ([7efca24](https://github.com/cellajs/cella/commit/7efca249a71a2ca79130bb77bb2d558816f91a19))
+
+
+### 🔧 Small improvements
+
+* **infra:** smoke derives URLs by role + boot service-key tests ([#1039](https://github.com/cellajs/cella/issues/1039)) ([4e88635](https://github.com/cellajs/cella/commit/4e88635ed5fdb26bba79c3c1141f3bc9f25f7d61))
+
 ## [0.8.8](https://github.com/cellajs/cella/compare/0.8.7...0.8.8) (2026-08-12)
 
 
