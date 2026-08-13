@@ -19,7 +19,7 @@ The canonical agent guidelines live in [cella/AGENTS.md](../cella/AGENTS.md). Re
 - **Frontend SDK**: Generated in `sdk/gen/`, consumed via the `sdk` package; never edit manually. Run `pnpm sdk` after backend route/schema changes.
 - **Routing**: File-based routes in `frontend/src/routes/` auto-registered into `routeTree.gen.ts` (committed, never hand-edited). Route files are thin shims; logic/components live in modules, wired via `getRouteApi('<route id>')`.
 - **State**: Server state → TanStack Query, in `frontend/src/modules/<module>/query.ts`; client state → Zustand `*-store.ts` files inside their module.
-- **Entities**: `ContextEntityType` (has memberships, e.g. `organization`) and `ProductEntityType` (content, e.g. `attachment`). See `frontend/src/modules/attachment/` for reference.
+- **Entities**: `ChannelEntityType` (has memberships, e.g. `organization`) and `ProductEntityType` (content, e.g. `attachment`). See `frontend/src/modules/attachment/` for reference.
 
 ## Code style
 

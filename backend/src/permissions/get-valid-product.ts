@@ -18,7 +18,7 @@ export interface ValidProductResult<K extends ProductEntityType> {
 
 /**
  * Checks whether the current user may perform `action` on a product entity, resolving it by `id`
- * (system-admin bypass handled inside `checkPermission`). Returns the resolved entity; throws 404 if
+ * (system-admin bypass handled inside `checkAccess`). Returns the resolved entity; throws 404 if
  * not found, 403 if not allowed.
  */
 export const getValidProduct = async <K extends ProductEntityType>(

@@ -13,12 +13,23 @@ export async function seedEntityHierarchy(
   opts: { tenantId: string; createdBy: string; slugPrefix: string },
 ): Promise<void> {
   for (const row of plan.seedChannelRows) {
+    // Insert every ancestor id column, not just the immediate parent: deep hierarchies keep all
+    // ancestor columns NOT NULL on channel tables. With cella's default hierarchy the chain has
+    // length 1 (the parent), so the generated SQL is unchanged.
+    const ancestorNames = sql.join(
+      row.ancestorColumns.map((column) => sql.raw(quoteIdent(column.columnName))),
+      sql`, `,
+    );
+    const ancestorValues = sql.join(
+      row.ancestorColumns.map((column) => sql`${column.id}`),
+      sql`, `,
+    );
     await db.execute(sql`
       INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
-        (id, tenant_id, entity_type, name, slug, created_by, ${sql.raw(quoteIdent(row.parentColumnName))})
+        (id, tenant_id, entity_type, name, slug, created_by, ${ancestorNames})
       VALUES (
         ${row.id}, ${opts.tenantId}, ${row.channelType}, ${`${opts.slugPrefix} ${row.channelType}`},
-        ${`${opts.slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${opts.createdBy}, ${row.parentId}
+        ${`${opts.slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${opts.createdBy}, ${ancestorValues}
       )
       ON CONFLICT (id) DO NOTHING
     `);

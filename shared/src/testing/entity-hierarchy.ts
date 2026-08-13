@@ -18,6 +18,8 @@ export interface TestChannelRow {
   parentId: string;
   parentIdKey: EntityIdColumnKey<ChannelEntityType>;
   parentColumnName: string;
+  /** Every ancestor id column this row must carry (deep hierarchies keep them all NOT NULL). */
+  ancestorColumns: TestChannelColumn[];
 }
 
 export interface TestEntityHierarchyPlan {
@@ -78,6 +80,19 @@ export const buildTestEntityHierarchyPlan = ({
     setChannelId(channelType, id);
 
     const parentIdKey = appConfig.entityIdColumnKeys[parentChannelType];
+    // Walk the full parent chain: rows are seeded root-first, so every ancestor id is known here.
+    // Deep hierarchies keep ALL ancestor id columns NOT NULL on channel tables, so a seeder that
+    // fills only the immediate parent column fails on any grandchild channel.
+    const ancestorColumns: TestChannelColumn[] = [];
+    for (let cursor: ChannelEntityType | null = parentChannelType; cursor; ) {
+      const ancestorId = channelIdsByType[cursor];
+      if (!ancestorId) {
+        throw new Error(`Cannot seed ${channelType}: missing ancestor channel id for ${cursor}`);
+      }
+      const idKey = appConfig.entityIdColumnKeys[cursor];
+      ancestorColumns.push({ channelType: cursor, id: ancestorId, idKey, columnName: toColumnName(idKey) });
+      cursor = hierarchy.getParent(cursor) as ChannelEntityType | null;
+    }
     seedChannelRows.push({
       channelType,
       id,
@@ -86,6 +101,7 @@ export const buildTestEntityHierarchyPlan = ({
       parentId,
       parentIdKey,
       parentColumnName: toColumnName(parentIdKey),
+      ancestorColumns,
     });
   }
 

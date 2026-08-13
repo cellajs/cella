@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
@@ -10,7 +10,9 @@ const email = 'query-request-uniqueness@example.com';
 
 describe('request query uniqueness', () => {
   afterEach(async () => {
-    await baseDb.delete(requestsTable).where(eq(requestsTable.email, email));
+    // Case-insensitive cleanup: the case-insensitivity test inserts an uppercase variant that an
+    // exact-match delete leaves behind, tripping the unique signup index on the next run.
+    await baseDb.delete(requestsTable).where(sql`lower(${requestsTable.email}) = lower(${email})`);
   });
 
   it('allows distinct signup types and finds each type precisely', async () => {
