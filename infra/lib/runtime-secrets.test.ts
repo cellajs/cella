@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { databaseUrl } from '../resources/stores/database-url';
 import { none } from '../resources/stores/none';
 import { buildRuntimeSecrets, type RuntimeSecretDefinition, validateRuntimeSecrets } from './runtime-secrets';
-import { readStoreOutput, type StoreOutputs } from './stores';
 
 /** A minimal non-cella app config, the P2 external-store consumer shape. */
 const appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>> = {
@@ -44,18 +43,5 @@ describe('buildRuntimeSecrets with external stores (P2)', () => {
   it('rejects a contribution targeting an unknown service', () => {
     const secrets = buildRuntimeSecrets({ primary: databaseUrl({ services: ['nope'] }) }, {});
     expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/unknown service 'nope'/);
-  });
-});
-
-describe('readStoreOutput (P2 primary-output contract)', () => {
-  const output = { fake: true } as unknown as StoreOutputs[string];
-
-  it('a provision-less store yields undefined for every name', () => {
-    expect(readStoreOutput({}, 'connectionStringAdmin')).toBeUndefined();
-  });
-
-  it('a provisioning store returns its outputs and throws on a missing name', () => {
-    expect(readStoreOutput({ host: output }, 'host')).toBe(output);
-    expect(() => readStoreOutput({ host: output }, 'connectionStringAdmin')).toThrow(/did not expose output/);
   });
 });

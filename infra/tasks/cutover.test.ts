@@ -20,11 +20,11 @@ function recordingSetServers(): { fn: SetServersFn; calls: string[][] } {
 
 const getOldServers: GetServersFn = async () => ['10.0.0.4'];
 
-/** A minimal lb-overlap plan with overridable effects. */
+/** A minimal start-first plan with overridable effects. */
 function lbPlan(overrides: Partial<CutoverPlan> = {}): CutoverPlan {
   return {
     service: 'backend',
-    strategy: 'lb-overlap',
+    strategy: 'start-first',
     drainPolicy: 'requests',
     oldIps: ['10.0.0.4'],
     newIps: ['10.0.0.9'],
@@ -46,7 +46,7 @@ describe('contractBackend', () => {
   });
 });
 
-describe('sequenceCutover — lb-overlap', () => {
+describe('sequenceCutover — start-first', () => {
   it('expands [old,new] before contracting to [new]', async () => {
     const lb = recordingSetServers();
     const res = await sequenceCutover(lbPlan({ setServers: lb.fn }));
@@ -164,7 +164,7 @@ describe('sequenceCutover — lb-overlap', () => {
     expect(slept).toBe(false);
   });
 
-  it('throws if a lb-overlap plan has no setServers effect', async () => {
+  it('throws if a start-first plan has no setServers effect', async () => {
     await expect(sequenceCutover(lbPlan({ setServers: undefined }))).rejects.toThrow(/requires a setServers effect/);
   });
 });
@@ -175,7 +175,7 @@ describe('sequenceCutover — exclusive (cdc)', () => {
     const order: string[] = [];
     const res = await sequenceCutover({
       service: 'cdc',
-      strategy: 'exclusive',
+      strategy: 'stop-first',
       oldIps: [],
       newIps: [],
       drainSeconds: 0,
@@ -195,7 +195,7 @@ describe('sequenceCutover — exclusive (cdc)', () => {
   it('aborts (unhealthy) when the new generation never comes up', async () => {
     const res = await sequenceCutover({
       service: 'cdc',
-      strategy: 'exclusive',
+      strategy: 'stop-first',
       oldIps: [],
       newIps: [],
       drainSeconds: 0,

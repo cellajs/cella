@@ -2,9 +2,9 @@ import type { Environment } from '../lib/stack/bootstrap-stack-state';
 
 /**
  * VM cutover strategy: `lb-overlap` health-gates and drains overlapping generations;
- * `exclusive` releases a singleton resource before replacement starts.
+ * `stop-first` releases a singleton resource before replacement starts.
  */
-export type ReplacementStrategy = 'lb-overlap' | 'exclusive';
+export type ReplacementStrategy = 'start-first' | 'stop-first';
 
 /**
  * How the old generation is drained off the LB when it is de-registered:
@@ -27,7 +27,7 @@ export type LbRoute = 'default' | 'host' | 'path';
  * The service must serve under the same leading-slash, no-trailing-slash prefix; required for
  * path-routed services.
  */
-export type LbPathBegin = `/${string}`;
+export type PathPrefix = `/${string}`;
 
 /** A service's VM size: one type for all modes, or a per-mode map. */
 export type ServiceInstanceType = string | Partial<Record<Environment, string>>;
@@ -73,23 +73,23 @@ export interface ServiceMeta {
   /** Deploy this service before the rest of the VM fleet. At most one enabled service may set this. */
   primaryRollout?: boolean;
   /**
-   * How this service's VM generation is cut over on a deploy. `'lb-overlap'`
+   * How this service's VM generation is cut over on a deploy. `'start-first'`
    * for LB-exposed services (overlap two generations behind the LB);
-   * `'exclusive'` for the singleton-slot cdc worker.
+   * `'stop-first'` for the singleton-slot cdc worker.
    */
   replacementStrategy: ReplacementStrategy;
   /**
    * How the old generation drains off the LB. `'requests'` (HTTP, finish
    * in-flight) or `'reconnect'` (WebSocket, clients re-dial). Omit for the
-   * LB-less `exclusive` worker.
+   * LB-less `stop-first` worker.
    */
   drainPolicy?: DrainPolicy;
   /** Drain window (seconds) the cutover waits after the old generation is de-registered; 0 for none. */
   drainSeconds: number;
   /** Public LB exposure; absent = internal-only. */
   lbRoute?: LbRoute;
-  /** Path-prefix route on the shared HTTPS frontend (same-origin migration); see LbPathBegin. */
-  lbPathBegin?: LbPathBegin;
+  /** Path-prefix route on the shared HTTPS frontend (same-origin migration); see PathPrefix. */
+  pathPrefix?: PathPrefix;
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean;
   /** Private ACL-guarded LB frontend giving in-network consumers a stable, cutover-following address. */
@@ -183,8 +183,8 @@ export interface AppServiceConfig {
    */
   healthExpectStatus?: number;
   /**
-   * How this service's VM generation is replaced on a deploy. `'lb-overlap'`
-   * is for LB-exposed services; `'exclusive'` is for the singleton-slot cdc
+   * How this service's VM generation is replaced on a deploy. `'start-first'`
+   * is for LB-exposed services; `'stop-first'` is for the singleton-slot cdc
    * worker, which cannot overlap because only one process can consume its
    * PostgreSQL replication slot.
    */
@@ -198,7 +198,7 @@ export interface AppServiceConfig {
   primaryRollout?: boolean;
   /**
    * How the old generation drains off the LB when de-registered. `'requests'`
-   * (HTTP) or `'reconnect'` (WebSocket). Omit for the LB-less `exclusive` worker.
+   * (HTTP) or `'reconnect'` (WebSocket). Omit for the LB-less `stop-first` worker.
    */
   drainPolicy?: DrainPolicy;
   /** Drain window (seconds) the cutover waits after the old generation is de-registered; defaults to 0. */
@@ -212,9 +212,9 @@ export interface AppServiceConfig {
   /**
    * Additionally route `<prefix>` path-begins on the shared HTTPS frontend to
    * this service (same-origin migration, e.g. '/api'). Only meaningful with
-   * `lbRoute`; see LbPathBegin for the exact matching/stripping semantics.
+   * `lbRoute`; see PathPrefix for the exact matching/stripping semantics.
    */
-  lbPathBegin?: LbPathBegin;
+  pathPrefix?: PathPrefix;
   /**
    * Keep LB connections long-lived (1h server/tunnel timeouts) for services
    * speaking WebSockets through the LB (yjs). Only meaningful with `lbRoute`.

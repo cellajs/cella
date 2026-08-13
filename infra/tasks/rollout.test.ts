@@ -86,15 +86,15 @@ function makeFake(opts: FakeOptions) {
 
 const backendPlan: RolloutServicePlan = {
   service: 'backend',
-  strategy: 'lb-overlap',
+  strategy: 'start-first',
   drainPolicy: 'requests',
   drainSeconds: 10,
   healthUrl: 'https://api/health',
 };
-const cdcPlan: RolloutServicePlan = { service: 'cdc', strategy: 'exclusive', drainSeconds: 0 };
+const cdcPlan: RolloutServicePlan = { service: 'cdc', strategy: 'stop-first', drainSeconds: 0 };
 const frontendPlan: RolloutServicePlan = {
   service: 'frontend',
-  strategy: 'lb-overlap',
+  strategy: 'start-first',
   drainPolicy: 'requests',
   drainSeconds: 0,
   healthUrl: 'https://app/health',

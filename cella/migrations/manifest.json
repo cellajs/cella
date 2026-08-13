@@ -1,429 +1,446 @@
 {
-  "schemaVersion": 1,
-  "migrations": [
-    {
-      "id": "20260722T0902-drop-entity-suffix-renames",
-      "version": "next",
-      "title": "Drop redundant Entity suffix from single-family identifiers",
-      "kind": "codemod",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": "cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts",
-      "roots": [
-        "backend/src",
-        "backend/tests",
-        "backend/scripts",
-        "frontend/src",
-        "shared",
-        "cdc/src",
-        "yjs/src"
-      ],
-      "requires": [
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*, EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no wire-shape change."
-    },
-    {
-      "id": "20260722T1906-embedding-propagation-rename",
-      "version": "next",
-      "title": "Rename embedding propagation contract to embedded/host product",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": true,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "frontend/src",
-        "shared",
-        "cdc/src"
-      ],
-      "requires": [
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); apps bump clientCacheVersion."
-    },
-    {
-      "id": "20260722T2050-sonner-style-toaster-api",
-      "version": "next",
-      "title": "Adopt the Sonner-style toaster API",
-      "kind": "codemod",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": "cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts",
-      "roots": [
-        "frontend/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual review; internal API only, no wire-shape change."
-    },
-    {
-      "id": "20260722T2105-prepared-mutation-compose",
-      "version": "next",
-      "title": "Compose prepared mutations over useMutation (drop usePreparedMutation)",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "frontend/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
-    },
-    {
-      "id": "20260723T0739-hierarchy-owned-id-columns",
-      "version": "next",
-      "title": "Hierarchy-owned id-column keys and row-location API",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "shared",
-        "backend/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "EntityHierarchy instance owns row location: idColumnKeys/idColumnKey/idColumnName, resolve*, compute*Path, pathColumnSql, deepestAncestorSql. appConfig.entityIdColumnKeys now derives from hierarchy.idColumnKeys (replace the literal map in config.default.ts). backend pathColumnExpression removed in favor of hierarchy.pathColumnSql. No wire-shape or DB change."
-    },
-    {
-      "id": "20260723T0802-hierarchy-derived-entity-arrays",
-      "version": "next",
-      "title": "Hierarchy-derived entity arrays in config",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "shared"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "config.default.ts derives entityTypes/channelEntityTypes/productEntityTypes from the hierarchy via nonEmpty(); bidirectional config-validation checks and EntityIdColumnKeysShape removed. Apps replace their literal arrays with the derived form. No wire or DB change."
-    },
-    {
-      "id": "20260723T0814-hierarchy-instance-only-api",
-      "version": "next",
-      "title": "Hierarchy instance-only row-location API",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "cdc/src",
-        "frontend/src",
-        "shared",
-        "yjs/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Free row-location functions, entity guards (isChannelEntity/isProductEntity/getChannelRoles), and the AncestorSource/CountsHierarchy/TopologyHierarchy types are removed; the EntityHierarchy instance is the only API. Mechanical rewrite: fn(h, ...) to h.fn(...), guards to hierarchy.isChannel/isProduct/getRoles, topology params typed EntityHierarchy. No wire or DB change."
-    },
-    {
-      "id": "20260723T0822-drop-product-path-column",
-      "version": "next",
-      "title": "Drop the product tables' stored path column",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": true,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "backend/drizzle",
-        "cdc/src"
-      ],
-      "requires": [
-        "pnpm generate",
-        "pnpm check"
-      ],
-      "summary": "Product rows compute their location path from ancestor id columns (hierarchy.computeProductPath) in CDC batching, move detection, and stream notifications; the stored generated column is dropped (wire: product responses lose the path field, clientCacheVersion bumped to v4-no-product-path). Channel tables keep their generated path for channel_counters ancestry."
-    },
-    {
-      "id": "20260723T0824-public-read-flag",
-      "version": "next",
-      "title": "Public read is a flag, not a mode",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "shared",
-        "backend/src",
-        "frontend/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }. Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no wire-shape or database change. Manual: single-token edits at each call site."
-    },
-    {
-      "id": "20260723T0959-permission-vocabulary",
-      "version": "next",
-      "title": "Permission vocabulary consolidation",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "shared",
-        "backend/src",
-        "backend/tests",
-        "frontend/src",
-        "yjs/src"
-      ],
-      "requires": [
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "Access/Policy/Permission naming rule: AccessPolicies family -> PolicyMatrix/EntityPolicies/PolicyEntry, accessPolicies -> policyMatrix, PermissionValue/NormalizedPermissionValue -> PolicyCellInput/PolicyCell, ActionPermissionState -> CanState, resolvePermission -> resolveCan, PermissionMembership -> AccessMembership, isAllowed/enabled -> allowed, PermissionTopology removed (options.hierarchy + options.entityActions), config DSL ({ subject, contexts }) -> ({ entityType, channels }), collection scopes subChannelIds -> homeChannelIds/channelIds, AncestorScope -> IntermediateScope, permission-manager/ -> engine/, actor.ts -> access.ts. No wire-shape or DB change."
-    },
-    {
-      "id": "20260723T1237-typed-nullable-user-and-tree-rows",
-      "version": "next",
-      "title": "Nullable store user and TreeItem-constrained tree rows",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "frontend/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "useUserStore().user is MeUser | null (was MeUser seeded with `null as unknown as MeUser`); authenticated call sites use the new useCurrentUser()/getCurrentUser() accessors, which throw while signed out, and anything reachable signed out handles null. useTreeRows requires T extends TreeItem; buildTree is overloaded so other row shapes must pass all three accessors. Also widens getEntityPolicies/getPolicyPermissions to string and gives actorFrom/accessFrom a structural AccessContext (actorFrom now returns { anonymous: true } without a userId). Compile-time detected; no wire-shape or DB change."
-    },
-    {
-      "id": "20260723T1311-batch-presigned-urls",
-      "version": "next",
-      "title": "Batch presigned URLs replace the single presign endpoint",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": true,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "frontend/src"
-      ],
-      "requires": [
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "GET /attachments/presigned-url (getPresignedUrl) -> POST /attachments/presigned-urls (getPresignedUrls): up to 50 id+variant items per call, uniform rejectedIds (no 403/404 existence oracle). Backend getPresignedUrlOp/findAttachmentById/presignedUrlQuerySchema -> getPresignedUrlsOp/findAttachmentsByIds/presignedUrlsBodySchema. Frontend getPrivateFileUrlById delegates to the presign-batch coalescer (flush window, in-flight dedupe, 1h memo); per-id denials reject with PresignRejectedError. No DB change."
-    },
-    {
-      "id": "20260723T1705-media-attachment-ref",
-      "version": "next",
-      "title": "Media blocks carry an attachment reference",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "frontend/src",
-        "shared",
-        "yjs/src"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Media block specs (image/video/audio/file) gain an attachmentId prop via withAttachmentRef, applied to both the frontend editor schema and the yjs relay's server schema so Y.Docs round-trip it; UppyFilePanel stamps it on upload. Dead checklistGroupConfig plus checklist-group-block/render deleted, the four mediaBlockTypes copies consolidated onto the shared/blocknote export, and derive-description-core added as the shared block walk for description derivation. No wire-shape or DB change."
-    },
-    {
-      "id": "20260723T2257-deploy-engine-waves",
-      "version": "next",
-      "title": "Deploy engine: waved rollout, internal routes, one deploy command",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "infra",
-        ".github/workflows"
-      ],
-      "requires": [
-        "pnpm --filter infra compose:generate",
-        "pnpm check"
-      ],
-      "summary": "Two-wave rollout with concurrent cutovers and one deferred reap; single 'infra deploy' command replaces the pulumi/roll-*/publish/smoke jobs (branch-protection checks change to 'deploy'); cdc binds the backend through the LB's ACL-guarded internal route (services.config: backend internalRoute + internalHost/internalPort binding); optional INFRA_PULUMI_DRIVER=automation and INFRA_STACK_TOPOLOGY=micro knobs."
-    },
-    {
-      "id": "20260729T0922-app-product-mocks",
-      "version": "next",
-      "title": "Rename the app product mock registry",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "backend/src/mocks",
-        "cella.config.ts"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Rename the pinned product mock registry file and export to app-product-mocks.ts and appProductMocks. Internal extension API only; no wire-shape or database change."
-    },
-    {
-      "id": "20260730T0425-boot-image-rename",
-      "version": "next",
-      "title": "Rename the boot runner image (cella-boot to infra-boot)",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "infra",
-        ".github/workflows"
-      ],
-      "requires": [
-        "pnpm --filter infra exec vitest run",
-        "pnpm check"
-      ],
-      "summary": "Boot runner image renamed cella-boot->infra-boot, centralized as BOOT_IMAGE_NAME in infra/lib/scaleway/boot-image.ts (build-images.ts, deploy-pipeline.yml, compute.ts). Immutable generations pin the boot image by name+sha and a digest is only pullable from its own repository, so resolveBootImage falls back to LEGACY_BOOT_IMAGE_NAMES on a 404 (threading the resolved name into cloud-init) and a pre-existing generation whose image is gone degrades to an unpinned tag instead of failing the plan. Auto-migrating: no app code changes; deploy staging first, drop 'cella-boot' from LEGACY_BOOT_IMAGE_NAMES once no environment runs a pre-rename generation. No wire-shape or DB change."
-    },
-    {
-      "id": "20260730T0624-attachment-keys-map",
-      "version": "next",
-      "title": "Attachment variant keys collapse to a single jsonb map",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": true,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "backend/tests",
-        "backend/scripts",
-        "backend/drizzle",
-        "frontend/src",
-        "shared",
-        "bench/src"
-      ],
-      "requires": [
-        "pnpm generate",
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? }); selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant = original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their own taskId/projectId columns."
-    },
-    {
-      "id": "20260730T0858-frontend-module-placements",
-      "version": "next",
-      "title": "Frontend module registry and UI placements",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "frontend/src",
-        "cella.config.ts"
-      ],
-      "requires": [
-        "pnpm generate",
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "Frontend *-module.ts(x) files switch registerModule -> defineFrontendModule (~/lib/module); a glob composition root frontend/src/modules.ts loads them before first render. UI placements arrive with settled vocabulary: modules declare tools into slots ('${channelType}.settings', 'account.settings'); built-in settings sections are registered tools and the settings pages are pure consumers. Tools render full cards (lazy), gate on requires (grants) and visibleTo context-role pairs ('organization.admin', hierarchy-validated, matched over the ancestor chain; UI-only). Arrangement layers: manifest defaults, pinned placement-config.ts overrides, then the new organizations.tools_config jsonb (per-slot order/hidden/settings, admin Tools card, fail-closed reconciliation; locked tools immune to channel hiding). organizationSettingsSections (pinned file + type) removed. staticData.navTab typed PlacementDescriptor; system default tab derives from first visible tab. nav-buttons id special-cases move to NavItem iconSlot/badgeSlot in pinned nav-config.tsx. DB: additive tools_config column (pnpm generate); wire: additive optional toolsConfig on organization (no cache bump). Needs @cellajs/cli with the define*Module territory-scan matcher."
-    },
-    {
-      "id": "20260730T1009-owned-host-embedding",
-      "version": "next",
-      "title": "Product host FKs move to owned embeddings",
-      "kind": "manual",
-      "syncBreaking": false,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "backend/src",
-        "backend/drizzle",
-        "frontend/src",
-        "shared"
-      ],
-      "requires": [
-        "pnpm generate",
-        "pnpm sdk",
-        "pnpm check"
-      ],
-      "summary": "Child-side product-to-product host FK columns (taskId-style) are deprecated in favor of host-side id arrays registered as lifecycle 'owned' productEmbeddings. The template machinery (owned-embedding GC in the CDC worker, attachmentId media-block refs, derive-description-core collection, propagation id-array patching) already ships and activates on the first 'owned' entry. Template-side this is docs-only: apps without a host FK are unaffected; apps with one flip on their own schedule (host array + GIN, backfill from FK, drop FK and in-request cascades, own cache bump, feat!)."
-    },
-    {
-      "id": "20260730T1258-cella-config-into-cella-folder",
-      "version": "next",
-      "title": "Move cella sync files into the cella/ folder",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "cella.config.ts",
-        "cella.manifest.json",
-        "cella.migrations.json"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The @cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE, managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or DB change. App localPath values still resolve against the repo root and the config contents are unchanged."
-    },
-    {
-      "id": "20260731T0844-iam-model-v2",
-      "version": "next",
-      "title": "IAM model v2: per-mode/per-service principals, per-deploy keys, S3 key retirement",
-      "kind": "manual",
-      "syncBreaking": false,
-      "clientCacheBump": false,
-      "roots": [
-        "infra"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Operational migration: per-mode IAM principals in a group, admin app replaces operator, per-service secret folders with resource-level conditions, per-deploy key rotation + single-access handoff, s3 managed key and s3AccessKeyId/Secret removed (backend signs with its service key; S3_* env names unchanged). Run the infra CLI 'Migrate IAM model' per environment."
-    },
-    {
-      "id": "20260804T1641-headless-settings-placements",
-      "version": "next",
-      "title": "Headless settings placements: sections hook, descriptor bases, consumers as presentation",
-      "kind": "manual",
-      "syncBreaking": true,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "frontend/src",
-        "backend/src"
-      ],
-      "requires": [
-        "pnpm check",
-        "pnpm test"
-      ],
-      "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
-    },
-    {
-      "id": "20260811T0905-ts-import-extensions",
-      "version": "next",
-      "title": "Explicit .ts import extensions in the Vite config-load graph",
-      "kind": "manual",
-      "syncBreaking": false,
-      "clientCacheBump": false,
-      "script": null,
-      "roots": [
-        "shared",
-        "frontend/vite",
-        "frontend/vite.config.ts"
-      ],
-      "requires": [
-        "pnpm check"
-      ],
-      "summary": "Vite 8's future-default configLoader 'native' needs fully-specified ESM imports; vite.config.ts loads the whole shared/ graph at config time. All relative imports in shared/ and frontend/vite/ gain .ts extensions, directory-index imports name index.ts explicitly, __dirname becomes import.meta.dirname, allowImportingTsExtensions hoists to root tsconfig, and a biome.jsonc override enforces correctness/useImportExtensions over the territory. Codemod = Biome's own fixer (see README Run). Not sync-breaking, no cache bump, no DB."
-    }
-  ]
+ "schemaVersion": 1,
+ "migrations": [
+  {
+   "id": "20260722T0902-drop-entity-suffix-renames",
+   "version": "next",
+   "title": "Drop redundant Entity suffix from single-family identifiers",
+   "kind": "codemod",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": "cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts",
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts",
+    "frontend/src",
+    "shared",
+    "cdc/src",
+    "yjs/src"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*, EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no wire-shape change."
+  },
+  {
+   "id": "20260722T1906-embedding-propagation-rename",
+   "version": "next",
+   "title": "Rename embedding propagation contract to embedded/host product",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared",
+    "cdc/src"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct; product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to codemod); apps bump clientCacheVersion."
+  },
+  {
+   "id": "20260722T2050-sonner-style-toaster-api",
+   "version": "next",
+   "title": "Adopt the Sonner-style toaster API",
+   "kind": "codemod",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": "cella/migrations/20260722T2050-sonner-style-toaster-api/sonner-style-toaster-api.ts",
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual review; internal API only, no wire-shape change."
+  },
+  {
+   "id": "20260722T2105-prepared-mutation-compose",
+   "version": "next",
+   "title": "Compose prepared mutations over useMutation (drop usePreparedMutation)",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare) }, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged. Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return rewrite + inline prepare input annotation)."
+  },
+  {
+   "id": "20260723T0739-hierarchy-owned-id-columns",
+   "version": "next",
+   "title": "Hierarchy-owned id-column keys and row-location API",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared",
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "EntityHierarchy instance owns row location: idColumnKeys/idColumnKey/idColumnName, resolve*, compute*Path, pathColumnSql, deepestAncestorSql. appConfig.entityIdColumnKeys now derives from hierarchy.idColumnKeys (replace the literal map in config.default.ts). backend pathColumnExpression removed in favor of hierarchy.pathColumnSql. No wire-shape or DB change."
+  },
+  {
+   "id": "20260723T0802-hierarchy-derived-entity-arrays",
+   "version": "next",
+   "title": "Hierarchy-derived entity arrays in config",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "config.default.ts derives entityTypes/channelEntityTypes/productEntityTypes from the hierarchy via nonEmpty(); bidirectional config-validation checks and EntityIdColumnKeysShape removed. Apps replace their literal arrays with the derived form. No wire or DB change."
+  },
+  {
+   "id": "20260723T0814-hierarchy-instance-only-api",
+   "version": "next",
+   "title": "Hierarchy instance-only row-location API",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "cdc/src",
+    "frontend/src",
+    "shared",
+    "yjs/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Free row-location functions, entity guards (isChannelEntity/isProductEntity/getChannelRoles), and the AncestorSource/CountsHierarchy/TopologyHierarchy types are removed; the EntityHierarchy instance is the only API. Mechanical rewrite: fn(h, ...) to h.fn(...), guards to hierarchy.isChannel/isProduct/getRoles, topology params typed EntityHierarchy. No wire or DB change."
+  },
+  {
+   "id": "20260723T0822-drop-product-path-column",
+   "version": "next",
+   "title": "Drop the product tables' stored path column",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/drizzle",
+    "cdc/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "Product rows compute their location path from ancestor id columns (hierarchy.computeProductPath) in CDC batching, move detection, and stream notifications; the stored generated column is dropped (wire: product responses lose the path field, clientCacheVersion bumped to v4-no-product-path). Channel tables keep their generated path for channel_counters ancestry."
+  },
+  {
+   "id": "20260723T0824-public-read-flag",
+   "version": "next",
+   "title": "Public read is a flag, not a mode",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared",
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }. Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no wire-shape or database change. Manual: single-token edits at each call site."
+  },
+  {
+   "id": "20260723T0959-permission-vocabulary",
+   "version": "next",
+   "title": "Permission vocabulary consolidation",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared",
+    "backend/src",
+    "backend/tests",
+    "frontend/src",
+    "yjs/src"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Access/Policy/Permission naming rule: AccessPolicies family -> PolicyMatrix/EntityPolicies/PolicyEntry, accessPolicies -> policyMatrix, PermissionValue/NormalizedPermissionValue -> PolicyCellInput/PolicyCell, ActionPermissionState -> CanState, resolvePermission -> resolveCan, PermissionMembership -> AccessMembership, isAllowed/enabled -> allowed, PermissionTopology removed (options.hierarchy + options.entityActions), config DSL ({ subject, contexts }) -> ({ entityType, channels }), collection scopes subChannelIds -> homeChannelIds/channelIds, AncestorScope -> IntermediateScope, permission-manager/ -> engine/, actor.ts -> access.ts. No wire-shape or DB change."
+  },
+  {
+   "id": "20260723T1237-typed-nullable-user-and-tree-rows",
+   "version": "next",
+   "title": "Nullable store user and TreeItem-constrained tree rows",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "useUserStore().user is MeUser | null (was MeUser seeded with `null as unknown as MeUser`); authenticated call sites use the new useCurrentUser()/getCurrentUser() accessors, which throw while signed out, and anything reachable signed out handles null. useTreeRows requires T extends TreeItem; buildTree is overloaded so other row shapes must pass all three accessors. Also widens getEntityPolicies/getPolicyPermissions to string and gives actorFrom/accessFrom a structural AccessContext (actorFrom now returns { anonymous: true } without a userId). Compile-time detected; no wire-shape or DB change."
+  },
+  {
+   "id": "20260723T1311-batch-presigned-urls",
+   "version": "next",
+   "title": "Batch presigned URLs replace the single presign endpoint",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "GET /attachments/presigned-url (getPresignedUrl) -> POST /attachments/presigned-urls (getPresignedUrls): up to 50 id+variant items per call, uniform rejectedIds (no 403/404 existence oracle). Backend getPresignedUrlOp/findAttachmentById/presignedUrlQuerySchema -> getPresignedUrlsOp/findAttachmentsByIds/presignedUrlsBodySchema. Frontend getPrivateFileUrlById delegates to the presign-batch coalescer (flush window, in-flight dedupe, 1h memo); per-id denials reject with PresignRejectedError. No DB change."
+  },
+  {
+   "id": "20260723T1705-media-attachment-ref",
+   "version": "next",
+   "title": "Media blocks carry an attachment reference",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src",
+    "shared",
+    "yjs/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Media block specs (image/video/audio/file) gain an attachmentId prop via withAttachmentRef, applied to both the frontend editor schema and the yjs relay's server schema so Y.Docs round-trip it; UppyFilePanel stamps it on upload. Dead checklistGroupConfig plus checklist-group-block/render deleted, the four mediaBlockTypes copies consolidated onto the shared/blocknote export, and derive-description-core added as the shared block walk for description derivation. No wire-shape or DB change."
+  },
+  {
+   "id": "20260723T2257-deploy-engine-waves",
+   "version": "next",
+   "title": "Deploy engine: waved rollout, internal routes, one deploy command",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [
+    "pnpm --filter infra compose:generate",
+    "pnpm check"
+   ],
+   "summary": "Two-wave rollout with concurrent cutovers and one deferred reap; single 'infra deploy' command replaces the pulumi/roll-*/publish/smoke jobs (branch-protection checks change to 'deploy'); cdc binds the backend through the LB's ACL-guarded internal route (services.config: backend internalRoute + internalHost/internalPort binding); optional INFRA_PULUMI_DRIVER=automation and INFRA_STACK_TOPOLOGY=micro knobs."
+  },
+  {
+   "id": "20260729T0922-app-product-mocks",
+   "version": "next",
+   "title": "Rename the app product mock registry",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src/mocks",
+    "cella.config.ts"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Rename the pinned product mock registry file and export to app-product-mocks.ts and appProductMocks. Internal extension API only; no wire-shape or database change."
+  },
+  {
+   "id": "20260730T0425-boot-image-rename",
+   "version": "next",
+   "title": "Rename the boot runner image (cella-boot to infra-boot)",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [
+    "pnpm --filter infra exec vitest run",
+    "pnpm check"
+   ],
+   "summary": "Boot runner image renamed cella-boot->infra-boot, centralized as BOOT_IMAGE_NAME in infra/lib/scaleway/boot-image.ts (build-images.ts, deploy-pipeline.yml, compute.ts). Immutable generations pin the boot image by name+sha and a digest is only pullable from its own repository, so resolveBootImage falls back to LEGACY_BOOT_IMAGE_NAMES on a 404 (threading the resolved name into cloud-init) and a pre-existing generation whose image is gone degrades to an unpinned tag instead of failing the plan. Auto-migrating: no app code changes; deploy staging first, drop 'cella-boot' from LEGACY_BOOT_IMAGE_NAMES once no environment runs a pre-rename generation. No wire-shape or DB change."
+  },
+  {
+   "id": "20260730T0624-attachment-keys-map",
+   "version": "next",
+   "title": "Attachment variant keys collapse to a single jsonb map",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts",
+    "backend/drizzle",
+    "frontend/src",
+    "shared",
+    "bench/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? }); selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant = original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their own taskId/projectId columns."
+  },
+  {
+   "id": "20260730T0858-frontend-module-placements",
+   "version": "next",
+   "title": "Frontend module registry and UI placements",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src",
+    "cella.config.ts"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Frontend *-module.ts(x) files switch registerModule -> defineFrontendModule (~/lib/module); a glob composition root frontend/src/modules.ts loads them before first render. UI placements arrive with settled vocabulary: modules declare tools into slots ('${channelType}.settings', 'account.settings'); built-in settings sections are registered tools and the settings pages are pure consumers. Tools render full cards (lazy), gate on requires (grants) and visibleTo context-role pairs ('organization.admin', hierarchy-validated, matched over the ancestor chain; UI-only). Arrangement layers: manifest defaults, pinned placement-config.ts overrides, then the new organizations.tools_config jsonb (per-slot order/hidden/settings, admin Tools card, fail-closed reconciliation; locked tools immune to channel hiding). organizationSettingsSections (pinned file + type) removed. staticData.navTab typed PlacementDescriptor; system default tab derives from first visible tab. nav-buttons id special-cases move to NavItem iconSlot/badgeSlot in pinned nav-config.tsx. DB: additive tools_config column (pnpm generate); wire: additive optional toolsConfig on organization (no cache bump). Needs @cellajs/cli with the define*Module territory-scan matcher."
+  },
+  {
+   "id": "20260730T1009-owned-host-embedding",
+   "version": "next",
+   "title": "Product host FKs move to owned embeddings",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/drizzle",
+    "frontend/src",
+    "shared"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Child-side product-to-product host FK columns (taskId-style) are deprecated in favor of host-side id arrays registered as lifecycle 'owned' productEmbeddings. The template machinery (owned-embedding GC in the CDC worker, attachmentId media-block refs, derive-description-core collection, propagation id-array patching) already ships and activates on the first 'owned' entry. Template-side this is docs-only: apps without a host FK are unaffected; apps with one flip on their own schedule (host array + GIN, backfill from FK, drop FK and in-request cascades, own cache bump, feat!)."
+  },
+  {
+   "id": "20260730T1258-cella-config-into-cella-folder",
+   "version": "next",
+   "title": "Move cella sync files into the cella/ folder",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "cella.config.ts",
+    "cella.manifest.json",
+    "cella.migrations.json"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The @cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE, managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or DB change. App localPath values still resolve against the repo root and the config contents are unchanged."
+  },
+  {
+   "id": "20260731T0844-iam-model-v2",
+   "version": "next",
+   "title": "IAM model v2: per-mode/per-service principals, per-deploy keys, S3 key retirement",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "roots": [
+    "infra"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Operational migration: per-mode IAM principals in a group, admin app replaces operator, per-service secret folders with resource-level conditions, per-deploy key rotation + single-access handoff, s3 managed key and s3AccessKeyId/Secret removed (backend signs with its service key; S3_* env names unchanged). Run the infra CLI 'Migrate IAM model' per environment."
+  },
+  {
+   "id": "20260804T1641-headless-settings-placements",
+   "version": "next",
+   "title": "Headless settings placements: sections hook, descriptor bases, consumers as presentation",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src",
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm check",
+    "pnpm test"
+   ],
+   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
+  },
+  {
+   "id": "20260811T0905-ts-import-extensions",
+   "version": "next",
+   "title": "Explicit .ts import extensions in the Vite config-load graph",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared",
+    "frontend/vite",
+    "frontend/vite.config.ts"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "Vite 8's future-default configLoader 'native' needs fully-specified ESM imports; vite.config.ts loads the whole shared/ graph at config time. All relative imports in shared/ and frontend/vite/ gain .ts extensions, directory-index imports name index.ts explicitly, __dirname becomes import.meta.dirname, allowImportingTsExtensions hoists to root tsconfig, and a biome.jsonc override enforces correctness/useImportExtensions over the territory. Codemod = Biome's own fixer (see README Run). Not sync-breaking, no cache bump, no DB."
+  },
+  {
+   "id": "20260812T1724-deploy-vocabulary",
+   "version": "next",
+   "title": "Deploy vocabulary: start-first/stop-first, pathPrefix, storeOutputs",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "infra"
+   ],
+   "requires": [
+    "pnpm --filter infra exec vitest run",
+    "pnpm check"
+   ],
+   "summary": "Planned generation roll: replacementStrategy values lb-overlap->start-first / exclusive->stop-first, lbPathBegin->pathPrefix (field + emitted x-service key), genId fingerprint key runMigrate->runRelease (deliberately re-rolls every generation on first deploy), flat db* stack outputs retired in favor of storeOutputs.<storeId>.<key> (db-exposure/seed CLI reads the primary store entry). Fork change is three seds in infra/config/services.config.ts plus any fork-local reader of the retired outputs; regenerate compose.gen.yml."
+  }
+ ]
 }

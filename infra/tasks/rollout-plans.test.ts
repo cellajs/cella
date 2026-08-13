@@ -11,7 +11,7 @@ describe('planForService', () => {
     const plan = planForService('backend', 'https://www.cellajs.com/api');
     expect(plan).toMatchObject({
       service: 'backend',
-      strategy: 'lb-overlap',
+      strategy: 'start-first',
       drainPolicy: 'requests',
       drainSeconds: 10,
       healthUrl: 'https://www.cellajs.com/api/health',
@@ -22,7 +22,7 @@ describe('planForService', () => {
 
   it('builds an exclusive plan without LB requirements', () => {
     const plan = planForService('cdc');
-    expect(plan.strategy).toBe('exclusive');
+    expect(plan.strategy).toBe('stop-first');
     expect(plan.healthUrl).toBeUndefined();
   });
 

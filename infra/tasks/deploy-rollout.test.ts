@@ -43,14 +43,14 @@ describe('buildWavedPlan', () => {
     });
     expect(plan.primary).toMatchObject({
       service: 'backend',
-      strategy: 'lb-overlap',
+      strategy: 'start-first',
       drainSeconds: 10,
       healthUrl: 'https://api/health',
     });
-    expect(plan.rest[0]).toMatchObject({ service: 'cdc', strategy: 'exclusive' });
+    expect(plan.rest[0]).toMatchObject({ service: 'cdc', strategy: 'stop-first' });
     expect(plan.rest[1]).toMatchObject({
       service: 'frontend',
-      strategy: 'lb-overlap',
+      strategy: 'start-first',
       healthUrl: 'https://app/health',
     });
   });

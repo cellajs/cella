@@ -69,12 +69,12 @@ describe('loadbalancer module — registry-driven wiring', () => {
     expect(src).toMatch(/matchHostHeader:\s*serviceHost\(service\.slug\)/);
   });
 
-  it('adds a path-begin route for every lbPathBegin service (same-origin migration)', () => {
+  it('adds a path-begin route for every pathPrefix service (same-origin migration)', () => {
     // Registry-driven like the host routes: the prefix comes from the service
     // declaration, never hardcoded per service, and targets the same backend.
-    expect(src).toMatch(/if \(!service\.lbPathBegin\) continue/);
+    expect(src).toMatch(/if \(!service\.pathPrefix\) continue/);
     expect(src).toMatch(/new scaleway\.loadbalancers\.Route\(`\$\{baseName\(service\.slug\)\}-path-route`/);
-    expect(src).toMatch(/matchPathBegin:\s*service\.lbPathBegin/);
+    expect(src).toMatch(/matchPathBegin:\s*service\.pathPrefix/);
     expect(src).not.toMatch(/matchPathBegin:\s*'/);
   });
 
