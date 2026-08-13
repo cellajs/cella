@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   type DiagReader,
+  emptyBootDiagGuidance,
+  isEmptyPrefixLs,
   parseArgs,
   parseKeys,
   renderDiagnostics,
@@ -66,6 +68,14 @@ describe('selectDiagnostics', () => {
     expect(sel.latestFull).toBeUndefined();
   });
 
+  it('prefers the boot transcript over the sibling events bundle', () => {
+    const sel = selectDiagnostics(
+      ['backend-20260807T081154Z-boot.log', 'backend-20260807T081154Z-events.jsonl'],
+      'backend',
+    );
+    expect(sel.latestFull).toBe('backend-20260807T081154Z-boot.log');
+  });
+
   it('caps stage details at the 10 most recent', () => {
     const many = Array.from({ length: 15 }, (_, i) => `backend-stage-${String(i).padStart(2, '0')}-x`);
     const sel = selectDiagnostics(many, 'backend');
@@ -117,7 +127,20 @@ describe('renderDiagnostics', () => {
     expect(logs).toContain('BODY(backend-20260531T090509-boot.log)');
   });
 
-  it('warns when there is no full boot-diag log', () => {
+  it('warns when there is no full boot-diag log but markers exist', () => {
+    const logs: string[] = [];
+    const cat = vi.fn((key: string) => `BODY(${key})`);
+    renderDiagnostics(
+      'cdc',
+      { markers: ['cdc-stage-1-pull'], stageDetailKeys: ['cdc-stage-1-pull'], latestFull: undefined, failureKeys: [] },
+      { list: () => '', cat },
+      (m) => logs.push(m),
+    );
+
+    expect(logs).toContain('::warning::No cdc full boot-diag log uploaded');
+  });
+
+  it('prints a single no-diagnostics line for a service that owns nothing', () => {
     const logs: string[] = [];
     const cat = vi.fn(() => '');
     renderDiagnostics(
@@ -127,7 +150,7 @@ describe('renderDiagnostics', () => {
       (m) => logs.push(m),
     );
 
-    expect(logs).toContain('::warning::No cdc full boot-diag log uploaded');
+    expect(logs).toEqual(['::warning::No boot diagnostics for cdc: nothing was ever uploaded for this service']);
     expect(cat).not.toHaveBeenCalled();
   });
 
@@ -172,7 +195,7 @@ describe('renderDiagnostics', () => {
     const logs: string[] = [];
     renderDiagnostics(
       'cdc',
-      { markers: [], stageDetailKeys: [], latestFull: undefined, failureKeys: [] },
+      { markers: ['cdc-stage-1-pull'], stageDetailKeys: [], latestFull: undefined, failureKeys: [] },
       { list: () => '', cat: () => '' },
       (m) => logs.push(m),
       'plain',
@@ -218,6 +241,29 @@ describe('summarizeBundles', () => {
       { service: 'cdc', total: 1, failures: 0, latestFull: undefined },
       { service: 'yjs', total: 0, failures: 0, latestFull: undefined },
     ]);
+  });
+});
+
+describe('isEmptyPrefixLs', () => {
+  it('classifies exit 1 with no output as an empty prefix', () => {
+    expect(isEmptyPrefixLs(1, '', '')).toBe(true);
+    expect(isEmptyPrefixLs(1, '\n', ' ')).toBe(true);
+  });
+
+  it('keeps real failures fatal', () => {
+    // Denied / bad endpoint: stderr is populated.
+    expect(isEmptyPrefixLs(1, '', 'An error occurred (AccessDenied)')).toBe(false);
+    expect(isEmptyPrefixLs(255, '', '')).toBe(false);
+    // A successful non-empty listing is not "empty prefix".
+    expect(isEmptyPrefixLs(0, '2026-05-31 09:00:01 12 backend-stage-1-pull', '')).toBe(false);
+  });
+});
+
+describe('emptyBootDiagGuidance', () => {
+  it('names both known causes and embeds the serial-console marker for the slug', () => {
+    const lines = emptyBootDiagGuidance('cella');
+    expect(lines.join('\n')).toContain('::cella::');
+    expect(lines.join('\n')).toContain('ObjectStorageObjectsWrite');
   });
 });
 
