@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { eq, getTableName, sql } from 'drizzle-orm';
+import { eq, getColumns, getTableName, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { appConfig, type ProductEntityType } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
@@ -58,11 +58,21 @@ async function seedEntityHierarchy(
   slugPrefix: string,
 ) {
   for (const row of plan.seedChannelRows) {
+    // Insert every ancestor id column, not just the immediate parent: deep hierarchies keep all
+    // ancestor columns NOT NULL on channel tables (length 1 == the parent under cella's default).
+    const ancestorNames = sql.join(
+      row.ancestorColumns.map((column) => sql.raw(quoteIdent(column.columnName))),
+      sql`, `,
+    );
+    const ancestorValues = sql.join(
+      row.ancestorColumns.map((column) => sql`${column.id}`),
+      sql`, `,
+    );
     await adminDb.execute(sql`
       INSERT INTO ${sql.raw(quoteIdent(row.tableName))}
-        (id, tenant_id, entity_type, name, slug, created_by, ${sql.raw(quoteIdent(row.parentColumnName))})
+        (id, tenant_id, entity_type, name, slug, created_by, ${ancestorNames})
       VALUES
-        (${row.id}, ${tenantId}, ${row.channelType}, ${`RLS ${row.channelType}`}, ${`${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${createdBy}, ${row.parentId})
+        (${row.id}, ${tenantId}, ${row.channelType}, ${`RLS ${row.channelType}`}, ${`${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`}, ${createdBy}, ${ancestorValues})
       ON CONFLICT (id) DO NOTHING
     `);
   }
@@ -142,6 +152,10 @@ const makeRlsProductFixture = (entityType: ProductEntityType): RlsProductFixture
       // Recent so the unseen-count tests attribute it; the mock's createdAt is a random past date.
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // Feed parity: findUnseenCountsByUser hides unpublished drafts (isNotNull(publishedAt)), so
+      // publish draft-lifecycle rows. Inert when the table has no publishedAt column ('in' rather
+      // than property access: cella's precise column types reject a key no table here has).
+      ...('publishedAt' in getColumns(table) ? { publishedAt: new Date().toISOString() } : {}),
       seq: 0,
       ...extra,
     }) as never;

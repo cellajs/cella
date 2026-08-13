@@ -99,10 +99,16 @@ describe('deriveGrantBoundaryViews', () => {
     ]);
   });
 
-  it('without elevatedRoles every unconditional grant is subtree (engine parity)', () => {
+  it('a role listed in elevatedRoles keeps its unconditional grant subtree (engine parity)', () => {
+    // Config-independent form: passing `undefined` here would NOT exercise the
+    // "no elevatedRoles configured" branch — JS default parameters substitute
+    // the app-config default on any undefined, so that branch is reachable
+    // only when the running app's config has no elevatedRoles. Asserting via
+    // an explicit list containing the granted role tests the same subtree
+    // semantics against the function's contract instead of ambient config.
     const studentRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
-    expect(derive([membership('course', 'c1', 'student')], studentRead, undefined)).toEqual([
+    expect(derive([membership('course', 'c1', 'student')], studentRead, ['student'])).toEqual([
       {
         key: `${ORG}:item:subtree`,
         organizationId: ORG,

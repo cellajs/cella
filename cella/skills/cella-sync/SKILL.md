@@ -9,6 +9,11 @@ Run this flow whenever the app pulls the cella template: `pnpm cella sync` (merg
 `pnpm cella analyze` (dry-run drift report). The goal of every sync is not just a green merge:
 each pass should leave the fork delta smaller or better-protected than before.
 
+**Hard rule**: on the sync branch, the merge is committed and shipped by the CLI, never by
+plain git. Each `pnpm cella sync` run advances one stage and the run that commits never ships:
+a clean merge is committed by the first run, a conflicted one by the rerun after resolution,
+and a further rerun on the committed branch ships (push + PR). Why in step 6.
+
 ## Vocabulary
 
 - **fork-owned**: file exists only in the app; sync never touches it. Preferred home for app code.
@@ -74,10 +79,21 @@ registration disappears while CI stays green until typecheck.
 Mark with `pnpm exec tsx cella/migrations/run.ts mark <id...>`. Never leave satisfied migrations
 unmarked; the pending list must be empty at the end of a sync.
 
-## 6. Post-commit drift triage
+## 6. Commit, then drift triage
 
-Commit the merge, then `pnpm cella analyze` (it diffs committed HEAD in a worktree, so content
-reverts only show after commit). For every `drifted` file, apply the decision matrix:
+If the merge was clean, `pnpm cella sync` already committed it in step 1's run; after conflict
+resolution, rerun `pnpm cella sync` to commit. Never commit the merge with plain `git commit`:
+while the merge is staged, that records a two-parent merge commit, and because sync PRs are
+squash-merged (upstream ancestry never reaches origin) the PR then lists the entire upstream
+history — hundreds of commits, growing every release. The CLI instead squash-commits the staged
+delta as a single-parent commit and stops on the branch without pushing, so it can be triaged
+first. (Pre-0.2.0 CLI: the commit rerun also ships; let it, then do this triage as follow-up
+pushes to the open PR.)
+
+Then `pnpm cella analyze` (it diffs committed HEAD in a worktree, so content reverts only show
+after commit). Follow-up commits from the triage are fine as plain `git commit` — only the
+staged merge itself must go through the rerun. For every `drifted` file, apply the decision
+matrix:
 
 | Finding | Action |
 |---|---|
@@ -93,6 +109,11 @@ the pinned list did not grow except for documented scaffolding with an unwind co
 
 ## 7. Finish
 
-Push the sync branch and open the PR (`pnpm cella sync` reruns to commit/push if it drove the
-merge). PR description lists: upstream range, conflicts and their resolution shape, migrations
-marked, and the drift delta (before/after counts from analyze).
+Ship with `pnpm cella sync` (on a committed sync branch it flattens any merge commits, pushes,
+and opens the PR). Never ship with plain `git push` + `gh pr create` — that skips the flatten
+safety net, which is the last chance to catch a merge commit from step 6. If a bloated sync PR
+already exists, the same rerun repairs it: it rewrites the branch to a single commit with
+identical content and force-pushes with lease.
+
+PR description lists: upstream range, conflicts and their resolution shape, migrations marked,
+and the drift delta (before/after counts from analyze).
