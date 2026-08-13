@@ -9,12 +9,19 @@ import type {
   GenTagSummary,
 } from '~/modules/docs/types';
 
+/**
+ * Append the build SHA to a /static URL. These files keep stable names with
+ * per-release content, so the param rolls browser HTTP and service worker
+ * caches over on each release.
+ */
+export const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;
+
 /** Base URL for docs JSON files served at /static/docs.gen (generated into sdk/gen, copied by Vite) */
 const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 
 /** Fetch JSON with Content-Type validation (guards against SPA HTML fallback responses). */
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+  const response = await fetch(versionedUrl(url));
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   const contentType = response.headers.get('content-type');
   if (!contentType?.includes('application/json')) {
@@ -23,8 +30,10 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-/** OpenAPI spec URL in public/static */
-export const openApiUrl = `${appConfig.frontendUrl}/static/openapi.json`;
+const openApiPath = `${appConfig.frontendUrl}/static/openapi.json`;
+
+/** OpenAPI spec URL in public/static (version param busts long-lived caches) */
+export const openApiUrl = versionedUrl(openApiPath);
 
 /**
  * Query keys for docs-related queries.
@@ -44,7 +53,7 @@ const docsKeys = {
  */
 export const openApiSpecQueryOptions = queryOptions({
   queryKey: docsKeys.spec,
-  queryFn: () => fetchJson(openApiUrl),
+  queryFn: () => fetchJson(openApiPath),
   staleTime: Number.POSITIVE_INFINITY, // Static file, cache indefinitely
 });
 

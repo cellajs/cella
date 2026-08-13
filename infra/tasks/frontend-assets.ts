@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
@@ -36,9 +37,14 @@ export function contentTypeFor(key: string): string {
   return (dot >= 0 ? contentTypes[key.slice(dot)] : undefined) ?? 'application/octet-stream';
 }
 
-/** Hashed, immutable paths: existence of the key proves the content matches. */
+/**
+ * Content-hashed, immutable paths: existence of the key proves the content
+ * matches. Only /assets/ qualifies — /static/ keys keep stable names with
+ * changing content (docs.gen JSON, openapi.json, flags), so existence proves
+ * nothing there.
+ */
 export function isHashedPath(key: string): boolean {
-  return key.startsWith('assets/') || key.startsWith('static/');
+  return key.startsWith('assets/');
 }
 
 export function isEntryFile(key: string): boolean {
@@ -67,11 +73,12 @@ export interface UploadAssetsOptions {
 }
 
 /**
- * Upload the built frontend bundle (everything except entry files) with a
- * 1-year immutable cache. Hashed paths skip upload when the key already exists
- * (content-addressed names make that check exact and unchanged deploys nearly
- * free); root files (favicon, robots.txt) always re-upload since their content
- * can change under a stable name.
+ * Upload the built frontend bundle (everything except entry files). Hashed
+ * paths get a 1-year immutable cache and skip upload when the key already
+ * exists (content-addressed names make that check exact). Stable-named keys
+ * (static/, favicon, robots.txt) change content under the same name, so they
+ * get a short cache and skip only when the remote ETag matches the local MD5 —
+ * unchanged deploys stay nearly free either way.
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
   const log = opts.log ?? ((message: string) => console.info(message));
@@ -93,24 +100,40 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
   const queue = [...keys];
   const workers = Array.from({ length: 8 }, async () => {
     for (let key = queue.shift(); key !== undefined; key = queue.shift()) {
+      const head = await s3.send(new HeadObjectCommand({ Bucket: opts.bucket, Key: key })).catch(() => null);
       if (isHashedPath(key)) {
-        const exists = await s3
-          .send(new HeadObjectCommand({ Bucket: opts.bucket, Key: key }))
-          .then(() => true)
-          .catch(() => false);
-        if (exists) {
+        if (head) {
           skipped++;
           continue;
         }
+        const body = readFileSync(join(opts.distDir, key));
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: opts.bucket,
+            Key: key,
+            Body: body,
+            ContentType: contentTypeFor(key),
+            CacheControl: 'public, max-age=31536000, immutable',
+          }),
+        );
+        uploaded++;
+        continue;
       }
+      // Stable-named key: ETag is the content MD5 for single-part uploads, so
+      // a match means the object is already current.
       const body = readFileSync(join(opts.distDir, key));
+      const md5 = createHash('md5').update(body).digest('hex');
+      if (head?.ETag?.replaceAll('"', '') === md5) {
+        skipped++;
+        continue;
+      }
       await s3.send(
         new PutObjectCommand({
           Bucket: opts.bucket,
           Key: key,
           Body: body,
           ContentType: contentTypeFor(key),
-          CacheControl: 'public, max-age=31536000, immutable',
+          CacheControl: 'public, max-age=3600',
         }),
       );
       uploaded++;

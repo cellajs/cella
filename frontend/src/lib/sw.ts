@@ -40,7 +40,9 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       // Cache runtime docs data after its first visit so the section works offline.
-      // Stale-while-revalidate refreshes these non-content-hashed files after each deploy.
+      // These files keep stable names with per-release content; the app appends a
+      // ?v=<sha> param to their fetches, so each release keys fresh cache entries
+      // while stale-while-revalidate serves them stale-first within a release.
       matcher: ({ url }) =>
         url.origin === self.location.origin &&
         (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
