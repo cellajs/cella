@@ -10,8 +10,9 @@ Run this flow whenever the app pulls the cella template: `pnpm cella sync` (merg
 each pass should leave the fork delta smaller or better-protected than before.
 
 **Hard rule**: on the sync branch, the merge is committed and shipped by the CLI, never by
-plain git — `pnpm cella sync --no-ship` to commit, `pnpm cella sync` to push and open the PR.
-Why in step 6.
+plain git. Each `pnpm cella sync` run advances one stage and the run that commits never ships:
+a clean merge is committed by the first run, a conflicted one by the rerun after resolution,
+and a further rerun on the committed branch ships (push + PR). Why in step 6.
 
 ## Vocabulary
 
@@ -80,13 +81,14 @@ unmarked; the pending list must be empty at the end of a sync.
 
 ## 6. Commit, then drift triage
 
-Commit the merge with `pnpm cella sync --no-ship`. Never commit the merge with plain
-`git commit`: while the merge is staged, that records a two-parent merge commit, and because
-sync PRs are squash-merged (upstream ancestry never reaches origin) the PR then lists the
-entire upstream history — hundreds of commits, growing every release. The rerun instead
-squash-commits the staged delta as a single-parent commit; `--no-ship` makes it stop there
-instead of pushing, so the branch can be triaged first. (CLI without `--no-ship`, pre-0.2.0:
-let the plain rerun commit *and* ship, then do this triage as follow-up pushes to the open PR.)
+If the merge was clean, `pnpm cella sync` already committed it in step 1's run; after conflict
+resolution, rerun `pnpm cella sync` to commit. Never commit the merge with plain `git commit`:
+while the merge is staged, that records a two-parent merge commit, and because sync PRs are
+squash-merged (upstream ancestry never reaches origin) the PR then lists the entire upstream
+history — hundreds of commits, growing every release. The CLI instead squash-commits the staged
+delta as a single-parent commit and stops on the branch without pushing, so it can be triaged
+first. (Pre-0.2.0 CLI: the commit rerun also ships; let it, then do this triage as follow-up
+pushes to the open PR.)
 
 Then `pnpm cella analyze` (it diffs committed HEAD in a worktree, so content reverts only show
 after commit). Follow-up commits from the triage are fine as plain `git commit` — only the
