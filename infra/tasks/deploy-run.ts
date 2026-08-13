@@ -319,6 +319,11 @@ export async function runDeploy(
         opts.sha,
         '--services-json',
         env.enabled_services_json,
+        // The primary-rollout service owns smoke's aggregate-health/OpenAPI
+        // checks; derived from the rollout matrix, no service-name literal.
+        ...((JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]
+          ? ['--primary', (JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]!.service]
+          : []),
         // A provided-but-unreadable --dist is a hard failure in smoke, so a
         // frontend-less registry omits it instead of pointing at nothing.
         ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),

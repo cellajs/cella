@@ -147,8 +147,8 @@ describe('runSmoke', () => {
 
   it('passes every check against a healthy deployment', async () => {
     const results = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       get: healthyGet,
     });
@@ -158,8 +158,8 @@ describe('runSmoke', () => {
 
   it('asserts the served bundle references the freshly built hash when expectedAsset is set', async () => {
     const pass = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       expectedAsset: '/assets/index-abc123.js',
       get: healthyGet,
@@ -167,8 +167,8 @@ describe('runSmoke', () => {
     expect(pass.find((r) => r.name === 'index.html references freshly built bundle')?.ok).toBe(true);
 
     const stale = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       expectedAsset: '/assets/index-OLD.js',
       get: healthyGet,
@@ -180,8 +180,8 @@ describe('runSmoke', () => {
 
   it('checks deployed SHA for every public service in the rollout matrix', async () => {
     const results = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       services: [
         { service: 'backend', health_url: 'https://api' },
@@ -200,9 +200,14 @@ describe('runSmoke', () => {
       url === 'https://api/health'
         ? Promise.resolve(res({ status: 204, headers: new Headers({ 'x-app-version': 'old9999' }) }))
         : healthyGet(url);
-    const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get });
+    const results = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get,
+    });
 
-    const sha = results.find((r) => r.name === 'backend reports deployed SHA');
+    const sha = results.find((r) => r.name === 'primary reports deployed SHA');
     expect(sha?.ok).toBe(false);
     expect(sha?.detail).toContain('old9999');
     // The other five still ran and passed.
@@ -214,7 +219,12 @@ describe('runSmoke', () => {
       url === 'https://app/'
         ? Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders({}, ['X-Frame-Options']) }))
         : healthyGet(url);
-    const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get });
+    const results = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get,
+    });
 
     const sec = results.find((r) => r.name === 'security headers present');
     expect(sec?.ok).toBe(false);
@@ -224,9 +234,14 @@ describe('runSmoke', () => {
   it('captures a thrown fetch error as a failed check', async () => {
     const get = (url: string) =>
       url.endsWith('/openapi.json') ? Promise.reject(new Error('ECONNREFUSED')) : healthyGet(url);
-    const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get });
+    const results = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get,
+    });
 
-    const api = results.find((r) => r.name === 'backend /openapi.json reachable');
+    const api = results.find((r) => r.name === 'primary /openapi.json reachable');
     expect(api?.ok).toBe(false);
     expect(api?.detail).toBe('ECONNREFUSED');
   });
@@ -234,8 +249,13 @@ describe('runSmoke', () => {
   it('flags a non-ok openapi response', async () => {
     const get = (url: string) =>
       url.endsWith('/openapi.json') ? Promise.resolve(res({ status: 404, ok: false })) : healthyGet(url);
-    const results = await runSmoke({ frontendUrl: 'https://app', backendUrl: 'https://api', expectedSha: SHA, get });
-    expect(results.find((r) => r.name === 'backend /openapi.json reachable')?.ok).toBe(false);
+    const results = await runSmoke({
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get,
+    });
+    expect(results.find((r) => r.name === 'primary /openapi.json reachable')?.ok).toBe(false);
   });
 
   it('retries the component check and passes once the cdc worker reconnects', async () => {
@@ -257,15 +277,15 @@ describe('runSmoke', () => {
     };
     const sleep = vi.fn().mockResolvedValue(undefined);
     const results = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       get,
       sleep,
       componentsRetryDelayMs: 1,
     });
 
-    expect(results.find((r) => r.name === 'backend components healthy')?.ok).toBe(true);
+    expect(results.find((r) => r.name === 'primary components healthy')?.ok).toBe(true);
     expect(depthFullCalls).toBe(3);
     expect(sleep).toHaveBeenCalledTimes(2);
   });
@@ -285,8 +305,8 @@ describe('runSmoke', () => {
     };
     const sleep = vi.fn().mockResolvedValue(undefined);
     const results = await runSmoke({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       expectedSha: SHA,
       get,
       sleep,
@@ -294,7 +314,7 @@ describe('runSmoke', () => {
       componentsRetryDelayMs: 1,
     });
 
-    const components = results.find((r) => r.name === 'backend components healthy');
+    const components = results.find((r) => r.name === 'primary components healthy');
     expect(components?.ok).toBe(false);
     expect(components?.detail).toContain('cdc=unhealthy(worker_disconnected)');
     expect(depthFullCalls).toBe(3);
@@ -305,8 +325,8 @@ describe('runSmoke', () => {
 describe('parseArgs', () => {
   it('parses the required flags with a default timeout', () => {
     expect(parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA])).toEqual({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
       sha: SHA,
       services: undefined,
       timeoutMs: 10000,
@@ -327,15 +347,22 @@ describe('parseArgs', () => {
     ]);
   });
 
-  it('derives frontend and backend URLs from services-json', () => {
+  it('derives the URLs from services-json by ROLE (lb_route/--primary), not by service name', () => {
     const matrix = JSON.stringify([
-      { service: 'backend', public_url: 'https://api', health_url: 'https://api' },
-      { service: 'frontend', public_url: 'https://app', health_url: 'https://app' },
+      { service: 'api', public_url: 'https://api', health_url: 'https://api', lb_route: 'path' },
+      { service: 'web', public_url: 'https://app', health_url: 'https://app', lb_route: 'default' },
     ]);
-    expect(parseArgs(['--sha', SHA, '--services-json', matrix])).toMatchObject({
-      frontendUrl: 'https://app',
-      backendUrl: 'https://api',
+    expect(parseArgs(['--sha', SHA, '--services-json', matrix, '--primary', 'api'])).toMatchObject({
+      defaultRouteUrl: 'https://app',
+      primaryUrl: 'https://api',
     });
+    // Without --primary: the first non-default-route service with a health URL.
+    expect(parseArgs(['--sha', SHA, '--services-json', matrix])).toMatchObject({ primaryUrl: 'https://api' });
+    // Frontend-less matrix: no defaultRouteUrl, checks 1/4/5 will skip.
+    const apiOnly = JSON.stringify([
+      { service: 'api', public_url: 'https://api', health_url: 'https://api', lb_route: 'path' },
+    ]);
+    expect(parseArgs(['--sha', SHA, '--services-json', apiOnly]).defaultRouteUrl).toBeUndefined();
   });
 
   it('honours an explicit --timeout', () => {
@@ -367,10 +394,9 @@ describe('parseArgs', () => {
   });
 
   it.each([
-    ['--backend', 'https://api', '--sha', SHA],
     ['--frontend', 'https://app', '--sha', SHA],
     ['--frontend', 'https://app', '--backend', 'https://api'],
-  ])('throws when a required flag is missing', (...argv) => {
+  ])('throws when the primary URL or sha is missing', (...argv) => {
     expect(() => parseArgs(argv)).toThrow(/Usage:/);
   });
 });
