@@ -7,6 +7,7 @@ import { deriveInfra } from '../../lib/naming';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
+import { fetchAppRulesByName } from '../../lib/scaleway/iam-client';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
@@ -23,7 +24,6 @@ import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpin
 import { writeEnvVar } from '../../lib/utils/env-file';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { fetchAppRulesByName } from '../../tasks/assert-vm-grants';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';

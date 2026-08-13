@@ -1,12 +1,17 @@
 import { writeFile } from 'node:fs/promises';
+import {
+  createApiKey,
+  deleteApiKey,
+  type IamAuth,
+  listApiKeys,
+  resolveApplicationIdByName,
+  type ScwApiKey,
+} from '../lib/scaleway/iam-client';
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
 import { handoffServicePath } from '../lib/scaleway/secret-paths';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
-
-const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
 
 /**
  * How many API keys each service/boot app retains after a mint: the fresh key
@@ -40,56 +45,41 @@ export interface GenerationKeys {
   handoffSecretIds: Record<string, string>;
 }
 
-interface ScwApiKey {
-  access_key: string;
-  secret_key: string;
-  created_at?: string;
-}
-
-async function resolveAppId(secretKey: string, organizationId: string, name: string): Promise<string> {
-  const { applications = [] } = await scwFetch<{ applications?: Array<{ id: string; name: string }> }>(
-    { secretKey },
-    'GET',
-    `${IAM_BASE}/applications?name=${encodeURIComponent(name)}&organization_id=${organizationId}&page_size=20`,
-  );
-  const app = applications.find((a) => a.name === name);
-  if (!app)
+async function resolveAppId(auth: IamAuth, organizationId: string, name: string): Promise<string> {
+  const id = await resolveApplicationIdByName(auth, organizationId, name);
+  if (!id)
     throw new Error(`mint-generation-keys: IAM application '${name}' not found — run the infra CLI bootstrap first.`);
-  return app.id;
+  return id;
 }
 
 /** Mint a fresh key on the app. Pruning happens separately, AFTER every
  *  handoff bundle is staged — see pruneStaleKeys. */
 async function mintKey(
-  secretKey: string,
+  auth: IamAuth,
   projectId: string,
   appId: string,
   label: string,
   sha: string,
 ): Promise<ScwApiKey> {
-  return scwFetch<ScwApiKey>({ secretKey }, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: appId,
+  return createApiKey(auth, {
+    applicationId: appId,
     description: `${label} gen ${sha.slice(0, 10)}`,
-    default_project_id: projectId,
+    defaultProjectId: projectId,
   });
 }
 
 /** Delete all but the newest KEYS_TO_KEEP keys on the app. */
 async function pruneStaleKeys(
-  secretKey: string,
+  auth: IamAuth,
   organizationId: string,
   appId: string,
   label: string,
   log: (msg: string) => void,
 ): Promise<void> {
-  const { api_keys = [] } = await scwFetch<{ api_keys?: ScwApiKey[] }>(
-    { secretKey },
-    'GET',
-    `${IAM_BASE}/api-keys?application_id=${appId}&organization_id=${organizationId}&page_size=100`,
-  );
-  const byNewest = [...api_keys].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+  const apiKeys = await listApiKeys(auth, organizationId, appId);
+  const byNewest = [...apiKeys].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
   for (const stale of byNewest.slice(KEYS_TO_KEEP)) {
-    await scwSend({ secretKey }, 'DELETE', `${IAM_BASE}/api-keys/${stale.access_key}`);
+    await deleteApiKey(auth, stale.access_key);
     log(`  ~ pruned ${label} key ${stale.access_key}`);
   }
 }
@@ -113,6 +103,7 @@ async function pruneStaleKeys(
  */
 export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promise<GenerationKeys> {
   const log = opts.log ?? ((msg: string) => console.info(msg));
+  const auth: IamAuth = { secretKey: opts.callerSecretKey };
   const names = principalNames(opts.slug, opts.mode);
   const client = createSecretManagerClient({
     secretKey: opts.callerSecretKey,
@@ -122,10 +113,10 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
 
   // Resolve every app id first: a missing principal fails before anything is
   // minted or pruned.
-  const bootAppId = await resolveAppId(opts.callerSecretKey, opts.organizationId, names.boot);
+  const bootAppId = await resolveAppId(auth, opts.organizationId, names.boot);
   const serviceAppIds = new Map<string, string>();
   for (const service of opts.services) {
-    serviceAppIds.set(service, await resolveAppId(opts.callerSecretKey, opts.organizationId, names.vmService(service)));
+    serviceAppIds.set(service, await resolveAppId(auth, opts.organizationId, names.vmService(service)));
   }
 
   // Transactional-ish ordering: mint and stage EVERYTHING first, prune keys
@@ -133,7 +124,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
   // the old generation keeps hydrating/signing, and a retry re-mints cleanly.
   // (The keep-newest-2 window can still age out the live key after repeated
   // failed attempts within one deploy; bounded, documented, accepted.)
-  const bootKey = await mintKey(opts.callerSecretKey, opts.projectId, bootAppId, names.boot, opts.sha);
+  const bootKey = await mintKey(auth, opts.projectId, bootAppId, names.boot, opts.sha);
   log(`✓ minted boot key ${bootKey.access_key}`);
 
   const handoffSecretIds: Record<string, string> = {};
@@ -141,7 +132,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     const appName = names.vmService(service);
     const appId = serviceAppIds.get(service);
     if (!appId) throw new Error(`mint-generation-keys: no app id resolved for ${appName}`);
-    const serviceKey = await mintKey(opts.callerSecretKey, opts.projectId, appId, appName, opts.sha);
+    const serviceKey = await mintKey(auth, opts.projectId, appId, appName, opts.sha);
 
     // Prune older handoff bundles first: an unconsumed bundle from a failed
     // deploy is stale (VMs cache the key after their single read), and leaving
@@ -168,10 +159,10 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
   }
 
   // Every bundle is staged; only now retire stale keys.
-  await pruneStaleKeys(opts.callerSecretKey, opts.organizationId, bootAppId, names.boot, log);
+  await pruneStaleKeys(auth, opts.organizationId, bootAppId, names.boot, log);
   for (const service of opts.services) {
     const appId = serviceAppIds.get(service);
-    if (appId) await pruneStaleKeys(opts.callerSecretKey, opts.organizationId, appId, names.vmService(service), log);
+    if (appId) await pruneStaleKeys(auth, opts.organizationId, appId, names.vmService(service), log);
   }
 
   const result: GenerationKeys = {

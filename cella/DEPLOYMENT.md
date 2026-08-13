@@ -54,7 +54,7 @@ The key resources and how traffic flows between them:
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `lbPathBegin` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix.
+- **Load balancer:** the single public entrypoint, and **dual-homed**: a public IP terminates TLS on one side, a private-network attachment forwards plain HTTP to VM private IPs on the other. The frontend (SPA proxy) is the default backend; backend, yjs and mcp are reached on the same app origin via registry-declared `pathPrefix` prefixes (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths, so each service serves itself under its prefix.
 - **Private network (VPC):** VMs and db connect over private IPs. Only the LB accepts inbound public traffic. Each VM keeps a public IP for egress (image pulls) but drops all inbound, including SSH.
 - **Frontend:** a Caddy VM behind the LB that reverse-proxies the SPA bucket over its public S3 endpoint, adding security headers/CSP and the SPA deep-link fallback.
 - **Backend VM:** the critical API path; replaced one generation at a time with LB overlap.
@@ -153,8 +153,8 @@ Every deploy is a **create-then-replace**: the image SHA is baked into a new VM 
 
 | `replacementStrategy` | Services | How |
 | --- | --- | --- |
-| **lb-overlap** | backend, frontend, yjs, mcp | Record the SHA as `pendingSha`; the Pulumi program provisions the content-addressed pending generation alongside the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) then reconciles the live LB server list toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It re-reads live state and always issues the corrective call, so an empty or stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active`; every displaced generation is reaped by ONE final stack update after all cutovers succeeded. No generation is retained, so a deploy never runs two VMs per service beyond the overlap window. |
-| **exclusive** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program provisions only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless: the slot retains the WAL position). |
+| **start-first** | backend, frontend, yjs, mcp | Record the SHA as `pendingSha`; the Pulumi program provisions the content-addressed pending generation alongside the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) then reconciles the live LB server list toward the desired state with idempotent Scaleway `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It re-reads live state and always issues the corrective call, so an empty or stale pool (or a same-generation redeploy) is repaired rather than assumed correct. The new generation is promoted to `active`; every displaced generation is reaped by ONE final stack update after all cutovers succeeded. No generation is retained, so a deploy never runs two VMs per service beyond the overlap window. |
+| **stop-first** | cdc | No LB overlap: cdc holds one Postgres replication slot. The Pulumi program provisions only the new generation (the old one is replaced in the same `up`); the new worker contends for the slot the old one releases on drain (handoff is lossless: the slot retains the WAL position). |
 
 **`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/mcp, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
 
@@ -462,11 +462,11 @@ Unlike **Rotate keys**, no bootstrap key is needed: nothing changes on the Scale
 
 > Losing the current passphrase means you cannot decrypt existing secret outputs; there is no recovery. The GitHub Environment holds a copy, but Actions secrets are write-only: CI keeps working with it, yet it can never be viewed again, so keep your password-manager copy current.
 
-### Teardown (manual)
+### Teardown
 
-Decommissioning a stack — deleting every resource to stop billing — is a deliberate manual operation you perform yourself in the Scaleway console. The CLI has **no** teardown action on purpose: a full destroy needs owner-tier credentials the [descending-privilege model](#credentials) keeps off laptops and out of CI (the CI deploy key can create but not delete the database or VPC, and the state-bucket policy denies it `DeleteBucket`), and `pulumi destroy` is unavailable once the passphrase is gone.
+Decommissioning a stack — deleting every resource to stop billing — is the CLI's **Teardown** action. It never *holds* owner-tier credentials (the [descending-privilege model](#credentials) keeps those off laptops and out of CI): it prompts for a transient bootstrap-grade key (`SCW_TEARDOWN_*` env for unattended runs), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, and then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is deliberately lifted in code first — that refusal is the point. The versioned state bucket, operator secret values, and GitHub Environment secrets are deliberately left in place.
 
-Delete in dependency order: load balancer (+IP) → instance (+volumes, +IP) → database → registry namespace → secrets → buckets (empty incl. versions, then delete; state bucket last) → private network → VPC → IAM apps/policies → DNS records → the now-empty project. The database and VPC need an owner or full-access key, not the CI key.
+**Manual fallback (lost passphrase):** `pulumi destroy` is unavailable once the passphrase is gone — then you delete by hand in the Scaleway console, in dependency order: load balancer (+IP) → instance (+volumes, +IP) → database → registry namespace → secrets → buckets (empty incl. versions, then delete; state bucket last) → private network → VPC → IAM apps/policies → DNS records → the now-empty project. The database and VPC need an owner or full-access key, not the CI key.
 
 > **Clean slate** below is *not* a teardown — it resets stack tracking to re-bootstrap a still-running stack, and leaves live resources in place.
 

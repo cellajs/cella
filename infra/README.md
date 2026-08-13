@@ -101,11 +101,15 @@ Each check reports one of `ok | warn | missing | error | unknown`, where `unknow
 }
 ```
 
-Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `dns.zone`). The evaluator is a pure function of gathered facts, so the mapping from facts to verdicts is unit-tested in isolation.
+Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `dns.zone`, `stores.<storeId>`). Each domain is a self-contained provider (`lib/status/providers/`) whose evaluation is a pure function of its gathered facts, so the mapping from facts to verdicts is unit-tested in isolation; registered stores contribute their own `validate()` posture checks.
+
+## Credentials files
+
+Operator credentials load in a fixed order (implemented once in `lib/utils/env-files.ts`, shared by the CLI and the standalone status task): `backend/.env`, then the repo-root `.env` (existing environment variables keep precedence over both), then the mode-scoped override **`infra/.env.<mode>`** — which OVERRIDES the ambient env, so a staging run cannot silently inherit production values. The mode file carries a live secret key and the Pulumi passphrase; the CLI tightens its permissions to `0600` on sight. It is a standing convenience for day-2 operator work only: one-off privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete any temporary env file afterwards.
 
 ## Teardown
 
-There is no teardown command, on purpose. Destroying a stack is a rare, irreversible operation that needs owner-tier credentials the descending-privilege model deliberately keeps off laptops and out of CI — the CI deploy key can create but not delete the database or VPC, and the state-bucket policy denies it `DeleteBucket`. So you do it yourself, by hand, in the Scaleway console. See **Teardown** in [../cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md) for the order.
+Teardown is a first-class CLI action (menu: **Teardown**), designed so the CLI never *holds* owner-tier credentials: it prompts for a transient bootstrap-grade key (`SCW_TEARDOWN_*` env for unattended runs), requires typing `<slug>-<mode>` to proceed, and runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production is additionally protected: the frontend/private buckets and database carry `protect: true`, so Pulumi refuses them unless protection is deliberately lifted in code first. Deliberately untouched: the versioned Pulumi state bucket, Secret Manager containers with operator values, and GitHub Environment secrets. See **Teardown** in [../cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md) for the walkthrough.
 
 ## Extending
 
