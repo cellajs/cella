@@ -1,10 +1,12 @@
-import { scwFetch } from '../lib/scaleway/scw-fetch';
+import {
+  fetchGrantedRules,
+  type IamAuth,
+  resolveApplicationIdByName,
+  resolveOrganizationIdViaProject,
+} from '../lib/scaleway/iam-client';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
-
-const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
 /** Permission sets that decrypt or enumerate secret values/metadata. */
 const SECRET_PERMISSION_SETS = new Set([
@@ -58,147 +60,6 @@ export interface AssertVmGrantsResult {
   unconditionedSecretRules: string[];
 }
 
-function scwGet<T>(fetchImpl: FetchLike, secretKey: string, url: string): Promise<T> {
-  return scwFetch<T>({ secretKey, fetchImpl }, 'GET', url);
-}
-
-async function resolveOrgId(fetchImpl: FetchLike, secretKey: string, projectId: string): Promise<string> {
-  const project = await scwGet<{ organization_id?: string }>(
-    fetchImpl,
-    secretKey,
-    `${ACCOUNT_BASE}/projects/${projectId}`,
-  );
-  if (!project?.organization_id) {
-    throw new Error(`Could not resolve organization_id from project ${projectId}. Pass --organization-id explicitly.`);
-  }
-  return project.organization_id;
-}
-
-/** Resolve an IAM application's id from its (unique) name. Returns null when not found. */
-export async function resolveApplicationIdByName(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  organizationId: string,
-  name: string,
-): Promise<string | null> {
-  const { applications = [] } = await scwGet<{ applications?: Array<{ id: string; name: string }> }>(
-    fetchImpl,
-    secretKey,
-    `${IAM_BASE}/applications?name=${encodeURIComponent(name)}&organization_id=${organizationId}&page_size=20`,
-  );
-  return applications.find((app) => app.name === name)?.id ?? null;
-}
-
-interface IamPolicy {
-  id: string;
-  name: string;
-  /** Principal bindings: a policy targets exactly one of application / user / group. */
-  application_id?: string;
-  user_id?: string;
-  group_id?: string;
-}
-
-/**
- * Every policy in the organization, paging past `page_size`. The list endpoint's
- * `application_id` filter is unreliable (Scaleway returns all policies regardless),
- * so callers filter by principal client-side against the `application_id` /
- * `group_id` each list item carries.
- */
-async function listOrganizationPolicies(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  organizationId: string,
-): Promise<IamPolicy[]> {
-  const pageSize = 100;
-  const all: IamPolicy[] = [];
-  for (let page = 1; page <= 100; page++) {
-    const { policies = [], total_count = 0 } = await scwGet<{ policies?: IamPolicy[]; total_count?: number }>(
-      fetchImpl,
-      secretKey,
-      `${IAM_BASE}/policies?organization_id=${organizationId}&page=${page}&page_size=${pageSize}`,
-    );
-    all.push(...policies);
-    if (policies.length === 0 || all.length >= total_count) break;
-  }
-  return all;
-}
-
-/** Group ids the application belongs to; a group's policies grant the app too. */
-async function fetchApplicationGroupIds(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  organizationId: string,
-  applicationId: string,
-): Promise<Set<string>> {
-  const ids = new Set<string>();
-  for (let page = 1; page <= 100; page++) {
-    const { groups = [], total_count = 0 } = await scwGet<{
-      groups?: Array<{ id: string; application_ids?: string[] }>;
-      total_count?: number;
-    }>(fetchImpl, secretKey, `${IAM_BASE}/groups?organization_id=${organizationId}&page=${page}&page_size=100`);
-    for (const group of groups) if ((group.application_ids ?? []).includes(applicationId)) ids.add(group.id);
-    if (groups.length === 0 || (page - 1) * 100 + groups.length >= total_count) break;
-  }
-  return ids;
-}
-
-/**
- * Every rule (permission sets + condition) granted to an application resolved
- * by name. Returns null when the application does not exist. Convenience
- * wrapper (resolve org → resolve app id → collect rules) for callers that only
- * have the deterministic `<slug>-<suffix>` name (the CLI's per-rule CI-policy
- * drift check).
- */
-export async function fetchAppRulesByName(opts: {
-  secretKey: string;
-  projectId: string;
-  applicationName: string;
-  organizationId?: string;
-  fetchImpl?: FetchLike;
-}): Promise<Array<{ policyName: string; permissionSets: string[]; condition: string }> | null> {
-  const fetchImpl = resolveFetch(opts.fetchImpl);
-  const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId));
-  const applicationId = await resolveApplicationIdByName(
-    fetchImpl,
-    opts.secretKey,
-    organizationId,
-    opts.applicationName,
-  );
-  if (!applicationId) return null;
-  return fetchGrantedRules(fetchImpl, opts.secretKey, organizationId, applicationId);
-}
-
-/** Every rule (permission sets + condition) granted to an application across its policies. */
-export async function fetchGrantedRules(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  organizationId: string,
-  applicationId: string,
-): Promise<Array<{ policyName: string; permissionSets: string[]; condition: string }>> {
-  const groupIds = await fetchApplicationGroupIds(fetchImpl, secretKey, organizationId, applicationId);
-  const policies = await listOrganizationPolicies(fetchImpl, secretKey, organizationId);
-  const bound = policies.filter(
-    (policy) =>
-      policy.application_id === applicationId || (policy.group_id !== undefined && groupIds.has(policy.group_id)),
-  );
-  const collected: Array<{ policyName: string; permissionSets: string[]; condition: string }> = [];
-  for (const policy of bound) {
-    const { rules = [] } = await scwGet<{ rules?: Array<{ permission_set_names?: string[]; condition?: string }> }>(
-      fetchImpl,
-      secretKey,
-      `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`,
-    );
-    for (const rule of rules) {
-      collected.push({
-        policyName: policy.name,
-        permissionSets: rule.permission_set_names ?? [],
-        condition: rule.condition ?? '',
-      });
-    }
-  }
-  return collected;
-}
-
 /**
  * Collect the union of permission set names granted to an application across all
  * its IAM policies and their rules, then verify it EQUALS the required set:
@@ -208,21 +69,20 @@ export async function fetchGrantedRules(
  * carries EXACTLY that condition (string equality against the shared builder).
  */
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
-  const fetchImpl = resolveFetch(opts.fetchImpl);
+  const auth: IamAuth = { secretKey: opts.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
   const log = opts.log ?? ((msg) => console.info(msg));
   const required = opts.required;
-  const organizationId = opts.organizationId ?? (await resolveOrgId(fetchImpl, opts.secretKey, opts.projectId));
+  const organizationId = opts.organizationId ?? (await resolveOrganizationIdViaProject(auth, opts.projectId));
 
   let applicationId = opts.applicationId;
   if (!applicationId && opts.applicationName) {
-    applicationId =
-      (await resolveApplicationIdByName(fetchImpl, opts.secretKey, organizationId, opts.applicationName)) ?? undefined;
+    applicationId = (await resolveApplicationIdByName(auth, organizationId, opts.applicationName)) ?? undefined;
     if (!applicationId)
       throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`);
   }
   if (!applicationId) throw new Error('assertVmGrants: provide applicationId or applicationName');
 
-  const rules = await fetchGrantedRules(fetchImpl, opts.secretKey, organizationId, applicationId);
+  const rules = await fetchGrantedRules(auth, organizationId, applicationId);
   const granted = new Set(rules.flatMap((rule) => rule.permissionSets));
 
   const requiredSet = new Set(required);
