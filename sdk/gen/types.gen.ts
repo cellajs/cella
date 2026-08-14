@@ -1159,8 +1159,21 @@ export type SignInWithTotpResponse = SignInWithTotpResponses[keyof SignInWithTot
 
 export type CreatePasskeyData = {
   body: {
-    attestationObject: string;
-    clientDataJSON: string;
+    attestation: {
+      id: string;
+      rawId: string;
+      response: {
+        clientDataJSON: string;
+        attestationObject: string;
+        authenticatorData?: string;
+        transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+        publicKeyAlgorithm?: number;
+        publicKey?: string;
+      };
+      authenticatorAttachment?: 'cross-platform' | 'platform';
+      clientExtensionResults?: unknown;
+      type: 'public-key';
+    };
     nameOnDevice: string;
   };
   path?: never;
@@ -1306,7 +1319,7 @@ export type GeneratePasskeyChallengeResponses = {
    * Challenge generated
    */
   200: {
-    challengeBase64: string;
+    challenge: string;
     credentialIds: Array<string>;
   };
 };
@@ -1316,10 +1329,19 @@ export type GeneratePasskeyChallengeResponse =
 
 export type SignInWithPasskeyData = {
   body: {
-    credentialId: string;
-    clientDataJSON: string;
-    authenticatorObject: string;
-    signature: string;
+    assertion: {
+      id: string;
+      rawId: string;
+      response: {
+        clientDataJSON: string;
+        authenticatorData: string;
+        signature: string;
+        userHandle?: string;
+      };
+      authenticatorAttachment?: 'cross-platform' | 'platform';
+      clientExtensionResults?: unknown;
+      type: 'public-key';
+    };
     type: 'authentication' | 'mfa';
     email?: string;
   };
@@ -1752,10 +1774,17 @@ export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
 export type ToggleMfaData = {
   body?: {
     passkeyData?: {
-      credentialId: string;
-      clientDataJSON: string;
-      authenticatorObject: string;
-      signature: string;
+      id: string;
+      rawId: string;
+      response: {
+        clientDataJSON: string;
+        authenticatorData: string;
+        signature: string;
+        userHandle?: string;
+      };
+      authenticatorAttachment?: 'cross-platform' | 'platform';
+      clientExtensionResults?: unknown;
+      type: 'public-key';
     };
     totpCode?: string;
     mfaRequired: boolean;

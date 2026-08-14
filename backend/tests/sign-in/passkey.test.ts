@@ -50,9 +50,9 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
-      expect(response.challengeBase64).toBeDefined();
-      expect(response.challengeBase64).toMatch(/^[A-Za-z0-9+/=]+$/);
+      const response = data as { challenge: string; credentialIds: string[] };
+      expect(response.challenge).toBeDefined();
+      expect(response.challenge).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(response.credentialIds).toContain(passkeyRecord.credentialId);
     });
 
@@ -80,8 +80,8 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
-      expect(response.challengeBase64).toBeDefined();
+      const response = data as { challenge: string; credentialIds: string[] };
+      expect(response.challenge).toBeDefined();
       expect(response.credentialIds).toHaveLength(0);
     });
 
@@ -93,8 +93,8 @@ describe('Passkey Authentication', async () => {
 
       // Handler returns 200 with empty credentials when email is not provided
       expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
-      expect(response.challengeBase64).toBeDefined();
+      const response = data as { challenge: string; credentialIds: string[] };
+      expect(response.challenge).toBeDefined();
       expect(response.credentialIds).toHaveLength(0);
     });
 
@@ -122,14 +122,7 @@ describe('Passkey Authentication', async () => {
 
     it('should reject verification with invalid credential ID', async () => {
       const { response: res, error } = await call(signInWithPasskey, {
-        body: {
-          credentialId: '',
-          clientDataJSON: '{}',
-          authenticatorObject: '',
-          signature: '',
-          type: 'authentication',
-          email: signUpUser.email,
-        },
+        body: passkeySignInBody({ credentialId: '', email: signUpUser.email }),
         headers: defaultHeaders,
       });
 
@@ -138,15 +131,11 @@ describe('Passkey Authentication', async () => {
     });
 
     it('should reject verification with invalid JSON', async () => {
+      const body = passkeySignInBody({ credentialId: nanoid(32), email: signUpUser.email });
+      body.assertion.response.clientDataJSON = 'invalid-json';
+
       const { response: res, error } = await call(signInWithPasskey, {
-        body: {
-          credentialId: nanoid(32),
-          clientDataJSON: 'invalid-json',
-          authenticatorObject: '',
-          signature: '',
-          type: 'authentication',
-          email: signUpUser.email,
-        },
+        body,
         headers: defaultHeaders,
       });
 
@@ -226,14 +215,7 @@ describe('Passkey Authentication', async () => {
   describe('Security & Input Validation', () => {
     it('should handle very long credential ID', async () => {
       const { response: res, error } = await call(signInWithPasskey, {
-        body: {
-          credentialId: 'a'.repeat(1000),
-          clientDataJSON: '{}',
-          authenticatorObject: '',
-          signature: '',
-          type: 'authentication',
-          email: signUpUser.email,
-        },
+        body: passkeySignInBody({ credentialId: 'a'.repeat(1000), email: signUpUser.email }),
         headers: defaultHeaders,
       });
 
@@ -242,15 +224,11 @@ describe('Passkey Authentication', async () => {
     });
 
     it('should handle very long client data', async () => {
+      const body = passkeySignInBody({ credentialId: nanoid(32), email: signUpUser.email });
+      body.assertion.response.clientDataJSON = 'a'.repeat(10000);
+
       const { response: res, error } = await call(signInWithPasskey, {
-        body: {
-          credentialId: nanoid(32),
-          clientDataJSON: 'a'.repeat(10000),
-          authenticatorObject: '',
-          signature: '',
-          type: 'authentication',
-          email: signUpUser.email,
-        },
+        body,
         headers: defaultHeaders,
       });
 
@@ -275,7 +253,7 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
+      const response = data as { challenge: string; credentialIds: string[] };
       expect(response.credentialIds).toHaveLength(2);
       expect(response.credentialIds).toContain(passkey1.credentialId);
       expect(response.credentialIds).toContain(passkey2.credentialId);
@@ -289,9 +267,9 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(res.status).toBe(200);
-      const response = data as { challengeBase64: string; credentialIds: string[] };
+      const response = data as { challenge: string; credentialIds: string[] };
       expect(response.credentialIds).toHaveLength(0);
-      expect(response.challengeBase64).toBeDefined();
+      expect(response.challenge).toBeDefined();
     });
   });
 
@@ -309,15 +287,15 @@ describe('Passkey Authentication', async () => {
       });
 
       expect(challengeRes.status).toBe(200);
-      const challengeResponse = challengeData as { challengeBase64: string; credentialIds: string[] };
-      expect(challengeResponse.challengeBase64).toBeDefined();
+      const challengeResponse = challengeData as { challenge: string; credentialIds: string[] };
+      expect(challengeResponse.challenge).toBeDefined();
 
       // Perform passkey verification
       const { response: verificationRes } = await call(signInWithPasskey, {
         body: passkeySignInBody({
           credentialId: passkeyRecord.credentialId,
           email: signUpUser.email,
-          challenge: challengeResponse.challengeBase64,
+          challenge: challengeResponse.challenge,
         }),
         headers: defaultHeaders,
       });

@@ -51,8 +51,8 @@ export function ConfirmMfaOptions({ mfaRequired }: { mfaRequired: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const onPasskyConfirm = async () => {
-    const passkeyData = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
-    toggleMfa({ mfaRequired, passkeyData });
+    const { assertion } = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
+    toggleMfa({ mfaRequired, passkeyData: assertion });
     removeDialog();
   };
 

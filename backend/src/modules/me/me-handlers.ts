@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -39,7 +40,8 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 
   try {
     // --- Passkey verification ---
-    if (passkeyData) await validatePasskey(ctx, { ...passkeyData, userId: user.id });
+    if (passkeyData)
+      await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
 
     // --- TOTP verification ---
     if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });

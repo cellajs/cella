@@ -1,25 +1,28 @@
-import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
+import {
+  type AuthenticationResponseJSON,
+  browserSupportsWebAuthnAutofill,
+  bufferToBase64URLString,
+  type PublicKeyCredentialRequestOptionsJSON,
+  startAuthentication,
+  startRegistration,
+  WebAuthnAbortService,
+} from '@simplewebauthn/browser';
 import { generatePasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { generatePasskeyName } from '~/modules/me/helpers';
 import { getCurrentUser } from '~/modules/user/user-store';
 
+const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
+
 /**
  * Check if the browser supports conditional mediation (passkey autofill).
  * Returns true if the browser can show passkey suggestions in autofill UI.
  */
-export const isConditionalMediationAvailable = async (): Promise<boolean> => {
-  if (typeof window === 'undefined' || !window.PublicKeyCredential) return false;
-  try {
-    return (await PublicKeyCredential.isConditionalMediationAvailable?.()) ?? false;
-  } catch {
-    return false;
-  }
-};
+export const isConditionalMediationAvailable = (): Promise<boolean> => browserSupportsWebAuthnAutofill();
 
 /**
- * Start cancellable passkey autofill and return its AbortController.
+ * Start cancellable passkey autofill for the given abort signal.
  * An email selects explicit credential IDs; omission uses discoverable credentials.
  */
 export const startConditionalMediation = async (
@@ -31,55 +34,40 @@ export const startConditionalMediation = async (
   const { challenge, credentialIds } = await getChallenge(challengeQuery);
 
   // If email provided, use specific credential IDs; otherwise use discoverable credentials
-  const allowCredentials =
-    email && credentialIds?.length
-      ? credentialIds.map((id: string) => ({
-          id: new Uint8Array(decodeBase64(id)),
-          type: 'public-key' as const,
-          transports: ['internal'] as AuthenticatorTransport[],
-        }))
-      : [];
+  const optionsJSON: PublicKeyCredentialRequestOptionsJSON = {
+    challenge,
+    rpId: relyingPartyId,
+    userVerification: 'required',
+    allowCredentials: email && credentialIds?.length ? credentialIds.map(toAllowCredential) : [],
+  };
 
-  const credential = await navigator.credentials.get({
-    mediation: 'conditional',
-    signal,
-    publicKey: {
-      challenge,
-      rpId: appConfig.mode === 'development' ? 'localhost' : appConfig.domain,
-      userVerification: 'required',
-      allowCredentials, // Empty = discoverable credentials, or specific IDs for email
-    },
+  // The ceremony is managed by @simplewebauthn's singleton abort service; forward external aborts
+  signal.addEventListener('abort', () => WebAuthnAbortService.cancelCeremony(), { once: true });
+
+  const assertion = await startAuthentication({
+    optionsJSON,
+    useBrowserAutofill: true,
+    verifyBrowserAutofillInput: false,
   });
 
-  const { response, rawId } = validateCredentials(credential);
-  if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
-
-  onCredential({
-    credentialId: encodeBase64(new Uint8Array(rawId)),
-    clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    authenticatorObject: encodeBase64(new Uint8Array(response.authenticatorData)),
-    signature: encodeBase64(new Uint8Array(response.signature)),
-    type: 'authentication',
-  });
+  onCredential({ assertion, type: 'authentication' });
 };
 
 export type ConditionalMediationResult = {
-  credentialId: string;
-  clientDataJSON: string;
-  authenticatorObject: string;
-  signature: string;
+  assertion: AuthenticationResponseJSON;
   type: 'authentication';
 };
 
 /**
- * Initiates the WebAuthn registration flow to create a new passkey credential. It fetches a challenge from the backend, generates a unique user ID, and prompts the user to create a passkey. The resulting attestation object and client data are encoded in Base64 and returned for submission to the backend.
+ * Initiates the WebAuthn registration flow to create a new passkey credential. It fetches a
+ * challenge from the backend, generates a unique user handle, and prompts the user to create a
+ * passkey. Returns the registration response (base64url JSON) for submission to the backend.
  */
 export const getPasskeyRegistrationCredential = async () => {
   const { challenge } = await getChallenge({ type: 'registration' });
 
-  // Generate a unique user ID for this credential
-  const userId = new Uint8Array(20);
-  crypto.getRandomValues(userId);
+  // Generate a unique user handle for this credential
+  const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
   const isDevelopment = appConfig.mode === 'development';
 
@@ -89,16 +77,16 @@ export const getPasskeyRegistrationCredential = async () => {
     ? `${email} (${generatedName}) for ${appConfig.name}`
     : `${email} (${generatedName})`;
 
-  const credential = await navigator.credentials.create({
-    publicKey: {
+  const attestation = await startRegistration({
+    optionsJSON: {
       challenge,
       user: {
-        id: userId,
+        id: userHandle,
         name: nameOnDevice,
         displayName: nameOnDevice,
       },
       rp: {
-        id: isDevelopment ? 'localhost' : appConfig.domain,
+        id: relyingPartyId,
         name: appConfig.name,
       },
       pubKeyCredParams: [
@@ -114,17 +102,10 @@ export const getPasskeyRegistrationCredential = async () => {
     },
   });
 
-  const { response } = validateCredentials(credential);
-  if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
-
-  return {
-    attestationObject: encodeBase64(new Uint8Array(response.attestationObject)),
-    clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    nameOnDevice,
-  };
+  return { attestation, nameOnDevice };
 };
 
-/** Returns the passkey verify credential. */
+/** Returns the passkey verify credential (assertion plus the challenge query context). */
 export const getPasskeyVerifyCredential = async (
   query: Omit<PasskeyCredentialProps, 'type'> & {
     type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
@@ -132,46 +113,28 @@ export const getPasskeyVerifyCredential = async (
 ) => {
   const { challenge, credentialIds } = await getChallenge(query);
 
-  // Prepare allowCredentials for passkey request
-  const allowCredentials = credentialIds.map((id: string) => ({
-    id: new Uint8Array(decodeBase64(id)),
-    type: 'public-key' as const,
-    transports: ['internal'] as AuthenticatorTransport[],
-  }));
-
   // Prompt user to authenticate with a passkey
-  const credential = await navigator.credentials.get({
-    publicKey: { challenge, allowCredentials, userVerification: 'required' },
+  const assertion = await startAuthentication({
+    optionsJSON: {
+      challenge,
+      rpId: relyingPartyId,
+      userVerification: 'required',
+      allowCredentials: credentialIds.map(toAllowCredential),
+    },
   });
 
-  const { response, rawId } = validateCredentials(credential);
-
-  // Ensure authenticator response is valid
-  if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
-
-  // Encode all binary responses into Base64 and prepare body for BE
-  return {
-    credentialId: encodeBase64(new Uint8Array(rawId)),
-    clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
-    authenticatorObject: encodeBase64(new Uint8Array(response.authenticatorData)),
-    signature: encodeBase64(new Uint8Array(response.signature)),
-    ...query,
-  };
+  return { assertion, ...query };
 };
 
-const validateCredentials = (credential: Credential | null) => {
-  // Ensure response is a PublicKeyCredential
-  if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
-  return credential;
-};
+const toAllowCredential = (id: string) => ({
+  id,
+  type: 'public-key' as const,
+  transports: ['internal' as const],
+});
 
 const getChallenge = async (body: PasskeyCredentialProps) => {
-  //  Fetch a challenge from BE
-  const { challengeBase64, credentialIds } = await generatePasskeyChallenge({ body });
-
-  // Decode  challenge and wrap it in a Uint8Array (required format)
-  const raw = decodeBase64(challengeBase64);
-  const challenge = new Uint8Array(raw);
+  // Fetch a base64url challenge from BE; it doubles as the WebAuthn JSON options value
+  const { challenge, credentialIds } = await generatePasskeyChallenge({ body });
 
   return { challenge, credentialIds };
 };
