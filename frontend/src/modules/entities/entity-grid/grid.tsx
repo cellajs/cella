@@ -83,7 +83,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
 
   return (
     <div className="mb-12">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fit,minmax(330px,1fr))]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fill,minmax(330px,1fr))]">
         {visibleEntities.map((entity) => (
           <TileComponent key={entity.id} entity={entity} />
         ))}
