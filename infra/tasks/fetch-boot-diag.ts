@@ -48,7 +48,9 @@ export function selectDiagnostics(keys: string[], service: string): DiagSelectio
   const sorted = [...keys].sort();
   const markers = sorted.filter((k) => new RegExp(`^${svc}-(stage|[0-9])`).test(k)).slice(-30);
   const stageDetailKeys = sorted.filter((k) => k.startsWith(`${service}-stage-`)).slice(-10);
-  const latestFull = sorted.filter((k) => new RegExp(`^${svc}-[0-9]{8}T`).test(k)).at(-1);
+  // Pin to -boot.log: the sibling -events.jsonl sorts after it and would win
+  // .at(-1), replacing the readable transcript with raw OTLP records.
+  const latestFull = sorted.filter((k) => new RegExp(`^${svc}-[0-9]{8}T.*-boot\\.log$`).test(k)).at(-1);
   // Reconciler failure captures: <svc>-failed-* (slot logs), <svc>-pull-failed-*
   // (docker pull/auth stderr) and <svc>-migrate-failed-* (one-shot migrator
   // output). Keep the few most recent.
@@ -65,14 +67,38 @@ export interface DiagReader {
 }
 
 /**
+ * True when an `aws s3 ls <prefix>` result means the prefix holds zero objects:
+ * the AWS CLI exits 1 with no output at all in that case. That is a finding
+ * (nothing was ever uploaded), not a listing failure; real failures (denied,
+ * bad endpoint, bad bucket) carry stderr and must still abort.
+ */
+export function isEmptyPrefixLs(status: number | null, stdout: string, stderr: string): boolean {
+  return status === 1 && stdout.trim() === '' && stderr.trim() === '';
+}
+
+/**
+ * Actionable guidance for an EMPTY boot-diag prefix. Every boot uploads a
+ * transcript, success or failure, so an empty prefix means no VM ever got a
+ * diagnostic object into the bucket.
+ */
+export function emptyBootDiagGuidance(slug = '<slug>'): string[] {
+  return [
+    'boot-diag is empty: no VM has ever uploaded diagnostics (every boot uploads, even a healthy one).',
+    'Two known causes:',
+    `  1. The boot runner never ran (cloud-init or launcher failure). Open the VM's serial console in the Scaleway web console and look for ::${slug}:: markers and "BOOT FAILED (exit N)".`,
+    '  2. Uploads are denied: a boot principal provisioned before the IAM v2 model carries no Object Storage permission set, and Scaleway does not honor bucket-policy-only grants, so every boot-diag PUT fails. Re-run the infra CLI "Stack setup" apply with a bootstrap key; the current boot principal carries ObjectStorageObjectsWrite.',
+  ];
+}
+
+/**
  * Reads boot diagnostics through the AWS CLI while preserving actionable failures.
- * Listing errors abort; individual object errors are returned for inline rendering so one bad
- * object does not hide the rest.
+ * An empty prefix lists as '' (see isEmptyPrefixLs); other listing errors abort. Individual
+ * object errors are returned for inline rendering so one bad object does not hide the rest.
  */
 export function createAwsReader(endpoint: string, bucket: string): DiagReader {
   const prefix = `s3://${bucket}/boot-diag/`;
-  const run = (args: string[], what: string): string => {
-    const res = spawnSync('aws', args, { encoding: 'utf-8' });
+  const spawnAws = (args: string[]) => spawnSync('aws', args, { encoding: 'utf-8' });
+  const check = (res: ReturnType<typeof spawnAws>, what: string): string => {
     if (res.error) {
       if ((res.error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw new Error('aws CLI not found on PATH — install the AWS CLI to read boot diagnostics');
@@ -85,8 +111,12 @@ export function createAwsReader(endpoint: string, bucket: string): DiagReader {
     return res.stdout ?? '';
   };
   return {
-    list: () => run(['--endpoint-url', endpoint, 's3', 'ls', prefix], `s3 ls ${prefix}`),
-    cat: (key) => run(['--endpoint-url', endpoint, 's3', 'cp', `${prefix}${key}`, '-'], `s3 cp ${key}`),
+    list: () => {
+      const res = spawnAws(['--endpoint-url', endpoint, 's3', 'ls', prefix]);
+      if (!res.error && isEmptyPrefixLs(res.status, res.stdout ?? '', res.stderr ?? '')) return '';
+      return check(res, `s3 ls ${prefix}`);
+    },
+    cat: (key) => check(spawnAws(['--endpoint-url', endpoint, 's3', 'cp', `${prefix}${key}`, '-']), `s3 cp ${key}`),
   };
 }
 
@@ -139,6 +169,13 @@ export function renderDiagnostics(
     }
   };
 
+  const owned =
+    (sel.failureKeys?.length ?? 0) + sel.markers.length + sel.stageDetailKeys.length + (sel.latestFull ? 1 : 0);
+  if (owned === 0) {
+    warn(`No boot diagnostics for ${service}: nothing was ever uploaded for this service`);
+    return;
+  }
+
   // Failure captures first. This is usually the actual answer (pull/auth error
   // or the failed slot's logs), so surface it before the boot transcript.
   for (const key of sel.failureKeys ?? []) {
@@ -186,7 +223,12 @@ export function parseArgs(argv: string[]): CliArgs {
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { bucket, service, region } = parseArgs(argv);
   const reader = createAwsReader(`https://s3.${region}.scw.cloud`, bucket);
-  const selection = selectDiagnostics(parseKeys(reader.list()), service);
+  const keys = parseKeys(reader.list());
+  if (keys.length === 0) {
+    for (const line of emptyBootDiagGuidance()) console.info(line);
+    return;
+  }
+  const selection = selectDiagnostics(keys, service);
   // CI gets collapsible groups; a manual local run gets plain headers.
   renderDiagnostics(service, selection, reader, console.info, process.env.GITHUB_ACTIONS === 'true' ? 'ci' : 'plain');
 }

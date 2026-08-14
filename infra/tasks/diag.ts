@@ -1,11 +1,19 @@
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
-import { createAwsReader, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag';
+import {
+  createAwsReader,
+  emptyBootDiagGuidance,
+  parseKeys,
+  renderDiagnostics,
+  selectDiagnostics,
+  summarizeBundles,
+} from './fetch-boot-diag';
 
 interface ResolvedTarget {
   bucket: string;
   region: string;
   serviceNames: readonly string[];
+  slug: string;
 }
 
 /** Derive bucket/region/service-list from appConfig for the given app mode. */
@@ -16,7 +24,7 @@ async function resolveTarget(mode: string): Promise<ResolvedTarget> {
   const { deriveInfra } = await import('../lib/naming');
   const { serviceNames } = await import('../compose/compose');
   const { naming, region } = deriveInfra(appConfig);
-  return { bucket: naming.bootDiagBucket, region, serviceNames };
+  return { bucket: naming.bootDiagBucket, region, serviceNames, slug: appConfig.slug };
 }
 
 /** Render the `--list` overview as an aligned plain-text table. */
@@ -98,6 +106,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   // A list failure (missing aws CLI, bad creds, wrong bucket) throws here with a
   // clear message when the service slug is invalid.
   const keys = parseKeys(reader.list());
+
+  if (keys.length === 0 && !wantReplay) {
+    for (const line of emptyBootDiagGuidance(target.slug)) console.info(`[diag] ${line}`);
+    return;
+  }
 
   if (wantList) {
     printSummary(keys, services);
