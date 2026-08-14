@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
-import { DropdownMenu, DropdownMenuContentNoPortal, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 // in this menu we have only drag button
 /** Renders the custom side menu component. */
@@ -111,9 +111,13 @@ function DragHandle({
       }}
     >
       <DropdownMenuTrigger render={gripButton} />
-      <DropdownMenuContentNoPortal side="left" className="bn-menu-dropdown bn-drag-handle-menu">
+      <DropdownMenuContent
+        container={editor.portalElement}
+        side="left"
+        className="bn-menu-dropdown bn-drag-handle-menu"
+      >
         <ResetBlockTypeItem editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
-      </DropdownMenuContentNoPortal>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }

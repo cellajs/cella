@@ -83,7 +83,7 @@ function Sidebar({
 
   if (collapsible === 'none') {
     return (
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider delay={0}>
         <div
           data-slot="sidebar"
           className={cn('flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground', className)}
@@ -96,7 +96,7 @@ function Sidebar({
   }
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delay={0}>
       <div
         className="group peer hidden text-sidebar-foreground md:block"
         data-state={state}

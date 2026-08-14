@@ -128,10 +128,7 @@ function SelectTrigger({
   );
 }
 
-/**
- * Renders select content without a portal for custom layering.
- */
-export function SelectContentNoPortal({
+function SelectContent({
   className,
   children,
   position = 'popper',
@@ -139,6 +136,8 @@ export function SelectContentNoPortal({
   side = 'bottom',
   sideOffset,
   alignOffset,
+  alignItemWithTrigger,
+  container,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & {
   className?: string;
@@ -148,40 +147,37 @@ export function SelectContentNoPortal({
   side?: 'top' | 'bottom' | 'left' | 'right';
   sideOffset?: number;
   alignOffset?: number;
+  alignItemWithTrigger?: boolean;
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals selects into editor.portalElement
+  container?: SelectPrimitive.Portal.Props['container'];
 }) {
   return (
-    <SelectPrimitive.Positioner
-      align={align}
-      side={side}
-      sideOffset={position === 'popper' ? (sideOffset ?? 1) : sideOffset}
-      alignOffset={alignOffset}
-      alignItemWithTrigger={position !== 'popper'}
-      className="z-270"
-    >
-      <SelectPrimitive.Popup
-        data-slot="select-content"
-        className={cn(
-          'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-closed:animate-out data-open:animate-in',
-          className,
-        )}
-        {...props}
+    <SelectPrimitive.Portal container={container}>
+      <SelectPrimitive.Positioner
+        align={align}
+        side={side}
+        sideOffset={position === 'popper' ? (sideOffset ?? 1) : sideOffset}
+        alignOffset={alignOffset}
+        alignItemWithTrigger={alignItemWithTrigger ?? position !== 'popper'}
+        className="z-270"
       >
-        <SelectScrollUpButton />
-        <SelectPrimitive.List
-          className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}
+        <SelectPrimitive.Popup
+          data-slot="select-content"
+          className={cn(
+            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-closed:animate-out data-open:animate-in',
+            className,
+          )}
+          {...props}
         >
-          {children}
-        </SelectPrimitive.List>
-        <SelectScrollDownButton />
-      </SelectPrimitive.Popup>
-    </SelectPrimitive.Positioner>
-  );
-}
-
-function SelectContent(props: React.ComponentProps<typeof SelectContentNoPortal>) {
-  return (
-    <SelectPrimitive.Portal>
-      <SelectContentNoPortal {...props} />
+          <SelectScrollUpButton />
+          <SelectPrimitive.List
+            className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}
+          >
+            {children}
+          </SelectPrimitive.List>
+          <SelectScrollDownButton />
+        </SelectPrimitive.Popup>
+      </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
   );
 }

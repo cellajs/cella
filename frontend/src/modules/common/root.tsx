@@ -31,7 +31,7 @@ export function Root() {
   }, []);
 
   return (
-    <TooltipProvider disableHoverableContent delayDuration={300} skipDelayDuration={0}>
+    <TooltipProvider delay={300} timeout={0}>
       <HeadContent />
       <Outlet />
       <ReloadPrompt />
