@@ -2,6 +2,7 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
+import { syntaxHighlighter } from '@blocknote/code-block';
 import { withCollaboration } from '@blocknote/core/yjs';
 import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
@@ -137,7 +138,7 @@ function BlockNote({
     dictionary: getDictionary(),
     // Caller extensions first: BlockNote keeps the first extension per key and drops later
     // duplicates, so a caller-provided checkedExtension (e.g. persisted: true) must win over the default.
-    extensions: [...(extensions ?? []), checkedExtension()],
+    extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter],
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
   };
 

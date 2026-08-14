@@ -33,7 +33,7 @@
     "@opentelemetry/sdk-node": "^0.221.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
     "drizzle-orm": "1.0.0-rc.3",
-    "hono": "^4.13.1",
+    "hono": "^4.13.2",
     "pg-format": "^1.0.4",
     "pg-logical-replication": "^2.5.0",
     "pino": "^10.3.1",

@@ -1,4 +1,3 @@
-import { codeBlockOptions } from '@blocknote/code-block';
 import {
   BlockNoteSchema,
   createCodeBlockSpec,
@@ -110,10 +109,7 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(), // Adds Notify block
-    codeBlock: createCodeBlockSpec({
-      ...codeBlockConfig,
-      createHighlighter: codeBlockOptions.createHighlighter,
-    }),
+    codeBlock: createCodeBlockSpec(codeBlockConfig),
   },
   inlineContentSpecs: { mention: MentionSchema },
 });
