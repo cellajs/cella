@@ -13,19 +13,19 @@
     "@inquirer/prompts": "^8.5.2",
     "nanoid": "^6.0.1",
     "ora": "^9.4.1",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "pg-format": "^1.0.4",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "26.1.2",
-    "@types/pg": "^8.20.4",
+    "@types/node": "26.2.0",
+    "@types/pg": "^8.21.0",
     "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.33",
     "artillery-plugin-ensure": "^1.27.0",
-    "tsx": "^4.23.7",
+    "tsx": "^4.23.12",
     "typescript": "^6.0.3"
   }
 }
