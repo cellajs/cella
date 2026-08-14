@@ -646,7 +646,7 @@ export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'confirm-mfa' | 'magic';
+    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'magic';
     token: string;
   };
   query?: never;

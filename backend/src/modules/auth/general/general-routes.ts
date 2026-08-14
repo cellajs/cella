@@ -5,7 +5,7 @@ import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
-import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
+import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 
 const authGeneralRoutes = {
@@ -114,7 +114,7 @@ const authGeneralRoutes = {
     description:
       'Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
+      params: z.object({ type: z.enum(invokableTokenTypes), token: z.string() }),
     },
     responses: {
       302: {

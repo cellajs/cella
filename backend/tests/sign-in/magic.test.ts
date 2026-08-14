@@ -184,4 +184,15 @@ describe('Magic link authentication', async () => {
       );
     });
   });
+
+  describe('Invoke token type restriction', () => {
+    it('should reject invoking a confirm-mfa token', async () => {
+      // confirm-mfa lives only in a cookie; the invoke route's param schema excludes it. Raw
+      // request because the generated SDK already rejects the type client-side.
+      const { baseApp } = await import('#/routes');
+      const res = await baseApp.request(`/auth/invoke-token/confirm-mfa/${nanoid(40)}`, { headers: defaultHeaders });
+
+      expect(res.status).toBe(400);
+    });
+  });
 });

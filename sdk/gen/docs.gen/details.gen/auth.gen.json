@@ -176,7 +176,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
           },
           "token": { "type": "string", "required": true }
         }

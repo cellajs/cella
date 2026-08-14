@@ -497,7 +497,7 @@ export const zCheckEmailBody = z.object({
 export const zCheckEmailResponse = z.void();
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic']),
+  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
   token: z.string(),
 });
 
