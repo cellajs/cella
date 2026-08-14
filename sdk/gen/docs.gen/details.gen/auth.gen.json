@@ -250,7 +250,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
           },
           "id": { "type": "string", "required": true, "maxLength": 50 }
         }

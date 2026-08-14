@@ -685,7 +685,7 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'confirm-mfa' | 'magic';
+    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'magic';
     id: string;
   };
   query?: never;

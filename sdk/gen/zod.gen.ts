@@ -502,7 +502,7 @@ export const zInvokeTokenPath = z.object({
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic']),
+  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
 });
 

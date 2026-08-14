@@ -1,5 +1,4 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
@@ -139,7 +138,7 @@ const authGeneralRoutes = {
     description:
       'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), id: validIdSchema }),
+      params: z.object({ type: z.enum(invokableTokenTypes), id: validIdSchema }),
     },
     responses: {
       200: {

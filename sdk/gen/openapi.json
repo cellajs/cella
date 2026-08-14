@@ -2539,7 +2539,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
