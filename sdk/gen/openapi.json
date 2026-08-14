@@ -2837,6 +2837,9 @@
                     "format": "email",
                     "minLength": 4,
                     "maxLength": 255
+                  },
+                  "redirect": {
+                    "type": "string"
                   }
                 },
                 "required": ["email"]

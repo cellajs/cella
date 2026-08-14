@@ -12,6 +12,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { hashToken } from '#/utils/hash-token';
+import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
@@ -20,8 +21,11 @@ import { magicLinkEmail } from '../../../../emails';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
-  const { email } = ctx.req.valid('json');
+  const { email, redirect } = ctx.req.valid('json');
   const strategy = 'magic';
+
+  // Validated here and re-validated at invoke; invalid input degrades to the default path.
+  const redirectPath = isValidRedirectPath(redirect) || null;
 
   // Check strategy enabled
   if (!appConfig.enabledAuthStrategies.includes(strategy)) {
@@ -71,6 +75,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
       userId: user.id,
       email: normalizedEmail,
       createdBy: user.id,
+      redirectPath,
       expiresAt: createDate(new TimeSpan(15, 'm')),
     })
     .returning();

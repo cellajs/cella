@@ -1,12 +1,14 @@
 import { appConfig } from 'shared';
+import { maxLength } from '#/db/utils/constraints';
 
 /**
  * Returns a normalized same-origin redirect path or false.
  * It rejects absolute/scheme-relative URLs, authority tricks, encoded bypasses, control
- * characters, and backend routes so callers never replay untrusted input.
+ * characters, and backend routes so callers never replay untrusted input. Length is capped
+ * at the standard field size so validated paths always fit stored token columns.
  */
 export function isValidRedirectPath(path: unknown): string | false {
-  if (typeof path !== 'string' || path.length === 0) return false;
+  if (typeof path !== 'string' || path.length === 0 || path.length > maxLength.field) return false;
 
   // Decode once so encoded bypasses (e.g. `%2F%2Fhost`) are evaluated as the
   // characters they actually represent.
@@ -39,6 +41,8 @@ export function isValidRedirectPath(path: unknown): string | false {
   // Never redirect into backend-only routes.
   if (resolved.pathname.startsWith('/api/')) return false;
 
-  // Return the normalized relative path only.
-  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  // Return the normalized relative path only. Normalization can re-encode (lengthen) the
+  // input, so re-check the cap on the result.
+  const normalized = `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  return normalized.length > maxLength.field ? false : normalized;
 }

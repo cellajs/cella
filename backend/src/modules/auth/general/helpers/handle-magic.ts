@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
-import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
+import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import type { TokenModel } from '#/modules/auth/tokens-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -32,7 +32,10 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {
   // Start MFA challenge if the user has MFA enabled
   const mfaRedirectPath = await initiateMfa(ctx, user);
 
-  const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(user);
+  const redirectPath = resolvePostAuthRedirectPath(user, {
+    redirectPath: token.redirectPath,
+    mfaPath: mfaRedirectPath,
+  });
   const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
   // If MFA is not required, set user session immediately

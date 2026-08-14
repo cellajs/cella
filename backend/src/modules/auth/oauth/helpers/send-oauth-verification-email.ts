@@ -18,7 +18,7 @@ import { oauthVerificationEmail } from '../../../../../emails';
 interface Props {
   userId: string;
   oauthAccountId: string;
-  redirectPath?: string;
+  redirectPath?: string | null;
 }
 
 /**
@@ -62,6 +62,8 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
       email,
       createdBy: user.id,
       ...(oauthAccountId && { oauthAccountId: oauthAccountId }),
+      // Kept on the token row (not the emailed URL) so the deep link doesn't leak into email bodies
+      redirectPath: redirectPath || null,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     })
     .returning();
@@ -80,8 +82,6 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   // Create verification link. Concatenate onto backendAuthUrl (which already ends in /auth) so the
   // /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
   const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
-
-  if (redirectPath) verificationURL.searchParams.set('redirectAfter', redirectPath);
 
   // Prepare & send email
   const staticProps = {

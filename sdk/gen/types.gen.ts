@@ -928,6 +928,7 @@ export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 export type SendMagicLinkData = {
   body: {
     email: string;
+    redirect?: string;
   };
   path?: never;
   query?: never;

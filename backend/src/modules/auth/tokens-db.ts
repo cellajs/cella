@@ -25,6 +25,7 @@ export const tokensTable = snakeCase.table(
     userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
     oauthAccountId: uuid().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
     inactiveMembershipId: uuid(),
+    redirectPath: varchar({ length: maxLength.field }),
     createdBy: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
 import { MailIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +32,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
   const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode } = useAuthStore();
+  const { redirect } = useSearch({ strict: false });
 
   const isMobile = window.innerWidth < 640;
 
@@ -42,7 +44,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   // Send magic link for email-based sign-up
   const { mutate: sendMagic, isPending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email } }),
+    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email, redirect } }),
     onSuccess: () => {
       setMagicLinkMode('signup');
       setStep('magicLinkSent', form.getValues('email') || email);

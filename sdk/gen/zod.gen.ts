@@ -552,6 +552,7 @@ export const zSignOutResponse = z.void();
 
 export const zSendMagicLinkBody = z.object({
   email: z.email().min(4).max(255),
+  redirect: z.string().optional(),
 });
 
 /**

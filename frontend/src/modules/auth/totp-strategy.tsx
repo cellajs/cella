@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { SmartphoneIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { redirect } = useSearch({ strict: false });
+  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
 
   const mode = useUIStore((state) => state.mode);
 
@@ -28,7 +30,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
       useAuthStore.getState().setSignedIn(true);
-      navigate({ to: appConfig.defaultRedirectPath, replace: true });
+      navigate({ to: redirectPath, replace: true });
     },
     onError: () => toaster.error(t('error:totp_verification_failed')),
   });

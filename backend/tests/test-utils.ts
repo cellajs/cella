@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
 
-type AuthStrategy = 'passkey' | 'oauth' | 'totp';
+type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = {

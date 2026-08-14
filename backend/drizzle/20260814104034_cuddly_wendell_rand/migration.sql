@@ -1,0 +1,1 @@
+ALTER TABLE "tokens" ADD COLUMN "redirect_path" varchar(255);

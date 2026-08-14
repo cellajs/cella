@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
-import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
+import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
@@ -315,13 +315,17 @@ const createOAuthAccount = async (
  */
 const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
   const { ctx, type, oauthAccount, redirectAfter } = info;
-  const redirectAfterPath = isValidRedirectPath(redirectAfter) || appConfig.defaultRedirectPath;
+  // Stored on the verification token; null means "use the default path" at the final hop.
+  const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
 
   if (type === 'verified') {
     // Start MFA challenge if the user has MFA enabled
     const mfaRedirectPath = await initiateMfa(ctx, info.user);
 
-    const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(info.user);
+    const redirectPath = resolvePostAuthRedirectPath(info.user, {
+      redirectPath: redirectAfter,
+      mfaPath: mfaRedirectPath,
+    });
     const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
 
     // If MFA is not required, set session immediately
