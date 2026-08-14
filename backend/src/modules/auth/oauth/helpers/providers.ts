@@ -58,7 +58,6 @@ const createProviderClient = ({
   resolveIssuerFromIdToken,
 }: ProviderSetup) => {
   const client: oauth.Client = { client_id: clientId };
-  const clientAuth = oauth.ClientSecretPost(clientSecret);
 
   return {
     /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
@@ -92,6 +91,9 @@ const createProviderClient = ({
       { codeVerifier, nonce }: OAuthFlowContext = {},
     ): Promise<{ accessToken: string }> {
       try {
+        // Created lazily: ClientSecretPost rejects empty secrets, and they may legitimately be
+        // absent at module load (CI openapi generation, deployments without this provider)
+        const clientAuth = oauth.ClientSecretPost(clientSecret);
         const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
         const response = await oauth.authorizationCodeGrantRequest(
           as,
