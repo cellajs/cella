@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.9.1](https://github.com/cellajs/cella/compare/0.9.0...0.9.1) (2026-08-14)
+
+
+### 🎉 New features
+
+* **auth:** carry post-auth deep-link redirect through magic link, OAuth and MFA ([#1054](https://github.com/cellajs/cella/issues/1054)) ([e297a3c](https://github.com/cellajs/cella/commit/e297a3c5dc5afc46eeab504f41d7e169c4c095fa))
+
+
+### 🐞 Bug fixes
+
+* **auth:** create OAuth client auth lazily so empty secrets don't crash module load ([#1053](https://github.com/cellajs/cella/issues/1053)) ([960c00f](https://github.com/cellajs/cella/commit/960c00f1ea2fef0dfc15a759c56206afc131ec05))
+* **backend:** derive membership mock ancestor IDs from the channel row ([#1048](https://github.com/cellajs/cella/issues/1048)) ([c2ef748](https://github.com/cellajs/cella/commit/c2ef7485abc1396a5716fcb17edc20e7502d0b72))
+* **infra:** boot-diag empty-bucket guidance and boot.log selection ([#1049](https://github.com/cellajs/cella/issues/1049)) ([c73c84b](https://github.com/cellajs/cella/commit/c73c84b84cd115132fdb1afec74c459a7399f7a1))
+* **tests:** adopt projectcampus fixes — hierarchy seeding, fixture parity, flaky cleanup ([#1046](https://github.com/cellajs/cella/issues/1046)) ([be54736](https://github.com/cellajs/cella/commit/be54736548ea3c5e79cc5b7debd17be5efe3a2a9))
+
+
+### 🔧 Small improvements
+
+* **auth:** replace deprecated arctic and [@oslojs](https://github.com/oslojs) packages ([#1052](https://github.com/cellajs/cella/issues/1052)) ([837e570](https://github.com/cellajs/cella/commit/837e570c8104e87b3c12b71f8bd8673933b12702))
+* **blocknote:** align UI adapter with @blocknote/shadcn 0.53 Base UI contract ([#1055](https://github.com/cellajs/cella/issues/1055)) ([848d116](https://github.com/cellajs/cella/commit/848d1165e2cae1e61398780285343cf7afa46668))
+* **infra:** shared iam-client + doc sweeps (teardown, vocabulary, credentials) ([#1045](https://github.com/cellajs/cella/issues/1045)) ([5dc9921](https://github.com/cellajs/cella/commit/5dc9921f25976196edf37129350d70ddfba3e1b6))
+
+
+### 📖 Documentation
+
+* **cella:** sync skill routes commit/ship through the CLI, never plain git ([#1042](https://github.com/cellajs/cella/issues/1042)) ([5fe6e8d](https://github.com/cellajs/cella/commit/5fe6e8d2c620df48d135a86a5204253bf8dfb453))
+* **skills:** consolidate agent skills into cella/skills ([#1043](https://github.com/cellajs/cella/issues/1043)) ([d4d080e](https://github.com/cellajs/cella/commit/d4d080ef481721e94dd41efc518c635d9d622111))
+
+
+### 🧹 Chores
+
+* **deps:** minor/patch dependency sweep, hold @hono/zod-openapi at 1.5.1 ([#1051](https://github.com/cellajs/cella/issues/1051)) ([a75b7f2](https://github.com/cellajs/cella/commit/a75b7f2ff24d646047c5a773302c5184fc93d9b6))
+* **lint:** clear comment-style backlog and make the style pass blocking ([#1050](https://github.com/cellajs/cella/issues/1050)) ([93bbd15](https://github.com/cellajs/cella/commit/93bbd15887e60f31b6484d3559ea122e2092cdd7))
+
 ## [0.9.0](https://github.com/cellajs/cella/compare/0.8.8...0.9.0) (2026-08-13)
 
 
