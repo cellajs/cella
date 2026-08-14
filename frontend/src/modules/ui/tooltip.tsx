@@ -4,24 +4,15 @@ import { cn } from '~/utils/cn';
 
 /** Renders the styled tooltip provider primitive. */
 export function TooltipProvider({
-  delayDuration,
-  skipDelayDuration,
-  disableHoverableContent: _disableHoverableContent,
+  delay = 200,
+  timeout = 400,
   ...props
 }: {
   children: ReactNode;
-  delayDuration?: number;
-  skipDelayDuration?: number;
-  disableHoverableContent?: boolean;
+  delay?: number;
+  timeout?: number;
 }) {
-  return (
-    <TooltipPrimitive.Provider
-      data-slot="tooltip-provider"
-      delay={delayDuration ?? 200}
-      timeout={skipDelayDuration ?? 400}
-      {...props}
-    />
-  );
+  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} timeout={timeout} {...props} />;
 }
 
 /** Renders the styled tooltip primitive. */
@@ -47,6 +38,7 @@ export function TooltipContent({
   side,
   align,
   hideWhenDetached,
+  container,
   children,
   ...props
 }: {
@@ -55,11 +47,13 @@ export function TooltipContent({
   side?: 'top' | 'bottom' | 'left' | 'right';
   align?: 'start' | 'center' | 'end';
   hideWhenDetached?: boolean;
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals tooltips into editor.portalElement
+  container?: TooltipPrimitive.Portal.Props['container'];
   children?: ReactNode;
   hidden?: boolean;
 } & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal container={container}>
       <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset} align={align} className="z-200">
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"

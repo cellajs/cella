@@ -1,5 +1,5 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import { type ComponentProps, type ComponentPropsWithoutRef, type ReactNode, type RefAttributes, useRef } from 'react';
+import type { ComponentProps, RefAttributes } from 'react';
 import { cn } from '~/utils/cn';
 
 /** Renders the styled popover primitive. */
@@ -22,6 +22,7 @@ export function PopoverContent({
   anchor,
   collisionPadding,
   finalFocus,
+  container,
   children,
   ...props
 }: {
@@ -33,10 +34,12 @@ export function PopoverContent({
   anchor?: Element | null | React.RefObject<Element | null>;
   collisionPadding?: number;
   finalFocus?: PopoverPrimitive.Popup.Props['finalFocus'];
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals popovers into editor.portalElement
+  container?: PopoverPrimitive.Portal.Props['container'];
   children?: React.ReactNode;
 } & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -59,50 +62,6 @@ export function PopoverContent({
         </PopoverPrimitive.Popup>
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
-  );
-}
-
-/** Renders the styled popover content no portal primitive. */
-export function PopoverContentNoPortal({
-  className,
-  align = 'center',
-  sideOffset = 4,
-  side,
-  alignOffset,
-  children,
-  ...props
-}: {
-  className?: string;
-  align?: 'start' | 'center' | 'end';
-  sideOffset?: number;
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  alignOffset?: number;
-  children?: ReactNode;
-} & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  return (
-    <div ref={containerRef} style={{ display: 'contents' }}>
-      <PopoverPrimitive.Portal container={containerRef}>
-        <PopoverPrimitive.Positioner
-          side={side}
-          sideOffset={sideOffset}
-          align={align}
-          alignOffset={alignOffset}
-          className="z-200"
-        >
-          <PopoverPrimitive.Popup
-            data-slot="popover-content"
-            className={cn(
-              'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 w-72 origin-(--transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-closed:animate-out data-open:animate-in',
-              className,
-            )}
-            {...props}
-          >
-            {children}
-          </PopoverPrimitive.Popup>
-        </PopoverPrimitive.Positioner>
-      </PopoverPrimitive.Portal>
-    </div>
   );
 }
 

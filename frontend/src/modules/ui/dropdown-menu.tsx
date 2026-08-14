@@ -1,6 +1,6 @@
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
-import { type ComponentProps, type HTMLAttributes, type RefAttributes, type RefObject, useRef } from 'react';
+import type { ComponentProps, HTMLAttributes, RefAttributes, RefObject } from 'react';
 import { cn } from '~/utils/cn';
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
@@ -15,10 +15,7 @@ function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props & RefAttr
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
-/**
- * Renders dropdown content without a portal for custom layering.
- */
-export function DropdownMenuContentNoPortal({
+function DropdownMenuContent({
   className,
   sideOffset = 4,
   side,
@@ -26,6 +23,7 @@ export function DropdownMenuContentNoPortal({
   anchor,
   collisionPadding,
   finalFocus,
+  container,
   ...props
 }: MenuPrimitive.Popup.Props &
   RefAttributes<HTMLDivElement> & {
@@ -35,38 +33,29 @@ export function DropdownMenuContentNoPortal({
     anchor?: Element | null | RefObject<Element | null>;
     collisionPadding?: number;
     finalFocus?: MenuPrimitive.Popup.Props['finalFocus'];
+    // `container` is part of @blocknote/shadcn's component contract: BlockNote portals menus into editor.portalElement
+    container?: MenuPrimitive.Portal.Props['container'];
   }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   return (
-    <div ref={containerRef} style={{ display: 'contents' }}>
-      <MenuPrimitive.Portal container={containerRef}>
-        <MenuPrimitive.Positioner
-          sideOffset={sideOffset}
-          side={side}
-          align={align}
-          anchor={anchor}
-          collisionPadding={collisionPadding}
-          className="z-270"
-        >
-          <MenuPrimitive.Popup
-            data-slot="dropdown-menu-content"
-            className={cn(
-              'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-closed:animate-out data-open:animate-in',
-              className,
-            )}
-            finalFocus={finalFocus}
-            {...props}
-          />
-        </MenuPrimitive.Positioner>
-      </MenuPrimitive.Portal>
-    </div>
-  );
-}
-
-function DropdownMenuContent({ ...props }: ComponentProps<typeof DropdownMenuContentNoPortal>) {
-  return (
-    <MenuPrimitive.Portal>
-      <DropdownMenuContentNoPortal {...props} />
+    <MenuPrimitive.Portal container={container}>
+      <MenuPrimitive.Positioner
+        sideOffset={sideOffset}
+        side={side}
+        align={align}
+        anchor={anchor}
+        collisionPadding={collisionPadding}
+        className="z-270"
+      >
+        <MenuPrimitive.Popup
+          data-slot="dropdown-menu-content"
+          className={cn(
+            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-closed:animate-out data-open:animate-in',
+            className,
+          )}
+          finalFocus={finalFocus}
+          {...props}
+        />
+      </MenuPrimitive.Positioner>
     </MenuPrimitive.Portal>
   );
 }
@@ -217,12 +206,14 @@ function DropdownMenuSubTrigger({
 
 function DropdownMenuSubContent({
   className,
+  container,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
   className?: string;
+  container?: MenuPrimitive.Portal.Props['container'];
 }) {
   return (
-    <MenuPrimitive.Portal>
+    <MenuPrimitive.Portal container={container}>
       <MenuPrimitive.Positioner className="z-270">
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-sub-content"
