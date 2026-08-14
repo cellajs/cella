@@ -4,9 +4,7 @@ import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
-import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
-import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
@@ -319,20 +317,7 @@ const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; 
   const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
 
   if (type === 'verified') {
-    // Start MFA challenge if the user has MFA enabled
-    const mfaRedirectPath = await initiateMfa(ctx, info.user);
-
-    const redirectPath = resolvePostAuthRedirectPath(info.user, {
-      redirectPath: redirectAfter,
-      mfaPath: mfaRedirectPath,
-    });
-    const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
-
-    // If MFA is not required, set session immediately
-    if (!mfaRedirectPath) await setUserSession(ctx, info.user, oauthAccount.provider);
-
-    // Redirect to determined URL
-    return ctx.redirect(redirectUrl, 302);
+    return finishSignIn(ctx, info.user, oauthAccount.provider, redirectAfter);
   }
   // For unverified accounts, send an OAuth verification email. Awaited so the verification token is
   // persisted before we redirect the user to the "check your email" page.

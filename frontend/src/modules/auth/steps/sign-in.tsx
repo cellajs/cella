@@ -15,6 +15,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem } from '~/modules/ui/field';
@@ -39,7 +40,7 @@ export function SignInStep() {
 
   const { lastUser, reset: clearUserStore } = useUserStore();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
-  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+  const redirectPath = usePostAuthRedirect();
 
   const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
