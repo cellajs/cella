@@ -1,4 +1,4 @@
-import type { ConfigMode, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
+import type { ConfigMode, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -39,12 +39,7 @@ export const config = {
    * `lifecycle: 'owned'` additionally lets CDC garbage-collect embedded rows that no live
    * host references; the default 'shared' only strips references to dead rows.
    */
-  productEmbeddings: [] as readonly {
-    readonly embeddedProduct: (typeof hierarchy.productTypes)[number];
-    readonly hostProduct: (typeof hierarchy.productTypes)[number];
-    readonly hostColumn: string;
-    readonly lifecycle?: 'shared' | 'owned';
-  }[],
+  productEmbeddings: [] as readonly ProductEmbedding<(typeof hierarchy.productTypes)[number]>[],
 
   /**
    * User menu structure of channel entities with optional nested subentities.
