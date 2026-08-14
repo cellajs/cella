@@ -15,6 +15,8 @@ interface TabRow {
   id: string;
   label: TKey;
   resource?: TKey;
+  /** Pre-translated label, resolved once per render so module-scope renderers can use it. */
+  name: string;
   order: number;
   locked?: boolean;
   visible: boolean;
@@ -23,6 +25,11 @@ interface TabRow {
 /** Stable row key getter, defined outside the component to keep its identity stable. */
 function rowKeyGetter(row: TabRow) {
   return row.id;
+}
+
+/** Stable drag preview renderer, defined at module scope so DataGrid's prop identity stays stable. */
+function renderRowDragPreview(row: TabRow) {
+  return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
 }
 
 interface TabsArrangementCardProps {
@@ -54,7 +61,11 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     order,
     locked,
   }));
-  const rows = orderBySlotConfig(candidates, slotConfig).map((tab) => ({ ...tab, visible: !hidden.has(tab.id) }));
+  const rows = orderBySlotConfig(candidates, slotConfig).map((tab) => ({
+    ...tab,
+    name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
+    visible: !hidden.has(tab.id),
+  }));
 
   const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
 
@@ -86,11 +97,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'label',
       name: '',
       minWidth: 160,
-      renderCell: ({ row }) => (
-        <span className="truncate text-sm">
-          {t(row.label, { resource: row.resource ? t(row.resource).toLowerCase() : '' })}
-        </span>
-      ),
+      renderCell: ({ row }) => <span className="truncate text-sm">{row.name}</span>,
     },
     {
       key: 'visible',
@@ -117,6 +124,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
         readOnly
         enableVirtualization={false}
         onRowReorder={onRowReorder}
+        renderRowDragPreview={renderRowDragPreview}
       />
     </ToolCard>
   );
