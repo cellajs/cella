@@ -1,9 +1,9 @@
 import { decodeBase32 } from '@oslojs/encoding';
-import { verifyTOTPWithGracePeriod } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
+import { verifyTOTPWithGracePeriod } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 

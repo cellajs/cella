@@ -1,4 +1,4 @@
-import { index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -13,6 +13,8 @@ export const passkeysTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     credentialId: varchar({ length: maxLength.url }).notNull(),
     publicKey: varchar({ length: maxLength.url }).notNull(),
+    // WebAuthn signature counter, persisted after each assertion to detect cloned authenticators
+    counter: integer().notNull().default(0),
     deviceName: varchar({ length: maxLength.field }),
     deviceType: varchar({ enum: ['desktop', 'mobile'] })
       .notNull()

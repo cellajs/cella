@@ -579,10 +579,29 @@
             "type": "object",
             "required": false,
             "properties": {
-              "credentialId": { "type": "string", "required": true },
-              "clientDataJSON": { "type": "string", "required": true },
-              "authenticatorObject": { "type": "string", "required": true },
-              "signature": { "type": "string", "required": true }
+              "id": { "type": "string", "required": true },
+              "rawId": { "type": "string", "required": true },
+              "response": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "clientDataJSON": { "type": "string", "required": true },
+                  "authenticatorData": { "type": "string", "required": true },
+                  "signature": { "type": "string", "required": true },
+                  "userHandle": { "type": "string", "required": false }
+                }
+              },
+              "authenticatorAttachment": {
+                "type": "string",
+                "required": false,
+                "enum": ["cross-platform", "platform"]
+              },
+              "clientExtensionResults": { "type": "object", "required": false },
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["public-key"]
+              }
             }
           },
           "totpCode": { "type": "string", "required": false },

@@ -1,6 +1,6 @@
 import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase64 } from '@oslojs/encoding';
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
@@ -18,7 +18,7 @@ import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { parseAndValidatePasskeyAttestation, validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import { validatePasskey, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import type { UserModel } from '#/modules/user/user-db';
@@ -31,16 +31,15 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
   const user = ctx.var.user;
 
-  const { attestationObject, clientDataJSON, nameOnDevice } = ctx.req.valid('json');
+  const { attestation, nameOnDevice } = ctx.req.valid('json');
 
   const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
   deleteAuthCookie(ctx, 'passkey-challenge');
 
   if (!challengeFromCookie) throw new AppError(401, 'invalid_credentials', 'error');
 
-  const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(
-    clientDataJSON,
-    attestationObject,
+  const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(
+    attestation as RegistrationResponseJSON,
     challengeFromCookie,
   );
 
@@ -49,6 +48,7 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
     userId: user.id,
     credentialId,
     publicKey,
+    counter,
     nameOnDevice,
     deviceName: device.name,
     deviceType: device.type,
@@ -95,12 +95,11 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
     throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
   }
 
-  // Generate a 32-byte random challenge and encode it as Base64
-  const challenge = getRandomValues(new Uint8Array(32));
-  const challengeBase64 = encodeBase64(challenge);
+  // Generate a 32-byte random challenge and encode it as base64url (the WebAuthn JSON encoding)
+  const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
 
   // Save the challenge in a short-lived cookie (5 minutes)
-  await setAuthCookie(ctx, 'passkey-challenge', challengeBase64, new TimeSpan(5, 'm'));
+  await setAuthCookie(ctx, 'passkey-challenge', challenge, new TimeSpan(5, 'm'));
 
   let user: UserModel | null = null;
 
@@ -116,18 +115,18 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
   }
 
   // If we still have no email, return challenge with empty credential list
-  if (!user) return ctx.json({ challengeBase64, credentialIds: [] }, 200);
+  if (!user) return ctx.json({ challenge, credentialIds: [] }, 200);
 
   // Fetch all passkey credentials for this user
   const credentials = await findCredentialIdsByUser(ctx, { userId: user.id });
 
   const credentialIds = credentials.map((c) => c.credentialId);
 
-  return ctx.json({ challengeBase64, credentialIds }, 200);
+  return ctx.json({ challenge, credentialIds }, 200);
 });
 
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
-  const { email, type, ...passkeyData } = ctx.req.valid('json');
+  const { email, type, assertion } = ctx.req.valid('json');
   // Define strategy and session type for metadata/logging purposes
   const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
@@ -151,7 +150,7 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
 
   // If no user found by email, try to find by credentialId (supports conditional mediation / discoverable credentials)
   if (!user) {
-    const passkeyRecord = await findUserIdByCredentialId(ctx, { credentialId: passkeyData.credentialId });
+    const passkeyRecord = await findUserIdByCredentialId(ctx, { credentialId: assertion.id });
 
     if (passkeyRecord) {
       user = await findUserById(ctx, { id: passkeyRecord.userId });
@@ -162,7 +161,7 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta });
 
   try {
-    await validatePasskey(ctx, { ...passkeyData, userId: user.id });
+    await validatePasskey(ctx, { assertion: assertion as AuthenticationResponseJSON, userId: user.id });
   } catch (error) {
     if (error instanceof AppError) throw error;
 

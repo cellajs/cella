@@ -7,7 +7,7 @@ import { mockNanoid, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
  */
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
   withFakerSeed(key, () => ({
-    challengeBase64: faker.string.alphanumeric(43),
+    challenge: faker.string.alphanumeric(43),
     credentialIds: [faker.string.alphanumeric(32)],
   }));
 
@@ -59,6 +59,7 @@ export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', 
     userId,
     credentialId: mockNanoid(32),
     publicKey: mockNanoid(40),
+    counter: 0,
     nameOnDevice,
     deviceType: 'desktop' as const,
     createdAt: mockPastIsoDate(),

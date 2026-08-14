@@ -9,7 +9,7 @@ import {
 } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { type ErrorResponse, passkeySignInBody } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -93,14 +93,7 @@ describe('passkey strategy disabled', async () => {
 
   it('should reject passkey authentication', async () => {
     const { response: res, error } = await call(signInWithPasskey, {
-      body: {
-        email: 'test@example.com',
-        type: 'authentication',
-        credentialId: 'test_id',
-        clientDataJSON: '',
-        authenticatorObject: '',
-        signature: '',
-      },
+      body: passkeySignInBody({ credentialId: 'test_id', email: 'test@example.com' }),
       headers: defaultHeaders,
     });
     expect(res.status).toBe(400);
@@ -148,14 +141,7 @@ describe('all strategies disabled', async () => {
 
   it('should reject passkey attempts', async () => {
     const { response: res, error } = await call(signInWithPasskey, {
-      body: {
-        email: 'test@example.com',
-        type: 'authentication',
-        credentialId: '',
-        clientDataJSON: '',
-        authenticatorObject: '',
-        signature: '',
-      },
+      body: passkeySignInBody({ credentialId: '', email: 'test@example.com' }),
       headers: defaultHeaders,
     });
     expect(res.status).toBe(400);

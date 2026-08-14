@@ -1,22 +1,9 @@
 import {
-  decodePKIXECDSASignature,
-  decodeSEC1PublicKey,
-  ECDSAPublicKey,
-  p256,
-  verifyECDSASignature,
-} from '@oslojs/crypto/ecdsa';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
-import {
-  AttestationStatementFormat,
-  ClientDataType,
-  coseAlgorithmES256,
-  coseEllipticCurveP256,
-  createAssertionSignatureMessage,
-  parseAttestationObject,
-  parseAuthenticatorData,
-  parseClientDataJSON,
-} from '@oslojs/webauthn';
+  type AuthenticationResponseJSON,
+  type RegistrationResponseJSON,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
@@ -25,77 +12,41 @@ import { baseDb as db } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 
+// Use "localhost" (and the localhost origin) for development
+const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
+const expectedOrigin = appConfig.frontendUrl;
+
 /**
- * Parses and validates passkey (WebAuthn) attestation: checks the attestation format, relying-party
- * ID hash, user presence/verification, credential, ES256 algorithm, and challenge. Returns the
- * encoded public key and credential ID.
+ * Verifies a passkey (WebAuthn) registration response: attestation, relying-party ID, origin,
+ * challenge, and user presence/verification. Returns the credential ID, public key, and signature
+ * counter to store (base64url / COSE key as base64url).
  */
-export const parseAndValidatePasskeyAttestation = (
-  clientDataJSON: string,
-  encodedAttestationObject: string,
-  challengeFromCookie: string | undefined,
-) => {
-  // Converting strings from client to Uint8Arrays
-  const decodedClientDataJSON = decodeBase64(clientDataJSON);
-  const decodedAttestationObject = decodeBase64(encodedAttestationObject);
+export const verifyPasskeyRegistration = async (attestation: RegistrationResponseJSON, challengeFromCookie: string) => {
+  const { verified, registrationInfo } = await verifyRegistrationResponse({
+    response: attestation,
+    expectedChallenge: challengeFromCookie,
+    expectedOrigin,
+    expectedRPID: relyingPartyId,
+    requireUserVerification: true,
+  });
 
-  const { attestationStatement, authenticatorData } = parseAttestationObject(decodedAttestationObject);
+  if (!verified || !registrationInfo) throw new Error('Passkey attestation verification failed');
 
-  if (attestationStatement.format !== AttestationStatementFormat.None)
-    throw new Error('Invalid attestation statement format');
-  // Use "localhost" for localhost
-  if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
-    throw new Error('Invalid relying party ID hash');
-  }
-
-  if (!authenticatorData.userPresent || !authenticatorData.userVerified)
-    throw new Error('User must be present and verified');
-
-  if (authenticatorData.credential === null) throw new Error('Missing credential');
-
-  if (authenticatorData.credential.publicKey.algorithm() !== coseAlgorithmES256)
-    throw new Error('Unsupported algorithm');
-
-  // Parse the COSE key as an EC2 key
-  // .rsa() for RSA, .okp() for EdDSA, etc
-  const cosePublicKey = authenticatorData.credential.publicKey.ec2();
-  if (cosePublicKey.curve !== coseEllipticCurveP256) throw new Error('Unsupported algorithm');
-
-  const clientData = parseClientDataJSON(decodedClientDataJSON);
-  if (clientData.type !== ClientDataType.Create) {
-    throw new Error('Invalid client data type');
-  }
-
-  if (encodeBase64(clientData.challenge) !== challengeFromCookie) throw new Error('Invalid challenge');
-
-  // Use "http://localhost:PORT" for localhost
-  if (clientData.origin !== appConfig.frontendUrl) throw new Error('Invalid origin');
-
-  if (clientData.crossOrigin !== null && clientData.crossOrigin) throw new Error('Invalid origin');
-
-  // Store the credential ID, algorithm (ES256), and public key with the user's user ID
-  const credentialId = authenticatorData.credential.id;
-  const publicKey = new ECDSAPublicKey(p256, cosePublicKey.x, cosePublicKey.y).encodeSEC1Uncompressed();
-
+  const { credential } = registrationInfo;
   return {
-    publicKey: encodeBase64(publicKey),
-    credentialId: encodeBase64(credentialId),
+    credentialId: credential.id,
+    publicKey: Buffer.from(credential.publicKey).toString('base64url'),
+    counter: credential.counter,
   };
 };
 
-type PasskeyData = {
-  publicKey: string;
-  signature: string;
-  authenticatorObject: string;
-  clientDataJSON: string;
-};
+type PasskeyData = { assertion: AuthenticationResponseJSON; userId: string };
 
-export const validatePasskey = async (
-  ctx: Context,
-  passkeyData: Omit<PasskeyData, 'publicKey'> & { credentialId: string; userId: string },
-) => {
-  const { userId, credentialId, ...restPasskeyData } = passkeyData;
-
+/**
+ * Validates a passkey assertion for `userId`: consumes the challenge cookie, loads the stored
+ * credential, verifies the signature, and persists the new signature counter.
+ */
+export const validatePasskey = async (ctx: Context, { assertion, userId }: PasskeyData) => {
   // Retrieve the passkey challenge stored in a secure cookie
   const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
   deleteAuthCookie(ctx, 'passkey-challenge');
@@ -105,56 +56,30 @@ export const validatePasskey = async (
   const [passkeyRecord] = await db
     .select()
     .from(passkeysTable)
-    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.credentialId, credentialId)))
+    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.credentialId, assertion.id)))
     .limit(1);
 
   if (!passkeyRecord) throw new AppError(404, 'passkey_not_found', 'warn');
 
-  // Verify signature against public key and challenge
-  const isValid = await verifyPassKeyPublic({
-    ...restPasskeyData,
-    publicKey: passkeyRecord.publicKey,
-    challengeFromCookie,
+  // Verify assertion signature against stored public key, challenge, origin, and relying-party ID
+  const { verified, authenticationInfo } = await verifyAuthenticationResponse({
+    response: assertion,
+    expectedChallenge: challengeFromCookie,
+    expectedOrigin,
+    expectedRPID: relyingPartyId,
+    credential: {
+      id: passkeyRecord.credentialId,
+      publicKey: new Uint8Array(Buffer.from(passkeyRecord.publicKey, 'base64url')),
+      counter: passkeyRecord.counter,
+    },
+    requireUserVerification: true,
   });
 
-  if (!isValid) throw new AppError(401, 'invalid_token', 'warn');
-};
+  if (!verified) throw new AppError(401, 'invalid_token', 'warn');
 
-/** Verifies the passkey assertion signature against the stored public key, challenge, and client data. */
-const verifyPassKeyPublic = async ({
-  signature,
-  authenticatorObject,
-  clientDataJSON,
-  publicKey,
-  challengeFromCookie,
-}: PasskeyData & { challengeFromCookie?: string }) => {
-  // Converting strings to Uint8Arrays
-  const decodedSignature = decodeBase64(signature);
-  const decodedClientDataJSON = decodeBase64(clientDataJSON);
-  const decodedAuthenticatorObject = decodeBase64(authenticatorObject);
-  const decodedPublicKey = decodeBase64(publicKey);
-
-  const authenticatorData = parseAuthenticatorData(decodedAuthenticatorObject);
-  // Use "localhost" for localhost
-  if (!authenticatorData.verifyRelyingPartyIdHash(appConfig.mode === 'development' ? 'localhost' : appConfig.domain)) {
-    throw new Error('Invalid relying party ID hash');
-  }
-  if (!authenticatorData.userPresent || !authenticatorData.userVerified)
-    throw new Error('User must be present and verified');
-
-  const clientData = parseClientDataJSON(decodedClientDataJSON);
-  if (clientData.type !== ClientDataType.Get) throw new Error('Invalid client data type');
-
-  if (encodeBase64(clientData.challenge) !== challengeFromCookie) throw new Error('Invalid challenge');
-  // Use "http://localhost:PORT" for localhost
-  if (clientData.origin !== appConfig.frontendUrl) throw new Error('Invalid origin');
-
-  if (clientData.crossOrigin !== null && clientData.crossOrigin) throw new Error('Invalid origin');
-
-  // Decode DER-encoded signature
-  const ecdsaSignature = decodePKIXECDSASignature(decodedSignature);
-  const ecdsaPublicKey = decodeSEC1PublicKey(p256, decodedPublicKey);
-  const hash = sha256(createAssertionSignatureMessage(decodedAuthenticatorObject, decodedClientDataJSON));
-  const valid = verifyECDSASignature(ecdsaPublicKey, hash, ecdsaSignature);
-  return valid;
+  // Persist the signature counter so cloned-authenticator replays can be detected
+  await db
+    .update(passkeysTable)
+    .set({ counter: authenticationInfo.newCounter })
+    .where(and(eq(passkeysTable.userId, userId), eq(passkeysTable.credentialId, assertion.id)));
 };

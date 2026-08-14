@@ -3103,18 +3103,61 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "attestationObject": {
-                    "type": "string"
-                  },
-                  "clientDataJSON": {
-                    "type": "string"
+                  "attestation": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "rawId": {
+                        "type": "string"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "attestationObject": {
+                            "type": "string"
+                          },
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "transports": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                            }
+                          },
+                          "publicKeyAlgorithm": {
+                            "type": "number"
+                          },
+                          "publicKey": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["clientDataJSON", "attestationObject"]
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": ["cross-platform", "platform"]
+                      },
+                      "clientExtensionResults": {},
+                      "type": {
+                        "type": "string",
+                        "enum": ["public-key"]
+                      }
+                    },
+                    "required": ["id", "rawId", "response", "type"]
                   },
                   "nameOnDevice": {
                     "type": "string",
                     "maxLength": 255
                   }
                 },
-                "required": ["attestationObject", "clientDataJSON", "nameOnDevice"]
+                "required": ["attestation", "nameOnDevice"]
               }
             }
           }
@@ -3295,7 +3338,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "challengeBase64": {
+                    "challenge": {
                       "type": "string"
                     },
                     "credentialIds": {
@@ -3305,10 +3348,10 @@
                       }
                     }
                   },
-                  "required": ["challengeBase64", "credentialIds"]
+                  "required": ["challenge", "credentialIds"]
                 },
                 "example": {
-                  "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+                  "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
                   "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
                 }
               }
@@ -3352,17 +3395,44 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "credentialId": {
-                    "type": "string"
-                  },
-                  "clientDataJSON": {
-                    "type": "string"
-                  },
-                  "authenticatorObject": {
-                    "type": "string"
-                  },
-                  "signature": {
-                    "type": "string"
+                  "assertion": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "rawId": {
+                        "type": "string"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "signature": {
+                            "type": "string"
+                          },
+                          "userHandle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["clientDataJSON", "authenticatorData", "signature"]
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": ["cross-platform", "platform"]
+                      },
+                      "clientExtensionResults": {},
+                      "type": {
+                        "type": "string",
+                        "enum": ["public-key"]
+                      }
+                    },
+                    "required": ["id", "rawId", "response", "type"]
                   },
                   "type": {
                     "type": "string",
@@ -3375,7 +3445,7 @@
                     "maxLength": 255
                   }
                 },
-                "required": ["credentialId", "clientDataJSON", "authenticatorObject", "signature", "type"]
+                "required": ["assertion", "type"]
               }
             }
           }
@@ -4064,20 +4134,41 @@
                   "passkeyData": {
                     "type": "object",
                     "properties": {
-                      "credentialId": {
+                      "id": {
                         "type": "string"
                       },
-                      "clientDataJSON": {
+                      "rawId": {
                         "type": "string"
                       },
-                      "authenticatorObject": {
-                        "type": "string"
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "signature": {
+                            "type": "string"
+                          },
+                          "userHandle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["clientDataJSON", "authenticatorData", "signature"]
                       },
-                      "signature": {
-                        "type": "string"
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": ["cross-platform", "platform"]
+                      },
+                      "clientExtensionResults": {},
+                      "type": {
+                        "type": "string",
+                        "enum": ["public-key"]
                       }
                     },
-                    "required": ["credentialId", "clientDataJSON", "authenticatorObject", "signature"]
+                    "required": ["id", "rawId", "response", "type"]
                   },
                   "totpCode": {
                     "type": "string",

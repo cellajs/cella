@@ -71,7 +71,7 @@ export async function createTotpUser(email: string) {
 }
 
 /**
- * Build a passkey sign-in request body.
+ * Build a passkey sign-in request body (WebAuthn `AuthenticationResponseJSON` shape).
  */
 export function passkeySignInBody(opts: {
   credentialId: string;
@@ -80,17 +80,32 @@ export function passkeySignInBody(opts: {
   challenge?: string;
 }) {
   return {
-    credentialId: opts.credentialId,
-    clientDataJSON: JSON.stringify({
-      type: 'webauthn.get',
-      challenge: opts.challenge ?? nanoid(32),
-      origin: 'http://localhost:3000',
-      crossOrigin: false,
-    }),
-    authenticatorObject: new Uint8Array(37).toString(),
-    signature: new Uint8Array(64).toString(),
+    assertion: passkeyAssertion({ credentialId: opts.credentialId, challenge: opts.challenge }),
     type: opts.type ?? 'authentication',
     email: opts.email,
+  };
+}
+
+/**
+ * Build a WebAuthn assertion object (base64url fields) for request bodies.
+ */
+export function passkeyAssertion(opts: { credentialId: string; challenge?: string } = { credentialId: nanoid(32) }) {
+  const clientData = JSON.stringify({
+    type: 'webauthn.get',
+    challenge: opts.challenge ?? nanoid(32),
+    origin: 'http://localhost:3000',
+    crossOrigin: false,
+  });
+  return {
+    id: opts.credentialId,
+    rawId: opts.credentialId,
+    response: {
+      clientDataJSON: Buffer.from(clientData).toString('base64url'),
+      authenticatorData: Buffer.from(new Uint8Array(37)).toString('base64url'),
+      signature: Buffer.from(new Uint8Array(64)).toString('base64url'),
+    },
+    clientExtensionResults: {},
+    type: 'public-key' as const,
   };
 }
 

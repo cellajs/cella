@@ -849,8 +849,7 @@ export const signInWithTotp = <ThrowOnError extends boolean = true>(
  * **POST /auth/passkey** ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey) ·· [createPasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey) ·· _auth_cella_
  *
  * @param {createPasskeyData} options
- * @param {string=} options.body.attestationObject - `string` (optional)
- * @param {string=} options.body.clientDataJSON - `string` (optional)
+ * @param {object} options.body.attestation - `object`
  * @param {string=} options.body.nameOnDevice - `string` (optional)
  * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
  */
@@ -966,10 +965,7 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * **POST /auth/passkey-verification** ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/passkey-verification) ·· [signInWithPasskey](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/passkey-verification) ·· _auth_cella_
  *
  * @param {signInWithPasskeyData} options
- * @param {string=} options.body.credentialId - `string` (optional)
- * @param {string=} options.body.clientDataJSON - `string` (optional)
- * @param {string=} options.body.authenticatorObject - `string` (optional)
- * @param {string=} options.body.signature - `string` (optional)
+ * @param {object} options.body.assertion - `object`
  * @param {enum=} options.body.type - `enum` (optional)
  * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429

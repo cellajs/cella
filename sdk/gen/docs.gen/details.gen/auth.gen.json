@@ -868,8 +868,42 @@
       "body": {
         "type": "object",
         "properties": {
-          "attestationObject": { "type": "string", "required": true },
-          "clientDataJSON": { "type": "string", "required": true },
+          "attestation": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "id": { "type": "string", "required": true },
+              "rawId": { "type": "string", "required": true },
+              "response": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "clientDataJSON": { "type": "string", "required": true },
+                  "attestationObject": { "type": "string", "required": true },
+                  "authenticatorData": { "type": "string", "required": false },
+                  "transports": {
+                    "type": "array",
+                    "required": false,
+                    "itemType": "string",
+                    "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                  },
+                  "publicKeyAlgorithm": { "type": "number", "required": false },
+                  "publicKey": { "type": "string", "required": false }
+                }
+              },
+              "authenticatorAttachment": {
+                "type": "string",
+                "required": false,
+                "enum": ["cross-platform", "platform"]
+              },
+              "clientExtensionResults": { "type": "object", "required": false },
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["public-key"]
+              }
+            }
+          },
           "nameOnDevice": { "type": "string", "required": true, "maxLength": 255 }
         },
         "required": true,
@@ -942,13 +976,13 @@
         "schema": {
           "type": "object",
           "properties": {
-            "challengeBase64": { "type": "string", "required": true },
+            "challenge": { "type": "string", "required": true },
             "credentialIds": { "type": "array", "required": true, "itemType": "string" }
           },
           "contentType": "application/json"
         },
         "example": {
-          "challengeBase64": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+          "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
           "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
         }
       },
@@ -1068,10 +1102,35 @@
       "body": {
         "type": "object",
         "properties": {
-          "credentialId": { "type": "string", "required": true },
-          "clientDataJSON": { "type": "string", "required": true },
-          "authenticatorObject": { "type": "string", "required": true },
-          "signature": { "type": "string", "required": true },
+          "assertion": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "id": { "type": "string", "required": true },
+              "rawId": { "type": "string", "required": true },
+              "response": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "clientDataJSON": { "type": "string", "required": true },
+                  "authenticatorData": { "type": "string", "required": true },
+                  "signature": { "type": "string", "required": true },
+                  "userHandle": { "type": "string", "required": false }
+                }
+              },
+              "authenticatorAttachment": {
+                "type": "string",
+                "required": false,
+                "enum": ["cross-platform", "platform"]
+              },
+              "clientExtensionResults": { "type": "object", "required": false },
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["public-key"]
+              }
+            }
+          },
           "type": {
             "type": "string",
             "required": true,

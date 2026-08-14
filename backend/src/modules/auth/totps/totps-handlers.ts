@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase32UpperCase } from '@oslojs/encoding';
-import { createTOTPKeyURI } from '@oslojs/otp';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
@@ -11,6 +10,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
 import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';

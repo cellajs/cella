@@ -1,5 +1,5 @@
-import { generateCodeVerifier, generateState } from 'arctic';
 import { eq } from 'drizzle-orm';
+import { generateRandomCodeVerifier, generateRandomState } from 'oauth4webapi';
 import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -13,7 +13,7 @@ import { createUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
 
-vi.mock('arctic', async () => (await import('../test-utils')).arcticMock());
+vi.mock('oauth4webapi', async () => (await import('../test-utils')).oauth4webapiMock());
 
 setTestConfig({
   enabledAuthStrategies: ['oauth'],
@@ -24,17 +24,17 @@ setTestConfig({
 vi.mock('#/modules/auth/oauth/helpers/providers', () => ({
   githubAuth: {
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://github.com/login/oauth/authorize')),
-    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: () => 'mock-access-token' }),
+    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },
   googleAuth: {
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://accounts.google.com/o/oauth2/v2.0/auth')),
-    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: () => 'mock-access-token' }),
+    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },
   microsoftAuth: {
     createAuthorizationURL: vi
       .fn()
       .mockReturnValue(new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')),
-    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: () => 'mock-access-token' }),
+    validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
   },
 }));
 vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
@@ -79,8 +79,8 @@ describe('OAuth Authentication', async () => {
     it('should initiate GitHub OAuth flow', async () => {
       const { response: res } = await call(github, { query: { type: 'auth' }, headers: defaultHeaders });
 
-      const state = generateState();
-      const url = githubAuth.createAuthorizationURL(state, ['user:email']);
+      const state = generateRandomState();
+      const url = await githubAuth.createAuthorizationURL(state, ['user:email']);
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
@@ -90,9 +90,9 @@ describe('OAuth Authentication', async () => {
     it('should initiate Google OAuth flow', async () => {
       const { response: res } = await call(google, { query: { type: 'auth' }, headers: defaultHeaders });
 
-      const state = generateState();
-      const codeVerifier = generateCodeVerifier();
-      const url = googleAuth.createAuthorizationURL(state, codeVerifier, ['profile', 'email']);
+      const state = generateRandomState();
+      const codeVerifier = generateRandomCodeVerifier();
+      const url = await googleAuth.createAuthorizationURL(state, ['profile', 'email'], { codeVerifier });
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');
@@ -102,9 +102,9 @@ describe('OAuth Authentication', async () => {
     it('should initiate Microsoft OAuth flow', async () => {
       const { response: res } = await call(microsoft, { query: { type: 'auth' }, headers: defaultHeaders });
 
-      const state = generateState();
-      const codeVerifier = generateCodeVerifier();
-      const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, ['profile', 'email']);
+      const state = generateRandomState();
+      const codeVerifier = generateRandomCodeVerifier();
+      const url = await microsoftAuth.createAuthorizationURL(state, ['profile', 'email'], { codeVerifier });
 
       expect(res.status).toBe(302);
       const location = res.headers.get('location');

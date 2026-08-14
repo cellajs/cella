@@ -586,8 +586,21 @@ export const zSignInWithTotpBody = z.object({
 export const zSignInWithTotpResponse = z.void();
 
 export const zCreatePasskeyBody = z.object({
-  attestationObject: z.string(),
-  clientDataJSON: z.string(),
+  attestation: z.object({
+    id: z.string(),
+    rawId: z.string(),
+    response: z.object({
+      clientDataJSON: z.string(),
+      attestationObject: z.string(),
+      authenticatorData: z.string().optional(),
+      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+      publicKeyAlgorithm: z.number().optional(),
+      publicKey: z.string().optional(),
+    }),
+    authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+    clientExtensionResults: z.unknown().optional(),
+    type: z.enum(['public-key']),
+  }),
   nameOnDevice: z.string().max(255),
 });
 
@@ -623,15 +636,24 @@ export const zGeneratePasskeyChallengeBody = z.object({
  * Challenge generated
  */
 export const zGeneratePasskeyChallengeResponse = z.object({
-  challengeBase64: z.string(),
+  challenge: z.string(),
   credentialIds: z.array(z.string()),
 });
 
 export const zSignInWithPasskeyBody = z.object({
-  credentialId: z.string(),
-  clientDataJSON: z.string(),
-  authenticatorObject: z.string(),
-  signature: z.string(),
+  assertion: z.object({
+    id: z.string(),
+    rawId: z.string(),
+    response: z.object({
+      clientDataJSON: z.string(),
+      authenticatorData: z.string(),
+      signature: z.string(),
+      userHandle: z.string().optional(),
+    }),
+    authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+    clientExtensionResults: z.unknown().optional(),
+    type: z.enum(['public-key']),
+  }),
   type: z.enum(['authentication', 'mfa']),
   email: z.email().min(4).max(255).optional(),
 });
@@ -722,10 +744,17 @@ export const zUpdateMeResponse = zUser;
 export const zToggleMfaBody = z.object({
   passkeyData: z
     .object({
-      credentialId: z.string(),
-      clientDataJSON: z.string(),
-      authenticatorObject: z.string(),
-      signature: z.string(),
+      id: z.string(),
+      rawId: z.string(),
+      response: z.object({
+        clientDataJSON: z.string(),
+        authenticatorData: z.string(),
+        signature: z.string(),
+        userHandle: z.string().optional(),
+      }),
+      authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+      clientExtensionResults: z.unknown().optional(),
+      type: z.enum(['public-key']),
     })
     .optional(),
   totpCode: z
