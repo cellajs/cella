@@ -1,12 +1,11 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
-import { getTokenData } from 'sdk';
-import type { TokenType } from 'shared';
+import { type GetTokenDataData, getTokenData } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 
 /** Query token data by ID. */
 export const useGetTokenData = (
-  type: TokenType,
+  type: GetTokenDataData['path']['type'],
   tokenId?: string,
   enabled = true,
 ): UseQueryResult<TokenData | undefined, ApiError> => {

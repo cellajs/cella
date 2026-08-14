@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
 import { MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendMagicLink } from 'sdk';
@@ -12,11 +13,12 @@ import { Button } from '~/modules/ui/button';
 export function MagicLinkStrategy({ email }: { email?: string }) {
   const { t } = useTranslation();
   const { setStep, setMagicLinkMode, email: storeEmail } = useAuthStore();
+  const { redirect } = useSearch({ strict: false });
 
   const targetEmail = email || storeEmail;
 
   const { mutate: send, isPending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email: targetEmail } }),
+    mutationFn: () => sendMagicLink({ body: { email: targetEmail, redirect } }),
     onSuccess: () => {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', targetEmail);

@@ -28,7 +28,6 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
-  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
   const actionText = authStep === 'signIn' ? t('c:sign_in') : authStep === 'signUp' ? t('c:sign_up') : t('c:continue');
 
   const authenticateWithProvider = async (provider: EnabledOAuthProvider) => {
@@ -36,7 +35,11 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       setLoadingProvider(provider);
 
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
-      const params = new URLSearchParams({ redirectAfter: redirectPath });
+      const params = new URLSearchParams();
+
+      // Only send an explicit deep link; a default here would read as an explicit redirect
+      // server-side and skip the welcome page for new users.
+      if (redirect?.startsWith('/')) params.set('redirectAfter', redirect);
 
       if (tokenId) {
         params.set('tokenId', tokenId);

@@ -15,6 +15,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem } from '~/modules/ui/field';
@@ -38,7 +39,8 @@ export function SignInStep() {
   const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode } = useAuthStore();
 
   const { lastUser, reset: clearUserStore } = useUserStore();
-  const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
+  const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
+  const redirectPath = usePostAuthRedirect();
 
   const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
@@ -68,7 +70,7 @@ export function SignInStep() {
         const body: NonNullable<SignInWithPasskeyData['body']> = data;
         await signInWithPasskey({ body });
         setSignedIn(true);
-        navigate({ to: appConfig.defaultRedirectPath, replace: true });
+        navigate({ to: redirectPath, replace: true });
       } catch {
         toaster.error(t('error:passkey_verification_failed'));
       }
@@ -109,7 +111,7 @@ export function SignInStep() {
   });
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') } }),
+    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect } }),
     onSuccess: () => {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', form.getValues('email'));

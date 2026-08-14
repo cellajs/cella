@@ -88,12 +88,9 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
     // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
     if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
 
-    // Determine redirect URL based on token type
-    let redirectUrl = appConfig.defaultRedirectPath;
-
-    // If invitation, redirect to auth page with tokenId param
-    if (tokenRecord.type === 'invitation')
-      redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
+    // Only invitation remains (the param schema is limited to invokable types): redirect to auth
+    // page with tokenId param
+    const redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
     log.info('Token invoked, redirecting with single use token in cookie', {
       tokenId: tokenRecord.id,

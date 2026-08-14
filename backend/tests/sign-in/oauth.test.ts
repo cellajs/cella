@@ -311,10 +311,8 @@ describe('OAuth Authentication', async () => {
     });
   });
 
-  describe('Verified redirect ignores client-supplied destination', () => {
-    // The verified sign-in redirect is server-determined; an attacker-controlled
-    // redirectAfter cannot become the Location.
-    it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
+  describe('Verified redirect honors only validated same-origin paths', () => {
+    const linkVerifiedAccount = async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
       await db.insert(oauthAccountsTable).values({
@@ -325,6 +323,30 @@ describe('OAuth Authentication', async () => {
         verified: true,
         createdAt: mockPastIsoDate(),
       });
+      return user;
+    };
+
+    it('should honor a valid redirectAfter on a verified OAuth sign-in', async () => {
+      await linkVerifiedAccount();
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ type: 'auth', redirectAfter: '/orgs/acme?tab=files', codeVerifier: undefined }),
+      );
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme?tab=files`);
+    });
+
+    // An attacker-controlled redirectAfter must never become the Location.
+    it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
+      await linkVerifiedAccount();
 
       const state = 'mock-state-test';
       mockCookieStore.set(

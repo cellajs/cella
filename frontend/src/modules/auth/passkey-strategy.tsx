@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { FingerprintPatternIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
-import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
+import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -24,8 +24,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
 
-  const { redirect } = useSearch({ strict: false });
-  const redirectPath = redirect?.startsWith('/') ? redirect : appConfig.defaultRedirectPath;
+  const redirectPath = usePostAuthRedirect();
 
   const { mutate: passkeyAuth } = useMutation<
     SignInWithPasskeyResponse,

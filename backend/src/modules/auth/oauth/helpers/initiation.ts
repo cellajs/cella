@@ -66,16 +66,10 @@ export const handleOAuthInitiation = async (
   }
 
   if (type === 'verify') {
+    // Fails early on a missing/expired verification token; the callback re-validates. The
+    // post-auth redirect travels on the token row, not as a query param.
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
-    if (tokenRecord && redirectAfter) {
-      try {
-        const redirectUrl = new URL(redirectAfter, appConfig.frontendUrl);
-        if (redirectUrl.pathname.includes('home')) {
-          redirectUrl.searchParams.set('skipWelcome', 'true');
-          cookieContent.redirectAfter = redirectUrl.pathname + redirectUrl.search + redirectUrl.hash;
-        }
-      } catch (_) {} // fallback if redirectAfter is not a valid URL
-    }
+    cookieContent.redirectAfter = tokenRecord.redirectPath ?? undefined;
   }
 
   const stringifiedContent = JSON.stringify(cookieContent);

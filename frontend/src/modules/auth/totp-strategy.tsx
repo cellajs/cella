@@ -4,9 +4,9 @@ import { SmartphoneIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from 'sdk';
-import { appConfig } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
+import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -15,6 +15,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const redirectPath = usePostAuthRedirect();
 
   const mode = useUIStore((state) => state.mode);
 
@@ -28,7 +29,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
       useAuthStore.getState().setSignedIn(true);
-      navigate({ to: appConfig.defaultRedirectPath, replace: true });
+      navigate({ to: redirectPath, replace: true });
     },
     onError: () => toaster.error(t('error:totp_verification_failed')),
   });

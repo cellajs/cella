@@ -176,7 +176,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
           },
           "token": { "type": "string", "required": true }
         }
@@ -250,7 +250,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
           },
           "id": { "type": "string", "required": true, "maxLength": 50 }
         }
@@ -538,7 +538,8 @@
             "format": "email",
             "minLength": 4,
             "maxLength": 255
-          }
+          },
+          "redirect": { "type": "string", "required": false }
         },
         "required": true,
         "contentType": "application/json"

@@ -1,12 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
-import { getPostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import type { TokenModel } from '#/modules/auth/tokens-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -34,14 +31,5 @@ export const handleEmailVerification = async (ctx: Context<Env>, token: TokenMod
       ),
     );
 
-  // Start MFA challenge if the user has MFA enabled
-  const mfaRedirectPath = await initiateMfa(ctx, user);
-
-  const redirectPath = mfaRedirectPath || getPostAuthRedirectPath(user);
-  const redirectUrl = new URL(redirectPath, appConfig.frontendUrl);
-
-  // If MFA is not required, set user session immediately
-  if (!mfaRedirectPath) await setUserSession(ctx, user, 'email');
-
-  return ctx.redirect(redirectUrl, 302);
+  return finishSignIn(ctx, user, 'email', token.redirectPath);
 };

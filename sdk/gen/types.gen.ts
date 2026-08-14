@@ -646,7 +646,7 @@ export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'confirm-mfa' | 'magic';
+    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'magic';
     token: string;
   };
   query?: never;
@@ -685,7 +685,7 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'confirm-mfa' | 'magic';
+    type: 'email-verification' | 'oauth-verification' | 'invitation' | 'magic';
     id: string;
   };
   query?: never;
@@ -928,6 +928,7 @@ export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
 export type SendMagicLinkData = {
   body: {
     email: string;
+    redirect?: string;
   };
   path?: never;
   query?: never;

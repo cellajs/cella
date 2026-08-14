@@ -675,6 +675,7 @@ export const signOut = <ThrowOnError extends boolean = true>(
  *
  * @param {sendMagicLinkData} options
  * @param {string=} options.body.email - `string` (optional)
+ * @param {string=} options.body.redirect - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const sendMagicLink = <ThrowOnError extends boolean = true>(

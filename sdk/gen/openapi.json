@@ -2477,7 +2477,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2539,7 +2539,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "confirm-mfa", "magic"]
+              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2837,6 +2837,9 @@
                     "format": "email",
                     "minLength": 4,
                     "maxLength": 255
+                  },
+                  "redirect": {
+                    "type": "string"
                   }
                 },
                 "required": ["email"]

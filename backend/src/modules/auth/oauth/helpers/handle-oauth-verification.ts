@@ -25,8 +25,6 @@ export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenMod
   verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');
 
-  const reqRedirect = ctx.req.query('redirectAfter');
-  if (reqRedirect) verificationURL.searchParams.set('redirectAfter', reqRedirect);
-
+  // The post-auth redirect stays on the token row; the verify initiation reads it from there.
   return ctx.redirect(verificationURL, 302);
 };

@@ -1,11 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
-import { emailBodySchema, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
+import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 
 const authGeneralRoutes = {
@@ -114,7 +113,7 @@ const authGeneralRoutes = {
     description:
       'Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), token: z.string() }),
+      params: z.object({ type: z.enum(invokableTokenTypes), token: z.string() }),
     },
     responses: {
       302: {
@@ -139,7 +138,7 @@ const authGeneralRoutes = {
     description:
       'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: {
-      params: z.object({ type: z.enum(appConfig.tokenTypes), id: validIdSchema }),
+      params: z.object({ type: z.enum(invokableTokenTypes), id: validIdSchema }),
     },
     responses: {
       200: {

@@ -497,12 +497,12 @@ export const zCheckEmailBody = z.object({
 export const zCheckEmailResponse = z.void();
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic']),
+  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
   token: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'confirm-mfa', 'magic']),
+  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
 });
 
@@ -552,6 +552,7 @@ export const zSignOutResponse = z.void();
 
 export const zSendMagicLinkBody = z.object({
   email: z.email().min(4).max(255),
+  redirect: z.string().optional(),
 });
 
 /**
