@@ -8,9 +8,8 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
 
 /**
  * Port of the pre-registry evaluate.test.ts: the same assertions, driven by
- * per-provider facts instead of the retired StatusInputs bag. `reportFor`
- * evaluates every registered provider against the given facts, exactly what
- * buildStatusReport does after its gather phase.
+ * per-provider facts. `reportFor` evaluates every registered provider against
+ * the given facts, exactly what buildStatusReport does after its gather phase.
  */
 
 interface Facts {

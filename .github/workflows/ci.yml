@@ -74,7 +74,7 @@ jobs:
       - name: Run Biome
         run: pnpm biome check .
 
-      - name: Run prose style checks
+      - name: Run style checks (terminology / docs / comments)
         run: pnpm prose:check
 
       - name: Run lens checks (append-only / collision / purity / wire completeness)

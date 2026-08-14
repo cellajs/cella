@@ -44,7 +44,7 @@ export interface CheckBuilder {
 }
 
 /** One verdict closure per status, so each check branch is a single call
- *  instead of a repeated object literal. */
+ *  without repeating the object literal. */
 export function check(id: string, title: string, credential: CredentialTier = 'none'): CheckBuilder {
   const verdict =
     (status: CheckStatus): Verdict =>

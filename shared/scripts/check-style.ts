@@ -1,7 +1,7 @@
 /**
- * Runs the terminology, documentation, and comment checks as a single non-blocking pass.
+ * Runs the terminology, documentation, and comment checks as a single blocking pass.
  * Clean sub-checks collapse into one `[style]` line; findings print their detail.
- * Always exits 0 so findings surface as warnings during `pnpm check` without breaking the build.
+ * Exits non-zero on any finding: `pnpm check`, `pnpm lint`, and CI's style step all run this same pass, so they cannot diverge.
  */
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -34,9 +34,6 @@ const flagged = subChecks.filter((check) => {
 if (flagged.length === 0) {
   console.log('[style] OK, terminology, documentation, and comments follow the required style.');
 } else {
-  console.warn(
-    `[style] ${flagged.length} area(s) reported warnings (${flagged
-      .map((check) => check.label)
-      .join(', ')}); not blocking the build.`,
-  );
+  console.error(`[style] ${flagged.length} area(s) failed (${flagged.map((check) => check.label).join(', ')}).`);
+  process.exit(1);
 }

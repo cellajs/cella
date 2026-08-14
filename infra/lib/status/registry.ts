@@ -12,7 +12,7 @@ import { STATUS_SCHEMA_VERSION } from './types';
 /**
  * The registered status providers, in report order. Each owns its domain's
  * gather + evaluate; the engine here owns the envelope, the summary, and the
- * cross-domain next-action priority — knowledge no single provider can hold.
+ * cross-domain next-action priority, knowledge no single provider can hold.
  */
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous provider fact types collapse at the registry boundary
 export const statusProviders: readonly StatusProvider<any>[] = [

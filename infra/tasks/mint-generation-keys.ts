@@ -53,7 +53,7 @@ async function resolveAppId(auth: IamAuth, organizationId: string, name: string)
 }
 
 /** Mint a fresh key on the app. Pruning happens separately, AFTER every
- *  handoff bundle is staged — see pruneStaleKeys. */
+ *  handoff bundle is staged; see pruneStaleKeys. */
 async function mintKey(
   auth: IamAuth,
   projectId: string,
@@ -120,7 +120,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
   }
 
   // Transactional-ish ordering: mint and stage EVERYTHING first, prune keys
-  // LAST. A failure mid-staging then aborts with all existing keys intact —
+  // LAST. A failure mid-staging then aborts with all existing keys intact:
   // the old generation keeps hydrating/signing, and a retry re-mints cleanly.
   // (The keep-newest-2 window can still age out the live key after repeated
   // failed attempts within one deploy; bounded, documented, accepted.)

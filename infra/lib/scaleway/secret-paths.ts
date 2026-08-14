@@ -51,7 +51,7 @@ export function handoffFolderPath(slug: string, mode: string): string {
  * compares the live rule condition against this exact builder output, so
  * producer and checker must share it. No `!has(resource.id)` escape:
  * hydration GETs by id only, so list actions may (and should) stay denied.
- * Pass the full secret scope (lib/services.ts secretScopeSlugs) — for the
+ * Pass the full secret scope (lib/services.ts secretScopeSlugs); for the
  * singleVM host that includes the folded co-hosted/collocated services, whose
  * secrets hydrate on the host VM.
  */

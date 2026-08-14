@@ -325,7 +325,7 @@ export async function runDeploy(
           ? ['--primary', (JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]!.service]
           : []),
         // A provided-but-unreadable --dist is a hard failure in smoke, so a
-        // frontend-less registry omits it instead of pointing at nothing.
+        // frontend-less registry omits the flag entirely.
         ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
       ]),
     );
