@@ -91,7 +91,7 @@ export function collocatedServices(
 
 /**
  * Service slugs whose secret folders a service's VMs must be able to read: the
- * service itself, plus — for the singleVM host — every co-hosted worker and
+ * service itself, plus (for the singleVM host) every co-hosted worker and
  * collocated container folded onto it. Their runtime secrets union onto the
  * host VM (resources/generations.ts secretConsumersFor), so the host's
  * secret-path grant must union identically or hydration 403s on the folded
@@ -117,7 +117,7 @@ export function secretScopeSlugs(
  * service that signs S3 requests (`s3Access`); browser CORS on the upload
  * buckets exists only when both do. Engine-owned buckets (Pulumi state,
  * boot-diag) are unconditional and not represented here. A registry with no
- * default route and no s3Access service provisions NO app buckets — the
+ * default route and no s3Access service provisions NO app buckets: the
  * frontend-less consumer scenario.
  */
 export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {

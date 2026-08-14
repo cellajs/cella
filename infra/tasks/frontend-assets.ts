@@ -39,7 +39,7 @@ export function contentTypeFor(key: string): string {
 
 /**
  * Content-hashed, immutable paths: existence of the key proves the content
- * matches. Only /assets/ qualifies — /static/ keys keep stable names with
+ * matches. Only /assets/ qualifies; /static/ keys keep stable names with
  * changing content (docs.gen JSON, openapi.json, flags), so existence proves
  * nothing there.
  */
@@ -77,7 +77,7 @@ export interface UploadAssetsOptions {
  * paths get a 1-year immutable cache and skip upload when the key already
  * exists (content-addressed names make that check exact). Stable-named keys
  * (static/, favicon, robots.txt) change content under the same name, so they
- * get a short cache and skip only when the remote ETag matches the local MD5 —
+ * get a short cache and skip only when the remote ETag matches the local MD5;
  * unchanged deploys stay nearly free either way.
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {

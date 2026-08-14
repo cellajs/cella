@@ -118,7 +118,7 @@ export function createFetchGet(timeoutMs: number): HttpGet {
 
 export interface SmokeOptions {
   /** Public URL of the default-route (browser) service; absent for a
-   *  frontend-less registry — the SPA/security-header checks then skip. */
+   *  frontend-less registry, where the SPA/security-header checks then skip. */
   defaultRouteUrl?: string;
   /** Public URL of the primary-rollout service (the API that serves the
    *  aggregate /health?depth=full and /openapi.json). */

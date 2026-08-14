@@ -16,7 +16,9 @@ const allowedFiles = new Set([
   'shared/scripts/check-app-vocabulary.test.ts',
   'shared/scripts/check-app-vocabulary.ts',
 ]);
-const allowedPrefixes = ['cella/migrations/20260729T0922-app-product-mocks/'];
+// Migration READMEs and the manifest address app maintainers pulling template
+// changes, an audience the CLI's source-control term describes precisely.
+const allowedPrefixes = ['cella/migrations/'];
 
 export interface AppVocabularyFinding {
   file: string;

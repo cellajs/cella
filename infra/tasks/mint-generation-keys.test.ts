@@ -110,8 +110,8 @@ describe('mintGenerationKeys', () => {
     failStagingFor = 'handoff-frontend';
     await expect(mintGenerationKeys(options(join(outDir, 'fail.json')))).rejects.toThrow(/staging failed/);
     expect(ops.some((op) => op.startsWith('delete:ak-'))).toBe(false);
-    // The first service's bundle was staged before the failure — that is fine;
-    // what must not happen is key pruning.
+    // The first service's bundle was staged before the failure, and that is
+    // fine; what must not happen is key pruning.
     expect(ops.filter((op) => op.startsWith('stage:'))).toHaveLength(1);
   });
 });

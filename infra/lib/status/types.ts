@@ -106,7 +106,7 @@ export interface ProbeSession {
 
 /**
  * One status domain: `gather` does best-effort I/O (undefined = could not
- * probe), `evaluate` turns facts into checks and never throws — a
+ * probe), `evaluate` turns facts into checks and never throws, so a
  * partially-credentialed run still produces a complete report. Providers are
  * registered in `registry.ts`; registry order is report order.
  */

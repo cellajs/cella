@@ -103,6 +103,18 @@ export interface CompanyConfig {
   coordinates: { lat: number; lng: number };
 }
 
+/**
+ * A product entity embedded as an ID array inside a host product entity.
+ * `lifecycle: 'owned'` lets CDC garbage-collect embedded rows no live host
+ * references; the default 'shared' only strips references to dead rows.
+ */
+export interface ProductEmbedding<P extends string = string> {
+  readonly embeddedProduct: P;
+  readonly hostProduct: P;
+  readonly hostColumn: string;
+  readonly lifecycle?: 'shared' | 'owned';
+}
+
 export interface MenuStructureItem<C extends string = string> {
   entityType: C;
   subentityType: C | null;
@@ -142,18 +154,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   entityIdColumnKeys: { readonly [K in T['entityTypes'][number] & string]: `${K}Id` };
   entityActions: T['entityActions'];
   resourceTypes: T['resourceTypes'];
-  productEmbeddings: readonly {
-    readonly embeddedProduct: T['productEntityTypes'][number] & string;
-    readonly hostProduct: T['productEntityTypes'][number] & string;
-    readonly hostColumn: string;
-    /**
-     * 'shared' (default): embedded rows live independently; host arrays hold
-     * best-effort references that CDC strips when the embedded row dies.
-     * 'owned': the union of host arrays is the row's reason to exist; CDC
-     * additionally garbage-collects embedded rows no live host references.
-     */
-    readonly lifecycle?: 'shared' | 'owned';
-  }[];
+  productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
   defaultRestrictions: {
     quotas: Record<string, number>;

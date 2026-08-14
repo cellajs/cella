@@ -39,7 +39,7 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
     // One rule per CI_RULE_SHAPES entry (separate rules per scope type:
     // Scaleway rejects mixing scopes in one rule). The key-mint rule is
-    // unconditioned — the resource.id condition 403s real api-key mints on
+    // unconditioned: the resource.id condition 403s real api-key mints on
     // live Scaleway (disproven 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS).
     buildRules: ({ projectId, organizationId }) =>
       CI_RULE_SHAPES.filter(

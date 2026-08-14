@@ -105,7 +105,7 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  * The CI key-mint grant (D3): IAMApplicationManager, unconditioned. The
  * former `resource.id in [<app ids>]` condition is disproven on live
  * Scaleway (probe 2026-08-10: api-key POST on a LISTED app id → 403; the
- * api-key request carries no `resource.id` for the condition to match) —
+ * api-key request carries no `resource.id` for the condition to match).
  * raak's live rule has run unconditioned since its migration and its repo
  * condition was live/repo drift, not validation. Documented widening: CI can
  * manage applications/api-keys org-wide; the remaining firewall is the
@@ -120,7 +120,7 @@ export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
  * by the rule builder (setup-ci-key.ts) and the advisory drift check
  * (setup.ts warnOnCiPolicyDrift) so the two cannot diverge. Every CI rule is
  * UNCONDITIONED by design (the key-mint resource.id condition is disproven on
- * live Scaleway — see CI_KEY_MINT_PERMISSION_SETS); a condition appearing on
+ * live Scaleway, see CI_KEY_MINT_PERMISSION_SETS); a condition appearing on
  * any CI rule is drift worth surfacing.
  */
 export interface CiRuleShape {

@@ -126,7 +126,7 @@ describe('runDeploy sequencing', () => {
       expect(index, `${op} missing or out of order in: ${ops.join(', ')}`).toBeGreaterThan(cursor);
       cursor = index;
     }
-    // Public version verification covers every LB-exposed service — including
+    // Public version verification covers every LB-exposed service, including
     // the co-hosted follower (yjs), which is absent from the rollout matrices.
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
     expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');

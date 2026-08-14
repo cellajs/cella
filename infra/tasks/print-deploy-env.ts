@@ -124,7 +124,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
       },
       // The CI app asserts its own grant too: exact set union (missing sets
       // fail deploys later and non-read-only extras are an escalation).
-      // condition '' skips the secret-condition check — CI rules are
+      // condition '' skips the secret-condition check; CI rules are
       // unconditioned by design (see CI_RULE_SHAPES).
       {
         app: principalNames(appConfig.slug, appConfig.mode).ciDeploy,

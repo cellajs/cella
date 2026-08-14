@@ -230,7 +230,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       // effective grants are owned by the role/RLS migrations from then on
       // (their REVOKEs make Scaleway read the privilege back as 'custom').
       // ignoreChanges keeps a refreshed state from arming an enforcement of
-      // 'all' that would clobber migration-owned grants — and that CI cannot
+      // 'all' that would clobber migration-owned grants, and that CI cannot
       // execute anyway (RelationalDatabasesReadOnly), which would fail the
       // deploy (seen live 2026-08-10 after the IAM v2 reconcile refresh).
 

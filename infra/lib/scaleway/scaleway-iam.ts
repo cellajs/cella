@@ -216,7 +216,7 @@ export async function provisionScopedKey(
 
   // 3. Mint the fresh API key FIRST (Scaleway reveals each secret only at
   //    creation), THEN purge the older keys. The old purge-then-mint order
-  //    left the principal keyless when the mint failed — for the CI app that
+  //    left the principal keyless when the mint failed; for the CI app that
   //    wedges every deploy until a manual rotate.
   const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
     application_id: app.id,

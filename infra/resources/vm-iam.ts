@@ -30,7 +30,7 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
         // Only a genuine not-found means "absent" (optional statements drop,
         // required principals fail with guidance). A transient IAM outage must
         // not silently demote a required principal to "not found" or drop
-        // admin statements — rethrow anything else.
+        // admin statements: rethrow anything else.
         const message = error instanceof Error ? error.message : String(error);
         if (/not.?found|404|does not exist/i.test(message)) return undefined;
         throw error;

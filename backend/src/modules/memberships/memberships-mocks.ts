@@ -37,7 +37,7 @@ const rootChannelType = hierarchy.channelTypes.find(
 /**
  * Membership location columns for wire/response mocks: all contexts start null, ancestors get
  * invented UUIDs, and the target column is always identical to the denormalized `channelId`.
- * Never use for rows that are inserted into the database — invented ancestor IDs violate FKs.
+ * Never use for rows that are inserted into the database: invented ancestor IDs violate FKs.
  */
 const generateMockMembershipChannelIdColumns = (
   channelType: ChannelEntityType,

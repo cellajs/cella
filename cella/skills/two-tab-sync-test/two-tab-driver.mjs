@@ -1,7 +1,5 @@
-// Two-tab realtime sync diagnosis for cella attachments. See SKILL.md for auth setup.
-// Drives two signed-in tabs (shared session, real tab-coordinator semantics) and runs:
-//   1. rename control  2. create  3. delete-fresh  4. delete-preseeded  5. reload verify
-// Captures per-tab console, seqCursor network bodies, SSE connections, screenshots.
+// Two-tab realtime sync diagnosis for cella attachments. See SKILL.md for auth setup and the experiment matrix.
+// Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, seqCursor network bodies, SSE connections, screenshots.
 // Usage: ORG_PATH=<tenantId>/<orgSlug> SESSION_COOKIE=<value> [OUT_DIR=...] node two-tab-driver.mjs
 import { globSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -151,7 +149,7 @@ try {
   writeFileSync(pdfPath, `%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Size 4/Root 1 0 R>>\n%%EOF\n`);
   let createOk = false;
   try {
-    // NOT /upload/i — that also matches the org page-header "Upload cover" button
+    // NOT /upload/i: that also matches the org page-header "Upload cover" button
     await tabA.getByRole('button', { name: 'Upload', exact: true }).click();
     const dlg = tabA.getByRole('dialog').filter({ has: tabA.locator('.uppy-Dashboard') });
     await dlg.waitFor({ timeout: 10_000 });
@@ -195,7 +193,7 @@ try {
     log('tabA', 'exp4-error', { message: String(err).slice(0, 300) });
   }
 
-  // ── Experiment 5: reload observer tab — server-state truth ────────────────
+  // ── Experiment 5: reload observer tab, server-state truth ─────────────────
   {
     await tabB.reload({ waitUntil: 'domcontentloaded' });
     await tabB.locator('.rdg-row').first().waitFor({ timeout: 30_000 });

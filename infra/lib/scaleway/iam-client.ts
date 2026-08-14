@@ -3,20 +3,18 @@ import { resolveFetch } from '../utils/fetch-like';
 import { scwFetch, scwSend } from './scw-fetch';
 
 /**
- * The shared IAM read/key client: app resolution, policy/rule collection, and
- * api-key CRUD, deduplicated from assert-vm-grants, mint-generation-keys, and
- * the CLI's drift check (IAM backlog item 5/8). Bootstrap provisioning flows
- * (scaleway-iam.ts) keep their own interwoven helpers on purpose — their
- * error handling and pagination needs differ per ritual step.
- *
- * Every function takes the same auth shape scwFetch does ({secretKey,
- * fetchImpl?}), so callers that inject a fetch for tests and callers that
- * mock the scw-fetch module both keep working.
+ * Shared IAM read/key client (app resolution, policy/rule collection, api-key CRUD)
+ * used by assert-vm-grants, mint-generation-keys, and the CLI's drift check. Bootstrap
+ * provisioning (scaleway-iam.ts) keeps its own helpers: its error handling and pagination needs differ per ritual step.
  */
 
 export const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
+/**
+ * Auth shape every function here shares with scwFetch, so callers that inject a
+ * fetch for tests and callers that mock the scw-fetch module both keep working.
+ */
 export interface IamAuth {
   secretKey: string;
   fetchImpl?: FetchLike;
@@ -155,7 +153,7 @@ export async function fetchAppRulesByName(opts: {
   return fetchGrantedRules(auth, organizationId, applicationId);
 }
 
-/** All api keys on an application (one page of 100 — the fleet keeps ≤2 per app). */
+/** All api keys on an application (one page of 100; the fleet keeps ≤2 per app). */
 export async function listApiKeys(auth: IamAuth, organizationId: string, applicationId: string): Promise<ScwApiKey[]> {
   const { api_keys = [] } = await scwFetch<{ api_keys?: ScwApiKey[] }>(
     auth,

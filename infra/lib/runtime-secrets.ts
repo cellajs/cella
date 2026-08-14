@@ -63,9 +63,9 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
  * `runtime-secrets.config.ts` entries. Store-owned declarations come first,
  * in store-registry order: database secrets historically led the app config,
  * and the per-consumer union order is genId-fingerprinted, so the merge
- * position is deliberate. Extracted (rather than inlined on the module-level
- * registry) so a non-postgres registry — external `databaseUrl`, `none` — is
- * testable without swapping the app config.
+ * position is deliberate. Kept as a standalone function so a non-postgres
+ * registry (external `databaseUrl`, `none`) is testable without swapping
+ * the app config.
  */
 export function buildRuntimeSecrets(
   stores: Record<string, Pick<StoreProvisioner, 'secrets'>>,
