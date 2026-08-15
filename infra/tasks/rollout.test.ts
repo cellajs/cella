@@ -193,6 +193,21 @@ describe('runWavedRollout sequencing', () => {
     expect(frontendServers).toContain('10.0.0.4');
   });
 
+  it('skips the final reap update with skipFinalReap, still promoting every service', async () => {
+    const fake = makeFake(cellaFixture());
+    await runWavedRollout(
+      { sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan], skipFinalReap: true },
+      fake.rt,
+    );
+
+    // Wave-1 and wave-2 provisioning updates only: no trailing reap update.
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2);
+    expect(fake.ops.at(-1)).not.toBe('update');
+    expect(fake.ops).toContain('promote:backend:b-new');
+    expect(fake.ops).toContain('promote:cdc:c-new');
+    expect(fake.ops).toContain('promote:frontend:f-new');
+  });
+
   it('supports a rollout without a primary service', async () => {
     const fake = makeFake(cellaFixture());
     await runWavedRollout({ sha: SHA, rest: [cdcPlan, frontendPlan] }, fake.rt);

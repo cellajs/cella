@@ -31,6 +31,12 @@ export interface DeployOptions {
   build?: boolean;
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string;
+  /**
+   * Skip the rollout's final displaced-generation reap so verification, entry
+   * publish, and smoke run right after cutover. The displaced VMs stay off
+   * every LB pool; a follow-up `reap` run (runReap below) destroys them.
+   */
+  deferReap?: boolean;
 }
 
 /** Deploy step tasks runnable in-process (tasks/<name>.ts, main(argv) throws on failure). */
@@ -81,7 +87,9 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
   if (!mode || !sha)
-    throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>]');
+    throw new Error(
+      'Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>] [--defer-reap]',
+    );
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
@@ -89,6 +97,7 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
     distDir: getFlag(argv, '--dist'),
     build: argv.includes('--build'),
     gitRef: getFlag(argv, '--git-ref'),
+    deferReap: argv.includes('--defer-reap'),
   };
 }
 
@@ -281,6 +290,7 @@ export async function runDeploy(
           env.primary_rollout_matrix,
           '--rest-json',
           env.roll_rest_matrix,
+          ...(opts.deferReap ? ['--skip-reap'] : []),
         ]),
       );
     } catch (err) {
@@ -346,6 +356,64 @@ export async function runDeploy(
     );
     await telemetry?.flush();
   }
+}
+
+export interface ReapOptions {
+  mode: string;
+  sha: string;
+}
+
+export function parseReapArgs(argv: string[]): ReapOptions {
+  const mode = getFlag(argv, '--mode');
+  const sha = getFlag(argv, '--sha');
+  if (!mode || !sha) throw new Error('Usage: reap.ts --mode <staging|production> --sha <git-sha>');
+  return { mode, sha };
+}
+
+/**
+ * Converge the stack on the control object's promoted pointers, destroying the
+ * generations a `--defer-reap` deploy displaced. Runs off the deploy's critical
+ * path (CI's follow-up reap job, or an operator shell). Safe without the
+ * generation keys file: only planning a NEW generation requires it, and a reap
+ * plans none (active generations are pre-existing and carry `ignoreChanges`
+ * on cloud-init and image). Idempotent: with nothing displaced the update is a
+ * no-op, and a skipped reap is recovered by any later stack update.
+ */
+export async function runReap(
+  opts: ReapOptions,
+  fx: DeployEffects,
+  loadDeployEnv: (opts: DeployOptions) => Promise<Record<AllowedKey, string>> = loadDeployEnvFromConfig,
+): Promise<void> {
+  const env = await loadDeployEnv(opts);
+  const stack = env.pulumi_stack;
+
+  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
+  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
+  process.env.AWS_DEFAULT_REGION ??= env.region;
+  process.env.SCW_DEFAULT_REGION ??= env.region;
+
+  let lockHeld = false;
+  try {
+    fx.exec('pulumi', ['login', `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`]);
+    fx.exec('pulumi', ['stack', 'select', stack]);
+    await fx.task('stack-lock', ['acquire', '--stack', stack, '--operation', 'reap', '--ttl-min', '30']);
+    lockHeld = true;
+    await fx.task('install-pulumi-providers');
+    fx.info(`[reap] converging '${stack}' on promoted generations (destroys displaced VMs)`);
+    await fx.update(stack);
+    fx.info('[reap] displaced generations reaped');
+  } finally {
+    if (lockHeld) {
+      await fx
+        .task('stack-lock', ['release', '--stack', stack])
+        .catch((err) => fx.info(`[reap] lock release failed: ${errorMessage(err)}`));
+    }
+  }
+}
+
+/** Entry called by tasks/reap.ts once APP_MODE is set (imports here evaluate shared). */
+export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
+  await runReap(parseReapArgs(argv), createRealEffects());
 }
 
 // Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware

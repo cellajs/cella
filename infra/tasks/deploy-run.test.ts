@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployEffects, type DeployOptions, parseDeployArgs, runDeploy } from './deploy-run';
+import {
+  type DeployEffects,
+  type DeployOptions,
+  parseDeployArgs,
+  parseReapArgs,
+  runDeploy,
+  runReap,
+} from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
@@ -42,8 +49,9 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
   };
 }
 
-function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) {
+function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean } = {}) {
   const ops: string[] = [];
+  const rolloutArgs: string[][] = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init');
@@ -59,9 +67,11 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
     },
     update: async (stack) => {
       ops.push(`update:${stack}`);
+      if (opts.updateFails) throw new Error('stack update failed');
     },
-    rollout: async () => {
+    rollout: async (argv) => {
       ops.push('rollout');
+      rolloutArgs.push([...argv]);
       if (opts.rolloutFails) throw new Error('cutover failed');
     },
     verifyVersion: async (url) => {
@@ -78,7 +88,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean } = {}) 
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops };
+  return { fx, ops, rolloutArgs };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
@@ -91,8 +101,10 @@ describe('parseDeployArgs', () => {
       distDir: 'dist',
       build: false,
       gitRef: undefined,
+      deferReap: false,
     });
     expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true);
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--defer-reap']).deferReap).toBe(true);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
   });
@@ -185,6 +197,16 @@ describe('runDeploy sequencing', () => {
     expect(waitIndex).toBeGreaterThan(bakeIndex);
   });
 
+  it('passes --skip-reap to the rollout only with deferReap', async () => {
+    const withDefer = makeFake();
+    await runDeploy({ ...baseOpts, deferReap: true }, withDefer.fx, fakeDeployEnv);
+    expect(withDefer.rolloutArgs[0]).toContain('--skip-reap');
+
+    const without = makeFake();
+    await runDeploy(baseOpts, without.fx, fakeDeployEnv);
+    expect(without.rolloutArgs[0]).not.toContain('--skip-reap');
+  });
+
   it('rejects production deploys from untrusted refs before touching anything', async () => {
     const { fx, ops } = makeFake();
     await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(
@@ -196,5 +218,36 @@ describe('runDeploy sequencing', () => {
   it('accepts production deploys from release tags', async () => {
     const { fx } = makeFake();
     await expect(runDeploy({ ...baseOpts, gitRef: 'refs/tags/1.2.3' }, fx, fakeDeployEnv)).resolves.toBeUndefined();
+  });
+});
+
+describe('parseReapArgs', () => {
+  it('requires mode and sha', () => {
+    expect(parseReapArgs(['--mode', 'production', '--sha', 'abc123'])).toEqual({ mode: 'production', sha: 'abc123' });
+    expect(() => parseReapArgs(['--mode', 'production'])).toThrow(/Usage/);
+    expect(() => parseReapArgs(['--sha', 'abc123'])).toThrow(/Usage/);
+  });
+});
+
+describe('runReap sequencing', () => {
+  it('logs in, locks, updates the stack, then releases the lock', async () => {
+    const { fx, ops } = makeFake();
+    await runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
+    expect(ops).toEqual([
+      'exec:pulumi:login',
+      'exec:pulumi:stack',
+      'task:stack-lock:acquire',
+      'task:install-pulumi-providers',
+      'update:production',
+      'task:stack-lock:release',
+    ]);
+  });
+
+  it('releases the lock when the update fails', async () => {
+    const { fx, ops } = makeFake({ updateFails: true });
+    await expect(runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)).rejects.toThrow(
+      /stack update failed/,
+    );
+    expect(ops.at(-1)).toBe('task:stack-lock:release');
   });
 });

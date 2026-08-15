@@ -82,7 +82,7 @@ export interface UploadAssetsOptions {
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
   const log = opts.log ?? ((message: string) => console.info(message));
-  const { S3Client, HeadObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { S3Client, ListObjectsV2Command, PutObjectCommand } = await import('@aws-sdk/client-s3');
   const s3 = new S3Client({
     region: opts.region,
     endpoint: `https://s3.${opts.region}.scw.cloud`,
@@ -93,16 +93,30 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
     forcePathStyle: false,
   });
 
+  // One paginated listing replaces a HeadObject round trip per key: existence
+  // answers the hashed paths, the listed ETag answers the stable-named ones
+  // (ETag is the content MD5 for single-part uploads, which is all this
+  // uploader ever performs).
+  const remoteEtags = new Map<string, string>();
+  let continuationToken: string | undefined;
+  do {
+    const page = await s3.send(new ListObjectsV2Command({ Bucket: opts.bucket, ContinuationToken: continuationToken }));
+    for (const object of page.Contents ?? []) {
+      if (object.Key) remoteEtags.set(object.Key, object.ETag?.replaceAll('"', '') ?? '');
+    }
+    continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (continuationToken);
+
   const keys = listDistKeys(opts.distDir).filter((key) => !isEntryFile(key));
   let uploaded = 0;
   let skipped = 0;
-  // Modest parallelism: hundreds of small objects, no need for a full pool.
   const queue = [...keys];
-  const workers = Array.from({ length: 8 }, async () => {
+  // Uploads are the only per-key round trip; wide parallelism over these
+  // small objects keeps the transfer S3-bound.
+  const workers = Array.from({ length: 32 }, async () => {
     for (let key = queue.shift(); key !== undefined; key = queue.shift()) {
-      const head = await s3.send(new HeadObjectCommand({ Bucket: opts.bucket, Key: key })).catch(() => null);
       if (isHashedPath(key)) {
-        if (head) {
+        if (remoteEtags.has(key)) {
           skipped++;
           continue;
         }
@@ -119,11 +133,10 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
         uploaded++;
         continue;
       }
-      // Stable-named key: ETag is the content MD5 for single-part uploads, so
-      // a match means the object is already current.
+      // Stable-named key: an ETag match means the object is already current.
       const body = readFileSync(join(opts.distDir, key));
       const md5 = createHash('md5').update(body).digest('hex');
-      if (head?.ETag?.replaceAll('"', '') === md5) {
+      if (remoteEtags.get(key) === md5) {
         skipped++;
         continue;
       }

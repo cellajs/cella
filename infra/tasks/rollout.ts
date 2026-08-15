@@ -142,6 +142,13 @@ export interface WavedRolloutPlan {
   primary?: RolloutServicePlan;
   /** Rolled together in wave 2: one provisioning update, concurrent cutovers. */
   rest: RolloutServicePlan[];
+  /**
+   * Skip the final reap update and leave displaced generations running after
+   * promotion. The displaced VMs are already detached from every LB pool, so a
+   * separate `reap` run (CI's follow-up job) destroys them off the deploy's
+   * critical path; any later stack update also converges them.
+   */
+  skipFinalReap?: boolean;
 }
 
 /**
@@ -150,8 +157,9 @@ export interface WavedRolloutPlan {
  * records pending intent for every remaining service, provisions all their
  * generations in ONE stack update (which also reaps the primary's displaced
  * generation), then health-gates and cuts each service over concurrently.
- * A final update reaps every remaining displaced generation. Any cutover
- * failure skips that reap: a displaced generation may still be serving.
+ * A final update reaps every remaining displaced generation (deferred to a
+ * separate reap run with `skipFinalReap`). Any cutover failure skips that
+ * reap: a displaced generation may still be serving.
  */
 export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime): Promise<void> {
   const { sha } = plan;
@@ -193,6 +201,10 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
     }
   }
 
+  if (plan.skipFinalReap) {
+    rt.info('[rollout] leaving displaced generations for a deferred reap run');
+    return;
+  }
   rt.info('[rollout] reaping displaced generations');
   await rt.update([...(plan.primary ? [plan.primary.service] : []), ...plan.rest.map((item) => item.service)]);
 }

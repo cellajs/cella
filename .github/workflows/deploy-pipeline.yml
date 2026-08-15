@@ -219,51 +219,56 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}"
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --defer-reap
 
   # -------------------------------------------------------------------------
-  # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
+  # Reap the generations the deploy displaced. --defer-reap above leaves the
+  # old VMs running (detached from every LB pool) so verification, entry
+  # publish, and smoke run minutes earlier; this follow-up update destroys
+  # them off the critical path. A failure here is visible but not urgent: the
+  # displaced VMs only cost money, and any later stack update (including the
+  # next deploy) converges them.
   # -------------------------------------------------------------------------
-  # -------------------------------------------------------------------------
-  # Prune stale deployment records. Every secret-using job above declares
-  # `environment:` (secrets are environment-scoped), and GitHub creates one
-  # deployment record per such job, including matrix legs. Each run leaves
-  # several records behind. They are audit-only; keep just the newest per
-  # environment so the /deployments list stays readable.
-  # A record must be marked `inactive` before it can be DELETEd.
-  # -------------------------------------------------------------------------
-  prune-deployments:
+  reap:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     needs: [setup, deploy]
     if: success()
     permissions:
-      deployments: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
     steps:
-      - name: Delete all but the newest deployment record
-        run: |
-          set -euo pipefail
-          # Newest first; keep index 0, prune the rest.
-          ids=$(gh api --paginate \
-            "repos/${GITHUB_REPOSITORY}/deployments?environment=${ENVIRONMENT}&per_page=100" \
-            --jq '.[].id' || true)
-          first=true
-          kept=""
-          deleted=0
-          while IFS= read -r id; do
-            [ -z "$id" ] && continue
-            if [ "$first" = true ]; then
-              first=false
-              kept="$id"
-              continue
-            fi
-            # Must be inactive before it can be deleted.
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses" \
-              -f state=inactive >/dev/null
-            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/deployments/${id}" >/dev/null
-            deleted=$((deleted + 1))
-          done <<< "$ids"
-          echo "Kept newest deployment ${kept:-<none>} for '${ENVIRONMENT}'; deleted ${deleted} stale record(s)."
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Reap displaced generations in ${{ needs.setup.outputs.environment }}
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+        run: pnpm --filter infra run reap --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}"
+
+# GitHub creates one deployment record per environment-declaring job
+# (secrets are environment-scoped, so that is every secret-using job,
+# matrix legs included) and offers no way to opt out. The records are
+# write-only audit noise; the accepted clutter keeps GitHub-specific
+# pruning administration out of the deploy path.

@@ -23,7 +23,12 @@ describe('deploy-rollout parseArgs', () => {
         { service: 'cdc', health_url: '' },
         { service: 'frontend', health_url: 'https://app' },
       ],
+      skipReap: false,
     });
+  });
+
+  it('parses --skip-reap', () => {
+    expect(parseArgs(['--stack', 'production', '--sha', 'abc123', '--skip-reap']).skipReap).toBe(true);
   });
 
   it('throws when required flags are missing', () => {
