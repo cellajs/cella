@@ -92,11 +92,11 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
         </div>
         <div className="pointer-events-none text-muted-foreground text-xs">
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100">
-            {item.submenu?.length
-              ? `${item.submenu?.length} ${t(item.submenu?.length > 1 ? item.submenu[0].entityType : item.submenu[0].entityType).toLowerCase()}`
-              : item.membership.role
-                ? t(item.membership.role)
-                : ''}
+            {item.membership.role ? t(item.membership.role) : ''}
+            {/* Submenu count is redundant when detailedMenu already renders the sub-items */}
+            {!detailedMenu && item.submenu?.length
+              ? `${item.membership.role ? ' · ' : ''}${item.submenu.length} ${t(item.submenu[0].entityType, { count: item.submenu.length }).toLowerCase()}`
+              : ''}
           </span>
         </div>
       </div>
