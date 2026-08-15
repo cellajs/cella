@@ -46,6 +46,7 @@ export function InfoContent() {
   const contactRef = useRef<HTMLButtonElement | null>(null);
   const { data: health, isError } = useQuery(healthQueryOptions());
   const statusServices = Object.entries(health?.components ?? {}).filter(([, component]) => component.label);
+  const allHealthy = !isError && health?.status === 'healthy';
 
   const hasStatusPage = !!appConfig.statusUrl?.trim();
 
@@ -106,9 +107,11 @@ export function InfoContent() {
             </Button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className={cn('gap-2 pt-1', allHealthy ? 'flex flex-col' : 'grid grid-cols-2')}>
           {isError ? (
             <StatusCard label="API" status="unhealthy" />
+          ) : allHealthy ? (
+            <StatusCard label={t('c:all_systems_healthy')} status="healthy" />
           ) : (
             statusServices.map(([key, component]) => (
               <StatusCard key={key} label={component.label ?? key} status={component.status} />
