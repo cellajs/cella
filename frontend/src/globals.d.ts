@@ -1,6 +1,9 @@
 /** Release identifier (git SHA, or 'unknown') used as Maple serviceVersion. */
 declare const __APP_VERSION__: string;
 
+/** Root package.json version (release-please), shown on the docs landing page. */
+declare const __PKG_VERSION__: string;
+
 /** Build-time frontmatter + headings index of docs pages (vite/docs-frontmatter.ts). */
 declare module 'virtual:docs-frontmatter' {
   export const docsIndex: Record<
