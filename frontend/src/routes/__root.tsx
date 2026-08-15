@@ -1,5 +1,6 @@
 import { createRootRouteWithContext, redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
+import { ApiError } from '~/lib/api';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Root } from '~/modules/common/root';
 import { meQueryOptions } from '~/modules/me/query';
@@ -44,7 +45,11 @@ export const Route = createRootRouteWithContext()({
 
     try {
       await queryClient.ensureQueryData({ ...meQueryOptions() });
-    } catch {
+    } catch (error) {
+      // Only a definitive 401 means signed out. Anything else (network blip, 5xx) rethrows to
+      // the root error boundary instead of masquerading a transient failure as a sign-out.
+      if (!(error instanceof ApiError) || Number(error.status) !== 401) throw error;
+
       console.info('[RootRoute] Not authenticated -> redirect to sign in');
       const redirectPath = location.pathname + location.searchStr;
       throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
