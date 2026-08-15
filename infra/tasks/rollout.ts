@@ -143,10 +143,10 @@ export interface WavedRolloutPlan {
   /** Rolled together in wave 2: one provisioning update, concurrent cutovers. */
   rest: RolloutServicePlan[];
   /**
-   * Leave displaced generations running after promotion instead of reaping them
-   * in a final stack update. The displaced VMs are already detached from every
-   * LB pool, so a separate `reap` run (CI's follow-up job) destroys them off
-   * the deploy's critical path; any later stack update also converges them.
+   * Skip the final reap update and leave displaced generations running after
+   * promotion. The displaced VMs are already detached from every LB pool, so a
+   * separate `reap` run (CI's follow-up job) destroys them off the deploy's
+   * critical path; any later stack update also converges them.
    */
   skipFinalReap?: boolean;
 }

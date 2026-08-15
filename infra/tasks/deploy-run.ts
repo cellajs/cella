@@ -374,9 +374,9 @@ export function parseReapArgs(argv: string[]): ReapOptions {
  * Converge the stack on the control object's promoted pointers, destroying the
  * generations a `--defer-reap` deploy displaced. Runs off the deploy's critical
  * path (CI's follow-up reap job, or an operator shell). Safe without the
- * generation keys file: only planning a NEW generation requires it and a reap
- * plans none — active generations are pre-existing and carry `ignoreChanges`
- * on cloud-init and image. Idempotent: with nothing displaced the update is a
+ * generation keys file: only planning a NEW generation requires it, and a reap
+ * plans none (active generations are pre-existing and carry `ignoreChanges`
+ * on cloud-init and image). Idempotent: with nothing displaced the update is a
  * no-op, and a skipped reap is recovered by any later stack update.
  */
 export async function runReap(

@@ -111,8 +111,8 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
   let uploaded = 0;
   let skipped = 0;
   const queue = [...keys];
-  // Small objects and no per-key existence probe left: wide parallelism keeps
-  // the upload S3-bound instead of round-trip-bound.
+  // Uploads are the only per-key round trip; wide parallelism over these
+  // small objects keeps the transfer S3-bound.
   const workers = Array.from({ length: 32 }, async () => {
     for (let key = queue.shift(); key !== undefined; key = queue.shift()) {
       if (isHashedPath(key)) {

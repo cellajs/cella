@@ -270,5 +270,5 @@ jobs:
 # GitHub creates one deployment record per environment-declaring job
 # (secrets are environment-scoped, so that is every secret-using job,
 # matrix legs included) and offers no way to opt out. The records are
-# write-only audit noise; we accept the clutter rather than carry
-# GitHub-specific pruning administration in the deploy path.
+# write-only audit noise; the accepted clutter keeps GitHub-specific
+# pruning administration out of the deploy path.
