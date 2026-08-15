@@ -46,8 +46,7 @@ export const Route = createRootRouteWithContext()({
     try {
       await queryClient.ensureQueryData({ ...meQueryOptions() });
     } catch (error) {
-      // Only a definitive 401 means signed out. Anything else (network blip, 5xx) rethrows to
-      // the root error boundary instead of masquerading a transient failure as a sign-out.
+      // Only a definitive 401 means signed out; network blips and 5xx rethrow to the root error boundary.
       if (!(error instanceof ApiError) || Number(error.status) !== 401) throw error;
 
       console.info('[RootRoute] Not authenticated -> redirect to sign in');
