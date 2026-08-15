@@ -51,6 +51,9 @@ Wave 2: one stack update provisions every remaining generation;
 verify SHAs, publish frontend entry files, smoke checks
         ↓
 one final stack update reaps every displaced generation
+(CI defers it: the deploy runs with --defer-reap and a follow-up
+ `pnpm --filter infra run reap` job destroys the displaced VMs
+ off the critical path — they are already detached from every LB pool)
 ```
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: instead of the wizard it opens an operator menu for day-2 work. From there you re-sync config and GitHub Environment secrets (Resume), rotate the CI deploy key or the Pulumi passphrase, run a privileged `pulumi up` for protected infra (database, VPC, private network), preview drift, manage runtime secrets in Secret Manager (list, set, rotate, delete), run database actions (reset, seed, temporary public exposure), and clear a stale stack lock. See [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md#advanced-operations) for the step-by-steps.

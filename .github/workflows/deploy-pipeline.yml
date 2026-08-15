@@ -219,11 +219,54 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}"
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --defer-reap
 
   # -------------------------------------------------------------------------
-  # Upload versioned (content-hashed, immutable) frontend assets to the bucket.
+  # Reap the generations the deploy displaced. --defer-reap above leaves the
+  # old VMs running (detached from every LB pool) so verification, entry
+  # publish, and smoke run minutes earlier; this follow-up update destroys
+  # them off the critical path. A failure here is visible but not urgent: the
+  # displaced VMs only cost money, and any later stack update (including the
+  # next deploy) converges them.
   # -------------------------------------------------------------------------
+  reap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup, deploy]
+    if: success()
+    permissions:
+      contents: read
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Reap displaced generations in ${{ needs.setup.outputs.environment }}
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+        run: pnpm --filter infra run reap --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}"
+
   # -------------------------------------------------------------------------
   # Prune stale deployment records. Every secret-using job above declares
   # `environment:` (secrets are environment-scoped), and GitHub creates one
@@ -235,7 +278,8 @@ jobs:
   prune-deployments:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [setup, deploy]
+    # After reap so the newest record kept per environment is the reap's.
+    needs: [setup, deploy, reap]
     if: success()
     permissions:
       deployments: write
