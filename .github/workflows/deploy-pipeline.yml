@@ -267,47 +267,8 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         run: pnpm --filter infra run reap --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}"
 
-  # -------------------------------------------------------------------------
-  # Prune stale deployment records. Every secret-using job above declares
-  # `environment:` (secrets are environment-scoped), and GitHub creates one
-  # deployment record per such job, including matrix legs. Each run leaves
-  # several records behind. They are audit-only; keep just the newest per
-  # environment so the /deployments list stays readable.
-  # A record must be marked `inactive` before it can be DELETEd.
-  # -------------------------------------------------------------------------
-  prune-deployments:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    # After reap so the newest record kept per environment is the reap's.
-    needs: [setup, deploy, reap]
-    if: success()
-    permissions:
-      deployments: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ENVIRONMENT: ${{ needs.setup.outputs.environment }}
-    steps:
-      - name: Delete all but the newest deployment record
-        run: |
-          set -euo pipefail
-          # Newest first; keep index 0, prune the rest.
-          ids=$(gh api --paginate \
-            "repos/${GITHUB_REPOSITORY}/deployments?environment=${ENVIRONMENT}&per_page=100" \
-            --jq '.[].id' || true)
-          first=true
-          kept=""
-          deleted=0
-          while IFS= read -r id; do
-            [ -z "$id" ] && continue
-            if [ "$first" = true ]; then
-              first=false
-              kept="$id"
-              continue
-            fi
-            # Must be inactive before it can be deleted.
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses" \
-              -f state=inactive >/dev/null
-            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/deployments/${id}" >/dev/null
-            deleted=$((deleted + 1))
-          done <<< "$ids"
-          echo "Kept newest deployment ${kept:-<none>} for '${ENVIRONMENT}'; deleted ${deleted} stale record(s)."
+# GitHub creates one deployment record per environment-declaring job
+# (secrets are environment-scoped, so that is every secret-using job,
+# matrix legs included) and offers no way to opt out. The records are
+# write-only audit noise; we accept the clutter rather than carry
+# GitHub-specific pruning administration in the deploy path.
