@@ -22,25 +22,32 @@ export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
-    const storedUser = useUserStore.getState().user;
+    let storedUser = useUserStore.getState().user;
 
-    // Redirect immediately without awaiting `/me`, preserving first paint when backend is slow.
-    // Background hydration restores valid sessions; global query handling owns failures.
     if (!storedUser) {
-      void queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {});
-
-      // If root domain, check for last user to decide where to redirect
+      // On root domain, check for last user to decide where to redirect
       if (location.pathname === '/') {
         const { lastUser } = useUserStore.getState();
-        if (lastUser) throw redirect({ to: '/auth/authenticate', replace: true });
-        throw redirect({ to: '/about', replace: true });
+        if (!lastUser) throw redirect({ to: '/about', replace: true });
+
+        // Returning user: the session cookie may still be valid while the store is empty (e.g.
+        // right after a backend-driven sign-in). Probe /me before bouncing to sign-in.
+        try {
+          storedUser = await queryClient.ensureQueryData({ ...meQueryOptions() });
+        } catch {
+          throw redirect({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true });
+        }
+      } else {
+        // Redirect immediately without awaiting `/me`, preserving first paint when backend is slow.
+        // Background hydration restores valid sessions; global query handling owns failures.
+        void queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {});
+
+        console.info('Not authenticated -> redirect to sign in');
+
+        const url = new URL(location.pathname, window.location.origin);
+        const redirectPath = url.pathname + url.search;
+        throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
       }
-
-      console.info('Not authenticated -> redirect to sign in');
-
-      const url = new URL(location.pathname, window.location.origin);
-      const redirectPath = url.pathname + url.search;
-      throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
     }
 
     // Stored user -> continue into the app and revalidate the session in the background
