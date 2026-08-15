@@ -7,6 +7,16 @@
   grid-row-start: var(--rdg-grid-row-start);
 }
 
+/* Row-box rows (animated reorder) carry the row placement themselves; their cells reset
+ * to auto so they flow into the row's subgrid instead of the root grid's row tracks. */
+.rdg-row-box {
+  grid-row-start: var(--rdg-grid-row-start);
+}
+
+.rdg-row-box > .rdg-cell {
+  grid-row-start: auto;
+}
+
 /* Show the last frozen cell shadow only when the grid is scrolled horizontally. */
 [data-scrolled-left] > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen),
 [data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {

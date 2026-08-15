@@ -1,4 +1,5 @@
 import { GripVerticalIcon, LockIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import type { TKey } from '~/lib/i18n-locales';
@@ -54,6 +55,12 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
+  // Draft order applied at drop time so the reorder animates as a response to the drop
+  // instead of after the mutation round-trip; cleared once a persisted order arrives.
+  const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
+  const persistedOrderKey = (slotConfig?.order ?? []).join();
+  useEffect(() => setDraftOrder(null), [persistedOrderKey]);
+
   const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, order, locked }) => ({
     id,
     label,
@@ -61,7 +68,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     order,
     locked,
   }));
-  const rows = orderBySlotConfig(candidates, slotConfig).map((tab) => ({
+  const rows = orderBySlotConfig(candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
     ...tab,
     name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
     visible: !hidden.has(tab.id),
@@ -80,6 +87,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     let insertAt = edge === 'bottom' ? toIdx + 1 : toIdx;
     if (fromIdx < insertAt) insertAt -= 1;
     ids.splice(insertAt, 0, moved);
+    setDraftOrder(ids);
     persistSlot({ order: ids, hidden: [...hidden] });
   };
 

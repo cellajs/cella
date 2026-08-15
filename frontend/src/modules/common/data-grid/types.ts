@@ -339,6 +339,12 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
+  /**
+   * Row-box mode: render the row as a real subgrid box (instead of display:contents) and
+   * animate order changes via motion layout. Derived by DataGrid for draggable,
+   * non-virtualized, keyed tables without frozen columns.
+   */
+  animateReorder?: boolean;
   lastFrozenColumnIndex: number;
   selectedCellEditor: ReactElement<RenderEditCellProps<TRow>> | undefined;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
