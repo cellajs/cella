@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.2](https://github.com/cellajs/cella/compare/0.9.1...0.9.2) (2026-08-15)
+
+
+### 🐞 Bug fixes
+
+* **frontend:** tab drag preview label + lone entity grid tile width ([#1059](https://github.com/cellajs/cella/issues/1059)) ([98df2d2](https://github.com/cellajs/cella/commit/98df2d28524b61378fe0d432a0784a7ea0f61946))
+
+
+### 🔧 Small improvements
+
+* **infra:** take reap and per-key HEAD probes off the deploy critical path ([#1060](https://github.com/cellajs/cella/issues/1060)) ([8e13d4f](https://github.com/cellajs/cella/commit/8e13d4f22f65d668ee8f5d0f221773c8764946f1))
+
+
+### 🧹 Chores
+
+* **deps:** minor/patch dependency sweep, migrate blocknote 0.54 highlighter ([#1056](https://github.com/cellajs/cella/issues/1056)) ([23d23da](https://github.com/cellajs/cella/commit/23d23dada548db41c5092b82eaa8f21b93b96a74))
+
 ## [0.9.1](https://github.com/cellajs/cella/compare/0.9.0...0.9.1) (2026-08-14)
 
 
