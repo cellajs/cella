@@ -18,6 +18,7 @@ import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
@@ -336,6 +337,8 @@ const viteConfig = {
     __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)
     __APP_VERSION__: JSON.stringify(gitSha),
+    // Root release version, shown on the docs landing page
+    __PKG_VERSION__: JSON.stringify(rootPkg.version),
   },
 } satisfies UserConfig;
 

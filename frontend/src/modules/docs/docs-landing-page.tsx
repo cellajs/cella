@@ -7,7 +7,7 @@ import { type DocsTile, docsConfig, getDocPageLoader, getResolvedDocPageComponen
 import { mdxComponents } from '~/modules/page/mdx-components';
 
 /**
- * The /docs landing page (title + intro MDX + link tiles), driven by the global docs config
+ * The /docs landing page (title + intro MDX + release version + link tiles), driven by the global docs config
  * (content root index.mdx frontmatter) so apps can customize it without touching code.
  */
 export function DocsLandingPage() {
@@ -32,6 +32,7 @@ export function DocsLandingPage() {
               </MDXProvider>
             </Suspense>
           )}
+          <p className="not-prose text-muted-foreground text-sm">v{__PKG_VERSION__}</p>
           {docsConfig.tiles.length > 0 && (
             <div className="not-prose mt-8 grid gap-3 sm:grid-cols-2">
               {docsConfig.tiles.map((tile) => (
