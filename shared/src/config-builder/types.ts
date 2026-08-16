@@ -187,6 +187,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   yjsUrl: string;
 
   mcpUrl: string;
+  /**
+   * Local dev service listen ports and Vite proxy targets. Forks offset the whole block
+   * together with the `frontendUrl` family's port so parallel stacks never collide.
+   */
+  devPorts: { api: number; cdcHealth: number; yjs: number; mcp: number };
   services: Record<string, AppServiceEndpointConfig>;
   // Cost escape hatch: backend (MODE=api) also boots every enabled service
   // in-process when true. Default false keeps the split (one service/process).
