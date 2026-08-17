@@ -65,6 +65,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         isFiltered={isFiltered}
         limitedView={limitedView}
         onExpand={() => setExpanded(true)}
+        queryKey={queryOptions.queryKey}
       />
     </div>
   );
