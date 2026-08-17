@@ -6,24 +6,20 @@ import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
 import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
-import { healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetPanelProps {
   id: string;
   label: TKey;
   children: ReactNode;
-  /** Fired on hover/focus of the panel button to warm data before the panel opens. */
-  onPrefetch?: () => void;
 }
 
 /**
  * Single accordion panel button + expandable content.
  */
-function MenuSheetPanel({ id, label, children, onPrefetch }: MenuSheetPanelProps) {
+function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   const { t } = useTranslation();
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
@@ -34,8 +30,6 @@ function MenuSheetPanel({ id, label, children, onPrefetch }: MenuSheetPanelProps
     <div>
       <Button
         onClick={() => toggleMenuSheetPanel(id)}
-        onMouseEnter={onPrefetch}
-        onFocus={onPrefetch}
         className="w-full justify-between shadow-none"
         variant={isOpen ? 'secondary' : 'ghost'}
       >
@@ -114,7 +108,7 @@ export function MenuSheetPanels() {
           <MenuSheetPanel id="preferences" label="c:preferences">
             <PreferencesContent />
           </MenuSheetPanel>
-          <MenuSheetPanel id="info" label="c:info" onPrefetch={() => queryClient.prefetchQuery(healthQueryOptions())}>
+          <MenuSheetPanel id="info" label="c:info">
             <InfoContent />
           </MenuSheetPanel>
         </div>

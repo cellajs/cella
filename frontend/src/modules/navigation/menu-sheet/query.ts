@@ -22,7 +22,7 @@ async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse> {
 
 /**
  * Query options for the backend health status shown in the info panel.
- * Polls on an interval and is safe to prefetch on intent (e.g. button hover).
+ * Polls on an interval while the info panel is open.
  */
 export const healthQueryOptions = () =>
   queryOptions({
