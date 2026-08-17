@@ -19,23 +19,13 @@ type PageBranchProps = {
   node: PageNode;
   variant: 'root' | 'parent';
   activePageId: string | undefined;
-  /** Ancestor chain of the active page. This row contains the active page iff its id is included. */
-  activeAncestorIds: ReadonlySet<string>;
   expandedIds: ReadonlySet<string>;
   onToggle: (id: string) => void;
   onClose: () => void;
 };
 
 /** Tier 0 (root) and tier 1 (parent) page rows. Both are collapsible; only visuals differ. */
-export function PageBranch({
-  node,
-  variant,
-  activePageId,
-  activeAncestorIds,
-  expandedIds,
-  onToggle,
-  onClose,
-}: PageBranchProps) {
+export function PageBranch({ node, variant, activePageId, expandedIds, onToggle, onClose }: PageBranchProps) {
   const { page, children } = node;
   const hasChildren = children.length > 0;
   const isExpanded = expandedIds.has(page.id);
@@ -79,8 +69,9 @@ export function PageBranch({
               onToggle(page.id);
               return;
             }
-            // Re-click on an expanded branch collapses it, unless the user is viewing one of its subpages
-            if (hasChildren && isExpanded && !activeAncestorIds.has(page.id)) {
+            // Collapsing is a re-click on the page you are already on. From anywhere else the
+            // click navigates here (the branch has its own page) and leaves the subtree open.
+            if (hasChildren && isExpanded && isActive) {
               e.preventDefault();
               onToggle(page.id);
               return;
@@ -118,7 +109,6 @@ export function PageBranch({
                     node={child}
                     variant="parent"
                     activePageId={activePageId}
-                    activeAncestorIds={activeAncestorIds}
                     expandedIds={expandedIds}
                     onToggle={onToggle}
                     onClose={onClose}

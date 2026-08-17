@@ -15,13 +15,13 @@ const tagTypeConfig = {
   operations: {
     linkTo: '/docs/operations' as const,
     getHash: (name: string) => `tag/${name}`,
-    getSearch: (isExpanded: boolean, name: string) => ({ operationTag: isExpanded ? undefined : name }),
+    getSearch: (collapse: boolean, name: string) => ({ operationTag: collapse ? undefined : name }),
     triggerClassName: 'text-left',
   },
   schemas: {
     linkTo: '/docs/schemas' as const,
     getHash: (name: string) => name,
-    getSearch: (isExpanded: boolean, name: string) => ({ schemaTag: isExpanded ? undefined : name }),
+    getSearch: (collapse: boolean, name: string) => ({ schemaTag: collapse ? undefined : name }),
     triggerClassName: 'justify-start lowercase',
   },
 };
@@ -58,6 +58,9 @@ function CollapsibleTagItemBase<T>({
   const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
+  // Collapsing is a re-click on the section you are already reading. While expanded but scrolled
+  // elsewhere, the click stays a jump to this section instead of folding it away underneath you.
+  const collapseOnClick = isExpanded && isActive;
 
   return (
     <Collapsible open={isExpanded}>
@@ -69,7 +72,7 @@ function CollapsibleTagItemBase<T>({
           render={
             <Link
               to={linkTo}
-              search={(prev) => ({ ...prev, ...getSearch(isExpanded, tag.name) })}
+              search={(prev) => ({ ...prev, ...getSearch(collapseOnClick, tag.name) })}
               hash={hash}
               replace
               resetScroll={false}
