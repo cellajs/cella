@@ -17,8 +17,10 @@ import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types'
 /** Renders the cella custom block type select component. */
 export function CellaCustomBlockTypeSelect({
   headingLevels,
+  titleLevel,
 }: {
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
+  titleLevel?: CustomBlockNoteMenuProps['titleLevel'];
 }) {
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -35,6 +37,8 @@ export function CellaCustomBlockTypeSelect({
     if (type === 'heading') {
       if (props?.isToggleable) return false;
       if (typeof props?.level === 'number') {
+        // Forced-title mode: body blocks must not rank at or above the title
+        if (titleLevel !== undefined && props.level <= titleLevel) return false;
         return headingLevels.includes(props.level as (typeof headingLevels)[number]);
       }
     }

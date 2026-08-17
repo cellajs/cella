@@ -419,3 +419,22 @@ li:has(.is-focused) {
 [data-content-type="heading"][data-level="3"] {
   --level: 1.1rem;
 }
+
+/* Forced-title mode (see forced-title-extension.ts). Block 0 is the normalized heading "title";
+   give it its own placeholder, overriding BlockNote's per-type "Heading" and emptyDocument rules,
+   which are injected per-editor with a unique class (hence !important). The text rides a CSS var
+   set by the wrapper so it stays translatable. Direct child combinators keep nested first blocks
+   (children of block 0) out of scope. Coupled to BlockNote's injected placeholder rules — re-check
+   on every @blocknote bump. */
+.bn-forced-title
+  .bn-editor
+  > .bn-block-group
+  > .bn-block-outer:first-child
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"]:has(.ProseMirror-trailingBreak:only-child)::after {
+  content: var(--bn-title-placeholder, "Title") !important;
+  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}

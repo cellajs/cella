@@ -8,12 +8,14 @@ import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { appConfig, type ProductEntityType } from 'shared';
 import type { WebsocketProvider } from 'y-websocket';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
+import { forcedTitleExtension } from '~/modules/common/blocknote/custom-elements/forced-title/forced-title-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
 import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
@@ -96,6 +98,7 @@ function BlockNote({
   emojis = true,
   excludeBlockTypes,
   excludeFileBlockTypes,
+  forcedTitle = false,
   extensions,
   members, // for mentions
   filePanel,
@@ -112,8 +115,11 @@ function BlockNote({
   onFocus,
   onBeforeLoad,
 }: BlockNoteProps) {
+  const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const isMobile = useBreakpointBelow('sm');
+  // Forced-title mode: `true` pins block 0 at level 1; `{ level }` overrides for nested surfaces
+  const titleLevel = forcedTitle ? (typeof forcedTitle === 'object' ? forcedTitle.level : 1) : undefined;
   // Present only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
   const uploadHost = useUploadHost();
 
@@ -138,7 +144,12 @@ function BlockNote({
     dictionary: getDictionary(),
     // Caller extensions first: BlockNote keeps the first extension per key and drops later
     // duplicates, so a caller-provided checkedExtension (e.g. persisted: true) must win over the default.
-    extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter],
+    extensions: [
+      ...(extensions ?? []),
+      ...(titleLevel ? [forcedTitleExtension({ level: titleLevel })] : []),
+      checkedExtension(),
+      syntaxHighlighter,
+    ],
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
   };
 
@@ -275,7 +286,9 @@ function BlockNote({
       editable={editable}
       autoFocus={autoFocus}
       ref={blockNoteRef}
-      className={`${dense ? 'bn-dense' : ''} ${className}`}
+      className={`${dense ? 'bn-dense' : ''} ${titleLevel ? 'bn-forced-title' : ''} ${className}`}
+      // Forced-title placeholder text rides a CSS var so it stays translatable (styles.css)
+      {...(titleLevel && { style: { '--bn-title-placeholder': `"${t('c:title')}"` } as React.CSSProperties })}
       data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
       sideMenu={false}
@@ -289,13 +302,29 @@ function BlockNote({
       onBlur={handleBlur}
       {...(commitOnEveryChange && { onChange: handleUpdateData })}
     >
-      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
+      {slashMenu && (
+        <CustomSlashMenu
+          editor={editor}
+          allowedTypes={allowedBlockTypes}
+          headingLevels={headingLevels}
+          titleLevel={titleLevel}
+        />
+      )}
 
       {/* Hide formatting toolbar on mobile */}
-      {!isMobile && formattingToolbar && <CustomFormattingToolbar headingLevels={headingLevels} />}
+      {!isMobile && formattingToolbar && (
+        <CustomFormattingToolbar headingLevels={headingLevels} titleLevel={titleLevel} />
+      )}
 
       {/* By default hides on mobile */}
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
+      {sideMenu && (
+        <CustomSideMenu
+          editor={editor}
+          allowedTypes={allowedBlockTypes}
+          headingLevels={headingLevels}
+          titleLevel={titleLevel}
+        />
+      )}
 
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}

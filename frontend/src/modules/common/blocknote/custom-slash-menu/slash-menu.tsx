@@ -5,8 +5,8 @@ import { CustomSlashMenuComponent } from '~/modules/common/blocknote/custom-slas
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 /** Renders the custom slash menu component. */
-export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
-  const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels);
+export function CustomSlashMenu({ editor, allowedTypes, headingLevels, titleLevel }: CustomBlockNoteMenuProps) {
+  const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels, titleLevel);
 
   return (
     <SuggestionMenuController
