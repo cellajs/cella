@@ -158,7 +158,7 @@ export function MembersTableBar({
           </FilterBarSearch>
           <FilterBarFilters>
             <SelectRole
-              entity
+              entityType={channel.entityType}
               value={role === undefined ? 'all' : role}
               onChange={onRoleChange}
               className="h-10 w-auto sm:min-w-32"

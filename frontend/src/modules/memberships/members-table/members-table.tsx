@@ -49,7 +49,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const limit = LIMIT;
 
   const [selected, setSelected] = useState<Member[]>([]);
-  const [columns, setColumns] = useColumns(canUpdate, isSheet);
+  const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit });

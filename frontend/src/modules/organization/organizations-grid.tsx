@@ -43,6 +43,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           queryKey={queryOptions.queryKey}
           searchVars={baseSearch}
           label={'c:organization'}
+          entityType="organization"
           setSearch={setSearch}
           isSheet={!focusView}
           focusView={focusView}

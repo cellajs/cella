@@ -19,7 +19,7 @@ interface Props {
 export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   const { t } = useTranslation();
 
-  const form = useInviteFormDraft(channel?.id);
+  const form = useInviteFormDraft(channel?.id, channel?.entityType);
   const { mutate: invite, isPending } = useInviteMemberMutation();
 
   if (!channel) return null;
@@ -68,7 +68,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row items-center gap-4">
               <FormLabel>{t('c:role')}:</FormLabel>
-              <SelectRoleRadio value={value} onValueChange={onChange} />
+              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} />
               <FormMessage />
             </FormItem>
           )}
