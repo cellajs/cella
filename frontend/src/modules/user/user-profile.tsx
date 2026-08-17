@@ -66,9 +66,8 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
         }
       />
       <Suspense>
-        <div className="container">
-          <ProfilePageContent user={user} organizationId={organizationId} isSheet={isSheet} />
-        </div>
+        {/* No wrapper: the content owns its own container, so it can run a full-width tab nav */}
+        <ProfilePageContent user={user} organizationId={organizationId} isSheet={isSheet} />
       </Suspense>
     </>
   );
