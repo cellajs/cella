@@ -117,10 +117,10 @@ export const config = {
   maintenance: false,
 
   /**
-   * Local dev service listen ports, also used as the Vite proxy targets. Forks MUST offset this
+   * Local dev service listen ports, also used as the Vite proxy targets. Apps MUST offset this
    * whole block together with the port in the `frontendUrl` family (e.g. +20 → 3020/4020/4021/…):
    * service ports are machine-global, so with two stacks running, whichever backend binds :4000
-   * first answers every fork's `/api` proxy. `PORT`-style env vars still override at runtime.
+   * first answers every app's `/api` proxy. `PORT`-style env vars still override at runtime.
    */
   devPorts: {
     api: 4000,

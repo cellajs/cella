@@ -188,7 +188,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   mcpUrl: string;
   /**
-   * Local dev service listen ports and Vite proxy targets. Forks offset the whole block
+   * Local dev service listen ports and Vite proxy targets. Apps offset the whole block
    * together with the `frontendUrl` family's port so parallel stacks never collide.
    */
   devPorts: { api: number; cdcHealth: number; yjs: number; mcp: number };
