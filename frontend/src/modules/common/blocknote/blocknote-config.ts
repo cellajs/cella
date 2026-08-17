@@ -21,6 +21,7 @@ import type {
   CustomBlockTypes,
   CustomFormatToolBarConfig,
   SlashIndexedItems,
+  TitleLevel,
 } from '~/modules/common/blocknote/types';
 
 /**
@@ -150,6 +151,8 @@ export const getSlashMenuItems = (
   editor: CustomBlockNoteEditor,
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
+  // Forced-title mode: levels at or above the title are reserved for block 0
+  titleLevel?: TitleLevel,
 ): DefaultReactSuggestionItem[] => {
   const baseItems = [
     ...getDefaultReactSlashMenuItems(editor),
@@ -162,6 +165,8 @@ export const getSlashMenuItems = (
   const filteredHeading = heading.filter((key) => {
     const match = key.match(/(?:_)?(\d)$/);
     const level = match ? Number.parseInt(match[1], 10) : 1;
+    // Forced-title mode: body blocks must not rank at or above the title
+    if (titleLevel !== undefined && level <= titleLevel) return false;
     return headingLevels.includes(level as (typeof headingLevels)[number]);
   });
 

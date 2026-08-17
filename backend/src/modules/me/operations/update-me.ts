@@ -9,6 +9,7 @@ interface UpdateMeInput {
   slug?: string;
   firstName?: string | null;
   lastName?: string | null;
+  description?: string | null;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   language?: string;

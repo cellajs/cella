@@ -33,4 +33,6 @@ pre-commit:
     #   run: pnpm --filter @cellajs/sync validate
     typescript:
       priority: 1
-      run: pnpm sdk && pnpm ts
+      # `pnpm sdk` regenerates from the working tree at commit time; stage its output so a
+      # schema-shaping commit cannot record stale sdk/gen while the fresh files sit unstaged.
+      run: pnpm sdk && git add sdk/gen && pnpm ts

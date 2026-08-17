@@ -90,6 +90,8 @@ export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
 
 export const pendingMembershipSchema = z.object({
   id: z.string(),
+  /** The pending invitation's token id; null when the invite's token row is gone. */
+  tokenId: z.string().nullable(),
   email: userBaseSchema.shape.email,
   thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),

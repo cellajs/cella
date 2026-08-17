@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { ShieldAlertIcon } from 'lucide-react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { getTools, resolvePlacementList } from '~/lib/placements';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { InvitationsTable } from '~/modules/me/invitations-table';
@@ -9,15 +11,21 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';
 
+const slot = 'home.sections';
+
 /**
  * Home page component displaying a welcome message and pending invitations for the user.
- * Shows an alert for system admins who have not enabled MFA.
+ * Shows an alert for system admins who have not enabled MFA. Below the built-in content it
+ * hosts the `home.sections` slot, so apps add home surfaces from their module config
+ * without patching this file.
  */
 export function HomePage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
 
   const showMfaAlert = !user.mfaRequired;
+
+  const sections = resolvePlacementList(slot, getTools(slot));
 
   return (
     <div className="container">
@@ -44,6 +52,11 @@ export function HomePage() {
           </CardContent>
         </Card>
       </div>
+      {sections.map((tool) => (
+        <Suspense key={tool.id} fallback={null}>
+          {tool.render(user)}
+        </Suspense>
+      ))}
     </div>
   );
 }

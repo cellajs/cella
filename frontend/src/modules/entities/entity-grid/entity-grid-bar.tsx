@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
@@ -14,6 +15,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { GRID_PREVIEW_LIMIT } from '~/modules/entities/entity-grid/grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type EntityGridBarSearch = {
@@ -43,6 +45,8 @@ type Props = {
   focusView?: boolean;
   /** Sort options shown in the bar; defaults to alphabetical + created date. */
   sortOptions?: readonly EntityGridSortOption[];
+  /** Slot for surface actions (e.g. a create button), rendered before the count while unfiltered. */
+  actions?: ReactNode;
 };
 
 /** Renders the entity grid bar component. */
@@ -54,6 +58,7 @@ export function EntityGridBar({
   isSheet,
   focusView,
   sortOptions = entityGridSortOptions,
+  actions,
 }: Props) {
   const { q, sort, role } = searchVars;
 
@@ -61,8 +66,11 @@ export function EntityGridBar({
 
   const isFiltered = !!q;
 
-  // Hide the bar when there are 3 or fewer items and no filters are active
-  if (!isFiltered && (total ?? 0) <= 3) return null;
+  // Hide the bar at or below the preview count while unfiltered; the actions slot stays
+  // rendered so surfaces keep their create affordance without mirroring the hide rule.
+  if (!isFiltered && (total ?? 0) <= GRID_PREVIEW_LIMIT) {
+    return actions ? <div className="flex items-center">{actions}</div> : null;
+  }
 
   const onSearch = (searchString: string) => setSearch({ q: searchString });
   const onSortChange = (sort: string) => setSearch({ sort });
@@ -76,6 +84,7 @@ export function EntityGridBar({
       {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
+          {!isFiltered && actions}
           <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters} />
         </FilterBarActions>
         <div className="sm:grow" />

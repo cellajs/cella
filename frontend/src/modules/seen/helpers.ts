@@ -16,12 +16,11 @@ export const seenGroupingChannelTypes = new Set(
 
 /**
  * Derive the channel entity ID for seen-tracking grouping from any entity row.
- * Uses hierarchy to find the parent context type, then reads the matching ID column from the entity.
+ * Resolves the deepest non-null ancestor (the row's effective home), matching mark-seen,
+ * unseen counts and unseen-sync; parent-then-org would diverge for nullableAncestors placements.
  */
 export function getSeenChannelId(entityType: ProductEntityType, entity: Record<string, unknown>): string {
-  const parent = hierarchy.getParent(entityType);
-  const key = parent ? appConfig.entityIdColumnKeys[parent] : 'organizationId';
-  return String(entity[key] ?? entity.organizationId);
+  return String(hierarchy.resolveDeepestAncestorId(entityType, entity) ?? entity.organizationId);
 }
 
 /**

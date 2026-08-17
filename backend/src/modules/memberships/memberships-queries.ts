@@ -435,6 +435,9 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
       createdAt: table.createdAt,
       createdBy: table.createdBy,
+      // The row's own invitation token: resends must target it by id, never by email
+      // (email-only resend resolves the address's newest token across orgs and system invites).
+      tokenId: tokensTable.id,
     })
     .from(table)
     .leftJoin(usersTable, eq(usersTable.id, table.userId))

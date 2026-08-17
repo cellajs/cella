@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ChannelEntityType, hierarchy, isProduct, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
 import type { DbContext } from '#/core/context';
@@ -6,6 +6,7 @@ import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { productCountersTable } from '#/modules/entities/product-counters-db';
 import type { membershipCountSchema } from '#/schemas';
 import type { EntityModel, EntityType, ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { getEntityTable } from '#/tables';
@@ -78,6 +79,30 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
 
   return { countsSelect };
 };
+
+// Product view-count queries (product_counters lives in this module; every product module reuses these)
+
+interface FindProductViewCountOpts {
+  productId: string;
+}
+
+/** Get a product's view count from product counters. */
+export const findProductViewCount = async (ctx: DbContext, { productId }: FindProductViewCountOpts) => {
+  const { db } = ctx.var;
+  const [counters] = await db
+    .select({ viewCount: productCountersTable.viewCount })
+    .from(productCountersTable)
+    .where(eq(productCountersTable.productId, productId))
+    .limit(1);
+  return counters?.viewCount ?? 0;
+};
+
+/** List-select projection for a product's view count; pair with {@link productViewCountJoin}. */
+export const productViewCountSelect = () =>
+  sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count');
+
+/** LEFT-join condition binding product counters to a product table's id column. */
+export const productViewCountJoin = (productIdColumn: AnyColumn) => eq(productCountersTable.productId, productIdColumn);
 
 interface GetChannelCountsOpts {
   entityType: ChannelEntityType;

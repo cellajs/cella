@@ -462,6 +462,56 @@
     "pnpm check"
    ],
    "summary": "Service listen ports and Vite proxy targets default from a single devPorts block in config.default.ts (api 4000, cdcHealth 4001, yjs 4002, mcp 4003) instead of five hardcodes; PORT-style env vars still override. Not sync-breaking and defaults are unchanged, but forks must add an offset devPorts override (paired with their frontendUrl port) to stop parallel stacks colliding on :4000, where the first backend up answers every fork's /api proxy. Also drop stale PORT= lines from backend/.env."
+  },
+  {
+   "id": "20260817T1053-product-view-count-helpers",
+   "version": "next",
+   "title": "Product view-count helpers move to the entities module",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "findAttachmentViewCount is deleted; the shared findProductViewCount / productViewCountSelect / productViewCountJoin (entities-queries.ts) and productViewCountSchema (entities-schema.ts) replace the per-module copies, and the attachment module is rewritten onto them. No DB or wire change. Forks: swap imports (opts key entityId->productId), replace inline coalesce-select/leftJoin/schema fields with the helpers, delete fork-local duplicates like findItemViewCount. Apps that PIN the attachment module must hand-apply the rewrite or their pinned copy silently keeps the deleted-export pattern."
+  },
+  {
+   "id": "20260817T1055-tools-config-channel-columns",
+   "version": "next",
+   "title": "toolsConfig moves into channelColumns()",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration — a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
+  },
+  {
+   "id": "20260817T1447-remove-filter-tab-ids",
+   "version": "next",
+   "title": "Remove the filterTabIds allow-list from nav tabs",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "PageTabNav/resolveNavTabs lose the filterTabIds prop: an imperative allow-list with zero template consumers that the nav-tab guards never honored, so allow-list-hidden tabs stayed URL-reachable and could become the landing tab. Apps passing it must express each gate declaratively before syncing: navTab.requires + grants for permission gates, visibleTo + pairs for role gates on registry tabs, or placementOverrides/route removal for hard removal. Compile error at sync until call sites are migrated."
   }
  ]
 }

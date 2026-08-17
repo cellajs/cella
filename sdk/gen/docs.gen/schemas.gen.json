@@ -1014,6 +1014,18 @@
           "type": ["string", "null"],
           "required": true
         },
+        "toolsConfig": {
+          "type": "object",
+          "required": true,
+          "additionalProperties": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "order": { "type": "array", "required": false, "itemType": "string" },
+              "hidden": { "type": "array", "required": false, "itemType": "string" }
+            }
+          }
+        },
         "path": {
           "type": ["string", "null"],
           "required": true
@@ -1080,18 +1092,6 @@
           "type": "object",
           "required": true,
           "properties": {}
-        },
-        "toolsConfig": {
-          "type": "object",
-          "required": true,
-          "additionalProperties": {
-            "type": "object",
-            "required": false,
-            "properties": {
-              "order": { "type": "array", "required": false, "itemType": "string" },
-              "hidden": { "type": "array", "required": false, "itemType": "string" }
-            }
-          }
         },
         "included": {
           "type": "object",
@@ -1221,6 +1221,7 @@
       "updatedBy": null,
       "publishedAt": "2024-12-25T15:04:42.969Z",
       "publicAt": null,
+      "toolsConfig": {},
       "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
       "shortName": "Spencer,",
       "country": "Sweden",
@@ -1235,7 +1236,6 @@
       "chatSupport": true,
       "organizationFlags": {},
       "setupConfig": {},
-      "toolsConfig": {},
       "included": {
         "membership": {
           "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",

@@ -329,6 +329,11 @@
             "required": false,
             "maxLength": 2048
           },
+          "description": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 1000000
+          },
           "firstName": {
             "type": ["string", "null"],
             "required": false,

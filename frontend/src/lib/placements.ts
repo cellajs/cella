@@ -75,6 +75,8 @@ type ChannelTabsSlotContexts = {
 export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSlotContexts {
   /** The current user's account settings page (the consumer passes no grants or pairs). */
   'account.settings': MeUser;
+  /** The home page's stacked sections below the built-in content (no grants or pairs). */
+  'home.sections': MeUser;
   /** The system admin panel's tab bar: a non-entity surface, so tools render with no context. */
   'system.tabs': undefined;
 }
