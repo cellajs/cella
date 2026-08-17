@@ -40,7 +40,10 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   const { sort, order } = search;
   const limit = LIMIT;
 
-  const [columns] = useColumns();
+  const [columns] = useColumns({
+    tenantId: channel.tenantId,
+    organizationId: channel.organizationId || channel.id,
+  });
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = pendingMembershipsQueryOptions({

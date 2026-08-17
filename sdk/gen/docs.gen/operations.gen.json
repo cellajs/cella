@@ -1703,6 +1703,29 @@
     }
   },
   {
+    "id": "resendPendingInvitation",
+    "hash": "tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/memberships/pending/{id}/resend",
+    "tags": ["memberships"],
+    "summary": "Resend pending invitation",
+    "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["spamLimiter", "pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "markSeen",
     "hash": "tag/seen/POST/{tenantId}/{organizationId}/seen",
     "method": "post",

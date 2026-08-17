@@ -32,7 +32,7 @@
   {
     "name": "memberships",
     "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
-    "count": 6,
+    "count": 7,
     "kind": "module"
   },
   {

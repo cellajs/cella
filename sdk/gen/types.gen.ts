@@ -4685,6 +4685,55 @@ export type GetPendingMembershipsResponses = {
 
 export type GetPendingMembershipsResponse = GetPendingMembershipsResponses[keyof GetPendingMembershipsResponses];
 
+export type ResendPendingInvitationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/memberships/pending/{id}/resend';
+};
+
+export type ResendPendingInvitationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ResendPendingInvitationError = ResendPendingInvitationErrors[keyof ResendPendingInvitationErrors];
+
+export type ResendPendingInvitationResponses = {
+  /**
+   * Invitation resent
+   */
+  204: void;
+};
+
+export type ResendPendingInvitationResponse = ResendPendingInvitationResponses[keyof ResendPendingInvitationResponses];
+
 export type MarkSeenData = {
   body: {
     /**

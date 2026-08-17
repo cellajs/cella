@@ -205,6 +205,27 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
+  /**
+   * Resend a pending membership invitation
+   */
+  resendPendingInvitation: createXRoute({
+    operationId: 'resendPendingInvitation',
+    method: 'post',
+    path: '/pending/{id}/resend',
+    xGuard: [authGuard, tenantGuard, orgGuard],
+    xRateLimiter: [spamLimiter, singlePointsLimiter],
+    tags: ['memberships', 'cella'],
+    summary: 'Resend pending invitation',
+    description:
+      'Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
+    request: {
+      params: idInTenantOrgParamSchema,
+    },
+    responses: {
+      204: { description: 'Invitation resent' },
+      ...errorResponseRefs,
+    },
+  }),
 };
 
 export { membershipRoutes };

@@ -1,40 +1,33 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
-import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   deleteSession,
-  findInactiveMembershipById,
   findInvitationToken,
   findLatestSessionByUser,
-  insertInvitationToken,
   linkTokenToUser,
 } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleEmailVerification } from '#/modules/auth/general/helpers/handle-email-verification';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
+import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
-import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
-import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
-import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
+import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -190,82 +183,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 
   if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
 
-  const { email: userEmail } = oldToken;
-
-  // Generate token and store hashed
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
-
-  // Insert token first
-  await insertInvitationToken(ctx, {
-    values: {
-      ...oldToken,
-      secret: hashedToken,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      invokedAt: null,
-      singleUseToken: null,
-    },
-  });
-
-  // Prepare and send invitation email
-  const recipient = {
-    email: userEmail,
-    lng: appConfig.defaultLanguage,
-    name: slugFromEmail(userEmail),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
-  };
-
-  // Prepare email props, default is system invite
-  const defaultEmailProps = {
-    senderName: 'System',
-    senderThumbnailUrl: null as string | null,
-  };
-
-  // Get original sender
-  if (oldToken.createdBy) {
-    const sender = await findUserById(ctx, { id: oldToken.createdBy });
-    if (sender) {
-      defaultEmailProps.senderName = sender.name;
-      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
-    }
-  }
-
-  // Get entity info
-  if (oldToken.inactiveMembershipId) {
-    const inactiveMembership = await findInactiveMembershipById(ctx, {
-      id: oldToken.inactiveMembershipId,
-    });
-
-    const entityIdColumnKey = appConfig.entityIdColumnKeys[
-      inactiveMembership.channelType
-    ] as keyof typeof inactiveMembership;
-    if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
-    // Internal resolve: getting entity info for email template (no permission check needed)
-    const entity = await resolveEntity(ctx, {
-      entityType: inactiveMembership.channelType,
-      identifier: inactiveMembership[entityIdColumnKey] as string,
-    });
-
-    if (!entity) throw new AppError(400, 'invalid_request', 'error');
-
-    const emailProps = {
-      ...defaultEmailProps,
-      entityName: entity.name,
-      role: inactiveMembership.role,
-    };
-
-    const recipientLng = 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage;
-    await mailer.prepareEmails(
-      memberInviteWithTokenEmail,
-      emailProps,
-      [{ ...recipient, lng: recipientLng }],
-      userEmail,
-    );
-    log.info('Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
-  } else {
-    await mailer.prepareEmails(systemInviteEmail, defaultEmailProps, [recipient], userEmail);
-    log.info('System invitation has been resent');
-  }
+  await resendInvitationEmail(ctx, oldToken);
 
   return ctx.body(null, 204);
 });

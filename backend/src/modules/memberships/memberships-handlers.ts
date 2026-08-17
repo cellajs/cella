@@ -6,6 +6,7 @@ import { deleteMembershipsOp } from '#/modules/memberships/operations/delete-mem
 import { getMembersOp } from '#/modules/memberships/operations/get-members';
 import { getPendingMembershipsOp } from '#/modules/memberships/operations/get-pending-memberships';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
+import { resendPendingInvitationOp } from '#/modules/memberships/operations/resend-pending-invitation';
 import { updateMembershipOp } from '#/modules/memberships/operations/update-membership';
 import { defaultHook } from '#/utils/default-hook';
 
@@ -46,6 +47,12 @@ app.openapi(membershipRoutes.getMembers, async (ctx) => {
 app.openapi(membershipRoutes.getPendingMemberships, async (ctx) => {
   const data = await getPendingMembershipsOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
+});
+
+app.openapi(membershipRoutes.resendPendingInvitation, async (ctx) => {
+  const { id } = ctx.req.valid('param');
+  await resendPendingInvitationOp(ctx, id);
+  return ctx.body(null, 204);
 });
 
 export const membershipHandlers = app;

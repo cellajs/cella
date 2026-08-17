@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
+import { ResendPendingInvitationCell } from '~/modules/memberships/pending-table/resend-pending-cell';
 import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 /** Builds the column definitions for the enclosing table. */
-export const useColumns = () => {
+export const useColumns = (path: { tenantId: string; organizationId: string }) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
@@ -66,14 +66,8 @@ export const useColumns = () => {
       name: '',
       width: 120,
       placeholderValue: '-',
-      // Resend targets the row's own token id; rows whose token row is gone offer no resend.
-      renderCell: ({ row }) =>
-        row.tokenId && (
-          <ResendInvitationButton
-            resendData={{ tokenId: row.tokenId }}
-            buttonProps={{ variant: 'ghost', size: 'sm' }}
-          />
-        ),
+      // Rows whose invitation token row is gone offer no resend.
+      renderCell: ({ row }) => row.tokenId && <ResendPendingInvitationCell {...path} membershipId={row.id} />,
     },
   ];
 

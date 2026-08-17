@@ -1771,6 +1771,17 @@ export const zGetPendingMembershipsResponse = z.object({
   total: z.number(),
 });
 
+export const zResendPendingInvitationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Invitation resent
+ */
+export const zResendPendingInvitationResponse = z.void();
+
 export const zMarkSeenBody = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500),
   entityType: z.enum(['attachment']),
