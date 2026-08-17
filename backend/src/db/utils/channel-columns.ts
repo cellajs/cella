@@ -1,5 +1,6 @@
-import { timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { jsonb, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType } from 'shared';
+import type { ToolsConfig } from 'shared/tools-config';
 import { maxLength } from '#/db/utils/constraints';
 import { channelPathColumn } from '#/db/utils/path-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
@@ -27,5 +28,12 @@ export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
    * `shared/config/permissions-config.ts`; null (the default) keeps the mechanism dormant.
    */
   publicAt: timestamp('public_at', { mode: 'string' }),
+  /**
+   * Per-channel tool arrangement per placement slot (order/hidden/settings, tool ids only).
+   * Stored sparse: a missing slot renders manifest defaults, so new tools need no backfill.
+   * The placement/settings/tabs machinery is generic over channel types; the column lives here
+   * so every channel table carries it without hand-copying.
+   */
+  toolsConfig: jsonb().$type<ToolsConfig>().notNull().default({}),
   ...channelPathColumn(entityType),
 });

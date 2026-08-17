@@ -377,6 +377,13 @@ export const zOrganization = z.object({
   updatedBy: zUserMinimalBase.nullable(),
   publishedAt: z.string().nullable(),
   publicAt: z.string().nullable(),
+  toolsConfig: z.record(
+    z.string(),
+    z.object({
+      order: z.array(z.string()).optional(),
+      hidden: z.array(z.string()).optional(),
+    }),
+  ),
   path: z.string().nullable(),
   shortName: z.string().max(255).nullable(),
   country: z.string().max(255).nullable(),
@@ -391,13 +398,6 @@ export const zOrganization = z.object({
   chatSupport: z.boolean(),
   organizationFlags: z.record(z.string(), z.unknown()),
   setupConfig: z.record(z.string(), z.unknown()),
-  toolsConfig: z.record(
-    z.string(),
-    z.object({
-      order: z.array(z.string()).optional(),
-      hidden: z.array(z.string()).optional(),
-    }),
-  ),
   included: z.object({
     membership: zMembershipBase.optional(),
     counts: z

@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { ChannelEntityType, EntityIdColumns, EntityType, ProductEntityType } from 'shared';
 import { hierarchy } from 'shared';
+import type { ToolsConfig } from 'shared/tools-config';
 import slugify from 'slugify';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 import { mockTenantId, mockUuid } from './mock-nanoid';
@@ -84,6 +85,7 @@ type MockChannelColumns<T extends ChannelEntityType> = MockTenantEntityColumns<T
   updatedBy: string | null;
   publishedAt: string | null;
   publicAt: string | null;
+  toolsConfig: ToolsConfig;
   path: string | null;
 };
 
@@ -109,6 +111,7 @@ export const mockChannelColumns = <T extends ChannelEntityType>(
     updatedBy: options.updatedBy ?? null,
     publishedAt: options.publishedAt === undefined ? base.createdAt : options.publishedAt,
     publicAt: options.publicAt ?? null,
+    toolsConfig: options.toolsConfig ?? {},
     path: hierarchy.computeChannelPath(entityType, { id: base.id, ...options.channelIds }),
   };
 };

@@ -433,6 +433,12 @@ export type Organization = {
   updatedBy: UserMinimalBase | null;
   publishedAt: string | null;
   publicAt: string | null;
+  toolsConfig: {
+    [key: string]: {
+      order?: Array<string>;
+      hidden?: Array<string>;
+    };
+  };
   path: string | null;
   shortName: string | null;
   country: string | null;
@@ -450,12 +456,6 @@ export type Organization = {
   };
   setupConfig: {
     [key: string]: unknown;
-  };
-  toolsConfig: {
-    [key: string]: {
-      order?: Array<string>;
-      hidden?: Array<string>;
-    };
   };
   included: {
     membership?: MembershipBase;
