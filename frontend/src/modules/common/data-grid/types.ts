@@ -340,7 +340,7 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
   /**
-   * Row-box mode: render the row as a real subgrid box (instead of display:contents) and
+   * Row-box mode: render the row as a real subgrid box (not display:contents) and
    * animate order changes via motion layout. Derived by DataGrid for draggable,
    * non-virtualized, keyed tables without frozen columns.
    */

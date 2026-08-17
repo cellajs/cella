@@ -55,8 +55,8 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
-  // Draft order applied at drop time so the reorder animates as a response to the drop
-  // instead of after the mutation round-trip; cleared once a persisted order arrives.
+  // Draft order applied at drop time so the reorder animates as a response to the drop,
+  // without waiting on the mutation round-trip; cleared once a persisted order arrives.
   const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);

@@ -464,8 +464,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   });
 
   // Row-box mode: draggable, non-virtualized, keyed tables without frozen columns render
-  // rows as real subgrid boxes and animate reorders via motion layout. Each condition is
-  // load-bearing: virtualized rows unmount mid-scroll (breaking FLIP), index keys defeat
+  // rows as real subgrid boxes and animate reorders via motion layout. Every condition is
+  // required: virtualized rows unmount mid-scroll (breaking FLIP), index keys defeat
   // DOM persistence, and a transformed row would unstick frozen cells.
   const animateReorder =
     rowDragEnabled && !enableRowVirtualization && typeof rowKeyGetter === 'function' && lastFrozenColumnIndex === -1;
