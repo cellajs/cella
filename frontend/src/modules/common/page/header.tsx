@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, HouseIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ChannelBase, MembershipBase, UserBase } from 'sdk';
+import type { ChannelBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
-import { Badge } from '~/modules/ui/badge';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,20 +17,23 @@ import {
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
-  entity: (ChannelBase | UserBase) & { membership?: MembershipBase | null };
+  entity: ChannelBase | UserBase;
   panel?: React.ReactNode;
-  parent?: ChannelBase;
+  /** Ancestor crumb chain, root first. Entries must be enriched: crumb routes need `ancestorSlugs`. */
+  parents?: EnrichedChannel[];
+  /** @deprecated Pass `parents` instead. */
+  parent?: EnrichedChannel;
 };
 
-/** Renders the page header. */
-export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderProps) {
+/**
+ * Renders the page header. Role visibility is the panel's job (a role-labeled membership
+ * button), not a header badge.
+ */
+export function PageHeader({ entity, panel, parents, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
 
-  // Use enriched membership from entity data (baked in via cache enrichment)
-  const membership = entity.entityType !== 'user' ? (entity.membership ?? null) : null;
-
-  // Get parent route using app-specific resolver (handles hierarchy differences per app)
-  const parentRoute = parent ? getChannelRoute(parent) : null;
+  // Crumb chain (root first); the deprecated single `parent` folds in for one release
+  const crumbs = parents ?? (parent ? [parent] : []);
 
   return (
     <div className="relative w-full">
@@ -53,45 +57,29 @@ export function PageHeader({ entity, panel, parent, ...coverProps }: PageHeaderP
           <h1 className="mb-1 truncate font-semibold leading-6 md:text-xl">{entity.name}</h1>
 
           <div className="flex items-center gap-2 text-sm">
-            {/* Role */}
-            {membership && (
-              <>
-                <Badge variant="plain">{t(membership.role)}</Badge>
-                <div className="opacity-70 max-sm:invisible max-sm:w-0">&middot;</div>
-              </>
-            )}
-
-            {/* Breadcrumb */}
+            {/* Breadcrumb: ancestor chain, then the entity type as a translated label */}
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink
-                    className="p-0.5 text-foreground/70"
-                    render={<Link to={appConfig.defaultRedirectPath} />}
-                  >
-                    <HouseIcon className="icon-sm" />
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="text-foreground/50">
-                  <ChevronRightIcon className="icon-xs" />
-                </BreadcrumbSeparator>
-                {parent && parentRoute && (
-                  <>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink
-                        className="flex items-center text-foreground/70"
-                        render={<Link to={parentRoute.to} params={parentRoute.params} {...pageTopHashNav} />}
-                      >
-                        <span className="truncate max-sm:max-w-24">{parent.name}</span>
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator className="text-foreground/50">
-                      <ChevronRightIcon className="icon-xs" />
-                    </BreadcrumbSeparator>
-                  </>
-                )}
+                {crumbs.map((crumb) => {
+                  const crumbRoute = getChannelRoute(crumb);
+                  return (
+                    <Fragment key={crumb.id}>
+                      <BreadcrumbItem>
+                        <BreadcrumbLink
+                          className="flex items-center text-foreground/70"
+                          render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} />}
+                        >
+                          <span className="truncate max-sm:max-w-24">{crumb.name}</span>
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator className="text-foreground/50">
+                        <ChevronRightIcon className="icon-xs" />
+                      </BreadcrumbSeparator>
+                    </Fragment>
+                  );
+                })}
                 <BreadcrumbItem className="flex items-center text-foreground/70">
-                  <span>{entity.entityType}</span>
+                  <span>{t(`c:${entity.entityType}`).toLowerCase()}</span>
                   {appConfig.mode === 'development' && (
                     <span className="ml-2 text-foreground/40 text-xs max-sm:hidden">{entity.id}</span>
                   )}

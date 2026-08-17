@@ -1,11 +1,17 @@
 import { CheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { MembershipBase } from 'sdk';
 import { LeaveChannelButton, type LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
-function LeaveOrgButton(props: LeaveChannelButtonProps) {
+type LeaveOrgButtonProps = LeaveChannelButtonProps & {
+  /** Membership role shown on the trigger ("✓ Admin"); the button is the page's role display. */
+  role?: MembershipBase['role'] | null;
+};
+
+function LeaveOrgButton({ role, ...props }: LeaveOrgButtonProps) {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(false);
 
@@ -14,7 +20,7 @@ function LeaveOrgButton(props: LeaveChannelButtonProps) {
       <Popover open={openPopover} onOpenChange={setOpenPopover}>
         <PopoverTrigger render={<Button size="sm" variant="success" aria-label="Leave" />}>
           <CheckIcon />
-          <span className="ml-1 max-xs:hidden">{t('c:joined')}</span>
+          <span className="ml-1 max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
         </PopoverTrigger>
         <PopoverContent className="pointer w-44 rounded-lg p-1" finalFocus={false} sideOffset={4} align="end">
           <LeaveChannelButton {...props} />
