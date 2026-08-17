@@ -709,6 +709,7 @@ export const zGetMeResponse = zMe;
 
 export const zUpdateMeBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
     .min(2)
@@ -940,6 +941,7 @@ export const zDeleteUsersResponse = z.object({
 
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
     .min(2)

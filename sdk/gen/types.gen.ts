@@ -1719,6 +1719,7 @@ export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 export type UpdateMeData = {
   body: {
     bannerUrl?: string | null;
+    description?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     language?: 'en' | 'nl';
@@ -2569,6 +2570,7 @@ export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponse
 export type UpdateUserData = {
   body?: {
     bannerUrl?: string | null;
+    description?: string | null;
     firstName?: string | null;
     lastName?: string | null;
     language?: 'en' | 'nl';

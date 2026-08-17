@@ -3979,6 +3979,10 @@
                     "type": ["string", "null"],
                     "maxLength": 2048
                   },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 1000000
+                  },
                   "firstName": {
                     "type": ["string", "null"],
                     "minLength": 2,
@@ -5405,6 +5409,10 @@
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 1000000
                   },
                   "firstName": {
                     "type": ["string", "null"],
