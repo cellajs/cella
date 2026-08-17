@@ -1821,6 +1821,26 @@
           "publicAt": {
             "type": ["string", "null"]
           },
+          "toolsConfig": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "hidden": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
           "path": {
             "type": ["string", "null"]
           },
@@ -1878,26 +1898,6 @@
           "setupConfig": {
             "type": "object",
             "properties": {}
-          },
-          "toolsConfig": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "properties": {
-                "order": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "hidden": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
           },
           "included": {
             "type": "object",
@@ -1979,6 +1979,7 @@
           "updatedBy",
           "publishedAt",
           "publicAt",
+          "toolsConfig",
           "path",
           "shortName",
           "country",
@@ -1993,7 +1994,6 @@
           "chatSupport",
           "organizationFlags",
           "setupConfig",
-          "toolsConfig",
           "included"
         ],
         "description": "The main channel entity is an organization.",
@@ -2011,6 +2011,7 @@
           "updatedBy": null,
           "publishedAt": "2024-12-25T15:04:42.969Z",
           "publicAt": null,
+          "toolsConfig": {},
           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
           "shortName": "Spencer,",
           "country": "Sweden",
@@ -2025,7 +2026,6 @@
           "chatSupport": true,
           "organizationFlags": {},
           "setupConfig": {},
-          "toolsConfig": {},
           "included": {
             "membership": {
               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
@@ -3979,6 +3979,10 @@
                     "type": ["string", "null"],
                     "maxLength": 2048
                   },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 1000000
+                  },
                   "firstName": {
                     "type": ["string", "null"],
                     "minLength": 2,
@@ -5405,6 +5409,10 @@
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 1000000
                   },
                   "firstName": {
                     "type": ["string", "null"],
@@ -7384,6 +7392,7 @@
                           "updatedBy": null,
                           "publishedAt": "2024-12-25T15:04:42.969Z",
                           "publicAt": null,
+                          "toolsConfig": {},
                           "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                           "shortName": "Spencer,",
                           "country": "Sweden",
@@ -7398,7 +7407,6 @@
                           "chatSupport": true,
                           "organizationFlags": {},
                           "setupConfig": {},
-                          "toolsConfig": {},
                           "included": {
                             "membership": {
                               "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
@@ -7470,6 +7478,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-04-18T21:12:59.543Z",
                       "publicAt": null,
+                      "toolsConfig": {},
                       "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
                       "shortName": "Conroy,",
                       "country": "Singapore",
@@ -7484,7 +7493,6 @@
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "toolsConfig": {},
                       "included": {
                         "membership": {
                           "id": "1f366272-953c-486d-81dc-ee61f43478a1",
@@ -7531,6 +7539,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-02-24T16:36:46.247Z",
                       "publicAt": null,
+                      "toolsConfig": {},
                       "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
                       "shortName": "Lemke,",
                       "country": "Pakistan",
@@ -7545,7 +7554,6 @@
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "toolsConfig": {},
                       "included": {
                         "membership": {
                           "id": "cf273cfa-8287-4b04-b641-897816829f30",
@@ -7848,6 +7856,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-11-21T01:19:53.533Z",
                       "publicAt": null,
+                      "toolsConfig": {},
                       "path": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "shortName": "Anderson",
                       "country": "Bahamas",
@@ -7862,7 +7871,6 @@
                       "chatSupport": true,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "toolsConfig": {},
                       "included": {
                         "membership": {
                           "id": "1008ac1a-ccec-476f-9baf-e65971876f04",
@@ -7909,6 +7917,7 @@
                       "updatedBy": null,
                       "publishedAt": "2024-10-29T04:35:17.725Z",
                       "publicAt": null,
+                      "toolsConfig": {},
                       "path": "772a771f-c150-465e-9635-46594859fc3d",
                       "shortName": "Wiegand,",
                       "country": "Argentina",
@@ -7923,7 +7932,6 @@
                       "chatSupport": false,
                       "organizationFlags": {},
                       "setupConfig": {},
-                      "toolsConfig": {},
                       "included": {
                         "membership": {
                           "id": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
@@ -8056,6 +8064,7 @@
                   "updatedBy": null,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
+                  "toolsConfig": {},
                   "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                   "shortName": "Spencer,",
                   "country": "Sweden",
@@ -8070,7 +8079,6 @@
                   "chatSupport": true,
                   "organizationFlags": {},
                   "setupConfig": {},
-                  "toolsConfig": {},
                   "included": {
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
@@ -8289,6 +8297,7 @@
                   "updatedBy": null,
                   "publishedAt": "2024-12-25T15:04:42.969Z",
                   "publicAt": null,
+                  "toolsConfig": {},
                   "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
                   "shortName": "Spencer,",
                   "country": "Sweden",
@@ -8303,7 +8312,6 @@
                   "chatSupport": true,
                   "organizationFlags": {},
                   "setupConfig": {},
-                  "toolsConfig": {},
                   "included": {
                     "membership": {
                       "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
@@ -10445,6 +10453,9 @@
                           "id": {
                             "type": "string"
                           },
+                          "tokenId": {
+                            "type": ["string", "null"]
+                          },
                           "email": {
                             "type": "string",
                             "format": "email"
@@ -10470,7 +10481,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
+                        "required": ["id", "tokenId", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {
@@ -10528,6 +10539,74 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/memberships/pending/{id}/resend": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "resendPendingInvitation",
+        "tags": ["memberships", "cella"],
+        "summary": "Resend pending invitation",
+        "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invitation resent"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

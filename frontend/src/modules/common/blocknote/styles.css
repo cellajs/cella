@@ -419,3 +419,19 @@ li:has(.is-focused) {
 [data-content-type="heading"][data-level="3"] {
   --level: 1.1rem;
 }
+
+/* Forced-title placeholder for block 0 (see forced-title-extension.ts). !important beats
+   BlockNote's per-editor injected placeholder rules; the CSS var keeps the text translatable.
+   Coupled to BlockNote's injected rules, so re-check this selector on every @blocknote bump. */
+.bn-forced-title
+  .bn-editor
+  > .bn-block-group
+  > .bn-block-outer:first-child
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"]:has(.ProseMirror-trailingBreak:only-child)::after {
+  content: var(--bn-title-placeholder, "Title") !important;
+  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}

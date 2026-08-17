@@ -3,6 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
@@ -44,7 +45,7 @@ export const attachmentSchema = z
     createdBy: nullableUserMinimalBaseSchema,
     updatedBy: nullableUserMinimalBaseSchema,
     stx: stxBaseSchema,
-    viewCount: z.number().int().min(0).optional(),
+    viewCount: productViewCountSchema,
   })
   .openapi('Attachment', {
     description: 'A product entity for file attachment metadata.',

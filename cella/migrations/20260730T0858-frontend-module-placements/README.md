@@ -97,9 +97,10 @@ No script - manual.
      `frontend/src/modules/organization/settings-tools.tsx` for the four thin wrappers).
    - The settings route component is one line: `<ChannelSettingsPage entity={course} />`
      (`~/modules/entities/channel-settings-page`).
-   - To persist per-channel arrangement, add the same `toolsConfig` jsonb column to the app's
-     channel tables (copy the `organizations` column declaration) and thread it through the
-     channel's update schema and query like `setupConfig`.
+   - To persist per-channel arrangement, thread `toolsConfig` through the channel's update
+     schema and query like `setupConfig`. (SUPERSEDED in part by
+     `20260817T1055-tools-config-channel-columns`: the jsonb column itself now comes from
+     `channelColumns()` — do NOT hand-copy the column declaration anymore.)
    - `visibleTo` pairs may name any hierarchy role (`'course.staff'`, `'project.owner'`);
      elevation is explicit, so a tool org admins should see must list `'organization.admin'`.
      Repeated audiences belong in app-owned preset constants that manifests spread.

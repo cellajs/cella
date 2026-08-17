@@ -377,6 +377,13 @@ export const zOrganization = z.object({
   updatedBy: zUserMinimalBase.nullable(),
   publishedAt: z.string().nullable(),
   publicAt: z.string().nullable(),
+  toolsConfig: z.record(
+    z.string(),
+    z.object({
+      order: z.array(z.string()).optional(),
+      hidden: z.array(z.string()).optional(),
+    }),
+  ),
   path: z.string().nullable(),
   shortName: z.string().max(255).nullable(),
   country: z.string().max(255).nullable(),
@@ -391,13 +398,6 @@ export const zOrganization = z.object({
   chatSupport: z.boolean(),
   organizationFlags: z.record(z.string(), z.unknown()),
   setupConfig: z.record(z.string(), z.unknown()),
-  toolsConfig: z.record(
-    z.string(),
-    z.object({
-      order: z.array(z.string()).optional(),
-      hidden: z.array(z.string()).optional(),
-    }),
-  ),
   included: z.object({
     membership: zMembershipBase.optional(),
     counts: z
@@ -709,6 +709,7 @@ export const zGetMeResponse = zMe;
 
 export const zUpdateMeBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
     .min(2)
@@ -940,6 +941,7 @@ export const zDeleteUsersResponse = z.object({
 
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
     .min(2)
@@ -1758,6 +1760,7 @@ export const zGetPendingMembershipsResponse = z.object({
   items: z.array(
     z.object({
       id: z.string(),
+      tokenId: z.string().nullable(),
       email: z.email(),
       thumbnailUrl: z.string().nullable(),
       role: z.enum(['admin', 'member']).nullable(),
@@ -1767,6 +1770,17 @@ export const zGetPendingMembershipsResponse = z.object({
   ),
   total: z.number(),
 });
+
+export const zResendPendingInvitationPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Invitation resent
+ */
+export const zResendPendingInvitationResponse = z.void();
 
 export const zMarkSeenBody = z.object({
   entityIds: z.array(z.string().max(50)).min(1).max(500),

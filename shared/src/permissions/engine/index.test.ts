@@ -1,6 +1,11 @@
-import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
+import {
+  configureWidePermissions,
+  wideHierarchy,
+  wideMembership,
+  wideOverrides,
+  wideSubject,
+} from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
 import type { SubjectForPermission } from './types.ts';
 
@@ -21,39 +26,40 @@ const attachmentSubject = (
   });
 };
 
-// Real-config guard sanity checks. These assertions hold in every app (organization is always the
-// root channel with roles admin/member; a product is never a channel), so the block is stable across app configurations.
-describe('hierarchy guards (real app config)', () => {
+// Hierarchy guard sanity checks on the wide fixture. Asserting against the real app config here
+// would pin app-configurable choices (role vocabularies, product ancestry) into a synced test
+// that fails for apps customizing roles or re-parenting products in a config file they own.
+describe('hierarchy guards (wide fixture)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root channel', () => {
-      const ancestors = hierarchy.getOrderedAncestors('organization');
+      const ancestors = wideHierarchy.getOrderedAncestors('organization');
       expect(ancestors).toEqual([]);
     });
 
     it('returns organization as an ancestor for a product entity', () => {
-      const ancestors = hierarchy.getOrderedAncestors('attachment');
+      const ancestors = wideHierarchy.getOrderedAncestors('attachment');
       expect(ancestors).toContain('organization');
     });
   });
 
   describe('hierarchy.getRoles', () => {
-    it('returns roles for the organization channel', () => {
-      const roles = hierarchy.getRoles('organization');
+    it('returns the declared roles for a channel', () => {
+      const roles = wideHierarchy.getRoles('organization');
       expect(roles).toEqual(['admin', 'member']);
     });
   });
 
   describe('hierarchy.isChannel / hierarchy.isProduct', () => {
     it('correctly identifies channel entities', () => {
-      expect(hierarchy.isChannel('organization')).toBe(true);
-      expect(hierarchy.isChannel('attachment')).toBe(false);
-      expect(hierarchy.isChannel('user')).toBe(false);
+      expect(wideHierarchy.isChannel('organization')).toBe(true);
+      expect(wideHierarchy.isChannel('attachment')).toBe(false);
+      expect(wideHierarchy.isChannel('user')).toBe(false);
     });
 
     it('correctly identifies product entities', () => {
-      expect(hierarchy.isProduct('attachment')).toBe(true);
-      expect(hierarchy.isProduct('organization')).toBe(false);
-      expect(hierarchy.isProduct('user')).toBe(false);
+      expect(wideHierarchy.isProduct('attachment')).toBe(true);
+      expect(wideHierarchy.isProduct('organization')).toBe(false);
+      expect(wideHierarchy.isProduct('user')).toBe(false);
     });
   });
 });

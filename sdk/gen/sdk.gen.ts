@@ -178,6 +178,9 @@ import type {
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
+  ResendPendingInvitationData,
+  ResendPendingInvitationErrors,
+  ResendPendingInvitationResponses,
   SelfCreateTenantData,
   SelfCreateTenantErrors,
   SelfCreateTenantResponses,
@@ -346,6 +349,8 @@ import {
   zPostAppCatchupResponse,
   zResendInvitationWithTokenBody,
   zResendInvitationWithTokenResponse,
+  zResendPendingInvitationPath,
+  zResendPendingInvitationResponse,
   zSelfCreateTenantBody,
   zSelfCreateTenantResponse,
   zSendMagicLinkBody,
@@ -1249,6 +1254,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)
  * @param {enum=} options.body.language - `enum` (optional)
@@ -1820,6 +1826,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)
  * @param {enum=} options.body.language - `enum` (optional)
@@ -3262,6 +3269,49 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/memberships/pending',
+    ...options,
+  });
+
+/**
+ * Resend pending invitation
+ *
+ * Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ *
+ * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships_cella_
+ *
+ * @param {resendPendingInvitationData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<ResendPendingInvitationData, ThrowOnError>,
+): RequestResult<ResendPendingInvitationResponses, ResendPendingInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<
+    ResendPendingInvitationResponses,
+    ResendPendingInvitationErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zResendPendingInvitationPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zResendPendingInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/memberships/pending/{id}/resend',
     ...options,
   });
 

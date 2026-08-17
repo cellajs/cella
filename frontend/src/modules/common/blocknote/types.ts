@@ -87,6 +87,12 @@ export type CommonBlockNoteProps = {
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
+  /**
+   * Forced-title mode: block 0 is a normalized heading acting as the document title (see
+   * forced-title-extension.ts). `true` pins it at level 1; pass `{ level }` when the editor
+   * sits inside a page whose own heading already occupies the upper levels.
+   */
+  forcedTitle?: boolean | { level: TitleLevel };
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
   onFocus?: () => void;
@@ -103,4 +109,9 @@ export type CustomBlockNoteMenuProps = {
   editor: CustomBlockNoteEditor;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
+  /** Forced-title mode: menus hide headings at or above this level for body blocks and skip block 0 entirely. */
+  titleLevel?: TitleLevel;
 };
+
+/** Heading level a forced-title editor pins block 0 to. */
+export type TitleLevel = 1 | 2 | 3;

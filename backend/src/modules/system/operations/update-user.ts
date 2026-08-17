@@ -17,7 +17,7 @@ export async function updateUserOp(ctx: AuthContext, id: string, input: UpdateUs
   const targetUser = await findUserById(ctx, { id });
   if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: id } });
 
-  const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = input;
+  const { bannerUrl, description, firstName, lastName, language, newsletter, thumbnailUrl, slug } = input;
 
   // Check if slug is available
   if (slug && slug !== targetUser.slug) {
@@ -27,6 +27,7 @@ export async function updateUserOp(ctx: AuthContext, id: string, input: UpdateUs
 
   const values = {
     bannerUrl,
+    description,
     firstName,
     lastName,
     language,

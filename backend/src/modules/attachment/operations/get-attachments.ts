@@ -1,12 +1,16 @@
 import type { z } from '@hono/zod-openapi';
-import { and, asc, count, eq, getColumns, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, asc, count, eq, getColumns, ilike, isNull, or, type SQL } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
+import {
+  getOrganizationEntityCount,
+  productViewCountJoin,
+  productViewCountSelect,
+} from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
@@ -95,10 +99,10 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
       .select({
         ...attachmentCols,
         ...auditUserSelect,
-        viewCount: sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count'),
+        viewCount: productViewCountSelect(),
       })
       .from(attachmentsTable)
-      .leftJoin(productCountersTable, eq(productCountersTable.productId, attachmentsTable.id))
+      .leftJoin(productCountersTable, productViewCountJoin(attachmentsTable.id))
       .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
       .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
       .where(whereClause)

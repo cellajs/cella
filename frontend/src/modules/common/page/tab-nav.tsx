@@ -55,8 +55,6 @@ export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab[
 
 /** Resolution inputs for a tabbed surface (all optional; absent conditions never hide a tab). */
 export interface ResolveNavTabsOptions {
-  /** Explicit allow-list of tab ids (prefer grant/pair gating over this). */
-  filterTabIds?: string[];
   /** Grants the actor holds; tabs declaring `requires` hide without a match. */
   grants?: readonly string[];
   /** Context-role pairs the actor holds; registry tabs declaring `visibleTo` hide without a match. */
@@ -136,13 +134,7 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
     overrides: options.overrides,
   });
 
-  const tabs: PageTab[] = resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
-
-  if (options.filterTabIds) {
-    const allow = options.filterTabIds;
-    return tabs.filter((tab) => allow.includes(tab.id));
-  }
-  return tabs;
+  return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
 }
 
 /**
@@ -238,8 +230,6 @@ interface Props {
   tabs?: PageTab[];
   /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
   parentRouteId?: string;
-  /** Filter which tab IDs to show (explicit allow-list; prefer `grants` + navTab.requires) */
-  filterTabIds?: string[];
   /** Grants held by the current user; tabs declaring navTab.requires are hidden unless granted */
   grants?: readonly string[];
   /** Context-role pairs held by the current user; registry tabs declaring visibleTo hide without a match */
@@ -262,7 +252,6 @@ interface Props {
 export function PageTabNav({
   tabs: explicitTabs,
   parentRouteId,
-  filterTabIds,
   grants,
   pairs,
   slotConfig,
@@ -276,11 +265,11 @@ export function PageTabNav({
   const { hasStarted } = useMountedState();
 
   // Use explicit tabs or auto-generate from parent route's children
-  const autoTabs = resolveNavTabs(parentRouteId ?? '', { filterTabIds, grants, pairs, slotConfig });
+  const autoTabs = resolveNavTabs(parentRouteId ?? '', { grants, pairs, slotConfig });
   const tabs = explicitTabs ?? autoTabs;
 
   // Forward off a tab this surface has disabled (explicit tab lists opt out of route derivation)
-  useNavTabRedirect(explicitTabs ? '' : (parentRouteId ?? ''), { filterTabIds, grants, pairs, slotConfig });
+  useNavTabRedirect(explicitTabs ? '' : (parentRouteId ?? ''), { grants, pairs, slotConfig });
 
   const layoutId = useRef(nanoid()).current;
 
