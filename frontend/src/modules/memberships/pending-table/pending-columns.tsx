@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
@@ -59,6 +60,20 @@ export const useColumns = () => {
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+    },
+    {
+      key: 'resend',
+      name: '',
+      width: 120,
+      placeholderValue: '-',
+      // Resend targets the row's own token id; rows whose token row is gone offer no resend.
+      renderCell: ({ row }) =>
+        row.tokenId && (
+          <ResendInvitationButton
+            resendData={{ tokenId: row.tokenId }}
+            buttonProps={{ variant: 'ghost', size: 'sm' }}
+          />
+        ),
     },
   ];
 

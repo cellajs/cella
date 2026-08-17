@@ -10453,6 +10453,9 @@
                           "id": {
                             "type": "string"
                           },
+                          "tokenId": {
+                            "type": ["string", "null"]
+                          },
                           "email": {
                             "type": "string",
                             "format": "email"
@@ -10478,7 +10481,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
+                        "required": ["id", "tokenId", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {

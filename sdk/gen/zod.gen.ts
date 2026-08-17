@@ -1760,6 +1760,7 @@ export const zGetPendingMembershipsResponse = z.object({
   items: z.array(
     z.object({
       id: z.string(),
+      tokenId: z.string().nullable(),
       email: z.email(),
       thumbnailUrl: z.string().nullable(),
       role: z.enum(['admin', 'member']).nullable(),

@@ -19,7 +19,10 @@ type ResendButtonPrpos = {
 };
 
 /**
- * Button to resend an invitation token email to a non-existing user. It can either be a membership invitation or a system-level invitation.
+ * Button to resend an invitation token email. It can either be a membership invitation or a
+ * system-level invitation, and the invitee may or may not already have an account. Prefer
+ * `resendData: { tokenId }` when the token is known — email-only resolution targets the
+ * address's newest invitation token, which may belong to another context.
  */
 export function ResendInvitationButton({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) {
   const { t } = useTranslation();

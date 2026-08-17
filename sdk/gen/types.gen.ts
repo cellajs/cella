@@ -4672,6 +4672,7 @@ export type GetPendingMembershipsResponses = {
   200: {
     items: Array<{
       id: string;
+      tokenId: string | null;
       email: string;
       thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;

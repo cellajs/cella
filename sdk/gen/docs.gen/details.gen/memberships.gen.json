@@ -753,6 +753,10 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
+                  "tokenId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "email": { "type": "string", "required": true, "format": "email" },
                   "thumbnailUrl": {
                     "type": ["string", "null"],
