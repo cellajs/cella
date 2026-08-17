@@ -475,6 +475,22 @@
     "pnpm check"
    ],
    "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration — a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
+  },
+  {
+   "id": "20260817T1447-remove-filter-tab-ids",
+   "version": "next",
+   "title": "Remove the filterTabIds allow-list from nav tabs",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "PageTabNav/resolveNavTabs lose the filterTabIds prop: an imperative allow-list with zero template consumers that the nav-tab guards never honored, so allow-list-hidden tabs stayed URL-reachable and could become the landing tab. Apps passing it must express each gate declaratively before syncing: navTab.requires + grants for permission gates, visibleTo + pairs for role gates on registry tabs, or placementOverrides/route removal for hard removal. Compile error at sync until call sites are migrated."
   }
  ]
 }
