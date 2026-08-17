@@ -246,6 +246,8 @@ export type CollectionReadWhere =
 
 A bare `undefined` WHERE would leak the table, which is exactly the bug this shape makes unrepresentable. In the same spirit, the compiled SQL for a row condition emits `false` for an anonymous actor, mirroring the check-form's deny.
 
+Channel lists have a sibling seam, `channel-collection-scope.ts` (`resolveChannelCollectionReadScope` → `buildChannelListReadWhere`, same tri-state): which rows of a sub-org channel type the caller can read beyond their own memberships, from org-root and ancestor-level grants (read+update grants see drafts, read-only grants see published rows). The template's only channel is the root organization, so the seam is dormant here; apps with sub-org channels compile it into a LEFT-joined membership list so discovery rows match single-row `checkAccess` results. The file's header comment carries the consumer contract (join-ON filters, NULL-membership mapping, ordering).
+
 
 ## Behavior
 
