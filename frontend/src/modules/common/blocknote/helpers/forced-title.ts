@@ -1,4 +1,4 @@
-// Forced-title mode helpers — compose/split a title-first document so entities keep `name` as
+// Forced-title mode helpers: compose/split a title-first document so entities keep `name` as
 // the stored source of truth while the editor shows `[heading(name), ...body]`.
 // See forced-title-extension.ts for the normalizer that pins block 0 to the title level.
 import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
@@ -29,7 +29,7 @@ const titleBlock = (name: string, level: TitleLevel) =>
     content: name ? [{ type: 'text', text: name, styles: {} }] : [],
   }) as unknown as CustomBlock;
 
-/** A stringified single empty title block — sync seed for create forms. */
+/** A stringified single empty title block, the sync seed for create forms. */
 export const emptyTitleDocument = (level: TitleLevel = 1) => JSON.stringify([titleBlock('', level)]);
 
 /** Cheap synchronous title read from stringified blocks (drives live submit-enable). */
@@ -51,7 +51,7 @@ export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: Lo
 
 /**
  * Compose the editor document for a forced-title editor: `[heading(name), ...body-from-HTML]`.
- * The title block is a projection of `name` — it is never persisted in `description`.
+ * The title block is a projection of `name`; it is never persisted in `description`.
  */
 export const composeTitleDocument = async (
   name: string,

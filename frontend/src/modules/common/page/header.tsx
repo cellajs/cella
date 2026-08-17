@@ -21,13 +21,13 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   panel?: React.ReactNode;
   /** Ancestor crumb chain, root first. Entries must be enriched: crumb routes need `ancestorSlugs`. */
   parents?: EnrichedChannel[];
-  /** @deprecated Pass `parents` instead. */
+  /** @deprecated Use `parents`. */
   parent?: EnrichedChannel;
 };
 
 /**
- * Renders the page header. Role visibility is the panel's job (a role-labeled membership
- * button), not a header badge.
+ * Renders the page header. Role visibility belongs to the panel's role-labeled
+ * membership button.
  */
 export function PageHeader({ entity, panel, parents, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();

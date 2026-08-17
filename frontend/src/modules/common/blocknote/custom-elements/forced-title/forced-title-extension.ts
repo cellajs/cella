@@ -1,7 +1,5 @@
-// Forced-title mode. BlockNote has no document-template support (TypeCellOS/BlockNote#2426;
-// closed as not-planned), so this appendTransaction normalizer guarantees the first block is a
-// heading at the configured title level (default 1; apps composing editors inside a page whose
-// own heading is the h1 pass a deeper level).
+// Forced-title mode: BlockNote has no document-template support (TypeCellOS/BlockNote#2426),
+// so an appendTransaction normalizer guarantees the first block is a title heading.
 import { createExtension, type ExtensionOptions } from '@blocknote/core';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import type { TitleLevel } from '~/modules/common/blocknote/types';

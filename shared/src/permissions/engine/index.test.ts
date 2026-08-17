@@ -27,8 +27,8 @@ const attachmentSubject = (
 };
 
 // Hierarchy guard sanity checks on the wide fixture. Asserting against the real app config here
-// would pin app-configurable choices (role vocabularies, product ancestry) into a synced test —
-// any fork customizing roles or re-parenting products would fail on a config file it owns.
+// would pin app-configurable choices (role vocabularies, product ancestry) into a synced test
+// that fails for apps customizing roles or re-parenting products in a config file they own.
 describe('hierarchy guards (wide fixture)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
     it('returns empty array for root channel', () => {

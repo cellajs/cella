@@ -79,7 +79,7 @@ describe('resolveChannelCollectionReadScope', () => {
       otherOrg,
       // student holds no project read at course level in this matrix
       membership('course', 'course-1', 'student'),
-      // project-level rows are own-type memberships, carried by the list join instead
+      // project-level rows are own-type memberships; the list membership join carries those
       membership('project', 'project-1', 'owner'),
     ]);
     expect(scope).toEqual({ orgWide: null, ancestorScopes: [] });

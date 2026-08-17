@@ -12,25 +12,9 @@ import {
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { CollectionReadWhere } from '#/permissions/row-predicates';
 
-/**
- * CHANNEL-entity sibling of `collection-scope.ts` (which resolves product collections):
- * which rows of a channel type (e.g. a sub-org channel like `project`) can the caller read
- * beyond their own memberships? Channel list queries use this to include discovery rows —
- * readable channels the caller has not joined — so lists match single-row `checkAccess`
- * results instead of silently under-returning.
- *
- * Row conditions and `publicRead` grants are intentionally not compiled here: channel policy
- * matrices use plain `read: 1` grants, and public rows have no authenticated list surface
- * (single-row reads handle `publicAt`).
- *
- * The template's only channel is the root organization, whose list is membership-scoped plus
- * the system-admin bypass, so this seam is dormant here; apps with sub-org channels opt their
- * list ops in by compiling the scope into a LEFT-joined membership query. Contract notes for
- * consumers: keep role/archived filters in the membership join ON (never WHERE), map the
- * nested membership only when its id is non-NULL (discovery rows come back all-NULL), and
- * membership-sourced sort columns (displayOrder, userRole) are NULL for discovery rows —
- * Postgres ASC puts NULLs last, which is the wanted members-first ordering.
- */
+// CHANNEL-entity sibling of `collection-scope.ts` (which resolves product collections): which
+// rows of a sub-org channel type the caller can read beyond their own memberships. See the
+// "Enforcement paths" section of cella/PERMISSIONS.md for the discovery-list consumer contract.
 
 /** Readable ids granted at one ancestor level, split by draft visibility. */
 export interface ChannelAncestorScope {
@@ -121,8 +105,12 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
 
 /**
  * Resolve which rows of `channelType` the caller can read within the organization via
- * org-root or ancestor-level grants. Own-type memberships are NOT part of the result —
- * list queries carry those through their membership join.
+ * org-root or ancestor-level grants. Own-type memberships are NOT part of the result;
+ * list queries carry those through their membership join. Row conditions and `publicRead`
+ * grants are never compiled here: channel policy matrices use plain `read: 1` grants, and
+ * public rows have no authenticated list surface (single-row reads handle `publicAt`).
+ * The template's only channel is the root organization, so the seam is dormant here; apps
+ * with sub-org channels compile the scope into a LEFT-joined membership list query.
  */
 export const resolveChannelCollectionReadScope = (
   memberships: MembershipBaseModel[],
@@ -153,8 +141,11 @@ export interface ChannelListReadColumns {
  * Compile a resolved channel read scope into the list query's predicate:
  * own-membership rows ∪ org-wide rows ∪ ancestor-scoped rows (published-only for read-only
  * grants). Tri-state on purpose (see `CollectionReadWhere`): 'all' can never be confused
- * with an unrestricted WHERE by accident. 'none' cannot occur — the caller's own membership
- * rows are always in scope.
+ * with an unrestricted WHERE by accident. 'none' cannot occur, since the caller's own
+ * membership rows are always in scope. Consumer contract: keep role/archived filters in the
+ * membership join ON (never WHERE), map the nested membership only when its id is non-NULL
+ * (discovery rows come back all-NULL), and expect membership-sourced sort columns to be NULL
+ * for discovery rows (Postgres ASC puts NULLs last, the wanted members-first ordering).
  */
 export const buildChannelListReadWhere = (
   scope: ChannelCollectionReadScope,
