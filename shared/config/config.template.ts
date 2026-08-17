@@ -93,6 +93,11 @@ export const config = {
   /** AI service base URL */
   mcpUrl: 'https://__project_slug__.example.com/mcp',
   /**
+   * Local dev service listen ports and Vite proxy targets. Offset the whole block together
+   * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
+   */
+  devPorts: { api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003 },
+  /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.
    */

@@ -15,7 +15,7 @@ export const development = {
   domain: '',
   // Same-origin in development too: the Vite dev server proxies /api, /yjs and /mcp
   // to the service ports (vite.config.ts), so cookies and CSP behave like production.
-  // Services still listen on their own ports (backend 4000, yjs 4002, mcp 4003).
+  // Services listen on `devPorts`; apps offset that block and these URL ports together.
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:3000/api',
   backendAuthUrl: 'http://localhost:3000/api/auth',

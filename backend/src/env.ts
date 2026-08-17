@@ -42,7 +42,7 @@ export const env = createEnv({
       z.literal('tunnel'),
       z.literal('test'),
     ]),
-    PORT: z.string().default('4000'),
+    PORT: z.string().default(String(appConfig.devPorts.api)),
     UNSUBSCRIBE_SECRET: z.string(),
 
     COOKIE_SECRET: z.string(),

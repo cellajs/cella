@@ -88,9 +88,9 @@ const viteConfig = {
     // service prefixes to their local ports. Services serve under their own prefix
     // (backend self-mounts /api, yjs strips /yjs), so no path rewrite here.
     proxy: {
-      '/api': { target: 'http://localhost:4000' },
-      '/yjs': { target: 'ws://localhost:4002', ws: true },
-      '/mcp': { target: 'http://localhost:4003' },
+      '/api': { target: `http://localhost:${appConfig.devPorts.api}` },
+      '/yjs': { target: `ws://localhost:${appConfig.devPorts.yjs}`, ws: true },
+      '/mcp': { target: `http://localhost:${appConfig.devPorts.mcp}` },
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.

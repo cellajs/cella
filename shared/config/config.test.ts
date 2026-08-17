@@ -10,7 +10,7 @@ import { development } from './config.development.ts';
  */
 export const test = {
   mode: 'test',
-  name: 'Raak TEST',
+  name: 'Cella TEST',
 
   domain: '',
 
