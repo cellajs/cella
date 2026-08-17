@@ -441,6 +441,22 @@
     "pnpm check"
    ],
    "summary": "Planned generation roll: replacementStrategy values lb-overlap->start-first / exclusive->stop-first, lbPathBegin->pathPrefix (field + emitted x-service key), genId fingerprint key runMigrate->runRelease (deliberately re-rolls every generation on first deploy), flat db* stack outputs retired in favor of storeOutputs.<storeId>.<key> (db-exposure/seed CLI reads the primary store entry). Fork change is three seds in infra/config/services.config.ts plus any fork-local reader of the retired outputs; regenerate compose.gen.yml."
+  },
+  {
+   "id": "20260817T1053-product-view-count-helpers",
+   "version": "next",
+   "title": "Product view-count helpers move to the entities module",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "findAttachmentViewCount is deleted; the shared findProductViewCount / productViewCountSelect / productViewCountJoin (entities-queries.ts) and productViewCountSchema (entities-schema.ts) replace the per-module copies, and the attachment module is rewritten onto them. No DB or wire change. Forks: swap imports (opts key entityId->productId), replace inline coalesce-select/leftJoin/schema fields with the helpers, delete fork-local duplicates like findItemViewCount. Apps that PIN the attachment module must hand-apply the rewrite or their pinned copy silently keeps the deleted-export pattern."
   }
  ]
 }

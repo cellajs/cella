@@ -68,4 +68,5 @@ Same flow with these swaps, copying from `organization`:
 - **Public read**: `publicRead()` in the policy case; setting a row's `publicAt` publishes it to anonymous actors on reads and SSE alike.
 - **Drafts**: spread `...publishedColumn` ([published-column.ts](../backend/src/db/utils/published-column.ts)) into the table and re-run `pnpm generate`; rows stay author-only and out of the CDC stream until `publishedAt` is set.
 - **Unseen badges**: add the type to `seenTrackedProductTypes` in [config.default.ts](../shared/config/config.default.ts).
+- **View counts**: reuse the shared helpers from [entities-queries.ts](../backend/src/modules/entities/entities-queries.ts) — `findProductViewCount` for single reads, `productViewCountSelect()` + `productViewCountJoin(<table>.id)` for list joins, and `productViewCountSchema` ([entities-schema.ts](../backend/src/modules/entities/entities-schema.ts)) for the response field. Don't re-derive the `product_counters` query per module; the attachment module shows the wiring.
 - **Embedded id-arrays**: add a `productEmbeddings` entry so CDC ref-counting and cache patching cover the embedding.

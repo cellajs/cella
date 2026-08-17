@@ -1,7 +1,6 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { productCountersTable } from '#/modules/entities/product-counters-db';
 
 interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;
@@ -87,19 +86,4 @@ export const findAttachmentsByIds = async (ctx: DbContext, { ids }: FindAttachme
     .select()
     .from(attachmentsTable)
     .where(and(inArray(attachmentsTable.id, ids), isNull(attachmentsTable.deletedAt)));
-};
-
-interface FindAttachmentViewCountOpts {
-  entityId: string;
-}
-
-/** Get an attachment's view count from product counters. */
-export const findAttachmentViewCount = async (ctx: DbContext, { entityId }: FindAttachmentViewCountOpts) => {
-  const { db } = ctx.var;
-  const [counters] = await db
-    .select({ viewCount: productCountersTable.viewCount })
-    .from(productCountersTable)
-    .where(eq(productCountersTable.productId, entityId))
-    .limit(1);
-  return counters?.viewCount ?? 0;
 };
