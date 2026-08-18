@@ -210,6 +210,7 @@
   "impersonate": "Impersonate",
   "import": "Import",
   "in_waitlist": "{{appName}} will soon contact you for early access!",
+  "inactive": "Inactive",
   "info": "Info",
   "introduction": "Introduction",
   "invitation_settled": "Invitation has been {{action}}!",

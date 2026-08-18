@@ -5,6 +5,7 @@ import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
+import { Badge } from '~/modules/ui/badge';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -85,7 +86,15 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         minBreakpoint: 'md',
         minWidth: 120,
         placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.lastSeenAt),
+        // An empty lastSeenAt means the member never signed in, which the badge states explicitly
+        renderCell: ({ row }) =>
+          row.lastSeenAt ? (
+            dateShort(row.lastSeenAt)
+          ) : (
+            <Badge variant="secondary" size="xs">
+              {t('c:inactive')}
+            </Badge>
+          ),
       },
     ];
 
