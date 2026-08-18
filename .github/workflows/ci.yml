@@ -80,8 +80,8 @@ jobs:
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
-      # compose.gen.yml is read at deploy time (infra/resources/compute.ts); a stale
-      # artifact ships silently, so drift is gated here rather than at deploy.
+      # compose.gen.yml is a committed artifact read at deploy time
+      # (infra/resources/compute.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
 
