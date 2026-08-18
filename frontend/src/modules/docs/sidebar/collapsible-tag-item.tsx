@@ -59,7 +59,7 @@ function CollapsibleTagItemBase<T>({
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
   // Collapsing is a re-click on the section you are already reading. While expanded but scrolled
-  // elsewhere, the click stays a jump to this section instead of folding it away underneath you.
+  // elsewhere, the click jumps to this section and leaves it open.
   const collapseOnClick = isExpanded && isActive;
 
   return (
