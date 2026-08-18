@@ -5,9 +5,6 @@ import type { TableMeta } from '../types';
 import { convertRowKeys, extractRowData } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
 
-/**
- * Handle an INSERT message and create an activity with entity data.
- */
 export function handleInsert(tableMeta: TableMeta, message: Pgoutput.MessageInsert): ParseMessageResult {
   const rowData = convertRowKeys(extractRowData(message.new), tableMeta.columnNameMap);
 

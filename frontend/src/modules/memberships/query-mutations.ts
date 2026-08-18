@@ -46,10 +46,7 @@ type ApiResponseWithIncludedMembership = {
 /** Extract API-only included membership data for seeding the myMemberships cache. */
 export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
 
-/**
- * Update a membership in the myMemberships cache.
- * This is the single source of truth for current user's memberships.
- */
+/** Writes to myMemberships; the global subscriber enriches entity lists from it. */
 export const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) => {
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
     if (!oldData) return oldData;
@@ -60,10 +57,6 @@ export const updateMyMembershipCache = (updatedMembership: Partial<MembershipBas
   });
 };
 
-/**
- * Add a new membership to the myMemberships cache.
- * Used when the current user is invited to a new entity.
- */
 export const addMyMembershipCache = (newMembership: MembershipBase) => {
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
     if (!oldData) return { items: [newMembership] };
@@ -71,10 +64,7 @@ export const addMyMembershipCache = (newMembership: MembershipBase) => {
   });
 };
 
-/**
- * Upsert a membership in the myMemberships cache.
- * Replaces existing membership by context identity, or appends when missing.
- */
+/** Matches on channel identity, not on membership id. */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
   const channelKey = getMembershipChannelKey(membership);
   queryClient.setQueryData<{ items: MembershipBase[] }>(meKeys.memberships, (oldData) => {
@@ -90,10 +80,7 @@ export const upsertMyMembershipCache = (membership: MembershipBase) => {
   });
 };
 
-/**
- * Update an entity's data in all matching list cache queries.
- * Uses the entity query registry to resolve query keys dynamically.
- */
+/** Resolves the list query keys through the entity query registry. */
 const updateEntityInListCache = (entityType: ChannelEntityType, updatedItems: { id: string }[]) => {
   const keys = getEntityQueryKeys(entityType);
 
@@ -115,7 +102,6 @@ const onError = (
   }
 };
 
-/** Provides the React Query mutation for invite member. */
 export const useInviteMemberMutation = () =>
   useMutation<MembershipInviteResponse, ApiError, InviteMember, undefined>({
     mutationKey: memberQueryKeys.update,
@@ -124,7 +110,6 @@ export const useInviteMemberMutation = () =>
       const { id: entityId, entityType, organizationId } = channel;
 
       if (invitesSentCount) {
-        // If the entity is not an organization but belongs to one, update its cache too
         if (entityType !== 'organization' && organizationId) {
           const orgKeys = getEntityQueryKeys('organization');
           const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
@@ -139,21 +124,18 @@ export const useInviteMemberMutation = () =>
         for (const [queryKey] of entityPendingTableQueries)
           queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
-        // Update entity detail cache using the proper query key
         const entityKeys = getEntityQueryKeys(entityType);
         const detailQueryKey = entityKeys.detail.byId(entityId);
         queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) =>
           updateMembershipCounts(oldEntity, invitesSentCount),
         );
 
-        // Invalidate entity detail/list queries to ensure fresh data
         invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       }
     },
     onError,
   });
 
-/** Provides the React Query mutation for member update. */
 export const useMemberUpdateMutation = () =>
   useMutation<Membership, ApiError, MutationUpdateMembership, MembershipChannelProp>({
     mutationKey: memberQueryKeys.update,
@@ -165,14 +147,12 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      // Store previous query data for rollback if an Apierror occurs
       const context = {
         queryChannel: [] as MemberChannelProp[],
         toastMessage: t('c:success.update_item', { item: t('c:membership') }),
         channelType,
       };
 
-      // Set toast message based on what was updated
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, {
           resource: t(`c:${channelType}`),
@@ -186,21 +166,17 @@ export const useMemberUpdateMutation = () =>
       } else if (body?.displayOrder !== undefined)
         context.toastMessage = t('c:success.update_item', { item: t('c:order') });
 
-      // Update myMemberships cache; the global subscriber enriches entity lists.
       updateMyMembershipCache(membershipInfo);
 
-      // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({
         entityId: channelId,
         entityType: channelType,
         tenantId,
         organizationId,
       });
-      // Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
 
-      // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
         if (!previousData) continue;
 
@@ -213,7 +189,7 @@ export const useMemberUpdateMutation = () =>
           return formatUpdatedCacheData(oldData, updatedData, limit);
         });
 
-        context.queryChannel.push([queryKey, previousData, membershipInfo.id]); // Store previous data for rollback if needed
+        context.queryChannel.push([queryKey, previousData, membershipInfo.id]);
       }
 
       return context;
@@ -223,23 +199,20 @@ export const useMemberUpdateMutation = () =>
       { channelId, channelType, path: { tenantId, organizationId } },
       { toastMessage },
     ) => {
-      // Update myMemberships cache; the global subscriber enriches entity lists.
       updateMyMembershipCache(updatedMembership);
 
-      // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({
         entityId: channelId,
         entityType: channelType,
         tenantId,
         organizationId,
       });
-      //Cancel all affected queries
       const queries = getSimilarQueries<Member>(similarKey);
 
       for (const query of queries) {
         const [activeKey] = query;
 
-        // if role changes invalidate role based filter
+        // Role-filtered lists must refetch when the role changes
         if (updatedMembership.role && activeKey.some((el) => typeof el === 'object' && el && 'role' in el && el.role)) {
           queryClient.invalidateQueries({ queryKey: activeKey, refetchType: 'all' });
           continue;
@@ -255,7 +228,6 @@ export const useMemberUpdateMutation = () =>
         });
       }
 
-      // Invalidate entity queries to ensure counts and data are fresh
       invalidateOnMembershipChange(queryClient, channelType, channelId, organizationId);
 
       toaster.success(toastMessage);
@@ -267,7 +239,6 @@ export const useMemberUpdateMutation = () =>
     },
   });
 
-/** Provides the React Query mutation for memberships delete. */
 export const useMembershipsDeleteMutation = () =>
   useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
     mutationKey: memberQueryKeys.delete,
@@ -284,13 +255,10 @@ export const useMembershipsDeleteMutation = () =>
 
       const context: MemberChannelProp[] = []; // previous query data for rollback if an Apierror occurs
 
-      // Get affected queries
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
-      //Cancel all affected queries
       await queryClient.cancelQueries({ queryKey: similarKey });
       const queries = getSimilarQueries<Member>(similarKey);
 
-      // Iterate over affected queries and optimistically update cache
       for (const [queryKey, previousData] of queries) {
         if (!previousData) continue;
 
@@ -303,13 +271,12 @@ export const useMembershipsDeleteMutation = () =>
           return formatUpdatedCacheData(oldData, updatedMemberships, limit, -ids.length);
         });
 
-        context.push([queryKey, previousData]); // Store previous data for rollback if needed
+        context.push([queryKey, previousData]);
       }
 
       return context;
     },
     onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
-      // Invalidate entity queries to ensure counts are fresh
       invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       toaster.success(t('c:success.delete_members'));
     },
@@ -318,10 +285,8 @@ export const useMembershipsDeleteMutation = () =>
 
 const updateMembers = (members: Member[], variables: { id: string } & Record<string, unknown>) => {
   return members.map((member) => {
-    // Update the task itself
     if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };
 
-    // No changes, return member as-is
     return member;
   });
 };
@@ -335,9 +300,6 @@ const deletedMembers = (members: Member[], ids: string[]) => {
     .filter((m): m is Member => m !== null);
 };
 
-/**
- * Update the memberships and pending membership count in the cache for a given entity.
- */
 const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
   if (!oldEntity?.included.counts) return oldEntity;
 
@@ -356,7 +318,6 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
   };
 };
 
-/** Variables for changing a user's role on a channel entity from an entity table */
 type ChangeEntityRoleVariables = {
   entity: EnrichedChannel;
   role: MembershipBase['role'];
@@ -368,7 +329,6 @@ type ChangeEntityRoleResult = {
   wasNew: boolean;
 };
 
-/** Provides the React Query mutation for change entity role. */
 export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {
@@ -383,7 +343,6 @@ export const useChangeEntityRoleMutation = () =>
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
       if (membership?.id) {
-        // Existing membership, update role.
         const updated = await updateMembership({
           body: { role },
           path: { id: membership.id, tenantId, organizationId },
@@ -391,7 +350,6 @@ export const useChangeEntityRoleMutation = () =>
         return { entity, membership: updated, wasNew: false };
       }
 
-      // No membership, create via invite.
       const { email } = getCurrentUser();
       const result = await membershipInvite({
         query: { entityId, entityType },
@@ -404,10 +362,8 @@ export const useChangeEntityRoleMutation = () =>
       return { entity, membership: created, wasNew: true };
     },
     onSuccess: ({ entity, membership }) => {
-      // Update myMemberships cache; the global subscriber enriches entity lists.
       upsertMyMembershipCache(membership);
 
-      // Update entity list cache with the new/updated membership
       const updatedEntity = { ...entity, membership };
       updateEntityInListCache(entity.entityType, [updatedEntity]);
 

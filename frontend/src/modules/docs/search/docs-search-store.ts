@@ -17,7 +17,6 @@ export const useDocsSearchStore = create<DocsSearchStoreState>()(
   }),
 );
 
-/** Removes a query from the recent documentation searches. */
 export const deleteRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
     const searches = state.recentSearches.filter((entry) => entry !== value);

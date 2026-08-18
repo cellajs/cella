@@ -30,9 +30,6 @@ const isMagicLinkEnabled = enabledStrategies.includes('magic');
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
-/**
- * Handles user sign-in, including token-based invitation flow.
- */
 export function SignInStep() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -51,7 +48,6 @@ export function SignInStep() {
     defaultValues: { email },
   });
 
-  // Check if conditional mediation is available for this browser.
   useEffect(() => {
     if (!enabledStrategies.includes('passkey')) return;
     isConditionalMediationAvailable().then(setConditionalMediationSupported);
@@ -81,21 +77,19 @@ export function SignInStep() {
     });
   };
 
-  // Only clean up pending mediation on unmount.
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
     };
   }, []);
 
-  // Handle sign in: verify email exists, then start passkey mediation for that verified email.
+  // Verify the email exists before starting passkey mediation for it.
   const { mutate: _checkEmail, isPending } = useMutation<void, ApiError, CheckEmailData['body']>({
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => {
       const submittedEmail = form.getValues('email');
       startMediation(submittedEmail);
 
-      // Focus button after next render
       setTimeout(() => {
         const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
         submitButton?.focus();
@@ -128,7 +122,6 @@ export function SignInStep() {
     resetSteps();
   };
 
-  // In restricted mode, show different title
   const getTitle = () => {
     if (restrictedMode) return t('c:sign_in');
     if (tokenId) return t('c:invite_sign_in');

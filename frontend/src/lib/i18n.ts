@@ -6,9 +6,7 @@ import { appConfig } from 'shared';
 import { env } from '~/env';
 import { locales } from '~/lib/i18n-locales';
 
-/**
- * i18n options with hybrid preload and lazy loading strategy
- */
+/** i18n options: bundled preload for the default language, HTTP-loaded namespaces for the rest. */
 const initOptions: InitOptions = {
   resources: locales, // Preload default ('en') translations
   debug: env.VITE_DEBUG_I18N,
@@ -25,13 +23,11 @@ const initOptions: InitOptions = {
   },
   defaultNS: 'c',
   backend: {
-    // Served by the locales vite plugin in dev and emitted as build assets; both
-    // expose the processed namespaces (common + app merged into `c`) at this path.
+    // Processed namespaces (common + app merged into `c`), served by the vite plugin in dev and as build assets.
     loadPath: '/locales/{{lng}}/{{ns}}.json',
   },
 };
 
-// Init i18n instance
 const instance = i18n.use(Backend).use(LanguageDetector).use(initReactI18next);
 
 instance.init(initOptions);

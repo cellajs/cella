@@ -3,7 +3,7 @@ import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
-/** Deep-compare two EntityCanMap objects (supports three-state: true/false/'own') */
+/** Deep compare, over the three-state values true, false, and 'own'. */
 function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
@@ -21,10 +21,7 @@ function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined)
   });
 }
 
-/**
- * Build an all-actions-allowed permission map for system admins.
- * Mirrors the structure of computeCan (channel type + descendants) but with full permissions.
- */
+/** Mirrors the shape of computeCan over the channel type and its descendants, with every action allowed. */
 function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
   const map: EntityCanMap = { [channelType]: { ...allActionsAllowed } };
   for (const descendant of hierarchy.getOrderedDescendants(channelType)) {
@@ -33,11 +30,7 @@ function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
   return map;
 }
 
-/**
- * Enrich an item with a permission map (keyed by entity type: self + hierarchy descendants) computed
- * from its membership. System admins without a membership get full permissions, mirroring the backend.
- * Returns the original reference when nothing changed.
- */
+/** Permission map keyed by entity type, self plus hierarchy descendants, computed from the item's membership. A system admin without a membership gets full permissions, as on the backend. */
 export function enrichWithPermissions(item: EnrichableChannel, channelType: ChannelEntityType): EnrichableChannel {
   const membership = item.membership ?? null;
   const existing = item.can;

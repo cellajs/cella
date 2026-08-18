@@ -7,19 +7,15 @@ import { isRowCondition } from './row-conditions.ts';
 import type { CanState, PolicyMatrix } from './types.ts';
 
 /**
- * Per-action permission state for one entity type. Three-valued to carry row conditions to the UI:
- * `true` = allowed (`1`), `false` = denied (`0`), condition name (e.g. `'own'`) = allowed only on
- * matching rows, resolved per row on the frontend by `resolveCan` / the condition's check-form.
+ * Three-valued so row conditions reach the UI: `true` allowed, `false` denied, condition name
+ * (`'own'`) allowed only on matching rows, resolved per row by the frontend's `resolveCan`.
  */
 type ActionStates = Record<EntityActionType, CanState>;
 
-/** Entity-type-keyed permission map: channel entity + its descendant types */
+/** Keyed by the channel entity plus its descendant types. */
 export type EntityCanMap = Partial<Record<EntityType, ActionStates>>;
 
-/**
- * Compute a single entity type's permission states from policies + membership.
- * Returns allActionsDenied when no policy is found.
- */
+/** Denies every action when no policy matches. */
 function computeEntityPermissions(
   entityType: ChannelEntityType | EntityType,
   channelType: ChannelEntityType,
@@ -35,16 +31,15 @@ function computeEntityPermissions(
   return recordFromKeys(entityActions, (action) => {
     const value = permissions[action];
     if (value === 1) return true;
-    // Row-conditional grant → surface the condition name (e.g. 'own'); the name IS the cell
-    // value. The frontend resolves it per row via resolveCan.
+    // The condition name is the cell value; the frontend resolves it per row via resolveCan.
     if (isRowCondition(value)) return value;
     return false;
   }) as ActionStates;
 }
 
 /**
- * Builds the frontend permission map for a channel and its descendants from one membership.
- * Row conditions remain unresolved; missing membership returns an empty map.
+ * The frontend permission map for a channel and its descendants, from one membership. Row
+ * conditions stay unresolved; a missing membership yields an empty map.
  */
 export const computeCan = (
   channelType: ChannelEntityType,
@@ -54,11 +49,9 @@ export const computeCan = (
 ): EntityCanMap => {
   if (!membership) return {};
 
-  // Hierarchy defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
   const { hierarchy: h, entityActions } = resolveHierarchy(overrides);
   const map: EntityCanMap = {};
 
-  // Permissions for the channel entity itself
   map[channelType] = computeEntityPermissions(
     channelType,
     membership.channelType,
@@ -67,7 +60,6 @@ export const computeCan = (
     entityActions,
   );
 
-  // Permissions for all descendant entity types (children + their children)
   for (const descendant of h.getOrderedDescendants(channelType) as EntityType[]) {
     map[descendant] = computeEntityPermissions(
       descendant,

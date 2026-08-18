@@ -11,9 +11,7 @@ interface GetOrderColumnsOpts<T extends Record<string, AnyColumn | SQLWrapper>, 
   append?: SQL[];
 }
 
-/**
- * Resolve API sorting to deterministic Drizzle `.orderBy()` expressions.
- */
+/** Resolves API sorting to deterministic `.orderBy()` expressions. */
 export const getOrderColumns = <T extends Record<string, AnyColumn | SQLWrapper>, U extends keyof T>({
   sort,
   order,

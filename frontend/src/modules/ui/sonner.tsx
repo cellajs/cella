@@ -3,7 +3,6 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-/** Renders the styled toaster primitive. */
 export function Toaster({ ...props }: ToasterProps) {
   const mode = useUIStore((state) => state.mode);
 

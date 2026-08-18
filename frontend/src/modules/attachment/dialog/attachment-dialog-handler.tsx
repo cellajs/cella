@@ -11,10 +11,7 @@ import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 const dialogId = ATTACHMENT_DIALOG_PARAM;
 
-/**
- * Handles opening/closing the attachment dialog based on URL search params.
- * Uses a stable dialog ID so carousel navigation doesn't recreate the dialog.
- */
+/** A stable dialog id keeps carousel navigation from recreating the dialog. */
 function AttachmentDialogHandlerBase() {
   const navigate = useNavigate();
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
@@ -39,8 +36,7 @@ function AttachmentDialogHandlerBase() {
           onClose: (isCleanup?: boolean) => {
             if (!isCleanup) close();
           },
-          // Open state lives in the URL. Remove it immediately on ESC/outside-press so onClose
-          // clears the search param synchronously and prevents the dialog flashing back.
+          // Open state lives in the URL: remove on ESC/outside-press so the search param clears before a re-open can flash.
           instantClose: true,
           headerClassName: 'hidden',
         }),
@@ -55,5 +51,4 @@ function AttachmentDialogHandlerBase() {
   return null;
 }
 
-/** Coordinates the attachment dialog with route and carousel state. */
 export const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);

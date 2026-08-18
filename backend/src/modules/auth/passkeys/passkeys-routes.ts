@@ -13,9 +13,6 @@ import {
 import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
 
 const authPasskeysRoutes = {
-  /**
-   * Generate passkey challenge
-   */
   generatePasskeyChallenge: createXRoute({
     operationId: 'generatePasskeyChallenge',
     method: 'post',
@@ -39,9 +36,6 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Create passkey
-   */
   createPasskey: createXRoute({
     operationId: 'createPasskey',
     method: 'post',
@@ -66,9 +60,6 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete passkey
-   */
   deletePasskey: createXRoute({
     operationId: 'deletePasskey',
     method: 'delete',
@@ -86,9 +77,6 @@ const authPasskeysRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Verify passkey
-   */
   signInWithPasskey: createXRoute({
     operationId: 'signInWithPasskey',
     method: 'post',

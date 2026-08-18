@@ -16,7 +16,6 @@ interface PasskeyTileProps {
   onlyPasskeyLeft: boolean;
 }
 
-/** Renders the passkey tile component. */
 export function PasskeyTile({ passkey, handleUnlinkPasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) {
   const { t } = useTranslation();
   const user = useCurrentUser();

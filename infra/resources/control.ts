@@ -12,10 +12,7 @@ import { mode, naming, region } from '../pulumi-context';
 async function loadControlState(): Promise<ControlState> {
   if (process.env.VITEST) return emptyControlState();
 
-  // AWS_* first: they are the state-backend S3 credentials, and Scaleway's S3
-  // gateway only honors project-scoped ObjectStorage grants, which an
-  // API-capable SCW_* identity may lack. Normal deploys set both pairs to the
-  // same key, so the order only matters for split-identity operator runs.
+  // AWS_* first: they are the state-backend S3 credentials, and Scaleway's S3 gateway honors only project-scoped ObjectStorage grants, which an API-capable SCW_* identity may lack.
   const accessKey = process.env.AWS_ACCESS_KEY_ID ?? process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.AWS_SECRET_ACCESS_KEY ?? process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) {
@@ -35,10 +32,8 @@ async function loadControlState(): Promise<ControlState> {
     const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode));
     return state;
   } catch (err) {
-    // readControlState returns the empty state for a missing object (fresh stack);
-    // only genuine failures reach here. The control object is the sole source of
-    // rollout state, so fail closed to protect live compute.
-    throw new Error(`control-store: failed to read rollout state — aborting deploy (${errorMessage(err)})`);
+    // readControlState returns the empty state for a missing object, so only real failures reach here; the control object is the only source of rollout state, so fail closed.
+    throw new Error(`control-store: failed to read rollout state, aborting deploy (${errorMessage(err)})`);
   }
 }
 

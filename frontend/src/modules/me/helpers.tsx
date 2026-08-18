@@ -14,58 +14,37 @@ export const getAndSetMe = async () => {
   useUserStore.getState().setUser(user, skipLastUser);
   useUserStore.getState().setIsSystemAdmin(isSystemAdmin);
 
-  // A different user signed in. Per-user storage namespaces are bound at boot from the persisted
-  // user id (just updated above), so a full reload rebinds every cache/store to the new owner.
-  // the previous user's data stays isolated, no surgical flush or cross-user bleed.
+  // Per-user storage namespaces bind at boot, so a different user id needs a full reload to rebind every cache and store.
   if (!skipLastUser && previousUserId && previousUserId !== user.id) window.location.reload();
 
   return user;
 };
 
-/**
- * Retrieves the current user's authentication information.
- *
- * @returns The data object.
- */
 export const getAndSetMeAuthData = async () => {
   const authInfo = await getMyAuth();
   return authInfo;
 };
 
-/**
- * Refresh me/membership caches and reconnect SSE so the active user's
- * role and memberships are picked up after switching identity.
- */
+/** Drops me and membership caches and reconnects SSE so the new identity's role and memberships apply. */
 const refreshIdentityCaches = async () => {
-  // Remove stale user and membership caches so fresh data is fetched for the new identity
   queryClient.removeQueries({ queryKey: meKeys.all });
   queryClient.removeQueries({ queryKey: meKeys.memberships });
   await getAndSetMe();
-  // Reconnect SSE so the subscriber uses the new role and memberships
   appStreamManager.reconnect();
 };
 
-/**
- * Start impersonating the given user and refresh local identity state.
- */
 export const startImpersonationFlow = async (targetUserId: string) => {
   await startImpersonation({ body: { targetUserId } });
   useUIStore.getState().setImpersonating(true);
   await refreshIdentityCaches();
 };
 
-/**
- * Stop impersonation and refresh local identity state back to the admin user.
- */
 export const stopImpersonationFlow = async () => {
   await stopImpersonation();
   useUIStore.getState().setImpersonating(false);
   await refreshIdentityCaches();
 };
 
-/**
- * Generates a random passkey name.
- */
 export const generatePasskeyName = () => {
   const nouns = [
     'Phoenix',

@@ -2,7 +2,6 @@ import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled hover card primitive. */
 export function HoverCard({
   children,
   ...props
@@ -21,12 +20,10 @@ export function HoverCard({
   );
 }
 
-/** Renders the styled hover card trigger primitive. */
 export function HoverCardTrigger({ ...props }: TooltipPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
   return <TooltipPrimitive.Trigger data-slot="hover-card-trigger" {...props} />;
 }
 
-/** Renders the styled hover card content primitive. */
 export function HoverCardContent({
   className,
   align = 'center',

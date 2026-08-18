@@ -31,10 +31,8 @@ export interface RollStatus {
 }
 
 /**
- * Reconciler exit codes that mean THE RELEASE ITSELF is bad and waiting won't
- * help: 4 compose-up, 5 health/blue-green, 6 migrate. The reconciler is a
- * converging loop, so the infra transients (2 tag-fetch, 3 pull) self-heal on
- * the next 20s tick. Keep polling through those and only fast-fail here.
+ * Reconciler exit codes meaning THE RELEASE ITSELF is bad and waiting cannot help: 4 compose-up, 5 health/blue-green, 6 migrate.
+ * The reconciler is a converging loop, so infra transients (2 tag-fetch, 3 pull) self-heal on the next 20s tick and keep polling.
  */
 const TERMINAL_EXIT_CODES = new Set(['4', '5', '6']);
 
@@ -50,12 +48,8 @@ export interface PollOptions {
   sleep?: (ms: number) => Promise<void>;
   log?: (msg: string) => void;
   /**
-   * Optional reconciler status reader. When provided, a TERMINAL failure for
-   * OUR sha (a bad release; see TERMINAL_EXIT_CODES) aborts the poll
-   * immediately with the reconciler's reason, preserving the remaining
-   * budget. Infra transients (tag-fetch/pull) self-heal on the next tick, so we
-   * keep polling through those and just surface the phase. Best-effort: a
-   * missing/unparseable status never changes the outcome.
+   * Optional reconciler status reader. A TERMINAL failure for OUR sha (see TERMINAL_EXIT_CODES) aborts the poll with the reconciler's reason, preserving the remaining budget.
+   * Infra transients self-heal on the next tick, so polling continues and only reports the phase. Best-effort: a missing or unparseable status never changes the outcome.
    */
   status?: StatusFn;
 }
@@ -70,28 +64,21 @@ export interface PollOutcome {
 }
 
 /**
- * A probe is "healthy" when the status is a success (any 2xx, covering the SPA
- * proxy's 200 and the API services' 204) AND the served version matches the SHA
- * we are rolling to. A 2xx with a stale or missing version means the stale
- * container is still answering: keep waiting.
+ * A probe is healthy on any 2xx (the SPA proxy's 200, the API services' 204) AND a served version matching the SHA being rolled to.
+ * A 2xx with a stale or missing version means the old container is still answering, so the poll continues.
  */
 export function isHealthy(result: ProbeResult, expectedSha: string): boolean {
   const statusOk = result.status >= 200 && result.status < 300;
   return statusOk && result.version === expectedSha;
 }
 
-/**
- * Default probe using global fetch with a per-request timeout. A failed request
- * (network error, TLS, timeout) surfaces as status 0, so the caller keeps polling
- * through a transient failure.
- */
+/** Default probe using global fetch with a per-request timeout. A network, TLS, or timeout failure reports status 0, so the caller keeps polling. */
 export function createFetchProbe(timeoutMs: number): ProbeFn {
   return async (url) => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket.
-      // This mirrors the backend health probe's scheme normalization.
+      // Probe WebSocket services over HTTP because their health endpoint is not a WebSocket; mirrors the backend health probe's scheme normalization.
       const httpUrl = url.replace(/^ws(s?):/, 'http$1:');
       const res = await fetch(httpUrl, { signal: controller.signal, redirect: 'follow' });
       return { status: res.status, version: res.headers.get(healthContract.versionHeader) ?? undefined };
@@ -124,8 +111,7 @@ export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
         return { ok: true, attempts: i, lastStatus, lastVersion };
       }
 
-      // Fail fast only on terminal rollout status; keep polling through self-healing transients.
-      // Surface phase and reason to show progress in CI.
+      // Fail fast only on terminal rollout status, keep polling through self-healing transients, and log phase and reason for CI progress.
       const roll = opts.status?.();
       if (roll && roll.desired === expectedSha) {
         if (roll.result === 'failed' && roll.exitCode && TERMINAL_EXIT_CODES.has(roll.exitCode)) {
@@ -178,7 +164,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const args = parseArgs(argv);
-  console.info(`Probing ${args.url} — expecting X-App-Version: ${args.sha}`);
+  console.info(`Probing ${args.url}, expecting X-App-Version: ${args.sha}`);
 
   const outcome = await pollForVersion({
     url: args.url,

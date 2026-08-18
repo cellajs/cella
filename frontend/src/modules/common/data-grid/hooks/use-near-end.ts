@@ -9,17 +9,11 @@ interface UseNearEndOptions {
   measured: boolean;
   /** Level-triggered: receives the current near-end state whenever it changes, and false on unmount. */
   onNearEndChange: Maybe<(nearEnd: boolean) => void>;
-  /**
-   * Number of rows from the end at which near-end reports true.
-   * Defaults to a dynamic value: 25% of rows, clamped between 10 and 50.
-   */
+  /** Rows from the end at which near-end reports true. Defaults to 25% of rows, clamped between 10 and 50. */
   threshold: Maybe<number>;
 }
 
-/**
- * Reports near-end state as a level trigger for infinite scrolling.
- * Consumers can retry deferred loads when query state changes, avoiding dropped one-shot events.
- */
+/** Level-triggered near-end state for infinite scrolling, so a consumer can retry a load it had to defer. */
 export function useNearEnd({
   totalRows,
   rowOverscanEndIdx,
@@ -32,14 +26,12 @@ export function useNearEnd({
     [threshold, totalRows],
   );
 
-  // Before layout is measured the overscan range is a bounded placeholder, not a
-  // real viewport position. Report false when the position is unknown.
+  // Before measurement the overscan range is a placeholder, not a viewport position, so near-end reports false.
   const nearEnd = measured && totalRows > 0 && rowOverscanEndIdx >= totalRows - effectiveThreshold;
 
   useEffect(() => {
     onNearEndChange?.(nearEnd);
-    // Reset on unmount (and before re-runs) so consumers never hold a stale
-    // near-end from a removed grid (e.g. filter change → skeleton).
+    // Reset on unmount and before re-runs so no consumer holds a near-end from a removed grid.
     return () => onNearEndChange?.(false);
   }, [nearEnd, onNearEndChange]);
 }

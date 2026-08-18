@@ -8,11 +8,7 @@ import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, v
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
-/**
- * Storage object keys per variant, keyed by the variant name. `original` is always present
- * (every upload has one); other variants appear only once the pipeline generates them.
- * This is the single place the variant set is enumerated for storage keys.
- */
+/** The single place the storage-key variant set is enumerated. `original` is always present. */
 export const attachmentKeysSchema = z.object({
   original: z.string(),
   preview: z.string().optional(),
@@ -21,7 +17,6 @@ export const attachmentKeysSchema = z.object({
 });
 export type AttachmentKeys = z.infer<typeof attachmentKeysSchema>;
 
-// Attachment-specific field docs, applied to both generated schemas so they reach every CRUD surface.
 const attachmentFieldDescriptions = {
   contentType: 'MIME type of the uploaded file (e.g. image/png).',
   convertedContentType: 'MIME type of the server-converted variant; null when none.',
@@ -68,12 +63,11 @@ const attachmentCreateBodySchema = attachmentInsertSchema
   })
   .extend({
     id: validUuidSchema,
-    // The column defaults to {}, which would make `keys` optional on the generated insert schema.
-    // Creates must carry at least the original key, so require it here.
+    // The column defaults to {}, making `keys` optional on the generated insert schema; a create
+    // must carry at least the original key.
     keys: attachmentKeysSchema,
   });
 
-/** Wire registration: lens-widened schemas + entity-bound runtime seams for attachment */
 export const attachmentContract = evolutionContract.product('attachment', {
   createItem: attachmentCreateBodySchema,
   updateOps: {
@@ -81,13 +75,10 @@ export const attachmentContract = evolutionContract.product('attachment', {
   },
 });
 
-/** Array schema for batch creates (1-50 attachments per request), each with own stx */
 export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSchema.array().min(1).max(50);
 
-/** Update body using fields pattern for single or multi-field updates with conflict detection */
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
-// Response schemas: batch operations use { data, rejectedIds }, single returns entity directly
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
@@ -100,10 +91,9 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
 export const attachmentVariantSchema = z.enum(['original', 'preview', 'thumbnail', 'converted']);
 
 /**
- * Body schema for the batch presigned URLs endpoint. Callers reference private
- * attachments by `attachmentId` + `variant`; clients never submit storage keys.
- * The server resolves the owning rows (RLS + permission) and fails closed before
- * signing. Public media is served from the CDN and never reaches this endpoint.
+ * Callers reference private attachments by `attachmentId` plus `variant`; clients never submit
+ * storage keys. The server resolves the owning rows under RLS and permission, and fails closed
+ * before signing. Public media is served from the CDN and never reaches this endpoint.
  */
 export const presignedUrlsBodySchema = z.object({
   items: z
@@ -117,10 +107,7 @@ export const presignedUrlsBodySchema = z.object({
     .max(50),
 });
 
-/**
- * One signed download URL in the batch response. Missing and denied ids collapse
- * into a uniform `rejectedIds` list (nonexistent and forbidden are indistinguishable).
- */
+/** Missing and denied ids collapse into one `rejectedIds` list, so the two are indistinguishable. */
 export const presignedUrlItemSchema = z.object({
   attachmentId: validUuidSchema,
   variant: attachmentVariantSchema,

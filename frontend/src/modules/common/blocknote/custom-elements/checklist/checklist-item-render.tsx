@@ -7,9 +7,8 @@ import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/bl
 
 type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
 
-/** Renders the checklist item render component. */
 export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItemRenderProps) {
-  // Assign a checkboxId if missing OR if duplicated (e.g. block created by pressing Enter to split)
+  // Assign a checkboxId when missing or duplicated, which happens when Enter splits a block.
   useEffect(() => {
     const id = block.props.checkboxId;
 
@@ -24,7 +23,6 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
       if (b.type !== 'checklistItem') continue;
       if ((b.props as { checkboxId?: string }).checkboxId !== id) continue;
       if (b.id === block.id) break; // This is the first occurrence, keep its ID
-      // Another block above us has the same checkboxId, so assign a fresh one.
       setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
       break;
     }
@@ -35,7 +33,7 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
 
   const handleToggle = () => {
     if (!persisted) return;
-    // Toggle checked state directly in block props; this is a Y.Doc update when collaborative.
+    // In collaborative mode this block update is a Y.Doc update.
     editor.updateBlock(block, { props: { checked: !isChecked } });
   };
 

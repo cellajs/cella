@@ -6,17 +6,14 @@ import { domainsTable } from '#/modules/domains/domains-db';
 import { type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
 import { log } from '#/utils/logger';
 
-/**
- * Creates a tenant with an associated domain claim.
- * Used by self-serve tenant creation during org onboarding.
- */
+/** Creates a tenant with an associated domain claim, for self-serve creation during org onboarding. */
 export async function createTenantForUser(
   db: DbOrTx,
   { name, createdBy, userEmail }: { name: string; createdBy: string; userEmail: string },
 ): Promise<TenantModel> {
   const [tenant] = await db.insert(tenantsTable).values({ name, createdBy }).returning();
 
-  // Extract domain from user email and insert as unverified domain claim
+  // Claim the user's email domain, unverified
   const domain = userEmail.split('@')[1];
   if (domain) {
     // Only insert if not already claimed by another tenant

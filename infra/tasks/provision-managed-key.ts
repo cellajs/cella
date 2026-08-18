@@ -64,7 +64,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
     const container = await client.getSecretByName(secret.secretName, secretPathFor(secret, opts.slug, opts.mode));
     if (!container) {
       throw new Error(
-        `${secret.secretName} (${secret.envVar}) has no container yet — run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
+        `${secret.secretName} (${secret.envVar}) has no container yet: run \`pulumi up\` so Pulumi creates it, then provision the ${definition.label} key.`,
       );
     }
     containerBySecretName.set(secret.secretName, container);

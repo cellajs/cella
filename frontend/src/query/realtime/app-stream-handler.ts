@@ -12,10 +12,7 @@ import { propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
 import type { AppStreamNotification } from './types';
 
-/**
- * Route an incoming app-stream notification to the membership/organization/product handler.
- * Notifications omit entity data, so handlers invalidate or fetch a seq range.
- */
+/** Notifications omit entity data, so each handler either invalidates or fetches a seq range. */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
 
@@ -23,11 +20,9 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
     syncSpanNames.messageProcess,
     { entityType: notification.productType, action, entityId: subjectId, _trace },
     () => {
-      // Checked before setOrgTenantId creates the entry: an org the sync store has never
-      // seen means the SSE connection is not registered on its channel.
+      // Checked before setOrgTenantId creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
       const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 
-      // Store tenantId in sync store whenever we see it in a notification
       if (organizationId && tenantId) {
         syncStore.getState().setOrgTenantId(organizationId, tenantId);
       }
@@ -35,9 +30,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // Membership changes use targeted query invalidation, not the seq sync path.
       if (notification.kind === 'membership') {
         handleMembershipNotification(action, organizationId, channelType);
-        // A self-membership in a NEW org arrives on the user channel; the connection is not
-        // registered on that org channel, so reconnect to re-register and catch up on it.
-        // (Dynamic import: stream-store imports this module for its config.)
+        // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
         if (action === 'create' && isUnknownOrg) {
           console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
           void import('./stream-store').then((m) => m.appStreamManager.reconnect());
@@ -49,8 +42,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       const entityType = notification.productType;
       if (!isProduct(entityType)) return console.error('Unknown entityType in app stream notification:', entityType);
 
-      // Merge create/update ranges for prioritized lazy fetch, including soft-delete tombstones.
-      // Recount unseen once per flush. Hard deletes have no fetchable row and use invalidation below.
+      // Create, update, and soft-delete tombstones merge into prioritized lazy fetches; hard deletes have no fetchable row and take the invalidation path below.
       if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
         enqueueRange({
           entityType,
@@ -87,11 +79,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
   );
 }
 
-/**
- * Handle membership create/update/delete via channelType-targeted invalidation (not broad):
- * create/delete invalidate the specific channel list + refresh menu; update invalidates member
- * queries and refreshes user data for role changes.
- */
+/** Targets invalidation by channelType: create and delete hit that channel list, update hits member queries and refreshes user data for role changes. */
 function handleMembershipNotification(
   action: AppStreamNotification['action'],
   organizationId: string | null,
@@ -117,7 +105,7 @@ function handleMembershipNotification(
   console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
-/** Handle product entity events (page, attachment, …): notification-only, so invalidate or seq-range refetch. */
+/** Product entity events carry no data, so each is answered with invalidation or a seq-range refetch. */
 function handleEntityNotification(
   entityType: ProductEntityType,
   entityId: string,
@@ -131,26 +119,21 @@ function handleEntityNotification(
   propagation?: AppStreamNotification['propagation'],
   spreadWindow?: number | null,
 ): void {
-  // Own create/update echoes skip fetching but still refresh STX metadata.
-  // Deletes always invalidate because row STX identifies the last writer, not necessarily the deleter.
+  // Own create/update echoes patch STX without fetching; deletes always invalidate, because row STX names the last writer and not necessarily the deleter.
   if (action !== 'delete' && stx?.sourceId === sourceId) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
-    console.debug('[handleEntityNotification] Echo — patched stx, skipped data fetch:', stx.mutationId);
+    console.debug('[handleEntityNotification] Echo: patched stx, skipped data fetch:', stx.mutationId);
     return;
   }
 
-  // The two paths without synced rows (delete-style removal, seq-less fallback) derive their
-  // invalidation/fetch decision from the same tier system the fetch prioritizer uses: viewing tier
-  // acts now, background/muted defers to next access.
+  // Delete-style removal and the seq-less fallback decide from the same tier system the fetch prioritizer uses: the viewing tier acts now, background and muted defer to next access.
   const isViewing = getSyncTier(entityType, organizationId, channelId).min === 0;
 
   switch (action) {
     case 'create':
     case 'update':
       if (seq !== null) {
-        // A single event is a width-1 batch: same lazy path as batches (merge, spread, flush).
-        // The caught-up watermark advances after a successful flush. Advancing before a fetch
-        // completes would permanently skip the range.
+        // A single event is a width-1 batch on the same lazy path; the watermark advances only after a successful flush, since advancing earlier would skip the range forever.
         enqueueRange({
           entityType,
           organizationId,
@@ -167,12 +150,11 @@ function handleEntityNotification(
       }
 
       if (!isViewing) {
-        // Mark stale only, refetch on next access
+        // Mark stale only; the next access refetches.
         cacheOps.invalidateEntityDetail(entityId, keys, 'none');
         cacheOps.invalidateEntityListForOrg(keys, organizationId, 'none');
       } else {
-        // Fetch single entity and patch both detail and list caches.
-        // Chain propagation after fetch so fresh source data is available.
+        // Propagation is chained after the fetch so fresh source data is in cache.
         cacheOps
           .fetchEntityAndUpdateList(entityId, keys, action, organizationId, tenantId ?? undefined, entityType)
           .then(() => {
@@ -188,8 +170,7 @@ function handleEntityNotification(
       break;
 
     case 'delete':
-      // Physical deletes and unpublishes leave no fetchable tombstone, so invalidate detail and list.
-      // Soft deletes remain updates reconciled through sequence ranges.
+      // Physical deletes and unpublishes leave no fetchable tombstone; soft deletes stay updates reconciled through sequence ranges.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
       applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
@@ -197,8 +178,7 @@ function handleEntityNotification(
       break;
 
     case 'moveOut':
-      // A move-out is the removal because this subscriber cannot fetch the new location.
-      // Drop cached row data and correct unseen counts.
+      // A move-out reads as a removal here: this subscriber cannot fetch the new location.
       cacheOps.removeEntity(entityType, entityId, organizationId);
       applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       break;

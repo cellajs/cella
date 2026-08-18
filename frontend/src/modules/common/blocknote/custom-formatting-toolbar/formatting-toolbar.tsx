@@ -58,7 +58,6 @@ function FormattingToolbarContent({
   );
 }
 
-/** Renders the custom formatting toolbar component. */
 export function CustomFormattingToolbar({
   headingLevels,
   titleLevel,

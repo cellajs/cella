@@ -1,9 +1,6 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 
-/**
- * Stable error codes the server can emit on the SSE stream so the client can
- * react beyond a generic transport failure (e.g. stop reconnecting on auth loss).
- */
+/** Stable codes so a client can react beyond a generic transport failure. */
 export type StreamErrorCode = 'unauthorized' | 'forbidden' | 'tenant_revoked' | 'server_shutdown' | 'internal';
 
 export interface StreamErrorPayload {
@@ -11,9 +8,6 @@ export interface StreamErrorPayload {
   message: string;
 }
 
-/**
- * Write a change event to SSE stream.
- */
 export async function writeChange(stream: SSEStreamingApi, id: string, data: unknown): Promise<void> {
   await stream.writeSSE({
     event: 'change',
@@ -22,9 +16,6 @@ export async function writeChange(stream: SSEStreamingApi, id: string, data: unk
   });
 }
 
-/**
- * Write a change event with pre-serialized data (avoids redundant JSON.stringify).
- */
 export async function writeChangeRaw(stream: SSEStreamingApi, id: string, serializedData: string): Promise<void> {
   await stream.writeSSE({
     event: 'change',
@@ -33,9 +24,7 @@ export async function writeChangeRaw(stream: SSEStreamingApi, id: string, serial
   });
 }
 
-/**
- * Write offset event (catch-up complete marker).
- */
+/** Catch-up complete marker. */
 export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {
   await stream.writeSSE({
     event: 'offset',
@@ -43,11 +32,7 @@ export async function writeOffset(stream: SSEStreamingApi, cursor: string | null
   });
 }
 
-/**
- * Write an application-level error event. Caller is expected to close the stream
- * (return from the streamSSE callback) after emitting this so the client doesn't
- * receive further events on a doomed connection.
- */
+/** The caller must return from the streamSSE callback after this, closing the stream. */
 export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPayload): Promise<void> {
   await stream.writeSSE({
     event: 'error',
@@ -56,17 +41,14 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
 }
 
 /**
- * Write an SSE heartbeat as a comment line. Per the SSE spec, lines starting
- * with `:` are ignored by EventSource. They keep the socket and any proxies
- * (Caddy, nginx, Cloudflare) from idling out, without firing a client event.
+ * A comment line: per the SSE spec, lines starting with `:` are ignored by EventSource, so this
+ * keeps the socket and any proxies from idling out without firing a client event.
  */
 export async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {
   await stream.write(': ping\n\n');
 }
 
-/**
- * Keep-alive loop. Runs until stream is aborted.
- */
+/** Runs until the stream is aborted. */
 export async function keepAlive(stream: SSEStreamingApi, intervalMs = 30000): Promise<void> {
   while (true) {
     await writeHeartbeat(stream);

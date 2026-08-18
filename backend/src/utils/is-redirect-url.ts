@@ -2,16 +2,14 @@ import { appConfig } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
- * Returns a normalized same-origin redirect path or false.
- * It rejects absolute/scheme-relative URLs, authority tricks, encoded bypasses, control
- * characters, and backend routes so callers never replay untrusted input. Length is capped
- * at the standard field size so validated paths always fit stored token columns.
+ * Normalized same-origin redirect path, or false. Rejects absolute and scheme-relative URLs, authority
+ * tricks, encoded bypasses, control characters and backend routes. Capped at `maxLength.field` so a
+ * validated path always fits the stored token columns.
  */
 export function isValidRedirectPath(path: unknown): string | false {
   if (typeof path !== 'string' || path.length === 0 || path.length > maxLength.field) return false;
 
-  // Decode once so encoded bypasses (e.g. `%2F%2Fhost`) are evaluated as the
-  // characters they actually represent.
+  // Decode once, so encoded bypasses such as `%2F%2Fhost` are evaluated as the characters they represent.
   let decoded: string;
   try {
     decoded = decodeURIComponent(path);
@@ -19,8 +17,7 @@ export function isValidRedirectPath(path: unknown): string | false {
     return false; // malformed percent-encoding
   }
 
-  // Must be a single-slash absolute path. Reject scheme-relative (`//host`) and
-  // backslash authority tricks (`/\host`, `\\host`).
+  // Single-slash absolute path only: reject scheme-relative `//host` and backslash authority tricks.
   if (!decoded.startsWith('/')) return false;
   if (decoded.startsWith('//')) return false;
   if (decoded.startsWith('\\') || decoded[1] === '\\') return false;
@@ -41,8 +38,7 @@ export function isValidRedirectPath(path: unknown): string | false {
   // Never redirect into backend-only routes.
   if (resolved.pathname.startsWith('/api/')) return false;
 
-  // Return the normalized relative path only. Normalization can re-encode (lengthen) the
-  // input, so re-check the cap on the result.
+  // Normalization can re-encode and lengthen the input, so re-check the cap on the result.
   const normalized = `${resolved.pathname}${resolved.search}${resolved.hash}`;
   return normalized.length > maxLength.field ? false : normalized;
 }

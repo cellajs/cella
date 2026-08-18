@@ -7,10 +7,6 @@ interface SkipOrganizationProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-/**
- * Confirmation dialog content for skipping organization creation during onboarding.
- * Marks onboarding as completed or cancels the action.
- */
 export function SkipOrganization({ setOnboardingState }: SkipOrganizationProps) {
   const { t } = useTranslation();
 

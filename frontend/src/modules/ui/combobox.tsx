@@ -145,11 +145,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
   );
 }
 
-/**
- * The single selected-check for combobox rows: green, inline in the row's flex flow (place it
- * left of trailing content such as hotkey numbers). Kept mounted to reserve space on
- * unselected rows, so trailing content stays column-aligned.
- */
+/** Selected-check for combobox rows: kept mounted so unselected rows reserve the space and trailing content stays column-aligned. */
 function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIndicator.Props) {
   return (
     <ComboboxPrimitive.ItemIndicator
@@ -264,10 +260,7 @@ function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemov
   );
 }
 
-/**
- * Search-styled combobox input (command palette / dropdowner). Uses `type="search"` so password
- * managers (NordPass, etc.) skip it.
- */
+/** Search-styled combobox input for the command palette and dropdowner. */
 function ComboboxSearchInput({
   className,
   wrapClassName,
@@ -301,8 +294,7 @@ function ComboboxSearchInput({
         data-lpignore="true"
         {...props}
         ref={(el) => {
-          // Set type="search" imperatively because base-ui omits it from its types.
-          // Password managers skip search inputs.
+          // type="search" is set imperatively (base-ui omits it from its types) so password managers skip the input.
           if (el) el.type = 'search';
           if (typeof ref === 'function') ref(el);
           else if (ref) ref.current = el;
@@ -350,10 +342,6 @@ export interface ComboboxSelectProps {
   };
 }
 
-/**
- * High-level combobox select for form fields.
- * Wraps base-ui Combobox with a trigger button, search input, and option list.
- */
 function ComboboxSelect({
   options,
   value,

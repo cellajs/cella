@@ -11,10 +11,6 @@ import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 
-/**
- * Renders the nav as a floating, sidebar, or bottom bar. Handles nav-item triggering (routing +
- * sheet) and sets up quick-navigation hotkeys.
- */
 export function AppNav() {
   const navigate = useNavigate();
   const isMobile = useBreakpointBelow('sm');
@@ -31,7 +27,6 @@ export function AppNav() {
       current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
     };
 
-    // If nav item is already open, close it
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
       updateSheet('nav-sheet', { open: false });
@@ -40,10 +35,8 @@ export function AppNav() {
 
     const navItem: NavItem = navItems.find((item) => item.id === id)!;
 
-    // If it has an action, trigger it
     if (navItem.action) return navItem.action(triggerRef);
 
-    // If its a route, navigate to it
     if (navItem.href) {
       if (!useNavigationStore.getState().keepNavOpen) {
         setNavSheetOpen(null);
@@ -52,7 +45,6 @@ export function AppNav() {
       return navigate({ to: navItem.href });
     }
 
-    // If it has a sheet, use sheeter service (both mobile and desktop)
     if (navItem.sheet) {
       setNavSheetOpen(navItem.id);
 
@@ -62,8 +54,7 @@ export function AppNav() {
         triggerRef,
         side: sheetSide as 'left' | 'right',
         modal: 'trap-focus',
-        // Outside-press handling is gated by `keepNavOpen` inside the sheeter's onOpenChange,
-        // so don't disable it at the Base UI level, which would suppress the event entirely.
+        // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
         disablePointerDismissal: false,
         className: navSheetClassName,
         skipAnimation: options?.skipAnimation,
@@ -74,7 +65,6 @@ export function AppNav() {
     }
   };
 
-  // Enable hotkeys
   useHotkeys([
     ['Shift + A', () => triggerNavItem('account')],
     ['Shift + F', () => triggerNavItem('search')],
@@ -82,7 +72,7 @@ export function AppNav() {
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 
-  // Sync keepNavOpen: pinned only when desktop + preference + a sheet is open
+  // keepNavOpen is pinned only on desktop, with the preference set and a sheet open.
   useEffect(() => {
     const shouldPin = isDesktop && keepOpenPreference && !!navSheetOpen;
     if (useNavigationStore.getState().keepNavOpen !== shouldPin) {
@@ -94,7 +84,6 @@ export function AppNav() {
   const floatingItems: FloatingNavItem[] = [];
 
   if (isMobile) {
-    // Collect left/right button IDs from route staticData
     const floatingConfig = routerState.matches.reduce(
       (acc, match) => {
         const config = match.staticData.floatingNavButtons;
@@ -105,7 +94,6 @@ export function AppNav() {
       { left: [] as string[], right: [] as string[] },
     );
 
-    // Dedupe and map to FloatingNavItem
     for (const id of [...new Set(floatingConfig.left)]) {
       const item = navItems.find((n) => n.id === id);
       if (item)
@@ -123,7 +111,7 @@ export function AppNav() {
     }
   }
 
-  // Use the owning route's path as resetTrigger so floating nav resets on page change
+  // The owning route's path is the resetTrigger, so the floating nav resets on page change.
   const floatingNavOwner = routerState.matches.findLast((m) => m.staticData.floatingNavButtons);
 
   return (

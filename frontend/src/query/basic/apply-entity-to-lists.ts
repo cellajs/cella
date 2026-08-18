@@ -6,11 +6,7 @@ import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
 import { getEntityQueryKeys } from './entity-query-registry';
 
-/**
- * The row's effective home channel id: deepest non-null ancestor, the org itself for org-homed
- * rows. The same resolution SSE routing uses (resolve-row-channel), so cache placement and stream
- * routing can never disagree.
- */
+/** Deepest non-null ancestor, or the org for org-homed rows. Matches resolve-row-channel, so cache placement and stream routing cannot disagree. */
 export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
   const entityRecord = asRecord(entity);
   const home = hierarchy.resolveDeepestAncestorId(entityType, entityRecord);
@@ -19,10 +15,7 @@ export function resolveHomeChannelId(entityType: string, entity: ItemData): stri
   return typeof organizationId === 'string' ? organizationId : null;
 }
 
-/**
- * Match a row's sole canonical home-list key.
- * Exclude filtered keys whose server predicates cannot be reproduced locally.
- */
+/** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
 export function matchesCanonicalHome(
   queryKey: readonly unknown[],
   organizationId: string,
@@ -47,15 +40,13 @@ export interface SpliceResult {
   seen: boolean;
   /** The row was newly inserted into its canonical home list. */
   spliced: boolean;
-  /** At least one filtered list (object key segment) was scanned; its server-side filter can't be
-   *  replicated locally, so callers invalidate those separately. */
+  /** At least one filtered list was scanned. Its server-side filter cannot be replicated locally, so callers invalidate those separately. */
   sawFilteredList: boolean;
 }
 
 /**
- * Applies an entity across organization list caches using canonical-home placement.
- * Existing rows update in place; unknown rows enter only an unfiltered home list.
- * Parent moves may remove cached rows when requested.
+ * Applies an entity across org list caches by canonical-home placement: existing rows update in place, unknown rows enter only an unfiltered home list.
+ * A parent move removes the cached row when `removeOnParentChannelChange` is set.
  */
 export function spliceEntityIntoListCaches(
   queryClient: QueryClient,
@@ -102,11 +93,7 @@ export function spliceEntityIntoListCaches(
   return { seen, spliced, sawFilteredList };
 }
 
-/**
- * Insert (or update in place) optimistic or server-confirmed rows into their canonical home lists,
- * never into filtered/search lists. The mutation-path counterpart of the realtime splice: creates
- * splice into the home list live sync owns; a row already present anywhere updates in place.
- */
+/** Mutation-path counterpart of the realtime splice: creates enter only the canonical home list live sync owns, never a filtered or search list, and a row present anywhere updates in place. */
 export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
   for (const entity of entities) spliceEntityIntoListCaches(queryClient, entity);
 }

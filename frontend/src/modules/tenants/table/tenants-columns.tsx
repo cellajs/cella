@@ -15,9 +15,6 @@ import { dateShort } from '~/utils/date-short';
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
 
-/**
- * Column configuration for the tenants table.
- */
 export const useColumns = () => {
   const { t } = useTranslation();
 

@@ -23,7 +23,6 @@ async function handleStartImpersonation(targetUserId: string) {
   }
 }
 
-/** Renders the impersonate table row. */
 export function ImpersonateRow({ user, tabIndex }: Props) {
   return (
     <Button

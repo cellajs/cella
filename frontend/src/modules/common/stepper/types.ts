@@ -23,25 +23,18 @@ interface StepOptions {
   expandVerticalSteps?: boolean;
   size?: 'sm' | 'md' | 'lg';
   styles?: {
-    /** Styles for the main container */
     'main-container'?: string;
-    /** Styles for the horizontal step */
     'horizontal-step'?: string;
     /** Styles for the horizontal step container (button and labels) */
     'horizontal-step-container'?: string;
-    /** Styles for the vertical step */
     'vertical-step'?: string;
     /** Styles for the vertical step container (button and labels) */
     'vertical-step-container'?: string;
-    /** Styles for the vertical step content */
     'vertical-step-content'?: string;
-    /** Styles for the step button container */
     'step-button-container'?: string;
     /** Styles for the label and description container */
     'step-label-container'?: string;
-    /** Styles for the step label */
     'step-label'?: string;
-    /** Styles for the step description */
     'step-description'?: string;
   };
   variables?: {

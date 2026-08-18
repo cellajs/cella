@@ -1,18 +1,16 @@
 import type { ChannelEntityType, ProductEntityType } from '../../types.ts';
 
 /**
- * Entity types lenses can target. Product entities get the full artifact set
- * (ops/stx normalization, mirror writes); channel entities get the reduced set
- * (body widening + normalization + cache migration): their writes are plain
+ * Product entities get the full artifact set (ops/stx normalization, mirror writes). Channel
+ * entities get body widening, normalization and cache migration only, because their writes are
  * full-body PUTs with no per-field merge.
  */
 export type LensEntityType = ProductEntityType | ChannelEntityType;
 
 /**
- * Version of the lens-module *format* itself (Cambria's "lens inception" guard).
- * Lens modules are append-only and immortal, so the engine must be able to tell
- * which format a frozen module was written against. Bump when LensDefinition
- * changes incompatibly; the engine branches on `lens.formatVersion`.
+ * Version of the lens-module format. Lens modules are append-only and permanent, so the engine
+ * branches on `lens.formatVersion` to tell which format a frozen module was written against.
+ * Bump on an incompatible LensDefinition change.
  */
 export const LENS_FORMAT_VERSION = 1;
 
@@ -20,13 +18,11 @@ export const LENS_FORMAT_VERSION = 1;
 export type RenameDelta = { rename: { from: string; to: string } };
 
 /**
- * Add a new field. `default` fills the value when migrating older rows forward:
- * a plain value, or a pure `(row) => value` function for computed defaults
- * (must pass the lens purity lint: no I/O, no dynamic key access).
+ * `default` fills the value when migrating older rows forward: a plain value, or a pure
+ * `(row) => value` function that must pass the lens purity lint (no I/O, no dynamic key access).
  */
 export type AddDelta = { add: { field: string; default: unknown } };
 
-/** Resolves an `add` delta's default for a row (plain value or computed). */
 export function resolveAddDefault(add: AddDelta['add'], row: Record<string, unknown>): unknown {
   return typeof add.default === 'function'
     ? (add.default as (row: Record<string, unknown>) => unknown)(row)
@@ -47,7 +43,7 @@ export type LensDelta = RenameDelta | AddDelta | DropDelta | RetypeDelta | SetRe
 /** Whether the lens widens the wire (`expand`) or removes the old shape (`contract`). */
 export type LensPhase = 'expand' | 'contract';
 
-/** Minimal transform context surfaced to custom converters (doba-compatible subset). */
+/** The doba-compatible subset custom converters receive. */
 export interface LensContext {
   warn: (message: string) => void;
   defaulted: (path: readonly PropertyKey[], message: string) => void;
@@ -65,13 +61,11 @@ export interface LensDefinition {
   id: string;
   /** Lens-module format version. Omit to get the current `LENS_FORMAT_VERSION`; frozen with the module. */
   formatVersion?: number;
-  /** Entity this lens applies to (product or context). */
   entityType: LensEntityType;
   /** Human-readable summary of the change. */
   description: string;
   /** Lifecycle phase: drives wire widening and spec generation. */
   phase: LensPhase;
-  /** Single declarative source of truth for the change. */
   delta: LensDelta;
   /** Optional custom converters when `delta` is insufficient (required for `retype`). */
   custom?: LensCustom;
@@ -81,10 +75,7 @@ export interface LensDefinition {
 
 const ID_PATTERN = /^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/;
 
-/**
- * Validates and returns a frozen lens definition. Throws on malformed input so
- * mistakes surface during module load and tests.
- */
+/** Returns a frozen definition. Throws on malformed input, at module load and in tests. */
 export function defineLens(def: LensDefinition): LensDefinition {
   if (!ID_PATTERN.test(def.id)) {
     throw new Error(`Lens id "${def.id}" must be date-prefixed kebab-case, e.g. 2026-07-01-task-name-to-title`);
@@ -101,7 +92,7 @@ export function defineLens(def: LensDefinition): LensDefinition {
   return Object.freeze({ ...def, formatVersion });
 }
 
-/** Field-key rename map (old → new) derived from a lens delta, or `null` when the delta renames nothing. */
+/** Old to new field keys, or `null` when the delta renames nothing. */
 export function deltaRenameMap(delta: LensDelta): { from: string; to: string } | null {
   if ('rename' in delta) return delta.rename;
   if ('setRename' in delta) return delta.setRename;

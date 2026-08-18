@@ -4,17 +4,12 @@ import { resolveEntity } from '#/modules/entities/entities-queries';
 
 type EntityTypeWithSlug = ChannelEntityType | 'user';
 
-/**
- * Checks if a slug is available for a specific entity type.
- */
 export const checkSlugAvailable = async (ctx: DbContext, slug: string, entityType: EntityTypeWithSlug) => {
   const result = await resolveEntity(ctx, { entityType, identifier: slug, bySlug: true });
   return !result;
 };
 
-/**
- * Batch check slug availability. Returns a Map of slug -> boolean (true = available).
- */
+/** Returns a Map of slug to availability; true means free. */
 export const checkSlugsAvailable = async (ctx: DbContext, slugs: string[], entityType: EntityTypeWithSlug) => {
   const results = await Promise.all(
     slugs.map(async (slug) => ({

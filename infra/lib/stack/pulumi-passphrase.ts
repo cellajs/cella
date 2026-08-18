@@ -37,22 +37,12 @@ function verify(key: Buffer, encryptionsalt: string): boolean {
   }
 }
 
-/**
- * Generate a strong Pulumi passphrase (the equivalent of
- * `openssl rand -base64 24`): 24 random bytes, base64-encoded.
- */
+/** Generate a Pulumi passphrase: 24 random bytes, base64-encoded. */
 export function generatePassphrase(): string {
   return randomBytes(24).toString('base64');
 }
 
-/**
- * True when this `pulumi version` output supports non-interactive passphrase
- * rotation: `stack change-secrets-provider passphrase` reading the NEW
- * passphrase from stdin: added in v3.44.0 (pulumi/pulumi#11094). Older CLIs
- * fail with "passphrase rotation requires an interactive terminal".
- * Unparseable output (e.g. a dev build) is not blocked; pulumi itself errors
- * if it is genuinely too old. Pure.
- */
+/** True when this `pulumi version` supports non-interactive passphrase rotation (stdin, v3.44.0+); older CLIs fail with "passphrase rotation requires an interactive terminal". Unparseable output is not blocked. */
 export function supportsStdinPassphraseRotation(versionOutput: string): boolean {
   const match = versionOutput.match(/v?(\d+)\.(\d+)\.\d+/);
   if (!match) return true;
@@ -60,12 +50,7 @@ export function supportsStdinPassphraseRotation(versionOutput: string): boolean 
   return major > 3 || (major === 3 && minor >= 44);
 }
 
-/**
- * True when `passphrase` decrypts the stack's `encryptionsalt` check value.
- * Returns false (never throws) when the header is missing or the passphrase is
- * wrong, so callers can use it as a plain predicate. `yamlText` is the raw
- * `Pulumi.<stack>.yaml` contents.
- */
+/** True when `passphrase` decrypts the stack's `encryptionsalt` check value. Returns false and never throws, so callers can use it as a plain predicate. */
 export function verifyStackPassphrase(yamlText: string, passphrase: string): boolean {
   const salt = yamlText.match(/^encryptionsalt:\s*(\S+)/m)?.[1];
   if (!salt) return false;

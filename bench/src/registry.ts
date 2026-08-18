@@ -14,30 +14,15 @@ export interface TableBenchSeed {
   kind?: 'table';
   /** Target database table, also used for dedup and seed/cleanup logging. */
   table: string;
-  /**
-   * Columns stored as native Postgres arrays.
-   * Snake_case column names (e.g. `'languages'`).
-   */
+  /** Columns stored as native Postgres arrays, named in snake_case. */
   pgArrayColumns?: string[];
   /** Seed order within the extensible tier (lower seeds first). Core uses <100, apps ≥100. */
   order: number;
-  /**
-   * Variant byte (UUID group-4, e.g. `'a005'`) for every id minted by this seed.
-   * When set, the cleanup predicate is derived as
-   * `id::text LIKE '<BENCH_UUID_PREFIX><idVariant>%'`, keeping the id helper and
-   * cleanup in sync from one value. Core seeds use the `a*` band; apps use `b*`.
-   */
+  /** UUID group-4 variant byte for every id from this seed; the cleanup predicate derives from it. Core seeds use the `a*` band, apps `b*`. */
   idVariant?: string;
-  /**
-   * Explicit cleanup WHERE clause: use only when rows aren't identified by an id
-   * variant (e.g. `"tenant_id = '...'"`). Prefer `idVariant` for id-based rows.
-   */
+  /** Explicit cleanup WHERE clause, for rows not identified by an id variant. */
   cleanupWhere?: string;
-  /**
-   * Produce rows to insert; `now` is one ISO timestamp shared across the seed run.
-   * INSERT columns derive from each row's keys (camelCase → snake_case), so keys
-   * must be real columns.
-   */
+  /** Rows to insert; `now` is one ISO timestamp shared across the run, and each row's keys must be real columns (camelCase to snake_case). */
   rows: (ctx: BenchSeedContext) => Record<string, unknown>[];
 }
 
@@ -70,9 +55,7 @@ export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
 };
 
 /**
- * Registers a bench seed as an import side effect (mirrors the module/tag registry
- * in `shared/src/module-registry.ts`). An app adds a load-test table by dropping in
- * one `*.bench.ts` file. Idempotent by name; rejects malformed or duplicate id variants.
+ * Registers a seed as an import side effect: an app adds a load-test table by dropping in one `*.bench.ts` file. Idempotent by name, and rejects malformed or duplicate id variants.
  *
  * @see seeds/README.md
  */

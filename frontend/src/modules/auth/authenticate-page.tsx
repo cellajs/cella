@@ -22,8 +22,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
 
-// Warn the user after the "slow" delay and give up after the timeout. This prevents a
-// down backend leaves the spinner hanging on the browser's default timeout.
+// Warn after the slow delay and abort at the timeout, so a down backend never hangs on the browser default.
 const HEALTH_SLOW_MS = 5000;
 const HEALTH_TIMEOUT_MS = 20000;
 
@@ -31,7 +30,6 @@ function shouldShowDivider(): boolean {
   return enabledStrategies.includes('oauth');
 }
 
-/** Renders the authenticate page. */
 export function AuthenticatePage() {
   const { t } = useTranslation();
 
@@ -42,15 +40,13 @@ export function AuthenticatePage() {
 
   const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
 
-  // Fetch auth health & check for rate limit (restrictedMode)
   const {
     data: healthData,
     isLoading: isHealthLoading,
     isError: isHealthError,
   } = useQuery({
     queryKey: ['auth', 'health'],
-    // Bound the request: combine the query's own signal with a hard timeout so a
-    // down or unreachable backend fails deterministically without hanging.
+    // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
     queryFn: ({ signal }) =>
       getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
     staleTime: 0,
@@ -58,7 +54,6 @@ export function AuthenticatePage() {
     retry: false,
   });
 
-  // After a short delay without a response, warn the user the server seems slow.
   const [showSlowWarning, setShowSlowWarning] = useState(false);
   useEffect(() => {
     if (!isHealthLoading) {
@@ -69,15 +64,12 @@ export function AuthenticatePage() {
     return () => clearTimeout(timer);
   }, [isHealthLoading]);
 
-  // Update restrictedMode based on health response
   useEffect(() => {
     if (healthData?.restrictedMode !== undefined) {
       setRestrictedMode(healthData.restrictedMode);
     }
   }, [healthData, setRestrictedMode]);
 
-  // If token, proceed to sign up with token. If last user and no token, use last user as email
-  // In restricted mode with no token/lastUser, go directly to signIn step
   useEffect(() => {
     // Don't override terminal steps (e.g. magicLinkSent)
     if (step === 'magicLinkSent') return;
@@ -85,7 +77,6 @@ export function AuthenticatePage() {
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
     if (!tokenData?.email) {
-      // In restricted mode, skip checkEmail and go directly to signIn
       if (restrictedMode && step === 'checkEmail') {
         setStep('signIn', '');
       }
@@ -94,7 +85,6 @@ export function AuthenticatePage() {
     setStep('signUp', tokenData.email);
   }, [tokenData, lastUser, restrictedMode, step]);
 
-  // Loading invitation token or health check, or already signed in (prevents UI flash during route transition)
   if (isLoading || isHealthLoading || signedIn) {
     return (
       <>
@@ -121,7 +111,6 @@ export function AuthenticatePage() {
       {step === 'inviteOnly' && <InviteOnlyStep />}
       {step === 'magicLinkSent' && <MagicLinkSentStep />}
 
-      {/* Show passkey and oauth options conditionally */}
       {['checkEmail', 'signIn', 'signUp'].includes(step) && (
         <>
           {shouldShowDivider() && (
@@ -133,7 +122,6 @@ export function AuthenticatePage() {
         </>
       )}
 
-      {/* Health probe failed (timeout or network error), surface that the backend is down */}
       {isHealthError && (
         <Alert variant="destructive">
           <ServerOffIcon />

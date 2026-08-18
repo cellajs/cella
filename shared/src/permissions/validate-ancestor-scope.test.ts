@@ -2,7 +2,6 @@ import type { AncestorChannelIds, SubjectForPermission } from 'shared';
 import { hierarchy, MissingScopeError, validateAncestorScope } from 'shared';
 import { describe, expect, it } from 'vitest';
 
-/** Build a raw subject (without validation) for testing validateAncestorScope itself */
 const buildRawSubject = (
   entityType: SubjectForPermission['entityType'],
   overrides?: Partial<Record<keyof AncestorChannelIds, string | null | undefined>>,
@@ -24,7 +23,7 @@ describe('shared validateAncestorScope', () => {
   const productWithAncestors = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
 
   if (!productWithAncestors)
-    throw new Error('No product entity types with ancestors found — hierarchy config may be empty');
+    throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
 
   const firstAncestor = hierarchy.getOrderedAncestors(productWithAncestors)[0];
 

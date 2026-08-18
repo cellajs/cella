@@ -11,7 +11,6 @@ import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
-/** Renders the onboarding completed component. */
 export function OnboardingCompleted() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -22,7 +21,6 @@ export function OnboardingCompleted() {
   const [isExploding] = useState(true);
   const didRun = useRef(false);
 
-  // Fetch organizations to determine whether the user has any orgs to land in.
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganization = organizations.length > 0;

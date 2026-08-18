@@ -5,10 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { Button } from '~/modules/ui/button';
 
-// Periodic fallback interval (15 min) for SW update checks
 const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
 
-/** Renders the reload prompt component. */
 export function ReloadPrompt() {
   const { t } = useTranslation();
   const [reloading, setReloading] = useState(false);
@@ -21,13 +19,11 @@ export function ReloadPrompt() {
       console.debug(`[ServiceWorker] Registered at: ${swUrl}`);
       if (!r) return;
 
-      // Periodic fallback check
       setInterval(() => {
         console.debug('[ServiceWorker] Periodic update check');
         r.update();
       }, SW_UPDATE_INTERVAL);
 
-      // Immediate check when user returns to the tab or comes back online
       const check = () => {
         if (document.visibilityState === 'visible') {
           console.debug('[ServiceWorker] Visibility/online update check');
@@ -49,13 +45,11 @@ export function ReloadPrompt() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  // Attempt SW-driven reload, force a hard reload if nothing happens after 5s.
-  // The gap between click and reload is the new SW's activate phase (stale
-  // precache cleanup), so the button shows a spinner until the page goes away.
+  // The gap between click and reload is the new service worker's activate phase, so the
+  // button spins until the page goes away. A hard reload follows if nothing happens in 5s.
   const reload = useCallback(() => {
     if (reloading) return;
     setReloading(true);
-    // Guaranteed fallback: if the SW update doesn't trigger a reload, force one
     setTimeout(() => window.location.reload(), 5000);
     updateServiceWorker(true);
   }, [reloading, updateServiceWorker]);

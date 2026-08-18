@@ -1,27 +1,19 @@
 import type { JSONSchemaDraft2020_12, OpenAPIV3_1 } from '@hey-api/spec-types';
 
-/**
- * OpenAPI schema (JSON Schema 2020-12 with OpenAPI v3.1 extensions), backed by
- * @hey-api/spec-types and re-exported as a stable alias for the parser to import.
- */
+/** JSON Schema 2020-12 with OpenAPI v3.1 extensions, re-exported as a stable alias for the parser. */
 export type OpenApiSchema = JSONSchemaDraft2020_12.Document;
 
-/** OpenAPI parameter */
 export type OpenApiParameter = OpenAPIV3_1.ParameterObject;
 
-/** OpenAPI request body */
 export type OpenApiRequestBody = OpenAPIV3_1.RequestBodyObject;
 
-/** OpenAPI response object */
 export type OpenApiResponseObject = OpenAPIV3_1.ResponseObject;
 
-/** OpenAPI reference object */
 export type OpenApiReferenceObject = OpenAPIV3_1.ReferenceObject;
 
-/** OpenAPI spec document */
 export type OpenApiSpec = OpenAPIV3_1.Document;
 
-/** Extended tag type for non-standard fields in our spec (kind, parent) */
+/** Tag object plus the non-standard fields this spec adds. */
 export type OpenApiTag = OpenAPIV3_1.TagObject & {
   kind?: string;
   parent?: string;

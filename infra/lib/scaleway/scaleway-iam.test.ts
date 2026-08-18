@@ -88,7 +88,7 @@ describe('provisionScopedKey', () => {
     expect(policyBody.rules).toEqual([{ permission_set_names: ['ObjectStorageReadOnly'], project_ids: ['proj-1'] }]);
 
     const keyCreate = calls.find((c) => c.url.endsWith('/api-keys') && c.init.method === 'POST')!;
-    expect(JSON.parse(keyCreate.init.body as string).description).toContain('demo-key — rotated 2026-05-22');
+    expect(JSON.parse(keyCreate.init.body as string).description).toContain('demo-key: rotated 2026-05-22');
   });
 
   it('reuses an existing application, recreates the policy, and purges orphan keys', async () => {

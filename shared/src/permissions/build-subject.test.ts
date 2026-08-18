@@ -9,16 +9,14 @@ import {
 import { describe, expect, it } from 'vitest';
 
 describe('shared buildSubject', () => {
-  // Use the first product type with ancestors (e.g., attachment → organization)
   const productWithAncestors = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
 
   if (!productWithAncestors)
-    throw new Error('No product entity types with ancestors found — hierarchy config may be empty');
+    throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
 
   const ancestors = hierarchy.getOrderedAncestors(productWithAncestors);
   const ancestorIdKeys = ancestors.map((a) => appConfig.entityIdColumnKeys[a]);
 
-  /** Build ancestor channel ID columns with all ancestors set to test values */
   const fullAncestorChannelIds = () => Object.fromEntries(ancestorIdKeys.map((key) => [key, `test-${key}`]));
 
   it('returns a subject with entityType and generated id', () => {
@@ -56,7 +54,7 @@ describe('shared buildSubject', () => {
 
 // Single-row enforcement requires the resolved row on its subject. Missing row data
 // makes row-derived grants fail closed without an explicit error.
-describe('buildSubjectFromEntity — carries the row', () => {
+describe('buildSubjectFromEntity: carries the row', () => {
   const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
   if (!product) throw new Error('No product entity types with ancestors found');
 

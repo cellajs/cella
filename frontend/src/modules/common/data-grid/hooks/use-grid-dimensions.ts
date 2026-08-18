@@ -6,11 +6,7 @@ interface GridDimensions {
   horizontalScrollbarHeight: number;
   scrollTop: number;
   gridRect: DOMRect | null;
-  /**
-   * False until the first real layout measurement commits. Consumers must not
-   * treat the placeholder numbers below as actual viewport geometry because that
-   * once made the first render report every row as visible.
-   */
+  /** False until the first layout measurement commits; the placeholder numbers below are not viewport geometry. */
   measured: boolean;
 }
 
@@ -26,10 +22,7 @@ const initialDimensions: GridDimensions = {
   measured: false,
 };
 
-/**
- * Walk up the DOM to find the nearest scrollable ancestor.
- * Returns null if the scroll container is the window/document.
- */
+/** Nearest scrollable ancestor, or null when the window or document is the scroll container. */
 function getScrollParent(node: HTMLElement): HTMLElement | null {
   let parent: HTMLElement | null = node;
   // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
@@ -43,20 +36,14 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
   return null;
 }
 
-/**
- * Tracks row-virtualization dimensions from an explicit or nearest scroll container.
- * CSS owns column sizing. `useSyncExternalStore` prevents concurrent-render tearing,
- * with animation-frame throttling and scrollbar observation.
- */
+/** Row-virtualization dimensions from an explicit or nearest scroll container; CSS owns column sizing. */
 export function useGridDimensions(
   scrollContainerRef?: RefObject<HTMLElement | null>,
   enableRowVirtualization = true,
 ): GridDimensionsResult {
   const gridRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<GridDimensions>(initialDimensions);
-  // Latest React notifier registered via useSyncExternalStore's subscribe.
-  // Stored in a ref so the layout effect below can call it without re-running
-  // when subscribe is re-invoked (e.g. StrictMode double-mount in dev).
+  // The notifier from useSyncExternalStore's subscribe lives in a ref, so the layout effect does not re-run when subscribe is re-invoked.
   const notifyRef = useRef<() => void>(() => {});
 
   const subscribe = useCallback((onStoreChange: () => void) => {
@@ -79,12 +66,10 @@ export function useGridDimensions(
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (ResizeObserver == null || grid == null) return;
 
-    // Determine the scroll container: explicit ref, auto-detect, then window.
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
     const isWindowScroll = scrollContainer === null;
 
-    // Mutate snapshotRef + notify → re-read via getSnapshot. useSyncExternalStore
-    // bails out when the returned reference is identical.
+    // useSyncExternalStore re-reads getSnapshot after notify and bails out on an identical reference.
     const commit = (next: GridDimensions) => {
       if (next === snapshotRef.current) return;
       snapshotRef.current = next;
@@ -111,9 +96,7 @@ export function useGridDimensions(
         scrollTop = Math.max(0, containerRect.top - rect.top);
       }
 
-      // Bail out if nothing meaningful changed to avoid unnecessary rerenders.
-      // Never bail while unmeasured: the first measurement must commit even if
-      // the numbers happen to match the placeholders.
+      // Skip rerenders when nothing changed, but never while unmeasured: the first measurement must commit even if it matches the placeholders.
       if (
         prev.measured &&
         prev.viewportHeight === viewportHeight &&
@@ -144,8 +127,7 @@ export function useGridDimensions(
       }),
     );
 
-    // --- ResizeObserver: rAF-throttled for scrollbar height detection ---
-    // Only horizontalScrollbarHeight is tracked (changes when scrollbar appears/disappears).
+    // rAF-throttled ResizeObserver, tracking only horizontalScrollbarHeight.
     const resizeObserver = new ResizeObserver(() => {
       const { clientHeight, offsetHeight } = grid;
       const newHScrollbar = offsetHeight - clientHeight;
@@ -165,15 +147,13 @@ export function useGridDimensions(
       });
     };
 
-    // Window resize after viewport height changes (rAF-throttled).
     const handleResize = () => {
       scheduleUpdate(() => {
         commit(measureScroll(snapshotRef.current));
       });
     };
 
-    // Only attach scroll/resize listeners when row virtualization is enabled.
-    // Without virtualization, scrollTop is unused and these cause needless rerenders.
+    // Without row virtualization scrollTop is unused, and these listeners would only cause rerenders.
     if (enableRowVirtualization) {
       if (isWindowScroll) {
         window.addEventListener('scroll', handleScroll, { passive: true });

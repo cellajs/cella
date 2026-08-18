@@ -43,10 +43,7 @@ function hyphenateString(prop: string) {
   return prop.replace(UPPERCASE, hyphenateChar).replace(MS, '-ms-');
 }
 
-/**
- * Converts a React style object to a string suitable for a `style` attribute.
- * Based on Hyperon's [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js).
- */
+/** Based on Hyperon's [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js). */
 export function stringifyStyles(styles: CSSProperties) {
   const parts = [];
   for (const key of Object.keys(styles) as ReadonlyArray<keyof typeof styles>) {

@@ -1,8 +1,6 @@
 import type { CalculatedColumn, CellRange, Position } from '../types';
 
-/**
- * Normalize a cell range so start is always top-left and end is bottom-right.
- */
+/** Normalizes a range so start is top-left and end is bottom-right. */
 export function normalizeCellRange(range: CellRange): CellRange {
   const minIdx = Math.min(range.start.idx, range.end.idx);
   const maxIdx = Math.max(range.start.idx, range.end.idx);
@@ -15,9 +13,6 @@ export function normalizeCellRange(range: CellRange): CellRange {
   };
 }
 
-/**
- * Check if a cell position is within a given range.
- */
 export function isCellInRange(position: Position, range: CellRange): boolean {
   const normalized = normalizeCellRange(range);
   return (
@@ -28,9 +23,6 @@ export function isCellInRange(position: Position, range: CellRange): boolean {
   );
 }
 
-/**
- * Get cells in a range along with their data.
- */
 export function getCellsInRange<R, SR>(
   range: CellRange,
   rows: readonly R[],
@@ -53,16 +45,11 @@ export function getCellsInRange<R, SR>(
   return cells;
 }
 
-/**
- * Create a range from anchor position to new focus position.
- */
 export function createRange(anchor: Position, focus: Position): CellRange {
   return { start: anchor, end: focus };
 }
 
-/**
- * Expand a range in a direction by one cell.
- */
+/** Expands a range by one cell in the given direction. */
 export function expandRange(
   range: CellRange,
   anchor: Position,
@@ -72,7 +59,6 @@ export function expandRange(
 ): CellRange {
   const { start, end } = range;
 
-  // Determine which edge to move based on anchor position
   const isAnchorAtStart = anchor.idx === start.idx && anchor.rowIdx === start.rowIdx;
 
   let newStart = { ...start };
@@ -112,9 +98,7 @@ export function expandRange(
   return { start: newStart, end: newEnd };
 }
 
-/**
- * Get the boundary positions of a cell in a range (for border styling).
- */
+/** Which range edges a cell sits on, for border styling. */
 export function getCellRangeBoundary(
   position: Position,
   range: CellRange,

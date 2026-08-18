@@ -3,12 +3,7 @@ import type { DbContext } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 
-/**
- * Builds an EXISTS filter that limits user rows to those sharing at least one
- * organization with the given org IDs. Correlates on `usersTable.id`.
- *
- * Used as defense-in-depth in cross-tenant user queries (mirrors relatableGuard).
- */
+/** EXISTS filter limiting user rows to those sharing an organization with `myOrgIds`: defense in depth mirroring relatableGuard. */
 export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string[] }) => {
   const { db } = ctx.var;
   return exists(

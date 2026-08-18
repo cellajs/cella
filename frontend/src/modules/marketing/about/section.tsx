@@ -9,7 +9,7 @@ interface AboutSectionProps {
   /** Optional components to interpolate into `text` (e.g. links) via <Trans>. */
   textComponents?: readonly React.ReactElement[] | Record<string, React.ReactElement>;
   children?: React.ReactNode;
-  alternate?: boolean; // Optional prop for background styling
+  alternate?: boolean;
 }
 
 interface AboutSectionHeaderProps {

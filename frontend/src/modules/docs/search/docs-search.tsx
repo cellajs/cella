@@ -35,10 +35,7 @@ const scopeChips: { value: DocsSearchScope; label: string }[] = [
   { value: 'api', label: docsConfig.sections.find((s) => s.id === 'apiReference')?.label ?? 'API' },
 ];
 
-/**
- * Docs search dialog: full client-side search over docs pages and the API
- * reference. Unlike the app search this needs no server and works offline.
- */
+/** Docs search dialog: client-side search over docs pages and the API reference, works offline. */
 export function DocsSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -50,13 +47,11 @@ export function DocsSearch() {
   const [scope, setScope] = useState<DocsSearchScope>('all');
   const { recentSearches } = useDocsSearchStore();
 
-  // null = blank query (default links); previous results stay visible while a
-  // new search runs so the list never blanks mid-typing.
+  // null = blank query (default links); previous results stay visible while a new search runs
   const [results, setResults] = useState<DocsSearchResult[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Warm the engine on open so the first keystroke doesn't wait on the Orama import and corpus
-  // build. Memoized in the client, so this only races the search effect to the same promise.
+  // Warm the engine on open so the first keystroke does not wait on the Orama import and corpus build
   useEffect(() => {
     getDocsSearchClient(queryClient).catch(() => {});
   }, [queryClient]);
@@ -141,8 +136,7 @@ export function DocsSearch() {
           wrapClassName="h-12 text-lg"
           placeholder={placeholder}
         />
-        {/* Height + scrolling live on the ScrollArea viewport (styled scrollbar);
-            the list's own max-h/overflow are neutralized so it never scrolls natively. */}
+        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized */}
         <ScrollArea className="sm:h-[45vh]">
           <ComboboxList className="h-full max-h-none overflow-visible">
             {results === null && recentSearches.length > 0 && (

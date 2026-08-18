@@ -43,7 +43,6 @@ export const setSessionCache = (sessionId: string, userId: string, entry: Sessio
   const jitteredTtl = Math.round(60_000 * (0.8 + Math.random() * 0.4));
   sessionCache.set(sessionId, entry, jitteredTtl);
 
-  // Register in reverse index
   let sessionIds = userIndex.get(userId);
   if (!sessionIds) {
     sessionIds = new Set();
@@ -53,15 +52,13 @@ export const setSessionCache = (sessionId: string, userId: string, entry: Sessio
 };
 
 export const setMembershipCache = (userId: string, memberships: MembershipCacheEntry): void => {
-  // Jitter TTL ±20% (4-6 min) so a cohort with synchronized expiry doesn't fire a
-  // membership-DB burst on top of a fan-out stampede (see cella/SYNC_ENGINE.md, Scheduling).
+  // Jitter TTL ±20% (4-6 min) so a synchronized cohort cannot add a membership-DB burst to a fan-out stampede
   const jitteredTtl = Math.round(5 * 60_000 * (0.8 + Math.random() * 0.4));
   membershipCache.set(userId, memberships, jitteredTtl);
 };
 
 /** Invalidate all cached entries for a user (across all their sessions) */
 export const invalidateAuthCacheByUser = (userId: string): void => {
-  // Invalidate all session entries
   const sessionIds = userIndex.get(userId);
   if (sessionIds) {
     for (const sessionId of sessionIds) {
@@ -69,7 +66,6 @@ export const invalidateAuthCacheByUser = (userId: string): void => {
     }
     userIndex.delete(userId);
   }
-  // Invalidate membership entry
   membershipCache.delete(userId);
 };
 

@@ -3,9 +3,6 @@ import { smallTextStyle } from '../styles';
 import { EmailText } from './email-text';
 import { Link } from './primitives';
 
-/**
- * EmailFooter component with company address and support email link.
- */
 export const EmailFooter = ({ supportText }: { supportText: string }) => (
   <EmailText
     style={{
@@ -31,5 +28,4 @@ export const EmailFooter = ({ supportText }: { supportText: string }) => (
   </EmailText>
 );
 
-// Template export
 export const Template = EmailFooter;

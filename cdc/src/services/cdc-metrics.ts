@@ -56,9 +56,7 @@ class Metrics {
     return this.walSlotActive;
   }
 
-  /** The replication slot's wal_status from pg_replication_slots (null until first poll).
-   * Values: 'active', 'reserved', or 'lost' (see PostgreSQL docs).
-   */
+  /** pg_replication_slots.wal_status: 'active', 'reserved' or 'lost'; null until the first poll. */
   get slotStatus(): string | null {
     return this.walSlotStatus;
   }
@@ -70,7 +68,6 @@ class Metrics {
 
     const bucket = createBucket(now);
     this.buckets.push(bucket);
-    // Evict old buckets
     while (this.buckets.length > BUCKET_COUNT) this.buckets.shift();
     return bucket;
   }
@@ -88,7 +85,7 @@ class Metrics {
     const b = this.currentBucket();
     b.flushCount++;
     b.flushDurations.push(durationMs);
-    // eventCount tracked via recordProcessing per group
+    // eventCount is tracked per group in recordProcessing.
   }
 
   /** Snapshot for health endpoint. */
@@ -135,10 +132,9 @@ class Metrics {
     };
   }
 
-  /** Start periodic WAL lag polling. */
   startLagPolling(): void {
     if (this.lagInterval) return;
-    this.pollLag(); // initial
+    this.pollLag();
     this.lagInterval = setInterval(() => this.pollLag(), LAG_POLL_MS);
   }
 
@@ -152,14 +148,12 @@ class Metrics {
     const prev = this.prevLagBytes;
     this.prevLagBytes = currentBytes;
 
-    // If lag dropped below warn threshold, reset warning state
     if (prev !== null && currentBytes < warnBytes) {
       this.hasWarned = false;
       this.hasGoneUnhealthy = false;
       return;
     }
 
-    // Warn threshold crossed
     if (currentBytes >= warnBytes && !this.hasWarned) {
       this.hasWarned = true;
       log.warn('WAL lag approaching backpressure limit', {
@@ -170,10 +164,9 @@ class Metrics {
       this.emitLagControl('wal_lag_warn');
     }
 
-    // Unhealthy threshold crossed
     if (currentBytes >= unhealthyBytes && !this.hasGoneUnhealthy) {
       this.hasGoneUnhealthy = true;
-      log.error('WAL lag exceeded backpressure limit — CDC unhealthy', {
+      log.error('WAL lag exceeded backpressure limit: CDC unhealthy', {
         lagBytes: currentBytes,
         unhealthyThreshold: unhealthyBytes,
       });
@@ -220,7 +213,7 @@ class Metrics {
         this.hasGoneUnhealthy = false;
       }
     } catch {
-      // Non-critical: skip silently
+      // Non-critical: the next poll retries.
     }
   }
 }

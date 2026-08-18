@@ -1,9 +1,8 @@
 import type { Context } from 'hono';
 
 /**
- * Returns the client IP under Cella's single-trusted-proxy topology.
- * The load balancer appends the authoritative rightmost forwarding entry; socket address is the
- * direct-hit fallback. Apps with a different proxy count must select a different entry.
+ * Single-trusted-proxy topology: the load balancer appends the authoritative rightmost forwarding entry,
+ * with the socket address as the direct-hit fallback. A different proxy count needs a different entry.
  */
 export const getIp = (ctx: Context): string | null => {
   const xff = ctx.req.header('x-forwarded-for');

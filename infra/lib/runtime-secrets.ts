@@ -11,11 +11,7 @@ export type RuntimeSecretConsumer = ServiceName;
 export type RuntimeSecretValueSource = 'pulumi' | 'operator';
 export type RuntimeSecretGeneration = 'manual' | 'random';
 
-/**
- * One runtime secret's app-owned mapping data, authored in
- * `runtime-secrets.config.ts`. The `id` is the config object key, so it is not
- * repeated here (see {@link RuntimeSecretDefinition} for the flattened shape).
- */
+/** One runtime secret's app-owned mapping data from `runtime-secrets.config.ts`. The `id` is the config object key; {@link RuntimeSecretDefinition} is the flattened shape. */
 export interface RuntimeSecretConfig {
   /** Scaleway Secret Manager container name (kebab-case). */
   secretName: string;
@@ -33,11 +29,7 @@ export interface RuntimeSecretConfig {
   services: readonly RuntimeSecretConsumer[];
 }
 
-/**
- * A runtime-secret id. Store contributions register ids outside the app-config
- * key union, so this is a plain string; the load-time validation below rejects
- * duplicates and unknown consumers.
- */
+/** A runtime-secret id. Store contributions register ids outside the app-config key union, so this stays a plain string and load-time validation rejects duplicates. */
 export type RuntimeSecretId = string;
 
 /** A runtime secret definition: registry data plus the id it is addressed by. */
@@ -58,15 +50,7 @@ export function defineRuntimeSecrets<const T extends Record<string, RuntimeSecre
   return secrets;
 }
 
-/**
- * Pure merge of a store registry's secret contributions with an app's
- * `runtime-secrets.config.ts` entries. Store-owned declarations come first,
- * in store-registry order: database secrets historically led the app config,
- * and the per-consumer union order is genId-fingerprinted, so the merge
- * position is deliberate. Kept as a standalone function so a non-postgres
- * registry (external `databaseUrl`, `none`) is testable without swapping
- * the app config.
- */
+/** Pure merge of a store registry's secret contributions with `runtime-secrets.config.ts` entries. Store-owned declarations come first, in store-registry order: the per-consumer union order is genId-fingerprinted, so merge position must not change. */
 export function buildRuntimeSecrets(
   stores: Record<string, Pick<StoreProvisioner, 'secrets'>>,
   appSecrets: Record<string, Omit<RuntimeSecretDefinition, 'id'>>,
@@ -86,11 +70,7 @@ export function buildRuntimeSecrets(
   return [...storeContributions, ...Object.entries(appSecrets).map(([id, definition]) => ({ id, ...definition }))];
 }
 
-/**
- * Fail fast on an app misconfiguration, preventing a missing container at
- * deploy time or a missing variable at runtime. Covers store contributions
- * and app-config entries alike (including cross-source clashes).
- */
+/** Fail fast on a misconfiguration that would produce a missing container at deploy time or a missing variable at runtime, including clashes across stores and app config. */
 export function validateRuntimeSecrets(
   secrets: readonly RuntimeSecretDefinition[],
   knownServices: ReadonlySet<string>,
@@ -101,13 +81,13 @@ export function validateRuntimeSecrets(
   for (const secret of secrets) {
     if (seenIds.has(secret.id)) {
       throw new Error(
-        `runtime-secrets: duplicate secret id '${secret.id}' — a store contribution clashes with another store or the app config.`,
+        `runtime-secrets: duplicate secret id '${secret.id}': a store contribution clashes with another store or the app config.`,
       );
     }
     seenIds.add(secret.id);
     if (secret.services.length === 0) {
       throw new Error(
-        `runtime-secrets.config: secret '${secret.id}' has no services — assign at least one consumer or remove it.`,
+        `runtime-secrets.config: secret '${secret.id}' has no services: assign at least one consumer or remove it.`,
       );
     }
     for (const service of secret.services) {
@@ -128,11 +108,7 @@ export function validateRuntimeSecrets(
   }
 }
 
-/**
- * Flattened, ordered runtime secret definitions for THIS app: store
- * contributions followed by the `runtime-secrets.config.ts` entries,
- * validated at load time.
- */
+/** Flattened runtime secret definitions for this app: store contributions then `runtime-secrets.config.ts` entries, validated at load time. */
 export const runtimeSecrets: RuntimeSecretDefinition[] = buildRuntimeSecrets(appStores, runtimeSecretsConfig);
 validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
 
@@ -144,14 +120,7 @@ export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): Runt
   return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer));
 }
 
-/**
- * Union of the runtime-secret definitions across consumers (the singleVM host
- * carries its co-hosted workers' secrets too), deduplicated by id. Order is
- * per-consumer registry order with duplicates dropped. LOAD-BEARING: the
- * manifest metadata is hashed into each generation's genId
- * (resources/compute.ts `serviceFingerprint`), so reordering would re-roll
- * every generation.
- */
+/** Union of runtime-secret definitions across consumers, deduplicated by id in per-consumer registry order. That order is hashed into each generation's genId, so reordering re-rolls every generation. */
 export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[]): RuntimeSecretDefinition[] {
   const seen = new Set<string>();
   return consumers

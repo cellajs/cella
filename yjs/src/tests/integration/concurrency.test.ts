@@ -14,7 +14,7 @@ const testOrgId = '00000000-0000-4000-a000-000000000001';
 
 function ctx(entityId: string): DocContext {
   return {
-    // Config-derived: yjs_documents has no FK to the entity table, so any product type works.
+    // yjs_documents has no FK to the entity table, so any product type works.
     entityType: appConfig.productEntityTypes[0],
     entityId,
     tenantId: testTenantId,
@@ -65,7 +65,6 @@ describe('2.3 State consistency under concurrency', () => {
     const c = ctx(ids.sequential);
     await createDoc(c);
 
-    // Apply 10 updates sequentially, each adding a key
     for (let i = 0; i < 10; i++) {
       const current = await loadState(c);
       const doc = new Y.Doc();
@@ -74,7 +73,6 @@ describe('2.3 State consistency under concurrency', () => {
       await saveState(c, Y.encodeStateAsUpdate(doc));
     }
 
-    // Verify all keys are present
     const finalState = await loadState(c);
     expect(finalState).not.toBeNull();
 
@@ -93,7 +91,6 @@ describe('2.3 State consistency under concurrency', () => {
     const c = ctx(ids.merged);
     await createDoc(c);
 
-    // Generate independent updates
     const updates: Uint8Array[] = [];
     for (let i = 0; i < 5; i++) {
       const doc = new Y.Doc();
@@ -101,11 +98,10 @@ describe('2.3 State consistency under concurrency', () => {
       updates.push(Y.encodeStateAsUpdate(doc));
     }
 
-    // Merge all updates into one (simulating what the relay does via safeMerge)
+    // One merge, matching what the relay does in safeMerge.
     const merged = Y.mergeUpdates(updates);
     await saveState(c, merged);
 
-    // Verify all keys survived the merge
     const loaded = await loadState(c);
     const verify = new Y.Doc();
     Y.applyUpdate(verify, loaded!);
@@ -122,15 +118,12 @@ describe('2.3 State consistency under concurrency', () => {
     const c = ctx(ids.race);
     await createDoc(c);
 
-    // Seed initial state
     const seed = new Y.Doc();
     seed.getMap('data').set('initial', true);
     await saveState(c, Y.encodeStateAsUpdate(seed));
 
-    // Two "clients" read current state at the same time
     const [stateA, stateB] = await Promise.all([loadState(c), loadState(c)]);
 
-    // Each builds on the read state independently
     const docA = new Y.Doc();
     Y.applyUpdate(docA, stateA!);
     docA.getMap('data').set('fromA', true);
@@ -139,7 +132,7 @@ describe('2.3 State consistency under concurrency', () => {
     Y.applyUpdate(docB, stateB!);
     docB.getMap('data').set('fromB', true);
 
-    // Save concurrently: last write wins, one update may be lost
+    // Concurrent saves: last write wins, so one update may be lost.
     await Promise.all([saveState(c, Y.encodeStateAsUpdate(docA)), saveState(c, Y.encodeStateAsUpdate(docB))]);
 
     const final = await loadState(c);
@@ -147,12 +140,11 @@ describe('2.3 State consistency under concurrency', () => {
     Y.applyUpdate(verify, final!);
     const map = verify.getMap('data');
 
-    // At least one of the concurrent writes should have persisted
     const hasA = map.get('fromA') === true;
     const hasB = map.get('fromB') === true;
     expect(hasA || hasB).toBe(true);
 
-    // Without merging, one concurrent update is typically lost; the relay's debounce + safeMerge pattern mitigates this in production (untested here).
+    // Without merging one concurrent update is typically lost; the relay's debounce plus safeMerge covers this in production, which this test does not exercise.
     if (!hasA || !hasB) {
       console.info('  ℹ Last-write-wins confirmed: one concurrent update was lost (expected without merge)');
     }

@@ -28,15 +28,11 @@ function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
   );
 }
 
-/**
- * Renders a legal notice with links open a dialog for the terms and privacy policy.
- */
 interface LegalNoticeProps {
   email?: string;
   mode?: 'waitlist' | 'signup' | 'verify';
 }
 
-/** Renders the legal notice component. */
 export function LegalNotice({ email = '', mode = 'signup' }: LegalNoticeProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);

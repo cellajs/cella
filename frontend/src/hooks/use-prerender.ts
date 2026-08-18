@@ -18,17 +18,13 @@ const usePrerenderStore = create<PrerenderState>((set) => ({
     }),
 }));
 
-/** Hides prerendered content from layout and paint until it is opened. */
 const hiddenStyle: CSSProperties = {
   contentVisibility: 'hidden',
   height: 0,
   overflow: 'hidden',
 };
 
-/**
- * Check if a section should be mounted and get its visibility style.
- * Prerendered sections mount hidden so later expansion is instant.
- */
+/** Prerendered sections mount hidden so opening them is instant. */
 export function usePrerenderSection(scope: string, sectionId: string, isOpen: boolean) {
   const isPrerendered = usePrerenderStore((s) => s.targets[scope] === sectionId);
   const shouldMount = isOpen || isPrerendered;
@@ -37,10 +33,7 @@ export function usePrerenderSection(scope: string, sectionId: string, isOpen: bo
   return { shouldMount, style };
 }
 
-/**
- * Get a prerender trigger for a scope.
- * Debounces DOM mounting to avoid churn during quick scrolling.
- */
+/** Debounces the mount by 150ms so quick scrolling does not churn the DOM. */
 export function usePrerenderTrigger(scope: string) {
   const setTarget = usePrerenderStore((s) => s.setTarget);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

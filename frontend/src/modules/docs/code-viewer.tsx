@@ -8,11 +8,7 @@ interface CodeViewerProps {
   language: 'typescript' | 'zod';
 }
 
-/**
- * Singleton highlighter using Shiki's JavaScript regex engine (no WASM).
- * The default `codeToHtml` uses the Oniguruma WASM engine, which requires
- * `WebAssembly.instantiate` and is blocked by the app CSP (no 'unsafe-eval').
- */
+/** Shiki's JavaScript regex engine: the default Oniguruma WASM engine is blocked by the app CSP. */
 let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
 const getHighlighter = () => {
   highlighterPromise ??= createHighlighter({
@@ -23,10 +19,6 @@ const getHighlighter = () => {
   return highlighterPromise;
 };
 
-/**
- * Code viewer component using Shiki for syntax highlighting.
- * Supports TypeScript and Zod code display.
- */
 export function CodeViewer({ code, language }: CodeViewerProps) {
   const [state, setState] = useState<{ html: string; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
@@ -44,7 +36,6 @@ export function CodeViewer({ code, language }: CodeViewerProps) {
         });
         if (!cancelled) setState({ html: highlighted, isLoading: false });
       } catch {
-        // Fallback to plain code if highlighting fails
         if (!cancelled) setState({ html: `<pre><code>${code}</code></pre>`, isLoading: false });
       }
     };

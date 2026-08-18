@@ -1,9 +1,6 @@
 import sanitizeHtml, { type IOptions } from 'sanitize-html';
 
-/**
- * Allowlist for short translated strings (e.g. i18n bodyHtml/headerHtml).
- * Only inline emphasis + line break + safe links are allowed.
- */
+/** Short translated strings: inline emphasis, line break and safe links only. */
 const inlinePolicy: IOptions = {
   allowedTags: ['strong', 'em', 'b', 'i', 'u', 'br', 'span', 'a'],
   allowedAttributes: {
@@ -16,10 +13,7 @@ const inlinePolicy: IOptions = {
   },
 };
 
-/**
- * Allowlist for long-form rich text (e.g. newsletter HTML produced from BlockNote).
- * Wider tag set, but URL schemes are still restricted to safe values.
- */
+/** Long-form rich text: wider tag set, URL schemes still restricted to safe values. */
 const richTextPolicy: IOptions = {
   allowedTags: [
     'p',
@@ -85,16 +79,11 @@ interface SafeHtmlProps {
   className?: string;
 }
 
-/**
- * The only place in the email pipeline allowed to use `dangerouslySetInnerHTML`:
- * input is sanitized against one of the named allowlist policies above, so call
- * sites stay safe by construction.
- */
+/** The only `dangerouslySetInnerHTML` in the email pipeline; input is sanitized by policy. */
 export const SafeHtml = ({ html, policy, as: Tag = 'span', className }: SafeHtmlProps) => {
   const clean = sanitizeHtml(html, policies[policy]);
   // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via sanitize-html allowlist policy
   return <Tag className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 };
 
-// Template export
 export const Template = SafeHtml;

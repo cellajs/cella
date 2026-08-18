@@ -8,7 +8,6 @@ import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-/** Renders the MFA enablement switch. */
 export function MfaSwitch() {
   const { t } = useTranslation();
   const user = useCurrentUser();

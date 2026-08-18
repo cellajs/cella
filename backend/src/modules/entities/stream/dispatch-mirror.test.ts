@@ -10,7 +10,6 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent } from './types';
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
-// Row-predicate parity is covered by the permission property tests.
 const ORG_A = 'org-dispatch-a';
 const ORG_B = 'org-dispatch-b';
 
@@ -52,10 +51,8 @@ const fakeSubscriber = (
 };
 
 /**
- * Rows and events must carry the full ancestor scope of the configured hierarchy.
- * `null` (not absent) for contexts the row isn't homed under, or `buildSubject`
- * fail-closes with MissingScopeError. Empty in base cella (organization only); apps
- * with deeper chains (e.g. project) get their id columns nulled here.
+ * Rows and events must carry the full ancestor scope: `null`, not absent, for contexts the row
+ * is not homed under, or `buildSubject` fail-closes with MissingScopeError.
  */
 const nullAncestorScopes = Object.fromEntries(
   appConfig.channelEntityTypes
@@ -93,7 +90,7 @@ const attachmentEvent = (organizationId: string, overrides: Record<string, unkno
   }) as unknown as ActivityEvent;
 
 afterEach(() => {
-  // Fake subscribers are registered per test; drop them so tests stay isolated
+  // Fake subscribers are registered per test; drop them so tests stay isolated.
   for (const org of [ORG_A, ORG_B]) {
     for (const subscriber of streamSubscriberManager.getByChannel(`org:${org}`)) {
       streamSubscriberManager.unregister(subscriber.id);
@@ -105,16 +102,15 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   it('pings org members; a subscriber whose membership is gone gets nothing despite channel registration', async () => {
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     const admin = fakeSubscriber([membership(ORG_A, 'admin', 'admin-user')], 'admin-user', [ORG_A], ORG_A);
-    // Membership deleted after connect: the listener refreshed the snapshot to empty,
-    // but channel registration occurs at connect time. The engine must deny per event.
+    // Membership deleted after connect: registration happened at connect time, so the engine
+    // must deny per event.
     const stale = fakeSubscriber([], 'stale-user', [ORG_A], ORG_A);
     const otherOrg = fakeSubscriber([membership(ORG_B, 'member', 'other-user')], 'other-user', [ORG_B], ORG_B);
     for (const { subscriber } of [member, admin, stale, otherOrg]) {
       streamSubscriberManager.register(subscriber);
     }
 
-    // Row authored by the org member: keeps "read granted" true under apps where org
-    // members hold a row-conditional read:'own' grant, not an unconditional read grant.
+    // Authored by the org member, so read stays granted under a row-conditional read:'own' grant.
     await dispatchToAppStream(
       attachmentEvent(ORG_A, {
         rowData: attachmentRow('attachment-1', ORG_A, { createdBy: 'member-user' }),
@@ -128,8 +124,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('pings a subscriber who can read only a non-representative batch row', async () => {
-    // Simulate a stale channel registration after live membership removal.
-    // CDC normally splits organizations, but dispatch must still evaluate every row independently.
+    // A stale channel registration after membership removal: dispatch must still evaluate each row.
     const { subscriber, received } = fakeSubscriber(
       [membership(ORG_A, 'member', 'moved-user')],
       'moved-user',
@@ -138,8 +133,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     );
     streamSubscriberManager.register(subscriber);
 
-    // The representative first row lives in unreadable org B; the second row is in org A.
-    // under representative-row dispatch this subscriber would have been skipped
+    // The representative first row is in unreadable org B, the second in org A: representative-row
+    // dispatch would have skipped this subscriber.
     await dispatchToAppStream(
       attachmentEvent(ORG_B, {
         seq: 20,
@@ -147,7 +142,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
         rowData: attachmentRow('attachment-a', ORG_B),
         batchRows: [
           { seq: 20, rowData: attachmentRow('attachment-a', ORG_B) },
-          // Authored by the subscriber: readable under both read:1 and read:'own' configs
+          // Authored by the subscriber, so readable under both read:1 and read:'own'.
           { seq: 21, rowData: attachmentRow('attachment-b', ORG_A, { createdBy: 'moved-user' }) },
         ],
       }) as AppStreamEvent,
@@ -156,10 +151,9 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     expect(received).toHaveLength(1);
   });
 
-  it('drops draft rows for everyone — author and admin included (defense-in-depth veto)', async () => {
-    // The publication row filter keeps drafts out of the stream at the source; this veto
-    // is the fail-closed backstop for a misconfigured app (filter missing). It must
-    // still hold for EVERYONE, author included.
+  it('drops draft rows for everyone: author and admin included (defense-in-depth veto)', async () => {
+    // The publication row filter keeps drafts out of the stream at the source; this veto is the
+    // fail-closed backstop if that filter is missing, and holds for everyone, the author included.
     const author = fakeSubscriber([membership(ORG_A, 'member', 'author-user')], 'author-user', [ORG_A], ORG_A);
     const admin = fakeSubscriber([membership(ORG_A, 'admin', 'admin-user')], 'admin-user', [ORG_A], ORG_A);
     for (const { subscriber } of [author, admin]) {
@@ -177,8 +171,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('an unpublish arrives as DELETE with the old published row: old readers get the delete', async () => {
-    // PostgreSQL exposes unpublish as DELETE with the old published row.
-    // Existing readers must receive the normal delete-style invalidation.
+    // PostgreSQL exposes unpublish as DELETE with the old published row, so existing readers must
+    // receive the normal delete-style invalidation.
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     const otherOrg = fakeSubscriber([membership(ORG_B, 'member', 'other-user')], 'other-user', [ORG_B], ORG_B);
     for (const { subscriber } of [member, otherOrg]) {
@@ -201,7 +195,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     expect(otherOrg.received).toHaveLength(0);
   });
 
-  it('a published row (publishedAt set) dispatches normally — the veto only hits null', async () => {
+  it('a published row (publishedAt set) dispatches normally: the veto only hits null', async () => {
     const member = fakeSubscriber([membership(ORG_A, 'member', 'member-user')], 'member-user', [ORG_A], ORG_A);
     streamSubscriberManager.register(member.subscriber);
 
@@ -218,9 +212,8 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('delivers a self-membership in an unregistered org through the user channel', async () => {
-    // Connected while a member of ORG_A only: the connection has no ORG_B channel, so the
-    // new-org invite can only arrive via the user channel. The bystander shares the org
-    // channel but must not receive someone else's membership event.
+    // Connected as a member of ORG_A only, so the new-org invite can arrive only via the user
+    // channel. The bystander shares the org channel but must not receive that event.
     const joiner = fakeSubscriber([membership(ORG_A, 'member', 'joiner-user')], 'joiner-user', [ORG_A], ORG_A);
     const bystander = fakeSubscriber([membership(ORG_A, 'member', 'bystander-user')], 'bystander-user', [ORG_A], ORG_A);
     streamSubscriberManager.register(joiner.subscriber, ['user:joiner-user']);

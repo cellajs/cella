@@ -16,10 +16,6 @@ interface OperationRequestProps {
   detail?: GenOperationDetail;
 }
 
-/**
- * Collapsible container for request schema (path, query, body).
- * Only renders if the operation has a request schema.
- */
 export function OperationRequest({ detail }: OperationRequestProps) {
   const { t } = useTranslation();
 
@@ -28,7 +24,6 @@ export function OperationRequest({ detail }: OperationRequestProps) {
 
   const request = detail?.request;
 
-  // Don't render if no request data
   if (!request) return null;
 
   return (

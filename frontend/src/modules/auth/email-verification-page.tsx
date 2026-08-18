@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 
-/** Renders the email verification page. */
 export function EmailVerificationPage() {
   const { t } = useTranslation();
 

@@ -1,20 +1,18 @@
 import { toColumnName } from '../permissions/schema-naming.ts';
 
-/** Minimal hierarchy surface needed for attribution: lets tests inject a synthetic hierarchy. */
+/** The minimum attribution needs, so tests can inject a synthetic hierarchy. */
 export interface AncestorSource {
   getOrderedAncestors(entityType: string): readonly string[];
   getNullableAncestors(entityType: string): readonly string[];
 }
 
 /**
- * The id-column key convention (`project` to `projectId`), the single runtime source of the
- * rule. Config validation pins `appConfig.entityIdColumnKeys` to this shape, so the rule holds
- * for any entity type, including injected or under-construction hierarchies whose types are
- * absent from the current app's config.
+ * The id-column key convention (`project` to `projectId`). Config validation pins
+ * `appConfig.entityIdColumnKeys` to this shape, so it also holds for entity types absent from
+ * the current app's config.
  */
 export const entityIdColumnKey = (entityType: string): string => `${entityType}Id`;
 
-/** The id-column SQL name convention (`courseSection` to `course_section_id`). */
 export const entityIdColumnName = (entityType: string): string => `${toColumnName(entityType)}_id`;
 
 export interface ResolvedAncestor {
@@ -55,10 +53,8 @@ export function resolveDeepestAncestorId(
 }
 
 /**
- * Context types that can be a row's effective home under the deepest-non-null rule:
- * the declared parent, plus each further ancestor while everything below it is nullable
- * (rows can never attach above a non-nullable ancestor). Without nullable ancestors this
- * is just the declared parent.
+ * Homes under the deepest-non-null rule: the declared parent, plus each further ancestor while
+ * everything below it is nullable. A row never attaches above a non-nullable ancestor.
  */
 export function possibleHomeChannels(hierarchy: AncestorSource, entityType: string): string[] {
   const nullable = new Set(hierarchy.getNullableAncestors(entityType));

@@ -15,10 +15,6 @@ interface TagSchemasTableProps {
   onPrerender?: () => void;
 }
 
-/**
- * Compact read-only table listing schemas within a single schema-kind tag section.
- * Mirrors the structure of `TagOperationsTable`: a name link + dynamic tag-kind columns.
- */
 function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<GenComponentSchema>[] {
   const navigate = useNavigate();
 
@@ -86,10 +82,6 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
   ];
 }
 
-/**
- * Read-only schemas table for a single schema-kind tag section.
- * Replaces the previous plain `<Link>` list with a sortable column layout.
- */
 export function TagSchemasTable({ schemas, tagName, tagKinds, onPrerender }: TagSchemasTableProps) {
   const columns = useColumns(tagName, tagKinds);
 

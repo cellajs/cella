@@ -2,16 +2,9 @@ import { useEffect, useRef } from 'react';
 
 /** Delay before a tooltip first appears on hover (ms). */
 const showDelay = 400;
-/**
- * After a tooltip hides, the next one appears without delay within this window (ms).
- * Keeps a "pass-over" feel when moving between adjacent trigger cells whose small hit
- * areas are separated by non-trigger gaps (cell padding, merged-cell text, borders).
- */
+/** After a tooltip hides, the next one appears without delay within this window (ms). */
 const skipDelayWindow = 500;
 
-/**
- * Position tooltip to the right of the reference element with a gap, centered vertically.
- */
 const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {
   const rect = reference.getBoundingClientRect();
   const tooltipRect = tooltip.getBoundingClientRect();
@@ -21,9 +14,7 @@ const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) 
   });
 };
 
-/**
- * Tooltip for a data grid. Works largely outside React to avoid re-render/perf issues.
- */
+/** Data grid tooltip driven by DOM listeners outside React, so hovering never re-renders the grid. */
 export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>, initialDone: boolean) {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -50,10 +41,9 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.style.display = 'block';
       lastShownCellRef.current = cell;
 
-      // Cancel previous positioning loop
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-      // Position immediately, then keep in sync via rAF (handles virtualization recycling)
+      // Reposition on every frame, since virtualization recycles the cell element.
       positionTooltip(cell, tooltip);
       const track = () => {
         if (!cell.isConnected) return clearTooltip();
@@ -72,9 +62,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.textContent = tooltipContent;
     };
 
-    // Resolve the tooltip host for an event target. `data-tooltip="true"` always qualifies;
-    // `data-tooltip="compact"` qualifies only while the host sits inside a compacted grid context,
-    // so a label collapsed by the compact toggle can still be read on hover.
+    // `data-tooltip="true"` always qualifies; `data-tooltip="compact"` only inside a compacted grid.
     const resolveTooltipCell = (target: HTMLElement): HTMLElement | null => {
       const cell = target.closest<HTMLElement>('[data-tooltip]');
       if (!cell) return null;
@@ -86,7 +74,6 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       const cell = resolveTooltipCell(e.target as HTMLElement);
       if (!cell) return clearTooltip();
 
-      // Already showing tooltip for this exact element
       if (lastShownCellRef.current === cell) return;
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -123,7 +110,6 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       observerRef.current?.disconnect();
     };
 
-    // Attach event listeners
     gridEl.addEventListener('mousemove', handleMouseMove);
     gridEl.addEventListener('mouseleave', handleMouseLeave);
     gridEl.addEventListener('focusin', handleFocus);

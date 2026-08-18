@@ -1,11 +1,8 @@
 import type { GenSchema, GenSchemaProperty } from '../../../../frontend/src/modules/docs/types';
 import type { OpenApiSchema, OpenApiSpec } from './types';
 
-/**
- * Resolves a $ref path to the actual schema from components
- */
 function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
-  // Handle refs like "#/components/schemas/User" or "#/components/responses/BadRequestError"
+  // Refs take the form "#/components/schemas/User" or "#/components/responses/BadRequestError".
   const parts = ref.split('/');
   const name = parts[parts.length - 1];
 
@@ -28,11 +25,7 @@ interface NullableReference {
   targetDescription?: string;
 }
 
-/**
- * Matches a schema whose only alternatives are a schema reference and null: either inline
- * (`anyOf: [$ref, {type: 'null'}]`, the emission for unnamed nullable unions) or behind a
- * named alias. Callers collapse the match to a nullable type without repeating the referenced schema.
- */
+/** Matches a schema whose only alternatives are a reference and null, inline or behind a named alias, so callers can collapse it to a nullable type. */
 function matchNullableReference(schema: OpenApiSchema, spec: OpenApiSpec): NullableReference | undefined {
   if (schema.anyOf && schema.oneOf) return undefined;
   const alternatives = schema.anyOf ?? schema.oneOf;
@@ -54,12 +47,7 @@ function matchNullableReference(schema: OpenApiSchema, spec: OpenApiSpec): Nulla
   };
 }
 
-/**
- * Merges allOf schemas into a single flat schema.
- * Properties from later schemas override earlier ones.
- * Required arrays are combined.
- * The first $ref encountered is preserved as extendsRef for inheritance tracking.
- */
+/** Later schemas override earlier properties, required arrays are combined, and the first $ref becomes extendsRef. */
 function mergeAllOfSchemas(
   allOfSchemas: readonly OpenApiSchema[],
   spec: OpenApiSpec,
@@ -74,7 +62,6 @@ function mergeAllOfSchemas(
   for (const subSchema of allOfSchemas) {
     let resolvedSubSchema = subSchema;
 
-    // If it's a $ref, resolve it and track the first one as extendsRef
     if (subSchema.$ref) {
       if (!extendsRef) {
         extendsRef = subSchema.$ref;
@@ -85,7 +72,6 @@ function mergeAllOfSchemas(
       }
     }
 
-    // Recursively handle nested allOf
     if (resolvedSubSchema.allOf) {
       const { mergedSchema: nestedMerged, extendsRef: nestedRef } = mergeAllOfSchemas(
         resolvedSubSchema.allOf,
@@ -98,17 +84,14 @@ function mergeAllOfSchemas(
       }
     }
 
-    // Track the most specific type seen (falls back to 'object' below if none is set)
     if (resolvedSubSchema.type) {
       mergedType = resolvedSubSchema.type;
     }
 
-    // Merge description (prefer later)
     if (resolvedSubSchema.description) {
       mergedDescription = resolvedSubSchema.description;
     }
 
-    // Merge properties
     if (resolvedSubSchema.properties) {
       for (const [key, value] of Object.entries(resolvedSubSchema.properties)) {
         if (value === true) continue;
@@ -116,7 +99,6 @@ function mergeAllOfSchemas(
       }
     }
 
-    // Merge required arrays
     if (resolvedSubSchema.required) {
       for (const req of resolvedSubSchema.required) {
         if (!mergedRequired.includes(req)) {
@@ -136,19 +118,14 @@ function mergeAllOfSchemas(
   return { mergedSchema, extendsRef };
 }
 
-/**
- * Resolves an OpenAPI schema to a GenSchemaProperty, dereferencing $refs
- * and converting the required array to inline required fields.
- */
+/** Dereferences $refs and converts the required array into inline required fields. */
 export function resolveSchemaProperty(
   schema: OpenApiSchema,
   isRequired: boolean,
   spec: OpenApiSpec,
   visited: Set<string> = new Set(),
 ): GenSchemaProperty {
-  // Handle $ref
   if (schema.$ref) {
-    // Prevent circular references
     if (visited.has(schema.$ref)) {
       return {
         type: 'object',
@@ -174,16 +151,13 @@ export function resolveSchemaProperty(
       }
 
       const result = resolveSchemaProperty(resolved, isRequired, spec, newVisited);
-      // Add ref metadata
       result.ref = schema.$ref;
-      // Only add refDescription if the property doesn't already have the same description
       if (resolved.description && resolved.description !== result.description) {
         result.refDescription = resolved.description;
       }
       return result;
     }
 
-    // Unresolved ref
     return {
       type: 'object',
       required: isRequired,
@@ -191,7 +165,7 @@ export function resolveSchemaProperty(
     };
   }
 
-  // Inline nullable reference (unnamed nullable union): collapse to a nullable type keeping ref metadata
+  // Inline nullable reference: collapse to a nullable type, keeping the ref metadata.
   const nullableRef = matchNullableReference(schema, spec);
   if (nullableRef) {
     const prop: GenSchemaProperty = {
@@ -211,10 +185,9 @@ export function resolveSchemaProperty(
     required: isRequired,
   };
 
-  // Copy description (example is NOT copied - it belongs at GenComponentSchema level only)
+  // example is not copied: it belongs at the GenComponentSchema level only.
   if (schema.description) prop.description = schema.description;
 
-  // Copy format constraints
   if (schema.format) prop.format = schema.format;
   if (schema.enum) prop.enum = schema.enum as readonly (string | number | boolean | null)[];
   if (schema.minimum !== undefined) prop.minimum = schema.minimum;
@@ -224,7 +197,6 @@ export function resolveSchemaProperty(
   if (schema.minItems !== undefined) prop.minItems = schema.minItems;
   if (schema.maxItems !== undefined) prop.maxItems = schema.maxItems;
 
-  // Handle nested object properties
   if (schema.properties) {
     const requiredSet = new Set(schema.required || []);
     prop.properties = {};
@@ -234,25 +206,19 @@ export function resolveSchemaProperty(
     }
   }
 
-  // Handle additionalProperties (record/map types from z.record())
+  // additionalProperties carries record/map types from z.record().
   if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
     prop.additionalProperties = resolveSchemaProperty(schema.additionalProperties, false, spec, visited);
   }
 
-  // Handle array items - unwrap simple items to parent level
   if (schema.items) {
-    // Array items don't have a meaningful required field (present or absent, not optional),
-    // so isRequired is always passed as false here.
+    // Array items carry no meaningful required field, so isRequired is always false here.
     const resolvedItem = resolveSchemaProperty(schema.items, false, spec, visited);
-    // Remove the redundant 'required' field from array items
     delete resolvedItem.required;
-    // Check if item is "complex" (has nested properties or items)
     const isComplexItem = resolvedItem.properties || resolvedItem.items || resolvedItem.anyOf || resolvedItem.oneOf;
 
-    // Always set itemType from the resolved item type
     prop.itemType = resolvedItem.type;
 
-    // Unwrap simple item properties to parent (enum, format, ref, etc.)
     if (resolvedItem.enum) prop.enum = resolvedItem.enum;
     if (resolvedItem.format) prop.format = resolvedItem.format;
     if (resolvedItem.ref) prop.ref = resolvedItem.ref;
@@ -262,33 +228,27 @@ export function resolveSchemaProperty(
     if (resolvedItem.minLength !== undefined) prop.minLength = resolvedItem.minLength;
     if (resolvedItem.maxLength !== undefined) prop.maxLength = resolvedItem.maxLength;
 
-    // Only keep full items for complex nested structures
     if (isComplexItem) {
       prop.items = resolvedItem;
     }
   }
 
-  // Handle composition keywords
   if (schema.anyOf) {
     prop.anyOf = schema.anyOf.map((s: OpenApiSchema) => resolveSchemaProperty(s, false, spec, visited));
-    // Remove type: 'object' when anyOf is present - it only describes the container, not the values
+    // type: 'object' describes only the container here, not the values.
     if (prop.type === 'object') {
       delete prop.type;
     }
   }
   if (schema.oneOf) {
     prop.oneOf = schema.oneOf.map((s: OpenApiSchema) => resolveSchemaProperty(s, false, spec, visited));
-    // Remove type: 'object' when oneOf is present - it only describes the container, not the values
     if (prop.type === 'object') {
       delete prop.type;
     }
   }
-  // Handle allOf by merging into a flat schema
   if (schema.allOf) {
     const { mergedSchema, extendsRef } = mergeAllOfSchemas(schema.allOf, spec, visited);
-    // Recursively resolve the merged schema
     const merged = resolveSchemaProperty(mergedSchema, isRequired, spec, visited);
-    // Preserve inheritance info
     if (extendsRef) {
       merged.extendsRef = extendsRef;
     }
@@ -298,14 +258,9 @@ export function resolveSchemaProperty(
   return prop;
 }
 
-/**
- * Resolves an OpenAPI schema to a top-level GenSchema for response bodies.
- * Preserves reference metadata when dereferencing.
- */
+/** Resolves a top-level schema for response bodies, keeping reference metadata while dereferencing. */
 export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited: Set<string> = new Set()): GenSchema {
-  // Handle $ref at top level
   if (schema.$ref) {
-    // Prevent circular references
     if (visited.has(schema.$ref)) {
       return {
         type: 'object',
@@ -320,16 +275,13 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
     const { schema: resolved } = resolveRef(schema.$ref, spec);
     if (resolved) {
       const result = resolveSchema(resolved, spec, newVisited);
-      // Preserve original ref info
       result.ref = schema.$ref;
-      // Only add refDescription if the schema doesn't already have the same description
       if (resolved.description && resolved.description !== result.description) {
         result.refDescription = resolved.description;
       }
       return result;
     }
 
-    // Unresolved ref
     return {
       type: 'object',
       ref: schema.$ref,
@@ -340,17 +292,11 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
     type: schema.type || 'object',
   };
 
-  // Don't copy description to refDescription here - that's only for $ref contexts.
-  // Component schemas get their description at the GenComponentSchema level.
-
-  // Handle enum
+  // description is not copied to refDescription here: that applies only in $ref contexts.
   if (schema.enum) {
     result.enum = schema.enum as readonly (string | number | boolean | null)[];
   }
 
-  // Handle description and format constraints
-  // example is NOT copied here - it's handled at the GenComponentSchema level in parse-spec.ts
-  // to avoid duplication (schema.example vs schema.schema.example)
   if (schema.description) result.description = schema.description;
   if (schema.format) result.format = schema.format;
   if (schema.minimum !== undefined) result.minimum = schema.minimum;
@@ -358,7 +304,6 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
   if (schema.minLength !== undefined) result.minLength = schema.minLength;
   if (schema.maxLength !== undefined) result.maxLength = schema.maxLength;
 
-  // Handle nested object properties
   if (schema.properties) {
     const requiredSet = new Set(schema.required || []);
     result.properties = {};
@@ -368,56 +313,43 @@ export function resolveSchema(schema: OpenApiSchema, spec: OpenApiSpec, visited:
     }
   }
 
-  // Handle additionalProperties (record/map types from z.record())
   if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
     result.additionalProperties = resolveSchemaProperty(schema.additionalProperties, false, spec, visited);
   }
 
-  // Handle array items - unwrap simple items to parent level
   if (schema.items) {
     const resolvedItem = resolveSchemaProperty(schema.items, true, spec, visited);
-    // Check if item is "complex" (has nested properties or items)
     const isComplexItem = resolvedItem.properties || resolvedItem.items || resolvedItem.anyOf || resolvedItem.oneOf;
 
-    // Always set itemType from the resolved item type
     result.itemType = resolvedItem.type;
 
-    // Unwrap simple item properties to parent (enum, format, ref, etc.)
     if (resolvedItem.enum) result.enum = resolvedItem.enum;
     if (resolvedItem.ref) result.ref = resolvedItem.ref;
     if (resolvedItem.refDescription) result.refDescription = resolvedItem.refDescription;
 
-    // Only keep full items for complex nested structures
     if (isComplexItem) {
       result.items = resolvedItem;
     }
 
-    // Copy array constraints
     if (schema.minItems !== undefined) result.minItems = schema.minItems;
     if (schema.maxItems !== undefined) result.maxItems = schema.maxItems;
   }
 
-  // Handle composition keywords
   if (schema.anyOf) {
     result.anyOf = schema.anyOf.map((s: OpenApiSchema) => resolveSchema(s, spec, visited));
-    // Remove type: 'object' when anyOf is present - it only describes the container, not the values
     if (result.type === 'object') {
       delete result.type;
     }
   }
   if (schema.oneOf) {
     result.oneOf = schema.oneOf.map((s: OpenApiSchema) => resolveSchema(s, spec, visited));
-    // Remove type: 'object' when oneOf is present - it only describes the container, not the values
     if (result.type === 'object') {
       delete result.type;
     }
   }
-  // Handle allOf by merging into a flat schema
   if (schema.allOf) {
     const { mergedSchema, extendsRef } = mergeAllOfSchemas(schema.allOf, spec, visited);
-    // Recursively resolve the merged schema
     const merged = resolveSchema(mergedSchema, spec, visited);
-    // Preserve inheritance info
     if (extendsRef) {
       merged.extendsRef = extendsRef;
     }

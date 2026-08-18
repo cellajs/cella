@@ -1,6 +1,4 @@
-// Shim for BodyInit (DOM/Fetch API type) used by SDK-generated client code.
-// The backend tsconfig excludes lib "DOM", but SDK sources are resolved
-// transitively through test imports, avoiding TS2304 errors.
+// Shim for BodyInit: the backend tsconfig excludes lib "DOM", but test imports resolve SDK sources that need it.
 declare global {
   // biome-ignore lint/suspicious/noExplicitAny: minimal shim for DOM type not available in backend lib
   type BodyInit = any;

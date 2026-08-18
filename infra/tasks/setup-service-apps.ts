@@ -30,7 +30,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   for (const service of opts.services) {
     const app = await provisionScopedKey(opts, {
       suffix: `vm-${service}`,
-      appDescription: `Non-human principal for ${service} service VMs — path-conditioned secret read (key minted per deploy)`,
+      appDescription: `Non-human principal for ${service} service VMs: path-conditioned secret read (key minted per deploy)`,
       policyDescription: 'unused (Pulumi manages the policy)',
       managePolicy: false,
       mintKey: false,
@@ -40,7 +40,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   const boot = await provisionScopedKey(opts, {
     suffix: 'boot',
     appDescription:
-      'Non-human boot fetcher — registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
+      'Non-human boot fetcher: registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
     policyDescription: 'unused (Pulumi manages the policy)',
     managePolicy: false,
     mintKey: false,

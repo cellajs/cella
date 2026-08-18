@@ -16,7 +16,6 @@ import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/mod
 
 const LIMIT = appConfig.requestLimits.organizations;
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
 function rowKeyGetter(row: EnrichedOrganization) {
   return row.id;
 }
@@ -29,7 +28,6 @@ function OrganizationsTable() {
     from: '/_app/system/organizations',
   });
 
-  // Table state
   const { q, sort, order } = search;
   const limit = LIMIT;
 
@@ -64,7 +62,6 @@ function OrganizationsTable() {
     }
   };
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();

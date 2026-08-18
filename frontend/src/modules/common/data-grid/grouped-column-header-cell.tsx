@@ -10,7 +10,6 @@ interface GroupedColumnHeaderCellProps<R, SR> {
   isCellSelectionEnabled: boolean;
 }
 
-/** Renders the grouped column header table cell. */
 export function GroupedColumnHeaderCell<R, SR>({
   column,
   rowIdx,

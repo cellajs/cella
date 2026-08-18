@@ -10,15 +10,11 @@ const OperationsTable = lazyNamed(
   'OperationsTable',
 );
 
-/**
- * Operations table route - shows operations in a table format.
- * Not nested under the operations route (trailing underscore); it is a sibling view.
- */
+/** Sibling view of the operations route: the trailing underscore keeps it un-nested. */
 export const Route = createFileRoute('/_public/_content/docs/operations_/table')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Operations table') }] }),
   loader: async () => {
-    // Prefetch operations for table view
     await queryClient.ensureQueryData(operationsQueryOptions);
   },
   component: withSuspense(OperationsTable),

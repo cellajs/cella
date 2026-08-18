@@ -20,7 +20,6 @@ interface CountMembershipsByChannelOpts {
   channelId: string;
 }
 
-/** Count active memberships for a channel entity. */
 export const countMembershipsByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountMembershipsByChannelOpts,
@@ -38,7 +37,6 @@ interface CountPendingInvitesByChannelOpts {
   channelId: string;
 }
 
-/** Count pending invitations for a channel entity. */
 export const countPendingInvitesByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountPendingInvitesByChannelOpts,
@@ -59,7 +57,6 @@ interface FindMembershipAwareRowsOpts {
   entityId: string;
 }
 
-/** Membership-aware lookup for a list of emails against a target entity. */
 export const findMembershipAwareRows = async (
   ctx: AuthContext,
   { emails, entityType, entityId }: FindMembershipAwareRowsOpts,
@@ -164,7 +161,6 @@ interface FindMembershipByIdInOrgOpts {
   membershipId: string;
 }
 
-/** Find a membership by ID scoped to an organization. */
 export const findMembershipByIdInOrg = async (ctx: AuthContext, { membershipId }: FindMembershipByIdInOrgOpts) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
@@ -180,7 +176,6 @@ interface FindMembershipsByUserIdsAndChannelOpts {
   channelId: string;
 }
 
-/** Find memberships for deletion targets (by user IDs and context). */
 export const findMembershipsByUserIdsAndChannel = async (
   ctx: DbContext,
   { userIds, channelId }: FindMembershipsByUserIdsAndChannelOpts,
@@ -196,7 +191,6 @@ interface DeleteMembershipsByIdsOpts {
   ids: string[];
 }
 
-/** Delete memberships by IDs. */
 export const deleteMembershipsByIds = async (ctx: AuthContext, { ids }: DeleteMembershipsByIdsOpts) => {
   const { db, organizationId } = ctx.var;
   return db
@@ -209,7 +203,6 @@ interface UpdateMembershipOpts {
   values: Partial<typeof membershipsTable.$inferInsert>;
 }
 
-/** Update a membership by ID and return the updated row. */
 export const updateMembership = async (ctx: AuthContext, { id, values }: UpdateMembershipOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
@@ -224,7 +217,6 @@ interface InsertTokensOpts {
   tokens: (typeof tokensTable.$inferInsert)[];
 }
 
-/** Insert tokens in bulk and return the created rows. */
 export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(tokens).returning({
@@ -252,7 +244,6 @@ interface FindInactiveMembershipForUserOpts {
   id: string;
 }
 
-/** Find an inactive membership by ID for a specific user. */
 export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
@@ -276,7 +267,6 @@ interface FindMembersPaginatedOpts {
   userIds?: string[];
 }
 
-/** Get paginated members list with total count for an entity. */
 export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds } = opts;
@@ -340,10 +330,8 @@ interface FindMemberPreviewsByChannelsOpts {
 }
 
 /**
- * Member previews for a set of contexts in ONE batched query: the first `limit` members
- * per context with the given role, ordered by membership createdAt (oldest first).
- * Powers `include=members` on channel entity list endpoints; overflow counts come from
- * the pre-computed `m:c:{role}` counters, so previews never need a second query.
+ * Member previews for a set of contexts in one batched query: the first `limit` members per context with the given
+ * role, oldest membership first. Overflow counts come from the `m:c:{role}` counters, so previews need no second query.
  */
 export const findMemberPreviewsByChannels = async (
   ctx: DbContext,
@@ -409,7 +397,6 @@ interface FindPendingMembershipsPaginatedOpts {
   limit: number;
 }
 
-/** Get paginated pending memberships list with total count. */
 export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: FindPendingMembershipsPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, sort, order, offset, limit } = opts;
@@ -435,8 +422,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
       createdAt: table.createdAt,
       createdBy: table.createdBy,
-      // The row's own invitation token: resends must target it by id, never by email
-      // (email-only resend resolves the address's newest token across orgs and system invites).
+      // The row's own invitation token: resends target it by id, never by email, which would resolve the address's newest token across orgs.
       tokenId: tokensTable.id,
     })
     .from(table)

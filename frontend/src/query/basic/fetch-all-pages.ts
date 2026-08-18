@@ -6,10 +6,8 @@ type PaginatedFetcher<T> = (params: { limit: string; offset: string }) => Promis
 export async function fetchAllPages<T>(fetcher: PaginatedFetcher<T>, limit: number): Promise<QueryData<T>> {
   const first = await fetcher({ limit: String(limit), offset: '0' });
 
-  // Everything fits in one page, the common case.
   if (first.items.length >= first.total) return first;
 
-  // Calculate how many additional pages we need
   const remaining = Math.ceil((first.total - first.items.length) / limit);
 
   const pages = await Promise.all(

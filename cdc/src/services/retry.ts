@@ -7,11 +7,10 @@ const { retry: RETRY_CONFIG } = RESOURCE_LIMITS;
 export function isTransientError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
 
-  // Check for PostgreSQL error code (also unwraps Drizzle-wrapped errors via .cause)
   const code = getErrorCode(error);
   if (code && TRANSIENT_ERROR_CODES.has(code)) return true;
 
-  // Also check for common transient error messages
+  // Fallback for drivers that report no code.
   const message = error instanceof Error ? error.message.toLowerCase() : '';
   const transientPatterns = [
     'connection refused',
@@ -26,7 +25,6 @@ export function isTransientError(error: unknown): boolean {
   return transientPatterns.some((pattern) => message.includes(pattern));
 }
 
-/** Type guard for objects with a string `code` property (e.g., PostgreSQL errors). */
 function hasErrorCode(value: unknown): value is { code: string } {
   return (
     typeof value === 'object' &&
@@ -36,14 +34,10 @@ function hasErrorCode(value: unknown): value is { code: string } {
   );
 }
 
-/**
- * Extract PostgreSQL error code from an error if available.
- * Also checks .cause for Drizzle-wrapped errors.
- */
+/** Reads the PostgreSQL error code, unwrapping Drizzle-wrapped errors via `.cause`. */
 export function getErrorCode(error: unknown): string | null {
   if (!error || typeof error !== 'object') return null;
   if (hasErrorCode(error)) return error.code;
-  // Drizzle-wrapped: check .cause
   const cause = error instanceof Error ? error.cause : undefined;
   if (hasErrorCode(cause)) return cause.code;
   return null;
@@ -54,8 +48,8 @@ type RetryResult<T> =
   | { success: false; error: Error; attempts: number; isTransient: boolean };
 
 /**
- * Execute an async function with exponential backoff retry for transient errors.
- * @param context - label for logging (e.g., "insert activity")
+ * Retries transient errors with exponential backoff.
+ * @param context - label for logging, e.g. "insert activity".
  */
 export async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<RetryResult<T>> {
   let lastError: Error = new Error('No attempts made');

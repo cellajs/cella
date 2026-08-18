@@ -19,7 +19,6 @@ interface OperationsSidebarProps {
   activeTag?: string;
 }
 
-/** Sidebar listing operation tags with their operations. */
 export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
   const [layoutId] = useState(() => nanoid());
   const { prerender } = usePrerenderTrigger('operations');

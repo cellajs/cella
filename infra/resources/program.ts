@@ -10,8 +10,7 @@ import './vm-iam';
 import { mode, naming, region } from '../pulumi-context';
 import * as lb from './loadbalancer';
 
-// The whole deployment program: one stack per mode, long-lived base resources
-// plus the content-addressed generation VMs.
+// The whole deployment program: one stack per mode, long-lived base resources plus the content-addressed generation VMs.
 
 console.info(`Pulumi stack: ${mode}`);
 console.info(`Slug: ${naming.slug}`);
@@ -33,9 +32,7 @@ export const privateUploadsBucketEndpoint = storage.privateUploadsBucketEndpoint
 export const bootDiagBucketName = storage.bootDiagBucketName;
 export const bootDiagBucketEndpoint = storage.bootDiagBucketEndpoint;
 
-// S11: generic store outputs, `storeOutputs.<storeId>.<key>`. The flat db*
-// exports were retired in the 2026-08 planned break: the db-exposure/seed
-// CLI reads the primary store's keys out of this object.
+// Generic store outputs addressed `storeOutputs.<storeId>.<key>`; the db-exposure and seed CLI reads the primary store's keys from here.
 export const storeOutputs = stores.allStoreOutputs;
 
 export const computeInstances = compute.computeInstances.map((i) => i.name);

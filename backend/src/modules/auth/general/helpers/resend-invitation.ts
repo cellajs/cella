@@ -14,11 +14,9 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../../emails';
 
 /**
- * Re-issue an invitation from an existing token row: mints a fresh 7-day token copying the old
- * row's linkage, then sends the matching email (membership invite when the token binds a pending
- * membership, system invite otherwise). Callers own token resolution and authorization: the
- * public resend endpoint resolves by email/tokenId behind its limiter, the memberships resend
- * resolves by pending-membership id behind a channel `update` check.
+ * Re-issues an invitation from an existing token row: mints a fresh 7-day token copying the old row's linkage, then sends the
+ * matching email (membership invite when the token binds a pending membership, system invite otherwise).
+ * Callers do token resolution and authorization themselves.
  */
 export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeTokenModel): Promise<void> => {
   const { email: userEmail } = oldToken;
@@ -27,7 +25,6 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
 
-  // Insert token first
   await insertInvitationToken(ctx, {
     values: {
       ...oldToken,
@@ -38,7 +35,6 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
     },
   });
 
-  // Prepare and send invitation email
   const recipient = {
     email: userEmail,
     lng: appConfig.defaultLanguage,
@@ -46,13 +42,12 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
     inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
   };
 
-  // Prepare email props, default is system invite
+  // Default props are the system invite
   const defaultEmailProps = {
     senderName: 'System',
     senderThumbnailUrl: null as string | null,
   };
 
-  // Get original sender
   if (oldToken.createdBy) {
     const sender = await findUserById(ctx, { id: oldToken.createdBy });
     if (sender) {
@@ -61,7 +56,6 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
     }
   }
 
-  // Get entity info
   if (oldToken.inactiveMembershipId) {
     const inactiveMembership = await findInactiveMembershipById(ctx, {
       id: oldToken.inactiveMembershipId,

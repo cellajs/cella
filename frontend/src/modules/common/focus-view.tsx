@@ -21,7 +21,7 @@ interface FocusViewContainerProps {
   disabled?: boolean;
 }
 
-/** Button to toggle focus view mode, which hides non-essential UI elements for a more immersive experience. */
+/** Toggles focus view mode, which hides non-essential UI. */
 export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   const { t } = useTranslation();
   const { focusView, setFocusView } = useUIStore();
@@ -46,7 +46,7 @@ export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   );
 }
 
-/** Container that applies focus view styles when focus view mode is active. Should wrap the main content of the page. */
+/** Applies focus view styles while the mode is active. Wraps the page's main content. */
 export function FocusViewContainer({ children, className = '', disabled }: FocusViewContainerProps) {
   const focusView = useUIStore((state) => state.focusView);
 

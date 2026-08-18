@@ -9,8 +9,6 @@ interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReact
   allowedTypes: CustomBlockTypes[];
 }
 
-// Custom slash menu component rendered inside the floating positioner.
-/** Connects the custom slash menu to the BlockNote suggestion menu. */
 export function CustomSlashMenuComponent({
   items,
   loadingState,
@@ -37,10 +35,9 @@ export function CustomSlashMenuComponent({
     onItemClick?.(item);
   };
 
-  // Ensure that all items are loaded before listening for keyboard shortcuts
   useEventListener('keydown', handleKeyPress, { enabled: loadingState === 'loaded' });
 
-  // Scroll selected item into view within the menu container only (not the page)
+  // Scroll within the menu container only, never the page.
   useEffect(() => {
     const selectedItem = itemRefs.current[selectedIndex || 0];
     const menuContainer = menuRef.current;

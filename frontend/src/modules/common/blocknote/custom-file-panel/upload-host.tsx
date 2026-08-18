@@ -18,14 +18,9 @@ export interface UploadHostApi {
 
 const UploadHostContext = createContext<UploadHostApi | null>(null);
 
-/** Read the surrounding upload host, if the editor is wrapped in one. */
 export const useUploadHost = () => useContext(UploadHostContext);
 
-/**
- * Owns the Uppy upload dialog outside the editor's React subtree, so a mid-upload editor remount (e.g.
- * a Yjs solo→collab switch) can no longer tear down an open dialog or discard an already picked file.
- * A `FilePanelBridge` inside the editor feeds it the active block and the live editor.
- */
+/** Owns the Uppy dialog outside the editor subtree so a mid-upload remount cannot tear it down; a `FilePanelBridge` feeds it the active block and live editor. */
 export function UploadHostProvider({
   baseFilePanelProps,
   children,

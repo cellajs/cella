@@ -12,12 +12,9 @@ import type { AppCatchupResponse, CatchupView, CatchupViewAnswer } from '#/schem
 const dbCtx: DbContext = { var: { db } };
 
 /**
- * Answer client-declared views from per-node summaries. Authorization first
- * (`resolveViewReadStatus` per prefix × entityType): a view is `ok` only when EVERY
- * pair proves unconditional subtree read; any readable-but-unproven pair makes it
- * `opaque` (no numbers), and no read route at all makes it `forbidden`. Summaries for
- * `ok` views come from one channel_counters read over the prefixes' deepest nodes:
- * `frontiers` = per-type max of `e:f:{type}`, `counts` = per-type sum of `e:c:{type}`.
+ * Authorization runs first, per (prefix, entityType): `ok` only when every pair proves
+ * unconditional subtree read, `opaque` (no numbers) when readable but unproven, `forbidden` with
+ * no read route. Summaries come from one channel_counters read over the prefixes' deepest nodes.
  */
 export async function answerCatchupViews(
   memberships: MembershipBaseModel[],
@@ -26,8 +23,8 @@ export async function answerCatchupViews(
 ): Promise<CatchupViewAnswer[]> {
   if (views.length === 0) return [];
 
-  // Read paths and counters before classification so ancestry comes from stored node identity.
-  // Schema and hard caps bound the query; overflow nodes fall back to conservative ID-only proof.
+  // Read before classification so ancestry comes from stored node identity; hard caps bound the
+  // query and overflow nodes fall back to ID-only proof.
   const nodeKeys = new Set<string>();
   for (const view of views) {
     for (const prefix of view.prefixes) {
@@ -40,8 +37,7 @@ export async function answerCatchupViews(
     counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]),
   );
 
-  // Authorize every (prefix, entityType) pair per view, at the view's depth, against
-  // the verified path when the counters row has one.
+  // Authorize each pair at the view's depth, against the verified path when the row has one.
   const statuses = views.map((view) => {
     let sawOpaque = false;
     let sawOk = false;
@@ -88,13 +84,9 @@ export async function answerCatchupViews(
 }
 
 /**
- * Build app stream catch-up data (sequence sync).
- *
- * Product entity sync is answered per client-declared VIEW (`answerCatchupViews`,
- * prefix-authorized, from `f:`/`e:` rollups). The per-org `changes` block carries the
- * remaining org-level concerns: the `membership` change signal (membership change
- * detection) and embedding propagation hints derived from the views' sequence cursors.
- * A null cursor returns baselines and causes client-side membership query invalidation.
+ * Product entity sync is answered per client-declared view by `answerCatchupViews`; the per-org
+ * `changes` block carries the membership signal and embedding propagation hints. A null cursor
+ * returns baselines and makes the client invalidate its membership queries.
  */
 export async function appCatchupOp(
   memberships: MembershipBaseModel[],
@@ -104,15 +96,14 @@ export async function appCatchupOp(
 ): Promise<AppCatchupResponse> {
   const organizationIds = new Set(memberships.map((m) => m.organizationId));
 
-  // View answers are permission-resolved per prefix, independent of membership-derived
-  // org enumeration (elevated readers hold no child memberships but declare views).
+  // View answers resolve per prefix: an elevated reader holds no child memberships but declares views.
   const viewAnswers = actor && views?.length ? await answerCatchupViews(memberships, actor, views) : undefined;
 
   if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null };
 
   const organizationIdArray = Array.from(organizationIds);
 
-  // One query for all org counter rows (membership signal + frontier rollups for hints).
+  // One query for all org counter rows: membership signal plus frontier rollups for hints.
   const allCounterRows = await findChannelCountersByKeys(dbCtx, { keys: organizationIdArray });
   const allCounters = new Map(allCounterRows.map((r) => [r.channelKey, r.counts]));
 
@@ -127,7 +118,6 @@ export async function appCatchupOp(
   // Embedding propagation hints: frontiers vs the client's org-view cursors.
   await buildPropagationHints(changes, views, allCounters);
 
-  // Advance cursor.
   let newCursor: string | null = cursor ?? null;
   if (!cursor || Object.keys(changes).length > 0) {
     newCursor =
@@ -142,11 +132,7 @@ export async function appCatchupOp(
   return { changes, views: viewAnswers, cursor: newCursor };
 }
 
-/**
- * Get the latest activity ID relevant to a user.
- * Used for 'now' offset and as new cursor in catchup responses.
- * Exported for use by stream handler.
- */
+/** Used for the 'now' offset and as the new cursor in catchup responses. */
 export async function getLatestUserActivityId(organizationIds: Set<string>): Promise<string | null> {
   if (organizationIds.size === 0) return null;
 

@@ -17,7 +17,6 @@ import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 
-/** Maximum number of rows that can be selected at once */
 const MAX_SELECTABLE_ROWS = 1000;
 
 /** DataGrid props forwarded unchanged through `gridProps`, retaining their source types and docs. */
@@ -75,10 +74,7 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rowHeight?: number;
 }
 
-/**
- * Bridge query presentation state and infinite scrolling to the DataGrid engine.
- * Pure engine props pass through unchanged via {@link ForwardedGridProps}.
- */
+/** Bridges query presentation state and infinite scrolling to the DataGrid engine. */
 export function DataTable<TData>({
   // DataTable-owned / transformed props, destructured so they don't leak into `...gridProps`.
   columns,
@@ -102,7 +98,6 @@ export function DataTable<TData>({
   renderCell,
   cellSelectionMode,
   rowHeight = 52,
-  // Everything else is a pure passthrough to <DataGrid>
   ...gridProps
 }: DataTableProps<TData>) {
   const { t } = useTranslation();
@@ -111,13 +106,11 @@ export function DataTable<TData>({
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
   useTableTooltip(gridRef, !isLoading);
 
-  // Reset column widths when resetWidthsKey changes (e.g., layout-affecting toggle)
   useEffect(() => {
     setColumnWidths(new Map());
   }, [resetWidthsKey]);
 
-  // Virtualized tables use the grid's level-triggered near-end state; fully rendered tables use
-  // InfiniteLoader observation. Deferred demand runs once the query can accept it.
+  // Virtualized tables use the grid's near-end state; fully rendered tables use InfiniteLoader observation.
   const [nearEnd, setNearEnd] = useState(false);
   useFetchMoreOnDemand({
     demand: !!enableVirtualization && nearEnd,
@@ -127,9 +120,7 @@ export function DataTable<TData>({
     fetchMore,
   });
 
-  // Wrap selection handler to enforce max selection limit. Memoized so the
-  // identity stays stable across renders; `DataGrid` passes it through to
-  // memoized rows; a fresh function each render would defeat that memo.
+  // Memoized because `DataGrid` passes it to memoized rows; a fresh function each render defeats that memo.
   const handleSelectedRowsChange = useCallback(
     (newSelectedRows: Set<string>) => {
       if (!onSelectedRowsChange) return;
@@ -137,9 +128,8 @@ export function DataTable<TData>({
       const currentSize = selectedRows?.size ?? 0;
       const newSize = newSelectedRows.size;
 
-      // Check if trying to select more than the limit
       if (newSize > MAX_SELECTABLE_ROWS) {
-        // If this is a "select all" attempt (large jump in selection)
+        // A jump of more than one row is a "select all" attempt.
         if (newSize - currentSize > 1) {
           toaster.warning(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }));
         } else {
@@ -153,9 +143,7 @@ export function DataTable<TData>({
     [onSelectedRowsChange, selectedRows, t],
   );
 
-  // Stable `renderers` object: every fresh `{ renderRow, renderCell }` literal
-  // would invalidate Row's memo and re-render every visible row on each parent
-  // render. Re-create only when an actual renderer function identity changes.
+  // A fresh `{ renderRow, renderCell }` literal each render would invalidate Row's memo.
   const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
   return (
@@ -164,8 +152,7 @@ export function DataTable<TData>({
         <DataTableSkeleton
           cellsWidths={['3rem', '10rem', '4rem']}
           cellHeight={Number(rowHeight)}
-          // Consumers pass the full column list (the grid filters `hidden`); match the
-          // rendered column count so the skeleton doesn't over-draw then collapse.
+          // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       ) : error && rows.length === 0 ? (

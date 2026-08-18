@@ -7,7 +7,6 @@ interface IsSelectedCellEditableOpts<R, SR> {
   rows: readonly R[];
 }
 
-/** Checks whether the selected cell can enter edit mode. */
 export function isSelectedCellEditable<R, SR>({
   selectedPosition,
   columns,
@@ -19,7 +18,6 @@ export function isSelectedCellEditable<R, SR>({
 }
 
 // https://github.com/vercel/next.js/issues/56480
-/** Checks whether a cell is editable for the current row. */
 export function isCellEditableUtil<R, SR>(column: CalculatedColumn<R, SR>, row: R): boolean {
   return (
     column.renderEditCell != null &&
@@ -87,10 +85,6 @@ function getSelectedCellColSpan<R, SR>({
   return undefined;
 }
 
-/**
- * Find the next focusable column index in the given direction.
- * Skips columns with focusable: false.
- */
 function findNextFocusableColumn<R, SR>(
   columns: readonly CalculatedColumn<R, SR>[],
   startIdx: number,
@@ -107,11 +101,9 @@ function findNextFocusableColumn<R, SR>(
     idx += direction;
   }
 
-  // If no focusable column found, return boundary
   return direction === 1 ? maxIdx + 1 : -1;
 }
 
-/** Returns the next selected cell position. */
 export function getNextSelectedCellPosition<R, SR>({
   moveUp,
   moveNext,
@@ -133,8 +125,7 @@ export function getNextSelectedCellPosition<R, SR>({
   const columnsCount = columns.length;
 
   const setColSpan = (moveNext: boolean) => {
-    // If a cell within the colspan range is selected then move to the
-    // previous or the next cell depending on the navigation direction
+    // A selection inside the colspan range moves to the previous or next cell, following the navigation direction.
     for (const column of colSpanColumns) {
       const colIdx = column.idx;
       if (colIdx > nextIdx) break;
@@ -213,7 +204,6 @@ export function getNextSelectedCellPosition<R, SR>({
       if (focusableIdx >= 0 && focusableIdx < columnsCount) {
         nextIdx = focusableIdx;
       } else {
-        // No focusable column found, stay at current position
         nextIdx = currentIdx;
       }
     }
@@ -240,8 +230,7 @@ export function getNextSelectedCellPosition<R, SR>({
   }
 
   if (nextRowIdx < mainHeaderRowIdx && nextIdx > -1 && nextIdx < columnsCount) {
-    // Find the last reachable parent for the new rowIdx when navigating
-    // to a column that has no parent matching the new rowIdx.
+    // Last reachable parent, for a column with no parent at the new rowIdx.
     const nextColumn = columns[nextIdx];
     let parent = nextColumn.parent;
     const nextParentRowIdx = nextRowIdx;
@@ -267,7 +256,6 @@ interface CanExitGridOpts {
   shiftKey: boolean;
 }
 
-/** Checks whether keyboard navigation can leave the grid. */
 export function canExitGrid({
   maxColIdx,
   minRowIdx,
@@ -275,7 +263,6 @@ export function canExitGrid({
   selectedPosition: { rowIdx, idx },
   shiftKey,
 }: CanExitGridOpts): boolean {
-  // Exit the grid if we're at the first or last cell of the grid
   const atLastCellInRow = idx === maxColIdx;
   const atFirstCellInRow = idx === 0;
   const atLastRow = rowIdx === maxRowIdx;

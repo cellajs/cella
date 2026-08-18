@@ -33,8 +33,7 @@ describe('transformGithubUserData', () => {
   });
 
   it('surfaces emailVerified=false when the primary GitHub email is unverified', () => {
-    // Regression guard: an unverified provider email must not be reported as verified,
-    // so downstream account creation/linking never auto-trusts it.
+    // Regression guard: an unverified provider email must not be reported as verified.
     const result = transformGithubUserData(githubUser, [ghEmail('primary@example.com', true, false)]);
 
     expect(result.emailVerified).toBe(false);

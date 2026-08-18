@@ -96,12 +96,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const repairs = planCertRepairs(stateCerts, liveById);
   if (repairs.length === 0) {
-    console.info(`repair-certs: ${stateCerts.length} certificate(s) in state, none errored — nothing to repair.`);
+    console.info(`repair-certs: ${stateCerts.length} certificate(s) in state, none errored: nothing to repair.`);
     return;
   }
 
   for (const repair of repairs) {
-    console.info(`repair-certs: ${repair.certId} — ${repair.reason}`);
+    console.info(`repair-certs: ${repair.certId}: ${repair.reason}`);
     const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], {
       cwd: infraDir,
       encoding: 'utf8',
@@ -110,7 +110,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       // A dependent (attached frontend) still references it: leave the live
       // object alone too: never delete TLS material something may serve.
       console.warn(
-        `repair-certs: state delete refused for ${repair.urn} (${stateDelete.stderr.trim().slice(0, 300)}) — skipping live delete; resolve the dependent first.`,
+        `repair-certs: state delete refused for ${repair.urn} (${stateDelete.stderr.trim().slice(0, 300)}): skipping live delete; resolve the dependent first.`,
       );
       continue;
     }

@@ -13,7 +13,6 @@ interface ViewportRowsArgs<R> {
   measured: boolean;
 }
 
-/** Provides viewport rows state and actions. */
 export function useViewportRows<R>({
   rows,
   rowHeight,
@@ -40,8 +39,7 @@ export function useViewportRows<R>({
     let currentHeight: number | null = null;
     let repeatCount = 0;
 
-    // Uses minmax(Xpx, max-content) so rendered rows can grow beyond the estimate
-    // while non-rendered rows stay at the estimated minimum.
+    // minmax(Xpx, max-content) lets rendered rows grow past the estimate while non-rendered rows keep the minimum.
     const flushRun = (height: number, count: number) => {
       const track = `minmax(${height}px,max-content)`;
       if (count > 1) {
@@ -64,7 +62,6 @@ export function useViewportRows<R>({
         currentHeight = currentRowHeight;
         repeatCount = 1;
       } else if (currentHeight === currentRowHeight) {
-        // If the current row height is the same as the previous one, increment the repeat count
         repeatCount++;
       } else {
         flushRun(currentHeight, repeatCount);

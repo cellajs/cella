@@ -39,10 +39,7 @@ function Breadcrumbs({ crumbs }: { crumbs: string[] }) {
   );
 }
 
-/**
- * A single search result row. Page rows carry the title; heading/text rows hang under their page
- * row with a continuous tree line (adjacent rows' inset-y-0 segments join up visually).
- */
+/** Heading and text rows hang under their page row with a continuous tree line. */
 export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
   if (item.type === 'heading' || item.type === 'text') {
     return (

@@ -9,7 +9,6 @@ interface ToolCardProps {
   label: TKey;
   /** Optional resource i18n key interpolated into the title. */
   resource?: TKey;
-  /** Optional description under the title. */
   description?: ReactNode;
   /** Shows the unsaved-changes badge in the title. */
   unsaved?: boolean;
@@ -18,7 +17,6 @@ interface ToolCardProps {
   children: ReactNode;
 }
 
-/** Standard card shell for settings tools: titled card with optional description and unsaved badge. */
 export function ToolCard({ label, resource, description, unsaved, id, className, children }: ToolCardProps) {
   const { t } = useTranslation();
   const title = t(label, { resource: resource ? t(resource).toLowerCase() : '' });

@@ -10,9 +10,7 @@ import { usersTable } from '#/modules/user/user-db';
 
 const roleEnum = roles.all;
 
-/**
- * Inactive memberships track pending invitations and rejected membership requests.
- */
+/** Pending invitations and rejected membership requests. */
 export const inactiveMembershipsTable = snakeCase.table(
   'inactive_memberships',
   {

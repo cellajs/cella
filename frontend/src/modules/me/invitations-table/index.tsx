@@ -7,12 +7,10 @@ import { useColumns } from '~/modules/me/invitations-table/invitations-columns';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
 function rowKeyGetter(row: Invitation) {
   return row.inactiveMembership.id;
 }
 
-/** Renders the invitations table. */
 export function InvitationsTable() {
   const { t } = useTranslation();
 
@@ -25,7 +23,6 @@ export function InvitationsTable() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* Explainer alert box */}
       <AlertBanner id="accept_invitations" variant="plain" icon={InfoIcon} animate>
         {t('c:accept_invitations.text')}
       </AlertBanner>

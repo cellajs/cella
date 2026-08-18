@@ -2,7 +2,6 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
-/** Component to display the legal contact information of the company */
 export function LegalContact({ addressOnly = false, className }: { addressOnly?: boolean; className?: string }) {
   const companyFull = appConfig.company.name;
   const streetAddress = appConfig.company.streetAddress;

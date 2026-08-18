@@ -9,7 +9,6 @@ import { log } from '#/utils/logger';
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
 export async function updateTenantOp(ctx: AuthContext, tenantId: string, updates: UpdateTenantInput) {
-  // Check tenant exists
   const existing = await findTenantById(ctx, { targetTenantId: tenantId });
   if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
 

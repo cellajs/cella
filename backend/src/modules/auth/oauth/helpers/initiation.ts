@@ -13,10 +13,7 @@ import { TimeSpan } from '#/utils/time-span';
 
 type OAuthQueryParams = z.infer<typeof oauthQuerySchema>;
 
-/**
- * Parse and validate an OAuth cookie payload using Zod schema.
- * Returns null if the cookie is missing, malformed, or fails validation.
- */
+/** Returns null when the cookie is missing, malformed, or fails schema validation. */
 export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthCookiePayload | null => {
   if (!raw) return null;
   try {
@@ -29,11 +26,8 @@ export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthC
 };
 
 /**
- * Creates an OAuth session: sets the flow-context cookies and redirects to the provider.
- *
- * - Stores OAuth flow context (invite, connect, verify, or default)
- * - Associates the context with the OAuth `state` to prevent CSRF
- * - Optionally includes a PKCE `codeVerifier` and an OIDC `nonce` (echoed back in the id_token)
+ * Creates an OAuth session: stores the flow context (invite, connect, verify, or default) in cookies and redirects to the provider.
+ * The context is tied to the OAuth `state` to prevent CSRF and can carry a PKCE `codeVerifier` and an OIDC `nonce`.
  */
 export const handleOAuthInitiation = async (
   ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,
@@ -51,8 +45,7 @@ export const handleOAuthInitiation = async (
       const { sessionToken } = await getParsedSessionCookie(ctx);
       const { user } = await validateSession(sessionToken);
       if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
-      // Pin the connecting user in the signed state payload: the session cookie
-      // (SameSite=Strict) is absent on the provider's cross-site callback.
+      // Pin the connecting user in the signed state payload: the SameSite=Strict session cookie is absent on the cross-site callback.
       cookieContent.connectUserId = user.id;
     } catch (err) {
       if (err instanceof AppError) {
@@ -66,8 +59,7 @@ export const handleOAuthInitiation = async (
   }
 
   if (type === 'verify') {
-    // Fails early on a missing/expired verification token; the callback re-validates. The
-    // post-auth redirect travels on the token row, not as a query param.
+    // Fails early on a missing or expired verification token; the callback re-validates. The post-auth redirect travels on the token row.
     const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
     cookieContent.redirectAfter = tokenRecord.redirectPath ?? undefined;
   }

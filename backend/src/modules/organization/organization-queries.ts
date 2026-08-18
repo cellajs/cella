@@ -17,7 +17,6 @@ interface CountOrganizationsByTenantOpts {
   tenantId: string;
 }
 
-/** Count organizations in a tenant. */
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
   const { db } = ctx.var;
   const [result] = await db
@@ -31,7 +30,6 @@ interface InsertOrganizationsOpts {
   orgs: (typeof organizationsTable.$inferInsert)[];
 }
 
-/** Insert organizations and return the created rows. */
 export const insertOrganizations = async (ctx: DbContext, { orgs }: InsertOrganizationsOpts) => {
   const { db } = ctx.var;
   return db.insert(organizationsTable).values(orgs).returning();
@@ -46,7 +44,7 @@ interface UpdateOrganizationOpts {
   };
 }
 
-/** Update an organization by ID and return the updated row. Merges organizationFlags/setupConfig/toolsConfig via jsonb || if provided. */
+/** Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. */
 export const updateOrganization = async (ctx: AuthContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
   const { organizationFlags, setupConfig, toolsConfig, ...rest } = values;
@@ -73,7 +71,6 @@ interface DeleteOrganizationsByIdsOpts {
   ids: string[];
 }
 
-/** Delete organizations by IDs. */
 export const deleteOrganizationsByIds = async (ctx: AuthContext, { ids }: DeleteOrganizationsByIdsOpts) => {
   const { db, tenantId } = ctx.var;
   return db
@@ -94,14 +91,12 @@ interface FindOrganizationsPaginatedOpts {
   includeCounts: boolean;
 }
 
-/** Get paginated list of organizations with conditional joins based on admin status. */
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
   const { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
 
   const entityType = 'organization';
 
-  // Base membership join key (who we're attaching membership for)
   const membershipKeyOn = and(
     eq(membershipsTable.organizationId, organizationsTable.id),
     eq(membershipsTable.userId, targetUserId),
@@ -133,9 +128,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     tieBreaker: organizationsTable.id,
   });
 
-  // System admins see all orgs they have RLS access to (via createdBy or membership)
-  // They use LEFT JOIN since they may not have a membership row for every org.
-  // Regular users use INNER JOIN on memberships (only see orgs they're members of).
+  // System admins LEFT JOIN memberships (RLS grants access via createdBy or membership); regular users INNER JOIN and see only their orgs.
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
   const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
   const selectShape = {
@@ -147,7 +140,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     ...(countData && { counts: countData.countsSelect }),
   } as const;
 
-  // Admins use LEFT JOIN; regular users use INNER JOIN on memberships.
   let query = isSystemAdmin
     ? db.select(selectShape).from(organizationsTable).leftJoin(membershipsTable, membershipOn).$dynamic()
     : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn).$dynamic();

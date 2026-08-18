@@ -1,7 +1,7 @@
 import type { KeyboardEventHandler } from 'react';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
-// IDE-like wrapping characters (constant, no need to recreate per keystroke).
+// Hoisted so the map is not rebuilt per keystroke.
 const wrappingChars: Record<string, string> = {
   '[': ']',
   '{': '}',
@@ -32,7 +32,6 @@ export function useEditorKeyboard({
     const isEscape = key === 'Escape';
     const isCmdEnter = key === 'Enter' && (metaKey || ctrlKey);
 
-    // Selection wrapping
     if (key in wrappingChars) {
       const pmState = editor.prosemirrorState;
       const { from, to } = pmState.selection;
@@ -60,7 +59,6 @@ export function useEditorKeyboard({
       return;
     }
 
-    // Cmd/Ctrl + Enter
     event.stopPropagation();
     onEnterClick?.();
     if (!editor.isEmpty) commit();

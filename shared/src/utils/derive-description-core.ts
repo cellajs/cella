@@ -1,6 +1,6 @@
 import { mediaBlockTypes } from './text-from-block.ts';
 
-/** Loose block shape for parsed description JSON, tolerant of custom block types. */
+/** Tolerant of custom block types. */
 export type DescriptionBlock = {
   type: string;
   props?: Record<string, unknown>;
@@ -17,7 +17,6 @@ export type DescriptionCounts = {
   attachments: string[];
 };
 
-/** Zeroed counts for empty or unparsable descriptions. */
 export const emptyDescriptionCounts = (): DescriptionCounts => ({
   expandable: false,
   checkboxCount: 0,
@@ -27,10 +26,9 @@ export const emptyDescriptionCounts = (): DescriptionCounts => ({
 });
 
 /**
- * Single depth-first walk over parsed description blocks gathering every count-based
- * derived property. Shared by backend and frontend derivation so the two sides cannot
- * drift. `attachmentCount` counts media blocks with any reference (including external
- * URLs with no attachment row); `attachments` collects only attachment entity ids.
+ * One depth-first walk gathering every count-based derived property, shared by backend and
+ * frontend derivation so the two cannot drift. `attachmentCount` counts media blocks with any
+ * reference, external URLs included; `attachments` collects attachment entity ids only.
  */
 export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionCounts => {
   const counts = emptyDescriptionCounts();
@@ -61,10 +59,7 @@ export const countDescriptionBlocks = (blocks: DescriptionBlock[]): DescriptionC
 
 type SummarySource = { source: DescriptionBlock | undefined; summaryLength: number };
 
-/**
- * Pick the block that seeds the summary: the first non-checklist block with text
- * content, falling back to the first block. Returns it with its plain-text length.
- */
+/** The first non-checklist block with text, else the first block, with its plain-text length. */
 export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => {
   const source =
     blocks.find(
@@ -84,6 +79,6 @@ export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => 
   return { source, summaryLength };
 };
 
-/** Plain-text fallback for summary sources the per-side HTML converters cannot render (custom blocks). */
+/** Fallback for summary sources the per-side HTML converters cannot render. */
 export const blockPlainText = (block: DescriptionBlock): string =>
   Array.isArray(block.content) ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('') : '';

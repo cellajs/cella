@@ -6,12 +6,7 @@ export function hasPublishedAt(table: AnyPgTable): table is AnyPgTable & { publi
   return 'publishedAt' in table;
 }
 
-/**
- * Published-rows-only predicate for collection, delta and catchup reads: excludes
- * unpublished drafts for everyone, including the author. Drafts live outside the sync
- * engine and surface via a dedicated drafts query, never the feed (see
- * `shared/src/published-rows.ts`). `undefined` (no-op) for tables without the column.
- */
+/** For collection, delta and catchup reads: excludes drafts for everyone, the author included. */
 export function publishedRowsPredicate(table: AnyPgTable): SQL | undefined {
   return hasPublishedAt(table) ? isNotNull(table.publishedAt) : undefined;
 }

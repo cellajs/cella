@@ -18,7 +18,6 @@ import type { Member, MembersRouteSearchParams } from '~/modules/memberships/typ
 
 const LIMIT = appConfig.requestLimits.members;
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
 function rowKeyGetter(row: Member) {
   return row.id;
 }
@@ -33,7 +32,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  // Get organization from route context - MembersTable is always rendered within OrganizationLayoutRoute
+  // MembersTable always renders inside OrganizationLayoutRoute
   const { organization } = useOrganizationLayoutContext();
 
   const updateMemberMembership = useMemberUpdateMutation();
@@ -43,11 +42,9 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const tenantId = organization.tenantId;
   const organizationId = organization.id;
 
-  // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
-  // The entity has no `createdBy` for resolving `'own'`, so require an unconditional grant.
+  // Members are managed per channel and the channel has no `createdBy` to resolve `'own'`, so require an unconditional grant.
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
 
-  // Table state
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
@@ -72,7 +69,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
 
-    // If role is changed, update membership
     for (const index of indexes) {
       const updatedMembership = {
         path: {

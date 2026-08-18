@@ -24,7 +24,6 @@ type EntityGridBarSearch = {
   role?: string;
 };
 
-/** Sort option for the entity grid bar. Apps pass their own set via the `sortOptions` prop. */
 export type EntityGridSortOption = {
   name: TKey;
   icon: IconComponent;
@@ -49,7 +48,6 @@ type Props = {
   actions?: ReactNode;
 };
 
-/** Renders the entity grid bar component. */
 export function EntityGridBar({
   queryKey,
   label,
@@ -66,8 +64,7 @@ export function EntityGridBar({
 
   const isFiltered = !!q;
 
-  // Hide the bar at or below the preview count while unfiltered; the actions slot stays
-  // rendered so surfaces keep their create affordance without mirroring the hide rule.
+  // Hide the bar at or below the preview count while unfiltered; the actions slot stays rendered
   if (!isFiltered && (total ?? 0) <= GRID_PREVIEW_LIMIT) {
     return actions ? <div className="flex items-center">{actions}</div> : null;
   }
@@ -81,7 +78,6 @@ export function EntityGridBar({
 
   return (
     <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 48}>
-      {/* Filter Bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {!isFiltered && actions}
@@ -107,7 +103,6 @@ export function EntityGridBar({
         </FilterBarFilters>
       </TableFilterBar>
 
-      {/* Focus view */}
       {focusView && <FocusView iconOnly />}
     </TableBarContainer>
   );

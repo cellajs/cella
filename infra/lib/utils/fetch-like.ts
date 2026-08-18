@@ -1,12 +1,4 @@
-/**
- * Minimal structural `fetch` surface shared by every module that performs raw
- * HTTP against the Scaleway APIs with an injectable implementation (tasks,
- * the VM boot runner, the shared Scaleway clients).
- *
- * Shaped so the native `fetch` (DOM lib or Node's undici) is directly
- * assignable: narrower parameter types, `Response` is a superset of the
- * return shape. This lets `resolveFetch` avoid any casting.
- */
+/** Minimal structural `fetch` type for raw HTTP against the Scaleway APIs. Shaped so native `fetch` is directly assignable and `resolveFetch` needs no cast. */
 export type FetchLike = (
   url: string,
   init?: { method?: string; headers?: Record<string, string>; body?: string },

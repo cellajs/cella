@@ -21,7 +21,7 @@ export default defineConfig({
 
   // File overrides
   overrides: {
-    // Paths the fork fully owns, never synced (existing or new)
+    // Paths the fork fully owns: never synced, whether existing or new
     // NOTE: package.jsons, lockfiles, this file are always ignored
     // NOTE: Modules with `app` owner are also ignored, including their public static asset folder
     ignored: [

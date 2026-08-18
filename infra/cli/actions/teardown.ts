@@ -23,20 +23,9 @@ import {
 } from '../shared';
 
 /**
- * First-class environment teardown. Owns the whole ritual that would otherwise
- * be hand-reproduced (state-backend login, AWS_*↔SCW_* mapping, stack
- * selection, `destroy --refresh`), then offers IAM principal cleanup.
- *
- * Credentials: two halves with different requirements, named explicitly.
- *  - infra destroy: the ADMIN key covers the state backend, but destroying
- *    compute/LB/VPC needs write access the admin deliberately lacks, so the
- *    destroy phase asks for a bootstrap-grade key (IAMManager not required,
- *    but full project write).
- *  - IAM cleanup: needs IAMManager; same bootstrap key when it has it.
- *
- * Production stacks additionally require typing `<slug>-production` and carry
- * `protect: true` on the frontend/private buckets. Pulumi refuses those
- * unless protection is lifted in code first, which is deliberate.
+ * Destroy an environment: state-backend login, AWS_ and SCW_ env mapping, stack selection, `destroy --refresh`, then optional IAM principal cleanup.
+ * The destroy phase needs full project write (a bootstrap-grade key), which the admin key lacks; the IAM cleanup additionally needs IAMManager.
+ * Production stacks require typing `<slug>-production`, and their frontend/private buckets carry `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
  */
 export async function runTeardown(context: InfraContext): Promise<void> {
   const { appConfig } = context;
@@ -51,7 +40,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   );
   if (mode === 'production') {
     console.warn(
-      `${warningMark} ${pc.bold('This is PRODUCTION.')} Protected resources (frontend/private buckets, DB) will refuse destruction unless 'protect' is lifted in code — that refusal is deliberate.`,
+      `${warningMark} ${pc.bold('This is PRODUCTION.')} Protected resources (frontend/private buckets, DB) will refuse destruction unless 'protect' is lifted in code: that refusal is deliberate.`,
     );
   }
 
@@ -61,9 +50,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     return;
   }
 
-  // Named credential pair for the destroy phase. SCW_TEARDOWN_* env vars allow
-  // unattended runs; interactive runs are told exactly which key quality is
-  // needed, with no guessing among SCW_*/AWS_* variables.
+  // Named credential pair for the destroy phase: SCW_TEARDOWN_* allows unattended runs, and interactive runs are told which key quality is needed.
   console.info(
     `\n${pc.dim('Credentials: a key with FULL PROJECT WRITE (a bootstrap key works; the admin key cannot destroy compute/VPC/DB).')}\n` +
       `${pc.dim(`Reads env ${pc.bold('SCW_TEARDOWN_ACCESS_KEY')}/${pc.bold('SCW_TEARDOWN_SECRET_KEY')} first, then prompts.`)}`,
@@ -98,9 +85,8 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     operation: 'teardown',
   });
 
-  // --refresh first so the destroy plan matches live state (a stale local view
-  // of generations/LB must not orphan real resources). The lock releases in a
-  // finally so a throw between acquire and release cannot strand it until TTL.
+  // --refresh first so the destroy plan matches live state; a stale local view of generations/LB would orphan real resources.
+  // The lock releases in a finally so a throw between acquire and release cannot strand it until the TTL.
   let destroy: ReturnType<typeof spawnSync>;
   try {
     console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));
@@ -121,8 +107,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
   console.info(`${checkMark} Stack resources destroyed.`);
 
-  // Remove the stack from the backend once empty (state history remains in the
-  // versioned state bucket).
+  // Remove the stack from the backend once empty; state history remains in the versioned state bucket.
   const rmStack = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', targetStack], {
     cwd: infraDir,
     env,
@@ -130,9 +115,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   });
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
-  // IAM principal cleanup: group members + the org-wide bootstrap DNS residue.
-  // Enumerated via the per-mode group (REQ-1), never by name-guessing alone.
-  // Requires IAMManager + IAMReadOnly on the same key.
+  // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing. Needs IAMManager + IAMReadOnly on the same key.
   if (!organizationId) return;
   const cleanupIam = await confirm({
     message: `Also delete the IAM principals (group ${confirmToken}, its applications, keys, and policies)? Requires IAMManager on this key.`,

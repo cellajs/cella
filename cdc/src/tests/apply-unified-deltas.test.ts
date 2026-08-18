@@ -5,7 +5,6 @@ import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { EntityTableMeta } from '../types';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 
-// Track all DB operations for assertions
 interface DbOp {
   type: 'upsert' | 'execute';
   sql?: string;
@@ -14,10 +13,8 @@ interface DbOp {
 const dbOps: DbOp[] = [];
 let upsertReturnValue: Record<string, number> = {};
 
-// Mock cdcDb before importing the module under test
 vi.mock('../lib/db', () => {
   const mockExecute = vi.fn(async (query: any) => {
-    // Detect query type from the SQL template chunks
     const chunks = query?.queryChunks ?? [];
     const sqlParts = chunks.map((c: any) => c?.value?.[0] ?? String(c ?? '')).join('');
     const isCounterUpsert = sqlParts.includes('channel_counters');
@@ -38,7 +35,6 @@ vi.mock('../lib/db', () => {
   };
 });
 
-// Import after mocks are set up
 const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
 const { frontierNodeKeys } = await import('../utils/compute-unified-deltas');
 
@@ -88,7 +84,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Events should have sequential sequence values: 3, 4, 5
+    // Sequential seq values: 3, 4, 5.
     expect(events[0].result.rowData.seq).toBe(3);
     expect(events[1].result.rowData.seq).toBe(4);
     expect(events[2].result.rowData.seq).toBe(5);
@@ -109,18 +105,17 @@ describe('applyBatchUnifiedDeltas', () => {
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
 
-    // Upserts: phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 (counts + frontier)
+    // Phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 counts + frontier.
     const upserts = dbOps.filter((op) => op.type === 'upsert');
     expect(upserts).toHaveLength(3);
-    // Stamp-back: one bulk UPDATE for the tasks table
+    // One bulk UPDATE per table.
     const executes = dbOps.filter((op) => op.type === 'execute');
     expect(executes).toHaveLength(1);
   });
 
-  it('every stamped event bumps frontiers — tombstones of published rows included', async () => {
-    // The publication row filter keeps drafts out of the stream entirely (the entrance
-    // guard in parse-message drops strays before compute/apply; see parse-message tests),
-    // so apply has no draft branch: whatever is stamped is delta-fetchable and bumps.
+  it('every stamped event bumps frontiers: tombstones of published rows included', async () => {
+    // Drafts never reach apply: the publication row filter and the parse-message guard remove them,
+    // so whatever is stamped here is delta-fetchable and bumps the frontier.
     upsertReturnValue = { sequence: 2 };
 
     const tombstoneEvent = (id: string) => {
@@ -176,11 +171,9 @@ describe('sumInto', () => {
 
   it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
     const target = { 'e:li:h:task': 1_751_000_000_000, 'e:lu:h:task': 1_751_000_000_000 };
-    // Older stamps lose
     sumInto(target, { 'e:li:h:task': 1_750_000_000_000, 'e:lu:h:task': 1_750_000_000_000 });
     expect(target['e:li:h:task']).toBe(1_751_000_000_000);
     expect(target['e:lu:h:task']).toBe(1_751_000_000_000);
-    // Newer stamps win
     sumInto(target, { 'e:li:h:task': 1_752_000_000_000, 'e:lu:h:task': 1_753_000_000_000 });
     expect(target['e:li:h:task']).toBe(1_752_000_000_000);
     expect(target['e:lu:h:task']).toBe(1_753_000_000_000);

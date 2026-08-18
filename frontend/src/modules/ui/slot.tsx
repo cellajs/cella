@@ -28,9 +28,6 @@ function mergeProps(slotProps: Record<string, unknown>, childProps: Record<strin
   return merged;
 }
 
-/**
- * Renders its single child element with the Slot's own props merged in.
- */
 export function Slot({ children, ...slotProps }: HTMLAttributes<HTMLElement> & { children?: ReactNode }) {
   if (isValidElement(children)) {
     return cloneElement(children, mergeProps(slotProps, children.props as Record<string, unknown>));

@@ -10,8 +10,7 @@ import {
 
 const ORG_ID = 'org-1';
 
-// Deep synthetic hierarchy (org > course > courseSection > project): `project` read grants
-// declared at three ancestor levels, with and without `update` (the draft-visibility split).
+// Deep synthetic hierarchy: `project` read grants at three ancestor levels, with and without `update` (the draft-visibility split).
 const policies: PolicyMatrix = configurePolicyMatrix(
   deepEntityTypes as unknown as readonly EntityType[],
   ({ entityType, channels }) => {

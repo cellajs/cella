@@ -3,12 +3,8 @@ import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import type { DocContext } from '../constants';
 import { db, withRlsTx } from './db';
 
-// Access split: per-document reads/writes run inside `withRlsTx` (tenant + user scoped),
-// while the crash-orphan sweep queries run system-scope on `db` directly (cross-tenant).
+// Per-document reads and writes run inside `withRlsTx` (tenant + user scoped); the crash-orphan sweep runs system-scope on `db` directly.
 
-/**
- * Returns raw Y.Doc binary state from PG, or null if no document exists yet.
- */
 export async function loadState({ entityType, entityId, tenantId, userId }: DocContext): Promise<Uint8Array | null> {
   return withRlsTx(tenantId, userId, async (tx) => {
     const rows = await tx
@@ -20,11 +16,7 @@ export async function loadState({ entityType, entityId, tenantId, userId }: DocC
   });
 }
 
-/**
- * Overwrites the stored Y.Doc state. Called on debounced save from the relay.
- * `lastEditedBy` identifies the user supplied when the startup sweep persists a
- * crash-orphaned session into the durable entity record.
- */
+/** Overwrites the stored Y.Doc state on debounced save; `lastEditedBy` attributes a crash-orphaned session persisted by the startup sweep. */
 export async function saveState(
   { entityType, entityId, tenantId, userId }: DocContext,
   state: Uint8Array,
@@ -38,12 +30,7 @@ export async function saveState(
   });
 }
 
-/**
- * Inserts a document row on first connection, optionally with a server-side seed
- * as its initial state. No-ops if it already exists: concurrent connectors must
- * re-load afterwards and use the canonical row (two independently generated seeds
- * would duplicate content when merged).
- */
+/** Inserts the row on first connection with an optional server-side seed; no-ops if it exists, so concurrent connectors must re-load and use the canonical row. */
 export async function createDoc(
   { entityType, entityId, tenantId, userId, organizationId }: DocContext,
   initialState?: Uint8Array | null,
@@ -63,9 +50,7 @@ export async function createDoc(
   });
 }
 
-/**
- * Removes the document row after the cleanup grace period (all clients disconnected).
- */
+/** Removes the document row after the cleanup grace period following the last disconnect. */
 export async function deleteState({ entityType, entityId, tenantId, userId }: DocContext): Promise<void> {
   await withRlsTx(tenantId, userId, async (tx) => {
     await tx
@@ -83,12 +68,7 @@ export interface StaleDocRow {
   lastEditedBy: string | null;
 }
 
-/**
- * List document rows untouched for longer than the cleanup grace: orphans left by a
- * relay crash between last-disconnect and cleanup. Cross-tenant by design, so this runs
- * system-scope on `db` directly (no tenant context). If the DB role enforces RLS it returns
- * no rows and the sweep degrades to a no-op, and normal gated cleanup is unaffected.
- */
+/** Rows untouched longer than the cleanup grace: orphans from a relay crash. Cross-tenant by design, so it runs system-scope on `db`; under an RLS-enforcing role it returns no rows. */
 export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
   const rows = await db
     .select({

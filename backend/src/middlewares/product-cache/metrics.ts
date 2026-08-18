@@ -6,10 +6,6 @@ interface CacheMetricsData {
   startedAt: number;
 }
 
-/**
- * Metrics collector for entity cache.
- * Tracks hits, misses, and invalidations.
- */
 class CacheMetrics {
   private data: CacheMetricsData = {
     hits: 0,
@@ -19,17 +15,14 @@ class CacheMetrics {
     startedAt: Date.now(),
   };
 
-  /** Record a cache hit */
   recordHit(): void {
     this.data.hits++;
   }
 
-  /** Record a cache miss */
   recordMiss(): void {
     this.data.misses++;
   }
 
-  /** Record an invalidation */
   recordInvalidation(count = 1): void {
     this.data.invalidations += count;
   }
@@ -46,7 +39,6 @@ class CacheMetrics {
     return (this.data.hits / total) * 100;
   }
 
-  /** Get total requests (hits + misses) */
   get totalRequests(): number {
     return this.data.hits + this.data.misses;
   }
@@ -56,7 +48,6 @@ class CacheMetrics {
     return Math.floor((Date.now() - this.data.startedAt) / 1000);
   }
 
-  /** Get all metrics as snapshot */
   getStats(): {
     hits: number;
     misses: number;
@@ -77,7 +68,6 @@ class CacheMetrics {
     };
   }
 
-  /** Reset all metrics */
   reset(): void {
     this.data = {
       hits: 0,
@@ -89,15 +79,12 @@ class CacheMetrics {
   }
 }
 
-/** Singleton metrics instance for entity cache */
 export const productCacheMetrics = new CacheMetrics();
 
-/** Get cache metrics */
 export function getCacheMetrics(): ReturnType<CacheMetrics['getStats']> {
   return productCacheMetrics.getStats();
 }
 
-/** Reset cache metrics */
 export function resetCacheMetrics(): void {
   productCacheMetrics.reset();
 }

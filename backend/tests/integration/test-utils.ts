@@ -18,20 +18,13 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 
-/**
- * Run database migrations for integration tests.
- */
 export async function migrateDatabase() {
   const migrationsFolder = path.resolve(process.cwd(), 'drizzle');
   await migrate(db as PgDB, { migrationsFolder });
 }
 
-/**
- * Clear test data from database tables.
- * Preserves schema but removes all rows.
- */
+/** Delete order respects the foreign key constraints. */
 export async function clearDatabase() {
-  // Delete in order to respect foreign key constraints
   await db.delete(activitiesTable);
   await db.delete(sessionsTable);
   await db.delete(tokensTable);
@@ -79,10 +72,7 @@ export async function waitFor(
   throw new Error(`Timeout waiting for: ${label}`);
 }
 
-/**
- * Host the backend's real `/internal/cdc` WebSocket endpoint on an ephemeral
- * local port, standing in for the deployed backend the CDC worker would dial.
- */
+/** Host the real `/internal/cdc` endpoint on an ephemeral local port for the CDC worker to dial. */
 async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promise<void> }> {
   const server = createServer((_req, res) => {
     res.writeHead(404);
@@ -106,12 +96,7 @@ async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promi
   };
 }
 
-/**
- * Start the CDC worker pipeline in-process so backend full-flow tests do not
- * depend on an externally running worker. Hosts the real `/internal/cdc`
- * endpoint locally, then delegates pipeline bring-up/teardown to the shared CDC
- * harness (the same one the CDC package tests use).
- */
+/** Run the CDC worker pipeline in-process, so full-flow tests need no external worker. */
 export async function startInProcessCdcWorker(): Promise<CdcTestHarness> {
   process.env.DATABASE_CDC_URL = testDatabaseUrl;
   process.env.CDC_SECRET = process.env.CDC_SECRET ?? 'test-cdc-secret-min16chars';
@@ -132,15 +117,11 @@ export async function startInProcessCdcWorker(): Promise<CdcTestHarness> {
   };
 }
 
-/**
- * Ensure CDC publication and replication slot exist.
- * In CI, these are created by the migration. This is a safety check.
- */
+/** The migration creates the publication and slot in CI; this only verifies they exist. */
 export async function ensureCdcSetup() {
   const CDC_PUBLICATION_NAME = 'cdc_pub';
   const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
-  // Check if publication exists
   const pubResult = await db.execute<{ pubname: string }>(
     sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
   );
@@ -149,7 +130,7 @@ export async function ensureCdcSetup() {
     throw new Error(`CDC publication '${CDC_PUBLICATION_NAME}' not found. Run migrations first.`);
   }
 
-  // Check if replication slot exists (CDC worker creates this)
+  // The CDC worker creates the replication slot.
   const slotResult = await db.execute<{ slot_name: string }>(
     sql`SELECT slot_name FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
   );

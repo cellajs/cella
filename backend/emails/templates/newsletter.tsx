@@ -12,9 +12,6 @@ interface NewsletterStatic {
 
 type NewsletterRecipient = EmailRecipient & { unsubscribeLink: string; orgName: string };
 
-/**
- * Email template for newsletters sent to users in one or more organizations.
- */
 export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterRecipient>()({
   translate(lng, { content, subject, testEmail }) {
     return {

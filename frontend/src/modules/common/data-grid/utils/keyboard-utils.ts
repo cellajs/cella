@@ -48,13 +48,11 @@ const nonInputKeys = new Set([
   'F12',
 ]);
 
-/** Checks whether the platform control modifier is held. */
 export function isCtrlKeyHeldDown(e: React.KeyboardEvent): boolean {
   return (e.ctrlKey || e.metaKey) && e.key !== 'Control';
 }
 
-// event.keyCode remains stable when event.key differs by keyboard input language.
-// event.nativeEvent.code cannot be used either as it would break copy/paste for the DVORAK layout
+// event.keyCode stays stable across keyboard languages, and event.nativeEvent.code would break copy/paste on DVORAK.
 const vKey = 86;
 
 /** Checks whether a key event should start the default cell editor. */
@@ -75,7 +73,6 @@ export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivE
   return false;
 }
 
-/** Returns the left right key. */
 export function getLeftRightKey() {
   return {
     leftKey: 'ArrowLeft',

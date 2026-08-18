@@ -9,17 +9,17 @@ type _ConfigSatisfiesRequired = Config extends RequiredConfig ? true : never;
 const _configValid: _ConfigSatisfiesRequired = true;
 void _configValid;
 
-// Entity arrays and id-column keys are derived from the hierarchy in config.default.ts, so
-// hierarchy/config agreement no longer needs bidirectional checks here.
+// Entity arrays and id-column keys derive from the hierarchy in config.default.ts, so no
+// bidirectional check is needed.
 
-// Unseen tracking requires unconditional channel reads for tracked types.
-// Conditional visibility must keep endpoint-based counting.
+// Unseen tracking needs unconditional channel reads for tracked types; conditional visibility
+// keeps endpoint-based counting.
 for (const entityType of appConfig.seenTrackedProductTypes) {
   for (const policy of getEntityPolicies(entityType, policyMatrix)) {
     if (isRowCondition(policy.permissions.read)) {
       throw new Error(
         `[Config] Seen-tracked entity type "${entityType}" has a row-conditional read grant ` +
-          `(${policy.channelType}.${policy.role}: read '${policy.permissions.read}') — unseen ` +
+          `(${policy.channelType}.${policy.role}: read '${policy.permissions.read}'): unseen ` +
           'badge counting requires unconditional channel read for tracked types.',
       );
     }

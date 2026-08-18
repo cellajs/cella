@@ -8,11 +8,8 @@ import type { InfraContext } from '../shared';
 type PromptOption<T extends string> = { name: string; value: T; description?: string };
 
 /**
- * `select` that also resolves the {@link BACK} sentinel when the operator presses
- * Esc, so selection prompts can return to the previous menu without forcing a
- * choice. Inquirer's select has no native Esc handling, so we abort it via an
- * AbortController driven by a keypress listener on stdin (Inquirer's own readline
- * emits the events while the prompt is active).
+ * `select` that also resolves the {@link BACK} sentinel on Esc, so a prompt can return to the previous menu without forcing a choice.
+ * Inquirer's select has no native Esc handling, so it is aborted via an AbortController driven by a stdin keypress listener.
  */
 function selectWithEscape<T extends string>(options: {
   message: string;
@@ -38,22 +35,11 @@ function selectWithEscape<T extends string>(options: {
     });
 }
 
-/**
- * Runs the secrets management mode for Scaleway infrastructure.
- *
- * Uses the project id resolved at CLI startup and a Scaleway secret key (from
- * env or prompt), then manages runtime secrets for the specified environment.
- *
- * @param context - Infra CLI context containing stack configuration
- * @returns Promise that resolves when secrets management is complete
- */
+/** Manage this environment's runtime secrets, using the project id resolved at CLI startup and a Scaleway secret key from env or prompt. */
 export async function runSecrets(context: InfraContext): Promise<void> {
-  // The project id is resolved once at CLI startup (required), so reuse it.
   const projectId = context.projectId;
 
-  // Managing runtime secrets reads/writes Secret Manager, which the operator or
-  // CI key already covers (no bootstrap key needed). Reuse one from the env when
-  // present; only prompt when none is loaded, and say how to skip the prompt.
+  // Secret Manager access is covered by the operator or CI key, so no bootstrap key is needed; prompt only when neither is in the env.
   let secretKey = process.env.SCW_SECRET_KEY?.trim() || process.env.SCW_BOOTSTRAP_SECRET_KEY?.trim() || '';
   if (!secretKey) {
     console.info(

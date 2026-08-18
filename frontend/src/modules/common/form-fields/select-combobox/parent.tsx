@@ -15,9 +15,6 @@ type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
   onSelect?: (item: ChannelBase) => void;
 };
 
-/**
- * Form field for selecting a parent entity.
- */
 export function SelectParentFormField<TFieldValues extends FieldValues>({
   parentType,
   control,
@@ -30,7 +27,6 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
 }: SelectParentProps<TFieldValues>) {
   const user = useCurrentUser();
 
-  // Fetch entities using proper query
   const queryFactory = channelListQueriesByType[parentType];
   // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
   const query = useInfiniteQuery((queryFactory as any)({ userId: user.id }));

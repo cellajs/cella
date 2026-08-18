@@ -7,7 +7,6 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 import '~/modules/common/uploader/uppy-styles';
 
-/** Renders the uploader component. */
 export function Uploader() {
   const mode = useUIStore((state) => state.mode);
   const remove = useUploader((state) => state.remove);
@@ -16,7 +15,6 @@ export function Uploader() {
 
   if (!uppy || !uploaderData) return null;
 
-  // Catch and display errors
   if (error) return <div className="py-3 text-red-600">{error}</div>;
 
   return (
@@ -36,7 +34,7 @@ export function Uploader() {
           </DialogDescription>
         </DialogHeader>
 
-        {/* For accessibility */}
+        {/* Guarantee an accessible name without a visible title */}
         {!uploaderData.title && <DialogTitle className="hidden" />}
         <Dashboard
           uppy={uppy}

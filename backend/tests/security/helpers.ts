@@ -13,20 +13,15 @@ export interface TestTenant {
 
 type Call = Awaited<ReturnType<typeof createAppClient>>;
 
-/**
- * Creates a fully isolated tenant with organization, user, membership, and active session.
- * Each call produces a unique tenant for side-by-side cross-tenant tests.
- */
+/** Each call produces a unique tenant, for side-by-side cross-tenant tests. */
 export async function createTestTenant(_call: Call, label: string): Promise<TestTenant> {
   const email = `${label}-user@security-test.com`;
 
-  // Create tenant + organization via DB (superuser, bypasses RLS)
+  // Seeded via the DB as superuser, which bypasses RLS.
   const organization = await createTestOrganization();
 
-  // Create user with membership in that organization
   const user = await createOrganizationAdminUser(email, organization.id, 'admin', true, organization.tenantId);
 
-  // Create session directly in DB
   const sessionCookie = await createTestSession(user);
 
   return {
@@ -37,19 +32,11 @@ export async function createTestTenant(_call: Call, label: string): Promise<Test
   };
 }
 
-/**
- * Creates a second, independent organization for cross-org tests. The one-organization-per-tenant
- * constraint requires separate tenants, so this provisions a fresh tenant and org. The returned
- * organization carries its own `tenantId`, distinct from any existing tenant.
- */
+/** One organization per tenant, so a cross-org test needs a fresh tenant with its own org. */
 export async function createSecondOrg() {
   return createTestOrganization();
 }
 
-/**
- * Creates a user with membership in a specific organization and signs them in.
- * Returns user info and session cookie.
- */
 export async function createOrgUser(
   _call: Call,
   tenantId: string,
@@ -66,9 +53,7 @@ export async function createOrgUser(
   return { id: user.id, email, sessionCookie };
 }
 
-/**
- * Cleanup all security test data. Truncates tenant-scoped tables + auth tables.
- */
+/** Truncates tenant-scoped and auth tables. */
 export async function clearSecurityTestData() {
   await db.execute(sql`TRUNCATE TABLE
     sessions, tokens, passkeys, oauth_accounts, emails,

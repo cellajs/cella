@@ -11,16 +11,11 @@ interface InfoRow {
   value: string;
 }
 
-/**
- * Displays API overview information in a table format.
- * Shows title, version, and description from the OpenAPI info.
- */
 export function OverviewTable() {
   const { t } = useTranslation();
 
   const { data: info } = useSuspenseQuery(infoQueryOptions);
 
-  // Transform info object into rows for the table
   const rows: InfoRow[] = [
     { key: 'title', label: t('c:title'), value: info.title },
     { key: 'version', label: t('c:version'), value: info.version },

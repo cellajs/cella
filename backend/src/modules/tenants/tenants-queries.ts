@@ -15,7 +15,6 @@ interface FindTenantsPaginatedOpts {
   offset: number;
 }
 
-/** Get paginated tenants with domain counts. */
 export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPaginatedOpts) => {
   const { db } = ctx.var;
   const { filters, sort, order, limit, offset } = opts;
@@ -50,8 +49,7 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
       domainsCount: sql<number>`coalesce(${domainsCountSq.count}, 0)`.mapWith(Number),
       createdAt: tenantsTable.createdAt,
       updatedAt: tenantsTable.updatedAt,
-      // 1 tenant = 1 organization, so a plain left join yields at most one org row (null if the
-      // tenant is an orphan: created but not yet linked to an org).
+      // 1 tenant = 1 organization, so this left join yields at most one org row (null for an orphan tenant).
       organizationId: organizationsTable.id,
       organizationName: organizationsTable.name,
       organizationSlug: organizationsTable.slug,
@@ -95,7 +93,6 @@ interface FindTenantByIdOpts {
   targetTenantId: string;
 }
 
-/** Find a tenant by ID. */
 export const findTenantById = async (ctx: DbContext, { targetTenantId }: FindTenantByIdOpts) => {
   const { db } = ctx.var;
   const [tenant] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, targetTenantId)).limit(1);
@@ -107,7 +104,6 @@ interface UpdateTenantOpts {
   values: Partial<typeof tenantsTable.$inferInsert>;
 }
 
-/** Update a tenant by ID and return the updated row. */
 export const updateTenant = async (ctx: DbContext, { targetTenantId, values }: UpdateTenantOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(tenantsTable).set(values).where(eq(tenantsTable.id, targetTenantId)).returning();
@@ -118,7 +114,6 @@ interface CountDomainsByTenantOpts {
   targetTenantId: string;
 }
 
-/** Count domains for a tenant. */
 export const countDomainsByTenant = async (ctx: DbContext, { targetTenantId }: CountDomainsByTenantOpts) => {
   const { db } = ctx.var;
   const [{ domainsCount }] = await db

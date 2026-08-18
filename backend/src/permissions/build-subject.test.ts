@@ -3,11 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AppError } from '#/core/error';
 import { buildSubject, buildSubjectFromEntity } from '#/permissions/build-subject';
 
-/**
- * Engine behavior is covered by the shared twin (shared/src/permissions/build-subject.test.ts).
- * This suite proves only the backend delta: MissingScopeError becomes AppError(400,
- * 'missing_scope') with the scope metadata preserved.
- */
+/** Backend delta only (the shared twin covers engine behavior): MissingScopeError becomes AppError(400, 'missing_scope'). */
 describe('buildSubject (backend error translation)', () => {
   const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
   if (!product) throw new Error('No product entity types with ancestors found');

@@ -18,19 +18,14 @@ interface HandleCreateUserProps {
   emailVerified?: boolean;
 }
 
-/**
- * Creates a user (also the OAuth sign-up path): inserts the user, unsubscribe token, and email row,
- * links any pending invitation tokens to their inactive memberships. Throws 409 if the email exists.
- */
+/** Creates a user (also the OAuth sign-up path): user, unsubscribe token and email row, linking pending invitation tokens to their inactive memberships. Throws 409 if the email exists. */
 export const handleCreateUser = async (
   ctx: DbContext,
   { newUser, emailVerified }: HandleCreateUserProps,
 ): Promise<UserModel> => {
   const { db } = ctx.var;
-  // Check if slug is available
   const slugAvailable = await checkSlugAvailable(ctx, newUser.slug, 'user');
 
-  // Insert new user into database
   try {
     const normalizedEmail = newUser.email.toLowerCase().trim();
 
@@ -49,7 +44,6 @@ export const handleCreateUser = async (
       .insert(unsubscribeTokensTable)
       .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
-    // If user has invitation tokens, find the inactive membership from it
     const existingTokens = await db
       .select()
       .from(tokensTable)
@@ -63,7 +57,6 @@ export const handleCreateUser = async (
       )
       .limit(1);
 
-    // If there are existing invitation tokens, set the user ID on the associated inactive memberships
     if (existingTokens.length > 0) {
       await handleSetUserOnInactiveMemberships(ctx, {
         userId: user.id,
@@ -84,7 +77,6 @@ export const handleCreateUser = async (
 
     return user;
   } catch (error) {
-    // If user with this email already exists, return an error
     throw new AppError(409, 'email_exists', 'warn');
   }
 };
@@ -100,6 +92,5 @@ export const handleSetUserOnInactiveMemberships = async (
     .set({ userId })
     .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
 
-  // Delete associated tokens
   await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };

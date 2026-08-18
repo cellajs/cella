@@ -24,10 +24,7 @@ interface ResponsiveSelectProps {
   align?: 'start' | 'center' | 'end';
 }
 
-/**
- * A select component that renders a native Select dropdown on desktop
- * and a Drawer with selectable options on mobile for better touch UX.
- */
+/** Select that renders a native dropdown on desktop and a Drawer of options on mobile. */
 export function ResponsiveSelect({
   options,
   value,

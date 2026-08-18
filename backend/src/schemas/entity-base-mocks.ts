@@ -1,19 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { mockNanoid, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
 
-/**
- * Core fields shared by all entities (id + timestamps).
- * Must be called within withFakerSeed() for deterministic output.
- */
+/** Must be called within withFakerSeed() for deterministic output. */
 const mockEntityCore = () => ({
   id: mockUuid(),
   ...mockTimestamps(),
 });
 
-/**
- * Generates a mock ChannelBase response.
- * Channel entities have memberships (e.g., organization).
- */
 export const mockChannelBase = (key = 'context-entity:default') =>
   withFakerSeed(key, () => {
     const name = faker.company.name();
@@ -28,10 +21,6 @@ export const mockChannelBase = (key = 'context-entity:default') =>
     };
   });
 
-/**
- * Generates a mock ProductBase response.
- * Product entities are content-related with createdBy/updatedBy.
- */
 export const mockProductBase = (key = 'product-entity:default') =>
   withFakerSeed(key, () => ({
     ...mockEntityCore(),
@@ -43,10 +32,7 @@ export const mockProductBase = (key = 'product-entity:default') =>
     entityType: 'attachment' as const,
   }));
 
-/**
- * Core of a minimal entity reference mock; only the name/slug generation differs per entity type.
- * Must be called within withFakerSeed() for deterministic output.
- */
+/** Only the name and slug generation differs per entity type. Must be called within withFakerSeed(). */
 const mockMinimalBase = <T extends string>(
   entityType: T,
   naming: () => { name: string; slug: string },
@@ -58,10 +44,6 @@ const mockMinimalBase = <T extends string>(
   entityType,
 });
 
-/**
- * Generates a mock UserMinimalBase response.
- * Minimal user data for references (e.g. createdBy, updatedBy).
- */
 export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =>
   withFakerSeed(key, () =>
     mockMinimalBase(
@@ -78,10 +60,6 @@ export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =
     ),
   );
 
-/**
- * Generates a mock OrganizationMinimalBase response.
- * Minimal organization data for references (e.g. the org a tenant holds).
- */
 export const mockOrganizationMinimalBase = (key = 'organization-minimal:default', id?: string) =>
   withFakerSeed(key, () =>
     mockMinimalBase(
@@ -106,10 +84,6 @@ export const mockAuditUsers = (row: { createdBy: string | null; updatedBy: strin
   return { createdBy, updatedBy };
 };
 
-/**
- * Generates a mock UserBase response.
- * Users are a special entity with email and slug.
- */
 export const mockUserBase = (key = 'user-base:default') =>
   withFakerSeed(key, () => {
     const firstName = faker.person.firstName();

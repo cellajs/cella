@@ -3,12 +3,7 @@ import { createAttachmentsMutationFn } from '~/modules/attachment/query-mutation
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Persist parsed BlockNote attachments under their stable client IDs through the shared mutation fn.
- * The confirmed rows are spliced into the canonical home list, mirroring the create mutation's
- * onSuccess: the own-create realtime echo only patches rows in place, so without this splice the
- * attachment stays invisible to list consumers until the next refetch.
- */
+/** Persists BlockNote attachments and splices the confirmed rows into the home list: the own-create realtime echo only patches rows in place. */
 export async function persistAttachments(
   attachments: Attachment[],
   { tenantId, organizationId }: { tenantId: string; organizationId: string },

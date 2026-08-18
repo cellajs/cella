@@ -48,7 +48,7 @@ export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAp
     // Engine folder: outside the VM secret condition, so a VM must never be
     // able to read the admin key.
     path: engineSecretPath(opts.slug, opts.mode),
-    description: 'Admin IAM key pair (bucket access + infra reads) — retrieve with a bootstrap key when needed',
+    description: 'Admin IAM key pair (bucket access + infra reads), retrieve with a bootstrap key when needed',
   });
   await client.putSecretValue({
     secretId: container.id,

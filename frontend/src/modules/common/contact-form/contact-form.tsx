@@ -19,7 +19,6 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const ContactFormMap = lazyNamed(() => import('~/modules/common/contact-form/contact-form-map'), 'ContactFormMap');
 
-/** Main contact form component */
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const { user } = useUserStore();

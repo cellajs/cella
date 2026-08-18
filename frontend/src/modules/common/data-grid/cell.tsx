@@ -35,9 +35,7 @@ function Cell<R, SR>({
   ...props
 }: CellRendererProps<R, SR>) {
   const roving = useRovingTabIndex(isCellSelected);
-  // When cell selection is disabled, the gridcell wrapper is not a tab stop and any
-  // interactive children stay reachable via natural DOM tab order. Otherwise use the
-  // standard roving-tabindex pattern.
+  // Without cell selection the gridcell is not a tab stop and interactive children keep their DOM tab order.
   const tabIndex = isCellSelectionEnabled ? roving.tabIndex : -1;
   const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
   const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
@@ -45,9 +43,7 @@ function Cell<R, SR>({
   const { cellClass } = column;
 
   const isEditable = isCellEditableUtil(column, row);
-  // Explicit cursor so the hover affordance matches the editor: I-beam for free-text,
-  // pointer for picker editors (select/popover/drawer). Without it, editable cells
-  // inherit the browser's text I-beam from selectable content, which misleads for non-text editors.
+  // Explicit cursor so the hover affordance matches the editor: I-beam for free text, pointer for pickers.
   const editorCursor = isEditable
     ? column.editorOptions?.editorType === 'select'
       ? 'cursor-pointer'
@@ -63,9 +59,7 @@ function Cell<R, SR>({
       [cellRangeLeftClassname]: isInSelectedRange === true && (rangeBoundary?.isLeft ?? false),
       [cellRangeRightClassname]: isInSelectedRange === true && (rangeBoundary?.isRight ?? false),
     },
-    // When cell selection is disabled, render the focus affordance via :focus-visible on
-    // any interactive child (Button cell variant, links). Using has-[:focus-visible]
-    // This explicit focus state avoids showing the outline on mouse clicks.
+    // Without cell selection the focus outline comes from :focus-visible on an interactive child, so mouse clicks draw none.
     !isCellSelectionEnabled &&
       'has-focus-visible:outline-2 has-focus-visible:outline-primary has-focus-visible:outline-solid has-focus-visible:-outline-offset-2',
     editorCursor,
@@ -73,7 +67,6 @@ function Cell<R, SR>({
     className,
   );
 
-  // Non-focusable columns get tabIndex -1
   const effectiveTabIndex = column.focusable === false ? -1 : tabIndex;
 
   function selectCellWrapper(enableEditor?: boolean) {
@@ -91,12 +84,10 @@ function Cell<R, SR>({
   }
 
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
-    // Focus synchronously without scrolling so the cell's scroll margin cannot jump the page.
-    // Keep the mousedown default: cancelling it would also suppress row drag events.
+    // Focus without scrolling so the cell's scroll margin cannot jump the page; the mousedown default must stay for row drag.
     event.currentTarget.focus({ preventScroll: true });
     onMouseDown?.(event);
     if (!handleMouseEvent(event, onCellMouseDown)) {
-      // select cell if the event is not prevented
       selectCell({ rowIdx, idx: column.idx }, { extendSelection: event.shiftKey });
     }
   }
@@ -109,7 +100,6 @@ function Cell<R, SR>({
   function handleDoubleClick(event: MouseEvent<HTMLDivElement>) {
     onDoubleClick?.(event);
     if (!handleMouseEvent(event, onCellDoubleClick)) {
-      // go into edit mode if the event is not prevented
       selectCellWrapper(true);
     }
   }
@@ -180,10 +170,7 @@ interface MergedCellContentProps<R, SR> {
   onRowChange: (column: CalculatedColumn<R, SR>, newRow: R) => void;
 }
 
-/**
- * Render columns merged into a host cell with compact and side styling hooks.
- * Empty slots collapse and suppress placeholder noise.
- */
+/** Empty slots collapse and render no placeholder. */
 function MergedCellContent<R, SR>({
   column,
   slots,
@@ -260,9 +247,7 @@ function renderCellContent<R, SR>(
   return content;
 }
 
-/** Memoizes the data-grid cell renderer. */
 export const CellComponent = memo(Cell) as <R, SR>(props: CellRendererProps<R, SR>) => React.JSX.Element;
-/** Renders the default data-grid cell content. */
 export function defaultRenderCell<R, SR>(key: React.Key, props: CellRendererProps<R, SR>) {
   return <CellComponent key={key} {...props} />;
 }

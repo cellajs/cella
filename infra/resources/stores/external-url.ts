@@ -25,12 +25,7 @@ interface ExternalUrlDefaults {
   description: string;
 }
 
-/**
- * Generic external store: provisions nothing and contributes one
- * operator-supplied URL as a runtime secret. The base for `redisUrl` /
- * `mongoUrl`; apps can call it directly for any other reachable-by-URL
- * backing service.
- */
+/** Generic external store: provisions nothing and contributes one operator-supplied URL as a runtime secret. The base for `redisUrl` and `mongoUrl`. */
 export function externalUrl(defaults: ExternalUrlDefaults, config: ExternalUrlConfig): StoreProvisioner {
   return {
     kind: defaults.kind,

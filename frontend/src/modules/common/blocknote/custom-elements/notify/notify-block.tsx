@@ -15,8 +15,6 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
-/** Defines the custom BlockNote notification block. */
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
     const [open, setOpen] = useState(false);
@@ -24,7 +22,6 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
     const Icon = notifyType.icon;
     return (
       <div className={'notify'} data-notify-type={block.props.type}>
-        {/*Icon which opens a menu to choose the Alert type*/}
         <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger disabled={!editor.isEditable}>
             <div className={'notify-icon-wrapper'} contentEditable={false}>
@@ -54,15 +51,12 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        {/*Rich text field for user to type in*/}
         <div className={'inline-content'} ref={contentRef} />
       </div>
     );
   },
 });
 
-// Slash menu item to insert an Notify block
-// add key on custom slash items it check allowance by it
 const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Notify',
   key: 'notify',
@@ -76,14 +70,10 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   icon: <MessageCircleIcon />,
 });
 
-// Side menu item to insert Notify block
-/** Inserts a notification block from the editor side menu. */
 export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Notify',
   type: 'notify',
   icon: MessageCircleIcon as IconType,
 });
 
-// Gets all default slash menu items and `insertNotify` item.
-/** Returns the slash notify slash item. */
 export const getSlashNotifySlashItem = (editor: CustomBlockNoteEditor) => insertSlashNotifyItem(editor);

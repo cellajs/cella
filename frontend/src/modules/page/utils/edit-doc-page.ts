@@ -13,10 +13,7 @@ export interface DocEditOps {
   parentId?: string | null;
 }
 
-/**
- * Persist a page edit via the dev-server endpoint: rewrites frontmatter (and moves the file on a
- * `parentId` change). Resolves on success; on failure shows an error toast and rejects. No-op outside dev.
- */
+/** Persists a page edit through the dev-server endpoint: rewrites frontmatter and moves the file on a `parentId` change. No-op outside dev. */
 export async function editDocPage(slug: string, ops: DocEditOps): Promise<void> {
   if (!canEditDocs) return;
   try {

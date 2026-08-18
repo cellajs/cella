@@ -1,25 +1,15 @@
 import { z } from '@hono/zod-openapi';
 import { productEntityTypeSchema, validIdSchema } from '#/schemas';
 
-/**
- * Request body for batch marking entities as seen.
- * Posted every 1 minute from the client with accumulated seen entity IDs.
- */
+/** Batch of accumulated seen entity IDs, posted by the client every minute. */
 export const seenBatchBodySchema = z.object({
   entityIds: validIdSchema.array().min(1).max(500).describe('Entity IDs the user has viewed since last batch'),
   entityType: productEntityTypeSchema.describe('Entity type for all IDs in this batch'),
 });
 
-/**
- * Response for batch seen POST: returns the number of newly recorded views.
- */
 export const seenBatchResponseSchema = z.object({
   newCount: z.number().int().min(0).describe('Number of entities newly marked as seen (deduped)'),
 });
 
-/**
- * Response for GET /unseen/counts.
- * Shape: { [channelId]: { [productEntityType]: unseenCount } }
- * Entity-agnostic: keys are dynamic IDs and type strings, not hardcoded field names.
- */
+/** Shape: { [channelId]: { [productEntityType]: unseenCount } }; keys are dynamic IDs and type strings. */
 export const unseenCountsResponseSchema = z.record(z.string(), z.record(z.string(), z.number().int().min(0)));

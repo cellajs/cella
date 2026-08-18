@@ -4,10 +4,7 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type RefObject, useEffect, useRef } from 'react';
 
-/**
- * Nearest vertically-scrollable ancestor. Mirrors `getScrollParent` in
- * `useGridDimensions` and `usePanelAutoScroll`'s window-fallback pattern.
- */
+/** Nearest vertically-scrollable ancestor, matching `getScrollParent` in `useGridDimensions`. */
 function findScrollParent(start: HTMLElement | null): HTMLElement | null {
   let parent: HTMLElement | null = start;
   while (parent) {
@@ -21,9 +18,7 @@ function findScrollParent(start: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-/**
- * Auto-scroll the cached vertical ancestor or window during drag; `.rdg` scrolls only horizontally.
- */
+/** Auto-scrolls the cached vertical ancestor or the window during a drag; `.rdg` itself scrolls only horizontally. */
 export function useDragAutoScroll(gridRef: RefObject<HTMLDivElement | null>, enabled: boolean): void {
   const scrollParentRef = useRef<HTMLElement | null>(null);
 

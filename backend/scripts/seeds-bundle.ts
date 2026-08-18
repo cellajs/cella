@@ -35,7 +35,7 @@ const toRun = target ? seedScripts.filter((s) => s.name === target) : seedScript
 
 for (const seed of toRun) {
   if (isProduction && !seed.allowProduction) {
-    console.info(`Skipping seed "${seed.name}" — not allowed in production.`);
+    console.info(`Skipping seed "${seed.name}": not allowed in production.`);
     continue;
   }
 

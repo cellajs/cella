@@ -2,19 +2,11 @@ import { Link } from '@tanstack/react-router';
 import { createContext, type ReactNode, use } from 'react';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 
-/**
- * Provides a handler to swap the legal dialog's subject (terms <-> privacy) in place. Absent on the
- * `/legal` page itself, where cross-links fall back to regular router links.
- */
+/** Null on the `/legal` page itself, where cross-links fall back to router links. */
 const LegalDialogNavContext = createContext<((subject: LegalSubject) => void) | null>(null);
 
-/** Shares legal-dialog navigation state with descendant components. */
 export const LegalDialogNavProvider = LegalDialogNavContext.Provider;
 
-/**
- * Cross-link between legal subjects. Renders a button that swaps the dialog content when
- * inside the legal dialog, or a router link to the legal page otherwise.
- */
 export function LegalCrossLink({ subject, children }: { subject: LegalSubject; children: ReactNode }) {
   const navigateInDialog = use(LegalDialogNavContext);
 

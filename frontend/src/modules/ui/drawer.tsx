@@ -75,7 +75,7 @@ function DrawerContent({
             ref={popupRef}
             data-slot="drawer-content"
             className={cn(
-              // Popup is a flex child of Viewport, not position:fixed. Scrolls via overflow-y-auto.
+              // Popup is a flex child of Viewport and scrolls via overflow-y-auto.
               'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-none',
               'transition-discrete transition-transform duration-300 ease-out will-change-transform',
               'data-swiping:select-none data-swiping:transition-none!',

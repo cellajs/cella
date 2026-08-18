@@ -1,9 +1,6 @@
 import type { JSX } from 'react';
 import { Heading } from './primitives';
 
-/**
- * Email header component to display a centered heading with consistent styling.
- */
 export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }): JSX.Element => (
   <Heading
     style={{
@@ -19,5 +16,4 @@ export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNo
   </Heading>
 );
 
-// Template export
 export const Template = EmailHeader;

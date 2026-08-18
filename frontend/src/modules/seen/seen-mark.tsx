@@ -13,7 +13,6 @@ type SeenMeta = {
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
 
-// Seed IDs persisted by the seen store.
 for (const id of seenStore.getState().flushedIds) markedIds.add(id);
 
 let sharedObserver: IntersectionObserver | null = null;
@@ -72,15 +71,12 @@ interface SeenMarkProps {
   tenantId: string;
   /** Organization ID for the POST API route. */
   organizationId: string;
-  /** Parent channel entity ID for badge grouping (e.g., projectId for tasks). Defaults to organizationId. */
+  /** Parent channel entity ID for badge grouping. Defaults to organizationId. */
   channelId?: string;
   productType: ProductEntityType;
 }
 
-/**
- * Invisible viewport marker that records an entity as seen.
- * Instances share one observer; `channelId` overrides organization-level badge grouping.
- */
+/** Invisible viewport marker that records an entity as seen. All instances share one IntersectionObserver. */
 export function SeenMark({ productId, tenantId, organizationId, channelId, productType }: SeenMarkProps) {
   const resolvedChannelId = channelId ?? organizationId;
   const elementRef = useRef<HTMLSpanElement>(null);
@@ -107,10 +103,8 @@ export function SeenMark({ productId, tenantId, organizationId, channelId, produ
     [productId, tenantId, organizationId, resolvedChannelId, productType],
   );
 
-  // Already seen this session.
   if (markedIds.has(productId)) return null;
 
-  // Invisible overlay that inherits parent cell dimensions for intersection detection
   return (
     <span ref={refCallback} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />
   );

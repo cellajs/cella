@@ -4,10 +4,7 @@ import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, QueryDataActions } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Run a cache mutation (create / update / remove) against all queries
- * that prefix-match `queryKey`.
- */
+/** Runs against every query that prefix-matches `queryKey`. */
 function mutateMatchingQueries(queryKey: QueryKey, items: ItemData[], action: QueryDataActions) {
   for (const [key, data] of queryClient.getQueriesData({ queryKey })) {
     if (isQueryData(data)) changeQueryData(key, items, action);
@@ -30,7 +27,6 @@ export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
   mutateMatchingQueries(queryKey, items, 'remove');
 }
 
-/** Remove detail queries for a set of IDs with a single query-cache scan. */
 export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
   const idsToRemove = new Set(ids);
   if (idsToRemove.size === 0) return;

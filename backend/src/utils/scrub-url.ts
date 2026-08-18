@@ -11,25 +11,17 @@ const SENSITIVE_QUERY_KEYS = new Set([
   'code_verifier',
 ]);
 
-/**
- * Path patterns whose trailing segment is a secret. Group 1 is the safe prefix
- * that is kept; the segment after it is redacted.
- * e.g. `/auth/invoke-token/magic/<TOKEN>` → `/auth/invoke-token/magic/[REDACTED]`.
- */
+/** Group 1 is the safe prefix that is kept; the trailing segment after it is the secret and is redacted. */
 const SECRET_PATH_PATTERNS: RegExp[] = [/(\/auth\/invoke-token\/[^/]+\/)[^/?#]+/];
 
 /** Redact the secret path segment(s) of a bare path. */
 const scrubPathname = (pathname: string): string =>
   SECRET_PATH_PATTERNS.reduce((acc, re) => acc.replace(re, `$1${REDACTED}`), pathname);
 
-/**
- * Redact secret path segments and sensitive query values from a URL or path.
- * Origin (scheme + host) is preserved when present; only the path and query are rewritten.
- */
+/** Origin is preserved when present; only path and query are rewritten. */
 export const scrubUrl = (input: string): string => {
   if (!input) return input;
 
-  // Full URL (has a scheme/host): rewrite pathname + search, keep origin.
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(input)) {
     try {
       const url = new URL(input);
@@ -41,7 +33,6 @@ export const scrubUrl = (input: string): string => {
     }
   }
 
-  // Bare path (optionally with query and/or fragment).
   const hashIndex = input.indexOf('#');
   const fragment = hashIndex === -1 ? '' : input.slice(hashIndex);
   const withoutFragment = hashIndex === -1 ? input : input.slice(0, hashIndex);

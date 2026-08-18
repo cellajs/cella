@@ -24,9 +24,7 @@ type SystemInviteRecipient = EmailRecipient & { name: string; inviteLink: string
 
 const appName = appConfig.name;
 
-/**
- * Email template for new users that receive a system-level invitation.
- */
+/** System-level invitation, for new users. */
 export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemInviteRecipient>()({
   translate(lng, { senderName, senderThumbnailUrl }) {
     return {

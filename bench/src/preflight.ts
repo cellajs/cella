@@ -2,8 +2,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { BACKEND_PORT, BASE_URL, DB_URL } from './config';
 
-// Only services the app actually runs are health-checked: cdc, yjs, and mcp are
-// skipped when disabled in appConfig.services.
+// Only services the app runs are health-checked: cdc, yjs, and mcp are skipped when disabled in appConfig.services.
 export const SERVICES = {
   backend: `${BASE_URL}/health`,
   ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${BACKEND_PORT + 1}/health` } : {}),
@@ -32,11 +31,7 @@ export async function isServiceHealthy(url: string): Promise<boolean> {
   }
 }
 
-/**
- * One-shot readiness probe (Postgres + every enabled service), shared by the bench
- * CLI and the Vitest smoke test. Unlike `assertInfrastructureReady`, it never polls
- * or exits: returns `false` immediately so callers can skip gracefully.
- */
+/** One-shot readiness probe of Postgres and every enabled service: never polls or exits, returning `false` so callers can skip. */
 export async function isInfrastructureReady(): Promise<boolean> {
   if (!(await isPostgresReady())) return false;
   for (const url of Object.values(SERVICES)) {

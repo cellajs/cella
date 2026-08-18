@@ -2,7 +2,6 @@ import * as blocknoteLocales from '@blocknote/core/locales';
 import { en } from '@blocknote/core/locales';
 import { useUserStore } from '~/modules/user/user-store';
 
-/** Returns the dictionary. */
 export const getDictionary = () => {
   const user = useUserStore.getState().user;
   if (!user) return { ...en };

@@ -1,34 +1,16 @@
 import type * as pulumi from '@pulumi/pulumi';
 
-/**
- * A store's provisioned outputs: the string values it exposes, keyed by a
- * store-defined name (e.g. `connectionStringRuntime`, `host`, `caCertificate`).
- * These become stack outputs.
- */
+/** A store's provisioned outputs, keyed by a store-defined name (`connectionStringRuntime`, `host`, `caCertificate`). These become stack outputs. */
 export type StoreOutputs = Record<string, pulumi.Output<string>>;
 
-/**
- * The result of provisioning one store: its output values plus the runtime-secret
- * values it supplies, keyed by runtime-secret id. Binding is returned from
- * `provision` (not a separate method) so a store computes secret values from its
- * own typed locals, never by re-reading the widened {@link StoreOutputs} record.
- */
+/** One store's provisioning result: output values plus the runtime-secret values it supplies, keyed by runtime-secret id. */
 export interface ProvisionedStore {
   outputs: StoreOutputs;
-  /**
-   * Runtime-secret id to value. Keys match the ids in `runtime-secrets.config.ts`
-   * (or, in P3+, the ids this store's `secrets()` declares). The engine merges
-   * these across stores.
-   */
+  /** Runtime-secret id to value. Keys match the ids in `runtime-secrets.config.ts` or in this store's `secrets()`. The engine merges these across stores. */
   secretValues: Record<string, pulumi.Input<string>>;
 }
 
-/**
- * One runtime-secret this store contributes, keyed by its runtime-secret id.
- * Managed stores contribute `valueSource: 'pulumi'` entries whose values arrive
- * via {@link ProvisionedStore.secretValues}; external-URL stores contribute
- * `valueSource: 'operator'` entries the operator fills through the CLI.
- */
+/** One runtime-secret a store contributes: managed stores supply `'pulumi'` values via {@link ProvisionedStore.secretValues}, external-URL stores declare `'operator'` entries filled through the CLI. */
 export interface StoreSecretContribution {
   /** Runtime-secret id (the key other layers address the secret by). */
   id: string;
@@ -46,13 +28,7 @@ export interface StoreSecretContribution {
   services: readonly string[];
 }
 
-/**
- * Engine facilities injected into `provision()`. Stores receive their Pulumi
- * toolchain and engine helpers as call arguments and keep their module scope
- * free of Pulumi imports, so the secret-declaration merge in
- * `lib/runtime-secrets.ts` and standalone CLI tasks can import the store
- * registry without touching the Pulumi resource graph.
- */
+/** Engine facilities injected into `provision()`. Stores take the Pulumi toolchain as arguments and keep module scope free of Pulumi imports, so CLI tasks can import the store registry without building a resource graph. */
 export interface ProvisionContext {
   pulumi: typeof import('@pulumi/pulumi');
   scaleway: typeof import('@pulumiverse/scaleway');
@@ -77,28 +53,15 @@ export interface StoreOps {
 }
 
 /**
- * A store plugin instance: the stateful peer of a service, produced by a
- * provisioner factory such as `postgresManaged(config)`. Scope is managed (a
- * cloud resource this engine creates) or external (an operator-supplied URL);
- * on-VM state is out of scope because it fights immutable VM generations.
- * `provision` runs inside the Pulumi program with side effects, so the engine
- * calls it exactly once per registered store.
+ * A store plugin instance: the stateful peer of a service, produced by a factory such as `postgresManaged(config)`. Scope is managed (a cloud resource) or external (an operator-supplied URL); on-VM state is out of scope because it fights immutable VM generations.
+ * `provision` has side effects in the Pulumi program, so the engine calls it exactly once per registered store.
  */
 export interface StoreProvisioner {
   /** Plugin discriminator, e.g. `'postgres-managed'`, `'database-url'`. */
   readonly kind: string;
-  /**
-   * Create the store's cloud resources (or none, for an external URL), returning
-   * its output values and the runtime-secret values it supplies. Called once by
-   * `resources/stores` with the engine's {@link ProvisionContext}; reruns would
-   * duplicate Pulumi resources.
-   */
+  /** Create the store's cloud resources (none for an external URL) and return its outputs and secret values. Called once by `resources/stores`; a rerun duplicates Pulumi resources. */
   provision(ctx: ProvisionContext): ProvisionedStore;
-  /**
-   * Runtime-secret declarations this store owns, merged ahead of the app's
-   * `runtime-secrets.config.ts` entries by `lib/runtime-secrets.ts`. Must be
-   * pure (no Pulumi access): it runs in CLI tasks too.
-   */
+  /** Runtime-secret declarations this store owns, merged ahead of `runtime-secrets.config.ts`. Must be pure with no Pulumi access: it runs in CLI tasks too. */
   secrets?(): StoreSecretContribution[];
   /** Store operations for the operator CLI. Wired in P4. */
   ops?: StoreOps;
@@ -106,13 +69,7 @@ export interface StoreProvisioner {
   validate?(): void;
 }
 
-/**
- * App-owned registry of stateful backing resources. Mirrors `defineServices` /
- * `defineRuntimeSecrets`: a typed identity that preserves literal keys so a
- * store id is a compile-time value. The first registered store is treated as
- * primary (its outputs feed the stack's `db*` exports) until P4 makes the role
- * explicit.
- */
+/** App-owned registry of stateful backing resources. Preserves literal keys so a store id is a compile-time value. The first registered store is primary: its outputs feed the stack's `db*` exports. */
 export function defineStores<const T extends Record<string, StoreProvisioner>>(stores: T): T {
   return stores;
 }

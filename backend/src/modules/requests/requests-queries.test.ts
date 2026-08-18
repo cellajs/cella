@@ -10,8 +10,7 @@ const email = 'query-request-uniqueness@example.com';
 
 describe('request query uniqueness', () => {
   afterEach(async () => {
-    // Case-insensitive cleanup: the case-insensitivity test inserts an uppercase variant that an
-    // exact-match delete leaves behind, tripping the unique signup index on the next run.
+    // Case-insensitive cleanup: an exact-match delete leaves the uppercase variant and trips the unique signup index.
     await baseDb.delete(requestsTable).where(sql`lower(${requestsTable.email}) = lower(${email})`);
   });
 

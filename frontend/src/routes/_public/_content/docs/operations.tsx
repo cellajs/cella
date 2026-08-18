@@ -9,9 +9,6 @@ import { stripParams } from '~/utils/strip-search-params';
 
 const OperationsPage = lazyNamed(() => import('~/modules/docs/operations/operations-page'), 'OperationsPage');
 
-/**
- * Operations route - shows operations list view.
- */
 export const Route = createFileRoute('/_public/_content/docs/operations')({
   staticData: { isAuth: false },
   validateSearch: operationsRouteSearchParamsSchema,

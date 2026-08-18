@@ -30,10 +30,7 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 /** Chrome caps cookie lifetime at 400 days; the device id slides forward on every sign-in. */
 const DEVICE_ID_LIFESPAN = new TimeSpan(400, 'd');
 
-/**
- * Get or mint the opaque per-browser device id. Set only on successful sign-in (never for anonymous
- * visitors) and refreshed each sign-in so active devices never expire.
- */
+/** Get or mint the opaque per-browser device id: set only on successful sign-in and refreshed each sign-in, so active devices never expire. */
 const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   const existing = await getAuthCookie(ctx, 'device-id');
   const deviceId = existing || nanoid(24);
@@ -42,9 +39,8 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 };
 
 /**
- * Evicts oldest active regular sessions before inserting one, leaving MFA and impersonation alone.
- * Selecting both partition-key columns before deletion lets PostgreSQL prune the target partition.
- * Concurrent sign-ins may transiently exceed the cap by one.
+ * Evicts oldest active regular sessions before inserting one, leaving MFA and impersonation alone. Selecting both partition-key
+ * columns before deletion lets PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db
@@ -69,10 +65,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
   log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
 };
 
-/**
- * Sets a user session and stores it in the database.
- * Generates a session token, captures device information, and optionally associates an admin user for impersonation.
- */
+/** Generates a session token, captures device information, and can associate an admin user for impersonation. */
 export const setUserSession = async (
   ctx: Context<Env>,
   user: UserModel,
@@ -105,18 +98,15 @@ export const setUserSession = async (
   const subnet = rawIp ? toSubnet(rawIp) : null;
   const { country, asn } = await lookupIp(rawIp);
 
-  // Get device information
   const device = deviceInfo(ctx);
 
   // Generate token and store hashed
   const sessionToken = nanoid(40);
   const hashedSessionToken = hashToken(sessionToken);
 
-  // Calculate expiration
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  // Mint/refresh the long-lived per-browser device id (regular sign-ins only) and derive its
-  // per-user HMAC. mfa/impersonation sessions get no device id.
+  // Long-lived per-browser device id (regular sign-ins only) plus its per-user HMAC; mfa and impersonation sessions get none.
   const deviceId = type === 'regular' ? await ensureDeviceId(ctx) : null;
 
   const sessionId = generateId();
@@ -153,11 +143,9 @@ export const setUserSession = async (
           ),
         );
     }
-    // Bound total concurrent regular sessions (evict oldest beyond the cap).
     await evictExcessSessions(user.id);
   }
 
-  // Insert session
   await db.insert(sessionsTable).values(session);
 
   const adminUser = ctx.var.user;
@@ -167,10 +155,9 @@ export const setUserSession = async (
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
-  // Exit early if it's impersonation
   if (type === 'impersonation') return;
 
-  // Update user last signIn in user_counters table (avoids CDC noise on users table)
+  // lastSignInAt lives in user_counters to avoid CDC noise on the users table
   const lastSignInAt = getIsoDate();
   await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
     target: userCountersTable.userId,
@@ -179,12 +166,7 @@ export const setUserSession = async (
   log.info('User signed in', { strategy });
 };
 
-/**
- * Validates a session by checking the provided session token.
- *
- * @param sessionToken - Hashed session token to validate.
- * @returns The session (without token) and user data if valid, otherwise null.
- */
+/** Returns the session (secret stripped) and its user; throws when the session is missing or expired. */
 export const validateSession = async (
   hashedSessionToken: string,
 ): Promise<{ session: SessionModel; user: UserWithCounters }> => {
@@ -194,16 +176,12 @@ export const validateSession = async (
     .where(eq(sessionsTable.secret, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
-  // If no result is found throw no session
   if (!result) throw new AppError(401, 'no_session', 'warn');
 
   const { session, user } = result;
 
-  // Check if the session has expired and invalidate it if so
   if (isExpiredDate(session.expiresAt)) {
-    // Opportunistically purge the dead row so expired sessions don't linger between maintenance
-    // runs. Fire-and-forget: a failure here must never change the auth outcome. Scoping by
-    // expiresAt lets PostgreSQL target the right partition directly.
+    // Fire-and-forget purge of the dead row: a failure must never change the auth outcome, and scoping by expiresAt targets the partition.
     void db
       .delete(sessionsTable)
       .where(and(eq(sessionsTable.id, session.id), eq(sessionsTable.expiresAt, session.expiresAt)))
@@ -211,7 +189,6 @@ export const validateSession = async (
     throw new AppError(401, 'session_expired', 'warn');
   }
 
-  // Strip secret from session before returning
   const { secret: _, ...safeSession } = session;
   return { session: safeSession, user };
 };
@@ -227,10 +204,8 @@ export const getParsedSessionCookie = async (
 ): Promise<z.infer<typeof sessionCookieSchema>> => {
   const { deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
   try {
-    // Retrieve session cookie data
     const sessionData = await getAuthCookie(ctx, 'session');
 
-    // If no session data, return null
     if (!sessionData) throw new Error();
 
     // Parse delimited string: "<hashedSessionToken>.<sessionId>.<adminUserId>"

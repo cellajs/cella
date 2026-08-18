@@ -13,23 +13,14 @@ export function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
-/**
- * Load backend/.env before the root fallback so infra tasks share the app's
- * local config. Existing environment variables keep precedence over both files.
- */
+/** Load backend/.env before the root fallback so infra tasks share the app's local config. Existing environment variables keep precedence over both files. */
 export function loadBaseEnvFiles(): void {
   for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
     if (existsSync(envFile)) process.loadEnvFile(envFile);
   }
 }
 
-/**
- * Load the mode-scoped env file `infra/.env.<mode>`, which OVERRIDES the
- * ambient env: it carries that mode's credentials/project so a staging run
- * cannot silently inherit production values from backend/.env. The file holds
- * a live secret key + Pulumi passphrase, so group/other read bits are
- * tightened to 0600 on sight.
- */
+/** Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key and Pulumi passphrase, so it is tightened to 0600 on sight. */
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): void {
   const modeEnvPath = resolve(infraDir, `.env.${mode}`);
   if (!existsSync(modeEnvPath)) return;

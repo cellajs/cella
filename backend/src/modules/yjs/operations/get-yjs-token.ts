@@ -10,9 +10,7 @@ export function getYjsTokenOp(
 ) {
   const { entityType, tenantId, organizationId } = params;
 
-  // Org-level gate only: verify the user is a member of this organization.
-  // Per-entity access (project/task level) is enforced locally by the relay worker,
-  // which runs the shared permission engine before allowing any writes.
+  // Org-level gate only: per-entity access is enforced by the relay worker running the shared permission engine.
   const hasOrgMembership = memberships.some((m) => m.organizationId === organizationId);
   if (!hasOrgMembership) throw new AppError(403, 'forbidden', 'warn', { entityType });
 

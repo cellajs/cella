@@ -17,9 +17,6 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 
 const uppyRestrictions = appConfig.uppy.defaultRestrictions;
 
-/**
- * Initializes and manages the Uppy upload instance.
- */
 export function useUploadUppy() {
   const { t } = useTranslation();
   const uploaderData = useUploader((state) => state.uploaderConfig);
@@ -84,7 +81,6 @@ export function useUploadUppy() {
               toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
             });
           });
-        // Plugin Options
         const imageEditorOptions = getImageEditorOptions(templateId);
         const webcamOptions: WebcamOptions<Meta, Body> = {
           videoConstraints: { width: 1280, height: 720 },
@@ -93,7 +89,6 @@ export function useUploadUppy() {
 
         if (['cover', 'avatar'].includes(templateId)) webcamOptions.modes = ['picture'];
 
-        // Plugin Registration
         if (plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
         if (plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
         if (plugins.includes('audio') && isUploadFullyEnabled) localUppy.use(Audio);

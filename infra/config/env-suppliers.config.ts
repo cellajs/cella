@@ -4,15 +4,7 @@ import { region, serviceUrl } from '../pulumi-context';
 import { frontendBucketName } from '../resources/storage';
 import { frontendCsp } from './frontend-csp.config';
 
-/**
- * App-owned suppliers for the app-wide compose `${VAR}` placeholders that are
- * not service-to-service bindings. Service-specific wiring is declared as
- * `bindings` on the service registry entry; these are the shared values.
- *
- * `FRONTEND_URL` / `BACKEND_URL` come from the endpoint registry by slug;
- * `FRONTEND_CSP` and `ORIGIN_HOST` are the SPA proxy's CSP header and the S3
- * REST hostname it fronts.
- */
+/** App-owned suppliers for app-wide compose `${VAR}` placeholders that are not service-to-service bindings, which are declared as `bindings` on the service registry entry. */
 export const appEnvSuppliers = defineEnvSuppliers({
   FRONTEND_URL: () => serviceUrl('frontend'),
   BACKEND_URL: () => serviceUrl('backend'),

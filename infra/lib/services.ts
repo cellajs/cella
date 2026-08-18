@@ -2,12 +2,7 @@ import { services as composeServices, type ServiceName } from '../compose/compos
 import type { ServiceMeta } from '../compose/types';
 import type { EngineConfig, EngineServiceEndpoint } from '../config/engine-config';
 
-/**
- * One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed
- * to this app's slug. Field meanings are documented on `ServiceMeta` in
- * `../compose/types.ts`; every other infra surface derives from this list (see
- * this module's header).
- */
+/** One deployable service: the Compose model's `x-service` (`ServiceMeta`) narrowed to this app's slug. Field meanings live on `ServiceMeta` in `../compose/types.ts`. */
 export interface ServiceDefinition extends ServiceMeta {
   slug: ServiceName;
 }
@@ -24,21 +19,12 @@ export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.m
 /** Services that build & push their own image (exclude image-reuse services). */
 export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug);
 
-/**
- * Services enabled for an app given appConfig.services. Services are enabled by
- * default; a service entry can opt out with `{ enabled: false }`. Single source
- * of truth for "which services this app deploys": compute (VMs), the load
- * balancer, and any future deploy-plan artifact all derive from it.
- */
+/** Services enabled for an app. Enabled by default; an entry opts out with `{ enabled: false }`. Compute and the load balancer both derive from this list. */
 export function enabledServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);
 }
 
-/**
- * Returns services receiving dedicated VMs.
- * Single-VM mode removes co-hosted workers and host-collocated containers from
- * compute while preserving their enabled routing through the host target.
- */
+/** Services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
 export function deployedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
@@ -48,13 +34,7 @@ export function deployedServices(
   return enabled.filter((s) => !s.coHosted && s.placement !== 'host');
 }
 
-/**
- * Enabled co-hosted worker services for an app under singleVM (empty when
- * singleVM is off), the workers folded into the host process; this unions
- * their runtime secrets onto the host VM and to gate the host's replacement
- * strategy (a co-hosted `exclusive` worker forces the host to cut over
- * exclusively).
- */
+/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a co-hosted `exclusive` worker forces an exclusive host cutover. */
 export function coHostedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
@@ -63,13 +43,7 @@ export function coHostedServices(
   return enabledServices(serviceConfig).filter((s) => s.coHosted);
 }
 
-/**
- * Enabled `placement: 'host'` services for an app under singleVM (empty when
- * singleVM is off): containers the boot runner starts on the host VM next to
- * the host container. Their LB pools follow the host cutover, their runtime
- * secrets union onto the host VM, and their compose blocks join the host's
- * genId fingerprint.
- */
+/** Enabled `placement: 'host'` containers the boot runner starts beside the host container under singleVM. Their LB pools follow the host cutover, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
 export function collocatedServices(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
@@ -83,20 +57,13 @@ export function collocatedServices(
       );
     if (svc.coHosted)
       throw new Error(
-        `services: '${svc.slug}' cannot set both coHosted and placement 'host' — in-process fold and container collocation are mutually exclusive.`,
+        `services: '${svc.slug}' cannot set both coHosted and placement 'host': in-process fold and container collocation are mutually exclusive.`,
       );
   }
   return collocated;
 }
 
-/**
- * Service slugs whose secret folders a service's VMs must be able to read: the
- * service itself, plus (for the singleVM host) every co-hosted worker and
- * collocated container folded onto it. Their runtime secrets union onto the
- * host VM (resources/generations.ts secretConsumersFor), so the host's
- * secret-path grant must union identically or hydration 403s on the folded
- * services' secrets.
- */
+/** Secret folders a service's VMs must read: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
 export function secretScopeSlugs(
   serviceConfig: Record<string, EngineServiceEndpoint>,
   singleVM: boolean,
@@ -112,13 +79,8 @@ export function secretScopeSlugs(
 }
 
 /**
- * Which app-owned object storage the service registry implies (P2). The SPA
- * bucket follows the default-route service; the upload buckets follow any
- * service that signs S3 requests (`s3Access`); browser CORS on the upload
- * buckets exists only when both do. Engine-owned buckets (Pulumi state,
- * boot-diag) are unconditional and not represented here. A registry with no
- * default route and no s3Access service provisions NO app buckets: the
- * frontend-less consumer scenario.
+ * App-owned object storage implied by the service registry: the SPA bucket follows the default-route service, the upload buckets follow any `s3Access` service, and browser CORS exists only when both do.
+ * Engine-owned buckets (Pulumi state, boot-diag) are unconditional and absent here, so a registry with neither a default route nor an s3Access service provisions no app buckets.
  */
 export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {
   spaBucket: boolean;
@@ -143,12 +105,8 @@ export interface ServiceEndpoint {
 }
 
 /**
- * The registry derives per-service public endpoints directly from appConfig. A service has an endpoint
- * iff it declares an `lbRoute` (cdc has none → internal-only, omitted here).
- *
- * Pure: pass the resolved appConfig. This module never reads appConfig eagerly
- * (helpers.ts imports it before APP_MODE is set), so the lookup must be a
- * function, not a module-level constant.
+ * Per-service public endpoints from appConfig. A service has an endpoint only when it declares an `lbRoute`; internal-only services are omitted.
+ * Must stay a function taking the resolved appConfig: this module is imported before APP_MODE is set, so it can never read appConfig at module level.
  */
 export function serviceEndpoints(cfg: EngineConfig): readonly ServiceEndpoint[] {
   const serviceUrls = cfg.services as Record<string, EngineServiceEndpoint>;

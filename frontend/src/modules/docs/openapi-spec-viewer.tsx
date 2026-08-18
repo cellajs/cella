@@ -13,9 +13,7 @@ import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-/**
- * Recursively counts all search matches in a value (keys and primitive values).
- */
+/** Counts matches recursively over both keys and primitive values. */
 function countSearchMatches(value: unknown, searchText: string): number {
   if (!searchText) return 0;
   const lowerSearch = searchText.toLowerCase();
@@ -42,10 +40,7 @@ function countSearchMatches(value: unknown, searchText: string): number {
   return count;
 }
 
-/**
- * Displays the full OpenAPI specification JSON with collapsible sections.
- * Uses custom json-viewer with 'openapi' mode for $ref click-to-scroll navigation.
- */
+/** Full OpenAPI spec JSON, rendered by json-viewer in 'openapi' mode for $ref click-to-scroll. */
 export function OpenApiSpecViewer() {
   const { t } = useTranslation();
 
@@ -56,11 +51,9 @@ export function OpenApiSpecViewer() {
   const [searchMatchPath, setSearchMatchPath] = useState<(string | number)[] | null>(null);
   const viewerContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to a specific match index - first expand the path, then scroll
   const scrollToMatch = (index: number) => {
     if (!viewerContainerRef.current || !data) return;
 
-    // First, compute the path to the match and expand nodes along it
     const result = getPathToNthMatch(data, searchText, index);
     if (result) {
       setSearchMatchPath(result.path);
@@ -86,28 +79,24 @@ export function OpenApiSpecViewer() {
 
   const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
 
-  // Count matches whenever search text or data changes
   const matchCount = useMemo(() => {
     if (!data || !searchText) return 0;
     return countSearchMatches(data, searchText);
   }, [data, searchText]);
 
-  // Reset current match index when search changes
   const handleSearchChange = (newSearch: string) => {
     setSearchText(newSearch);
-    setCurrentMatchIndex(-1); // Reset to no selection
+    setCurrentMatchIndex(-1);
     setSearchMatchPath(null);
   };
 
   const handlePrevMatch = () => {
-    // If no selection or at first match, go to last match
     const newIndex = currentMatchIndex <= 0 ? matchCount - 1 : currentMatchIndex - 1;
     setCurrentMatchIndex(newIndex);
     scrollToMatch(newIndex);
   };
 
   const handleNextMatch = () => {
-    // If no selection or at last match, go to first match
     const newIndex = currentMatchIndex < 0 || currentMatchIndex >= matchCount - 1 ? 0 : currentMatchIndex + 1;
     setCurrentMatchIndex(newIndex);
     scrollToMatch(newIndex);
@@ -129,7 +118,7 @@ export function OpenApiSpecViewer() {
 
   return (
     <>
-      {/* Mobile-only: show actions before sticky bar */}
+      {/* Mobile-only: actions above the sticky bar */}
       <JsonActions
         url={openApiUrl}
         data={data}
@@ -139,7 +128,6 @@ export function OpenApiSpecViewer() {
       />
 
       <div className="sticky top-0 z-10 -mt-2 mb-2 flex w-full items-center gap-2 bg-background/60 py-2 backdrop-blur-xs max-sm:flex-col">
-        {/* Search through JSON */}
         <InputGroup className="max-sm:w-full">
           <InputGroupAddon>
             <SearchSpinner value={searchText} isSearching={false} />
@@ -212,7 +200,7 @@ export function OpenApiSpecViewer() {
           <span>{isExpanded ? t('c:reset') : t('c:expand')}</span>
         </Button>
 
-        {/* Copy, download and open in new tab (desktop only, mobile version is above sticky bar) */}
+        {/* Desktop-only actions; the mobile copy sits above the sticky bar */}
         <JsonActions
           url={openApiUrl}
           data={data}
@@ -222,7 +210,6 @@ export function OpenApiSpecViewer() {
         />
       </div>
 
-      {/* JSON viewer with collapsible nodes and OpenAPI $ref navigation */}
       <div ref={viewerContainerRef} className="overflow-x-auto rounded-lg bg-muted/30 p-4">
         <JsonViewer
           key={resetKey}

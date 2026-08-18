@@ -5,9 +5,9 @@ import type { SubjectForPermission } from './engine/types.ts';
 import { matchesRowCondition } from './row-conditions.ts';
 
 /**
- * Verifies membership-independent public reads from the row's own `publicAt` across the wide
- * synthetic hierarchy. Parent-derived publication remains outside the permission engine because
- * SQL and stream dispatch evaluate row-local data.
+ * Membership-independent reads from the row's own `publicAt`, over the wide synthetic hierarchy.
+ * Parent-derived publication stays outside the engine: SQL and stream dispatch read row-local
+ * fields only.
  */
 const NOW = '2026-07-06T12:00:00Z';
 
@@ -24,7 +24,7 @@ const projectSubject = (publicAt: string | null): SubjectForPermission =>
 // No policies at all: everything below must come from public grants alone.
 const noPolicies = {};
 
-describe('public read grants — anonymous actor', () => {
+describe('public read grants: anonymous actor', () => {
   it('grants read when the row publicAt is set', () => {
     const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(NOW), {
       publicGrants: grants,
@@ -44,8 +44,8 @@ describe('public read grants — anonymous actor', () => {
   });
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
-    // The project (parent) is public; the task is not. Publication does not cascade through the
-    // permission engine: an app that wants it propagates `publicAt` to the child row.
+    // The parent project is public, the task is not: publication never cascades through the
+    // engine. An app that wants it propagates `publicAt` to the child row.
     const task = wideSubject({
       entityType: 'task',
       id: 't1',
@@ -66,7 +66,7 @@ describe('public read grants — anonymous actor', () => {
     );
   });
 
-  it('grants read only — other actions stay denied', () => {
+  it('grants read only: other actions stay denied', () => {
     const { can } = getAllDecisions(noPolicies, [], projectSubject(NOW), {
       publicGrants: grants,
       ...wideOverrides,
@@ -94,18 +94,18 @@ describe('public read grants — anonymous actor', () => {
   });
 });
 
-describe("the 'public' row condition — the shared rule", () => {
+describe("the 'public' row condition: the shared rule", () => {
   it('is actor-independent and reads only the row: it matches for anonymous actors when publicAt is set', () => {
-    // This is what makes public read enforceable in list endpoints too: `'public'` reads only the
-    // row's own `publicAt`, so it compiles identically in the check-form here and in collection SQL.
-    // An actor-bound or cross-row rule could not be compiled, and public rows would vanish from lists.
+    // What makes public read enforceable in list endpoints: `'public'` reads only the row's own
+    // `publicAt`, so it compiles identically here and in collection SQL. An actor-bound or
+    // cross-row rule would not compile, and public rows would drop out of lists.
     expect(matchesRowCondition('public', { publicAt: NOW }, {})).toBe(true);
     expect(matchesRowCondition('public', { publicAt: null }, {})).toBe(false);
     expect(matchesRowCondition('public', {}, {})).toBe(false);
   });
 });
 
-describe('configurePermissions — publicRead declaration', () => {
+describe('configurePermissions: publicRead declaration', () => {
   it('collects grants per subject and returns them alongside policies', () => {
     const { publicReadGrants } = configureWidePermissions(({ entityType, publicRead }) => {
       if (entityType === 'project') publicRead();

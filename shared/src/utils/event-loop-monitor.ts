@@ -11,10 +11,9 @@ function ensureStarted(): IntervalHistogram {
 }
 
 /**
- * Mean event-loop delay over the sampling window, in milliseconds (1 decimal).
- * Lazily starts a libuv-backed histogram on first read, kept running for the
- * life of the process: a healthy service idles near 0ms, a saturated one
- * climbs into the hundreds. Surfaced via `/health`.
+ * Mean delay over the sampling window in milliseconds, reported by `/health`. The first read
+ * starts a libuv histogram that then runs for the life of the process. A healthy service idles
+ * near 0ms; a saturated one climbs into the hundreds.
  */
 export function getEventLoopLagMs(): number {
   const meanNs = ensureStarted().mean;

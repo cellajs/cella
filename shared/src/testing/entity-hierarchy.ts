@@ -80,9 +80,8 @@ export const buildTestEntityHierarchyPlan = ({
     setChannelId(channelType, id);
 
     const parentIdKey = appConfig.entityIdColumnKeys[parentChannelType];
-    // Walk the full parent chain: rows are seeded root-first, so every ancestor id is known here.
-    // Deep hierarchies keep ALL ancestor id columns NOT NULL on channel tables, so a seeder that
-    // fills only the immediate parent column fails on any grandchild channel.
+    // Rows are seeded root-first, so every ancestor id is known. Deep hierarchies keep all
+    // ancestor id columns NOT NULL, so filling only the immediate parent breaks grandchildren.
     const ancestorColumns: TestChannelColumn[] = [];
     for (let cursor: ChannelEntityType | null = parentChannelType; cursor; ) {
       const ancestorId = channelIdsByType[cursor];

@@ -8,9 +8,9 @@ import type { AccessMembership, PermissionCheckOptions, PermissionDecision, Subj
 import { validateSubject } from './validation.ts';
 
 /**
- * One actor's inputs to a decision, engine-shaped: the memberships plus the two actor
- * fields the engine reads. Anonymous actors are expressed as `{ memberships: [] }` with
- * no `userId`; the `checkAccess*` wrappers map their public `Access` union onto this.
+ * One actor's inputs to a decision: memberships plus the two actor fields the engine reads. An
+ * anonymous actor is `{ memberships: [] }` with no `userId`, which the `checkAccess*` wrappers
+ * map their public `Access` union onto.
  */
 export interface EngineAccess<T extends AccessMembership = AccessMembership> {
   memberships: T[];
@@ -20,17 +20,15 @@ export interface EngineAccess<T extends AccessMembership = AccessMembership> {
 
 export interface ResolveAccessOptions extends PermissionCheckOptions {
   /**
-   * What to do when an access's memberships fail `validateMembership`:
-   * - `'throw'` (default): surface the error, matching the single-access path; a malformed
-   *   membership in a request context is a bug to crash on.
-   * - `'deny'`: fail-close JUST that access (all actions denied) and keep resolving the rest.
-   *   For fan-out callers (stream dispatch) where one corrupt subscriber must not poison the
-   *   batch or mask the others.
+   * When an access's memberships fail `validateMembership`: `'throw'` (default) raises, matching
+   * the single-access path, since a malformed membership on a request is a bug. `'deny'`
+   * fail-closes that one access and keeps resolving the rest, so one corrupt stream subscriber
+   * does not take the batch down with it.
    */
   onInvalidMembership?: 'throw' | 'deny';
 }
 
-/** All-denied decision for an access the engine refuses to evaluate (fail-closed). */
+/** Fail-closed decision for an access the engine refuses to evaluate. */
 const deniedDecision = <T extends AccessMembership>(subject: SubjectForPermission): PermissionDecision<T> => ({
   subject: { entityType: subject.entityType, id: subject.id, channelIds: {} },
   actions: createActionRecord(() => ({ allowed: false, grantedBy: [] })),
@@ -39,10 +37,9 @@ const deniedDecision = <T extends AccessMembership>(subject: SubjectForPermissio
 });
 
 /**
- * Resolves many actors against one subject by grouping accesses the policy engine cannot
- * distinguish. Keys include system-admin state, referenced row conditions, and roles at
- * each subject channel level. The per-call class result is then paired with each access's
- * own membership; property tests compare it with independent single-access decisions.
+ * Many actors against one subject, grouping accesses the policy engine cannot tell apart. Keys
+ * cover system-admin state, referenced row conditions and roles at each subject channel level.
+ * Each class result is then paired with the access's own membership.
  */
 export function getDecisionsForAccesses<T extends AccessMembership>(
   policies: PolicyMatrix,
@@ -60,8 +57,8 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
 
   const policyIndex = buildPolicyIndex(policies, subject.entityType);
 
-  // Row conditions this subject's policies actually reference: these are the only places
-  // an actor's identity can enter a decision besides roles and the admin bit.
+  // Row conditions this subject's policies reference: besides roles and the admin bit, the only
+  // places an actor's identity enters a decision.
   const conditionNames: RowConditionName[] = [];
   for (const permissions of policyIndex.values()) {
     for (const action of entityActions) {
@@ -72,7 +69,6 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
 
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
 
-  // The subject's channel levels, resolved once: the exact index lookups the walk makes.
   const channelLevels: Array<[ChannelEntityType, string]> = [];
   for (const channelType of orderedChannels) {
     const channelId = getSubjectChannelId(subject, channelType);

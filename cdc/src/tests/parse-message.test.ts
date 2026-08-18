@@ -41,7 +41,7 @@ function dmlMessage(
   return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as Pgoutput.Message;
 }
 
-describe('parseMessage — draft entrance guard', () => {
+describe('parseMessage: draft entrance guard', () => {
   // The guard's warn timestamp is module state: step a monotonic fake clock 120s per
   // test so each starts outside the 60s rate-limit window, frozen within the test.
   let clock = Date.now();

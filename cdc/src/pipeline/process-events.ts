@@ -33,9 +33,6 @@ interface PreparedEvent {
 
 // Activity persistence
 
-/**
- * Prepare an activity for persistence: generate ID, extract seq.
- */
 function prepareActivity(
   parseResult: ParseMessageResult,
   lsn: string,
@@ -47,9 +44,8 @@ function prepareActivity(
 }
 
 /**
- * Persist activities to DB in a single multi-row insert with retry.
- * Falls back to individual inserts if the batch insert fails.
- * Returns false if persistence failed (caller should skip deltas).
+ * Multi-row insert with retry, falling back to individual inserts.
+ * @returns false when persistence failed, in which case the caller must skip deltas.
  */
 async function persistActivities(
   infos: Array<{ activityWithId: BatchEvent['activity']; lsn: string }>,
@@ -62,7 +58,7 @@ async function persistActivities(
     }, 'insert activity');
 
     if (!insertResult.success) {
-      log.error('Activity insert failed permanently — event skipped', {
+      log.error('Activity insert failed permanently: event skipped', {
         activityId: activityWithId.id,
         lsn,
         tableName,
@@ -84,7 +80,6 @@ async function persistActivities(
     return true;
   }
 
-  // Multi-row batch insert
   const insertResult = await withRetry(async () => {
     await cdcDb
       .insert(activitiesTable)
@@ -93,7 +88,7 @@ async function persistActivities(
   }, 'batch insert activities');
 
   if (!insertResult.success) {
-    // Fallback: try individual inserts so partial success is possible
+    // Individual inserts allow partial success.
     let anyFailed = false;
     for (const { activityWithId, lsn } of infos) {
       const singleResult = await withRetry(async () => {
@@ -101,7 +96,7 @@ async function persistActivities(
       }, 'insert activity');
 
       if (!singleResult.success) {
-        log.error('Activity insert failed permanently — event skipped', {
+        log.error('Activity insert failed permanently: event skipped', {
           activityId: activityWithId.id,
           lsn,
           tableName,
@@ -141,11 +136,10 @@ function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
 // Unified event processing
 
 /**
- * Process one or more CDC events through three sequenced concerns:
- *   1. persist the activity/audit-log rows (all tracked tables)
+ * Three ordered stages, single events and batches alike:
+ *   1. persist the activity rows (all tracked tables)
  *   2. apply counter + seq deltas (entities and memberships)
- *   3. dispatch the real-time sync notification over WebSocket, then embedding cleanup
- * Handles both single-event and batch paths through a unified pipeline.
+ *   3. dispatch the sync notification over WebSocket, then embedding cleanup
  */
 export async function processEvents(events: Array<{ lsn: string; result: ParseMessageResult }>): Promise<void> {
   const firstLsn = events[0].lsn;
@@ -155,7 +149,7 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
   // Circuit breaker: skip events for tables with persistent failures
   if (!circuitBreaker.shouldProcess(tableName)) {
-    log.debug('Skipping event — circuit open', { tableName, lsn: firstLsn, count: events.length });
+    log.debug('Skipping event, circuit open', { tableName, lsn: firstLsn, count: events.length });
     return;
   }
 
@@ -165,17 +159,16 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     async (traceCtx) => {
       const startMs = performance.now();
 
-      // Compute unified deltas (pure, no side effects yet)
+      // Pure: no side effects until applyBatchUnifiedDeltas below.
       const batchPlan = computeBatchUnifiedDeltas(events);
 
-      // Prepare all activities (generate IDs, extract seq)
       const prepared = events.map(({ lsn, result }) => {
         replicationState.lastLsn = lsn;
         const { activityWithId, seq } = prepareActivity(result, lsn);
         return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
       });
 
-      // Persist activities FIRST: if this fails, no deltas are applied (no side effects)
+      // Persist first: a failure here leaves no deltas applied.
       const persisted = await withSpan(
         cdcSpanNames.createActivity,
         activityAttrs(prepared[0].activityWithId),
@@ -188,14 +181,12 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       );
 
       if (!persisted) {
-        // Activity insert failed permanently: skip deltas and WS send
         return;
       }
 
-      // Apply deltas SECOND: only after activities are safely persisted
       await applyBatchUnifiedDeltas(batchPlan);
 
-      // Mirror channel paths onto counters rows (view-ancestry verification source)
+      // Mirror channel paths onto counters rows: the view-ancestry verification source.
       await syncChannelPaths(events);
 
       const stamped = prepared.map((item) => ({
@@ -205,7 +196,6 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
 
       circuitBreaker.recordSuccess(tableName);
 
-      // Log each activity creation
       for (const { activityWithId, lsn } of stamped) {
         log.trace('Activity created from CDC', {
           type: activityWithId.type,
@@ -216,17 +206,15 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
         });
       }
 
-      // Send the real-time sync notification (single vs batch payload)
       dispatchToApi(stamped, traceCtx);
 
-      // Embedding cleanup: strip deleted embedded-entity IDs from host-entity arrays
+      // Strip deleted embedded-entity ids from host-entity arrays.
       const { tableMeta } = events[0].result;
       if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
         await cleanupEmbeddingReferences(tableMeta.type, action, events);
       }
 
-      // Owned-embedding GC: soft-delete embedded rows their host arrays stopped referencing
-      // (update covers array diffs and host soft-deletes; hard deletes ride FK cascades)
+      // Soft-delete embedded rows their host arrays stopped referencing; hard deletes ride FK cascades.
       if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
         await gcOwnedEmbeddedRows(tableMeta.type, events);
       }

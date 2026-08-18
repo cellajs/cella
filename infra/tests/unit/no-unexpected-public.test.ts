@@ -19,8 +19,7 @@ const PATTERNS: Array<{ name: string; rx: RegExp }> = [
   { name: 'inbound-accept-default', rx: /inboundDefaultPolicy:\s*['"]accept['"]/ },
 ];
 
-// Allowlist: every entry MUST be justified by a real, intentional public
-// surface. Keep this list short. Format: `<resource>:<pattern-name>`.
+// Allowlist of intentional public resources, format `<resource>:<pattern-name>`. Keep it short.
 const EXPECTED = new Set<string>([
   // Frontend SPA bucket: served by the Caddy frontend VM, must be readable.
   'storage.ts:principal-wildcard',
@@ -71,9 +70,7 @@ describe('no-unexpected-public sweep', () => {
     }
   });
 
-  // Exposure keys must only ever live in the gitignored Pulumi.<env>.exposure.yaml
-  // overlay (written by the expose/seed flows): a committed key would make every
-  // CI deploy re-converge the public endpoint open.
+  // Exposure keys belong only in the gitignored Pulumi.<env>.exposure.yaml overlay; a committed key would make every CI deploy re-converge the public endpoint open.
   it('no committed stack config records DB-exposure keys', () => {
     const infraRoot = resolve(__dirname, '../..');
     const offenders: string[] = [];
@@ -89,7 +86,7 @@ describe('no-unexpected-public sweep', () => {
     ).toEqual([]);
   });
 
-  it('does not flag pristine surface — sanity check the scanner itself runs', () => {
+  it('does not flag pristine surface: sanity check the scanner itself runs', () => {
     // If PATTERNS array got accidentally emptied, this test catches it.
     expect(PATTERNS.length).toBeGreaterThan(0);
     // And ensure we're actually scanning resources.

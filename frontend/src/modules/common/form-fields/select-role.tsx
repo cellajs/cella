@@ -10,10 +10,7 @@ interface SelectRoleProps {
   className?: string;
 }
 
-/**
- * Dropdown select for picking a single role, supporting both entity and system roles.
- * Renders a drawer on mobile for better touch UX.
- */
+/** Single-role select over entity and system roles. Renders a drawer on mobile. */
 export function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();

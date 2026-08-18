@@ -19,7 +19,6 @@ interface MenuSheetItemProps {
   className?: string;
 }
 
-/** Renders the menu sheet item component. */
 export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProps) {
   const { t } = useTranslation();
 
@@ -30,15 +29,13 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !item.submenu;
 
-  // Unseen count for grouping contexts and their parents.
-  // When detailedMenu is on, sub-items show their own badges so skip parent-level aggregation.
+  // Parent-level aggregation is skipped when detailedMenu is on: sub-items then show their own badges.
   let channelIds: string | string[] | undefined;
   if (seenGroupingChannelTypes.has(item.entityType)) channelIds = item.id;
   else if (!detailedMenu && item.submenu?.length) channelIds = item.submenu.map((sub) => sub.id);
   const unseenCount = useUnseenCount(channelIds);
   const showBadge = unseenCount > 0 && !item.membership.muted;
 
-  // Build route path for the entity
   const { to, params, search } = getChannelRoute(item, isSubitem);
 
   return (
@@ -93,7 +90,6 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
         <div className="pointer-events-none text-muted-foreground text-xs">
           <span className="absolute opacity-0 transition-opacity duration-100 ease-in-out group-hover/menuItem:delay-300 sm:group-hover/menuItem:opacity-100">
             {item.membership.role ? t(item.membership.role) : ''}
-            {/* Submenu count is redundant when detailedMenu already renders the sub-items */}
             {!detailedMenu && item.submenu?.length
               ? `${item.membership.role ? ' · ' : ''}${item.submenu.length} ${t(item.submenu[0].entityType, { count: item.submenu.length }).toLowerCase()}`
               : ''}

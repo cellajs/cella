@@ -6,9 +6,8 @@ export interface VerifiedPostgresSslOptions {
   checkServerIdentity?: (host: string, cert: PeerCertificate) => Error | undefined;
 }
 
-// Scaleway-built connection strings include libpq ssl params. node-postgres can
-// let those override an explicit verified `ssl` object, so strip them before
-// handing the connection string to pg.
+// Scaleway connection strings carry libpq ssl params that node-postgres may let override an
+// explicit verified `ssl` object, so strip them before handing the string to pg.
 export const stripPostgresSslParams = (url: string): string => {
   try {
     const parsed = new URL(url);
@@ -20,9 +19,8 @@ export const stripPostgresSslParams = (url: string): string => {
   }
 };
 
-// Production requires the Pulumi-provisioned database CA and verified TLS.
-// Decode its single-line base64 runtime-secret representation back to PEM.
-// Pure: callers pass the raw env value and whether their mode mandates a CA.
+// Production requires the Pulumi-provisioned database CA and verified TLS. Decodes the
+// single-line base64 runtime secret back to PEM; callers pass the raw env value.
 export const resolvePostgresSslCa = (ca: string | undefined, required: boolean): string | undefined => {
   if (!ca) {
     if (!required) return undefined;
@@ -43,9 +41,8 @@ const postgresHost = (connectionString: string): string | undefined => {
   }
 };
 
-// node-postgres does not thread the connection host into TLS identity checking,
-// so Node can verify against `localhost`. Pin verification to the host we dialed
-// while keeping CA-chain verification intact.
+// node-postgres omits the connection host from TLS identity checking, so Node would verify
+// against `localhost`. Pins verification to the dialed host, keeping CA-chain verification.
 export const verifiedPostgresSsl = (
   connectionString: string,
   ca: string | undefined,

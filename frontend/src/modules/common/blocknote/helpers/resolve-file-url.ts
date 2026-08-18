@@ -5,11 +5,7 @@ interface ResolveFileUrlContext {
   baseFilePanelProps: CommonBlockNoteProps['baseFilePanelProps'];
 }
 
-/**
- * Build the `resolveFileUrl` callback for BlockNote. The resolution itself lives in the attachment
- * module (`resolveBlockNoteFileRef`). This only supplies the editor's org context as a fallback
- * for references whose attachment isn't in cache.
- */
+/** Supplies the editor's org context to `resolveBlockNoteFileRef` as a fallback for references whose attachment is not cached. */
 export function createResolveFileUrl({ baseFilePanelProps }: ResolveFileUrlContext) {
   return (ref: string): Promise<string> =>
     resolveBlockNoteFileRef(ref, {

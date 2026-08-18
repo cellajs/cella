@@ -1,37 +1,24 @@
-/**
- * Minimal contract a row needs to satisfy to be tree-able. If your entity
- * uses different field names, override the accessors via {@link BuildTreeOptions}.
- */
+/** Minimal row contract for tree building; other field names go through the {@link BuildTreeOptions} accessors. */
 export interface TreeItem {
   id: string;
   parentId: string | null;
   displayOrder: number;
 }
 
-/** A row augmented with tree-display metadata. Produced by {@link buildTree}. */
 export type TreeRow<T> = T & {
   _depth: number;
   _hasChildren: boolean;
   /** Number of direct children. Stable across expand/collapse. */
   _childCount: number;
   _isExpanded: boolean;
-  /** True when this row is the last child of its parent (or last root). */
+  /** True when this row is the last child of its parent, or the last root row. */
   _isLastChild: boolean;
-  /**
-   * True when this row's immediate parent was the last child of *its* parent.
-   * Decides whether ancestor-trunk guide lines should continue through
-   * this row in deeper levels. Always false for depth-0 rows.
-   */
+  /** True when the immediate parent was the last child of its own parent; always false at depth 0. */
   _parentIsLastChild: boolean;
-  /**
-   * Deepest descendant offset from this row (leaf = 0, parent of a leaf = 1, ...).
-   * Computed from the full items array, so it stays accurate when descendants
-   * are collapsed and not currently rendered.
-   */
+  /** Deepest descendant offset (leaf = 0), computed from all items so collapsed descendants still count. */
   _subtreeHeight: number;
 };
 
-/** The three field reads the tree builder performs, as functions over a row. */
 export interface TreeAccessors<T> {
   getId: (item: T) => string;
   getParentId: (item: T) => string | null;
@@ -55,13 +42,7 @@ export const treeItemAccessors: TreeAccessors<TreeItem> = {
   getDisplayOrder: (item) => item.displayOrder,
 };
 
-/**
- * Build the visible depth-first tree from flat items.
- * Expansion is `defaultExpanded XOR toggledIds.has(id)`.
- *
- * A row satisfying {@link TreeItem} may omit the accessors; any other row shape must supply
- * all three, so a row without the default fields is rejected at the call site.
- */
+/** Builds the visible depth-first rows; expansion is `defaultExpanded XOR toggledIds.has(id)`. */
 export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[];
 export function buildTree<T>(items: T[], opts: BuildTreeOptions<T> & TreeAccessors<T>): TreeRow<T>[];
 export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[] {
@@ -71,7 +52,6 @@ export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions
   const defaultExpanded = opts.defaultExpanded ?? false;
   const { toggledIds } = opts;
 
-  // Index children by parentId.
   const childrenMap = new Map<string | null, T[]>();
   for (const item of items) {
     const key = getParentId(item) ?? null;
@@ -80,14 +60,11 @@ export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions
     else childrenMap.set(key, [item]);
   }
 
-  // Sort siblings by displayOrder.
   for (const siblings of childrenMap.values()) {
     siblings.sort((a, b) => getDisplayOrder(a) - getDisplayOrder(b));
   }
 
-  // Memoized subtree-height computation. Walks the full tree (not just
-  // expanded), so the value is stable across expand/collapse and needed for
-  // depth-limit drag validation while parts of the tree are hidden.
+  // Walks the full tree, so heights stay valid while descendants are collapsed.
   const subtreeHeightCache = new Map<string, number>();
   function computeSubtreeHeight(itemId: string): number {
     const cached = subtreeHeightCache.get(itemId);

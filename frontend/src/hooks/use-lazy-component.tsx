@@ -1,8 +1,6 @@
 import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useRef, useState } from 'react';
 
-/**
- * Lazily loads `exportName` from a dynamic import, `delay` ms after mount. Returns null until loaded.
- */
+/** Lazily loads `exportName` from a dynamic import `delay` ms after mount; null until loaded. */
 export function useLazyComponent<
   // biome-ignore lint/suspicious/noExplicitAny: Supports components with any prop shape.
   T extends ComponentType<any>,

@@ -6,24 +6,18 @@ import { accessFrom } from '#/permissions/access';
 import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
 
 /**
- * Checks if user has permission to create product or channel entity.
- * This is separate from read/update/delete checks, since the entity doesn't exist yet.
- * Uses SubjectForPermission directly, since id is optional for create checks.
- *
- * Enforces scope completeness: if the entity type has ancestor channels (e.g., attachment → project → organization),
- * all ancestor channel IDs must be provided. Pass `null` to explicitly signal org-level scope (no project).
- * Omitting a required ancestor (undefined) throws a 400 error to prevent silent fallback to a broader scope.
+ * Create check for a product or channel entity, separate from read/update/delete because the row
+ * does not exist yet. Every ancestor channel ID must be present: `null` states org-level scope,
+ * while an omitted (undefined) ancestor throws 400 so it cannot fall back to a broader scope.
  */
 export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) => {
   const { entityType } = entity;
 
-  // Enforce that all ancestor channel IDs are explicitly provided (null = intentional, undefined = missing)
   validateAncestorScope(entity);
 
   // Permission check (system admin bypass is handled inside)
   const { allowed } = checkAccess(accessFrom(ctx), 'create', entity);
 
-  // Deny if not allowed
   if (!allowed) {
     throw new AppError(403, 'forbidden', 'warn', { entityType });
   }

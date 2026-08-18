@@ -38,7 +38,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
 
   const dateNow = new Date().toUTCString();
 
-  // Reset before route change to prevent retaining the error state
+  // Reset before a route change so the error state is not retained
   useEffect(() => {
     const unsub = router.subscribe('onBeforeRouteMount', () => {
       resetErrorBoundary?.();

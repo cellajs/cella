@@ -1,8 +1,6 @@
 /**
- * Sources for a paginated list's `total`:
- * - `pageLength`: callers do not need a collection total, so report the fetched page length.
- * - `counter`: resolve an eventually consistent precomputed total.
- * - `exact`: resolve an exact `COUNT(*)`.
+ * Sources for a paginated list's `total`: `pageLength` reports the fetched page length, `counter`
+ * an eventually consistent precomputed total, `exact` a `COUNT(*)`.
  */
 export type ListTotalSource = { kind: 'pageLength' } | { kind: 'counter' | 'exact'; getTotal: () => Promise<number> };
 
@@ -11,10 +9,7 @@ export interface PaginatedResult<TItem> {
   total: number;
 }
 
-/**
- * Run an items query and its total source in parallel. Page-length reads skip the
- * total source entirely.
- */
+/** Runs the items query and the total source in parallel; page-length reads skip the total source. */
 export async function resolveListTotal<TItem>(
   itemsQuery: PromiseLike<TItem[]>,
   source: ListTotalSource,

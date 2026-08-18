@@ -10,7 +10,6 @@ const formatGrant = (g: GrantSource): string => {
   return `relation:${g.relation}`;
 };
 
-/** Formats a decision tree for debug logging. */
 export const formatPermissionDecision = <T extends AccessMembership>(decision: PermissionDecision<T>): string => {
   const lines = [
     `[Permission Check] entity=${decision.subject.entityType} id=${decision.subject.id}`,
@@ -33,7 +32,6 @@ export const formatPermissionDecision = <T extends AccessMembership>(decision: P
   return lines.join('\n');
 };
 
-/** Formats per-entity and per-action decision counts for debug logging. */
 export const formatBatchPermissionSummary = <T extends AccessMembership>(
   decisions: Map<string, PermissionDecision<T>>,
 ): string => {

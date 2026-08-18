@@ -9,11 +9,7 @@ import {
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
-/**
- * Compares independent subscriber checks with dispatch's access-class collapse under a
- * hot-organization workload. Timings are hardware-dependent; assertions guard only the
- * expected performance direction.
- */
+/** Hardware-dependent timings under a hot-organization workload: assertions guard direction only. */
 const ORG = 'org-perf-hot';
 const OTHER_ORGS = ['org-perf-b', 'org-perf-c'];
 
@@ -90,7 +86,7 @@ const scopedRows = (event: AppStreamProductEvent): AppStreamProductEvent[] => {
   return rows.map(({ rowData }) => (rowData === event.rowData ? event : rowScopedEvent(event, rowData)));
 };
 
-/** Per-subscriber baseline: independent engine calls, scoped events derived once, no collapse. */
+/** Baseline: independent engine calls, scoped events derived once, no collapse. */
 const perSubscriberFilter = (
   subscribers: AppStreamSubscriber[],
   event: AppStreamProductEvent,
@@ -119,12 +115,7 @@ const batchFilter = (subscribers: AppStreamSubscriber[], event: AppStreamProduct
   return eligible;
 };
 
-/**
- * Average ms per run. `makeInput` runs OUTSIDE the timed section and returns a fresh event
- * each run (one event is dispatched exactly once in production); membership arrays stay
- * stable across runs, matching steady-state connections (warm engine index memo for BOTH
- * paths).
- */
+/** Average ms per run; `makeInput` runs outside the timed section and returns a fresh event. */
 const MEASURE_RUNS = 6;
 const measure = (makeInput: () => AppStreamProductEvent, run: (event: AppStreamProductEvent) => unknown): number => {
   for (let i = 0; i < 2; i++) run(makeInput());
@@ -147,19 +138,16 @@ interface Scenario {
 }
 
 describe('dispatch batch eligibility: fan-out benchmark', () => {
-  // Keep the performance direction visible under instrumented two-core CI.
-  // Timings remain informational; assertions cover correctness and regression direction.
+  // Timings stay informational: the assertions cover correctness and regression direction.
   const hot2000 = makeSubscribers(2000, ORG);
   const hot1200 = makeSubscribers(1200, ORG);
-  // Registered on the channel (connect-time), but membership moved: worst case, every
-  // batch row is checked and denied for every subscriber.
+  // Registered at connect time but membership moved: every batch row is checked and denied.
   const strangers1200 = makeSubscribers(1200, 'org-perf-gone').map((subscriber) => ({
     ...subscriber,
     organizationIds: new Set([ORG]),
   }));
 
-  // Eligibility count depends on app policies, so assert batch/baseline parity plus universal
-  // reader and non-member expectations.
+  // Eligibility count depends on app policies, so assert batch/baseline parity only.
   const scenarios: Scenario[] = [
     {
       name: 'single row × 2000 readers',
@@ -195,8 +183,7 @@ describe('dispatch batch eligibility: fan-out benchmark', () => {
         `${scenario.name}: per-subscriber ${singleMs.toFixed(2)}ms → batch ${batchMs.toFixed(2)}ms (${(singleMs / batchMs).toFixed(1)}x)`,
       );
 
-      // Access-class collapse should not be materially slower than per-subscriber checks.
-      // A broad tolerance absorbs CI sampling noise while retaining a regression guard.
+      // The broad tolerance absorbs CI sampling noise.
       expect(batchMs).toBeLessThan(singleMs * 1.5);
     }
 

@@ -13,13 +13,7 @@ function zoneName(zone: DnsZoneItem): string {
   return zone.subdomain ? `${zone.subdomain}.${zone.domain}` : zone.domain;
 }
 
-/**
- * Project id of the most specific existing DNS zone that serves `dnsZone`
- * (exact match or parent zone), or undefined when no zone matches. Records for
- * a stack can land in a parent zone owned by another project (staging on the
- * production apex), so the CI grant must cover that zone's project, not just
- * the app project.
- */
+/** Project id of the most specific existing zone serving `dnsZone`. A stack's records can land in a parent zone owned by another project, so the CI grant must cover that zone's project. */
 export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): Promise<string | undefined> {
   if (!dnsZone) return undefined;
   const { dns_zones: zones = [] } = await scwFetch<{ dns_zones?: DnsZoneItem[] }>(
@@ -36,12 +30,7 @@ export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): P
   return matches[0]?.project_id;
 }
 
-/**
- * Project ids the CI key's DNS grant must cover: the app project (where a
- * fresh zone is created) plus the serving zone's project when it differs.
- * Falls back to the app project alone when the zone lookup fails (the caller
- * may lack DNS read; the grant then covers the common same-project case).
- */
+/** Project ids the CI key's DNS grant must cover: the app project plus the serving zone's project when it differs. Falls back to the app project alone when the zone lookup fails. */
 export async function resolveDnsProjectIds(auth: ScwAuth, dnsZone: string, appProjectId: string): Promise<string[]> {
   const zoneProjectId = await resolveDnsZoneProjectId(auth, dnsZone).catch((err: unknown) => {
     console.warn(

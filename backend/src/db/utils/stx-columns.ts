@@ -1,11 +1,7 @@
 import { jsonb } from 'drizzle-orm/pg-core';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/**
- * Sync transaction column for sync-enabled entities (offline/realtime).
- * Tracks mutations and enables conflict detection via CDC Worker.
- * Required (notNull) because all offline/realtime entity mutations MUST include stx metadata.
- */
+/** Tracks mutations for CDC conflict detection. notNull: every offline or realtime mutation must carry stx metadata. */
 export const stxColumns = {
   stx: jsonb().$type<StxBase>().notNull(),
 };

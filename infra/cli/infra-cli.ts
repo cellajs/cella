@@ -25,20 +25,13 @@ import { runUnlock } from './actions/unlock';
 import type { CliMode, InfraContext } from './shared';
 import { autoAcceptDefaults, nonInteractive } from './shared';
 
-// Load backend/.env before the root fallback so infra child tasks share the app's
-// local config. Existing environment variables keep precedence over both files.
+// Load backend/.env before the root fallback so infra child tasks share the app's local config; ambient env keeps precedence over both files.
 loadBaseEnvFiles();
 
 /**
- * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a
- * fresh stack that has no Pulumi.<mode>.yaml yet; otherwise the first existing
- * stack file wins (production before staging), matching prior behavior. With
- * no stack file at all, an interactive fresh install asks, defaulting to
- * staging: validate the cheap disposable target first, promote to production
- * later by re-running with `--mode production`.
- * A mode-scoped env file `infra/.env.<mode>` OVERRIDES the ambient env: it
- * carries that mode's credentials/project so a staging run cannot silently
- * inherit production values from backend/.env.
+ * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
+ * otherwise the first existing stack file wins (production before staging), and with no stack file an interactive install asks, defaulting to staging.
+ * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production credentials from backend/.env.
  */
 async function resolveMode(): Promise<'production' | 'staging'> {
   const flagIndex = process.argv.indexOf('--mode');
@@ -79,27 +72,23 @@ async function loadContext(): Promise<InfraContext> {
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
   const state = detectStackState({ yamlText: stackYaml });
 
-  // Set the stack mode before loading the config, which reads APP_MODE during
-  // module evaluation. The CLI-selected stack is authoritative for child tasks.
+  // The config reads APP_MODE during module evaluation, so the CLI-selected stack must be set first; it is authoritative for child tasks.
   process.env.APP_MODE = environment;
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
 
-  // Project id scopes all Scaleway API calls, so resolve it once here from the
-  // env files loaded above. A fresh install may not have one yet: the setup
-  // wizard offers to pick or create the project with the bootstrap key and
-  // writes SCW_PROJECT_ID to backend/.env itself. Every other state fails fast.
+  // Project id scopes all Scaleway API calls, so resolve it once from the env files loaded above.
+  // Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env. Every other state fails fast.
   const projectId = resolveProjectId();
   if (!projectId && state !== 'fresh') {
-    throw new Error('SCW_PROJECT_ID is not set — add it to backend/.env before running the infra CLI.');
+    throw new Error('SCW_PROJECT_ID is not set: add it to backend/.env before running the infra CLI.');
   }
 
-  // Bootstrap creates the admin application and writes its id to backend/.env.
-  // Bootstrapped stacks require it for admin access to CI-scoped buckets.
+  // Bootstrap creates the admin application and writes its id to backend/.env; bootstrapped stacks need it for admin access to CI-scoped buckets.
   const adminApplicationId = process.env.SCW_ADMIN_APPLICATION_ID?.trim();
   if (!adminApplicationId && state === 'bootstrapped') {
     console.warn(
-      'SCW_ADMIN_APPLICATION_ID is not set — admin bucket-policy statements will be dropped on the next up. Run "Rotate keys" to create the admin app.',
+      'SCW_ADMIN_APPLICATION_ID is not set: admin bucket-policy statements will be dropped on the next up. Run "Rotate keys" to create the admin app.',
     );
   }
 
@@ -125,9 +114,7 @@ if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
 
 const context = await loadContext();
 
-// Fail on an apex-hosted frontend before any prompt or provisioning step: the
-// LB module cannot serve the app at the zone apex (deriveInfra throws the same
-// error deep inside `pulumi up`, but by then half a deploy has run).
+// Fail on an apex-hosted frontend before any prompt or provisioning step; the LB module cannot serve the app at the zone apex, and `pulumi up` only throws once half a deploy has run.
 {
   const { frontendApexIssue } = await import('../lib/naming');
   const apexIssue = frontendApexIssue(context.appConfig);
@@ -148,16 +135,14 @@ if (deferredSince) {
   );
 }
 
-// Two-level action menu: a short category list, then the actions inside it, so
-// the top level stays glanceable. Back returns to the top. The two DB-exposure
-// actions collapse into one status-aware toggle; the current state comes from
-// the local stack config already in memory.
+// Two-level action menu: category list, then the actions inside it, with Back returning to the top.
+// The two DB-exposure actions collapse into one status-aware toggle, read from the local stack config already in memory.
 const backChoice = { name: '← Back', value: 'back' as const, description: 'Return to the main menu.' };
 
 async function chooseDatabaseAction(dbExposed: boolean): Promise<Exclude<CliMode, 'status'> | 'back'> {
   const toggle = dbExposed
     ? {
-        name: `Public DB access: ${pc.yellow('OPEN')} — close it`,
+        name: `Public DB access: ${pc.yellow('OPEN')}, close it`,
         value: 'unexpose-db' as const,
         description: 'Close the temporary public DB endpoint.',
       }
@@ -239,8 +224,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
 }
 
 async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status'>> {
-  // Exposure state lives in the gitignored overlay; the committed stack yaml is
-  // only consulted for stacks that predate the overlay flow.
+  // Exposure state lives in the gitignored overlay; the committed stack yaml is only consulted for stacks predating it.
   const overlayPath = exposureOverlayPath(ctx.environment);
   const overlayYaml = existsSync(overlayPath) ? readFileSync(overlayPath, 'utf8') : undefined;
   const dbExposed = detectDbPublicEndpoint(overlayYaml ?? ctx.stackYaml);
@@ -265,8 +249,7 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
         { name: 'Stack setup', value: 'stack', description: 'Apply or preview infra changes, resume, or unlock.' },
       ],
     });
-    // Status is read-only, so run it in place and return to the menu rather
-    // than exiting, letting the operator glance and then pick a real action.
+    // Status is read-only, so it runs in place and returns to the menu.
     if (category === 'status') {
       await runStatus(ctx);
       console.info('');

@@ -1,11 +1,6 @@
 const isPrimitive = (v: unknown): boolean => v === null || typeof v !== 'object';
 
-/**
- * Format JSON with collapsed primitive arrays and simple objects.
- * - Arrays with only primitives → single line: ["a", "b", "c"]
- * - Objects with ≤3 primitive values → single line: { "type": "string", "required": true }
- * - Everything else → multi-line with indentation
- */
+/** Primitive-only arrays and objects with at most 3 primitive values collapse to a single line; everything else stays multi-line. */
 export function formatJson(data: unknown, indent = 2): string {
   const spacer = ' '.repeat(indent);
 
@@ -25,7 +20,6 @@ export function formatJson(data: unknown, indent = 2): string {
     const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== undefined);
     if (entries.length === 0) return '{}';
 
-    // Collapse simple objects (≤3 keys, all primitive values)
     if (entries.length <= 3 && entries.every(([, v]) => isPrimitive(v))) {
       const props = entries.map(([k, v]) => `${JSON.stringify(k)}: ${stringify(v, depth)}`);
       return `{ ${props.join(', ')} }`;

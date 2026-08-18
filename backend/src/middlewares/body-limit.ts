@@ -5,12 +5,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/**
- * Middleware to apply dynamic body size limits based on Content-Type.
- * - application/json → `appConfig.jsonBodyLimit`
- * - multipart/form-data → `appConfig.fileUploadLimit`
- * - everything else → `appConfig.defaultBodyLimit`
- */
+/** Applies a body size limit chosen from the request's Content-Type. */
 export const dynamicBodyLimit: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const contentType = ctx.req.header('content-type') ?? '';
 

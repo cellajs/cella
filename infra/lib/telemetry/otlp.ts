@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-// Hand-rolled OTLP/JSON builders: the boot runner bundle stays dependency-free and
-// the black-box S3 sink stores exactly these objects (no OTel SDK needed).
+// Hand-rolled OTLP/JSON builders: the boot runner bundle stays dependency-free and the black-box S3 sink stores exactly these objects.
 
 /** Attribute value types the engine emits. */
 export type AttrValue = string | number | boolean;
@@ -117,8 +116,7 @@ export function buildEvent(opts: {
 }): OtlpLogRecord {
   const severity: Severity = opts.severity ?? 'info';
   const time = unixNano(opts.timeMs);
-  // Backends render the BODY as the message line, so it must read on its own:
-  // the event name plus logfmt attrs. Attributes stay structured for rules.
+  // Backends render the body as the message line, so it carries the event name plus logfmt attrs; attributes stay structured for rules.
   const attrs = opts.attrs ?? {};
   const logfmt = Object.entries(attrs)
     .map(([key, value]) => `${key}=${value}`)
@@ -136,8 +134,7 @@ export function buildEvent(opts: {
   };
 }
 
-// OTLP instrumentation scope: names the emitting component (this deploy engine),
-// not the deployed app. App identity travels in the `resource` attributes.
+// OTLP instrumentation scope names the emitting component, not the deployed app; app identity travels in the `resource` attributes.
 const SCOPE_NAME = 'infra';
 
 /** OTLP/JSON envelope for a logs export request. */

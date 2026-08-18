@@ -17,12 +17,7 @@ type Ref = ErrorOption['ref'];
 /** HTTP error status codes registered in the OpenAPI spec. */
 export type ErrorCode = ErrorOption['code'];
 
-/**
- * Standardized error response specifications for:
- * - Zod-backed response objects for route definitions
- * - `$ref` objects for route definitions
- * - OpenAPI registry components
- */
+/** Feeds the Zod-backed responses, the `$ref` objects, and the OpenAPI registry components below. */
 const errorResponseOptions = [
   {
     code: 400,
@@ -68,7 +63,6 @@ const errorResponseOptions = [
   },
 ] as const;
 
-// Helper to create error body schemas with OpenAPI metadata
 const errorBodySchema = (code: ErrorCode) => {
   const option = errorResponseOptions.find((o) => o.code === code);
   return apiErrorSchema.extend({ status: z.literal(code) }).openapi(option?.name ?? 'Error', {
@@ -77,7 +71,7 @@ const errorBodySchema = (code: ErrorCode) => {
   });
 };
 
-// Helper that creates a numeric map for registry work (we simply *don't* include `ref` here)
+// Numeric-keyed map for registry work; no `ref` here.
 const zodErrorResponses: Partial<Record<ErrorCode, ZodBackedResponse>> = Object.fromEntries(
   errorResponseOptions.map(({ code, description }) => [
     code,
@@ -88,9 +82,7 @@ const zodErrorResponses: Partial<Record<ErrorCode, ZodBackedResponse>> = Object.
   ]),
 );
 
-/**
- * Error `responses` (string-indexed) for registry work. No `ref` here.
- */
+/** String-indexed, for registry work. No `ref` here. */
 export const errorResponses: Responses = Object.fromEntries(
   errorResponseOptions.map(({ code, description }) => [
     String(code),
@@ -102,13 +94,9 @@ export const errorResponses: Responses = Object.fromEntries(
 );
 
 /**
- * Errors as `$ref` for route definitions, keeping OpenAPI output compact by referencing
- * registered response components and avoids inlining the full schema per route.
- *
- * NOTE: The type is cast to look like inline Zod-backed responses. Without this,
- * `@hono/zod-openapi` sees `$ref` objects (no `content` key) and widens the handler
- * return type to `Response`, silently disabling compile-time response type checking.
- * See: https://github.com/honojs/middleware/issues.
+ * `$ref` responses for route definitions, so the OpenAPI output does not inline the full schema per route.
+ * The cast makes them look like inline Zod-backed responses: without it `@hono/zod-openapi` sees objects with
+ * no `content` key and widens the handler return type to `Response`, dropping response type checking.
  */
 export const errorResponseRefs = errorResponseOptions.reduce(
   (acc, { code, ref }) => {
@@ -133,9 +121,6 @@ const registerResponseFromZod = (
   });
 };
 
-/**
- * Register all errors in registry
- */
 export const registerAllErrorResponses = (
   registry: OpenAPIRegistry,
   responses: Partial<Record<ErrorCode, ZodBackedResponse>> = zodErrorResponses,

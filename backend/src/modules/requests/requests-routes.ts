@@ -7,9 +7,6 @@ import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema
 import { mockPaginatedRequestsResponse, mockRequestResponse } from './requests-mocks';
 
 const requestRoutes = {
-  /**
-   * Create request
-   */
   createRequest: createXRoute({
     operationId: 'createRequest',
     method: 'post',
@@ -35,9 +32,6 @@ const requestRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get list of requests
-   */
   getRequests: createXRoute({
     operationId: 'getRequests',
     method: 'get',
@@ -60,9 +54,6 @@ const requestRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete requests
-   */
   deleteRequests: createXRoute({
     operationId: 'deleteRequests',
     method: 'delete',

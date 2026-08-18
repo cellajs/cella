@@ -6,10 +6,8 @@ import { useDomainCreateMutation } from '~/modules/tenants/query';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
-/** Identifies the create-domain dialog. */
 export const createDomainDialogId = 'create-domain';
 
-/** Renders the form for creating domain. */
 export function CreateDomainForm({ tenantId }: { tenantId: string }) {
   const { t } = useTranslation();
   const [newDomain, setNewDomain] = useState('');

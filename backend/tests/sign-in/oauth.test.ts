@@ -119,7 +119,6 @@ describe('OAuth Authentication', async () => {
       });
 
       expect(res.status).toBe(302);
-      // Should set oauth-redirect cookie
       const setCookieHeader = res.headers.get('set-cookie');
       expect(setCookieHeader).toBeTruthy();
       expect(setCookieHeader).toContain(`"redirectAfter":"${redirectAfter}"`);
@@ -131,7 +130,6 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      // Create linked OAuth account
       const oauthAccount = {
         userId: user.id,
         provider: 'github' as const,
@@ -143,7 +141,6 @@ describe('OAuth Authentication', async () => {
       await db.insert(oauthAccountsTable).values(oauthAccount);
 
       const state = 'mock-state-test';
-      // Set up the state cookie manually for the test
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const { response: res } = await call(githubCallback, {
@@ -164,7 +161,6 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      // Create unverified OAuth account
       const oauthAccount = {
         userId: user.id,
         provider: 'github' as const,
@@ -176,7 +172,6 @@ describe('OAuth Authentication', async () => {
       await db.insert(oauthAccountsTable).values(oauthAccount);
 
       const state = 'mock-state-test';
-      // Set up the state cookie manually for the test
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
       const { response: res } = await call(githubCallback, {
@@ -252,8 +247,8 @@ describe('OAuth Authentication', async () => {
   });
 
   describe('Account-linking safety (no implicit linking)', () => {
-    // GHSA-g38m-r43w-p2q7 (nOAuth-class): an OAuth sign-in whose email matches an
-    // existing local user cannot silently link/authenticate that account.
+    // GHSA-g38m-r43w-p2q7 (nOAuth-class): an OAuth sign-in whose email matches an existing
+    // local user must not link or authenticate that account.
     it('should refuse OAuth sign-in when the email matches an existing local user without a linked account', async () => {
       // Local user owns the email, but there is NO linked OAuth account.
       await createUser('github-user@example.com');
@@ -373,7 +368,6 @@ describe('OAuth Authentication', async () => {
       const user = await createUser(userEmail);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      // Create linked OAuth account
       const oauthAccount = {
         userId: user.id,
         provider: 'github' as const,
@@ -405,7 +399,6 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      // Create verified OAuth account with matching data
       const oauthAccount = {
         userId: user.id,
         provider: 'github' as const,
@@ -419,7 +412,6 @@ describe('OAuth Authentication', async () => {
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
 
-      // Sign in with OAuth
       const { response: signinRes } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
         headers: defaultHeaders,
@@ -427,12 +419,10 @@ describe('OAuth Authentication', async () => {
 
       expect(signinRes.status).toBe(302);
 
-      // Extract session cookie and verify it was set correctly
       const setCookieHeader = signinRes.headers.get('set-cookie');
       expect(setCookieHeader).toBeTruthy();
       expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
 
-      // Verify session cookie contains a session token value
       const sessionCookiePattern = new RegExp(`${appConfig.slug}-session-${appConfig.cookieVersion}=([^;]+)`);
       const match = setCookieHeader?.match(sessionCookiePattern);
       expect(match).toBeTruthy();

@@ -12,7 +12,7 @@ import {
 const allOn = { yjs: { enabled: true }, mcp: { enabled: true } };
 const allOff = { yjs: { enabled: false }, mcp: { enabled: false } };
 
-describe('service registry — enabledServices', () => {
+describe('service registry: enabledServices', () => {
   it('includes services that do not opt out in appConfig.services', () => {
     const off = enabledServices(allOff).map((s) => s.slug);
     expect(off).toContain('backend');
@@ -44,7 +44,7 @@ describe('service registry — enabledServices', () => {
   });
 });
 
-describe('service registry — singleVM (deployedServices / coHostedServices)', () => {
+describe('service registry: singleVM (deployedServices / coHostedServices)', () => {
   it('split-VM (singleVM off) deploys every enabled service on its own VM', () => {
     const deployed = deployedServices(allOn, false).map((s) => s.slug);
     expect(deployed).toEqual(enabledServices(allOn).map((s) => s.slug));
@@ -84,7 +84,7 @@ describe('service registry — singleVM (deployedServices / coHostedServices)', 
   });
 });
 
-describe('service registry — lbRoute contract', () => {
+describe('service registry: lbRoute contract', () => {
   it('frontend (the app origin) is the default LB backend', () => {
     expect(services.find((s) => s.slug === 'frontend')?.lbRoute).toBe('default');
   });

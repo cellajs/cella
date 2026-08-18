@@ -3,9 +3,8 @@ import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 /**
- * Validates a subject has required fields for permission checking. `entityGuards` defaults to
- * the real config's hierarchy; the engine passes its (possibly synthetic) hierarchy so a subject
- * whose entity type only exists in a test fixture still validates.
+ * `entityGuards` defaults to the real config's hierarchy. The engine passes its own, possibly
+ * synthetic, so a subject whose entity type exists only in a fixture still validates.
  */
 export const validateSubject = (
   subject: SubjectForPermission,
@@ -29,7 +28,6 @@ export const validateSubject = (
   }
 };
 
-/** Validates a membership has required fields. */
 export const validateMembership = <T extends AccessMembership>(membership: T, index: number): void => {
   if (!membership.channelType) {
     throw new Error(`[Permission] Membership[${index}] missing channelType`);

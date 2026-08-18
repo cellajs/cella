@@ -13,10 +13,7 @@ type RenderImageProps = {
   imageClassName?: string;
   showButtons?: boolean;
   onPanStateToggle?: (state: boolean) => void;
-  /**
-   * Dialog viewer: sizes the image to its content and lets the surrounding letterbox fall through to
-   * the backdrop so a click there dismisses the viewer, while panning on the image itself still works.
-   */
+  /** Dialog viewer: sizes the image to its content so the letterbox falls through to the backdrop, while panning on the image still works. */
   backdropDismiss?: boolean;
 };
 
@@ -42,7 +39,6 @@ function ControlButton({ tooltipContent, onClick, icon, className }: ControlButt
   );
 }
 
-/** Adds pan and zoom behavior to the image viewer. */
 export function ReactPanZoom({
   image,
   alt,
@@ -57,12 +53,10 @@ export function ReactPanZoom({
 
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  // On by default if to onPanStateToggle passed
+  // On by default when no onPanStateToggle is passed.
   const [panState, setPanState] = useState(!onPanStateToggle);
 
-  // Image fits its container via CSS (object-contain), so zoom = 1 is the natural "fit". We don't
-  // Calculate the initial scale before paint to avoid a visible jump and fit
-  // cached images (whose load event never fires).
+  // The image fits its container via CSS (object-contain), so zoom 1 is the natural fit.
   const resetAll = () => {
     setDx(0);
     setDy(0);
@@ -133,7 +127,6 @@ export function ReactPanZoom({
         onPan={onPan}
         rotation={rotation}
       >
-        {/* Image */}
         <img
           style={{ transform: `rotate(${rotation * 90}deg)` }}
           className={cn(

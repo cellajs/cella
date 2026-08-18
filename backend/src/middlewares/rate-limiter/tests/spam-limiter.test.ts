@@ -41,9 +41,7 @@ describe('spamLimiter status handling', () => {
   beforeEach(() => consumeSpy.mockClear());
 
   it('consumes a point on 204 responses', async () => {
-    // sendMagicLink and resendInvitationWithToken both return 204. With the default
-    // successStatusCodes [200, 201] the spam limiter never consumed a point on them,
-    // leaving those email-sending endpoints with no effective rate limit at all.
+    // sendMagicLink and resendInvitationWithToken return 204, which the default successStatusCodes do not cover
     const res = await request(appReturning(204));
     expect(res.status).toBe(204);
     expect(consumeSpy).toHaveBeenCalledWith('ip:1.2.3.4');

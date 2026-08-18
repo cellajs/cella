@@ -1,4 +1,3 @@
-/* Checklist item block */
 .checklist-item {
   display: flex;
   align-items: flex-start;
@@ -31,8 +30,7 @@
     border-color 0.15s;
 }
 
-/* Disabled inputs swallow mouse events entirely; let clicks fall through to the wrapper so
-   click-intercepts (e.g. an expanded card's checkbox toggle) still receive them. */
+/* Disabled inputs swallow mouse events, so let clicks fall through to the wrapper. */
 .checklist-checkbox:disabled {
   pointer-events: none;
 }

@@ -27,17 +27,11 @@ interface AttachmentRenderProps {
   itemClassName?: string;
   containerClassName?: string;
   onPanStateToggle?: (state: boolean) => void;
-  /**
-   * When set, a click on the empty letterbox around the media dismisses the viewer. Enabling it also
-   * sizes the media to its content so that surrounding area is a real click target, not the image box.
-   */
+  /** A click on the empty letterbox dismisses the viewer; it also sizes the media to its content so that area is a click target. */
   onBackdropClick?: () => void;
 }
 
-/**
- * Pure presentational component for rendering attachments.
- * Expects a valid URL - URL resolution should happen at a higher level.
- */
+/** Presentational only: expects an already-resolved URL. */
 export function AttachmentRender({
   url,
   type,
@@ -56,8 +50,7 @@ export function AttachmentRender({
 
   if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
 
-  // Only the container itself is the backdrop; clicks on the media or controls bubble here but are
-  // ignored by the target check, so just the empty letterbox dismisses the viewer.
+  // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
     ? (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onBackdropClick();
@@ -96,8 +89,7 @@ export function AttachmentRender({
         )}
         {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
           <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
-            {/* Actionable: the URL is always fetchable here — a CDN/presigned URL online, or a
-                local blob object URL (which also works offline). */}
+            {/* The URL is always fetchable: a CDN or presigned URL online, a local blob URL offline. */}
             <Button
               variant="plain"
               className="mt-4"

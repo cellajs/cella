@@ -21,11 +21,7 @@ if (mapleEnabled) {
   });
 }
 
-/**
- * Structured funnel for errors caught by React (boundaries/root). console.error
- * is the SDK's capture path (it wraps console), so this both keeps local
- * visibility and lands the error on the Maple session timeline.
- */
+/** Reports a React-caught error. console.error is the Maple SDK capture path, so it reaches the session timeline. */
 export const reportReactError = (scope: string, error: unknown, componentStack?: string | null) => {
   console.error(`[react:${scope}]`, error, componentStack ? `\n${componentStack}` : '');
 };

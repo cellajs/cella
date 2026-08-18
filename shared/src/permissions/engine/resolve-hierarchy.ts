@@ -3,14 +3,14 @@ import type { ChannelEntityType, EntityActionType } from '../../../types.ts';
 import { appConfig } from '../../config-builder/app-config.ts';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 
-/** Optional hierarchy and action overrides let tests exercise the engine outside app config. */
+/** Lets tests exercise the engine outside the app config. */
 export interface HierarchyOverrides {
   hierarchy?: EntityHierarchy;
   /** Defaults to `appConfig.entityActions` (the action set is hierarchy-independent). */
   entityActions?: readonly EntityActionType[];
 }
 
-/** The hierarchy surface the permission machinery reads, with the app singletons as defaults. */
+/** What the permission machinery reads, defaulting to the app singletons. */
 export interface ResolvedHierarchy {
   hierarchy: EntityHierarchy;
   entityActions: readonly EntityActionType[];
@@ -18,10 +18,7 @@ export interface ResolvedHierarchy {
   getRoles: (type: string) => readonly string[];
 }
 
-/**
- * Resolves the hierarchy and action set for permission operations. Synthetic channel types come
- * from their own hierarchy, and wrapped methods retain hierarchy binding.
- */
+/** Synthetic channel types come from their own hierarchy, and wrapped methods keep its binding. */
 export const resolveHierarchy = (overrides?: HierarchyOverrides): ResolvedHierarchy => {
   const h: EntityHierarchy = overrides?.hierarchy ?? appHierarchy;
   return {

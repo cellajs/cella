@@ -16,9 +16,6 @@ interface PasskeyStrategyProps extends Omit<PasskeyCredentialProps, 'type'> {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
 }
 
-/**
- * Component for handling passkey authentication and MFA verification. It initiates the WebAuthn flow and communicates with the backend to complete authentication. Used in both sign-in and MFA flows based on the `type` prop.
- */
 export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();

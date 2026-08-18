@@ -5,11 +5,9 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
-// The diagram can be viewed in three sync modes, toggled by the user.
 type SyncMode = 'rest' | 'cdc' | 'yjs';
 
-// Node positions in a 0–100 coordinate space (percentages of the container).
-// Keeping them here makes it easy to nudge layout and later anchor connector lines.
+// Node positions in a 0-100 coordinate space (percentages of the container).
 const nodes = {
   database: { x: 50, y: 80, Icon: DatabaseIcon, label: 'Postgres DB' },
   api: { x: 65, y: 20, Icon: ServerIcon, label: 'API server' },
@@ -20,7 +18,7 @@ const nodes = {
 
 type NodeKey = keyof typeof nodes;
 
-// Request–response flow: standard REST (solid, grey = HTTP, bidirectional).
+// REST request/response flow, drawn as solid grey lines.
 const requestEdges: {
   from: NodeKey;
   to: NodeKey;
@@ -36,7 +34,7 @@ const requestEdges: {
   { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14, bidirectional: true },
 ];
 
-// Stream connections (dashed). Solid = HTTP, dashed = streams. `bidirectional` adds a start arrowhead.
+// Stream connections, drawn dashed. `bidirectional` adds a start arrowhead.
 const streamEdges: {
   from: NodeKey;
   to: NodeKey;
@@ -95,10 +93,8 @@ const ANIM = { fade: 0.6, hold: 1, cdcIn: 0.6, draw: 0.9, sqlDraw: 0.6, gap: 0.4
 
 type EdgeTiming = { delay: number; duration: number; draw: boolean };
 
-// Build the per-mode node/edge timeline. `lead` is the pause before the mode-specific
-// node appears: the full hold on first reveal, but ~0 on a toggle (base already visible).
+// `lead` is the pause before the mode-specific node appears: the full hold on first reveal, 0 on a toggle.
 const buildTimeline = (lead: number) => {
-  // CDC timeline.
   const T_CDC = ANIM.fade + lead;
   const T_REPLICATION = T_CDC + ANIM.cdcIn + ANIM.gap;
   const T_SQL_CDC = T_REPLICATION + ANIM.draw + ANIM.gap;
@@ -110,14 +106,13 @@ const buildTimeline = (lead: number) => {
   const T_WS_YJS = T_YJS_NODE + ANIM.cdcIn + ANIM.gap;
   const T_YJS_PERSIST = T_WS_YJS + ANIM.draw + ANIM.gap;
 
-  // Per-node fade-in delay per mode (the mode-specific node appears last).
   const nodeDelay: Record<SyncMode, Partial<Record<NodeKey, number>>> = {
     rest: { database: 0, api: 0, client: 0 },
     cdc: { database: 0, api: 0, client: 0, cdc: T_CDC },
     yjs: { database: 0, api: 0, client: 0, cdc: T_CDC, yjs: T_YJS_NODE },
   };
 
-  // Per-edge animation per mode: `draw` lines are stroked along their trajectory, others fade.
+  // `draw` lines are stroked along their trajectory; the rest fade in.
   const edgeAnim: Record<SyncMode, Record<string, EdgeTiming>> = {
     rest: {
       'client-api': { delay: 0, duration: ANIM.fade, draw: false },
@@ -147,8 +142,7 @@ const buildTimeline = (lead: number) => {
 };
 const fallbackAnim = { delay: 0, duration: ANIM.fade, draw: false };
 
-// Extra breathing room (px) kept between a line end and the icon box edge.
-// Labels sit on the outer side of each node, so this only needs to clear the box.
+// Extra room (px) kept between a line end and the icon box edge.
 const EDGE_PADDING = 8;
 
 type Point = { x: number; y: number };
@@ -160,31 +154,26 @@ export const SyncDiagram = () => {
   const [geom, setGeom] = useState<Geometry | null>(null);
   // Tracks which draw-mode lines have finished, so arrowheads/dashes appear only then.
   const [drawn, setDrawn] = useState<Record<string, boolean>>({});
-  // Active sync mode; drives which nodes/edges render and which timeline runs.
   const [mode, setMode] = useState<SyncMode>('rest');
   const activeNodes = modeConfig[mode].nodes;
   const activeEdges = modeConfig[mode].edges;
-  // Edges this part introduces (vs the previous part); only these get moving dashes so each
-  // part visually highlights just its own new flow while earlier lines sit static.
+  // Only edges a part introduces get moving dashes; earlier lines stay static.
   const prevMode = (['rest', 'cdc', 'yjs'] as const)[(['rest', 'cdc', 'yjs'] as const).indexOf(mode) - 1];
   const introducedEdges = new Set(
     activeEdges.filter((edge) => !prevMode || !modeConfig[prevMode].edges.includes(edge)),
   );
-  // Lead-in before the mode-specific node appears: full hold on first reveal, ~0 on a toggle.
   const [lead, setLead] = useState<number>(ANIM.hold);
   // Edge whose label is revealed on hover (inherited labels are hidden until hovered/near).
   const [hovered, setHovered] = useState<string | null>(null);
-  // Clicking the diagram toggles a "reveal every label" override on/off.
   const [showAllLabels, setShowAllLabels] = useState(false);
   // Time (s) subtracted from delays so a toggle animates only the new part. The
   // shared structure from earlier parts stays put while the new flow draws in from t≈0.
   const [rebase, setRebase] = useState(0);
-  // "Try me" hint nudges the user to interact; hidden as soon as they switch parts.
   const [hint, setHint] = useState(true);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
   const { t } = useTranslation();
 
-  // Switch parts: keep everything the previous part already showed, animate only the delta.
+  // Keeps everything the previous part showed and animates only the delta.
   const switchMode = (target: SyncMode) => {
     if (target === mode) return;
     setHint(false);
@@ -238,7 +227,6 @@ export const SyncDiagram = () => {
     return () => ro.disconnect();
   }, [mode]);
 
-  // Shorten a segment to each node's measured edge (in real px space).
   // `offset` shifts the whole line perpendicular, to run parallel lines side by side.
   const trimmedLine = (from: NodeKey, to: NodeKey, offset = 0) => {
     if (!geom) return null;
@@ -260,7 +248,6 @@ export const SyncDiagram = () => {
     };
   };
 
-  // Midpoint of a line, nudged perpendicular so the label sits beside the line.
   const labelPos = (line: { x1: number; y1: number; x2: number; y2: number }, offset = 12) => {
     const dx = line.x2 - line.x1;
     const dy = line.y2 - line.y1;
@@ -300,7 +287,6 @@ export const SyncDiagram = () => {
         </ToggleGroup>
       </div>
 
-      {/* Per-part explanation, tied to the selected toggle (old fades out, new fades in) */}
       <AnimatePresence mode="wait">
         <motion.p
           key={mode}
@@ -343,7 +329,6 @@ export const SyncDiagram = () => {
           >
             <title>Cella sync engine data flow</title>
 
-            {/* Request–response: solid neutral lines (bidirectional = HTTP) */}
             <g>
               <defs>
                 <marker
@@ -382,7 +367,6 @@ export const SyncDiagram = () => {
                   const delay = startDelay(anim.delay, drawn[key]);
                   const labelDelay = delay + (anim.draw ? anim.duration : 0);
                   const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
-                  // Inherited labels stay hidden until the line (or near it) is hovered.
                   const relevant = introducedEdges.has(key);
                   const showLabel = relevant || hovered === key || showAllLabels;
                   return (
@@ -391,7 +375,6 @@ export const SyncDiagram = () => {
                       onMouseEnter={() => setHovered(key)}
                       onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
                     >
-                      {/* Wide transparent hit area so hovering near the line reveals its label. */}
                       <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
                       <motion.line
                         x1={line.x1}
@@ -459,7 +442,6 @@ export const SyncDiagram = () => {
               )}
             </g>
 
-            {/* Streams: dashed colored lines with matching arrowheads (WAL / WebSocket / SSE) */}
             <defs>
               {streamEdges.map(({ from, to, stroke }) => (
                 <marker
@@ -487,12 +469,9 @@ export const SyncDiagram = () => {
                 const lp2 = label2 ? labelPos(line, -(label2Offset ?? labelOffset ?? 12)) : null;
                 const delay = startDelay(anim.delay, drawn[key]);
                 const labelDelay = delay + anim.duration;
-                // Only the part that introduces an edge animates its dashes; earlier lines sit still.
                 const animateDashes = introducedEdges.has(key);
-                // Inherited labels stay hidden until the line (or near it) is hovered.
                 const showLabel = animateDashes || hovered === key || showAllLabels;
-                // Bidirectional streams render as one line with an arrowhead at each end, split
-                // into two collinear halves (with a small center gap) whose dashes flow outward.
+                // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
                 const flowLanes = (() => {
                   if (!bidirectional) return [{ seg: line, dir: -10, lane: 'flow' }];
                   const dx = line.x2 - line.x1;
@@ -504,13 +483,11 @@ export const SyncDiagram = () => {
                   const mx = (line.x1 + line.x2) / 2;
                   const my = (line.y1 + line.y2) / 2;
                   return [
-                    // From center toward `to` (arrowhead at `to`), dashes flow toward `to`.
                     {
                       seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 },
                       dir: -10,
                       lane: 'fwd',
                     },
-                    // From center toward `from` (arrowhead at `from`), dashes flow toward `from`.
                     {
                       seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 },
                       dir: -10,
@@ -524,7 +501,6 @@ export const SyncDiagram = () => {
                     onMouseEnter={() => setHovered(key)}
                     onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
                   >
-                    {/* Wide transparent hit area so hovering near the line reveals its label. */}
                     <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
                     {drawn[key] ? (
                       flowLanes.map(({ seg, dir, lane }) => (
@@ -601,7 +577,6 @@ export const SyncDiagram = () => {
           </svg>
         )}
 
-        {/* Icon nodes positioned absolutely over the SVG */}
         {Object.entries(nodes).map(([key, { x, y, Icon, label }]) => {
           if (!activeNodes.includes(key as NodeKey)) return null;
           const isLastNode = (mode === 'cdc' && key === 'cdc') || (mode === 'yjs' && key === 'yjs');

@@ -91,9 +91,7 @@ describe('Permission enforcement via HTTP', async () => {
     });
   });
 
-  // The member/admin split follows the configured policy matrix, so this suite holds across apps:
-  // cella grants org members unconditional attachment read (cell 1, so a member signs a row they did
-  // not create), while an app that scopes attachment read to the creator (cell 'own') rejects it.
+  // The member/admin split follows the configured policy matrix, so this suite holds across apps.
   describe('Presigned URLs by role', () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
 

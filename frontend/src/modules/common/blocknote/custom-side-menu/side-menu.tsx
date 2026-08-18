@@ -7,8 +7,6 @@ import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-// in this menu we have only drag button
-/** Renders the custom side menu component. */
 export function CustomSideMenu({ editor, allowedTypes, headingLevels, titleLevel }: CustomBlockNoteMenuProps) {
   return (
     <SideMenuController
@@ -19,8 +17,7 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels, titleLevel
           selector: (state) => state?.block,
         });
         if (block === undefined) return null;
-        // Forced-title mode: the title block gets no drag handle or type menu
-        // (maintainer-sanctioned pattern, TypeCellOS/BlockNote#709)
+        // Forced-title mode: the title block gets no drag handle or type menu (TypeCellOS/BlockNote#709).
         if (titleLevel !== undefined && block.id === editor.document[0]?.id) return null;
         return (
           <SideMenu {...props}>
@@ -40,8 +37,7 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels, titleLevel
   );
 }
 
-// Keep drag mousedown separate from Base UI's menu trigger.
-// Controlled click-only state prevents dragging from opening the menu.
+// Controlled click-only state keeps a drag mousedown from opening Base UI's menu.
 function DragHandle({
   sideMenu,
   block,
@@ -108,9 +104,7 @@ function DragHandle({
     <DropdownMenu
       open={menuOpen}
       onOpenChange={(open, details) => {
-        // Ignore trigger-initiated events ('trigger-press'); our onClick
-        // handles all opens and closes. Only respond to external dismiss
-        // events like escape-key and outside-press.
+        // onClick handles every open and close, so only external dismiss events (escape, outside press) apply here.
         if (details.reason === 'trigger-press') return;
         setMenuOpen(open);
         if (!open) sideMenu.unfreezeMenu();

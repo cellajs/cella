@@ -19,7 +19,6 @@ const collapseTextClasses =
 
 const expandedTextClasses = 'transition-[max-height,opacity,margin] duration-300 ease-in-out max-h-24 mt-2 md:mt-3';
 
-/** Renders the simple header. */
 export function SimpleHeader({
   heading,
   text,

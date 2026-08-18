@@ -5,14 +5,13 @@ import { Button } from '~/modules/ui/button';
 export interface RenderExpandToggleProps {
   expanded: boolean;
   hasChildren: boolean;
-  /** Pixel height of the row the toggle is rendered in. Required so the SVG connector paths can be drawn in row-relative pixel coordinates. */
+  /** Pixel height of the row; connector paths are drawn in row-relative pixel coordinates. */
   rowHeight: number;
   /** Nesting depth of the row. 0 = root. Draws a connector line above nested rows. */
   depth?: number;
   /** True when this row is the last child of its parent. Suppresses the connector line below. */
   isLastChild?: boolean;
-  /** True when this row's parent is itself the last child of its grandparent. Determines
-   *  whether the depth-1 trunk should keep going through deeper rows. */
+  /** True when the parent is the last child of its grandparent; decides if the depth-1 trunk continues through deeper rows. */
   parentIsLastChild?: boolean;
   /** Maximum nesting depth; its final level receives the thin, hollow depth-limit treatment. */
   maxDepth?: number;
@@ -26,7 +25,6 @@ export interface RenderExpandToggleProps {
 
 /** Column width in px. Must match the column factory's `width`. */
 const COL = 36;
-/** Column horizontal center. */
 const CX = COL / 2;
 /** Horizontal offset of the depth-1 ("solid") and depth-2 ("thin") tracks from center. */
 const TRACK_OFFSET = 4;
@@ -34,11 +32,7 @@ const SOLID_X = CX - TRACK_OFFSET;
 const THIN_X = CX + TRACK_OFFSET;
 const STROKE_SOLID = 2;
 const STROKE_THIN = 1;
-/**
- * Half-height of the chevron button (size-5 = 20px tall, so 10px). Elbows
- * terminate at this distance from row center, so
- * the curve isn't clipped by the chevron sitting on top of it.
- */
+/** Half-height of the size-5 (20px) chevron button; elbows stop this far from row center so the chevron cannot clip the curve. */
 const CHEVRON_HALF = 10;
 
 interface ConnectorPath {
@@ -61,7 +55,7 @@ interface ConnectorGeometry {
 function elbowAbovePath(xStart: number, xEnd: number, rowHeight: number): string {
   const yEnd = rowHeight / 2 - CHEVRON_HALF;
   const yStem = yEnd / 2; // stem from top to half-way to the chevron edge
-  const midY = (yStem + yEnd) / 2; // both control points sit at the curve's vertical midpoint
+  const midY = (yStem + yEnd) / 2;
   return `M ${xStart} 0 V ${yStem} C ${xStart} ${midY}, ${xEnd} ${midY}, ${xEnd} ${yEnd}`;
 }
 
@@ -73,10 +67,6 @@ function elbowBelowPath(xStart: number, xEnd: number, rowHeight: number): string
   return `M ${xStart} ${yStart} C ${xStart} ${midY}, ${xEnd} ${midY}, ${xEnd} ${yStem} V ${rowHeight}`;
 }
 
-/**
- * Pure helper: returns all connector path segments for a row. One SVG path
- * per element. Snapshot the array for each visual case.
- */
 function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   const paths: ConnectorPath[] = [];
   const H = g.rowHeight;
@@ -107,9 +97,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
     }
   }
 
-  // Lower-half solid trunk on an expanded parent whose children are on the
-  // thin track; keeps the depth-1 line continuous to the next sibling at
-  // this depth, and balances the thin elbow on the right.
+  // Lower-half solid trunk on an expanded parent with children on the thin track, keeping the depth-1 line continuous to the next sibling.
   if (g.solidTrunkBelow) {
     paths.push({ d: elbowBelowPath(CX, SOLID_X, H), thin: false });
   }
@@ -117,11 +105,7 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
   return paths;
 }
 
-/**
- * Renders the focusable tree-grid toggle and its depth-aware connectors.
- * Root rows show only a chevron; deeper rows use solid or thin tracks and leaf bullets.
- * Curved SVG paths keep connectors continuous through the toggle.
- */
+/** Root rows show only a chevron; deeper rows add solid or thin connector tracks and leaf bullets. */
 export function RenderExpandToggle({
   expanded,
   hasChildren,
@@ -137,19 +121,15 @@ export function RenderExpandToggle({
   const { t } = useTranslation();
 
   const showLineAbove = depth > 0;
-  // Line below: either this is an expanded parent (joining its first child)
-  // or this is a nested row that has more siblings after it (joining the next sibling).
+  // A line below joins the first child of an expanded parent, or the next sibling of a nested row.
   const showLineBelow = (hasChildren && expanded) || (depth > 0 && !isLastChild);
 
-  // Derived here (not by consumers) so callers pass only the tree shape, not visual flags.
   const isDeepest = maxDepth !== undefined && depth >= maxDepth - 1;
   const childIsDeepest = maxDepth !== undefined && depth + 1 >= maxDepth - 1;
-  // Below-line joins either children (when expanded) or the next sibling.
-  // Match thinness to whichever it joins.
+  // Thinness matches whatever the below-line joins: children when expanded, otherwise the next sibling.
   const lineBelowIsThin = hasChildren && expanded ? childIsDeepest : isDeepest;
   const lineAboveIsThin = isDeepest;
-  // Keep the depth-1 trunk continuous through deepest rows when the depth-1
-  // ancestor still has more siblings to come.
+  // Keeps the depth-1 trunk continuous through deepest rows while its ancestor still has siblings to come.
   const parentTrunkContinues = isDeepest && !parentIsLastChild;
   // Keeps the centered trunk continuous to the next sibling when children sit on the thin track.
   const solidTrunkBelow = hasChildren && expanded && !isLastChild && childIsDeepest;
@@ -168,8 +148,7 @@ export function RenderExpandToggle({
   return (
     <span className="relative flex h-full w-full items-center justify-center">
       {paths.length > 0 && (
-        // Stretch connectors to the rendered cell so mobile row and rem scaling remain aligned.
-        // The viewBox retains stable desktop drawing coordinates.
+        // Connectors stretch to the rendered cell for mobile row and rem scaling; the viewBox keeps desktop drawing coordinates.
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full text-input"
@@ -217,9 +196,7 @@ export function RenderExpandToggle({
           <ChevronRightIcon className={`opacity-70 transition-transform ${expanded ? 'rotate-90' : ''}`} />
         </Button>
       ) : depth > 0 ? (
-        // Deepest leaf bullets ride the thin track (4px right of center) so
-        // they line up with the thin lines above/below them. Inner-leaf
-        // bullets ride the solid track (4px left of center).
+        // Deepest leaf bullets ride the thin track (4px right of center), inner-leaf bullets the solid track (4px left).
         isDeepest ? (
           <span
             aria-hidden

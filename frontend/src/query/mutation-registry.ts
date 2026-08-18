@@ -1,6 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-/** Registry of mutation default registration functions. */
 type MutationDefaultsRegistrar = (queryClient: QueryClient) => void;
 
 const registrars: MutationDefaultsRegistrar[] = [];
@@ -16,9 +15,7 @@ export function addMutationRegistrar(registrar: MutationDefaultsRegistrar): void
 }
 
 /**
- * Apply buffered mutation defaults and store the client for later registrations. Call once at
- * startup, before PersistQueryClientProvider restores.
- *
+ * Applies buffered mutation defaults and stores the client for later registrations. Call once at startup, before PersistQueryClientProvider restores.
  * @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persist-mutations
  */
 export function initMutationDefaults(queryClient: QueryClient): void {

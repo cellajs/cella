@@ -8,8 +8,7 @@ import { appConfig } from 'shared';
 import { createSpanStore, createSpanStoreProcessor } from 'shared/tracing';
 import { mapleEnabled } from './maple-enabled';
 
-// Devtools span ring. Only fed in development.
-/** Stores completed frontend tracing spans for diagnostics. */
+/** Devtools ring of completed frontend tracing spans. Only fed when Maple tracing is disabled. */
 export const spanStore = createSpanStore({ maxSpans: 500 });
 
 if (!mapleEnabled) {

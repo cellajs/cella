@@ -2,19 +2,11 @@ import type { TrackedEventType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 
-/**
- * Batch payload: the rows the event is about. cella ops work in batches, so the bus does too.
- * `before`/`after` are index-aligned for updates; a create carries `after`, a delete carries
- * `before` (the deleted rows, which already hold the op's `deletedAt`/`deletedBy`). Handlers
- * narrow rows to their entity type.
- */
+/** The batched rows an event is about: `before`/`after` index-aligned for updates, `before` alone for deletes. */
 export interface MutationPayload {
   before?: Record<string, unknown>[];
   after?: Record<string, unknown>[];
-  /**
-   * True when the write originates from Yjs materialization (server-origin). Handlers that would
-   * double-process on those re-writes should return early.
-   */
+  /** True for writes from Yjs materialization; handlers that would double-process those re-writes return early. */
   serverOrigin?: boolean;
 }
 
@@ -32,11 +24,7 @@ onBackendModuleRegister((module) => {
   }
 });
 
-/**
- * Fire the handlers registered for `<type>.<verb>` synchronously, in registration order, awaiting
- * each. Rejects on the first handler error so an operation can let a failed requirement abort the
- * request. Pass the transactional ctx when handlers must run inside the write's transaction.
- */
+/** Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. */
 export async function dispatchMutation(
   ctx: AuthContext,
   event: TrackedEventType,

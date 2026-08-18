@@ -12,7 +12,6 @@ describe('retry utility', () => {
 
   describe('isTransientError', () => {
     it('should return true for PostgreSQL transient error codes', () => {
-      // Test various PostgreSQL error codes
       expect(isTransientError({ code: '40001' })).toBe(true); // serialization_failure
       expect(isTransientError({ code: '40P01' })).toBe(true); // deadlock_detected
       expect(isTransientError({ code: '53000' })).toBe(true); // insufficient_resources
@@ -98,7 +97,6 @@ describe('retry utility', () => {
 
       const resultPromise = withRetry(fn, 'test operation');
 
-      // Fast-forward through retry delays
       await vi.advanceTimersByTimeAsync(100); // First retry delay
       await vi.advanceTimersByTimeAsync(200); // Second retry delay
 
@@ -118,7 +116,6 @@ describe('retry utility', () => {
 
       const resultPromise = withRetry(fn, 'test operation');
 
-      // Fast-forward through all retry delays
       await vi.advanceTimersByTimeAsync(100); // First retry
       await vi.advanceTimersByTimeAsync(200); // Second retry
 
@@ -147,7 +144,7 @@ describe('retry utility', () => {
         expect(result.attempts).toBe(3); // Still counts attempts
         expect(result.isTransient).toBe(false);
       }
-      // Should only be called once since error is not transient
+      // Not transient: no retry.
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
@@ -161,22 +158,21 @@ describe('retry utility', () => {
 
       const resultPromise = withRetry(fn, 'test operation');
 
-      // First call happens immediately
       expect(fn).toHaveBeenCalledTimes(1);
 
-      // After 50ms, still waiting for first retry (delay is 100ms)
+      // 50ms: still waiting, the first delay is 100ms.
       await vi.advanceTimersByTimeAsync(50);
       expect(fn).toHaveBeenCalledTimes(1);
 
-      // After 100ms total, first retry happens
+      // 100ms: first retry.
       await vi.advanceTimersByTimeAsync(50);
       expect(fn).toHaveBeenCalledTimes(2);
 
-      // After 150ms more (250ms total), still waiting for second retry (delay is 200ms)
+      // 250ms: still waiting, the second delay is 200ms.
       await vi.advanceTimersByTimeAsync(150);
       expect(fn).toHaveBeenCalledTimes(2);
 
-      // After 200ms total from second attempt, second retry happens
+      // Second retry.
       await vi.advanceTimersByTimeAsync(50);
       expect(fn).toHaveBeenCalledTimes(3);
 

@@ -16,7 +16,6 @@ import { queryClient } from '~/query/query-client';
 /** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
 const variantPriority: CloudFileVariant[] = ['thumbnail', 'preview', 'converted', 'original'];
 
-/** Per-fetch timeout for variant downloads. */
 const variantFetchTimeoutMs = 30_000;
 
 /** Result of attempting to download a single variant. */
@@ -37,67 +36,50 @@ class AttachmentDownloadService {
   private mutationUnsubscribe: (() => void) | null = null;
   private ownerUnsubscribe: (() => void) | null = null;
 
-  /**
-   * Get config for local blob storage.
-   */
   private get config() {
     return appConfig.localBlobStorage;
   }
 
-  /**
-   * Start the download service.
-   */
   start(): void {
     if (!this.config?.enabled) {
       console.debug('[DownloadService] Local blob storage disabled');
       return;
     }
 
-    // Wake up when connectivity returns.
     this.onlineUnsubscribe = onlineManager.subscribe((online) => {
       if (online) this.processQueueSoon();
     });
 
-    // Drive processing reactively from the queue itself.
     this.subscribeQueue();
 
-    // liveQuery only tracks the DB it first resolved, but the per-user localUserDb rebinds on
-    // Re-subscribe and schedule a run against the new instance after sign-in or an account switch.
+    // liveQuery tracks only the DB it first resolved, so re-subscribe when the per-user localUserDb rebinds.
     this.ownerUnsubscribe = subscribeOwnerChange(() => {
       this.subscribeQueue();
       this.processQueueSoon();
     });
 
-    // Subscribe to query cache to detect new attachments
     this.cacheUnsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // Only react to successful data updates for attachment list queries
       if (event.type !== 'updated') return;
       if (event.action.type !== 'success') return;
 
-      // Compare against the key factory to keep its shape in one place.
       if (!matchesKeyPrefix(event.query.queryKey, attachmentQueryKeys.list.base)) return;
 
-      // Extract attachments from the query data
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
       if (attachments.length > 0) {
         this.queueForDownload(attachments);
       }
     });
 
-    // Subscribe to mutation cache to clean up blobs when attachments are deleted
     this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
-      // Only react to successful mutations
       if (event.type !== 'updated') return;
       if (event.mutation.state.status !== 'success') return;
 
       if (!matchesKeyPrefix(event.mutation.options.mutationKey, attachmentQueryKeys.delete)) return;
 
-      // Get the deleted attachments from mutation variables
       const deletedAttachments = event.mutation.state.variables as Attachment[] | undefined;
       if (!deletedAttachments?.length) return;
 
-      // Drop both the local blobs and their queue rows; a deleted attachment will never be
-      // re-downloaded, so leaving its row behind only grows the dedupe registry forever.
+      // Drop blobs and queue rows: a deleted attachment is never re-downloaded and its row would grow the dedupe registry.
       const ids = deletedAttachments.map((a) => a.id);
       attachmentStorage.deleteBlobs(ids).catch((err) => {
         console.error('[DownloadService] Failed to delete local blobs:', err);
@@ -110,10 +92,7 @@ class AttachmentDownloadService {
     console.debug('[DownloadService] Started');
   }
 
-  /**
-   * Replace the pending-queue subscription for the current database; signed-out state is empty.
-   * Scan the small queue because status exists only in a compound index.
-   */
+  /** Replaces the pending-queue subscription for the current database, scanning the small queue since status is only in a compound index. */
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();
     this.queueSubscription = liveQuery(() =>
@@ -126,9 +105,6 @@ class AttachmentDownloadService {
     });
   }
 
-  /**
-   * Stop the download service.
-   */
   stop(): void {
     if (this.queueSubscription) {
       this.queueSubscription.unsubscribe();
@@ -153,10 +129,7 @@ class AttachmentDownloadService {
     console.debug('[DownloadService] Stopped');
   }
 
-  /**
-   * Schedule a queue run on the next microtask, deduped by `wakeScheduled`.
-   * Cheap to call from many places; processQueue itself guards against re-entry.
-   */
+  /** Schedules a queue run on the next microtask, deduped by `wakeScheduled`; processQueue guards re-entry. */
   private processQueueSoon(): void {
     if (this.wakeScheduled) return;
     this.wakeScheduled = true;
@@ -166,10 +139,6 @@ class AttachmentDownloadService {
     });
   }
 
-  /**
-   * Queue attachments for download.
-   * Call this when attachments are loaded from react-query.
-   */
   async queueForDownload(attachments: Attachment[]): Promise<void> {
     if (!this.config?.enabled) return;
     if (!attachments.length) return;
@@ -178,22 +147,17 @@ class AttachmentDownloadService {
     const queueable = attachments.filter(isPersisted);
     if (!queueable.length) return;
 
-    // Get organization ID from first attachment
     const organizationId = queueable[0]?.organizationId;
     if (!organizationId) return;
 
     await downloadQueue.enqueue(queueable, organizationId);
 
-    // The queue liveQuery will pick up the new pending rows and wake processing,
-    // but call directly too in case enqueue produced no new rows (e.g. all already cached).
+    // Call directly as well: enqueue may add no pending rows for the liveQuery to observe.
     if (onlineManager.isOnline()) {
       this.processQueueSoon();
     }
   }
 
-  /**
-   * Process the download queue.
-   */
   async processQueue(): Promise<void> {
     if (!this.config?.enabled) return;
     if (this.processing) return;
@@ -205,12 +169,11 @@ class AttachmentDownloadService {
     try {
       const concurrency = this.config.downloadConcurrency ?? 2;
 
-      // Get all pending downloads. Table scan is fine for this small table.
+      // Table scan is fine for this small table.
       const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
 
       if (pendingAll.length === 0) return;
 
-      // Group by organization
       const byOrg = new Map<string, typeof pendingAll>();
       for (const entry of pendingAll) {
         const existing = byOrg.get(entry.organizationId) || [];
@@ -218,9 +181,7 @@ class AttachmentDownloadService {
         byOrg.set(entry.organizationId, existing);
       }
 
-      // Process each organization
       for (const [organizationId, entries] of byOrg) {
-        // Check storage limit
         const used = await attachmentStorage.getStorageUsed(organizationId);
         const maxTotal = this.config.maxTotalSize ?? 100 * 1024 * 1024;
 
@@ -229,10 +190,8 @@ class AttachmentDownloadService {
           continue;
         }
 
-        // Sort by priority and take up to concurrency limit
         const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, concurrency);
 
-        // Download in parallel
         await Promise.all(sorted.map((entry) => this.downloadAttachment(entry.id, organizationId)));
       }
     } catch (error) {
@@ -244,8 +203,7 @@ class AttachmentDownloadService {
 
   /** Downloads variants in priority order (thumbnail, preview, converted, original), then evicts raw. */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
-    // Look up in cache *before* claiming the row, so we don't burn an attempt on rows whose
-    // metadata hasn't synced yet; the liveQuery re-triggers us once the cache fills.
+    // Read the cache before claiming the row, so a row whose metadata has not synced does not burn an attempt.
     const attachment = findAttachmentInCache(attachmentId);
     if (!attachment) {
       console.debug(`[DownloadService] Attachment ${attachmentId} not in cache yet, leaving pending`);
@@ -284,7 +242,6 @@ class AttachmentDownloadService {
         // 'skipped' and 'failed-other' just continue to the next variant.
       }
 
-      // Evict raw blob after original is downloaded (smart eviction)
       if (downloadedOriginal) {
         await attachmentStorage.evictRawBlob(attachmentId);
       }
@@ -304,10 +261,6 @@ class AttachmentDownloadService {
     }
   }
 
-  /**
-   * Download and store a single variant. Returns the outcome so the caller can
-   * decide how to aggregate results across variants.
-   */
   private async downloadVariant(
     attachment: Attachment,
     variant: CloudFileVariant,

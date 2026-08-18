@@ -1,14 +1,11 @@
-/* ==========================================================================
-   Cell Styles (layout that needs CSS vars + complex selectors)
-   ========================================================================== */
+/* Cell layout that needs CSS vars and compound selectors */
 
 /* Grid-row-start via CSS var cascades naturally through display:contents rows. */
 .rdg-cell {
   grid-row-start: var(--rdg-grid-row-start);
 }
 
-/* Row-box rows (animated reorder) carry the row placement themselves; their cells reset
- * to auto so they flow into the row's subgrid, not the root grid's row tracks. */
+/* Row-box rows carry their own placement, so their cells reset to auto and flow into the row's subgrid. */
 .rdg-row-box {
   grid-row-start: var(--rdg-grid-row-start);
 }
@@ -23,12 +20,9 @@
   box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
 }
 
-/* ==========================================================================
-   DataTable Overrides (drag-and-drop indicators)
-   ========================================================================== */
+/* DataTable overrides: drag-and-drop indicators */
 
-/* Attribute selectors keep drag updates local to one row. Inset shadows escape cell clipping.
- * The drag handler maps a bottom seam to the next row's top; only the final row uses bottom. */
+/* Attribute selectors keep drag updates on one row, and inset shadows escape cell clipping; only the final row draws a bottom edge. */
 .rdg-row[data-drop-edge="top"] > .rdg-cell {
   box-shadow: inset 0 2px 0 0 var(--primary);
 }
@@ -37,8 +31,7 @@
   box-shadow: inset 0 -2px 0 0 var(--primary);
 }
 
-/* Rows use display:contents, so joined inset cell shadows form the center-zone ring.
- * Only the first and last cells draw the vertical edges. */
+/* Rows use display:contents, so joined inset cell shadows form the center-zone ring, with vertical edges on the first and last cells. */
 .rdg-row[data-drop-edge="center"] > .rdg-cell {
   background-color: oklch(from var(--primary) l c h / 0.08);
   box-shadow:

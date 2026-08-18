@@ -12,29 +12,16 @@ export interface RedisManagedConfig {
   userName?: string;
   /** Terminate connections with TLS (rediss scheme). Defaults to true. */
   tls?: boolean;
-  /**
-   * Permit a public cluster endpoint. Off by default: the provider-formatted
-   * `connectionString` prefers a public endpoint when one exists, so an
-   * unnoticed public network would silently switch the emitted REDIS_URL from
-   * private to internet-reachable.
-   */
+  /** Permit a public cluster endpoint, off by default: the provider-formatted `connectionString` prefers a public endpoint when one exists, which would make REDIS_URL internet-reachable. */
   allowPublicEndpoint?: boolean;
-  /**
-   * Services that consume the connection URL (and, with TLS, the cluster CA)
-   * as runtime secrets. When set, the store owns the secret declarations.
-   */
+  /** Services consuming the connection URL and, with TLS, the cluster CA. When set, the store owns the secret declarations. */
   secretConsumers?: {
     url?: readonly string[];
     ca?: readonly string[];
   };
 }
 
-/**
- * Managed Scaleway Redis store: provisions a Redis cluster on the deployment's
- * private network and binds its connection URL (plus the TLS CA) to runtime
- * secrets. Pure at import time; Pulumi access arrives through the
- * {@link ProvisionContext}.
- */
+/** Managed Scaleway Redis store: a cluster on the deployment's private network, binding its connection URL and TLS CA to runtime secrets. Pure at import time. */
 export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
   const tls = config.tls ?? true;
 
@@ -44,7 +31,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
     validate(): void {
       if (!tls && config.secretConsumers?.ca?.length) {
         throw new Error(
-          'redisManaged: secretConsumers.ca declared but tls is disabled — no CA secret would be emitted. Enable tls or drop the ca consumers.',
+          'redisManaged: secretConsumers.ca declared but tls is disabled, no CA secret would be emitted. Enable tls or drop the ca consumers.',
         );
       }
     },
@@ -81,8 +68,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
     provision(ctx: ProvisionContext): ProvisionedStore {
       const { scaleway, naming, zone, isProduction, privateNetworkId, configuredOrRandomSecret } = ctx;
 
-      // Stable resource identity for the live credential, mirroring the
-      // postgres role passwords.
+      // Stable resource identity for the live credential; renaming re-rolls it.
       const password = configuredOrRandomSecret('redisPassword', 'redis-password');
 
       const cluster = new scaleway.redis.Cluster(
@@ -101,14 +87,11 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
         { protect: isProduction },
       );
 
-      // Provider-formatted URI for the first reachable endpoint; rediss scheme
-      // when TLS is enabled, userinfo included. Posture guard: the provider
-      // prefers a public endpoint when one exists, so fail the deploy rather
-      // than silently emit an internet-reachable REDIS_URL (O-F5).
+      // Provider-formatted URI for the first reachable endpoint. The provider prefers a public endpoint when one exists, so an unapproved public network fails the deploy and never emits an internet-reachable REDIS_URL.
       const connectionString = cluster.publicNetwork.apply((publicNetwork) => {
         if (!config.allowPublicEndpoint && (publicNetwork?.ips?.length ?? 0) > 0) {
           throw new Error(
-            'redisManaged: the cluster has a public endpoint but allowPublicEndpoint is not set — the emitted REDIS_URL would prefer it. Opt in explicitly or remove the public network.',
+            'redisManaged: the cluster has a public endpoint but allowPublicEndpoint is not set, the emitted REDIS_URL would prefer it. Opt in explicitly or remove the public network.',
           );
         }
         return cluster.connectionString;
@@ -124,8 +107,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
           redisUrl: connectionString,
           ...(tls
             ? {
-                // Base64-encode the multiline CA for line-based `.env.runtime`
-                // delivery, mirroring the postgres CA secret.
+                // Base64-encoded for line-based `.env.runtime` delivery.
                 redisSslCa: cluster.certificate.apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
               }
             : {}),

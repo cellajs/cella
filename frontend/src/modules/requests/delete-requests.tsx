@@ -10,7 +10,6 @@ interface Props {
   callback?: (args: CallbackArgs<Request[]>) => void;
 }
 
-/** Renders the deletion flow for requests. */
 export function DeleteRequests({ requests, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
 

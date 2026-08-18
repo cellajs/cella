@@ -24,7 +24,6 @@ const CRITICAL_COMPONENTS = new Set(['api', 'database']);
 
 /** Check database connectivity with a timed `SELECT 1`. */
 async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
-  // No DB when NODB is set
   if (env.NODB) return { connected: false, latencyMs: null };
 
   const startedAt = Date.now();
@@ -78,12 +77,8 @@ async function buildMcpSelfComponent(): Promise<HealthComponent> {
 }
 
 /**
- * Aggregate a structured, wide health report.
- *
- * Every dependency and sibling worker is a uniform `component` keyed by name.
- * The api process grades its own runtime (`api`), checks the database, watches
- * the pushed CDC report, and actively probes the yjs/mcp workers. The mcp worker
- * process reports its own queue depth without probing itself.
+ * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
+ * itself, checks the database, reads the pushed CDC report, and probes yjs/mcp; the mcp worker reports its own queue.
  */
 export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};

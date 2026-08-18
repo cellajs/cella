@@ -2,25 +2,17 @@ import { errorMessage } from '../utils/errors';
 import { type FetchLike, resolveFetch } from '../utils/fetch-like';
 import { retry } from '../utils/retry';
 
-// SCW_DEBUG only: the generic DEBUG var is set casually while troubleshooting
-// unrelated tools, and verbose mode must never be a one-variable accident away
-// from printing API bodies into retained CI logs.
+// SCW_DEBUG only, never the generic DEBUG var: verbose mode prints API bodies into retained CI logs.
 const DEBUG = process.env.SCW_DEBUG === '1';
 
-/**
- * True for endpoints whose request or response bodies carry live secret
- * values: Secret Manager versions/access (base64 secret data) and IAM api-key
- * minting (the response contains the new secret key). Verbose logging redacts
- * bodies for these so even deliberate debugging cannot print values.
- */
+/** True for endpoints whose bodies carry live secret values (Secret Manager access, IAM api-key minting). Verbose logging redacts these bodies. */
 export function carriesSecretValues(url: string): boolean {
   return url.includes('/secret-manager/') || url.includes('/api-keys');
 }
 
 const REDACTED = '[redacted: secret-bearing endpoint]';
 
-// A rejected fetch is a transient network failure (an HTTP error status
-// resolves); one runner blip must not fail a whole deploy preflight.
+// A rejected fetch is a transient network failure (an HTTP error status resolves), so one runner blip must not fail a deploy preflight.
 const networkAttempts = 3;
 const networkRetryDelayMs = 2000;
 

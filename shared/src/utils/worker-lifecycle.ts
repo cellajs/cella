@@ -11,9 +11,9 @@ export interface GracefulShutdownOptions {
 }
 
 /**
- * Shared graceful shutdown and crash handler for all services (api, cdc, yjs):
- * runs cleanup on SIGINT/SIGTERM, force-exiting if cleanup hangs or a second
- * signal arrives, and logs unhandledRejection/uncaughtException to stderr.
+ * Shutdown and crash handling for api, cdc and yjs: runs cleanup on SIGINT/SIGTERM, force-exits
+ * when cleanup hangs or a second signal arrives, and logs unhandledRejection and
+ * uncaughtException to stderr.
  */
 export function setupGracefulShutdown(options: GracefulShutdownOptions): void {
   const { name, cleanup: cleanupFn, log: logFn, timeoutMs = 10_000 } = options;
@@ -21,14 +21,14 @@ export function setupGracefulShutdown(options: GracefulShutdownOptions): void {
 
   const shutdown = async (signal: string) => {
     if (shuttingDown) {
-      logFn(`Second ${signal} received — forcing exit`);
+      logFn(`Second ${signal} received: forcing exit`);
       process.exit(1);
     }
     shuttingDown = true;
     logFn(`Received ${signal}, shutting down ${name}...`);
 
     const timer = setTimeout(() => {
-      logFn(`Shutdown timed out after ${timeoutMs}ms — forcing exit`);
+      logFn(`Shutdown timed out after ${timeoutMs}ms: forcing exit`);
       process.exit(1);
     }, timeoutMs);
     timer.unref();

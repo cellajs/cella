@@ -12,7 +12,6 @@ interface FindVerifiedEmailsOpts {
   emails: string[];
 }
 
-/** Find emails that already belong to a verified user. */
 export const findVerifiedEmails = async (ctx: DbContext, { emails }: FindVerifiedEmailsOpts) => {
   const { db } = ctx.var;
   return db
@@ -25,7 +24,6 @@ interface FindPendingInvitationTokensOpts {
   emails: string[];
 }
 
-/** Find pending (unused) system invitation tokens for given emails. */
 export const findPendingInvitationTokens = async (ctx: DbContext, { emails }: FindPendingInvitationTokensOpts) => {
   const { db } = ctx.var;
   return db
@@ -50,7 +48,6 @@ interface InsertTokensOpts {
   tokens: (typeof tokensTable.$inferInsert)[];
 }
 
-/** Insert invitation tokens and return created rows. */
 export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(tokens).returning();
@@ -60,13 +57,11 @@ interface FindUsersByIdsOpts {
   ids: string[];
 }
 
-/** Find users by IDs. */
 export const findUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
   const { db } = ctx.var;
   return db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids));
 };
 
-/** Delete users by IDs. */
 export const deleteUsersByIds = async (ctx: DbContext, { ids }: FindUsersByIdsOpts) => {
   const { db } = ctx.var;
   return db.delete(usersTable).where(inArray(usersTable.id, ids));
@@ -77,7 +72,6 @@ interface UpdateUserOpts {
   values: Partial<typeof usersTable.$inferInsert>;
 }
 
-/** Update a user by ID and return the updated row. */
 export const updateUser = async (ctx: DbContext, { id, values }: UpdateUserOpts) => {
   const { db } = ctx.var;
   const [updated] = await db.update(usersTable).set(values).where(eq(usersTable.id, id)).returning();
@@ -89,7 +83,6 @@ interface FindNewsletterRecipientsOpts {
   roles: EntityRole[];
 }
 
-/** Find distinct newsletter recipients across organizations with matching roles. */
 export const findNewsletterRecipients = async (
   ctx: DbContext,
   { organizationIds, roles }: FindNewsletterRecipientsOpts,

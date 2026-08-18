@@ -9,9 +9,6 @@ type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
   description?: string;
 };
 
-/**
- * Form field for entering and validating a list of domain names using tag input.
- */
 export function DomainsFormField<TFieldValues extends FieldValues>({
   control,
   name,
@@ -27,13 +24,11 @@ export function DomainsFormField<TFieldValues extends FieldValues>({
   const domains: string[] = formValue.map((dom: string) => dom);
   const [currentValue, setCurrentValue] = useState('');
 
-  // Validate input while typing
   const isValidInput = (value: string) => {
     if (!value || value.trim().length < 2) return true;
     return checkValidDomain(value);
   };
 
-  // Domain validation regex
   const checkValidDomain = (domain: string) => {
     return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i.test(domain.trim());
   };

@@ -19,7 +19,6 @@ export type HeadingProps = BaseProps<PresentAs> & Margin & { as?: PresentAs };
 
 export const withSpace = (value: number | string | undefined, properties: MarginCSSProperty[]) =>
   properties.reduce((styles, property) => {
-    // Check to ensure string value is a valid number
     if (!isNaN(Number.parseFloat(value as string))) {
       return { ...styles, [property as keyof MarginCSSProperty]: `${value}px` };
     }

@@ -11,10 +11,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
 
-/**
- * User account settings page. Accepts error/severity search params from backend OAuth connect
- * redirects (e.g. ?error=oauth_conflict&severity=error), shows a toast, and cleans the URL.
- */
+/** Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. */
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
   validateSearch: errorSearchSchema,
@@ -27,7 +24,6 @@ export const Route = createFileRoute('/_app/account')({
 
       const toastSeverity = severityMap[search.severity ?? ''] ?? 'warning';
       useToastStore.getState().showToast(message, toastSeverity);
-      // Redirect to clean URL (strips error/severity search params)
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },

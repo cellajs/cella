@@ -97,8 +97,8 @@ async function handleList(ctx: MenuContext): Promise<void> {
       ? `${tildeMark} missing`
       : (current.version_count ?? 0) > 0
         ? `${checkMark} present`
-        : `${warningMark} empty (no version — run "Set or update")`;
-    ctx.log(`- ${secret.secretName} (${secret.envVar}) — ${status}; consumers: ${secret.services.join(', ')}`);
+        : `${warningMark} empty (no version: run "Set or update")`;
+    ctx.log(`- ${secret.secretName} (${secret.envVar}): ${status}; consumers: ${secret.services.join(', ')}`);
   }
 }
 
@@ -201,7 +201,7 @@ async function handleMint(ctx: MenuContext): Promise<void> {
         (id) => runtimeSecrets.find((secret) => secret.id === id)?.envVar ?? id,
       );
       return {
-        name: `${key.suffix} — ${key.label}`,
+        name: `${key.suffix}: ${key.label}`,
         value: key.id,
         description: `${ctx.slug}-${key.suffix} → ${targets.join(', ')}`,
       };

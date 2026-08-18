@@ -21,19 +21,14 @@ export interface BootPlan {
   service: string;
   profile: string;
   /**
-   * Compose services to start (explicit names, so the one-shot release
-   * companion sharing the profile is never `up`ed). Absent in plans written
-   * before container collocation; the boot runner falls back to [profile].
+   * Compose services to start, named explicitly so the one-shot release companion sharing the profile is never `up`ed.
+   * Absent in plans predating container collocation, where the boot runner falls back to [profile].
    */
   services?: [string, ...string[]];
   releaseSha: string;
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
   traceparent?: string;
-  /**
-   * App-declared telemetry sink: boot events export here once the runtime env
-   * delivers the key under `keyEnvVar`. Absent = black box only (the boot
-   * runner carries NO baked-in vendor endpoint).
-   */
+  /** App-declared telemetry sink: boot events export here once the runtime env delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
   telemetry?: {
     endpoint: string;
     keyHeader: string;
@@ -47,10 +42,8 @@ export interface BootPlan {
     scwSecretKeyFile: string;
   };
   /**
-   * v2 model: fetch the real service key from a single-access handoff bundle
-   * using the (baked) boot credentials. A failed fetch on FIRST boot means the
-   * bundle was already consumed: interception signal, boot halts. Cache-first
-   * on reboots. Absent = legacy model (baked key does everything).
+   * Fetch the real service key from a single-access handoff bundle using the baked boot credentials, cache-first on reboots.
+   * A failed fetch on FIRST boot means the bundle was already consumed, which is an interception signal and halts the boot. Absent = the baked key does everything.
    */
   serviceKeyHandoff?: ServiceKeyHandoff;
   /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
@@ -133,8 +126,7 @@ function assertKnownTopLevel(obj: Record<string, unknown>): void {
 
 function assertAllowedPath(path: string): void {
   const allowedPrefixes = ['/opt/app/', '/var/log/'];
-  // App config and secrets live under a single `/etc/<name>/` subdirectory (the
-  // app slug, or 'runtime-secrets'); accept any single kebab-case segment there.
+  // App config and secrets live under a single `/etc/<name>/` subdirectory (the app slug, or 'runtime-secrets'), so accept any single kebab-case segment.
   const etcSubdir = /^\/etc\/[a-z0-9-]+\//;
   if (allowedPrefixes.some((prefix) => path.startsWith(prefix)) || etcSubdir.test(path)) return;
   throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`);
@@ -149,14 +141,11 @@ function commandField(obj: Record<string, unknown>, key: string): [string, ...st
       throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`);
     return part;
   });
-  // Validated non-empty above; the tuple type lets consumers destructure the
-  // executable without a non-null assertion.
+  // Validated non-empty above, so the tuple type lets consumers destructure the executable without a non-null assertion.
   return command as [string, ...string[]];
 }
 
-/** Validate a runtime-secret manifest value. Also used by the boot-plan
- *  producer (resources/cloud-init.ts) so a malformed manifest fails at plan
- *  time during planning. */
+/** Validate a runtime-secret manifest value. The boot-plan producer (resources/cloud-init.ts) calls it too, so a malformed manifest fails at plan time. */
 export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifestEntry[] {
   if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array");
   return value.map((entry, index) => {

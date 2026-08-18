@@ -17,7 +17,7 @@ import { queryClient } from '~/query/query-client';
 /** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
 let isEnriching = false;
 
-/** Cache of extended ancestors (hierarchy + menu parents) per entity type */
+/** Hierarchy ancestors plus menu parents, per entity type. */
 const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
 
 /** Ancestors for URL building: hierarchy ancestors first, then menu parents not already included. */
@@ -43,10 +43,7 @@ function getExtendedAncestors(entityType: ChannelEntityType): readonly ChannelEn
   return frozen;
 }
 
-/**
- * Run enrichers on an item in sequence (each returns the same reference when unchanged).
- * Order matters: membership must run before permissions and ancestor-slugs (they read item.membership).
- */
+/** Order matters: membership runs first, since permissions and ancestor-slugs read item.membership. Each enricher returns the same reference when unchanged. */
 function enrichItem(
   item: EnrichableChannel,
   memberships: MembershipBase[],
@@ -60,9 +57,7 @@ function enrichItem(
   return result;
 }
 
-/**
- * Enrich all items in list query data. Returns same reference when nothing changed.
- */
+/** Returns the same reference when nothing changed. */
 function enrichListData(
   data: InfiniteData,
   memberships: MembershipBase[],
@@ -91,7 +86,6 @@ function enrichListData(
   return dataChanged ? { ...data, pages: newPages } : data;
 }
 
-/** Build slug index from list queries for a given entity type */
 function buildSlugIndex(entityType: ChannelEntityType): Map<string, string> {
   const slugMap = new Map<string, string>();
   for (const query of queryClient.getQueryCache().findAll({ queryKey: [entityType, 'list'] })) {
@@ -107,7 +101,7 @@ function buildSlugIndex(entityType: ChannelEntityType): Map<string, string> {
   return slugMap;
 }
 
-/** Write enriched data back to the cache, guarded against re-entrancy */
+/** Sets isEnriching so the cache subscriber ignores this write. */
 function setCacheData(queryKey: Query['queryKey'], data: unknown) {
   isEnriching = true;
   try {
@@ -117,7 +111,6 @@ function setCacheData(queryKey: Query['queryKey'], data: unknown) {
   }
 }
 
-/** Enrich all list and detail queries for a single entity type */
 function enrichEntityType(entityType: ChannelEntityType, memberships: MembershipBase[], slugIndex: SlugIndex) {
   const cache = queryClient.getQueryCache();
 
@@ -137,10 +130,7 @@ function enrichEntityType(entityType: ChannelEntityType, memberships: Membership
   }
 }
 
-/**
- * Populate the slug index with all ancestors of this entity type, so enrichWithAncestorSlugs can
- * resolve ancestor slugs regardless of which type triggered enrichment.
- */
+/** Indexes every ancestor of this entity type, so enrichWithAncestorSlugs resolves slugs whichever type triggered enrichment. */
 function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex) {
   for (const ancestor of getExtendedAncestors(entityType)) {
     if (!slugIndex.has(ancestor)) slugIndex.set(ancestor, buildSlugIndex(ancestor));
@@ -154,12 +144,11 @@ function runEnrichment(entityType: ChannelEntityType) {
 
   const slugIndex: SlugIndex = new Map([[entityType, buildSlugIndex(entityType)]]);
 
-  // Pre-build ancestor slug indexes so enrichment can resolve ancestor slugs
   ensureAncestorSlugs(entityType, slugIndex);
 
   enrichEntityType(entityType, memberships, slugIndex);
 
-  // Re-enrich child types that depend on this type for ancestor slugs
+  // Child types read this type's slugs as ancestors, so they re-enrich too.
   for (const { type: childType } of getRegisteredChannelEntities()) {
     if (childType === entityType) continue;
     if (hierarchy.hasAncestor(childType, entityType) || isMenuParentOf(entityType, childType)) {
@@ -177,7 +166,7 @@ export function initChannelEnrichment(): () => void {
 
     const queryKey = event.query.queryKey;
 
-    // Memberships updated, re-enrich all channel entities.
+    // A membership change affects every channel entity.
     if (queryKey[0] === 'me' && queryKey[1] === 'memberships') {
       for (const { type } of getRegisteredChannelEntities()) {
         runEnrichment(type);
@@ -185,14 +174,12 @@ export function initChannelEnrichment(): () => void {
       return;
     }
 
-    // Identify the entity type from the event's query key via registry
     const entityType = typeof queryKey[0] === 'string' ? queryKey[0] : null;
     if (!entityType) return;
 
     const entry = getChannelKeys(entityType);
     if (!entry) return;
 
-    // Only enrich on list or detail updates
     if (queryKey[1] === 'list' || queryKey[1] === 'detail') {
       runEnrichment(entry.type);
     }

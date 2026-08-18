@@ -6,7 +6,6 @@ import type { Attachment } from 'sdk';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { Member } from '~/modules/memberships/types';
 
-// Extendable BlockNote types interface
 export interface ExtendableBlockNoteTypes {
   SlashKeys: DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 }
@@ -14,7 +13,6 @@ export interface ExtendableBlockNoteTypes {
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
-// Define basic block and file types
 export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
 export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
 export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockFileTypes>;
@@ -43,7 +41,6 @@ type MaxNineItems<T extends string> =
   | [T, T, T, T, T, T, T, T, T];
 export type SlashIndexedItems = MaxNineItems<CustomBlockTypes>;
 
-// Icon type for side menu to satisfy custom elements
 export type IconType = (
   props: React.SVGAttributes<SVGElement> & {
     children?: React.ReactNode;
@@ -53,16 +50,10 @@ export type IconType = (
   },
 ) => React.ReactElement;
 
-/**
- * Selects whether BlockNote stores a public bucket key or a private attachment ID.
- * Attachment modes persist an entity; private media requires one for permission-scoped access.
- */
+/** Whether BlockNote stores a public bucket key or a private attachment id; private media needs the id for permission-scoped access. */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
 
-/**
- * Attachment modes require a tenant and completion callback for persistence and private reads.
- * Parsed attachments retain the client IDs referenced by their blocks.
- */
+/** Attachment modes require a tenantId for persistence and private reads. */
 export type BaseUppyFilePanelProps = {
   organizationId: string;
   onComplete?: (attachments: Attachment[]) => void | Promise<void>;
@@ -87,11 +78,7 @@ export type CommonBlockNoteProps = {
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
-  /**
-   * Forced-title mode: block 0 is a normalized heading acting as the document title (see
-   * forced-title-extension.ts). `true` pins it at level 1; pass `{ level }` when the editor
-   * sits inside a page whose own heading already occupies the upper levels.
-   */
+  /** Forced-title mode: block 0 is a heading acting as document title. `true` pins level 1; `{ level }` sets it lower. */
   forcedTitle?: boolean | { level: TitleLevel };
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions

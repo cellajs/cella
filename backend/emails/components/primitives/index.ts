@@ -1,6 +1,4 @@
-// Vendored subset of jsx-email primitives (v3.2.1, MIT licensed).
-// Only the primitives used (directly or indirectly) by our email templates are
-// kept. See ../../README.md for what was kept, trimmed, and why.
+// Vendored subset of jsx-email primitives (v3.2.1, MIT). See ../../README.md for what was kept.
 
 export { Body } from './body.js';
 export { Button } from './button.js';

@@ -2,23 +2,13 @@ import { sql } from 'drizzle-orm';
 import { appConfig, type OrganizationFlags, type OrganizationSetupConfig } from 'shared';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
-/**
- * SQL select expression for `organizationFlags`: merges config-declared defaults under the stored
- * (sparse) bag, so a flag added to `defaultOrganizationFlags` later needs no backfill. Parallel to
- * the `userFlags` merge in the user select.
- */
+/** Merges config-declared defaults under the stored sparse bag, so a flag added to `defaultOrganizationFlags` later needs no backfill. */
 export const organizationFlagsSelect = sql<OrganizationFlags>`${JSON.stringify(appConfig.defaultOrganizationFlags)}::jsonb || ${organizationsTable.organizationFlags}`;
 
-/**
- * SQL select expression for `setupConfig`: merges config-declared defaults under the stored (sparse)
- * bag, so an app widening `defaultSetupConfig` later needs no backfill. Twin of `organizationFlagsSelect`.
- */
+/** Merges config-declared defaults under the stored sparse bag, so widening `defaultSetupConfig` later needs no backfill. */
 export const setupConfigSelect = sql<OrganizationSetupConfig>`${JSON.stringify(appConfig.defaultSetupConfig)}::jsonb || ${organizationsTable.setupConfig}`;
 
-/**
- * JS-side equivalent of `organizationFlagsSelect` for organization rows that don't pass through our
- * own select shapes (org-guard fetch, generic channel-entity reads, `.returning()` rows).
- */
+/** JS-side equivalent of `organizationFlagsSelect` for rows that skip our select shapes (org-guard fetch, generic channel reads, `.returning()`). */
 export const withOrganizationFlagDefaults = <T extends { organizationFlags: OrganizationFlags }>(
   organization: T,
 ): T => ({

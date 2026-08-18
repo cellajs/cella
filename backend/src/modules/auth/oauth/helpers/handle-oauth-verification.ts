@@ -8,7 +8,6 @@ import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
 import type { TokenModel } from '#/modules/auth/tokens-db';
 
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
-  // Token requires userId and oauthAccountId
   if (!token.userId || !token.oauthAccountId) throw new AppError(500, 'server_error', 'error');
 
   const [oauthAccount] = await db
@@ -18,8 +17,6 @@ export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenMod
     .limit(1);
   if (!oauthAccount) throw new AppError(400, 'invalid_request', 'warn');
 
-  // Concatenate onto backendAuthUrl (which already ends in /auth) so the /api base path is
-  // preserved; new URL(absolutePath, backendUrl) would drop it.
   const verificationURL = new URL(`${appConfig.backendAuthUrl}/${oauthAccount.provider}`);
 
   verificationURL.searchParams.set('tokenId', token.id);

@@ -13,7 +13,6 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 
-/** Redirects to the settings page under the new slug after a slug-changing update. */
 function useSlugChangeCallback(organization: EnrichedOrganization) {
   const navigate = useNavigate();
 
@@ -29,7 +28,6 @@ function useSlugChangeCallback(organization: EnrichedOrganization) {
   };
 }
 
-/** General organization settings card (name, slug, visuals). */
 export function OrganizationGeneralCard({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
   return (
@@ -39,7 +37,6 @@ export function OrganizationGeneralCard({ organization }: { organization: Enrich
   );
 }
 
-/** Organization details card (locale, contact, links). */
 export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
   return (
@@ -49,7 +46,6 @@ export function OrganizationDetailsCard({ organization }: { organization: Enrich
   );
 }
 
-/** Tabs arrangement card for the organization page surface, wired to the update mutation. */
 export function OrganizationTabsCard({ organization }: { organization: EnrichedOrganization }) {
   const { mutate } = useOrganizationUpdateMutation();
   return (
@@ -63,7 +59,6 @@ export function OrganizationTabsCard({ organization }: { organization: EnrichedO
   );
 }
 
-/** Danger-zone card: the standard delete tool with the organization delete confirmation. */
 export function OrganizationDeleteCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

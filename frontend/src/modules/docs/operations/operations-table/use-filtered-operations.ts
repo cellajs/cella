@@ -22,10 +22,6 @@ const matchesTerm = (op: GenOperationSummary, term: string): boolean =>
   Object.values(op.tagsByKind ?? {}).some((values) => values.some((v) => v.toLowerCase().includes(term))) ||
   Object.values(op.extensions).some((values) => values.some((v) => v.toLowerCase().includes(term)));
 
-/**
- * Filter operations by an optional `${kind}:${value}` tag selector and a
- * free-text query (space-separated terms are AND-combined).
- */
 export function useFilteredOperations(operations: GenOperationSummary[], { q, tag }: FilterOptions) {
   return useMemo(() => {
     let ops = operations;

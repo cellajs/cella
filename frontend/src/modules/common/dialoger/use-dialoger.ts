@@ -47,21 +47,18 @@ interface DialogStoreState {
   getTriggerRef: (id: string) => TriggerRef | null;
 }
 
-/**
- * A hook to manage one or multiple dialogs (on mobile it renders drawers.)
- */
+// Manages one or multiple dialogs; on mobile they render as drawers.
 export const useDialoger = create<DialogStoreState>((set, get) => ({
   dialogs: [],
   triggerRefs: {},
 
   create: (content, data) => {
-    // Capture and blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
+    // Blur the active element: a modal sets aria-hidden on ancestors and would trap focus there
     if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) {
       fallbackContentRef.current = document.activeElement;
       document.activeElement.blur();
     }
 
-    // Add defaults and a key for reactivity
     const defaults = {
       drawerOnMobile: true,
       headerClassName: 'with-close-btn',
@@ -88,9 +85,8 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     const dialogsToRemove = id ? dialogs.filter((d) => d.id === id) : dialogs;
     if (!dialogsToRemove.length) return;
 
-    // Update the store first, then run onClose. onClose callbacks may navigate (e.g. clearing
-    // the attachment dialog's search params); dispatching that from inside the set() updater
-    // interleaves a router update with this state update and flashes a stale frame of the dialog.
+    // Update the store before onClose: a callback that navigates from inside set() would
+    // interleave a router update with this one and render a stale frame of the dialog.
     set({ dialogs: dialogs.filter((d) => !dialogsToRemove.some((r) => r.id === d.id)) });
 
     for (const dialog of dialogsToRemove) dialog.onClose?.(opts?.isCleanup);

@@ -14,11 +14,7 @@ export function extractEntryAsset(html: string): string | undefined {
   return match?.[1];
 }
 
-/**
- * Response headers the frontend Caddy layer must inject. A missing header means
- * the Caddyfile regressed or the request bypassed Caddy entirely. Compared
- * case-insensitively.
- */
+/** Response headers the frontend Caddy layer must inject, compared case-insensitively. A missing one means the Caddyfile regressed or the request bypassed Caddy. */
 export const SECURITY_HEADERS = [
   'Content-Security-Policy',
   'Strict-Transport-Security',
@@ -51,11 +47,7 @@ export interface ComponentIssue {
   reason?: string;
 }
 
-/**
- * Returns every non-healthy component from a deep health response.
- * Smoke tests treat degraded non-critical workers as failures after rollout; malformed responses
- * produce a synthetic issue.
- */
+/** Every non-healthy component in a deep health response. Degraded non-critical workers count as failures after rollout, and a malformed response yields a synthetic issue. */
 export function unhealthyComponents(body: string): ComponentIssue[] {
   let parsed: { components?: Record<string, { status?: string; reason?: string }> };
   try {
@@ -95,9 +87,10 @@ export interface SmokeService {
   health_url: string;
 }
 
-/** Default GET using global fetch with no-cache headers and a timeout.
- *  ws(s):// URLs are probed over plain HTTP on the same host (a WebSocket
- *  worker's /health speaks HTTP; fetch rejects the ws scheme outright). */
+/**
+ * Default GET using global fetch with no-cache headers and a timeout.
+ * ws(s):// URLs are probed over plain HTTP on the same host, because a WebSocket worker's /health speaks HTTP and fetch rejects the ws scheme.
+ */
 export function createFetchGet(timeoutMs: number): HttpGet {
   return async (rawUrl) => {
     const url = rawUrl.replace(/^ws(s?):/, 'http$1:');
@@ -117,19 +110,16 @@ export function createFetchGet(timeoutMs: number): HttpGet {
 }
 
 export interface SmokeOptions {
-  /** Public URL of the default-route (browser) service; absent for a
-   *  frontend-less registry, where the SPA/security-header checks then skip. */
+  /** Public URL of the default-route (browser) service; absent for a frontend-less registry, which skips the SPA and security-header checks. */
   defaultRouteUrl?: string;
-  /** Public URL of the primary-rollout service (the API that serves the
-   *  aggregate /health?depth=full and /openapi.json). */
+  /** Public URL of the primary-rollout service, which serves the aggregate /health?depth=full and /openapi.json. */
   primaryUrl: string;
   expectedSha: string;
   /** Enabled rollout services; public services carry health_url, internal-only services have ''. */
   services?: readonly SmokeService[];
   /**
-   * Hashed entry asset (e.g. /assets/index-abc123.js) from the freshly built
-   * local bundle. When set, check #1 asserts the served index.html references
-   * this exact asset; when absent it falls back to "references some hashed asset".
+   * Hashed entry asset (e.g. /assets/index-abc123.js) from the freshly built local bundle.
+   * When set, the bundle check requires the served index.html to reference this exact asset, otherwise any hashed asset passes.
    */
   expectedAsset?: string;
   get: HttpGet;
@@ -143,12 +133,8 @@ export interface SmokeOptions {
 }
 
 /**
- * Component-health (check #6) retry budget. The exclusive cdc replacement
- * frees its replication slot only at the final reap, and the fresh worker's
- * WebSocket reconnect backs off up to 30s, so the backend can surface a
- * transient `cdc=unhealthy(worker_disconnected)` for up to ~2 minutes after
- * cutover. The 120s budget outlasts that; a genuinely broken component stays
- * bad for the whole budget and still fails the gate.
+ * Component-health retry budget. The exclusive cdc replacement frees its replication slot only at the final reap and the fresh worker's
+ * WebSocket reconnect backs off up to 30s, so `cdc=unhealthy(worker_disconnected)` can persist for ~2 minutes after cutover. The 120s budget outlasts that.
  */
 export const COMPONENTS_RETRY_ATTEMPTS = 15;
 export const COMPONENTS_RETRY_DELAY_MS = 8_000;
@@ -167,8 +153,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const componentsRetryDelayMs = opts.componentsRetryDelayMs ?? COMPONENTS_RETRY_DELAY_MS;
   const results: SmokeResult[] = [];
 
-  // Runs one named check: the body returns `ok` (+ failure detail), the wrapper
-  // owns the try/catch and result collection so no check can short-circuit.
+  // The wrapper owns the try/catch and result collection, so no check can short-circuit the rest.
   const check = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>): Promise<void> => {
     try {
       const { ok, detail } = await fn();
@@ -178,16 +163,14 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     }
   };
 
-  // 1. Require the exact local entry hash when available, otherwise any hashed
-  // entry asset. Skipped (with 4 and 5) when no default-route service exists.
+  // Require the exact local entry hash when available, otherwise any hashed entry asset. Skipped with the SPA and header checks when no default-route service exists.
   if (defaultRouteUrl)
     await check(
       opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset',
       async () => {
         const res = await get(`${defaultRouteUrl}/`);
         const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body);
-        // Detail mirrors the branch that actually failed: a bad status, or a 200
-        // whose HTML lacks the expected (or any) hashed entry asset.
+        // Detail mirrors the branch that failed: a bad status, or a 200 whose HTML lacks the expected hashed entry asset.
         const detail = !res.ok
           ? `status=${res.status}`
           : opts.expectedAsset
@@ -197,14 +180,12 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       },
     );
 
-  // 2. Primary service OpenAPI spec is reachable.
   await check('primary /openapi.json reachable', async () => {
     const res = await get(`${primaryUrl}/openapi.json`);
     return { ok: res.ok, detail: `status=${res.status}` };
   });
 
-  // 3. Public services report the deployed release SHA. Internal-only services
-  // have no health_url and are covered by the aggregate primary health.
+  // Internal-only services have no health_url and are covered by the aggregate primary health.
   const publicServices = (opts.services ?? [{ service: 'primary', health_url: primaryUrl }]).filter(
     (service) => service.health_url,
   );
@@ -219,14 +200,12 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     });
   }
 
-  // 4. SPA route fallback returns an HTML document.
   if (defaultRouteUrl)
     await check('SPA fallback returns HTML', async () => {
       const res = await get(`${defaultRouteUrl}/__smoke_${Date.now()}`);
       return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` };
     });
 
-  // 5. Default-route security headers are present.
   if (defaultRouteUrl)
     await check('security headers present', async () => {
       const res = await get(`${defaultRouteUrl}/`);
@@ -234,9 +213,7 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` };
     });
 
-  // 6. Retry aggregate health across one worker reconnect interval after
-  // rollout. Pass on the first clean read; persistent component failures
-  // exhaust the budget.
+  // Retry aggregate health across one worker reconnect interval after rollout: the first clean read passes, persistent failures exhaust the budget.
   await check('primary components healthy', async () => {
     let lastDetail = 'no response';
     const healthy = await pollUntil(
@@ -284,11 +261,8 @@ export function parseServicesJson(raw: string): Array<SmokeService & { public_ur
 export function parseArgs(argv: string[]): CliArgs {
   const servicesRaw = getFlag(argv, '--services-json');
   const services = servicesRaw ? parseServicesJson(servicesRaw) : undefined;
-  // Roles, not names (S9): the default-route service owns the browser checks;
-  // the primary service (named via --primary, passed by the deploy from its
-  // rollout matrix) owns the aggregate health + OpenAPI checks. Fallback for
-  // standalone runs without --primary: the first non-default-route service
-  // with a health URL.
+  // Roles, not names (S9): the default-route service owns the browser checks, the --primary service owns the aggregate health and OpenAPI checks.
+  // Without --primary, the first non-default-route service with a health URL stands in.
   const defaultRouteRow = services?.find((service) => service.lb_route === 'default');
   const primarySlug = getFlag(argv, '--primary');
   const primaryRow = primarySlug
@@ -315,8 +289,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
 /**
  * Resolve the expected hashed entry asset from the freshly built local bundle.
- * A provided-but-unreadable --dist is a hard failure: it once silently degraded
- * the bundle check into a no-op (a wrong cwd resolved the path to nothing).
+ * A provided-but-unreadable --dist is a hard failure, so a wrong path or cwd cannot degrade the bundle check into a no-op.
  */
 export function resolveExpectedAsset(dist: string | undefined): string | undefined {
   if (!dist) return undefined;
@@ -349,7 +322,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   for (const r of results) {
     if (r.ok) console.info(`✓ ${r.name}`);
-    else console.error(`::error::${r.name}${r.detail ? ` — ${r.detail}` : ''}`);
+    else console.error(`::error::${r.name}${r.detail ? `: ${r.detail}` : ''}`);
   }
 
   const failed = results.filter((r) => !r.ok);

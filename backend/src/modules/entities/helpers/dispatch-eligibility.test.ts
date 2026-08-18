@@ -10,11 +10,8 @@ import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 /**
- * The batch eligibility path (`rowReadDecisions`, engine-side access-class collapse) must
- * agree with the single-subscriber predicate (`canReceiveProductEvent`, a batch of one) on
- * every (subscriber, row). The engine's own class-key guarantee is property-tested in
- * shared (`resolve-access.test.ts`) with synthetic policies; these tests pin the dispatch
- * wiring: veto propagation, per-row any-of composition, and per-subscriber isolation.
+ * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
+ * propagation, per-row any-of composition, and per-subscriber isolation.
  */
 const ORGS = ['org-el-a', 'org-el-b', 'org-el-c'];
 const USERS = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
@@ -104,14 +101,14 @@ describe('dispatch batch eligibility: deterministic splits', () => {
       isSystemAdmin: false,
       memberships: [membership(ORGS[0], 'member', 'user-1')],
     };
-    // Same granting membership PLUS a malformed one: the engine fail-closes just this access.
+    // A granting membership plus a malformed one: the engine fail-closes just this access.
     const broken: SubscriberAccess = {
       userId: 'user-2',
       isSystemAdmin: false,
       memberships: [membership(ORGS[0], 'member', 'user-2'), membership(ORGS[1], 'member', 'user-2', true)],
     };
 
-    // broken FIRST: were classes shared naively, its deny would leak onto clean.
+    // broken comes first: were classes shared naively, its deny would leak onto clean.
     expect(batchDecisions([broken, clean], event)).toEqual([false, true]);
     expect(singleDecision(clean, event)).toBe(true);
     expect(singleDecision(broken, event)).toBe(false);

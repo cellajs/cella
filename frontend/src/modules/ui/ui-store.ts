@@ -7,35 +7,33 @@ import { isDebugMode } from '~/env';
 export type Mode = 'light' | 'dark';
 
 interface UIStoreState {
-  offlineAccess: boolean; // Offline access mode status
-  toggleOfflineAccess: () => void; // Toggles the offline access state
+  offlineAccess: boolean;
+  toggleOfflineAccess: () => void;
 
-  impersonating: boolean; // Impersonation mode status
-  setImpersonating: (status: boolean) => void; // Sets the impersonation state
+  impersonating: boolean;
+  setImpersonating: (status: boolean) => void;
 
   mode: Mode; // Current color mode (default to system preference)
-  setMode: (mode: Mode) => void; // Updates the color mode
+  setMode: (mode: Mode) => void;
 
   theme: Theme; // Selected theme ('none' for default)
-  setTheme: (theme: Theme) => void; // Updates the theme
+  setTheme: (theme: Theme) => void;
 
   publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
-  setPublicAlertSeen: (alertSeen: string) => void; // Adds a public alert to the seen list
+  setPublicAlertSeen: (alertSeen: string) => void;
 
-  focusView: boolean; // Focused view mode state
-  setFocusView: (status: boolean) => void; // Toggles focus view state
+  focusView: boolean;
+  setFocusView: (status: boolean) => void;
 
   uiLocks: string[]; // Active UI lock sources
-  lockUI: (source: string) => void; // Add a UI lock
-  unlockUI: (source: string) => void; // Remove a UI lock
+  lockUI: (source: string) => void;
+  unlockUI: (source: string) => void;
 
-  reset: () => void; // Resets store to initial state
+  reset: () => void;
 }
 
-// Detects system preference
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-// Default state values
 const initStore: Pick<
   UIStoreState,
   'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'
@@ -49,9 +47,7 @@ const initStore: Pick<
   uiLocks: [],
 };
 
-/**
- * UI store for non-user-identifiable states: offline access, impersonation, theme
- */
+/** UI store for non-user-identifiable state: offline access, impersonation, theme. */
 export const useUIStore = create<UIStoreState>()(
   devtools(
     persist(

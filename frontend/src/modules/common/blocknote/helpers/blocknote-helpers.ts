@@ -5,7 +5,6 @@ import type { CustomBlock } from '~/modules/common/blocknote/types';
 
 // Shared headless editor singleton avoids expensive BlockNoteEditor.create() on every call.
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
-/** Returns the headless editor. */
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
     headlessEditor = BlockNoteEditor.create({
@@ -17,10 +16,7 @@ export const getHeadlessEditor = () => {
   return headlessEditor;
 };
 
-/**
- * Depth-first walk over parsed (JSON) blocks and children; returning `false` from the visitor stops early.
- * Mirrors `editor.forEachBlock` (which needs a live editor) for our JSON-string helpers.
- */
+/** Depth-first walk over parsed blocks and children; returning `false` from the visitor stops early. */
 // biome-ignore lint/suspicious/noConfusingVoidType: `boolean | void` lets visitors omit a return (mirrors editor.forEachBlock)
 export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) => boolean | void): boolean => {
   for (const block of blocks) {
@@ -30,11 +26,7 @@ export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) 
   return true;
 };
 
-/**
- * Locate the media element for a click in rendered BlockNote content (null when not on media).
- * `includeWrapped` extends detection to nested media and `.bn-file-block-content-wrapper` hits (file blocks
- * without a preview), used by the live editor; the static full-HTML renderer matches only direct media clicks.
- */
+/** Media element for a click in rendered content, or null. `includeWrapped` also matches nested media and file blocks without a preview. */
 export const findClickedMedia = (
   target: HTMLElement,
   { includeWrapped = false } = {},
@@ -48,7 +40,6 @@ export const findClickedMedia = (
   return { src: (mediaElement as HTMLMediaElement | null)?.src };
 };
 
-/** Returns the parsed content. */
 export const getParsedContent = (initialStringifiedBlocks: string | undefined) => {
   if (!initialStringifiedBlocks) return undefined;
   try {
@@ -58,16 +49,12 @@ export const getParsedContent = (initialStringifiedBlocks: string | undefined) =
   }
 };
 
-/** Converts BlockNote blocks to HTML. */
 export const blocksToHTML = (srtBlocks: string) => {
   const blocks = JSON.parse(srtBlocks) as CustomBlock[];
   return getHeadlessEditor().blocksToHTMLLossy(blocks);
 };
 
-/**
- * Copies BlockNote content to clipboard with both HTML and Markdown formats.
- * HTML is used by rich text apps, Markdown ensures code blocks work in Copilot/plain text apps.
- */
+/** Writes both HTML (for rich text targets) and Markdown (so code blocks survive in plain-text targets). */
 export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<boolean> => {
   if (!strBlocks) return false;
 
@@ -94,10 +81,7 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
 // biome-ignore lint/suspicious/noExplicitAny: schema-agnostic; custom block renderers pass narrower-schema editors
 type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
-/**
- * Works in both collaborative (Yjs UndoManager) and non-collaborative (ProseMirror history) modes via
- * BlockNote's `transact`, so the outer transaction carries `addToHistory: false`.
- */
+/** The outer `transact` carries `addToHistory: false`, which covers both the Yjs UndoManager and ProseMirror history. */
 export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
   editor: TEditor,
   blockId: Parameters<TEditor['updateBlock']>[0],

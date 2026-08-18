@@ -37,7 +37,7 @@ describe('4.2 Graceful shutdown', () => {
     try {
       await shutdownServer();
     } catch {
-      // Already closed
+      // Already closed.
     }
   });
 
@@ -52,10 +52,8 @@ describe('4.2 Graceful shutdown', () => {
   it('all connected clients receive close code 1001 on shutdown', async () => {
     await startServer();
 
-    // Connect 3 clients
     const clients = await Promise.all([connectClient(), connectClient(), connectClient()]);
 
-    // Collect close events
     const closePromises = clients.map(
       (ws) =>
         new Promise<{ code: number; reason: string }>((resolve) => {
@@ -63,7 +61,6 @@ describe('4.2 Graceful shutdown', () => {
         }),
     );
 
-    // Trigger shutdown
     await shutdownServer();
 
     const results = await Promise.all(closePromises);
@@ -95,7 +92,6 @@ describe('4.2 Graceful shutdown', () => {
   it('shutdown with no clients does not throw', async () => {
     await startServer();
 
-    // Should complete without error
     await shutdownServer();
   });
 
@@ -112,7 +108,7 @@ describe('4.2 Graceful shutdown', () => {
       });
     });
 
-    // Close all clients (mimics closeWsServer behavior)
+    // Mimics closeWsServer.
     for (const client of wss.clients) {
       client.close(1001, 'Server shutting down');
     }
@@ -120,7 +116,6 @@ describe('4.2 Graceful shutdown', () => {
     await closePromise;
     expect(closeReceivedBeforeServerStop).toBe(true);
 
-    // Now close the server
     wss.close();
     httpServer.close();
   });

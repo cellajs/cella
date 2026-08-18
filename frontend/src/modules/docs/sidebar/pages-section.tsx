@@ -21,7 +21,6 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1">
         <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
-        {/* Edit pages */}
         {isSystemAdmin && (
           <TooltipButton toolTipContent={t('c:manage_pages')} side="right">
             <Button
@@ -35,10 +34,8 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
           </TooltipButton>
         )}
       </div>
-      {/* List of pages */}
       <SidebarGroupContent>
-        {/* Inner SidebarGroup mirrors the operations/schemas wrappers so tier-1 bullets
-            and guideline align with the API reference section (their p-1 adds 4px left). */}
+        {/* Inner SidebarGroup matches the API reference wrappers so bullets and guideline align */}
         <SidebarGroup className="p-1 pt-0">
           <PagesSidebar onClose={onClose} />
         </SidebarGroup>

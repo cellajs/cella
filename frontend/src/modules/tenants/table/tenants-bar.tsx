@@ -19,7 +19,6 @@ interface TenantsTableBarProps {
   setSearch: (newValues: Partial<TenantsRouteSearchParams>, saveSearch?: boolean) => void;
 }
 
-/** Renders the action and filter toolbar for the tenants table. */
 export function TenantsTableBar({ queryKey, searchVars, setSearch, columns, setColumns }: TenantsTableBarProps) {
   const total = useListQueryTotal(queryKey);
 

@@ -10,12 +10,10 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { getMethodColor } from '../../helpers/get-method-color';
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
   const { t } = useTranslation();
 
   return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(() => {
-    // Generate extension columns dynamically from extension definitions
     const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
       key: ext.id,
       name: ext.key
@@ -35,7 +33,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
               const meta = ext.values?.[value];
               const label = meta?.name ?? value;
               const tooltipContent = meta?.description
-                ? `${value} — ${meta.description}`
+                ? `${value}: ${meta.description}`
                 : label !== value
                   ? value
                   : undefined;
@@ -55,7 +53,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       },
     }));
 
-    // Generate tag kind columns dynamically (one column per kind, e.g., 'module', 'owner')
+    // One column per tag kind, e.g. 'module', 'owner'
     const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
       key: `tag-${kind}`,
       name: kind.replace(/^\w/, (c) => c.toUpperCase()),
@@ -160,9 +158,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
           <Input value={row.summary} onChange={(e) => onRowChange({ ...row, summary: e.target.value })} autoFocus />
         ),
       },
-      // Insert dynamically generated extension columns
       ...extensionColumns,
-      // Insert dynamically generated tag kind columns
       ...tagKindColumns,
     ];
   });

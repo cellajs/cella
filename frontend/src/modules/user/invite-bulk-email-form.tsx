@@ -27,10 +27,6 @@ interface Props {
   children?: React.ReactNode;
 }
 
-/**
- * Bulk variant of the email invite form: emails are extracted from freely pasted text.
- * Operates the same invite flow in the background, only the input differs.
- */
 export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
@@ -67,7 +63,6 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
   });
 
   const onSubmit = (body: InviteFormValues) => {
-    // With no context, this is a system invite; otherwise it is a membership invite.
     if (!channel) return systemInvite(body);
 
     const organizationId = channel.organizationId || channel.id;

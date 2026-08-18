@@ -19,10 +19,8 @@ import { userBaseSchema } from '#/schemas/user-schema-base';
 const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
 
-  // Build extension entries with collected value metadata
   const extensions = buildExtensionEntries(getExtensionValueMetadata());
 
-  // OpenAPI configuration
   const openApiConfig = {
     servers: [{ url: appConfig.backendUrl }],
     info: {
@@ -44,7 +42,6 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     })) as { name: string; description: string }[],
   };
 
-  // Set security schemes
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
     in: 'cookie',
@@ -64,13 +61,10 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.register('BooleanQueryValue', booleanTransformSchema);
   registry.register('StreamNotification', streamNotificationSchema);
 
-  // Register error responses
   registerAllErrorResponses(registry, errorResponses);
 
-  // Review all existing schemas
   app.doc31('/openapi.json', openApiConfig);
 
-  // Get JSON doc and save to file
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
 
   validateOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);

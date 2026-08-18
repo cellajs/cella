@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { makeDeepHierarchy } from '../../testing/deep-fixture.ts';
 
 /**
- * Variable-depth `item` rows attach at any depth; raak/cella configs cannot exhibit this
- * (no nullable ancestors), so the rule is proven on the deep fixture. `course` stays
- * non-nullable here so possibleHomeChannels can prove its first-non-nullable boundary.
+ * Variable-depth `item` rows attach at any depth, which template configs cannot express, so the
+ * rule is proven on the deep fixture. `course` stays non-nullable here so possibleHomeChannels
+ * can prove its first-non-nullable boundary.
  */
 describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
   const h = makeDeepHierarchy(['project', 'courseSection']);

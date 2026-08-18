@@ -1,7 +1,4 @@
-/**
- * Wraps a mock generator to produce a paginated response matching paginationSchema
- * (`{ items: T[], total: number }`). `count` defaults to 2.
- */
+/** Matches paginationSchema: `{ items: T[], total: number }`. */
 export const mockPaginated = <T>(
   mockFn: (key?: string) => T,
   count = 2,

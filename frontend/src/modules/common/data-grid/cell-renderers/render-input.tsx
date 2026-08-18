@@ -1,10 +1,7 @@
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/**
- * Strips the default focus ring/shadow since the grid cell already provides
- * its own focus styling, and keeps the input flush with the cell.
- */
+/** Drops the default focus ring and shadow: the grid cell draws focus, and the input stays flush with it. */
 export function EditCellInput({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (
     <input

@@ -9,7 +9,6 @@ import { isSeenTracked } from '~/modules/seen/helpers';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
-/** Batch of seen entity IDs for one org + entity type (one markSeen call) */
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
@@ -24,16 +23,12 @@ const FLUSHED_IDS_MAX = 10_000;
 
 const batchKey = (organizationId: string, productType: ProductEntityType) => `${organizationId}:${productType}`;
 
-// Mutable module state: nothing renders from the queue, and per-mark immutable clones are
-// exactly the scroll-time overhead the delta batcher exists to avoid.
 const pending = new Map<string, SeenBatch>();
 let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 
 interface SeenStoreState {
-  /** Entity IDs the server has confirmed as seen (persisted across sessions) */
   flushedIds: Set<string>;
 
-  /** Record an entity as seen and queue it for the next flush. */
   markProductSeen: (
     tenantId: string,
     organizationId: string,
@@ -41,21 +36,14 @@ interface SeenStoreState {
     productType: ProductEntityType,
     productId: string,
   ) => void;
-  /** Start the periodic flush interval */
   startFlushInterval: () => void;
-  /** Stop the periodic flush interval */
   stopFlushInterval: () => void;
-  /** Flush all pending seen rows to the server */
   flush: () => Promise<void>;
   /** Reset in-memory state to initial (call on sign-out; persisted data lives in localUserDb). */
   reset: () => void;
 }
 
-/**
- * Vanilla Zustand store for "seen" entities. Queued from IntersectionObserver, batch-flushed to
- * POST /:tenantId/:organizationId/seen periodically (or on unload via sendBeacon).
- * Pending IDs stay in memory; confirmed IDs persist to prevent resending next session.
- */
+/** Seen entities queued from IntersectionObserver, batch-flushed to POST /:tenantId/:organizationId/seen; pending IDs stay in memory, confirmed IDs persist. */
 export const seenStore = createStore<SeenStoreState>()(
   devtools(
     persist(
@@ -64,11 +52,11 @@ export const seenStore = createStore<SeenStoreState>()(
 
         markProductSeen: (tenantId, organizationId, channelId, productType, productId) => {
           if (!isSeenTracked(productType)) return;
-          if (get().flushedIds.has(productId)) return; // server already told in an earlier session
+          if (get().flushedIds.has(productId)) return;
 
           const key = batchKey(organizationId, productType);
           const batch = pending.get(key) ?? { tenantId, organizationId, productType, productIds: new Set() };
-          if (batch.productIds.has(productId)) return; // session dedup
+          if (batch.productIds.has(productId)) return;
           batch.productIds.add(productId);
           pending.set(key, batch);
 
@@ -146,17 +134,14 @@ export const seenStore = createStore<SeenStoreState>()(
   ),
 );
 
-/**
- * True when this client already saw the entity (flushed to the server, or queued to be).
- * App code must use this accessor and keep store internals private.
- */
+/** True when this client saw the entity (flushed or still queued); store internals stay private behind this accessor. */
 export function isSeenLocally(entityId: string): boolean {
   if (seenStore.getState().flushedIds.has(entityId)) return true;
   for (const batch of pending.values()) if (batch.productIds.has(entityId)) return true;
   return false;
 }
 
-/** Flush pending seen data via sendBeacon on page unload. Call once at app init (e.g. root useEffect). */
+/** Flush pending seen data via sendBeacon on page unload. Call once at app init. */
 export const setupSeenBeaconFlush = () => {
   const handler = () => {
     for (const batch of pending.values()) {

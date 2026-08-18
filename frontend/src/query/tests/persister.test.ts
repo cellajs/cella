@@ -2,7 +2,6 @@ import 'fake-indexeddb/auto';
 import type { PersistedClient } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock shared config before any module imports
 vi.mock('shared', () => ({
   appConfig: {
     slug: 'test-app',
@@ -12,13 +11,11 @@ vi.mock('shared', () => ({
   },
 }));
 
-// Stub window.addEventListener for the module-level beforeunload listener
 vi.stubGlobal('window', {
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
 });
 
-// Mock sessionStorage for getTabSessionId
 const sessionStorageMap = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {
   getItem: (key: string) => sessionStorageMap.get(key) ?? null,
@@ -30,9 +27,7 @@ const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~
 // The persister reads/writes the live per-user localUserDb; bind one (owner `u1`) per test.
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 
-// Snapshot the window listeners the persister registered at import time, before any test clears
-// mocks. A reload fires `beforeunload`, so a teardown wired there would wipe the session cache on
-// every refresh; this snapshot lets us assert none is registered even after later mock resets.
+// Snapshot of the listeners registered at import time: a reload fires `beforeunload`, so a teardown wired there would wipe the session cache on every refresh.
 const importTimeWindowEvents = (window.addEventListener as unknown as { mock: { calls: unknown[][] } }).mock.calls.map(
   (call) => call[0],
 );
@@ -71,7 +66,6 @@ function makePersistedClient(queries: ReturnType<typeof makeQuery>[], timestamp 
   };
 }
 
-/** Delete the test-app database between tests */
 async function deleteDb() {
   await deleteLocalUserDb();
 }
@@ -109,7 +103,6 @@ describe('per-query IDB persister', () => {
       const restoredHashes = restored!.clientState.queries.map((q) => q.queryHash).sort();
       expect(restoredHashes).toEqual(['["me"]', '["task","list","org-1"]']);
 
-      // Data round-trips correctly
       const taskQuery = restored!.clientState.queries.find((q) => q.queryHash === '["task","list","org-1"]');
       expect(taskQuery!.state.data).toEqual([{ id: 't1' }]);
       expect(taskQuery!.state.dataUpdatedAt).toBe(1000);
@@ -159,11 +152,9 @@ describe('per-query IDB persister', () => {
       const q1 = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
       const q2 = makeQuery('["me"]', 'me', 2000, { name: 'user' });
 
-      // First persist: writes both
       await persister.persistClient(makePersistedClient([q1, q2]));
       await persister.flush();
 
-      // Second persist: same data, nothing should change
       await persister.persistClient(makePersistedClient([q1, q2]));
       await persister.flush();
 
@@ -187,7 +178,6 @@ describe('per-query IDB persister', () => {
       expect(taskQuery!.state.data).toEqual([{ id: 't1' }, { id: 't2' }]);
       expect(taskQuery!.state.dataUpdatedAt).toBe(3000);
 
-      // me query should be unchanged
       const meQuery = restored!.clientState.queries.find((q) => q.queryHash === '["me"]');
       expect(meQuery!.state.data).toEqual({ name: 'user' });
     });
@@ -223,7 +213,6 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient(queries));
       await persister.flush();
 
-      // Read from DB directly; product queries should be in queries table.
       const productRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
       expect(productRecords).toHaveLength(3);
     });
@@ -238,11 +227,9 @@ describe('per-query IDB persister', () => {
       await persister.persistClient(makePersistedClient(queries));
       await persister.flush();
 
-      // No individual records for context queries
       const queryRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
       expect(queryRecords).toHaveLength(0);
 
-      // Context queries bundled in meta
       const meta = await getLocalUserDb()!.meta.get('rq');
       expect(meta!.channelQueries).toHaveLength(3);
       const hashes = meta!.channelQueries.map((q: { queryHash: string }) => q.queryHash).sort();
@@ -343,7 +330,6 @@ describe('per-query IDB persister', () => {
 
       await cleanupOrphanedSessions();
 
-      // Verify cleanup
       const metaRecords = await db.meta.where('key').equals(oldScope).count();
       const queryRecords = await db.queries.where('scope').equals(oldScope).count();
       expect(metaRecords).toBe(0);
@@ -386,13 +372,11 @@ describe('per-query IDB persister', () => {
 
       const restored = await persister.restoreClient();
       expect(restored).toBeDefined();
-      // Cached query data is gone (both product + context)...
       expect(restored!.clientState.queries).toHaveLength(0);
       // ...but the queued offline mutation survives for replay.
       expect(restored!.clientState.mutations).toHaveLength(1);
       expect(restored!.clientState.mutations[0].state.variables).toEqual({ title: 'offline edit' });
 
-      // Pointer advanced to current so a subsequent restore does not re-bust.
       const metaAfter = await db.meta.get('rq');
       expect(metaAfter!.clientCacheVersion).toBe('v1');
     });
@@ -424,8 +408,7 @@ describe('session persister survives reload', () => {
   });
 
   it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
-    // `beforeunload` cannot distinguish reloads from closed tabs. Age-based orphan cleanup
-    // preserves reload caches while reclaiming closed sessions.
+    // `beforeunload` cannot tell a reload from a closed tab, so age-based orphan cleanup preserves reload caches while reclaiming closed sessions.
     expect(importTimeWindowEvents).not.toContain('beforeunload');
   });
 });

@@ -24,7 +24,6 @@ export type AlertBanner = {
   contextMode?: AlertContextMode;
 };
 
-/** Renders the alert banner component. */
 export function AlertBanner({
   id,
   icon: Icon,

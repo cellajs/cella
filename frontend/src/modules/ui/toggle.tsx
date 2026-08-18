@@ -3,7 +3,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Defines the style variants for toggle. */
 export const toggleVariants = cva(
   'focus-effect inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground active:translate-y-[.05rem] disabled:pointer-events-none disabled:opacity-50 data-pressed:bg-accent data-pressed:text-accent-foreground',
   {
@@ -30,7 +29,6 @@ export const toggleVariants = cva(
   },
 );
 
-/** Renders the styled toggle primitive. */
 export function Toggle({
   className,
   variant,

@@ -4,8 +4,7 @@ li:has(.is-focused) {
   z-index: 10;
 }
 
-/* BlockNote copies the editor class onto its bare floating-UI portal root.
-   Strip editor chrome from that portal; this selector outranks Tailwind utilities. */
+/* BlockNote copies the editor class onto its floating-UI portal root; this selector outranks Tailwind utilities. */
 .bn-root:not(.bn-container) {
   border: 0;
   padding: 0;
@@ -17,37 +16,32 @@ li:has(.is-focused) {
 
 /* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
 
-/* Override BlockNote's default soft editor text color with our foreground for bright editing/expanded text */
+/* Override BlockNote's soft editor text color with the app foreground. */
 .bn-container.bn-shadcn {
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
   --bn-colors-editor-text: var(--foreground);
 }
 
-/* Override BlockNote's hardcoded font-family on .bn-default-styles (from @blocknote/core)
-   which bypasses the --bn-font-family CSS variable */
+/* .bn-default-styles hardcodes a font-family in @blocknote/core and bypasses --bn-font-family. */
 .bn-container.bn-shadcn .bn-default-styles {
   font-family: "Open Sans", ui-sans-serif, sans-serif;
 }
 
-/* To hide selction of file content when editor not editable */
 .bn-editor[contenteditable="false"] .ProseMirror-selectednode > .bn-block-content > *,
 .bn-editor[contenteditable="false"] .bn-block-content.ProseMirror-selectednode > * {
   outline: none !important;
 }
 
-/* To disable click on file buttons when editor not editable */
 .bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
   cursor: default !important;
 }
 .bn-editor[contenteditable="false"] .bn-add-file-button {
   pointer-events: none !important;
 }
-/* To hide file buttons placeholders when editor not editable */
 .bn-editor[contenteditable="false"] p.bn-add-file-button-text {
   display: none;
 }
 
-/* To hide formattingtoolbar when editor not editable */
 .bn-container:has(.bn-editor[contenteditable="false"]) > [data-floating-ui-focusable] {
   display: none !important;
 }
@@ -68,9 +62,7 @@ li:has(.is-focused) {
   color: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
 }
 
-/* BlockNote renders its placeholder via `::after` on `.bn-block-content` (see
-   @blocknote/core's Placeholder extension). Override its font sizing so the
-   placeholder matches the editor's paragraph text at the intended size. */
+/* BlockNote renders its placeholder via `::after` on `.bn-block-content`; match the editor paragraph size. */
 .bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
   font-size: 0.888rem;
   line-height: 1.4;
@@ -136,7 +128,6 @@ li:has(.is-focused) {
   padding: 0.5rem !important;
 }
 
-/* Dense mode - tighter line height and no vertical spacing between blocks */
 .bn-shadcn.bn-dense p {
   line-height: 1.3;
   min-height: 1.3rem;
@@ -187,7 +178,6 @@ li:has(.is-focused) {
 }
 
 @media (max-width: 639px) {
-  /* Hide side menu on small screens */
   .bn-shadcn .bn-side-menu {
     display: none !important;
   }
@@ -212,8 +202,7 @@ li:has(.is-focused) {
   width: 100%;
 }
 
-/* Intrinsic aspect ratios reserve media space before loading. Resized wrappers cap to the
-   container; untouched fit-content wrappers fill the available width. */
+/* Intrinsic aspect ratios reserve media space before loading; fit-content wrappers fill the available width. */
 .bn-visual-media[style*="aspect-ratio"] {
   background-color: var(--muted);
 }
@@ -274,9 +263,7 @@ li:has(.is-focused) {
   justify-content: space-between;
 }
 
-/* Normalize menu icons to the app's standard size. BlockNote's shadcn theme resets any icon without a
-   size-* class to its raw attribute width (react-icons 18px, lucide 24px) via an unlayered
-   `.bn-shadcn svg:not([class*="size-"]) { width: revert }` rule, so !important is required to win. */
+/* BlockNote's shadcn theme resets icons without a size-* class via an unlayered rule, so !important is required. */
 .slash-menu-item svg {
   width: 1rem !important;
   height: 1rem !important;
@@ -346,7 +333,6 @@ li:has(.is-focused) {
   background-color: #208020;
 }
 
-/* styles.css */
 .no-hover-bg:hover {
   background-color: transparent !important;
 }
@@ -384,14 +370,12 @@ li:has(.is-focused) {
   flex-grow: 1;
 }
 
-/* Notify renders its editable text in a div, not a <p>, so the `.bn-shadcn p`
-   size never applies. Match the paragraph size so notify text stays consistent. */
+/* Notify renders its editable text in a div, so the `.bn-shadcn p` size never applies. */
 .notify .inline-content {
   font-size: 0.888rem;
   line-height: 1.4;
 }
 
-/* For showing saved checklistItem */
 .bn-block-content[data-content-type="checklistItem"] > input {
   margin: 0;
   margin-inline-end: 0.5em;
@@ -409,7 +393,7 @@ li:has(.is-focused) {
   border-collapse: collapse;
 }
 
-/* Heading sizes - defaults from BlockNote are too big */
+/* BlockNote heading defaults are too big. */
 [data-content-type="heading"] {
   --level: 1.8rem;
 }
@@ -420,9 +404,7 @@ li:has(.is-focused) {
   --level: 1.1rem;
 }
 
-/* Forced-title placeholder for block 0 (see forced-title-extension.ts). !important beats
-   BlockNote's per-editor injected placeholder rules; the CSS var keeps the text translatable.
-   Coupled to BlockNote's injected rules, so re-check this selector on every @blocknote bump. */
+/* Forced-title placeholder for block 0; !important beats BlockNote's injected placeholder rules, so re-check on every @blocknote bump. */
 .bn-forced-title
   .bn-editor
   > .bn-block-group

@@ -1,14 +1,10 @@
 import type { LensDefinition } from './define.ts';
 
-// ── Ordered lens modules (append new imports at the end) ──
-// example:
-//   import taskNameToTitle from './2026-07-01-task-name-to-title';
-
 /**
- * Frozen, date-ordered list of shipped lenses. Append-only: never reorder or
- * remove entries; add new lenses at the end. Index + 1 is the lens's global
- * schema ordinal; `currentSchemaVersion` (engine.ts) is the array length.
- * Empty until the first breaking change ships.
+ * Date-ordered shipped lenses, append-only: never reorder or remove an entry, add new lens
+ * modules at the end. Index + 1 is a lens's global schema ordinal, and `currentSchemaVersion`
+ * in engine.ts is the array length. Example entry:
+ * `import taskNameToTitle from './2026-07-01-task-name-to-title';`
  */
 export const lenses: readonly LensDefinition[] = [
   // taskNameToTitle,

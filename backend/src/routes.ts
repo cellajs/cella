@@ -43,8 +43,7 @@ baseApp.route('/users', userHandlers);
 
 baseApp.route('/yjs', yjsHandlers);
 
-// Modules with absolute route paths: cross-tenant list + tenant-scoped routes in one app.
-// Registered after all static mounts so param segments (/:tenantId/...) cannot shadow static paths.
+// Absolute-path modules, registered after every static mount so param segments cannot shadow static paths.
 baseApp.route('/', organizationHandlers);
 
 // Tenant-scoped routes: /:tenantId/:organizationId/...

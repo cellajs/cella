@@ -18,7 +18,6 @@ interface MenuItemEditProps {
   icon?: IconComponent;
 }
 
-/** Renders the menu item edit component. */
 export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
   const { t } = useTranslation();
 

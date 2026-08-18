@@ -1,6 +1,4 @@
-// Forced-title mode helpers: compose/split a title-first document so entities keep `name` as
-// the stored source of truth while the editor shows `[heading(name), ...body]`.
-// See forced-title-extension.ts for the normalizer that pins block 0 to the title level.
+// Forced-title helpers: the entity keeps `name` as stored source of truth while the editor shows `[heading(name), ...body]`.
 import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
 
 /** Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit. */
@@ -21,7 +19,6 @@ const blockText = (block: LooseBlock | undefined): string => {
 const isEmptyTextBlock = (block: LooseBlock): boolean =>
   Array.isArray(block.content) && blockText(block).trim() === '' && !block.children?.length;
 
-/** Partial title block seeding a forced-title document. */
 const titleBlock = (name: string, level: TitleLevel) =>
   ({
     type: 'heading',
@@ -32,7 +29,7 @@ const titleBlock = (name: string, level: TitleLevel) =>
 /** A stringified single empty title block, the sync seed for create forms. */
 export const emptyTitleDocument = (level: TitleLevel = 1) => JSON.stringify([titleBlock('', level)]);
 
-/** Cheap synchronous title read from stringified blocks (drives live submit-enable). */
+/** Synchronous title read from stringified blocks. */
 export const titleFromBlocks = (strBlocks: string): string => {
   try {
     const blocks = JSON.parse(strBlocks) as LooseBlock[];
@@ -49,10 +46,7 @@ export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: Lo
   return { name: blockText(first).trim(), body: rest };
 };
 
-/**
- * Compose the editor document for a forced-title editor: `[heading(name), ...body-from-HTML]`.
- * The title block is a projection of `name`; it is never persisted in `description`.
- */
+/** Compose `[heading(name), ...body-from-HTML]`; the title block projects `name` and is never persisted in `description`. */
 export const composeTitleDocument = async (
   name: string,
   descriptionHtml: string | null,

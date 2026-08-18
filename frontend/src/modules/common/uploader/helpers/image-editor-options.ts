@@ -29,7 +29,6 @@ const baseActions = {
   cropWidescreenVertical: false,
 };
 
-/** Returns the image editor options. */
 export const getImageEditorOptions = (mode: UploadTemplateId | undefined): ImageEditorOptions => {
   const options: ImageEditorOptions = {
     quality: 0.9,

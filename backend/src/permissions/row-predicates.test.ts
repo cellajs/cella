@@ -38,14 +38,11 @@ const HOME = CHAIN.length > 1 ? CHAIN[0] : null; // narrowable home-channel, nul
 const ROOT_ID = 'org1';
 const HOME_INSTANCES = HOME ? ['s1', 's2', 's3'] : []; // home-channel instance ids (empty when there is no home-channel)
 
-// Home-channel id column on the scratch table (raak: `project_id`), derived from config. Null on an
-// org-only app, where the read is org-wide and no home-channel column is ever referenced.
+// Home-channel id column, derived from config. Null on an org-only app, where the read is org-wide.
 const homeIdKey = HOME ? appConfig.entityIdColumnKeys[HOME] : null; // 'projectId' | null
 const homeColumnName = homeIdKey ? toColumnName(homeIdKey) : null; // 'project_id' | null
 
-// Root id column ('organizationId'): apps that configure `elevatedRoles` compile
-// home-scoped grants against it, so the scratch table must carry it like real product
-// tables do (on the template config it is simply never referenced).
+// Root id column: `elevatedRoles` configs compile home-scoped grants against it, so the scratch table carries it.
 const rootIdKey = appConfig.entityIdColumnKeys[ROOT];
 const rootColumnName = toColumnName(rootIdKey);
 
@@ -61,8 +58,7 @@ const parityTable = pgTable(
   'test_permission_parity_rows',
   homeIdKey && homeColumnName ? { ...baseColumns, [homeIdKey]: varchar(homeColumnName).notNull() } : baseColumns,
 );
-// The home-channel column passed to `buildCollectionReadWhere`. On an org-only app the read is
-// org-wide (homeChannelIds always undefined/[]), so this column is never referenced; `id` stands in.
+// The home-channel column passed to `buildCollectionReadWhere`; never referenced on an org-only app, where `id` stands in.
 const homeChannelColumn = (
   homeIdKey ? (parityTable as unknown as Record<string, PgColumn>)[homeIdKey] : parityTable.id
 ) as PgColumn;
@@ -133,7 +129,6 @@ interface Scenario {
   publicGrants: PublicReadGrants;
 }
 
-/** The scenario's actor, in the shape every enforcement path now demands. */
 const scenarioActor = (scenario: Scenario): Actor =>
   scenario.userId === undefined
     ? { anonymous: true }
@@ -266,8 +261,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       const fromSql = await sqlReadableIds(scenario);
       expect(fromSql, label).toEqual(fromEngine);
 
-      // Compare frontend and engine decisions per membership and in-scope row.
-      // Both sides omit system-admin and public grants because `computeCan` models one membership.
+      // Frontend vs engine per membership and in-scope row; both omit system-admin and public grants, as `computeCan` models one membership.
       for (const m of scenario.memberships) {
         const canMap = computeCan(m.channelType as ChannelEntityType, m, scenario.policies);
         const state = canMap.attachment?.read ?? false;
@@ -284,8 +278,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
     }
   });
 
-  // Explicit home-channel narrowing needs a nested channel (e.g. organization > project). Skips on an
-  // org-only app, which has no home-channel to narrow into.
+  // Explicit home-channel narrowing needs a nested channel, so an org-only app has nothing to narrow into.
   describe.runIf(HOME !== null)('home-channel narrowing', () => {
     it('explicitly requested home-channel narrows conditional scopes the same way', async () => {
       const random = mulberry32(0xbee5);
@@ -306,8 +299,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
             requested: { homeChannelId: requestedHomeChannel },
           });
         } catch {
-          // 403: no scope at all for the requested home-channel. The engine must agree that
-          // no row of it is readable.
+          // 403: no scope at all for the requested home-channel, so the engine must read no row of it.
           const fromEngine = engineReadableIds(scenario);
           for (const row of ROWS.filter((r) => r.homeChannelId === requestedHomeChannel)) {
             expect(fromEngine.has(row.id), `seed 0xbee5 scenario ${i} row ${row.id}`).toBe(false);
@@ -337,12 +329,10 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
   });
 });
 
-// The shared deep fixture exercises intermediate ancestor grants. Both the engine and
-// scope compiler receive its hierarchy through their hierarchy-override seam.
+// The shared deep fixture exercises intermediate ancestor grants; engine and scope compiler both take its hierarchy override.
 const DEEP_ITEM = 'item' as unknown as ProductEntityType;
 
-// Column keys follow the `${channelType}Id` convention `buildCollectionReadWhere` falls
-// back to for hierarchy levels absent from `appConfig.entityIdColumnKeys`.
+// Column keys follow the `${channelType}Id` fallback `buildCollectionReadWhere` uses for levels absent from `appConfig.entityIdColumnKeys`.
 const deepParityTable = pgTable('test_permission_parity_deep_rows', {
   id: varchar('id').primaryKey(),
   organizationId: varchar('organization_id').notNull(),
@@ -429,7 +419,6 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
     },
   }) as unknown as SubjectForPermission;
 
-/** Path 1: the engine's per-row read decision, over the synthetic hierarchy. */
 const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly string[]): Set<string> => {
   const readable = new Set<string>();
   for (const row of DEEP_ROWS) {
@@ -447,7 +436,6 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly 
 const deepActor = (scenario: DeepScenario): Actor =>
   scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
 
-/** Path 2: the compiled SQL predicate executed against Postgres, same hierarchy. */
 const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readonly string[]): Promise<Set<string>> => {
   const filter = resolveCollectionReadFilterForPolicies({
     policies: scenario.policies,
@@ -504,8 +492,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
     }
   });
 
-  // Sysadmin widens who can read, never what a placement-filtered list returns. The
-  // admin bypass must preserve `requested` narrowing.
+  // Sysadmin widens who can read, never what a placement-filtered list returns: the bypass keeps `requested` narrowing.
   it('an explicitly requested home-channel narrows a sysadmin read like any other', async () => {
     const sysadmin: Actor = { userId: 'u1', isSystemAdmin: true };
     const sqlIdsFor = async (requested: { homeChannelId?: string; homeChannelIds?: string[] }) => {
@@ -534,8 +521,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
 
 const SUBTREE_ROLES = ['admin', 'staff'] as const;
 
-// Non-elevated product roles see rows homed at their grant level; elevated roles retain
-// subtree scope. This synthetic chain covers configs that enable `elevatedRoles`.
+// Non-elevated product roles see rows homed at their grant level; elevated roles keep subtree scope.
 describe('elevatedRoles parity: home-scoped grants agree between engine and SQL', () => {
   it('agrees on every row across random policies and memberships with elevatedRoles configured', async () => {
     const random = mulberry32(0x50b7);
@@ -594,8 +580,7 @@ describe('elevatedRoles parity: home-scoped grants agree between engine and SQL'
   });
 });
 
-// Real-config scenarios must agree across collection SQL, single-row checks, and SSE
-// dispatch. The attachment ancestor chain and system-admin state define the scenario space.
+// Real-config scenarios must agree across collection SQL, single-row checks, and SSE dispatch.
 const realMembership = (
   channelType: ChannelEntityType,
   channelId: string,

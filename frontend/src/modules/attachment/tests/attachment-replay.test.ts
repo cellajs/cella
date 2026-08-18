@@ -92,8 +92,7 @@ describe('attachment offline-replay mutation functions', () => {
   });
 
   it('REGRESSION: without injected context the persisted request loses tenant/org', async () => {
-    // The exact bug the fix prevents: before the hook injected context, a mutation persisted as
-    // `{ id, ops }` replayed through the default function with tenant/org undefined, producing a broken request.
+    // A mutation persisted as `{ id, ops }` replays with tenant/org undefined unless the hook injects context.
     updateAttachment.mockClear();
     // @ts-expect-error intentionally passing the OLD (incomplete) variable shape.
     await updateAttachmentMutationFn({ id: 'att-1', ops: { name: 'x' } });

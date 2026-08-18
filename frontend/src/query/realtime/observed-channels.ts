@@ -1,10 +1,7 @@
 import { hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Reports whether an active list query carries the notified channel ID.
- * Prefetched queries have no observers and do not count as viewed.
- */
+/** True when an active list query carries the notified channel id. Prefetched queries have no observers and do not count as viewed. */
 export function isObservedChannel(channelId: string): boolean {
   return queryClient
     .getQueryCache()

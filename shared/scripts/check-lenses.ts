@@ -1,9 +1,4 @@
-/**
- * CI guards for schema-evolution lenses. Exit code 1 on any violation; run via
- * `pnpm --filter shared lens:check`.
- *
- * @see README.md
- */
+/** CI guards for schema-evolution lenses; `pnpm --filter shared lens:check`. @see README.md */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
@@ -56,7 +51,7 @@ function datedLensFiles(): string[] {
 // ── 1. Append-only lint ──
 function checkAppendOnly(files: string[]) {
   if (!gitAvailable()) {
-    console.warn('[lens:check] git unavailable — skipping append-only check');
+    console.warn('[lens:check] git unavailable, skipping append-only check');
     return;
   }
   for (const file of files) {
@@ -136,7 +131,6 @@ function checkPurity(files: string[]) {
   }
 }
 
-// ── 4. Contract completeness ──
 function checkContractCompleteness() {
   const modulesDir = join(repoRoot, 'backend', 'src', 'modules');
   let combined = '';
@@ -146,20 +140,20 @@ function checkContractCompleteness() {
       combined += readFileSync(join(modulesDir, entry), 'utf8');
     }
   } catch {
-    console.warn('[lens:check] backend/src/modules unavailable — skipping contract-completeness check');
+    console.warn('[lens:check] backend/src/modules unavailable, skipping contract-completeness check');
     return;
   }
   for (const type of appConfig.productEntityTypes) {
     if (!combined.includes(`evolutionContract.product('${type}'`)) {
       failures.push(
-        `Contract completeness: product entity "${type}" never calls evolutionContract.product('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: product entity "${type}" never calls evolutionContract.product('${type}', …) in backend/src/modules: its create/update body schemas bypass the lens seams.`,
       );
     }
   }
   for (const type of appConfig.channelEntityTypes) {
     if (!combined.includes(`evolutionContract.channel('${type}'`)) {
       failures.push(
-        `Contract completeness: channel entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules — its create/update body schemas bypass the lens seams.`,
+        `Contract completeness: channel entity "${type}" never calls evolutionContract.channel('${type}', …) in backend/src/modules: its create/update body schemas bypass the lens seams.`,
       );
     }
   }
@@ -177,4 +171,4 @@ if (failures.length > 0) {
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log(`[lens:check] OK — ${lenses.length} lens(es), ${files.length} dated module(s) verified.`);
+console.log(`[lens:check] OK, ${lenses.length} lens(es), ${files.length} dated module(s) verified.`);

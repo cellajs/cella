@@ -15,7 +15,6 @@ type Props = {
   membershipId: string;
 };
 
-/** Row action re-sending a pending invitation through the authed, channel-permission-checked route. */
 export function ResendPendingInvitationCell({ tenantId, organizationId, membershipId }: Props) {
   const { t } = useTranslation();
   const [resent, setResent] = useState(false);

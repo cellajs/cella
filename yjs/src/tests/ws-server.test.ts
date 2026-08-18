@@ -7,9 +7,7 @@ import { createExpiredToken, createSignedToken } from './helpers';
 
 const { verifyToken } = await import('../server/auth');
 
-// Stands in for the relay's local authorization (`canEditEntity`). Tests drive its outcome:
-// resolve(true) → allowed, resolve(false) → denied, reject(MissingScopeError) → missing scope,
-// reject(Error) → DB/resolver failure.
+// Stands in for the relay's local authorization (`canEditEntity`); tests drive its outcome per case.
 const mockVerify = vi.fn();
 
 let port: number;
@@ -17,9 +15,7 @@ let baseUrl: string;
 let httpServer: ReturnType<typeof createServer>;
 let wss: InstanceType<typeof WebSocketServer>;
 
-/**
- * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
- */
+/** Rejects at the HTTP level, without completing the handshake. */
 function rejectAtHttp(
   _wsServer: WebSocketServer,
   _req: import('node:http').IncomingMessage,
@@ -43,8 +39,7 @@ beforeAll(async () => {
 
   wss = new WebSocketServer({ noServer: true });
 
-  // Optimistic connect verifies the token and request identity locally, then accepts immediately.
-  // Entity access is also decided without a backend round-trip.
+  // Optimistic connect: the token and entity access are both decided locally, with no backend round-trip.
   httpServer.on('upgrade', async (req, socket, head) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
@@ -63,7 +58,6 @@ beforeAll(async () => {
     }
     const payload = result.payload;
 
-    // Token must match requested entityType and tenantId
     if (payload.entityType !== entityType) {
       rejectAtHttp(wss, req, socket, head, 4003, 'Token not valid for this entity type');
       return;
@@ -81,17 +75,14 @@ beforeAll(async () => {
 
     if (socket.destroyed) return;
 
-    // Accept the connection immediately (optimistic)
     wss.handleUpgrade(req, socket, head, async (ws) => {
       wss.emit('connection', ws);
 
-      // Async local entity authorization: close connection on failure
       try {
         const allowed = await mockVerify({ entityType, entityId, tenantId, userId: payload.userId });
         if (!allowed) {
           ws.close(4003, 'Access denied');
         }
-        // On success: connection stays open, writes would be unblocked
       } catch (err) {
         if (err instanceof MissingScopeError) {
           ws.close(4400, 'Missing entity scope');
@@ -131,7 +122,7 @@ function connectWs(
     const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
 
     ws.on('open', () => {
-      // Give the server a chance to run async verification and potentially close
+      // Leave time for async verification to close the connection.
       setTimeout(() => {
         if (ws.readyState === WsWebSocket.OPEN) {
           clearTimeout(timeout);
@@ -147,7 +138,7 @@ function connectWs(
 
     ws.on('error', (err) => {
       clearTimeout(timeout);
-      // HTTP-level rejections (no WS upgrade) trigger error events
+      // HTTP-level rejections never upgrade, so they arrive as error events.
       resolve({ ws, error: err });
     });
   });

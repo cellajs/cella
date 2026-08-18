@@ -25,9 +25,6 @@ import {
 } from './organization-mocks';
 
 const organizationRoutes = {
-  /**
-   * Create one or more organizations within a tenant
-   */
   createOrganizations: createXRoute({
     operationId: 'createOrganizations',
     method: 'post',
@@ -57,9 +54,6 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get list of organizations (cross-tenant)
-   */
   getOrganizations: createXRoute({
     operationId: 'getOrganizations',
     method: 'get',
@@ -82,9 +76,6 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get an organization (tenant-scoped)
-   */
   getOrganization: createXRoute({
     operationId: 'getOrganization',
     method: 'get',
@@ -102,9 +93,6 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Update an organization (tenant-scoped)
-   */
   updateOrganization: createXRoute({
     operationId: 'updateOrganization',
     method: 'put',
@@ -128,9 +116,6 @@ const organizationRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete organizations (tenant-scoped)
-   */
   deleteOrganizations: createXRoute({
     operationId: 'deleteOrganizations',
     method: 'delete',

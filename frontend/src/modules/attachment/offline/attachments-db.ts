@@ -6,16 +6,10 @@ type BlobSource = 'upload' | 'download';
 export type UploadStatus = 'pending' | 'uploading' | 'uploaded' | 'failed' | 'local-only';
 export type DownloadStatus = 'pending' | 'downloading' | 'downloaded' | 'failed' | 'skipped';
 
-/**
- * Transloadit blob stages: raw upload, processed original, conversion, mid-size preview (image
- * preview / doc-video poster), or the tiny grid-cell image thumbnail.
- */
+/** Transloadit blob stages: raw upload, processed original, conversion, mid-size preview, tiny grid-cell thumbnail. */
 export type BlobVariant = 'raw' | 'original' | 'converted' | 'preview' | 'thumbnail';
 
-/**
- * Create composite key for variant-aware blob storage.
- * Format: `${attachmentId}:${variant}`
- */
+/** Composite blob key, formatted `${attachmentId}:${variant}`. */
 export function makeBlobKey(attachmentId: string, variant: BlobVariant): string {
   return `${attachmentId}:${variant}`;
 }
@@ -26,30 +20,19 @@ export interface UploadContext {
   publicBucket: boolean;
 }
 
-/**
- * Blob storage. One table serves both 'upload' (created locally, pending cloud upload) and
- * 'download' (fetched from cloud for offline viewing) sources.
- */
+/** Blob storage: one table for locally created uploads and blobs fetched from the cloud for offline viewing. */
 export interface AttachmentBlob {
   /** Composite key: `${attachmentId}:${variant}`. Use makeBlobKey() to create. */
   id: string;
 
-  /** The attachment ID this blob belongs to */
   attachmentId: string;
-
-  /** Which variant of the attachment this blob represents */
   variant: BlobVariant;
-
-  /** Organization scope */
   organizationId: string;
-
-  /** The actual file blob */
   blob: Blob;
 
   /** Original filename (used by the upload service during re-upload) */
   filename?: string;
 
-  /** Upload context for the upload service (templateId, publicBucket flag) */
   uploadContext?: UploadContext;
 
   /** File size in bytes (denormalized for filtering) */
@@ -61,11 +44,7 @@ export interface AttachmentBlob {
   /** How this blob was created: 'upload' (local, may need uploading) or 'download' (from cloud). */
   source: BlobSource;
 
-  /**
-   * Upload status. Note 'uploaded' also covers blobs downloaded from cloud (it effectively means
-   * "exists in cloud"), and 'local-only' means no cloud is configured (permanent local storage);
-   * other states apply only to source='upload'.
-   */
+  /** Upload status: 'uploaded' means "exists in cloud" (downloads included), 'local-only' means no cloud is configured, the rest apply to source='upload'. */
   uploadStatus: UploadStatus;
 
   /** Upload retry count (source='upload' only) */
@@ -77,22 +56,17 @@ export interface AttachmentBlob {
   /** Last error message (source='upload' only) */
   lastError?: string | null;
 
-  /** When blob was stored */
   storedAt: Date;
 }
 
-/**
- * Download queue that tracks which attachments to cache locally for offline viewing.
- * Separate from blob storage for clean queue management.
- */
+/** Queue of attachments to cache locally for offline viewing, kept separate from blob storage. */
 export interface DownloadQueueEntry {
   /** Matches Attachment.id */
   id: string;
 
-  /** Organization scope */
   organizationId: string;
 
-  /** Download priority (lower = higher priority) */
+  /** Download priority; lower runs first. */
   priority: number;
 
   /** Download status; 'skipped' means filtered out (too large / wrong type), see skipReason. */
@@ -101,17 +75,11 @@ export interface DownloadQueueEntry {
   /** Why skipped (if status='skipped') */
   skipReason: string | null;
 
-  /** When added to queue */
   queuedAt: Date;
-
-  /** Download attempts */
   attempts: number;
 }
 
-/**
- * Resolves attachment blob and download-queue tables from the active per-user localUserDb.
- * Accessors throw while signed out; guard with `getLocalUserDb()` where no DB is reachable.
- */
+/** Blob and download-queue tables of the active per-user localUserDb; accessors throw while signed out, so guard with `getLocalUserDb()`. */
 export const attachmentsDb = {
   get blobs(): Dexie.Table<AttachmentBlob, string> {
     const db = getLocalUserDb();

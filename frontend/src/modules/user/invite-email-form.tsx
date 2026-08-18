@@ -22,9 +22,6 @@ interface Props {
   children?: React.ReactNode;
 }
 
-/**
- * Form for inviting users by email.
- */
 export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) {
   const { t } = useTranslation();
 
@@ -47,7 +44,6 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
     if (rejectedIds.length)
       toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
 
-    // Onboarding advances through stepper state; the callback is optional.
     nextStep?.();
   };
 

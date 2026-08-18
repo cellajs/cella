@@ -47,14 +47,11 @@ interface CalculatedColumnsArgs<R, SR> {
   rawColumns: readonly ColumnOrColumnGroup<R, SR>[];
   defaultColumnOptions: DefaultColumnOptions<R, SR> | undefined | null;
   getColumnWidth: (column: CalculatedColumn<R, SR>) => string | number;
-  /** Current breakpoint for responsive column visibility */
   currentBreakpoint?: BreakpointKey;
 
-  /** Which display modes are active (applies per-column `modes` overrides and merge rules) */
   activeModes?: ActiveModes;
 }
 
-/** Provides calculated columns state and actions. */
 export function useCalculatedColumns<R, SR>({
   rawColumns,
   defaultColumnOptions,
@@ -88,8 +85,7 @@ export function useCalculatedColumns<R, SR>({
       return true;
     };
 
-    // Activate merges only when the host is currently visible and not itself merged.
-    // Invalid rules fall back to normal column visibility.
+    // A merge activates only when its host is visible and not itself merged; invalid rules leave the column visible.
     const validMerges = new Map<string, ColumnMergeRule>();
     {
       const gridKeys = new Set<string>();
@@ -121,7 +117,7 @@ export function useCalculatedColumns<R, SR>({
       parent?: MutableCalculatedColumnParent<R, SR>,
     ) {
       for (const rawColumn of rawColumns) {
-        // Reactive hide flag, such as a column-visibility toggle: hard exclude, same as a failing breakpoint.
+        // Reactive hide flag, such as a column-visibility toggle: excluded like a failing breakpoint.
         if (rawColumn.hidden) continue;
 
         if ('children' in rawColumn) {
@@ -138,19 +134,16 @@ export function useCalculatedColumns<R, SR>({
           continue;
         }
 
-        // Merged columns are relocated into their host cell so they
-        // bypass the breakpoint visibility check.
+        // Merged columns move into their host cell, so they skip the breakpoint visibility check.
         const mergeRule = validMerges.get(rawColumn.key);
         if (mergeRule == null && !isVisibleAtBreakpoint(rawColumn)) continue;
 
         const frozen = mergeRule == null && (rawColumn.frozen ?? false);
 
-        // Per-mode width overrides (mobile > compact)
         const overrides = resolveModeOverrides(rawColumn, activeModes);
 
         const column: MutableCalculatedColumn<R, SR> = {
           ...rawColumn,
-          // Slot columns don't take part in header/group layout
           parent: mergeRule == null ? parent : undefined,
           idx: 0,
           level: 0,
@@ -184,18 +177,15 @@ export function useCalculatedColumns<R, SR>({
     }
 
     columns.sort(({ key: aKey, frozen: frozenA }, { key: bKey, frozen: frozenB }) => {
-      // Sort select column first:
       if (aKey === SELECT_COLUMN_KEY) return -1;
       if (bKey === SELECT_COLUMN_KEY) return 1;
 
-      // Sort frozen columns second:
       if (frozenA) {
         if (frozenB) return 0;
         return -1;
       }
       if (frozenB) return 1;
 
-      // Sort other columns last:
       return 0;
     });
 
@@ -209,8 +199,7 @@ export function useCalculatedColumns<R, SR>({
       }
     });
 
-    // Grouped by side, sorted by `order` (ties keep column order). Hosts are
-    // guaranteed present because rules with unresolvable hosts were deactivated above.
+    // Grouped by side and sorted by `order`, ties keeping column order; hosts always resolve because invalid rules were dropped above.
     if (slotColumns.length > 0) {
       const slotsByHost = new Map<string, typeof slotColumns>();
       for (const slot of slotColumns) {
@@ -228,8 +217,7 @@ export function useCalculatedColumns<R, SR>({
         });
         const mergedSlots: Record<TileSide, MergedSlot<R, SR>[]> = { top: [], right: [], bottom: [], left: [] };
         for (const { column, rule } of hostSlots) {
-          // Slot columns share the host's idx: consumer renderCell receives a
-          // plausible CalculatedColumn, and row-change metadata stays in-bounds.
+          // Slot columns share the host's idx so renderCell gets a usable CalculatedColumn and row-change metadata stays in bounds.
           column.idx = host.idx;
           mergedSlots[rule.side].push({ column: column as CalculatedColumn<R, SR>, className: rule.className });
         }
@@ -280,9 +268,7 @@ export function useCalculatedColumns<R, SR>({
         columnMetrics.set(column, { width: clampedWidth, left });
         left += clampedWidth;
       } else {
-        // CSS-native flex: CSS grid + minmax distribute remaining space between
-        // breakpoints, no JS measurement. maxWidth is enforced only during resize,
-        // not for initial flex sizing.
+        // CSS grid minmax distributes remaining space without JS measurement; maxWidth applies only during resize.
         lastAutoColumnIndex = i;
         hasFlexColumn = true;
         templateColumns.push(`minmax(${column.minWidth}px, ${column.minWidth}fr)`);

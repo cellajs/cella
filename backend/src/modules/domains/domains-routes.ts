@@ -11,9 +11,6 @@ import {
 } from './domains-schema';
 
 export const domainRoutes = {
-  /**
-   * List domains for a tenant (system admin only)
-   */
   getDomains: createXRoute({
     operationId: 'getDomains',
     method: 'get',
@@ -37,9 +34,6 @@ export const domainRoutes = {
     },
   }),
 
-  /**
-   * Add a domain to a tenant (system admin only)
-   */
   createDomain: createXRoute({
     operationId: 'createDomain',
     method: 'post',
@@ -69,9 +63,6 @@ export const domainRoutes = {
     },
   }),
 
-  /**
-   * Remove a domain from a tenant (system admin only)
-   */
   deleteDomain: createXRoute({
     operationId: 'deleteDomain',
     method: 'delete',
@@ -95,9 +86,6 @@ export const domainRoutes = {
     },
   }),
 
-  /**
-   * Get a single domain with its verification token (system admin only)
-   */
   getDomain: createXRoute({
     operationId: 'getDomain',
     method: 'get',
@@ -121,9 +109,6 @@ export const domainRoutes = {
     },
   }),
 
-  /**
-   * Verify a domain via DNS TXT record lookup (system admin only)
-   */
   verifyDomain: createXRoute({
     operationId: 'verifyDomain',
     method: 'post',

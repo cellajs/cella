@@ -8,7 +8,7 @@ import type { CellRendererProps } from './types';
 import { cn } from './utils/grid-utils';
 
 /**
- * Internal type used by data-grid's row drag-and-drop wiring.
+ * Internal drag type for data-grid row drag-and-drop.
  * @internal
  */
 const ROW_DRAG_TYPE = 'rdg-row';
@@ -37,24 +37,19 @@ function resolveDropZone(
   return null;
 }
 
-/**
- * Mutate drop-edge attributes without rerendering; paint bottom edges atop the next row when possible.
- * Drop logic retains the original zone independently of that visual edge.
- */
+/** Mutates drop-edge attributes without rerendering; a bottom edge may paint on the next row while the drop keeps the original zone. */
 function setRowDropEdge(
   rowEl: HTMLElement | null,
   zone: DropZone | null,
   prevRowElRef: { current: HTMLElement | null },
   allowRedirect = true,
 ) {
-  // Resolve which element to mark and with which attribute value.
   let targetEl: HTMLElement | null = null;
   let attrValue: DropZone | null = null;
   if (rowEl && zone !== null) {
     if (zone === 'bottom') {
       const next = rowEl.nextElementSibling;
-      // Redirect only to an accepting next grid row, skipping measurement/focus nodes.
-      // This keeps the indicator on a hit area that can receive the drop.
+      // Redirect only to an accepting next grid row, skipping measurement and focus nodes, so the indicator sits on a droppable area.
       if (allowRedirect && next instanceof HTMLElement && next.classList.contains('rdg-row')) {
         targetEl = next;
         attrValue = 'top';
@@ -84,22 +79,13 @@ function setRowDropEdge(
 
 export interface RowDragConfig<R> {
   onRowReorder: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void;
-  /** When provided, the middle 50% of each row becomes a "reparent" drop zone. */
   onRowReparent?: (fromIdx: number, toIdx: number) => void;
-  /**
-   * Optional per-zone drop validation, consulted on hover. Falls back to the
-   * nearest allowed zone; if all three are blocked, no indicator + `onDrop`
-   * suppressed. Keep it fast (O(1)/O(depth)) because it runs on every drag move.
-   */
+  /** Per-zone drop validation. It runs on every drag move, so keep it O(1) or O(depth). */
   canDropRow?: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => boolean;
-  /** Optional content rendered inside the native drag preview. Defaults to a generic preview. */
   renderRowDragPreview?: (row: R) => ReactNode;
 }
 
-/**
- * Attaches row drag/drop behavior to cells because `display: contents` rows have no hit-test box.
- * Drop indicators update an imperative data attribute without per-move React state.
- */
+/** Drag and drop lives on cells because `display: contents` rows have no hit-test box; indicators update a data attribute, not React state. */
 export function RowDragCell<R, SR>({
   rowIdx,
   row,
@@ -109,12 +95,10 @@ export function RowDragCell<R, SR>({
   ...props
 }: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
   const ref = useRef<HTMLDivElement>(null);
-  // `isDragging` only flips twice per drag (start + end), so React state is
-  // fine here because it's not on the per-mousemove hot path.
+  // `isDragging` flips twice per drag, so React state stays off the per-mousemove path.
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<{ container: HTMLElement; rect: DOMRect } | null>(null);
-  // Tracks the row element we last marked with `data-drop-edge` so we can
-  // clear it when the pointer moves to a different row's cell.
+  // Last row element marked with `data-drop-edge`, cleared when the pointer reaches another row's cell.
   const prevRowElRef = useRef<HTMLElement | null>(null);
 
   const isDragHandle = column.rowDragHandle === true;
@@ -125,8 +109,7 @@ export function RowDragCell<R, SR>({
     const el = ref.current;
     if (!el) return;
 
-    // Cache geometry per drag to avoid layout reads on every pointer move.
-    // Refresh on scroll because viewport-relative positions change during auto-scroll.
+    // Geometry is cached per drag to skip layout reads on pointer move, and refreshed on scroll because auto-scroll moves the row.
     let cached: { top: number; height: number } | null = null;
     const refreshRect = () => {
       const r = el.getBoundingClientRect();
@@ -136,8 +119,7 @@ export function RowDragCell<R, SR>({
       if (cached) refreshRect();
     };
 
-    // Build a per-zone allowance predicate scoped to the current source.
-    // Center is structurally disabled when no `onRowReparent` is wired.
+    // Per-zone allowance for the current source; center is disabled without `onRowReparent`.
     const buildIsZoneAllowed = (fromIdx: number) => (zone: DropZone) => {
       if (zone === 'center' && !allowCenter) return false;
       if (canDropRow && !canDropRow({ fromIdx, toIdx: rowIdx, zone })) return false;
@@ -149,7 +131,6 @@ export function RowDragCell<R, SR>({
         element: el,
         canDrop: ({ source }) => {
           if (!isRowDragData(source.data) || source.data.rowIdx === rowIdx) return false;
-          // Row is a valid target if at least one zone is allowed.
           const isAllowed = buildIsZoneAllowed(source.data.rowIdx);
           return isAllowed('top') || isAllowed('bottom') || isAllowed('center');
         },
@@ -161,15 +142,13 @@ export function RowDragCell<R, SR>({
         },
         onDragEnter: () => {
           refreshRect();
-          // Listen passively for scroll on capture so we catch any scrolling
-          // ancestor (auto-scroll container, window) without per-element setup.
+          // Passive capture-phase scroll catches any scrolling ancestor without per-element listeners.
           window.addEventListener('scroll', onScroll, { capture: true, passive: true });
         },
         onDrag: ({ self, source }) => {
           if (!isRowDragData(source.data)) return;
           const zone = (self.data as Record<string, unknown>).dropZone as DropZone | null;
-          // Only redirect bottom→top into the next row when that row would
-          // accept this drag's `top` zone; otherwise paint on the current row.
+          // Redirect bottom to the next row's top only when that row accepts this drag's `top` zone.
           const allowRedirect =
             zone !== 'bottom' || !canDropRow
               ? true

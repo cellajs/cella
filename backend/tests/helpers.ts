@@ -22,15 +22,9 @@ import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-m
 import type { apiErrorSchema } from '#/schemas';
 import { hashToken } from '#/utils/hash-token';
 
-/**
- * Types for test responses
- */
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 
-/**
- * Create a user with a verified email.
- * Use for OAuth/passkey tests.
- */
+/** User with a verified email, for OAuth/passkey tests. */
 export async function createUser(email: string) {
   const userRecord = mockUser({ email });
   const [user] = await db.insert(usersTable).values(userRecord).returning();
@@ -38,9 +32,7 @@ export async function createUser(email: string) {
   return user;
 }
 
-/**
- * Create a confirm-mfa token for a user. Returns the raw token string for use in cookies.
- */
+/** Returns the raw token string, for use in cookies. */
 export async function createMfaToken(user: { id: string; email: string }) {
   const mfaToken = nanoid(40);
   const hashedMfaToken = hashToken(mfaToken);
@@ -55,9 +47,6 @@ export async function createMfaToken(user: { id: string; email: string }) {
   return mfaToken;
 }
 
-/**
- * Create a user with TOTP + MFA enabled.
- */
 export async function createTotpUser(email: string) {
   const user = await createTestUser(email);
   await verifyUserEmail(email);
@@ -70,9 +59,7 @@ export async function createTotpUser(email: string) {
   return user;
 }
 
-/**
- * Build a passkey sign-in request body (WebAuthn `AuthenticationResponseJSON` shape).
- */
+/** WebAuthn `AuthenticationResponseJSON` shape. */
 export function passkeySignInBody(opts: {
   credentialId: string;
   email: string;
@@ -86,9 +73,7 @@ export function passkeySignInBody(opts: {
   };
 }
 
-/**
- * Build a WebAuthn assertion object (base64url fields) for request bodies.
- */
+/** WebAuthn assertion with base64url fields. */
 export function passkeyAssertion(opts: { credentialId: string; challenge?: string } = { credentialId: nanoid(32) }) {
   const clientData = JSON.stringify({
     type: 'webauthn.get',
@@ -109,19 +94,13 @@ export function passkeyAssertion(opts: { credentialId: string; challenge?: strin
   };
 }
 
-/**
- * Create a user with a verified email.
- */
 export async function createTestUser(email: string, verified = true) {
-  // Make user row, then insert into the database
   const userRecord = mockUser({ email });
   const [user] = await db.insert(usersTable).values(userRecord).returning();
 
-  // Make unsubscribeToken row, then insert into the database
   const unsubscribeTokenRecord = await mockUnsubscribeToken(user);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
-  // Make email row for user, then insert into the database
   const emailRecord = {
     email: user.email,
     userId: user.id,
@@ -137,16 +116,10 @@ export async function getUserByEmail(email: string): Promise<UserModel[]> {
   return await db.select().from(usersTable).where(eq(usersTable.email, email));
 }
 
-/**
- * Enable MFA for a user
- */
 export async function enableMFAForUser(userId: string) {
   await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, userId));
 }
 
-/**
- * Verify email for a user
- */
 export async function verifyUserEmail(email: string) {
   await db
     .update(emailsTable)
@@ -154,14 +127,9 @@ export async function verifyUserEmail(email: string) {
     .where(eq(emailsTable.email, email.toLowerCase()));
 }
 
-/**
- * Create a system admin user
- */
 export async function createSystemAdminUser(email: string, verified = true) {
-  // Create regular user first
   const user = await createTestUser(email, verified);
 
-  // Assign system admin role
   await db.insert(systemRolesTable).values({
     id: user.id,
     userId: user.id,
@@ -172,9 +140,6 @@ export async function createSystemAdminUser(email: string, verified = true) {
   return user;
 }
 
-/**
- * Create an organization admin user
- */
 export async function createOrganizationAdminUser(
   email: string,
   organizationId?: string,
@@ -182,10 +147,8 @@ export async function createOrganizationAdminUser(
   verified = true,
   tenantId = 'test01', // Default test tenant
 ) {
-  // Create regular user first
   const user = await createTestUser(email, verified);
 
-  // Create organization membership
   const membership = {
     id: generateId(),
     userId: user.id,
@@ -204,24 +167,16 @@ export async function createOrganizationAdminUser(
   return user;
 }
 
-/**
- * Helper to parse auth response from API response
- */
 export async function parseResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-/**
- * Create an organization with its tenant (required for FK constraint).
- * Returns the created organization which includes tenantId.
- */
+/** The tenant is created first; the FK constraint requires it. */
 export async function createTestOrganization(
   overrides?: Partial<ReturnType<typeof mockOrganization>>,
 ): Promise<OrganizationModel> {
-  // Create tenant first
   const [tenant] = await db.insert(tenantsTable).values({ name: 'Test Tenant' }).returning();
 
-  // Create organization with tenant reference
   const orgData = mockOrganization();
   const [organization] = await db
     .insert(organizationsTable)
@@ -231,10 +186,7 @@ export async function createTestOrganization(
   return organization;
 }
 
-/**
- * Create a test session directly in the database for a user.
- * Returns the cookie string to use in test requests.
- */
+/** Inserts a session row and returns the cookie string for test requests. */
 export async function createTestSession(user: { id: string }) {
   const sessionToken = nanoid(40);
   const hashedSessionToken = hashToken(sessionToken);

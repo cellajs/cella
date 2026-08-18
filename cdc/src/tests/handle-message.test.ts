@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock all heavy dependencies before importing the module under test
+// Mocks must precede the import of the module under test.
 vi.mock('../pipeline/process-events', () => ({
   processEvents: vi.fn(),
 }));
@@ -47,7 +47,7 @@ import { replicationState } from '../services/replication-state';
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);
 
-/** Create a minimal DML message for testing */
+/** Minimal DML message. */
 function mockDmlMessage(tag: 'insert' | 'update' | 'delete', id: string): Pgoutput.Message {
   const row = { id };
   if (tag === 'delete') {
@@ -56,7 +56,7 @@ function mockDmlMessage(tag: 'insert' | 'update' | 'delete', id: string): Pgoutp
   return { tag, relation: { name: 'tasks' }, new: row } as unknown as Pgoutput.Message;
 }
 
-describe('handleDataMessage — seeded entity filtering', () => {
+describe('handleDataMessage: seeded entity filtering', () => {
   beforeEach(() => {
     replicationState.reset();
     vi.clearAllMocks();
@@ -81,7 +81,6 @@ describe('handleDataMessage — seeded entity filtering', () => {
   });
 
   it('skips inserts of gen- prefixed entities during catch-up', async () => {
-    // Enter catchup mode
     replicationState.updateLag(15_000);
     expect(replicationState.catchingUp).toBe(true);
 

@@ -13,15 +13,11 @@ interface ResizeSnapshot<R, SR> {
   readonly leftCols: readonly CalculatedColumn<R, SR>[];
 }
 
-/** Get column width from the widths map with minWidth fallback */
 function getWidth<R, SR>(widths: ReadonlyMap<string, number>, col: CalculatedColumn<R, SR>): number {
   return widths.get(col.key) ?? col.minWidth;
 }
 
-/**
- * Keep auto columns flexible, pin all columns to pixels during drag, then retain only user widths.
- * Space redistribution is handled by `redistributeWidths`.
- */
+/** Auto columns stay flexible, every column pins to pixels during a drag, and only user widths survive it. */
 export function useColumnWidths<R, SR>(
   columns: readonly CalculatedColumn<R, SR>[],
   templateColumns: readonly string[],
@@ -174,10 +170,7 @@ function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: nu
   return newWidths;
 }
 
-/**
- * Shrink columns by `amount`: first in array shrinks first (nearest neighbor),
- * then remaining shrink proportionally. Returns actual amount shrunk.
- */
+/** Shrinks the nearest neighbor first, then the rest proportionally, and returns the amount actually shrunk. */
 function shrinkColumns<R, SR>(
   cols: readonly CalculatedColumn<R, SR>[],
   widths: Map<string, number>,
@@ -186,14 +179,12 @@ function shrinkColumns<R, SR>(
   if (cols.length === 0 || amount <= 0) return 0;
   let remaining = amount;
 
-  // Nearest neighbor first
   const neighbor = cols[0];
   const neighborWidth = getWidth(widths, neighbor);
   const neighborTake = min(remaining, max(0, neighborWidth - neighbor.minWidth));
   widths.set(neighbor.key, neighborWidth - neighborTake);
   remaining -= neighborTake;
 
-  // Remaining columns proportionally
   if (remaining > 0 && cols.length > 1) {
     const others = cols.slice(1);
     const totalAvailable = others.reduce((sum, col) => sum + max(0, getWidth(widths, col) - col.minWidth), 0);
@@ -230,7 +221,6 @@ function measureColumnWidth(gridRef: React.RefObject<HTMLDivElement | null>, key
   return gridRef.current?.querySelector(selector)?.getBoundingClientRect().width;
 }
 
-/** Measure all column widths in a single DOM query. */
 export function measureAllColumnWidths(gridRef: React.RefObject<HTMLDivElement | null>): Map<string, number> {
   const widths = new Map<string, number>();
   const cells = gridRef.current?.querySelectorAll<HTMLElement>('[data-measuring-cell-key]');

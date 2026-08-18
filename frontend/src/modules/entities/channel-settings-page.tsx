@@ -8,12 +8,6 @@ interface ChannelSettingsPageProps<C extends ChannelEntityType> {
   entity: ChannelSettingsHost<C>;
 }
 
-/**
- * Page-hosted consumer for a channel entity's `settings` slot: an aside index next to the
- * anchored section stack. Section resolution (arrangement, grant and context-role gating) lives
- * in {@link useChannelSettingsSections}; this component only decides presentation, so apps
- * needing a different layout write their own map over the same sections.
- */
 export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: ChannelSettingsPageProps<C>) {
   const sections = useChannelSettingsSections(entity);
 

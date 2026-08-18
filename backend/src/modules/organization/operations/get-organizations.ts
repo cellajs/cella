@@ -30,7 +30,6 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
   // relatableGuard already verified shared org membership if relatableUserId is provided
   const targetUserId = relatableUserId ?? user.id;
 
-  // Determine what to include
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
   const includeMembers = include.includes('members');
@@ -38,9 +37,7 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
   const opts = { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
-  // Member previews (avatar stacks): ONE batched query per page for the most-privileged role,
-  // capped at 3 per entity. Overflow counts come from the m:{role} counters, so no extra data
-  // is needed. Apps wire this same helper into their own channel entity list ops.
+  // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:{role} counters.
   const memberPreviews = includeMembers
     ? await findMemberPreviewsByChannels(ctx, {
         channelType: entityType,
@@ -50,7 +47,6 @@ export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizatio
       })
     : null;
 
-  // Build response with included wrapper for optional data
   const items = organizations.map((org) => {
     const { counts, ...orgData } = org;
 

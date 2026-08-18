@@ -1,9 +1,6 @@
 import type { ConfigMode } from 'shared';
 
-/**
- * Show badge on favicon indicating current mode of application.
- * Example: "D" for development, "S" for staging.
- */
+/** Overlays the mode initial ("D" for development, "S" for staging) on the favicon. No-op in production. */
 export const initFaviconBadge = (mode: ConfigMode) => {
   if (mode === 'production') return;
 

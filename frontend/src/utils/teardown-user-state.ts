@@ -3,11 +3,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { deleteLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Clears authenticated client state with structural per-user isolation.
- * A hard sign-out deletes the user's database and identity hint; a soft session loss only closes
- * it so the same user can recover offline work after reauthentication.
- */
+/** Clears authenticated client state. `wipe` deletes the user's database and identity hint; without it both survive. */
 export const teardownUserState = async (wipe = true): Promise<void> => {
   queryClient.clear();
 
@@ -17,8 +13,7 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
   // Reset the bootstrap UI session flags (impersonation, offline access); theme/mode persist.
   useUIStore.getState().reset();
 
-  // Nulling the user drives the localUserDb lifecycle to unbind (close) the DB and reset every
-  // per-user store's in-memory state. A hard wipe also forgets `lastUser`; a soft teardown keeps it.
+  // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
   if (wipe) useUserStore.getState().reset();
   else useUserStore.setState({ user: null, isSystemAdmin: false, yjsTokens: {} });
 };

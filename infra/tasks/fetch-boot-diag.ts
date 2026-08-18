@@ -11,10 +11,8 @@ export interface DiagSelection {
   /** Latest complete boot transcript, if one was uploaded. */
   latestFull?: string;
   /**
-   * Reconciler-uploaded failure captures (`<svc>-failed-*`, `<svc>-pull-failed-*`):
-   * the actual cause of a roll failure (health-gate logs, docker pull/auth
-   * error) that wouldn't otherwise appear in a boot transcript. Most recent
-   * last; printed prominently because this is usually the answer.
+   * Reconciler-uploaded failure captures (`<svc>-failed-*`, `<svc>-pull-failed-*`): the cause of a roll failure that never reaches a boot transcript.
+   * Most recent last.
    */
   failureKeys: string[];
 }
@@ -24,11 +22,7 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Parse `aws s3 ls` output into object keys. Each line is
- * `<date> <time> <size> <key>`; we take the 4th column (matching the prior
- * `awk '{print $4}'`). Blank lines and `PRE <dir>/` rows yield no key.
- */
+/** Parse `aws s3 ls` output into object keys: the 4th column of `<date> <time> <size> <key>`. Blank lines and `PRE <dir>/` rows yield no key. */
 export function parseKeys(lsOutput: string): string[] {
   const keys: string[] = [];
   for (const line of lsOutput.split('\n')) {
@@ -38,22 +32,15 @@ export function parseKeys(lsOutput: string): string[] {
   return keys;
 }
 
-/**
- * Choose which diagnostic objects to surface for a service. Lexical sort is
- * sufficient because both marker indices and the YYYYMMDDThhmmss timestamps are
- * zero-padded / ISO-ish, so string order == chronological order.
- */
+/** Choose which diagnostic objects to show for a service. Lexical sort equals chronological order because marker indices and YYYYMMDDThhmmss timestamps are zero-padded. */
 export function selectDiagnostics(keys: string[], service: string): DiagSelection {
   const svc = escapeRe(service);
   const sorted = [...keys].sort();
   const markers = sorted.filter((k) => new RegExp(`^${svc}-(stage|[0-9])`).test(k)).slice(-30);
   const stageDetailKeys = sorted.filter((k) => k.startsWith(`${service}-stage-`)).slice(-10);
-  // Pin to -boot.log: the sibling -events.jsonl sorts after it and would win
-  // .at(-1), replacing the readable transcript with raw OTLP records.
+  // Pin to -boot.log: the sibling -events.jsonl sorts after it and would win .at(-1), replacing the readable transcript with raw OTLP records.
   const latestFull = sorted.filter((k) => new RegExp(`^${svc}-[0-9]{8}T.*-boot\\.log$`).test(k)).at(-1);
-  // Reconciler failure captures: <svc>-failed-* (slot logs), <svc>-pull-failed-*
-  // (docker pull/auth stderr) and <svc>-migrate-failed-* (one-shot migrator
-  // output). Keep the few most recent.
+  // Reconciler failure captures: <svc>-failed-* (slot logs), <svc>-pull-failed-* (docker pull/auth stderr), <svc>-migrate-failed-* (one-shot migrator output).
   const failureKeys = sorted.filter((k) => new RegExp(`^${svc}-(pull-|migrate-)?failed-`).test(k)).slice(-5);
   return { markers, stageDetailKeys, latestFull, failureKeys };
 }
@@ -62,25 +49,18 @@ export function selectDiagnostics(keys: string[], service: string): DiagSelectio
 export interface DiagReader {
   /** Return raw `aws s3 ls` output for the boot-diag prefix. */
   list(): string;
-  /** Return the body of a single boot-diag object key. */
   cat(key: string): string;
 }
 
 /**
- * True when an `aws s3 ls <prefix>` result means the prefix holds zero objects:
- * the AWS CLI exits 1 with no output at all in that case. That is a finding
- * (nothing was ever uploaded), not a listing failure; real failures (denied,
- * bad endpoint, bad bucket) carry stderr and must still abort.
+ * True when an `aws s3 ls <prefix>` result means the prefix holds zero objects: the CLI exits 1 with no output at all.
+ * That is a finding, not a listing failure; denied, bad-endpoint, and bad-bucket failures carry stderr and must still abort.
  */
 export function isEmptyPrefixLs(status: number | null, stdout: string, stderr: string): boolean {
   return status === 1 && stdout.trim() === '' && stderr.trim() === '';
 }
 
-/**
- * Actionable guidance for an EMPTY boot-diag prefix. Every boot uploads a
- * transcript, success or failure, so an empty prefix means no VM ever got a
- * diagnostic object into the bucket.
- */
+/** Guidance for an EMPTY boot-diag prefix: every boot uploads a transcript, so an empty prefix means no VM ever wrote a diagnostic object to the bucket. */
 export function emptyBootDiagGuidance(slug = '<slug>'): string[] {
   return [
     'boot-diag is empty: no VM has ever uploaded diagnostics (every boot uploads, even a healthy one).',
@@ -91,9 +71,8 @@ export function emptyBootDiagGuidance(slug = '<slug>'): string[] {
 }
 
 /**
- * Reads boot diagnostics through the AWS CLI while preserving actionable failures.
- * An empty prefix lists as '' (see isEmptyPrefixLs); other listing errors abort. Individual
- * object errors are returned for inline rendering so one bad object does not hide the rest.
+ * Read boot diagnostics through the AWS CLI. An empty prefix lists as '' (see isEmptyPrefixLs) and other listing errors abort.
+ * Per-object errors are returned for inline rendering so one bad object does not hide the rest.
  */
 export function createAwsReader(endpoint: string, bucket: string): DiagReader {
   const prefix = `s3://${bucket}/boot-diag/`;
@@ -101,7 +80,7 @@ export function createAwsReader(endpoint: string, bucket: string): DiagReader {
   const check = (res: ReturnType<typeof spawnAws>, what: string): string => {
     if (res.error) {
       if ((res.error as NodeJS.ErrnoException).code === 'ENOENT') {
-        throw new Error('aws CLI not found on PATH — install the AWS CLI to read boot diagnostics');
+        throw new Error('aws CLI not found on PATH: install the AWS CLI to read boot diagnostics');
       }
       throw new Error(`aws ${what} failed: ${res.error.message}`);
     }
@@ -131,11 +110,7 @@ export interface BundleSummary {
   latestFull?: string;
 }
 
-/**
- * Summarise the boot-diag prefix per service: a quick "what's here" overview so
- * a caller (or Copilot) can see which services have evidence and which have a
- * failure capture worth opening, without dumping every body.
- */
+/** Summarise the boot-diag prefix per service, showing which services have evidence and which have a failure capture worth opening, without dumping every body. */
 export function summarizeBundles(keys: string[], serviceNames: readonly string[]): BundleSummary[] {
   return serviceNames.map((service) => {
     const svc = escapeRe(service);
@@ -146,10 +121,8 @@ export function summarizeBundles(keys: string[], serviceNames: readonly string[]
 }
 
 /**
- * Print the selected diagnostics. `style` controls presentation: `'ci'` emits
- * GitHub Actions collapsible `::group::` log groups (the default, for the deploy
- * workflow); `'plain'` emits readable section headers for a local terminal. A
- * failed per-object read is annotated inline while the dump continues.
+ * Print the selected diagnostics. `style` `'ci'` (default) emits GitHub Actions `::group::` log groups, `'plain'` emits section headers for a terminal.
+ * A failed per-object read is annotated inline while the dump continues.
  */
 export function renderDiagnostics(
   service: string,
@@ -176,8 +149,7 @@ export function renderDiagnostics(
     return;
   }
 
-  // Failure captures first. This is usually the actual answer (pull/auth error
-  // or the failed slot's logs), so surface it before the boot transcript.
+  // Failure captures print before the boot transcript: the pull/auth error or failed slot's logs is usually the answer.
   for (const key of sel.failureKeys ?? []) {
     open(`⚠️ ${key}`);
     log(safeCat(key));

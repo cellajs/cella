@@ -1,8 +1,5 @@
 import * as React from 'react';
 
-/**
- * Tracks a media query match state.
- */
 export function useMediaQuery(query: string) {
   const [value, setValue] = React.useState(false);
 

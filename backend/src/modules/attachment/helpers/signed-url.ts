@@ -12,8 +12,8 @@ function getS3Client(): S3Client {
   const accessKeyId = env.S3_ACCESS_KEY_ID;
   const secretAccessKey = env.S3_ACCESS_KEY_SECRET;
 
-  // Blank keys reach the signer as invalid credentials and surface as an opaque 500.
-  // Fail with a typed 503 so a deployment without S3 configured is diagnosable.
+  // Blank keys reach the signer as invalid credentials and return an opaque 500. Fail with a
+  // typed 503 so a deployment without S3 configured is diagnosable.
   if (!accessKeyId || !secretAccessKey) {
     throw new AppError(503, 'server_error', 'error', {
       name: 'S3NotConfigured',
@@ -37,10 +37,8 @@ interface GetUrlOptions {
 }
 
 /**
- * Resolves an object URL in Scaleway Object Storage:
- * - blob URL → returned as-is
- * - public → permanent public URL (no signing)
- * - private → presigned URL, valid for `expiresIn` seconds (default 24h)
+ * Resolves an object URL in Scaleway Object Storage: a blob URL is returned as-is, a public one
+ * as a permanent URL, a private one presigned for `expiresIn` seconds (default 24h).
  */
 export async function getSignedUrlFromKey(
   Key: string,

@@ -1,11 +1,7 @@
 import { z } from '@hono/zod-openapi';
 
 /**
- * Wire schema for `organization.setupConfig`, wired into the organization response and update
- * contract in `organization-schema`.
- *
- * Cella ships an empty object (no setup payload); apps override this file to describe their own
- * setup config (e.g. `z.object({ primaryLabels: z.array(...) })`) so it validates on the wire and
- * flows into the generated SDK type.
+ * Wire schema for `organization.setupConfig`, used by the organization response and update contract.
+ * The template ships an empty object; apps override this file so their setup config validates on the wire and reaches the SDK type.
  */
 export const setupConfigSchema = z.object({});

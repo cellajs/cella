@@ -5,55 +5,39 @@ import { downloadService } from '~/modules/attachment/offline/download-service';
 import { uploadService } from '~/modules/attachment/offline/upload-service';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
-// Side-effect import: starts the auth-driven localUserDb lifecycle + eager kv hydration at root,
-// before any route beforeLoad runs.
+// Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 
-/**
- * Init mutation defaults BEFORE cache restoration: stores the queryClient so entity modules can
- * self-register their mutationFn via addMutationRegistrar() on load (no explicit imports needed).
- */
+// Runs before cache restoration: stores the queryClient so entity modules self-register their mutationFn via addMutationRegistrar() on load.
 initMutationDefaults(queryClient);
 
-/**
- * Init channel entity enrichment, guarded to prevent duplicate subscribers during HMR.
- */
 const unsubscribeEnrichment = initChannelEnrichment();
 
-/**
- * HMR cleanup: unsubscribe enrichment to prevent duplicates on re-evaluation.
- */
+// HMR cleanup: re-evaluation would otherwise leave duplicate enrichment subscribers.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     unsubscribeEnrichment();
   });
 }
 
-/**
- * QueryClientProvider wrapper for cache persistence + offline. Persister is session or IndexedDB
- * per offlineAccess. In app routes only the leader tab persists mutations, to avoid cross-tab conflicts.
- */
+/** Adds cache persistence and offline support: the persister is session or IndexedDB per offlineAccess. */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
   const { offlineAccess, toggleOfflineAccess } = useUIStore();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Disable offline access if PWA is not enabled in the config
   useEffect(() => {
     if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
   }, [offlineAccess, toggleOfflineAccess]);
 
-  // Clean up orphaned session-scoped IndexedDB entries on mount (fire-and-forget)
   useEffect(() => {
     cleanupOrphanedSessions();
   }, []);
 
-  // Start offline services for background blob caching and upload sync.
-  // Deferred to mount (not module-eval) to avoid a circular-import TDZ during HMR:
-  // provider.tsx -> download-service -> attachment/query -> realtime -> query/index -> provider.tsx.
+  // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {
     downloadService.start();
     uploadService.start();
@@ -63,11 +47,9 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  // Persister by mode: offlineAccess -> IndexedDB (survives restart); session -> sessionStorage
-  // (survives refresh, cleared on tab close).
+  // offlineAccess persists to IndexedDB and survives restart; the session persister survives refresh and is reclaimed after the tab closes.
   const activePersister = offlineAccess ? persister : sessionPersister;
 
-  // Track online/offline status and update staleTime accordingly
   useEffect(() => {
     if (!offlineAccess) return;
 
@@ -81,7 +63,6 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       updateStaleTime(true, false);
     };
 
-    // Set initial staleTime based on current network status
     updateStaleTime(true, navigator.onLine);
 
     window.addEventListener('online', handleOnline);
@@ -90,12 +71,10 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      // Reset to default staleTime when offlineAccess is disabled
       updateStaleTime(false, true);
     };
   }, [offlineAccess]);
 
-  // Log offline status changes for debugging
   useEffect(() => {
     if (!offlineAccess) return;
     console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
@@ -107,18 +86,14 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       persistOptions={{
         persister: activePersister,
         dehydrateOptions: {
-          // Persist each tab's paused offline queue separately so tabs cannot overwrite one another.
-          // Active mutations may contain non-cloneable streaming data and remain in memory only.
+          // Only paused mutations persist: active ones may hold non-cloneable streaming data.
           shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
           shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
         },
       }}
       onSuccess={() => {
         markCacheRestored();
-        // Catchup reconciles the restored cache selectively (per-view deltas), so resume paused
-        // mutations once it completes and let replays read the reconciled data. No blanket
-        // invalidation: the sync engine owns freshness, and a full refetch here would refetch
-        // every cached list on startup and defeat catchup's per-view decisions.
+        // Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup.
         waitForActiveCatchup().then(() => queryClient.resumePausedMutations());
       }}
     >

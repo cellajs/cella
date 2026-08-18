@@ -22,11 +22,7 @@ export const redactedFields = sensitiveKeys.flatMap((key) => [key, `*.${key}`]);
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
 const isTest = appConfig.mode === 'test';
 
-/**
- * Logger for incoming/outgoing requests (used by the logger middleware). Dev: pino-pretty formats
- * via the messageFormat template; production: JSON to stdout. Also ships to Maple when a Maple ingest
- * key is set.
- */
+/** Request logger: pino-pretty via messageFormat in dev, JSON to stdout in production, Maple when a key is set. */
 export const requestLogger = createLogger({
   level: env.PINO_LOG_LEVEL,
   isProduction,
@@ -47,11 +43,7 @@ export const requestLogger = createLogger({
   },
 });
 
-/**
- * Underlying pino instance for application logs. Not exported: all app logging
- * goes through `baseLog` below or the request-aware `log` in #/utils/logger,
- * so the err convention and dedup apply everywhere.
- */
+/** Not exported: all logging passes through `baseLog` or the request-aware `log`, keeping the err convention. */
 const eventLogger = createLogger({
   level: env.PINO_LOG_LEVEL,
   isProduction,

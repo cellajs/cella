@@ -13,9 +13,6 @@ interface TooltipButtonProps {
   className?: string;
 }
 
-/**
- * A button that displays a tooltip when hovered.
- */
 export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(function TooltipButton(
   {
     children,

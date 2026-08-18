@@ -19,17 +19,9 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { DocContext } from '../constants';
 import { type Tx, withRlsTx } from './db';
 
-// Constraint: no app-owned entity schema imports. Cella-owned tables (memberships) are
-// queried through their typed drizzle schema; app-declared entity tables are resolved
-// dynamically from the DB so this file works for every app unchanged.
+// Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
 
-/**
- * Column names that exist on a table, read once from Postgres and cached per process.
- *
- * Lets the relay select only the columns a table actually has (each app's entities differ)
- * without importing app-owned entity schema. The DB is
- * the source of truth, so this stays correct across apps and migrations.
- */
+/** Column names per table, read once from Postgres and cached per process, so the relay selects only columns a table has. */
 const tableColumnsCache = new Map<string, Promise<Set<string>>>();
 
 export function getTableColumnNames(tx: Tx, table: string): Promise<Set<string>> {
@@ -49,13 +41,7 @@ export function getTableColumnNames(tx: Tx, table: string): Promise<Set<string>>
   return cached;
 }
 
-/**
- * Load the user's memberships in the shape the permission engine expects.
- *
- * Runs on an RLS-scoped transaction (tenant + user already set by {@link withRlsTx}), so the
- * result is naturally limited to the active tenant. Memberships are cella-owned, so the typed
- * drizzle schema applies; only the three columns the engine reads are selected.
- */
+/** Runs on an RLS-scoped transaction, so the result is limited to the active tenant. */
 export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
   return tx
     .select({
@@ -74,29 +60,19 @@ export interface EntityScopeRow extends Partial<ChannelIdColumns> {
   tenantId?: string | null;
 }
 
-/**
- * Resolve an entity's ancestor scope (e.g. `organizationId`), `createdBy`, and `tenantId`.
- *
- * Reads only the columns the permission engine needs. Table and column names are derived from the
- * app's schema conventions (`toTableName`/`toColumnName`, validated against drizzle by a backend
- * test) and filtered to the columns the table actually has via {@link getTableColumnNames}, so it
- * works for every app's entity types without importing app-owned entity schema. The entity id is
- * parameterized. Returns `null` if the entity type is not declared or the row does not exist.
- */
+/** Table and column names come from the app's schema conventions, filtered to columns the table has. Returns `null` if the entity type is not declared or the row does not exist. */
 export async function resolveEntityScope(
   tx: Tx,
   entityType: ChannelEntityType | ProductEntityType,
   entityId: string,
 ): Promise<EntityScopeRow | null> {
-  // Only entity types this app declares are resolvable.
   if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
 
   const table = toTableName(entityType);
   const existing = await getTableColumnNames(tx, table);
   if (!existing.has('id')) return null; // unknown / non-conforming table
 
-  // Logical keys the permission engine may read, filtered to columns the table actually has.
-  // `publishedAt` feeds the draft veto in `canEditEntity` (absent column → always published).
+  // Logical keys the permission engine may read; an absent `publishedAt` column counts as published.
   const candidateKeys = ['id', 'createdBy', 'tenantId', 'publishedAt'];
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     candidateKeys.push(appConfig.entityIdColumnKeys[ancestor]);
@@ -111,11 +87,7 @@ export async function resolveEntityScope(
 }
 
 /**
- * Decide locally whether the user may edit the document's entity.
- *
- * Mirrors the backend `verifyEntityOp`: resolves the entity scope and memberships in one RLS-scoped
- * transaction, then runs the shared permission engine for the `update` action. The decision is computed
- * by exactly the same engine the backend uses, no HTTP round-trip.
+ * Mirrors the backend `verifyEntityOp`: one RLS-scoped transaction, then the shared permission engine for the `update` action.
  *
  * @throws MissingScopeError if the resolved entity is missing a required ancestor scope.
  */
@@ -131,12 +103,10 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     if (!entity) return false;
 
-    // Defense-in-depth: verify tenant match even if RLS is not enforced (e.g. superuser connection).
+    // Defense in depth: verify the tenant match even when RLS is not enforced, as on a superuser connection.
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
 
-    // Unpublished drafts (publishedAt null) are editable by their author alone. The
-    // published-rows lifecycle veto, ahead of the engine (which has no draft vocabulary).
-    // Absent column (resolveEntityScope filtered it out) → always published → no-op.
+    // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
     if (!draftVisibleTo(asRecord(entity), ctx.userId)) return false;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
@@ -147,8 +117,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
       row: asRecord(entity),
     });
 
-    // Collaborative editing confers no system-admin bypass. The same stance the backend's
-    // materialize endpoint takes, so the relay and the write it triggers agree.
+    // Collaborative editing confers no system-admin bypass, matching the backend materialize endpoint.
     const { allowed } = checkAccess({ userId: ctx.userId, isSystemAdmin: false, memberships }, 'update', subject);
     return allowed;
   });

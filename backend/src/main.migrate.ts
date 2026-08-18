@@ -19,8 +19,7 @@ try {
 
   console.info(pc.green(`${timestamp()} [migrate] ✓ Migrations complete`));
 
-  // Seed the configured system administrator only for an empty user table.
-  // Lazy loading keeps mock helpers outside the migration path until needed.
+  // Seed the system administrator only for an empty user table; the lazy import keeps mock helpers out of this path.
   console.info(`${timestamp()} [migrate] Seeding system admin (idempotent)...`);
   const { initSeed } = await import('../scripts/seeds/00-init.seed');
   await initSeed();
@@ -37,8 +36,7 @@ try {
       cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
   }
-  // Export the failure because one-shot container output is not centrally collected.
-  // Wait through the OTel batch interval before exiting.
+  // Log to OTel because one-shot container output is not collected, then wait through the batch interval.
   const { baseLog } = await import('#/lib/pino');
   baseLog.fatal('Migrate companion failed', { err: error });
   await new Promise((resolve) => setTimeout(resolve, 6000));

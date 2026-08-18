@@ -7,9 +7,6 @@ import { Onboarding } from '~/modules/home/onboarding/steps';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-/**
- * Welcome page shown to new users. Contains onboarding flow and welcome message. Only shown if user has not completed onboarding.
- */
 function WelcomePage() {
   const user = useCurrentUser();
 
@@ -20,7 +17,7 @@ function WelcomePage() {
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
-      // Don't close onboarding on escape when focused on a form field
+      // Escape inside a form field must not close onboarding
       if (document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
     }
     if (!nextOpen) setOnboardingState('completed');

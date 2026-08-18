@@ -2,11 +2,8 @@ interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
   contentTypeValue?: string | null;
-  /** Whether this node contains anyOf composition */
   hasAnyOf?: boolean;
-  /** Whether this node contains oneOf composition */
   hasOneOf?: boolean;
-  /** Inline numeric constraints (maxLength, minLength, etc.) */
   constraints?: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } | null;
   theme: {
     string: string;
@@ -17,7 +14,6 @@ interface SchemaLabelsProps {
   };
 }
 
-/** Returns the appropriate color class for a JSON Schema type keyword */
 function getTypeColorClass(
   typeValue: string,
   theme: { string: string; number: string; boolean: string; null: string },
@@ -37,8 +33,6 @@ function getTypeColorClass(
   }
 }
 
-// Renders OpenAPI schema-mode labels: type, ref, contentType, and composition markers (anyOf/oneOf) when present.
-/** Renders the schema labels component. */
 export function SchemaLabels({
   typeValue,
   refValue,
@@ -52,7 +46,7 @@ export function SchemaLabels({
 
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
 
-  // Composition label (anyOf takes precedence over oneOf if both are present)
+  // anyOf takes precedence over oneOf when both are present.
   const compositionLabel = hasAnyOf ? 'anyOf' : hasOneOf ? 'oneOf' : null;
 
   return (

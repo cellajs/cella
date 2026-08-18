@@ -15,12 +15,9 @@ interface DraftStoreState {
   isFormDirty(key: string): boolean; // Checks if a form has unsaved changes
 }
 
-/**
- * Draft store for having auto draft functionality on forms that use useDraftForm.
- */
+/** Backs the auto-draft behavior of useFormWithDraft. */
 const initStore: Pick<DraftStoreState, 'forms' | 'dirtyForms'> = { forms: {}, dirtyForms: {} };
 
-/** Provides access to persisted form-draft state. */
 export const useDraftStore = create<DraftStoreState>()(
   immer(
     persist(

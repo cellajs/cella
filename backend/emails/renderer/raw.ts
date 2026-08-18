@@ -29,10 +29,7 @@ export function unescapeForRawComponent(input: string): string {
   return input.replace(new RegExp(START_TAG, 'g'), '<!--').replace(new RegExp(END_TAG, 'g'), '/-->');
 }
 
-/**
- * Returns a rehype plugin that replaces `<jsx-email-raw><!--...--></jsx-email-raw>`
- * elements with a raw HTML node using the original, unescaped content.
- */
+/** Replaces `<jsx-email-raw><!--...--></jsx-email-raw>` with a raw node holding the unescaped content. */
 export const getRawPlugin = async () => {
   return function rawPlugin() {
     return function transform(tree: Root) {
@@ -46,15 +43,13 @@ export const getRawPlugin = async () => {
       });
 
       for (const { node, parent, index } of matches) {
-        // The Raw component renders a single HTML comment child containing the
-        // escaped raw content. Extract it and unescape back to the original.
+        // The Raw component renders one HTML comment child holding the escaped content.
         const commentChild = node.children.find((c): c is Comment => c.type === 'comment');
 
         if (commentChild) {
           const rawHtml = unescapeForRawComponent(commentChild.value);
 
-          // Replace the wrapper element with a `raw` node to inject HTML verbatim.
-          // rehype-stringify will pass this through when `allowDangerousHtml: true`.
+          // A `raw` node injects HTML verbatim; rehype-stringify needs `allowDangerousHtml: true`.
           const rawNode: Raw = { type: 'raw', value: rawHtml };
           (parent as ParentWithRaw).children.splice(index, 1, rawNode);
         }

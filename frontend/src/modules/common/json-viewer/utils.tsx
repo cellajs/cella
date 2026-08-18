@@ -1,8 +1,5 @@
 import type { ReactNode } from 'react';
 
-/**
- * Recursively checks if a value or any of its children contain the search text.
- */
 const containsSearchMatch = (value: unknown, searchText: string): boolean => {
   if (!searchText) return false;
   const lowerSearch = searchText.toLowerCase();
@@ -25,9 +22,6 @@ const containsSearchMatch = (value: unknown, searchText: string): boolean => {
   return false;
 };
 
-/**
- * Recursively counts all search matches in a value (keys and primitive values).
- */
 export const countSearchMatchesInValue = (value: unknown, searchText: string): number => {
   if (!searchText) return 0;
   const lowerSearch = searchText.toLowerCase();
@@ -54,9 +48,6 @@ export const countSearchMatchesInValue = (value: unknown, searchText: string): n
   return count;
 };
 
-/**
- * Determines the type of a JSON value for display purposes.
- */
 export function getValueType(value: unknown): string {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
@@ -64,9 +55,7 @@ export function getValueType(value: unknown): string {
   return typeof value;
 }
 
-/**
- * Returns a formatted type label for display (e.g., "int", "float", "Array(5)", "Object").
- */
+/** Formats a display label such as "int", "float", "Array(5)", or "Object". */
 export function getTypeLabel(value: unknown, type: string): string {
   switch (type) {
     case 'number': {
@@ -92,13 +81,9 @@ export function getTypeLabel(value: unknown, type: string): string {
   }
 }
 
-/** JSON Schema data type keywords */
 export const JSON_SCHEMA_TYPES = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
 
-/**
- * Highlights all search matches in text with Tailwind classes.
- * Adds data-search-match attribute for scroll-to-match functionality.
- */
+/** Wraps search matches in Tailwind-styled spans carrying data-search-match for scroll-to-match. */
 export const highlightText = (
   text: string,
   searchText: string,
@@ -144,10 +129,7 @@ export const highlightText = (
   return <span className={colorClass}>{segments}</span>;
 };
 
-/**
- * Finds the path to the Nth search match (0-indexed) in a JSON value.
- * Returns null if the match index is out of bounds.
- */
+/** Finds the path to the Nth (0-indexed) search match, or null when the index is out of bounds. */
 export const getPathToNthMatch = (
   value: unknown,
   searchText: string,

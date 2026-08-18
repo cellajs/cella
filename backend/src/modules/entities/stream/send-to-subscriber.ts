@@ -5,10 +5,8 @@ import { writeChange, writeChangeRaw } from './helpers';
 import type { CursoredSubscriber } from './types';
 
 /**
- * Send notification to a subscriber and update cursor.
- * Accepts a pre-built notification to avoid redundant builds across subscribers.
- * When preSerialized is provided, skips JSON.stringify (used when all subscribers
- * receive identical notifications without per-subscriber transforms).
+ * Takes a pre-built notification so it is not rebuilt per subscriber. `preSerialized` skips
+ * JSON.stringify, for when every subscriber receives an identical notification.
  */
 export async function sendNotificationToSubscriber<T extends CursoredSubscriber, E extends ActivityEvent>(
   subscriber: T,

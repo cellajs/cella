@@ -1,5 +1,4 @@
-/** Dependency-free sleep, so this module can be included by the boot runner
- *  (whose tsup bundle must not reach into the `shared` workspace package). */
+/** Dependency-free sleep: the boot runner's tsup bundle must not reach into the `shared` workspace package. */
 const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface RetryOptions {
@@ -13,10 +12,7 @@ export interface RetryOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-/**
- * Run `fn` up to `opts.attempts` times, sleeping `opts.delayMs` between failures.
- * Resolves with the first success; rejects with the last error if all attempts fail.
- */
+/** Run `fn` up to `opts.attempts` times, sleeping `opts.delayMs` between failures. Rejects with the last error when all attempts fail. */
 export async function retry<T>(fn: (attempt: number) => Promise<T>, opts: RetryOptions): Promise<T> {
   const sleep = opts.sleep ?? defaultSleep;
   let lastError: unknown;
@@ -43,12 +39,7 @@ export interface PollUntilOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-/**
- * Probe until `probe` returns a non-undefined value (the poll's result), or the
- * attempt budget is spent (undefined). Unlike {@link retry}, a probe that
- * "misses" is not an error: it simply returns undefined to keep polling, so
- * per-attempt logging and terminal fast-fail decisions live inside the probe.
- */
+/** Probe until `probe` returns a non-undefined value, or the attempt budget is spent. A miss returns undefined and is not an error, so per-attempt logging and fast-fail decisions live inside the probe. */
 export async function pollUntil<T>(
   probe: (attempt: number) => Promise<T | undefined>,
   opts: PollUntilOptions,

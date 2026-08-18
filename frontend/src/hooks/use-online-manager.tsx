@@ -1,11 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-/**
- * Hook to reactively track network online status via TanStack Query's onlineManager.
- *
- * @returns boolean indicating if the user is online
- */
+/** Network status sourced from TanStack Query's onlineManager. */
 export const useOnlineManager = () => {
   const [isOnline, setIsOnline] = useState(onlineManager.isOnline());
 

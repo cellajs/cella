@@ -9,10 +9,6 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
-/**
- * Combined header with logo and preferences.
- * Also renders floating-nav return bar (visible only in floating-nav context).
- */
 export function MenuSheetHeader() {
   const { user } = useUserStore();
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
@@ -35,7 +31,6 @@ export function MenuSheetHeader() {
   return (
     <div className="relative h-14 p-3 pb-1">
       <div className="flex h-10 items-center justify-between">
-        {/* Logo */}
         <Link
           to="/home"
           draggable={false}
@@ -45,7 +40,7 @@ export function MenuSheetHeader() {
         </Link>
 
         <div className="group/actions flex items-center gap-2">
-          {/* User button - only visible when floating nav is present */}
+          {/* Only shown inside a floating-nav layout. */}
           {user && (
             <Button
               ref={accountButtonRef}

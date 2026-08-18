@@ -5,11 +5,7 @@ import { appStorageNeeds, services } from '../lib/services';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
 import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciDeployApplicationId } from './vm-iam';
 
-// App-owned buckets follow the service registry (P2): the SPA bucket needs a
-// default-route service, the upload buckets need an s3Access service, and the
-// browser CORS origin is the default-route service's URL when both exist. A
-// frontend-less registry provisions no app buckets at all; the engine-owned
-// boot-diag bucket below is unconditional.
+// App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
 const browserOrigin = needs.browserOriginSlug ? serviceUrl(needs.browserOriginSlug) : undefined;
 const uploadCorsRules = browserOrigin
@@ -24,14 +20,8 @@ const uploadCorsRules = browserOrigin
   : undefined;
 
 /**
- * Admin application S3 access on the CI-scoped bucket policies, so a human key
- * under the admin app can read/refresh buckets without being the CI deploy
- * app. Bucket policies are deny-by-default: without this, even an org-admin or
- * personal key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
- * Resolved from IAM by name (vm-iam.ts) so local and CI ups produce the SAME
- * policy. The old env-var source (backend/.env only) made the statement
- * flip-flop between local and CI updates. Absent admin app = statement
- * dropped (vm-iam warns once).
+ * Admin application S3 access on the CI-scoped bucket policies. Bucket policies are deny-by-default, so without it even an org-admin key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
+ * Resolved from IAM by name so local and CI ups produce the same policy; an absent admin app drops the statement.
  */
 const adminAccess = (bucketName: pulumi.Input<string>) =>
   adminApplicationId.apply((adminId) =>
@@ -48,9 +38,7 @@ const adminAccess = (bucketName: pulumi.Input<string>) =>
       : [],
   );
 
-// Full S3 access for the CI deploy application: the same statement on every
-// bucket policy (bucket policies are deny-by-default, so without it even the
-// deploy key cannot touch the bucket).
+// Full S3 access for the CI deploy application, on every bucket policy: policies are deny-by-default, so without it the deploy key cannot touch the bucket.
 const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Sid: 'DeployAccess',
   Effect: 'Allow',
@@ -60,16 +48,9 @@ const deployAccess = (bucketName: pulumi.Input<string>) => ({
 });
 
 /**
- * CI access on buckets holding irreplaceable user data (REQ-14): everything a
- * deploy/refresh needs EXCEPT `s3:DeleteObjectVersion`. Mirroring the state
- * bucket, a leaked CI key can delete objects (recoverable markers on a
- * versioned bucket) but cannot destroy version history. `PutBucketVersioning`
- * stays granted: Pulumi (as CI) manages the versioning config itself, so
- * denying it would break the up that applies this very posture. Accepted
- * residual: a leaked key can suspend FUTURE versioning, never erase history.
- * The action list is the riskiest piece of this file: Scaleway's supported
- * bucket-policy action vocabulary is not fully documented, so validate on
- * staging before trusting it (fallback: revert to `s3:*`).
+ * CI access on buckets holding irreplaceable user data: everything a deploy or refresh needs except `s3:DeleteObjectVersion`, so a leaked CI key can delete objects but not destroy version history.
+ * `PutBucketVersioning` stays granted because Pulumi manages the versioning config itself; the residual risk is that a leaked key can suspend future versioning.
+ * Scaleway's supported bucket-policy action vocabulary is undocumented, so validate any change to this list on staging before trusting it.
  */
 const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
   Sid: 'DeployAccess',
@@ -87,8 +68,7 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
     's3:PutBucketTagging',
     's3:GetBucketVersioning',
     's3:PutBucketVersioning',
-    // Scaleway spells CORS all-caps (unlike AWS's s3:GetBucketCors); the
-    // AWS casing is rejected as an invalid action (MalformedPolicy 400).
+    // Scaleway spells CORS all-caps; the AWS casing is rejected as an invalid action (MalformedPolicy 400).
     's3:GetBucketCORS',
     's3:PutBucketCORS',
     's3:GetLifecycleConfiguration',
@@ -100,11 +80,7 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 });
 
-/**
- * Backend service-app statement on the uploads buckets (REQ-20): object-level
- * only, since the backend signs uploads and presigned URLs with its per-deploy
- * service key. Resolves gracefully (absent app = statement dropped).
- */
+/** Backend service-app statement on the uploads buckets: object-level only, since the backend signs uploads and presigned URLs with its per-deploy service key. An absent app drops the statement. */
 const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
   backendServiceApplicationId.apply((backendId) =>
     backendId
@@ -128,12 +104,10 @@ const uploadsSignerAccess = (bucketName: pulumi.Input<string>) =>
       : [],
   );
 
-// Expire stale hashed assets only after old browser tabs are unlikely to lazy-load them.
-// Root entry files stay outside this lifecycle prefix.
+// Expire stale hashed assets only after old browser tabs stop lazy-loading them; root entry files stay outside this lifecycle prefix.
 const assetRetentionDays = sizing.assetRetentionDays;
 
-// Frontend static files bucket (website hosting); only when a default-route
-// service exists to serve it.
+// Frontend static files bucket, only when a default-route service exists to serve it.
 
 const frontendBucket = needs.spaBucket
   ? new scaleway.object.Bucket(
@@ -146,16 +120,14 @@ const frontendBucket = needs.spaBucket
         versioning: { enabled: true },
         lifecycleRules: [
           {
-            // Versioned expiration creates delete markers, so purge noncurrent objects bucket-wide
-            // after 30 days and remove markers once no versions remain.
+            // Versioned expiration creates delete markers, so purge noncurrent objects after 30 days and remove markers once no versions remain.
             id: 'cleanup-old-versions',
             enabled: true,
             noncurrentVersionExpiration: { noncurrentDays: 30 },
             expiration: { expiredObjectDeleteMarker: true },
           },
           {
-            // Expire immutable chunks after the open-tab window; rollback reuploads identical hashes.
-            // Versioning creates a marker here, while the old-version rule performs deletion.
+            // Expire immutable chunks after the open-tab window; versioning creates a marker here and the old-version rule performs the deletion.
             id: 'expire-stale-assets',
             enabled: true,
             expiration: { days: assetRetentionDays },
@@ -167,9 +139,7 @@ const frontendBucket = needs.spaBucket
     )
   : undefined;
 
-// Public read via bucket policy only: the SPA is served by the Caddy frontend
-// VMs proxying the S3 REST endpoint (with their own index.html fallback), so
-// no S3 website hosting configuration is needed.
+// Public read via bucket policy only: the Caddy frontend VMs proxy the S3 REST endpoint with their own index.html fallback, so no S3 website hosting config is needed.
 if (frontendBucket) {
   new scaleway.object.BucketPolicy('frontend-policy', {
     bucket: frontendBucket.name,
@@ -191,8 +161,7 @@ if (frontendBucket) {
   });
 }
 
-// Public uploads bucket (user-uploaded public assets); only when a service
-// signs S3 uploads (s3Access).
+// Public uploads bucket, only when a service signs S3 uploads.
 
 const publicUploadsBucket = needs.uploadBuckets
   ? new scaleway.object.Bucket('public-uploads-bucket', {
@@ -200,9 +169,7 @@ const publicUploadsBucket = needs.uploadBuckets
       region,
       tags: tagsAsMap,
       forceDestroy: !isProduction,
-      // User uploads are irreplaceable: versioning + a noncurrent-expiry window is
-      // the backup floor (REQ-14). Overwrites/deletes are recoverable for 30
-      // days, and the CI statement below cannot delete versions.
+      // User uploads are irreplaceable: versioning plus a noncurrent-expiry window keeps overwrites and deletes recoverable for 30 days, and the CI statement below cannot delete versions.
       versioning: { enabled: true },
       lifecycleRules: [
         {
@@ -212,13 +179,11 @@ const publicUploadsBucket = needs.uploadBuckets
           expiration: { expiredObjectDeleteMarker: true },
         },
       ],
-      // Browser direct upload needs the SPA origin; a registry without a
-      // default-route service uploads server-side only, no CORS.
+      // Browser direct upload needs the SPA origin; without a default-route service uploads are server-side only and need no CORS.
       ...(uploadCorsRules ? { corsRules: uploadCorsRules } : {}),
     })
   : undefined;
 
-// Public read access for public uploads
 if (publicUploadsBucket) {
   new scaleway.object.BucketPolicy('public-uploads-policy', {
     bucket: publicUploadsBucket.name,
@@ -243,8 +208,6 @@ if (publicUploadsBucket) {
   });
 }
 
-// Private uploads bucket (user-uploaded private assets, signed URL access)
-
 const privateUploadsBucket = needs.uploadBuckets
   ? new scaleway.object.Bucket(
       'private-uploads-bucket',
@@ -253,9 +216,7 @@ const privateUploadsBucket = needs.uploadBuckets
         region,
         tags: tagsAsMap,
         forceDestroy: !isProduction,
-        // Same backup floor as public uploads (REQ-14). This bucket stays
-        // policy-less (signed URLs only), so version protection here is IAM-side
-        // only until P3 adds the per-service backend statement.
+        // Same versioning protection as public uploads. This bucket is reached by signed URLs only, so version protection is IAM-side.
         versioning: { enabled: true },
         lifecycleRules: [
           {
@@ -271,11 +232,7 @@ const privateUploadsBucket = needs.uploadBuckets
     )
   : undefined;
 
-/**
- * Deny-by-default policy on the private bucket (P3): no public statement, signed URLs only.
- * Admits the upload signer (backend service app), CI without version deletes (REQ-14),
- * and the admin app; any other key, including a compromised VM boot key or another service's key, is denied.
- */
+/** Deny-by-default policy on the private bucket: signed URLs only. Admits the upload signer, CI without version deletes, and the admin app; every other key, including a VM boot key, is denied. */
 if (privateUploadsBucket) {
   new scaleway.object.BucketPolicy('private-uploads-policy', {
     bucket: privateUploadsBucket.name,
@@ -288,8 +245,6 @@ if (privateUploadsBucket) {
     }),
   });
 }
-
-// Boot diagnostics bucket (VM write-only diagnostics channel)
 
 const bootDiagBucket = new scaleway.object.Bucket(
   'boot-diag-bucket',
@@ -335,29 +290,20 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   }),
 });
 
-// Exports. Skipped buckets export empty strings, matching the provision-less
-// primary-store contract in resources/program.ts.
+// Skipped buckets export empty strings, matching the provision-less primary-store contract in resources/program.ts.
 
-/** Frontend bucket name */
 export const frontendBucketName = frontendBucket?.name ?? pulumi.output('');
 
-/** Frontend bucket S3 endpoint */
 export const frontendBucketEndpoint = frontendBucket?.endpoint ?? pulumi.output('');
 
-/** Public uploads bucket name */
 export const publicUploadsBucketName = publicUploadsBucket?.name ?? pulumi.output('');
 
-/** Public uploads bucket S3 endpoint */
 export const publicUploadsBucketEndpoint = publicUploadsBucket?.endpoint ?? pulumi.output('');
 
-/** Private uploads bucket name */
 export const privateUploadsBucketName = privateUploadsBucket?.name ?? pulumi.output('');
 
-/** Private uploads bucket S3 endpoint */
 export const privateUploadsBucketEndpoint = privateUploadsBucket?.endpoint ?? pulumi.output('');
 
-/** Boot diagnostics bucket name */
 export const bootDiagBucketName = bootDiagBucket.name;
 
-/** Boot diagnostics bucket S3 endpoint */
 export const bootDiagBucketEndpoint = bootDiagBucket.endpoint;

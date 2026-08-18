@@ -61,7 +61,6 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
   };
 };
 
-// Split full name into first and last name
 const splitFullName = (name: string) => {
   const [firstName, lastName] = name.split(' ');
   return { firstName: firstName || '', lastName: lastName || '' };

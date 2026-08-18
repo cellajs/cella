@@ -1,8 +1,4 @@
-/**
- * Newest-first recency ordering for activity feeds: publish time when the draft lifecycle set
- * one, else create time; the same key unseen tracking uses. Pure, so apps can reuse it over
- * any product entity type.
- */
+/** Newest-first ordering on publishedAt when the draft lifecycle set one, else createdAt: the same key unseen tracking uses. */
 export function selectRecentActivity<T extends { createdAt?: string | null; publishedAt?: string | null }>(
   items: T[],
   limit: number,

@@ -28,8 +28,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   const memberships = ctx.var.memberships;
   const actor = actorFrom(ctx);
 
-  // No memberships means no badge contexts, including for administrators.
-  // Administrator bypass widens rows inside a membership organization, not the organization set.
+  // No memberships means no badge contexts: administrator bypass widens rows inside an organization, not the organization set.
   if (memberships.length === 0 || new Set(trackedProductTypes).size === 0) {
     return {};
   }
@@ -37,9 +36,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // Any tracked type with no parent groups by org → org ids join the context id set.
   const needsOrgFallback = trackedProductTypes.some((t) => !hierarchy.getParent(t));
 
-  // Group the user's context ids by ORG (mirror rule: read scopes are org-scoped, so the
-  // count runs per org with that org's predicate). Entity tables have FORCE ROW LEVEL
-  // SECURITY with a tenant-scoped policy, so each count runs inside tenantRead.
+  // Read scopes are org-scoped, so counts run per org, and inside tenantRead because entity tables have FORCE ROW LEVEL SECURITY.
   const orgGroups = new Map<string, { tenantId: string; channelIds: Set<string> }>();
   for (const m of memberships) {
     const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channelIds: new Set<string>() };
@@ -55,9 +52,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
   const results: Record<string, Record<string, number>> = {};
 
-  // Per org: compose each tracked type's collection read predicate (same compiler as
-  // list endpoints) so badges only count rows this user can actually fetch. The seen
-  // counter is a change signal that must mirror the feed, never a wider number.
+  // Compose each tracked type's collection read predicate so badges only count rows this user can fetch.
   for (const [organizationId, { tenantId, channelIds }] of orgGroups) {
     const scopeWhereByType: Partial<Record<SeenTrackedProductType, SQL | undefined>> = {};
     const readableTypes: SeenTrackedProductType[] = [];

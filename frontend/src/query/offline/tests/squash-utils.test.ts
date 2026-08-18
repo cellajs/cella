@@ -8,10 +8,7 @@ function stxWith(fieldTimestamps: Record<string, string> = {}): StxBase {
   return { mutationId: `mut-${Object.keys(fieldTimestamps).join('-') || 'x'}`, sourceId: 'test', fieldTimestamps };
 }
 
-/**
- * Helper: create a QUEUED (offline-parked) mutation. Coalescing only runs while offline, so these
- * helpers keep the client offline for the duration of the test (afterEach restores online).
- */
+/** Creates a queued, offline-parked mutation. Coalescing only runs while offline, so the client stays offline until afterEach restores it. */
 function queuePausedMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
@@ -25,11 +22,7 @@ function queuePausedMutation(
   observer.mutate(variables as Record<string, unknown>).catch(() => {});
 }
 
-/**
- * Helper: create an IN-FLIGHT (active: pending, not paused) mutation that never resolves.
- * networkMode 'always' keeps it running regardless of connectivity, so it stays active even while
- * the client is offline (the state coalescing runs in), modelling a request truly on the wire.
- */
+/** Creates an in-flight (pending, not paused) mutation that never resolves. networkMode 'always' keeps it active while the client is offline, modelling a request on the wire. */
 function queueInFlightMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
@@ -48,8 +41,7 @@ function queueInFlightMutation(
   return () => resolve();
 }
 
-// Covers same-entity mutation squashing and pending-create coalescing. Only PAUSED mutations
-// participate: in-flight requests are on the wire and must be left alone.
+// Only paused mutations participate in squashing and pending-create coalescing: in-flight requests are on the wire and must be left alone.
 describe('squashPendingMutation', () => {
   let queryClient: QueryClient;
   const mutationKey = ['task', 'update'] as const;
@@ -115,8 +107,7 @@ describe('squashPendingMutation', () => {
   });
 
   it('preserves the inherited field timestamp for a field this edit does not touch (LWW by intent time)', () => {
-    // A queued edit set `name` at t1; the new edit changes only `description` at t2. The merged
-    // request must carry name@t1 (not restamped to t2), or an older name edit could beat a newer one.
+    // A queued edit set `name` at t1 and the new edit changes only `description` at t2: the merged request must keep name@t1, or an older name edit could beat a newer one.
     queuePausedMutation(queryClient, mutationKey, {
       id: 'entity-1',
       ops: { name: 'Old name' },

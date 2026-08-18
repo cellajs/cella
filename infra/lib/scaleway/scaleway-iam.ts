@@ -35,11 +35,7 @@ export interface PolicyRule {
   permission_set_names: readonly string[];
   project_ids?: string[];
   organization_id?: string;
-  /**
-   * Optional CEL condition narrowing the rule (request- or resource-level).
-   * Conditions can only narrow an allow: one unconditioned policy on the same
-   * principal bypasses every condition (union semantics, no deny primitive).
-   */
+  /** CEL condition narrowing the rule. Conditions only narrow an allow: one unconditioned policy on the same principal bypasses every condition. */
   condition?: string;
 }
 
@@ -53,20 +49,9 @@ export interface ScopedKeyConfig {
   policyDescription: string;
   /** Builds the policy rules once the organization id is known. Required unless `managePolicy` is false. */
   buildRules?: (ctx: { projectId: string; organizationId: string }) => PolicyRule[];
-  /**
-   * Whether this flow owns the identity's IAM policy. Defaults to `true`.
-   *
-   * Set `false` when the policy is declared as a Pulumi-managed resource,
-   * so `pulumi up` reconciles its permission sets on every deploy and
-   * the grant can never drift). In that case this flow provisions only the
-   * application + API key and leaves the policy untouched, without deleting a
-   * policy it does not own.
-   */
+  /** Whether this flow owns the identity's IAM policy. Defaults to `true`; set `false` when a Pulumi `iam.Policy` resource reconciles the grant. */
   managePolicy?: boolean;
-  /**
-   * Whether to mint an API key. Defaults to `true`. Set `false` to provision
-   * only the application + policy and let a human mint a key in the console
-   * (operator app). The result's accessKey/secretKey are empty strings then. */
+  /** Whether to mint an API key. Defaults to `true`; when `false` the result's accessKey/secretKey are empty and a human mints the key in the console. */
   mintKey?: boolean;
 }
 
@@ -75,12 +60,7 @@ export interface ProvisionScopedKeyOptions {
   organizationId?: string;
   projectId: string;
   slug: string;
-  /**
-   * Deploy mode (`production` / `staging`). When set, the application is named
-   * per-mode (`<slug>-<mode>-<suffix>`), tagged, and enrolled in the
-   * `<slug>-<mode>` IAM group. Omitted only by legacy callers; new code always
-   * passes it.
-   */
+  /** Deploy mode (`production` / `staging`): names the application `<slug>-<mode>-<suffix>`, tags it, and enrolls it in the `<slug>-<mode>` IAM group. */
   mode?: string;
   /** Injected for tests; defaults to console.info. */
   log?: (msg: string) => void;
@@ -93,19 +73,12 @@ export interface ScopedKeyResult {
   organizationId: string;
 }
 
-/**
- * Resolve the organization id from a project id via the Account API. Also used
- * by callers outside the provisioning flow (e.g. the apply CLI, which needs the
- * org id to look up an existing IAM policy). Throws with guidance when it
- * cannot be resolved.
- */
+/** Resolve the organization id from a project id via the Account API. Throws with guidance when it cannot be resolved. */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  // Env-provided id wins: a project-scoped bootstrap key (staging) may lack
-  // the Account read that the API fallback below needs.
+  // Env-provided id wins: a project-scoped bootstrap key may lack the Account read the API fallback needs.
   const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim();
   if (fromEnv) return fromEnv;
-  // GET /account/v3/projects/{id} returns the Project object directly, not
-  // wrapped in { project: ... }.
+  // GET /account/v3/projects/{id} returns the Project object directly, not wrapped in { project: ... }.
   const project = await scwFetch<{ organization_id?: string }>(
     { secretKey },
     'GET',
@@ -121,11 +94,7 @@ export async function resolveOrganizationId(secretKey: string, projectId: string
   return project.organization_id;
 }
 
-/**
- * Provision (or rotate) a scoped IAM application + policy + API key.
- * Returns the freshly minted credentials; Scaleway only reveals `secret_key`
- * at creation time, so the caller must persist it immediately.
- */
+/** Provision (or rotate) a scoped IAM application, policy and API key. Scaleway reveals `secret_key` only at creation, so the caller must persist it immediately. */
 export async function provisionScopedKey(
   opts: ProvisionScopedKeyOptions,
   config: ScopedKeyConfig,
@@ -138,7 +107,6 @@ export async function provisionScopedKey(
   const appName = mode ? `${slug}-${mode}-${config.suffix}` : `${slug}-${config.suffix}`;
   const policyName = `${appName}-policy`;
 
-  // 1. Find or create the IAM application.
   const { applications } = await scwFetch<{ applications: ScwApp[] }>(
     { secretKey: callerSecretKey },
     'GET',
@@ -157,9 +125,7 @@ export async function provisionScopedKey(
     log(`  ${changeMark} Created IAM application: ${app.name} (${app.id})`);
   }
 
-  // Enroll the app in the per-mode IAM group. Organizational only (the group
-  // carries no grants): it is the one navigable unit in the console's flat
-  // org-wide lists, and teardown finds members by enumerating the group.
+  // Per-mode IAM group is organizational only (carries no grants): console navigation, and teardown enumerates its members.
   if (mode) {
     await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch(
       (error) => {
@@ -168,11 +134,8 @@ export async function provisionScopedKey(
     );
   }
 
-  // Recreate managed policies so rules match current permissions.
-  // When Pulumi owns the policy, skip it here to avoid races and duplicate policies.
-  // Scaleway splits IAM rights: IAMManager writes but cannot read (that needs
-  // IAMReadOnly). A write-only bootstrap key skips the recreate-check and
-  // creates directly, tolerating an already-exists conflict.
+  // Recreate managed policies so rules match current permissions; skip when Pulumi owns the policy, to avoid races and duplicates.
+  // Scaleway splits IAM rights: IAMManager writes but cannot read (that needs IAMReadOnly), so a write-only key creates directly and tolerates a 409.
   if (config.managePolicy !== false) {
     if (!config.buildRules) {
       throw new Error('provisionScopedKey: buildRules is required when managePolicy is not false');
@@ -190,7 +153,7 @@ export async function provisionScopedKey(
       }
     } catch (error) {
       if (!isPermissionDenied(error)) throw error;
-      log(`  ${tildeMark} Cannot list policies (IAMManager without IAMReadOnly) — creating '${policyName}' directly`);
+      log(`  ${tildeMark} Cannot list policies (IAMManager without IAMReadOnly): creating '${policyName}' directly`);
     }
     try {
       await scwFetch<ScwPolicy>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
@@ -203,29 +166,26 @@ export async function provisionScopedKey(
       log(`  ${changeMark} Created IAM policy: ${policyName}`);
     } catch (error) {
       if (!isAlreadyExists(error)) throw error;
-      log(`  ${checkMark} Policy ${policyName} already exists — kept as-is (rules refresh needs IAMReadOnly)`);
+      log(`  ${checkMark} Policy ${policyName} already exists: kept as-is (rules refresh needs IAMReadOnly)`);
     }
   } else {
-    log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource) — skipping`);
+    log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource): skipping`);
   }
 
   if (config.mintKey === false) {
-    log(`  ${checkMark} Key minting skipped — create one in the console for ${app.name}`);
+    log(`  ${checkMark} Key minting skipped: create one in the console for ${app.name}`);
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId };
   }
 
-  // 3. Mint the fresh API key FIRST (Scaleway reveals each secret only at
-  //    creation), THEN purge the older keys. The old purge-then-mint order
-  //    left the principal keyless when the mint failed; for the CI app that
-  //    wedges every deploy until a manual rotate.
+  // Mint before purging: Scaleway reveals each secret only at creation, and purge-then-mint leaves the principal keyless when the mint fails.
   const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
     application_id: app.id,
-    description: `${config.suffix} — rotated ${new Date().toISOString().slice(0, 10)}`,
+    description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`,
     default_project_id: projectId,
   });
   log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
 
-  // 4. Purge the replaced keys so reruns do not accumulate unusable keys.
+  // Purge replaced keys so reruns do not accumulate unusable keys.
   try {
     const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
       { secretKey: callerSecretKey },
@@ -239,7 +199,7 @@ export async function provisionScopedKey(
     }
   } catch (error) {
     if (!isPermissionDenied(error)) throw error;
-    log(`  ${tildeMark} Cannot list API keys (IAMManager without IAMReadOnly) — skipping the orphan purge`);
+    log(`  ${tildeMark} Cannot list API keys (IAMManager without IAMReadOnly): skipping the orphan purge`);
   }
 
   return {
@@ -250,20 +210,12 @@ export async function provisionScopedKey(
   };
 }
 
-/**
- * Delete an API key. Used by the setup wizard to revoke the bootstrap key as
- * its last call: Scaleway allows a key to delete itself, so the wizard can
- * finish with zero privileged credentials left outside the credential chain.
- */
+/** Delete an API key. Scaleway allows a key to delete itself, so the wizard revokes the bootstrap key as its last call. */
 export async function revokeApiKey(callerSecretKey: string, accessKey: string): Promise<void> {
   await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`);
 }
 
-/**
- * Find an IAM policy id by exact name within an organization, or undefined when
- * none matches. Detects a pre-existing (orphaned) policy that must be
- * adopted into Pulumi state and preserved.
- */
+/** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
 export async function findPolicyIdByName(
   secretKey: string,
   organizationId: string,
@@ -293,11 +245,7 @@ async function findGroup(callerSecretKey: string, organizationId: string, name: 
   return groups.find((group) => group.name === name);
 }
 
-/**
- * Ensure the `<slug>-<mode>` IAM group exists and contains the application.
- * The group is purely organizational (never a policy principal, since a group
- * policy would grant every member): console navigation + teardown enumeration.
- */
+/** Ensure the `<slug>-<mode>` IAM group exists and contains the application. Never a policy principal: a group policy would grant every member. */
 export async function ensureGroupMembership(opts: {
   callerSecretKey: string;
   organizationId: string;
@@ -313,8 +261,7 @@ export async function ensureGroupMembership(opts: {
     group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName);
   } catch (error) {
     if (!isPermissionDenied(error)) throw error;
-    // Write-only bootstrap key (IAMManager without IAMReadOnly): create
-    // directly and tolerate the duplicate.
+    // Write-only bootstrap key (IAMManager without IAMReadOnly): create directly and tolerate the duplicate.
   }
   if (!group) {
     try {
@@ -342,10 +289,7 @@ export async function ensureGroupMembership(opts: {
   }
 }
 
-/**
- * IAM principal inventory for one app×mode: the per-mode group's members.
- * Drives teardown, so nothing is deleted by name-guessing alone.
- */
+/** IAM principal inventory for one app and mode, from the per-mode group's members. Drives teardown, so nothing is deleted by name-guessing. */
 export async function listManagedPrincipals(opts: {
   callerSecretKey: string;
   organizationId: string;
@@ -365,11 +309,7 @@ export async function listManagedPrincipals(opts: {
   return { group, applications };
 }
 
-/**
- * Delete one application and everything hanging off it: its API keys and the
- * policies bound to it. Used by teardown. Requires IAMManager (+ IAMReadOnly
- * for the listings).
- */
+/** Delete one application with its API keys and bound policies. Requires IAMManager plus IAMReadOnly for the listings. */
 export async function deleteApplicationCascade(opts: {
   callerSecretKey: string;
   organizationId: string;
@@ -385,8 +325,7 @@ export async function deleteApplicationCascade(opts: {
   for (const key of api_keys) {
     await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`);
   }
-  // The list endpoint's application_id filter is unreliable (see
-  // assert-vm-grants); filter client-side on the principal each item carries.
+  // The list endpoint's application_id filter is unreliable; filter client-side on the principal each item carries.
   const { policies = [] } = await scwFetch<{ policies?: Array<ScwPolicy & { application_id?: string }> }>(
     { secretKey: opts.callerSecretKey },
     'GET',
@@ -410,12 +349,7 @@ export async function deleteGroup(opts: {
   if (group) await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/groups/${group.id}`);
 }
 
-/**
- * Remove the org-wide `<slug>-bootstrap-dns` policy. Called at the end of
- * bootstrap (the first `pulumi up` no longer needs it) and by teardown: it is
- * the widest standing grant the engine ever creates, and it must not outlive
- * the bootstrap key it was minted for.
- */
+/** Remove the org-wide `<slug>-bootstrap-dns` policy: the widest standing grant the engine creates, and it must not outlive the bootstrap key. */
 export async function removeBootstrapDnsGrant(opts: {
   callerSecretKey: string;
   organizationId: string;
@@ -431,14 +365,7 @@ export async function removeBootstrapDnsGrant(opts: {
   return true;
 }
 
-/**
- * Ensure the bootstrap key's own IAM application carries org-wide DNS. Needed
- * when the zone lives in a sibling project (a staging stack reusing the
- * production apex): the first provisioning `pulumi up` runs with the bootstrap
- * key and must create records in that shared zone. No-ops for user-owned keys
- * (Owner-level rights already include DNS) and when the policy already exists.
- * The grant is removed with the bootstrap application when the key is revoked.
- */
+/** Ensure the bootstrap key's IAM application carries org-wide DNS, needed when the zone lives in a sibling project. No-ops for user-owned keys and when the policy exists. */
 export async function ensureBootstrapDnsGrant(opts: {
   callerSecretKey: string;
   accessKey: string;

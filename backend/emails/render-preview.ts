@@ -3,25 +3,16 @@ import { render } from './renderer/render';
 
 export interface RenderEmailPreviewOptions {
   lng: string;
-  /**
-   * When true, render per-recipient props as Brevo `{{params.x}}` placeholders,
-   * exactly as the mailer does at send time. When false (default), render with
-   * realistic sample values for readability.
-   */
+  /** True renders per-recipient props as Brevo `{{params.x}}` placeholders, as the mailer does. Default false. */
   placeholders?: boolean;
 }
 
-/**
- * Goes through the real render pipeline (`emails/jsx-email`), so preview output
- * matches what the mailer actually sends. Shared by the dev preview route and tests.
- */
+/** Uses the real render pipeline, so preview output matches what the mailer sends. */
 export async function renderEmailPreview(
   name: EmailPreviewName,
   { lng, placeholders = false }: RenderEmailPreviewOptions,
 ) {
-  // Cast to the loose fixture type: the registry preserves each template's
-  // specific generic params, which would otherwise collapse `translate`'s
-  // parameter to `never` across the union.
+  // The cast to the loose fixture type stops `translate`'s parameter collapsing to `never`.
   const fixture = emailPreviewFixtures[name] as EmailPreviewFixture | undefined;
   if (!fixture) throw new Error(`Unknown email preview: ${name}`);
 

@@ -11,7 +11,6 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './help
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// Runtime role connection (subject to RLS policies)
 const RUNTIME_DB_URL = testRuntimeDatabaseUrl;
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
@@ -49,7 +48,6 @@ describe('Defense-in-depth data isolation', async () => {
     tenantB = await createTestTenant(call, 'depth-b');
     await ensureRuntimeRoleAccess();
 
-    // Try to connect as runtime_role for RLS-level tests
     try {
       const roleCheck = getRows<{ exists: boolean }>(
         await adminDb.execute(
@@ -104,11 +102,10 @@ describe('Defense-in-depth data isolation', async () => {
   });
 
   describe('RLS-level data scoping (runtime_role)', () => {
-    it('should allow cross-tenant organization reads (no RLS on channel entities — app-layer isolation)', async () => {
+    it('should allow cross-tenant organization reads (no RLS on channel entities: app-layer isolation)', async () => {
       if (!rolesAvailable || !runtimeDb) return;
 
-      // Organizations have no RLS, so runtime_role can read all orgs.
-      // Cross-tenant isolation for channel entities is enforced at the API layer (tenantGuard/orgGuard).
+      // Organizations have no RLS; tenantGuard/orgGuard enforce cross-tenant isolation at the API.
       const rows = await runtimeDb.transaction(async (tx) => {
         await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantA.tenantId}, true)`);
         await tx.execute(sql`SELECT set_config('app.user_id', ${tenantA.user.id}, true)`);

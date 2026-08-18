@@ -16,10 +16,7 @@ import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemDa
 import { isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 
-/**
- * True if an entity has a pending (in-flight or paused) mutation. When true, skip remote cache
- * writes to preserve optimistic state. The mutation's own onSuccess reconciles the cache on settle.
- */
+/** Callers skip remote cache writes while this is true, so optimistic state survives; the mutation's onSuccess reconciles on settle. */
 export function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
   const mutationCache = queryClient.getMutationCache();
   for (const suffix of ['update', 'create', 'delete'] as const) {
@@ -42,13 +39,9 @@ function isSoftDeleted(entity: ItemData): boolean {
   return typeof deletedAt === 'string' && deletedAt.length > 0;
 }
 
-/**
- * If a Yjs editor is active for this entity, replace Yjs-owned fields on the incoming
- * server snapshot with the locally cached values, so a slightly stale server read can't
- * overwrite the local Y.Doc-derived state. Returns the entity unchanged otherwise.
- */
+/** While a Yjs editor is active, restores Yjs-owned fields from cache so a stale server read cannot overwrite local Y.Doc state. */
 function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: QueryKey): ItemData {
-  // SSE payloads carry entityType as a runtime string; isActive misses are harmless
+  // SSE payloads carry entityType as a runtime string; isActive misses are harmless.
   const type = entityType as ProductEntityType;
   if (!isYjsEditorActive(type, entity.id)) return entity;
 
@@ -56,7 +49,7 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
   if (!existing) return entity;
 
   const filtered = { ...entity };
-  // Dynamic field copy, ItemData lacks an index signature, so cast once here
+  // ItemData has no index signature, so cast once for the dynamic field copy.
   const target: Record<string, unknown> = filtered as never;
   const source: Record<string, unknown> = existing as never;
   for (const field of getYjsOwnedFields(type)) {
@@ -65,10 +58,7 @@ function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: Qu
   return filtered;
 }
 
-/**
- * Patch only cached STX metadata for echo-prevented stream events, preserving optimistic fields.
- * Mutate unrendered metadata in place to avoid React Query observer notifications.
- */
+/** Patches only cached STX metadata for echo-prevented stream events, in place so no React Query observer is notified and optimistic fields survive. */
 export function patchEntityStxInCache(
   entityType: ProductEntityType,
   entityId: string,
@@ -81,17 +71,14 @@ export function patchEntityStxInCache(
 
   type StxEntity = { id: string; stx?: Record<string, unknown> };
 
-  // Mutate stx in-place on a single item (no new object reference)
   const patchInPlace = (item: StxEntity): void => {
     if (!item.stx) return;
     item.stx.fieldTimestamps = stx.fieldTimestamps;
   };
 
-  // Patch detail cache in-place
   const detail = queryClient.getQueryData<StxEntity>(keys.detail.byId(entityId));
   if (detail?.stx) patchInPlace(detail);
 
-  // Patch list caches in-place (scoped to org when available)
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
   for (const [, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
     if (isInfiniteQueryData(queryData)) {
@@ -106,7 +93,6 @@ export function patchEntityStxInCache(
   }
 }
 
-/** Remove entity from detail cache */
 function removeEntityFromCache(entityType: string, entityId: string): void {
   if (hasEntityQueryKeys(entityType)) {
     const keys = getEntityQueryKeys(entityType);
@@ -114,7 +100,6 @@ function removeEntityFromCache(entityType: string, entityId: string): void {
   }
 }
 
-/** Remove entity from detail cache, list caches, and token store. */
 export function removeEntity(entityType: string, entityId: string, organizationId?: string): void {
   removeEntityFromCache(entityType, entityId);
   if (hasEntityQueryKeys(entityType)) {
@@ -123,7 +108,6 @@ export function removeEntity(entityType: string, entityId: string, organizationI
   }
 }
 
-/** Invalidate entity detail query */
 export function invalidateEntityDetail(
   entityId: string,
   keys: EntityQueryKeys,
@@ -132,15 +116,11 @@ export function invalidateEntityDetail(
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
 }
 
-/** Invalidate entity list queries */
 export function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active' | 'none' | 'all' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
 }
 
-/**
- * Invalidate entity list queries scoped to a specific organization.
- * Uses the org tier in the key hierarchy for direct prefix matching.
- */
+/** Matches on the org tier of the key hierarchy as a direct prefix. */
 export function invalidateEntityListForOrg(
   keys: EntityQueryKeys,
   organizationId: string,
@@ -152,10 +132,7 @@ export function invalidateEntityListForOrg(
   });
 }
 
-/**
- * Invalidate org-scoped lists whose key tail contains a filter object (i.e. filtered lists).
- * Canonical home lists (string-only tails) are left alone, they're patched directly.
- */
+/** Invalidates org-scoped lists whose key tail holds a filter object; canonical home lists have string-only tails and are patched directly. */
 function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
   queryClient.invalidateQueries({
     queryKey: orgListKey,
@@ -163,9 +140,7 @@ function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
   });
 }
 
-/** Remove a single entity from all list caches by ID (no refetch triggered).
- * When organizationId is provided, only scans list caches for that org.
- */
+/** Removes one entity from list caches without triggering a refetch; an organizationId narrows the scan to that org. */
 export function removeEntityFromListCache(entityId: string, keys: EntityQueryKeys, organizationId?: string): void {
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
@@ -178,8 +153,8 @@ export function removeEntityFromListCache(entityId: string, keys: EntityQueryKey
 }
 
 /**
- * Apply server truth across detail and list caches; tombstones remove and new rows enter only home lists.
- * Return whether every list lacked the row so callers can invalidate opaque filtered lists once.
+ * Applies server truth to detail and list caches: tombstones remove, new rows enter only home lists.
+ * Returns true when every list lacked the row, so the caller can invalidate opaque filtered lists once.
  */
 function applyServerEntity(
   entityType: string,
@@ -192,8 +167,7 @@ function applyServerEntity(
     return false;
   }
 
-  // Skip remote writes for entities with pending mutations to preserve optimistic state.
-  // The mutation's onSuccess will reconcile the cache when it settles.
+  // Preserve optimistic state; the mutation's onSuccess reconciles the cache when it settles.
   if (hasPendingMutationForEntity(entityType, entity.id)) {
     console.debug(`[CacheOps] Skipping remote apply for ${entityType}:${entity.id}, has pending mutation`);
     return false;
@@ -213,18 +187,15 @@ function applyServerEntity(
 
   const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
 
-  // Splice into list caches through the shared canonical-home policy (also used by the mutation
-  // path). Cached rows update in place; new rows insert only into the canonical home list; a row
-  // whose parent channel changed is removed.
+  // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
   const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, {
     removeOnParentChannelChange: true,
   });
 
-  // A new row that no home list spliced and no filtered list will refetch stays invisible until
-  // an unrelated refetch. This is always a key-shape bug (canonical data cached outside keys.list.home).
+  // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
     console.warn(
-      `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache — ` +
+      `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache: ` +
         `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
     );
   }
@@ -232,10 +203,7 @@ function applyServerEntity(
   return !seen;
 }
 
-/**
- * Fetch one entity through registered query defaults and apply it to caches, or invalidate lists.
- * Stream organization and tenant IDs pass through metadata for path resolution.
- */
+/** Fetches one entity through registered query defaults and applies it to caches, falling back to list invalidation. Stream org and tenant IDs pass through meta for path resolution. */
 export async function fetchEntityAndUpdateList(
   entityId: string,
   keys: EntityQueryKeys,
@@ -267,11 +235,7 @@ export async function fetchEntityAndUpdateList(
   }
 }
 
-/**
- * Describes a bounded sequence fetch applied to list and detail caches.
- * Only `ok` permits cursor advancement; overflow/unsupported require list invalidation, while
- * transient errors may retry. `reachedSeq` exposes short deliveries.
- */
+/** Only `ok` permits cursor advancement; `overflow` and `unsupported` require list invalidation, `error` may retry. */
 export interface RangeFetchResult {
   status: 'ok' | 'overflow' | 'unsupported' | 'error';
   items: ItemData[];
@@ -285,7 +249,6 @@ const seqOf = (item: ItemData): number => {
   return typeof seq === 'number' ? seq : 0;
 };
 
-/** Fetches a changed entity range and patches matching caches. */
 export async function fetchRangeAndPatch(
   entityType: string,
   organizationId: string | null,
@@ -305,8 +268,7 @@ export async function fetchRangeAndPatch(
   try {
     const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
 
-    // A full chunk may truncate the range. Report overflow so the caller invalidates without
-    // advancing past unseen rows.
+    // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
       return { status: 'overflow', items: [], reachedSeq: 0 };
@@ -317,8 +279,7 @@ export async function fetchRangeAndPatch(
       sawNewRow = applyServerEntity(entityType, entity, keys, organizationId) || sawNewRow;
     }
 
-    // Rows new to every list cache cannot be spliced into filtered lists with unknown server-side
-    // filters. One invalidation per flush lets active filtered lists refetch and place them.
+    // Filtered lists have unknown server-side filters, so one invalidation per flush lets the active ones refetch and place new rows.
     if (sawNewRow && organizationId) invalidateFilteredLists(keys.list.org(organizationId));
 
     if (items.length > 0) {

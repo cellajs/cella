@@ -29,9 +29,6 @@ import {
 } from './me-mocks';
 
 const meRoutes = {
-  /**
-   * Get self
-   */
   getMe: createXRoute({
     operationId: 'getMe',
     method: 'get',
@@ -53,9 +50,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get list of invitations
-   */
   getMyInvitations: createXRoute({
     operationId: 'getMyInvitations',
     method: 'get',
@@ -77,9 +71,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Update self
-   */
   updateMe: createXRoute({
     operationId: 'updateMe',
     method: 'put',
@@ -107,9 +98,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete self
-   */
   deleteMe: createXRoute({
     operationId: 'deleteMe',
     method: 'delete',
@@ -125,9 +113,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get auth data
-   */
   getMyAuth: createXRoute({
     operationId: 'getMyAuth',
     method: 'get',
@@ -145,9 +130,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Terminate sessions
-   */
   deleteMySessions: createXRoute({
     operationId: 'deleteMySessions',
     method: 'delete',
@@ -172,9 +154,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Leave entity
-   */
   deleteMyMembership: createXRoute({
     operationId: 'deleteMyMembership',
     method: 'delete',
@@ -192,9 +171,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Unsubscribe
-   */
   unsubscribeMe: createXRoute({
     operationId: 'unsubscribeMe',
     method: 'get',
@@ -214,9 +190,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get upload token
-   */
   getUploadToken: createXRoute({
     operationId: 'getUploadToken',
     method: 'get',
@@ -235,9 +208,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Toggle MFA
-   */
   toggleMfa: createXRoute({
     operationId: 'toggleMfa',
     method: 'put',
@@ -259,9 +229,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get my memberships
-   */
   getMyMemberships: createXRoute({
     operationId: 'getMyMemberships',
     method: 'get',

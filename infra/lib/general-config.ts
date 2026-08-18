@@ -11,7 +11,6 @@ export interface GeneralConfig {
   database: {
     /** Scaleway managed-PostgreSQL node type (e.g. `'DB-DEV-S'`, `'DB-GP-XS'`). */
     nodeType: PerMode<string>;
-    /** Provisioned DB volume size in GB. */
     volumeSizeGb: PerMode<number>;
   };
   assets: {

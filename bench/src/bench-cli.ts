@@ -31,7 +31,7 @@ function parseArgs() {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    // `--scenario <name>` remains an alias for the positional argument below.
+    // `--scenario <name>` is an alias for the positional argument below.
     if (arg === '--scenario' && args[i + 1]) scenario = args[++i];
     else if (arg === '--skip-seed') skipSeed = true;
     else if (arg === '--all') all = true;
@@ -54,7 +54,7 @@ function discoverScenarios(): string[] {
     .sort();
 }
 
-/** Scenario description from the first `#` comment line of its YAML. Keeps the picker in sync as apps add scenarios, no hardcoded map. */
+/** Scenario description from the first `#` comment line of its YAML, so the picker needs no hardcoded map. */
 function scenarioDescription(name: string): string {
   try {
     const content = readFileSync(resolve(BENCH_ROOT, 'scenarios', `${name}.yaml`), 'utf-8');
@@ -65,7 +65,6 @@ function scenarioDescription(name: string): string {
   }
 }
 
-/** Print usage and the list of available scenarios (for `pnpm bench help`). */
 function printUsage(scenarios: string[]): void {
   console.info(`${pc.bold('Usage:')} pnpm bench [scenario] [--all] [--short] [--skip-seed]\n`);
   console.info('Run without a scenario for an interactive picker.\n');
@@ -86,12 +85,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 // ── Preflight ──────────────────────────────────────────────────────────────
 
-/**
- * Fail-fast preflight: bench does NOT start services; it expects Postgres seeded
- * and backend/cdc/yjs/mcp already up via `pnpm dev`. Services are polled briefly to
- * tolerate `dev` still compiling, then it exits with an actionable message rather
- * than hanging on empty runs.
- */
+/** Bench does not start services: Postgres must be seeded and backend/cdc/yjs/mcp up via `pnpm dev`. Services are polled briefly to tolerate `dev` still compiling. */
 async function assertInfrastructureReady(): Promise<void> {
   const spinner = ora('checking infrastructure...').start();
 
@@ -119,8 +113,6 @@ async function assertInfrastructureReady(): Promise<void> {
 
   spinner.succeed('infrastructure ready');
 }
-
-// ── Rate limits ────────────────────────────────────────────────────────────
 
 async function clearRateLimits(): Promise<void> {
   const pool = new pg.Pool({ connectionString: DB_URL });
@@ -155,11 +147,7 @@ function seedDatabase(): Promise<{ output: string }> {
 
 // ── Artillery ──────────────────────────────────────────────────────────────
 
-/**
- * Artillery `--overrides` for `--short`: collapse every phase to a single 1s/1-VU
- * arrival and drop ensure thresholds. A fast "does it still work" smoke check, not
- * a load test. Loop `count`s in scenario flows stay but execute once (single VU).
- */
+/** `--short` collapses every phase to one 1s/1-VU arrival and drops ensure thresholds: a smoke check, not a load test. Flow loop counts stay but execute once. */
 const SHORT_OVERRIDES = JSON.stringify({
   config: {
     phases: [{ duration: 1, arrivalRate: 1, name: 'smoke' }],
@@ -177,8 +165,7 @@ function runArtillery(
   try {
     execFileSync('npx', args, {
       cwd: BENCH_ROOT,
-      // Quiet runs (used by --all) hide Artillery's live report, but still pipe
-      // output. Artillery exits non-zero when stdout/stderr are ignored.
+      // Quiet runs hide Artillery's live report but still pipe output: it exits non-zero when stdout/stderr are ignored.
       stdio: quiet ? 'pipe' : 'inherit',
       env: createBenchProcessEnv(),
       encoding: 'utf-8',
@@ -206,12 +193,7 @@ function runArtillery(
   }
 }
 
-/**
- * Background CDC health poller, started automatically for every scenario. Collects
- * throughput/latency samples silently, emitting a summary only if CDC actually
- * processed events (read-only scenarios stay clean). A separate process because
- * `runArtillery` blocks the event loop via synchronous `execFileSync`.
- */
+/** Samples CDC throughput and latency for every scenario, summarizing only when CDC processed events. A separate process, since `runArtillery` blocks the event loop on `execFileSync`. */
 function startCdcPoller(): { proc: ChildProcess; summary: Promise<string> } {
   const proc = spawn('tsx', ['src/cdc-poller.ts', '--quiet'], {
     cwd: BENCH_ROOT,
@@ -222,8 +204,6 @@ function startCdcPoller(): { proc: ChildProcess; summary: Promise<string> } {
   const summary = new Promise<string>((res) => proc.on('close', () => res(chunks.join(''))));
   return { proc, summary };
 }
-
-// ── Baselines ──────────────────────────────────────────────────────────────
 
 const BASELINES_DIR = resolve(BENCH_ROOT, '.baselines');
 
@@ -275,7 +255,6 @@ function loadBaseline(scenario: string): BaselineMetrics | null {
   if (!existsSync(file)) return null;
   try {
     const data = JSON.parse(readFileSync(file, 'utf-8'));
-    // Support both a single-object file and an array of runs
     const runs: BaselineMetrics[] = Array.isArray(data) ? data : [data];
     return runs.at(-1) ?? null;
   } catch {
@@ -369,7 +348,7 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
   }
 
   if (!baseline) {
-    console.info(`\n  ${pc.dim('No previous run to compare against — saving this run as the first baseline.')}`);
+    console.info(`\n  ${pc.dim('No previous run to compare against: saving this run as the first baseline.')}`);
   } else {
     console.info(`  ${pc.dim(`baseline from ${baseline.timestamp}`)}`);
   }
@@ -378,7 +357,7 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
 
 /** Combined `--all` table: one row per scenario with key metrics and p95 delta vs baseline. Printed once at the end so the run stays quiet. */
 function printAllSummary(results: { name: string; result: ScenarioResult }[]): void {
-  console.info(`\n${pc.bold('Summary')} ${pc.dim('— all scenarios')}\n`);
+  console.info(`\n${pc.bold('Summary')} ${pc.dim(': all scenarios')}\n`);
 
   const cols = `  ${pc.bold('Scenario'.padEnd(22))} ${pc.bold('Req/s'.padStart(8))} ${pc.bold('Mean'.padStart(8))} ${pc.bold('p95'.padStart(8))} ${pc.bold('p99'.padStart(8))} ${pc.bold('Errors'.padStart(8))} ${pc.bold('p95 Δ'.padStart(10))}`;
   console.info(cols);
@@ -400,8 +379,6 @@ function printAllSummary(results: { name: string; result: ScenarioResult }[]): v
   }
   console.info();
 }
-
-// ── Cleanup ────────────────────────────────────────────────────────────────
 
 const cleanupFns: (() => void)[] = [];
 
@@ -428,12 +405,7 @@ interface ScenarioResult {
   baseline: BaselineMetrics | null;
 }
 
-/**
- * Run one scenario end to end (CDC poller + Artillery + baseline compare/save).
- * Short runs are smoke checks: metrics aren't comparable and never touch baselines.
- * `quiet` (used by `--all`) hides Artillery output and the per-scenario table so
- * the caller can print one combined summary.
- */
+/** Runs the CDC poller, Artillery, and the baseline compare or save. Short runs produce no comparable metrics and never touch baselines; `quiet` leaves output to the caller's combined summary. */
 async function runScenario(
   name: string,
   { short, quiet }: { short: boolean; quiet: boolean },
@@ -468,18 +440,11 @@ async function runScenario(
     else spinner.fail(`${name} ${pc.dim(`exited ${exitCode}`)}`);
   }
 
-  // Verbose runs print CDC throughput inline; quiet runs stay clean for the summary.
   if (!quiet && cdcSummary) console.info(cdcSummary);
 
   return { exitCode, current, baseline };
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────
-
-/**
- * Orchestrates a bench run: verifies infrastructure is up, seeds bench data,
- * clears rate limits, then runs the selected scenario(s) via Artillery.
- */
 async function main() {
   process.on('SIGINT', () => {
     cleanup();
@@ -517,8 +482,7 @@ async function main() {
 
   // ── 2. Scenario selection ──
 
-  // Seed in parallel whenever there is no interactive picker to corrupt
-  // (--all or an explicit scenario). The picker path seeds after selection.
+  // Seeding runs in parallel when no interactive picker is on screen; the picker path seeds after selection.
   let seedPromise: Promise<void> | undefined;
   if (!skipSeed && (cliScenario || all)) {
     const seedSpinner = ora('seeding database...').start();
@@ -583,11 +547,9 @@ async function main() {
   // ── 4. Run scenario(s) ──
 
   const toRun = all ? scenarios : [selected];
-  // --all runs quietly and prints one combined summary at the end; a single
-  // scenario stays verbose with live Artillery output and a comparison table.
+  // --all prints one combined summary; a single scenario stays verbose with live output and a comparison table.
   const quiet = all;
-  // Cooldown between scenarios so load from one run settles before the next.
-  // Skipped for short smoke runs, where speed matters more than isolation.
+  // Cooldown so load from one run settles before the next; skipped for short smoke runs.
   const pauseSeconds = all && !short ? PAUSE_SECONDS : 0;
 
   const results: { name: string; result: ScenarioResult }[] = [];

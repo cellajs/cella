@@ -8,9 +8,6 @@ interface WelcomeTextProps {
   onboardingToStepper: () => void;
 }
 
-/**
- * Welcome text shown at the start of onboarding, before the stepper. Contains a brief intro and a call to action to start the stepper.
- */
 export function WelcomeText({ onboardingToStepper }: WelcomeTextProps) {
   const { t } = useTranslation();
 

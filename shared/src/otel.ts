@@ -13,7 +13,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic
 import { appConfig } from './config-builder/app-config.ts';
 
 const MAPLE_INGEST_BASE = 'https://ingest.maple.dev/v1';
-const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set — skipping Maple.dev';
+const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set: skipping Maple.dev';
 
 export interface OtelSDKOptions {
   serviceName: string;
@@ -38,8 +38,8 @@ export interface OtelSDK {
 }
 
 /**
- * Creates a configured NodeSDK + MeterProvider for a service, centralizing Maple.dev exporter
- * config so backend, CDC, and YJS share one source of truth.
+ * NodeSDK plus MeterProvider for one service. Backend, CDC and YJS share this Maple.dev exporter
+ * configuration.
  *
  * @example
  * const otel = createOtelSDK({ serviceName: 'raak-development-api', mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY });
@@ -63,12 +63,12 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
     [ATTR_SERVICE_VERSION]: serviceVersion,
-    // OTel semantic convention: surfaces the deploy environment (development/staging/production/…) in Maple.
+    // OTel semantic convention: reports the deploy environment to Maple.
     'deployment.environment.name': appConfig.mode,
   });
 
-  // Maple exporter config factory: defined only when an ingest key is present, so `hasMaple`
-  // being undefined is the single "telemetry export is off" signal used throughout this function.
+  // Defined only when an ingest key is present, so an undefined `hasMaple` is this function's
+  // single signal that telemetry export is off.
   const hasMaple = mapleSecretIngestKey
     ? (signal: 'traces' | 'metrics' | 'logs') => ({
         url: `${MAPLE_INGEST_BASE}/${signal}`,
@@ -85,8 +85,8 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       })
     : undefined;
 
-  // The MeterProvider always exists (with no readers when export is off) so callers can register
-  // gauges unconditionally; reader-less observations are simply not exported.
+  // Always present, with no readers when export is off, so callers register gauges
+  // unconditionally and reader-less observations go nowhere.
   const meterProvider = new SdkMeterProvider({
     readers: metricReader ? [metricReader] : [],
     resource,
@@ -108,8 +108,8 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const traceExporter = hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined;
   const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
 
-  // Select stable HTTP semantic attributes before instrumentation is constructed.
-  // Preserve any explicit environment override.
+  // Stable HTTP semantic attributes, chosen before instrumentation is constructed and never
+  // overriding an explicit environment value.
   if (autoInstrumentations) {
     // biome-ignore lint/style/noProcessEnv: the OTel SDK reads this env var itself; writing it is the only way to pass the setting through
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN ??= 'http';
@@ -169,9 +169,9 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       });
       const logger = verifyLogProvider.getLogger(serviceName);
       logger.emit({
-        // Match pino-opentelemetry-transport's representation (lowercase label + numeric severity)
-        // so Maple groups these probes under the same `info` bucket as application logs.
-        // 9 == OTel SeverityNumber.INFO (avoids a runtime dep on @opentelemetry/api-logs).
+        // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so Maple
+        // groups these probes with application logs. 9 is OTel SeverityNumber.INFO, inlined to
+        // avoid a runtime dependency on @opentelemetry/api-logs.
         severityNumber: 9,
         severityText: 'info',
         body: `[otel] ${serviceName} initialized`,

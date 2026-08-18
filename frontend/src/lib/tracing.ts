@@ -9,27 +9,22 @@ export { frontendSpanNames as syncSpanNames };
 
 // Public API for devtools
 
-/** Returns all captured frontend tracing spans. */
 export function getSpans(): SpanData[] {
   return spanStore.getSpans();
 }
 
-/** Returns captured spans whose names share a prefix. */
 export function getSpansByPrefix(prefix: string): SpanData[] {
   return spanStore.getSpansByPrefix(prefix);
 }
 
-/** Subscribes to changes in the captured tracing spans. */
 export function subscribeToSpans(callback: (spans: SpanData[]) => void): () => void {
   return spanStore.subscribe(callback);
 }
 
-/** Clears all captured frontend tracing spans. */
 export function clearSpans(): void {
   spanStore.clear();
 }
 
-/** Summarizes captured spans by name and duration. */
 export function getSpanStats(): SpanStats {
   return spanStore.getStats();
 }
@@ -56,7 +51,6 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
 
 // withSpan helpers
 
-/** Runs an asynchronous callback within a traced span. */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     applyAttrs(span, attrs);
@@ -79,7 +73,6 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
   });
 }
 
-/** Runs a synchronous callback within a traced span. */
 export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => T): T {
   const span = tracer.startSpan(name);
   applyAttrs(span, attrs);
@@ -101,7 +94,6 @@ export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceC
   }
 }
 
-/** Starts a synchronous traced span. */
 export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>): Span {
   const span = tracer.startSpan(name);
   if (attributes) {

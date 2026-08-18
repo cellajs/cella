@@ -9,24 +9,22 @@ import type { MeUser } from '~/modules/me/types';
 
 type LastUser = Pick<MeUser, 'id' | 'email'>;
 
-/** Construct the store key for a context-scoped Yjs token. */
 export const yjsTokenKey = (entityType: ProductEntityType, tenantId: string) => `${entityType}:${tenantId}`;
 
 interface UserStoreState {
   /** Current user. `null` while signed out; set by the authenticated route guard. */
   user: MeUser | null;
   isSystemAdmin: boolean;
-  lastUser: LastUser | null; // Last signed-out user's email
+  lastUser: LastUser | null; // Identity of the last signed-out user
   yjsTokens: Record<string, string>; // Map of "entityType:tenantId" → HMAC token (not persisted)
-  setUser: (user: MeUser, skipLastUser?: boolean) => void; // Sets current user and updates lastUser
-  setIsSystemAdmin: (isSystemAdmin: boolean) => void; // Sets current user's system admin status
-  setLastUser: (lastUser: LastUser) => void; // Sets last user identity
-  setYjsToken: (key: string, token: string | null) => void; // Sets Yjs auth token for a context
-  updateUser: (user: User) => void; // Updates current user and adjusts lastUser
-  reset: () => void; // Resets the store.
+  setUser: (user: MeUser, skipLastUser?: boolean) => void; // Also updates lastUser
+  setIsSystemAdmin: (isSystemAdmin: boolean) => void;
+  setLastUser: (lastUser: LastUser) => void;
+  setYjsToken: (key: string, token: string | null) => void;
+  updateUser: (user: User) => void; // Also adjusts lastUser
+  reset: () => void;
 }
 
-// Default state values. `user` is `null` at rest; the router guarantees it's set inside app routes.
 const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'yjsTokens'> = {
   user: null,
   isSystemAdmin: false,
@@ -34,7 +32,6 @@ const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'y
   yjsTokens: {},
 };
 
-/** Provides access to shared user-sheet state. */
 export const useUserStore = create<UserStoreState>()(
   devtools(
     persist(
@@ -106,18 +103,14 @@ export const useUserStore = create<UserStoreState>()(
   ),
 );
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+// Non-hook alias for reading the store outside React components
 export { useUserStore as userStore };
 
 const signedOutMessage =
   '[userStore] Read the signed-in user while signed out. Only authenticated routes may use it; ' +
   'read `useUserStore().user` and handle null elsewhere.';
 
-/**
- * The signed-in user, for components mounted under an authenticated route.
- * Requires `user` to be set, which the route guard guarantees. Throws while signed out, so a
- * component mounted outside the guard fails at the read that broke the requirement.
- */
+/** The signed-in user. Throws while signed out, so only components under the route guard may call it. */
 export const useCurrentUser = (): MeUser => {
   const user = useUserStore((state) => state.user);
   if (!user) throw new Error(signedOutMessage);

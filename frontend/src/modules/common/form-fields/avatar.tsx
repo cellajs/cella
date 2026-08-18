@@ -22,9 +22,6 @@ interface Props {
   type: EntityAvatarProps['type'];
 }
 
-/**
- * Form field for uploading and managing an avatar image.
- */
 export function AvatarFormField({ form, label, name, entity, type }: Props) {
   const { t } = useTranslation();
   const uploadButtonRef = useRef(null);
@@ -38,7 +35,6 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
     form.setValue(name, urlWithPublicCDN, { shouldDirty: true });
   };
 
-  // Open upload dialog
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     upload.create({

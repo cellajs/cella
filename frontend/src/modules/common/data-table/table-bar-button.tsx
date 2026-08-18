@@ -13,7 +13,6 @@ type Props = {
   badge?: ReactNode;
 } & ButtonProps;
 
-/** Renders the table bar button. */
 export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton(
   { icon: Icon, label, badge, className, ...props },
   ref,

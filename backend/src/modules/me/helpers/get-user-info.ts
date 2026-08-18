@@ -9,10 +9,7 @@ import { sessionsTable } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import type { sessionSchema } from '#/modules/me/me-schema';
 
-/**
- * Fetches a user's auth data in parallel: passkeys (minus the sensitive credentialId/publicKey),
- * whether TOTP is set, and verified OAuth providers.
- */
+/** Fetches passkeys (minus the sensitive credentialId/publicKey), whether TOTP is set, and verified OAuth providers. */
 export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }) => {
   const { db } = ctx.var;
   const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
@@ -20,7 +17,6 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
 
   const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
 
-  // Query to get verified OAuth accounts
   const getOAuth = db
     .select({ provider: oauthAccountsTable.provider })
     .from(oauthAccountsTable)
@@ -40,6 +36,5 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
     .orderBy(desc(sessionsTable.createdAt));
   const { sessionToken } = await getParsedSessionCookie(ctx);
 
-  // Destructure/remove secret from response
   return sessions.map(({ secret, ...session }) => ({ ...session, isCurrent: sessionToken === secret }));
 };

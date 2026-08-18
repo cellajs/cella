@@ -2,27 +2,20 @@ import { useMemo } from 'react';
 import type { SortColumn } from '~/modules/common/data-grid';
 import type { GenOperationSummary } from '~/modules/docs/types';
 
-/**
- * Comparable key from an array of strings. Returns `''` for missing/empty so the comparator can
- * pin those rows to the bottom regardless of sort direction.
- */
+/** Comparable key from string values, `''` when missing or empty so the comparator can pin those last. */
 const arrayKey = (values: string[] | undefined): string => {
   if (!values?.length) return '';
   return [...values].sort().join(',');
 };
 
-/**
- * Comparable string for a column key. Dynamic tag (`tag-${kind}`) and extension columns sort by
- * their joined sorted values, so a direction toggle reorders visibly even when every row has one.
- */
+/** Dynamic tag (`tag-${kind}`) and extension columns sort by their joined sorted values. */
 const getSortValue = (row: GenOperationSummary, columnKey: string): string => {
   if (columnKey.startsWith('tag-')) return arrayKey(row.tagsByKind?.[columnKey.slice(4)]);
   if (columnKey in row.extensions) return arrayKey(row.extensions[columnKey]);
   return String(row[columnKey as keyof GenOperationSummary] ?? '');
 };
 
-/** Client-side sort by the first active sort column (locale-aware string compare).
- * Empty/missing values are always placed last regardless of sort direction. */
+/** Client-side sort by the first active sort column, with a locale-aware string compare. */
 export function useSortedOperations(operations: GenOperationSummary[], sortColumns: SortColumn[]) {
   return useMemo(() => {
     if (!sortColumns.length) return operations;

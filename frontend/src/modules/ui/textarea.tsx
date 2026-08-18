@@ -6,7 +6,6 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   autoResize?: boolean;
 }
 
-/** Renders the styled textarea primitive. */
 export function Textarea({
   className,
   autoResize = false,

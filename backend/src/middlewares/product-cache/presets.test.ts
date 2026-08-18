@@ -39,7 +39,7 @@ const mockCtx = () => ({
   json: vi.fn((d: unknown) => d),
 });
 
-describe('productCache — per-request authorization on cache hit', () => {
+describe('productCache: per-request authorization on cache hit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     productCacheGet.mockReturnValue(cachedAttachment);
@@ -77,10 +77,8 @@ describe('productCache — per-request authorization on cache hit', () => {
   });
 });
 
-describe('productCache — draft veto on cache hit (publishedAt lifecycle)', () => {
-  // An author-cached draft: the handler ran for the author and the enriched response
-  // was cached; a later hit by anyone else must not serve it, even when the engine
-  // would allow the read (the engine has no draft vocabulary).
+describe('productCache: draft veto on cache hit (publishedAt lifecycle)', () => {
+  // An author-cached draft must not serve to anyone else, even when the engine allows the read: it has no draft rules
   const cachedDraft = { ...cachedAttachment, publishedAt: null };
 
   beforeEach(() => {
@@ -111,7 +109,7 @@ describe('productCache — draft veto on cache hit (publishedAt lifecycle)', () 
     expect(ctx.json).not.toHaveBeenCalled();
   });
 
-  it('falls through for a system admin too — author-only means author-only', async () => {
+  it('falls through for a system admin too: author-only means author-only', async () => {
     accessFrom.mockReturnValue({ userId: 'admin-user', isSystemAdmin: true, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();

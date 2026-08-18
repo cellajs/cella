@@ -3,9 +3,7 @@ export function secretManagerPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/`;
 }
 
-// Per-service path layout (REQ-8). The path hierarchy is the SECURITY BOUNDARY: IAM
-// conditions grant secret-value reads by `resource.name.startsWith(<path>)`, so where a
-// secret lives decides who reads it; the engine owns all naming and never renames in place.
+// The path hierarchy is the security boundary: IAM conditions grant secret-value reads by `resource.name.startsWith(<path>)`, so where a secret lives decides who reads it. Never rename a path in place.
 
 /** Folder for secrets consumed by exactly one service. */
 export function serviceSecretPath(slug: string, mode: string, service: string): string {
@@ -17,10 +15,7 @@ export function sharedSecretPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/shared/`;
 }
 
-/**
- * Folder for engine-internal credentials (admin-key). OUTSIDE the VM
- * condition on purpose: a VM must never be able to read the admin key.
- */
+/** Folder for engine-internal credentials. Outside the VM condition on purpose: a VM must never read the admin key. */
 export function engineSecretPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/engine/`;
 }
@@ -45,15 +40,8 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for one service application: value reads only under its own
- * folder(s) + shared. Engine credentials and any future sibling stacks in the
- * same project stay unreadable. STRING EQUALITY MATTERS: assert-vm-grants
- * compares the live rule condition against this exact builder output, so
- * producer and checker must share it. No `!has(resource.id)` escape:
- * hydration GETs by id only, so list actions may (and should) stay denied.
- * Pass the full secret scope (lib/services.ts secretScopeSlugs); for the
- * singleVM host that includes the folded co-hosted/collocated services, whose
- * secrets hydrate on the host VM.
+ * Condition for one service application: value reads only under its own folders plus shared, leaving engine credentials and sibling stacks unreadable.
+ * String equality matters: assert-vm-grants compares the live rule condition against this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services.
  */
 export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {
   const scope = typeof services === 'string' ? [services] : services;
@@ -62,12 +50,7 @@ export function serviceKeyCondition(slug: string, mode: string, services: string
     .join(' || ');
 }
 
-/**
- * Condition for the boot application: ONLY the handoff folder. The boot key is
- * baked into cloud-init, so its secret reach must be exactly the single-access
- * bundles: reading one that a VM already consumed fails, which IS the tamper
- * alarm.
- */
+/** Condition for the boot application: only the handoff folder. The boot key is baked into cloud-init, so its reach is exactly the single-access bundles, and re-reading a consumed bundle fails as the tamper alarm. */
 export function bootKeyCondition(slug: string, mode: string): string {
   return `resource.name.startsWith("${handoffFolderPath(slug, mode)}")`;
 }

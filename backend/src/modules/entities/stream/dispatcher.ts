@@ -5,9 +5,6 @@ import { sendNotificationToSubscriber } from './send-to-subscriber';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { CursoredSubscriber, DispatcherConfig } from './types';
 
-/**
- * Creates a stream dispatcher with channel lookup, eligibility filtering, and error handling.
- */
 export function createStreamDispatcher<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent>(
   config: DispatcherConfig<T, E>,
 ): (event: E) => Promise<void> {
@@ -30,9 +27,8 @@ export function createStreamDispatcher<T extends CursoredSubscriber, E extends A
       hasRowData: !!event.rowData,
     });
 
-    // Build notification once for all subscribers
     const notification = buildStreamNotification(event);
-    // Pre-serialize when no per-subscriber transform is needed
+    // Pre-serialize when no per-subscriber transform is needed.
     const preSerialized = !transformNotification ? JSON.stringify(notification) : undefined;
 
     await Promise.allSettled(

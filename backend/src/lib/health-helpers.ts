@@ -2,12 +2,7 @@ import type { CdcWorkerHealth } from '#/lib/cdc-websocket';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
-/**
- * One service or dependency in the health envelope. Every component shares the
- * same shape: a graded `status` plus optional probe metadata and a free-form
- * `details` bag. There is intentionally no discriminated union: consumers read
- * `status` for grading and `details` for diagnostics.
- */
+/** One service or dependency in the health envelope: `status` grades it, the open `details` bag diagnoses it. */
 export interface HealthComponent {
   status: HealthStatus;
   /** Human-readable name for user-facing status displays. */
@@ -36,14 +31,7 @@ export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
   return RANK[a] >= RANK[b] ? a : b;
 }
 
-/**
- * Roll a set of components up into a single overall status.
- *
- * Critical components (the backend's own ability to serve: `api`, `database`)
- * contribute their full status. Non-critical dependency components are capped
- * at `degraded`, so a flaky worker degrades the API without marking it
- * `unhealthy`, which would otherwise deregister it from the load balancer.
- */
+/** Only critical components reach `unhealthy`; others cap at `degraded` so a flaky worker keeps the API registered. */
 export function rollupStatus(
   components: Record<string, HealthComponent>,
   criticalComponents: Set<string>,
@@ -59,7 +47,7 @@ export function rollupStatus(
 const EVENT_LOOP_LAG_DEGRADED_MS = 100;
 const EVENT_LOOP_LAG_UNHEALTHY_MS = 1_000;
 
-/** Grade a Node service's own runtime from event-loop lag, with memory diagnostics. */
+/** Grade a Node service's own runtime from event-loop lag. */
 export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
   if (eventLoopLagMs >= EVENT_LOOP_LAG_UNHEALTHY_MS) return 'unhealthy';
   if (eventLoopLagMs >= EVENT_LOOP_LAG_DEGRADED_MS) return 'degraded';
@@ -99,12 +87,7 @@ export interface CdcSocketSnapshot {
 
 type CdcWorkerReport = CdcWorkerHealth & { receivedAt: string; ageMs: number };
 
-/**
- * Map the CDC worker's pushed self-report (plus the backend-side socket
- * snapshot) into a component. A live socket alone never proves the data plane
- * is healthy: WAL liveness comes from the worker's `slotActive`/`lagBytes`/
- * `replicationStatus` signals, which the backend only learns via the push.
- */
+/** A live socket does not prove the data plane is healthy: WAL liveness comes only from the worker's pushed fields. */
 export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerReport | null): HealthComponent {
   if (!socket.cdcConnected) {
     return {
@@ -172,11 +155,7 @@ export interface ProbeResult {
   body?: Record<string, unknown> | null;
 }
 
-/**
- * Map an active probe of a worker's `/health?depth=full` into a component.
- * An unreachable worker is `unhealthy` for the component itself; the rollup
- * caps non-critical components at `degraded`.
- */
+/** Maps an active probe of a worker's `/health?depth=full`; an unreachable worker is `unhealthy` here. */
 export function mapProbeComponent(
   result: ProbeResult,
   extractDetails: (body: Record<string, unknown>) => Record<string, unknown>,

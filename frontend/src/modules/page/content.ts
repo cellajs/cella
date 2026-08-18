@@ -4,7 +4,6 @@ import { z } from 'zod';
 
 const CONTENT_ROOT = '/src/content/docs/';
 
-/** Lists the supported documentation rendering modes. */
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
 
@@ -19,11 +18,6 @@ const frontmatterSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
-/**
- * Global docs config, authored as the content root `index.mdx` frontmatter. Drives the /docs
- * landing page (title, intro, tiles) and sidebar sections so apps can customize both without
- * code; tiles and sections render in array order.
- */
 const docsTileSchema = z.object({
   label: z.string().min(1),
   description: z.string().optional(),
@@ -31,7 +25,6 @@ const docsTileSchema = z.object({
   to: z.string().min(1),
 });
 
-/** Lists the section IDs used by the documentation pages. */
 export const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
 export type DocsSectionId = (typeof docsSectionIds)[number];
 
@@ -41,6 +34,7 @@ const docsSectionSchema = z.object({
   visible: z.boolean().default(true),
 });
 
+/** Global docs config, authored as the content root `index.mdx` frontmatter; tiles and sections render in array order. */
 const docsConfigSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
@@ -56,8 +50,7 @@ export type DocsConfig = z.infer<typeof docsConfigSchema>;
 export type DocsTile = z.infer<typeof docsTileSchema>;
 export type DocsSection = z.infer<typeof docsSectionSchema>;
 
-// Migration cushion for apps that sync code before adding a root index.mdx: warn and
-// keep the docs section working with default section labels and prevent a build failure.
+// Fallback for a content root without an index.mdx: warn and keep docs rendering with default section labels.
 const defaultDocsConfig: DocsConfig = {
   title: 'Docs',
   description: undefined,
@@ -73,10 +66,7 @@ const defaultDocsConfig: DocsConfig = {
 /** A content heading (h2/h3/...) with its `spy-`-prefixed DOM id stripped to the bare hash slug. */
 export type DocHeading = { id: string; text: string; depth: number };
 
-/**
- * A docs page's metadata. Field names (`id`, `parentId`, `name`, `displayOrder`) intentionally
- * expose the page entity shape expected by the sidebar and table tree helpers.
- */
+/** Field names (`id`, `parentId`, `name`, `displayOrder`) match the page entity shape the sidebar and tree helpers expect. */
 export type DocPage = {
   id: string;
   parentId: string | null;
@@ -96,13 +86,11 @@ export type DocPage = {
 /** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
 const HEADING_ID_PREFIX = 'spy-';
 
-// Frontmatter + headings come from a build-time index (vite/docs-frontmatter.ts), not an eager
-// glob: importing page modules for their `frontmatter` export would pull every page body into
-// this chunk, defeating the lazy per-page glob below.
+// Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
 const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
-/** File path → slug (`architecture/index.md` → `architecture`). Exported for the search corpus mapping. */
+/** File path to slug: `architecture/index.md` becomes `architecture`. */
 export function pathToSlug(path: string): string {
   const slug = path
     .slice(CONTENT_ROOT.length)
@@ -123,7 +111,7 @@ function buildIndex(): {
   for (const [path, entry] of Object.entries(metaModules)) {
     const slug = pathToSlug(path);
     if (!slug) {
-      // Root index: the global docs config + /docs landing body, not a regular page.
+      // Root index holds the global docs config and the /docs landing body.
       const result = docsConfigSchema.safeParse(entry.frontmatter);
       if (!result.success) throw new Error(`Docs content: invalid docs config in ${path}: ${result.error.message}`);
       config = result.data;
@@ -133,13 +121,11 @@ function buildIndex(): {
     const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
     slugs.add(slug);
-    // Bare hash slugs for the spy store: hashes are unprefixed, DOM ids carry the prefix.
     const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(HEADING_ID_PREFIX, '') }));
     parsed.push({ slug, path, meta: result.data, headings });
   }
 
   const pages: DocPage[] = parsed.map(({ slug, meta, headings }) => {
-    // Parent is the index page of the containing directory, when it exists
     const dir = slug.includes('/') ? slug.slice(0, slug.lastIndexOf('/')) : null;
     const parentId = dir && slugs.has(dir) ? dir : null;
     return {
@@ -172,33 +158,26 @@ function buildIndex(): {
 
 const { pages, loaders, config } = buildIndex();
 
-/** Global docs config (landing page + sidebar sections), from the content root index.mdx. */
 export const docsConfig: DocsConfig = config;
 
 /** All docs pages, sorted by display order. Includes drafts (callers filter). */
 export const docPages: DocPage[] = pages;
 
-/** Returns the doc page. */
 export function getDocPage(slug: string): DocPage | undefined {
   return docPages.find((page) => page.id === slug);
 }
 
-/** Published (non-draft, non-hidden) child pages of the given page, in display order. */
 export function getChildDocPages(slug: string): DocPage[] {
   return docPages.filter((page) => page.parentId === slug && !page.draft && !page.hidden);
 }
 
-/** Lazy loader for a page's compiled MDX component; undefined for unknown slugs. */
 export function getDocPageLoader(slug: string): (() => Promise<ComponentType>) | undefined {
   return loaders.get(slug);
 }
 
-// Components resolved ahead of render (docs route loader) so the page view renders the body
-// synchronously. A fresh Suspense boundary otherwise commits its fallback for at least a frame
-// even when the chunk is already cached.
+// Resolved ahead of render (docs route loader) so the body renders synchronously: a fresh Suspense boundary commits its fallback for a frame even on a cached chunk.
 const resolvedComponents = new Map<string, ComponentType>();
 
-/** Load and memoize a page's compiled MDX component; undefined for unknown slugs. */
 export async function ensureDocPageComponent(slug: string): Promise<ComponentType | undefined> {
   const cached = resolvedComponents.get(slug);
   if (cached) return cached;
@@ -209,7 +188,6 @@ export async function ensureDocPageComponent(slug: string): Promise<ComponentTyp
   return component;
 }
 
-/** Synchronous access to a component resolved by ensureDocPageComponent. */
 export function getResolvedDocPageComponent(slug: string): ComponentType | undefined {
   return resolvedComponents.get(slug);
 }

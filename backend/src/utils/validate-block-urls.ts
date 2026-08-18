@@ -8,10 +8,7 @@ export { trustedMediaDomains };
 
 type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] };
 
-/**
- * Validates that all media URLs in BlockNote JSON content are from trusted sources.
- * @param extraAllowedDomains - Optional additional trusted domains (e.g., ['mycompany.com'])
- */
+/** @param extraAllowedDomains - trusted domains beyond `trusted-media-domains.json`, e.g. `['mycompany.com']`. */
 export const validateBlockMediaUrls = (blocksJson: string, extraAllowedDomains?: string[]): ValidationResult => {
   let blocks: Block[];
 
@@ -29,9 +26,6 @@ export const validateBlockMediaUrls = (blocksJson: string, extraAllowedDomains?:
   return validateUrls(blocks, allDomains);
 };
 
-/**
- * Validates block media URLs and throws AppError if any are untrusted.
- */
 export const assertBlockMediaUrls = (blocksJson: string, entityType: EntityType, fieldName: string) => {
   const result = validateBlockMediaUrls(blocksJson);
   if (!result.valid) {

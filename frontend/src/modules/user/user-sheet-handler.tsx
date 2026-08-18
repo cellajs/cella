@@ -2,10 +2,6 @@ import { memo } from 'react';
 import { useUrlSheet } from '~/modules/common/sheeter/use-url-sheet';
 import { UserSheet } from '~/modules/user/user-sheet';
 
-/**
- * Handles opening/closing the user sheet based on URL search params.
- * Listens to `userSheetId` in search params and manages the sheet lifecycle.
- */
 function UserSheetHandlerBase() {
   useUrlSheet({
     searchParamKey: 'userSheetId',
@@ -19,5 +15,4 @@ function UserSheetHandlerBase() {
   return null;
 }
 
-/** Coordinates user-sheet state with the current route search parameters. */
 export const UserSheetHandler = memo(UserSheetHandlerBase);

@@ -1,4 +1,3 @@
-/** Renders the animated arrow component. */
 export function AnimatedArrow() {
   return (
     <svg

@@ -8,8 +8,7 @@ const makeEditor = () =>
   BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
 
 describe('handleChecklistItemEnter', () => {
-  // The handler defers caret placement with setTimeout; fake timers keep that deferred DOM-only work
-  // (irrelevant to these document-structure assertions) from running against a torn-down headless editor.
+  // The handler defers caret placement with setTimeout; fake timers keep that DOM-only work off a torn-down headless editor.
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 

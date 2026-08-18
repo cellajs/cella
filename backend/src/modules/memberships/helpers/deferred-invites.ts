@@ -21,11 +21,8 @@ interface DispatchDeferredInvitesOpts {
 }
 
 /**
- * Dispatch invites that were deferred while their context was unpublished: send the held
- * emails through the normal invitation flow and stamp `remindedAt`. Invitation tokens are
- * rotated (fresh secret + expiry) since raw tokens are unrecoverable and may have expired
- * while the context was a draft. The active re-invite throttle skips rows emailed within
- * the last seven days.
+ * Sends invites held while their context was unpublished and stamps `remindedAt`. Invitation tokens are rotated
+ * (fresh secret and expiry) because raw tokens are unrecoverable; the throttle skips rows emailed in the last seven days.
  */
 export async function dispatchDeferredInvites(ctx: AuthContext, { channelIds }: DispatchDeferredInvitesOpts) {
   const user = ctx.var.user;

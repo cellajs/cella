@@ -25,9 +25,8 @@ type ProviderSetup = {
 };
 
 /**
- * Resolves the effective Entra ID issuer for multi-tenant sign-in ('common'/'organizations'/'consumers'):
- * those aliases are not real issuers, since the id_token `iss` claim embeds the user's actual tenant id (`tid`).
- * Claim and signature validation then run against the resolved issuer; the signing keys are tenant-agnostic.
+ * Resolves the effective Entra ID issuer for multi-tenant sign-in: 'common', 'organizations' and 'consumers' are not real issuers, since
+ * the id_token `iss` claim embeds the user's tenant id. Claim and signature validation run against the resolved issuer.
  */
 const resolveEntraIssuer = async (
   response: Response,
@@ -81,9 +80,8 @@ const createProviderClient = ({
     },
 
     /**
-     * Exchanges the authorization code for tokens. Enforces PKCE when a `codeVerifier` is given; for
-     * OIDC providers additionally validates the id_token claims, binds the `nonce`, and verifies the
-     * signature against the provider JWKS.
+     * Exchanges the authorization code for tokens, enforcing PKCE when a `codeVerifier` is given. OIDC providers also get
+     * id_token claim validation, `nonce` binding, and a signature check against the provider JWKS.
      */
     async validateAuthorizationCode(
       code: string,
@@ -91,8 +89,7 @@ const createProviderClient = ({
       { codeVerifier, nonce }: OAuthFlowContext = {},
     ): Promise<{ accessToken: string }> {
       try {
-        // Created lazily: ClientSecretPost rejects empty secrets, and they may legitimately be
-        // absent at module load (CI openapi generation, deployments without this provider)
+        // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
         const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
         const response = await oauth.authorizationCodeGrantRequest(

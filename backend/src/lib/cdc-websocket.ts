@@ -10,22 +10,16 @@ import { productCache } from '#/middlewares/product-cache/app-product-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
 import { log } from '#/utils/logger';
 
-/**
- * Validates the CDC worker payload with stricter activity fields required on this wire path.
- * Keep it synchronized with the producing `CdcOutboundMessage` type.
- * @see cdc/src/services/activity-service.ts
- */
+/** Validates the CDC worker payload. @see cdc/src/services/activity-service.ts for the producing type. */
 const cdcMessageSchema = z.object({
   activity: z.object({
     ...activitySchema.shape,
     // Override nullable fields that are always present in CDC messages
     action: activityActionSchema,
     subjectId: z.string().nullable(),
-    // seq: org-sequence position stamped by CDC worker (product entities only)
+    // Org-sequence position stamped by the CDC worker (product entities only)
     seq: z.number().optional(),
-    // Batch fields (set by CDC Worker for multi-entity transactions). Under the org
-    // sequence a group's seq..batchUntilSeq range may interleave with other groups;
-    // `count` is the authoritative row count.
+    // Batch fields for multi-entity transactions; seq..batchUntilSeq ranges may interleave, so `count` is authoritative
     batchUntilSeq: z.number().optional(),
     count: z.number().optional(),
   }),
@@ -52,13 +46,10 @@ const cdcMessageSchema = z.object({
     .optional(),
 });
 
-/** The validated CDC → API-server message shape. Counterpart of the CDC worker's `CdcOutboundMessage`. */
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;
 
-/** Idle timeout in ms - close connection if no message received within this time */
 const IDLE_TIMEOUT_MS = 90_000;
 
-/** Ping interval in ms */
 const PING_INTERVAL_MS = 30_000;
 
 /** Strip an IPv4-mapped IPv6 prefix (e.g. `::ffff:10.0.0.9` → `10.0.0.9`). */
@@ -76,31 +67,20 @@ function isVpcIp(ip: string): boolean {
   return /^10\.0\.0\.\d{1,3}$/.test(ip);
 }
 
-/**
- * Docker bridge private ranges (172.16.0.0/12, 192.168.0.0/16), the network
- * the per-VM Caddy `ingress` container runs on. The local ingress is the only
- * thing that can be the direct TCP peer when a request is proxied.
- */
+/** Docker bridge ranges: the per-VM Caddy `ingress` runs there and is the only direct peer of a proxied request. */
 function isDockerBridgeIp(ip: string): boolean {
   return /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(ip) || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip);
 }
 
-/**
- * Allows direct loopback/VPC CDC peers and VPC clients forwarded by the local ingress.
- * The ingress overwrites client-supplied forwarding headers, making its reported source
- * trustworthy. The mandatory shared secret remains the primary authentication layer.
- */
+/** Allows loopback/VPC CDC peers directly or through the local ingress; the shared secret is the primary auth. */
 function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string | string[] | undefined): boolean {
   if (!remoteIp) return false;
   const peer = normalizeIp(remoteIp);
 
-  // Direct connection, no proxy in between (co-located Compose over loopback,
-  // or a direct VPC dial): the peer IS the worker.
+  // Direct connection, no proxy in between: the peer is the worker
   if (isLoopbackIp(peer) || isVpcIp(peer)) return true;
 
-  // Behind the per-VM ingress proxy: the direct peer is the local Caddy on the
-  // Docker bridge. Trust X-Forwarded-For and validate the real client IP it
-  // reports is a loopback/VPC address.
+  // Behind the per-VM ingress the peer is the local Caddy, so trust X-Forwarded-For and check the reported client IP
   if (isDockerBridgeIp(peer)) {
     const xff = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
     const client = normalizeIp(xff?.split(',')[0]?.trim() ?? '');
@@ -125,10 +105,7 @@ export interface CdcWorkerHealth {
   catchingUp?: boolean;
 }
 
-/**
- * Internal CDC worker channel. It requires the shared secret and an allowed source,
- * permits one live connection, and closes idle peers after 90 seconds.
- */
+/** Internal CDC worker channel: shared secret plus allowed source, one live connection, idle peers closed. */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;
@@ -142,16 +119,12 @@ class CdcWebSocketServer {
   private _parseErrors = 0;
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
 
-  /**
-   * Attach WebSocket server to an existing HTTP server.
-   * Handles upgrade requests to /internal/cdc with auth validation.
-   */
+  /** Attach to an existing HTTP server and authenticate upgrade requests to /internal/cdc. */
   attachToServer(server: ServerType): void {
     this.wss = new WebSocketServer({ noServer: true });
 
     // Type assertion needed because ServerType is broader than HTTP1 Server
     (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
-      // Only handle /internal/cdc path
       const url = new URL(request.url ?? '', `http://${request.headers.host}`);
       if (url.pathname !== '/internal/cdc') {
         socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
@@ -159,8 +132,7 @@ class CdcWebSocketServer {
         return;
       }
 
-      // Production accepts co-located loopback or VPC workers.
-      // Behind the local ingress, the trusted forwarding header carries the worker IP.
+      // Production accepts co-located loopback or VPC workers only
       const remoteIp = request.socket.remoteAddress;
       if (env.NODE_ENV === 'production' && !isAllowedCdcSource(remoteIp, request.headers['x-forwarded-for'])) {
         log.warn('CDC WebSocket rejected disallowed source', {
@@ -192,12 +164,8 @@ class CdcWebSocketServer {
     log.info('CDC WebSocket server attached to HTTP server');
   }
 
-  /**
-   * Handle a new WebSocket connection from CDC Worker.
-   * Replaces existing connection if one exists.
-   */
+  /** Accept a CDC worker connection, replacing any live one. */
   private handleConnection(ws: WebSocket): void {
-    // Close existing connection if any (graceful replacement)
     if (this.currentConnection) {
       log.info('Replacing existing CDC Worker connection');
       this.currentConnection.close(1000, 'Replaced by new connection');
@@ -230,10 +198,7 @@ class CdcWebSocketServer {
     });
   }
 
-  /**
-   * Handle incoming message from CDC Worker.
-   * Validates JSON schema and transforms message into ActivityBus event.
-   */
+  /** Validate an incoming CDC message and transform it into an ActivityBus event. */
   private handleMessage(data: string): void {
     try {
       const parsed = JSON.parse(data);
@@ -248,7 +213,6 @@ class CdcWebSocketServer {
 
       if (!result.success) {
         this._parseErrors++;
-        // Extract what we can from the raw message for debugging
         const preview = {
           type: parsed?.activity?.type,
           subjectId: parsed?.activity?.subjectId,
@@ -265,7 +229,6 @@ class CdcWebSocketServer {
       this._messagesReceived++;
       this._lastMessageAt = new Date();
 
-      // Validate event type is a known TrackedEventType
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;
@@ -276,9 +239,7 @@ class CdcWebSocketServer {
         return;
       }
 
-      // Keep the entity detail cache fresh on writes: invalidate each changed entity by id so a
-      // later detail fetch re-enriches. Batch messages carry per-row ids in batchRows; single
-      // messages carry subjectId. No cache token involved (entity-keyed cache).
+      // Invalidate each changed entity by id so a later detail fetch re-enriches (entity-keyed cache, no token)
       const entityType = message.activity.entityType;
       if (entityType) {
         if (message.batchRows?.length) {
@@ -291,7 +252,6 @@ class CdcWebSocketServer {
         }
       }
 
-      // Transform CDC message to ActivityBus event and emit
       const activityEvent = {
         ...message.activity,
         type,
@@ -317,10 +277,7 @@ class CdcWebSocketServer {
     }
   }
 
-  /**
-   * Handle CDC control messages (not regular activity events).
-   * These are sent by the CDC worker to signal lifecycle events like catchup completion.
-   */
+  /** Handle CDC lifecycle signals such as catchup completion, sent outside the activity stream. */
   private handleControlMessage(message: { _control: string; [key: string]: unknown }): void {
     if (message._control === 'catchup_complete') {
       const eventsProcessed = message.eventsProcessed ?? 0;
@@ -329,7 +286,7 @@ class CdcWebSocketServer {
       // Clear entity caches after counter recalculation.
       productCache.clear();
 
-      log.info('CDC catchup complete — entity caches cleared', {
+      log.info('CDC catchup complete: entity caches cleared', {
         eventsProcessed,
         catchupDurationMs,
       });
@@ -347,9 +304,7 @@ class CdcWebSocketServer {
     log.warn('Unknown CDC control message', { control: message._control });
   }
 
-  /**
-   * Reset idle timer; connection closes when no activity arrives.
-   */
+  /** Reset the idle timer; the connection closes when no activity arrives. */
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
@@ -358,9 +313,6 @@ class CdcWebSocketServer {
     }, IDLE_TIMEOUT_MS);
   }
 
-  /**
-   * Start sending periodic pings to keep connection alive.
-   */
   private startPingInterval(): void {
     if (this.pingInterval) clearInterval(this.pingInterval);
     this.pingInterval = setInterval(() => {
@@ -371,9 +323,6 @@ class CdcWebSocketServer {
     }, PING_INTERVAL_MS);
   }
 
-  /**
-   * Clean up connection state.
-   */
   private cleanup(): void {
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
@@ -393,9 +342,6 @@ class CdcWebSocketServer {
     return this._workerHealth;
   }
 
-  /**
-   * Get health status for the CDC WebSocket connection.
-   */
   getHealthStatus(): {
     cdcConnected: boolean;
     lastMessageAt: string | null;
@@ -403,11 +349,9 @@ class CdcWebSocketServer {
     parseErrors: number;
     status: 'healthy' | 'degraded' | 'unknown';
   } {
-    // Determine status based on connection and message timing
     let status: 'healthy' | 'degraded' | 'unknown' = 'unknown';
 
     if (this._cdcConnected) {
-      // If connected and received message recently (within 60s), healthy
       const sixtySecondsAgo = Date.now() - 60_000;
       if (this._lastMessageAt && this._lastMessageAt.getTime() > sixtySecondsAgo) {
         status = 'healthy';
@@ -417,7 +361,6 @@ class CdcWebSocketServer {
         status = 'healthy'; // Just connected, no messages yet is OK
       }
     } else if (!env.NODB) {
-      // CDC expected but not connected
       status = 'degraded';
     }
     // In NODB mode without CDC, status remains 'unknown' (not applicable)
@@ -431,9 +374,6 @@ class CdcWebSocketServer {
     };
   }
 
-  /**
-   * Close the WebSocket server.
-   */
   close(): void {
     this.cleanup();
     this.wss?.close();
@@ -441,5 +381,4 @@ class CdcWebSocketServer {
   }
 }
 
-/** Singleton CDC WebSocket server instance */
 export const cdcWebSocketServer = new CdcWebSocketServer();

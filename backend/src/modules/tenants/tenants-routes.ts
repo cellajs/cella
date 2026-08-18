@@ -16,9 +16,6 @@ import {
 } from './tenants-schema';
 
 export const tenantRoutes = {
-  /**
-   * Get list of tenants (system admin only)
-   */
   getTenants: createXRoute({
     operationId: 'getTenants',
     method: 'get',
@@ -41,9 +38,6 @@ export const tenantRoutes = {
     },
   }),
 
-  /**
-   * Self-serve tenant creation for authenticated users without a tenant
-   */
   selfCreateTenant: createXRoute({
     operationId: 'selfCreateTenant',
     method: 'post',
@@ -73,9 +67,6 @@ export const tenantRoutes = {
     },
   }),
 
-  /**
-   * Update a tenant (system admin only)
-   */
   updateTenant: createXRoute({
     operationId: 'updateTenant',
     method: 'put',

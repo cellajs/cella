@@ -1,10 +1,6 @@
 import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel.ts';
 
-/**
- * Builds a root-first path from populated ancestor IDs, optionally appending a channel row's ID.
- * Returns null without the root. Tests keep this aligned with the backend generated-column SQL
- * and the deepest-ancestor attribution rule.
- */
+/** Root-first path from the populated ancestor ids. Null when the root ancestor id is missing. */
 export function computeAncestorPath(
   hierarchy: AncestorSource,
   entityType: string,
@@ -19,8 +15,7 @@ export function computeAncestorPath(
     const id = row[entityIdColumnKey(type)];
     if (typeof id === 'string' && id) segments.push(id);
   }
-  // The root (organization) ancestor is structurally non-null for every product/channel
-  // below it; a row without it has no addressable subtree.
+  // A row without the root organization id has no addressable subtree.
   const rootId = row[entityIdColumnKey(root)];
   if (typeof rootId !== 'string' || !rootId) return null;
   return segments.join('/');
@@ -35,10 +30,7 @@ export function computeProductPath(
   return computeAncestorPath(hierarchy, entityType, row);
 }
 
-/**
- * A channel row's path: its ancestor chain plus its own id. The root channel
- * (no ancestors) is just its own id.
- */
+/** A channel row's ancestor chain plus its own id; for the root channel, just its own id. */
 export function computeChannelPath(
   hierarchy: AncestorSource,
   entityType: string,
@@ -68,18 +60,14 @@ export function pathHomeId(path: string): string {
 }
 
 /**
- * SQL twin of {@link computeAncestorPath} / {@link computeChannelPath}, kept adjacent so the
- * two rules stay provably identical (see the path parity tests). Produces the generated-column
- * expression `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`,
- * appending `'/' || "id"::text` when `appendOwnId` (channel entities). The expression updates
- * atomically on reparenting, skips nullable intermediate ancestors, and requires a non-null
- * root organization.
+ * SQL twin of {@link computeAncestorPath} / {@link computeChannelPath}, kept adjacent and held
+ * identical by the path parity tests. Produces the generated-column expression
+ * `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`, appending
+ * `'/' || "id"::text` when `appendOwnId` (channel entities). It updates atomically on
+ * reparenting, skips nullable intermediate ancestors, and requires a non-null root organization.
  */
 export function pathColumnSql(hierarchy: AncestorSource, entityType: string, appendOwnId: boolean): string {
-  // getOrderedAncestors is most-specific → root; path segments are root-first.
   const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();
-
-  // Root channel (organization): the path is its own id.
   if (root === undefined) return `"id"::text`;
 
   const parts = [`"${entityIdColumnName(root)}"::text`];
@@ -90,10 +78,7 @@ export function pathColumnSql(hierarchy: AncestorSource, entityType: string, app
   return parts.join(' || ');
 }
 
-/**
- * SQL twin of `resolveDeepestAncestorId`: a COALESCE over the aliased ancestor id columns,
- * most-specific first. Null when the entity has no ancestors.
- */
+/** SQL twin of `resolveDeepestAncestorId`. Null when the entity has no ancestors. */
 export function deepestAncestorSql(hierarchy: AncestorSource, entityType: string, alias: string): string | null {
   const ancestors = hierarchy.getOrderedAncestors(entityType);
   if (!ancestors.length) return null;

@@ -17,7 +17,6 @@ export interface DerivedSyncView {
   depth: 'self' | 'subtree';
 }
 
-/** The membership fields the derivation reads (client cache shape). */
 export interface ViewMembership {
   organizationId: string;
   channelType: string;
@@ -37,10 +36,7 @@ export interface DeriveViewsInput {
   elevatedRoles?: readonly string[];
 }
 
-/**
- * Derive provable subtree or self views at unconditional grant boundaries.
- * Conditional grants and unknown paths retain only the organization fallback.
- */
+/** Derives provable subtree or self views at unconditional grant boundaries; conditional grants and unknown paths keep only the organization fallback. */
 export function deriveGrantBoundaryViews({
   memberships,
   entityTypes,

@@ -1,9 +1,6 @@
 import type { UserMenuItem } from '~/modules/me/types';
 
-/**
- * Collect channel entity IDs from menu items for unseen count aggregation.
- * Expands sub-menus (e.g., projects under workspaces) and filters out muted items.
- */
+/** Expands sub-menus and filters out muted items. */
 export function collectChannelIds(items: UserMenuItem[], opts?: { archived?: boolean }): string[] {
   const ids: string[] = [];
   for (const item of items) {

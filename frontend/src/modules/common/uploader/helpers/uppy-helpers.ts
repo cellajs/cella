@@ -14,27 +14,24 @@ import type { UploadTokenQuery } from '~/modules/me/types';
 import { cleanFileName } from '~/utils/clean-file-name';
 
 /**
- * Creates a local-first Uppy instance: when Transloadit is configured (params/signature present) uploads to
- * cloud, otherwise stores locally in IndexedDB; offline uploads queue as pending. The local blob is always
- * stored first, then synced to cloud when available.
+ * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit
+ * is configured and the app is online. Offline uploads queue as pending.
  */
 export const createBaseTransloaditUppy = async (
   uppyOptions: CustomUppyOpt,
   tokenQuery: UploadTokenQuery,
 ): Promise<CustomUppy> => {
-  // Get upload token early to determine cloud availability
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
 
   try {
-    // Skip cloud upload when uploadEnabled is false; all files go to IndexedDB.
+    // Without uploadEnabled all files stay in IndexedDB
     if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
-      // Cloud upload only available if Transloadit is configured
+      // Transloadit is configured only when both params and signature come back
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
     }
   } catch (err) {
-    // Offline or failed to get token - will use local storage
     if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
       console.error('Failed to get upload token:', err);
     }
@@ -51,7 +48,6 @@ export const createBaseTransloaditUppy = async (
     },
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
-      // Clean up file names synchronously
       for (const file of Object.values(files)) {
         const cleanName = cleanFileName(file.name || 'file');
         file.name = cleanName;
@@ -61,7 +57,6 @@ export const createBaseTransloaditUppy = async (
     },
   });
 
-  // Handle async operations before upload starts
   uppy.on('upload', async (_uploadId, uploadFiles) => {
     const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
 
@@ -69,7 +64,6 @@ export const createBaseTransloaditUppy = async (
     const isOnline = onlineManager.isOnline();
     const uploadStatus = hasCloudUpload ? 'pending' : 'local-only';
 
-    // If cloud upload not available, store locally and emit completion
     if (!hasCloudUpload) {
       const assembly = await prepareFilesForOffline(filesMap, tokenQuery, uploadStatus);
       uppy.cancelAll();
@@ -77,7 +71,6 @@ export const createBaseTransloaditUppy = async (
       return;
     }
 
-    // If offline but cloud is configured, store locally for later sync
     if (!isOnline) {
       const assembly = await prepareFilesForOffline(filesMap, tokenQuery, 'pending');
       uppy.cancelAll();
@@ -85,7 +78,7 @@ export const createBaseTransloaditUppy = async (
       return;
     }
 
-    // Online with cloud - store locally first (as pending), then upload
+    // Store the blob before uploading so a failed upload can retry from IndexedDB
     const organizationId = tokenQuery.organizationId;
     if (organizationId) {
       const uploadContext: UploadContext = {
@@ -98,7 +91,6 @@ export const createBaseTransloaditUppy = async (
     }
   });
 
-  // Only add Transloadit plugin if cloud upload is available
   if (hasCloudUpload && cloudToken?.params && cloudToken?.signature) {
     uppy.use(Transloadit, {
       waitForEncoding: true,
@@ -109,7 +101,6 @@ export const createBaseTransloaditUppy = async (
       },
     });
 
-    // On successful cloud upload, mark local blobs as uploaded
     uppy.on('transloadit:complete', async (assembly) => {
       // Skip offline assemblies (already marked correctly)
       if (assembly.assembly_id?.startsWith('offline_')) return;
@@ -121,7 +112,6 @@ export const createBaseTransloaditUppy = async (
       }
     });
 
-    // On upload error, mark as failed for retry
     uppy.on('transloadit:assembly-error', async (assembly, error) => {
       const errorMessage = error?.message || 'Upload failed';
       for (const upload of assembly.uploads || []) {
@@ -146,9 +136,7 @@ const uploadAttachmentId = (upload: { user_meta?: Record<string, unknown> }): st
 const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Simplify Uppy's own file ID (it only has to be unique within this Uppy instance).
   file.id = nanoid();
-  // Mint the attachment id up front so the local blob is stored under the id its row will get.
-  // Uppy passes file meta to Transloadit as `user_meta`, so it survives the round trip and
-  // `parseUploadedAttachments` reuses it to keep the upload and attachment IDs aligned.
+  // Mint the attachment id up front so the local blob is stored under the id its row will get
   file.meta.attachmentId = generateId();
   return file;
 };

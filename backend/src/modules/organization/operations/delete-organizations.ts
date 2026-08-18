@@ -7,7 +7,6 @@ import { log } from '#/utils/logger';
 export async function deleteOrganizationsOp(ctx: AuthContext, ids: string[], tenantId: string) {
   const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-  // Split ids into allowed and disallowed
   const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds);
 
   await deleteOrganizationsByIds(ctx, { ids: allowedIds });

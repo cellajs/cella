@@ -51,7 +51,7 @@ describe('mutation pausing on connectivity failure', () => {
     expect(mutation.state.data).toEqual({ ok: 'a' });
   });
 
-  it('does not pause a server error — it fails fast so 4xx/5xx handlers run', async () => {
+  it('does not pause a server error: it fails fast so 4xx/5xx handlers run', async () => {
     // onlineManager stays online; the server responds with an error.
     const observer = new MutationObserver(queryClient, {
       mutationKey: ['thing', 'update'],

@@ -1,6 +1,5 @@
 import type { EntityType } from 'shared';
 
-// Drag and drop data
 export type DraggableItemData<T, D extends string> = {
   type: D;
   item: T;
@@ -9,7 +8,6 @@ export type DraggableItemData<T, D extends string> = {
   displayOrder: number;
 };
 
-/** Builds the drag payload for a draggable item, tagged with its order, type, and entity type. */
 export const getDraggableItemData = <T, D extends string>(
   item: T,
   itemOrder: number,

@@ -9,17 +9,10 @@ import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { dateShort } from '~/utils/date-short';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-/**
- * Structural tile entity: any channel entity whose optional `included.counts`
- * carries a membership total fits, without coupling to a concrete entity type.
- */
 type ChannelTileEntity = EnrichedChannel & {
   included?: { counts?: { membership: { total: number } } };
 };
 
-/**
- * Tile component to display an entity in a grid layout.
- */
 export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
   const { to, params, search } = getChannelRoute(entity);
   const counts = entity.included?.counts;

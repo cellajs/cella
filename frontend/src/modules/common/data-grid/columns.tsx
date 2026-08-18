@@ -2,7 +2,6 @@ import { RenderCheckbox } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
 import type { Column, RenderCellProps, RenderHeaderCellProps } from './types';
 
-/** Identifies the data-grid selection column. */
 export const SELECT_COLUMN_KEY = 'rdg-select-column';
 
 function HeaderRenderer(props: RenderHeaderCellProps<unknown>) {
@@ -37,7 +36,6 @@ function SelectFormatter(props: RenderCellProps<unknown>) {
   );
 }
 
-/** Renders the column selector. */
 // biome-ignore lint/suspicious/noExplicitAny: SelectColumn is row-shape agnostic; consumers narrow via Column<Row, SR>.
 export const SelectColumn: Column<any, any> = {
   key: SELECT_COLUMN_KEY,

@@ -15,14 +15,10 @@ type ConfigOverride = {
   selfRegistration?: boolean;
 };
 
-/**
- * Mock the global fetch request to avoid actual network calls during tests.
- */
 export function mockFetchRequest() {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockImplementation((input) => {
-      // Handle Request objects (like those from rate limiter)
       if (input instanceof Request) {
         return Promise.resolve({
           ok: true,
@@ -53,12 +49,8 @@ export function mockFetchRequest() {
   );
 }
 
-/**
- * Clear the database with TRUNCATE CASCADE (much faster than per-table DELETEs). Also resets
- * mock enforcers so unique values don't conflict across tests.
- */
+/** TRUNCATE CASCADE, plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
-  // Reset mock enforcers so unique values don't conflict across tests
   resetUserMockEnforcers();
   resetOrganizationMockEnforcers();
 
@@ -67,10 +59,7 @@ export async function clearDatabase() {
     CASCADE`);
 }
 
-/**
- * vi.mock() calls must be at the top level of each test file because Vitest hoists them.
- * Use at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock)
- */
+/** Vitest hoists vi.mock(), so call at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock) */
 export const rateLimiterCoreMock = () => ({
   rateLimiter: vi
     .fn()
@@ -97,10 +86,7 @@ export const rateLimiterCoreMock = () => ({
   },
 });
 
-/**
- * Mock factory for rate limiter helpers module.
- * Use at top level: vi.mock('#/middlewares/rate-limiter/helpers', rateLimiterHelpersMock)
- */
+/** Use at top level: vi.mock('#/middlewares/rate-limiter/helpers', rateLimiterHelpersMock) */
 export const rateLimiterHelpersMock = async (importOriginal: () => Promise<Record<string, unknown>>) => {
   const actual = await importOriginal();
   return {
@@ -110,10 +96,7 @@ export const rateLimiterHelpersMock = async (importOriginal: () => Promise<Recor
   };
 };
 
-/**
- * Mock factory for the oauth4webapi library.
- * Use at top level: vi.mock('oauth4webapi', oauth4webapiMock)
- */
+/** Use at top level: vi.mock('oauth4webapi', oauth4webapiMock) */
 export const oauth4webapiMock = async () => {
   const actual = await vi.importActual('oauth4webapi');
   return {
@@ -124,11 +107,6 @@ export const oauth4webapiMock = async () => {
   };
 };
 
-/**
- * Modifies the app configuration for testing purposes.
- *
- * @param overrides - Instructions for what to enable/disable.
- */
 export function setTestConfig(overrides: ConfigOverride) {
   if (overrides.enabledAuthStrategies) {
     (appConfig as unknown as { enabledAuthStrategies: string[] }).enabledAuthStrategies =
@@ -136,7 +114,7 @@ export function setTestConfig(overrides: ConfigOverride) {
   }
 
   if (overrides.enabledOAuthProviders) {
-    // Config type is narrowed by `satisfies` in default-config, so cast needed to widen
+    // `satisfies` in default-config narrows the type, so widen with a cast.
     (appConfig as unknown as { enabledOAuthProviders: string[] }).enabledOAuthProviders =
       overrides.enabledOAuthProviders;
   }
@@ -147,16 +125,15 @@ export function setTestConfig(overrides: ConfigOverride) {
 }
 
 /**
- * In-memory cookie store standing in for the real cookie helpers (OAuth tests).
+ * In-memory cookie store standing in for the real cookie helpers.
  * Use at top level: vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock())
- * Call clearCookieStore() in afterEach to reset between tests.
- * Access mockCookieStore directly to pre-populate cookies in tests.
+ * Call clearCookieStore() in afterEach; pre-populate by writing to mockCookieStore.
  */
 export const mockCookieStore = new Map<string, string>();
 export const clearCookieStore = () => mockCookieStore.clear();
 
 export const cookieMock = () => ({
-  // Mirrors the real helper (test mode is secure → __Host- prefix applies).
+  // Test mode is secure, so the __Host- prefix applies.
   authCookieName: (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`,
   setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
@@ -178,10 +155,7 @@ export const cookieMock = () => ({
   }),
 });
 
-/**
- * Mock factory for session helpers (used in OAuth tests).
- * Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock)
- */
+/** Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock) */
 export const sessionMock = () => ({
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
     const sessionToken = 'mock-session-token';

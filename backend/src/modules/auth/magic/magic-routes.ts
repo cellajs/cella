@@ -6,9 +6,6 @@ import { magicLinkBodySchema } from '#/modules/auth/magic/magic-schema';
 import { errorResponseRefs } from '#/schemas';
 
 const authMagicLinkRoutes = {
-  /**
-   * Send magic link email
-   */
   sendMagicLink: createXRoute({
     operationId: 'sendMagicLink',
     method: 'post',

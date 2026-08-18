@@ -4,10 +4,6 @@ import { docsConfig, ensureDocPageComponent } from '~/modules/page/content';
 import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 
-/**
- * Index route rendering the docs landing page: intro + tiles from the global docs
- * config (content root index.mdx frontmatter).
- */
 export const Route = createFileRoute('/_public/_content/docs/')({
   staticData: { isAuth: false },
   head: () => ({

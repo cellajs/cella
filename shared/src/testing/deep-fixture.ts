@@ -3,16 +3,16 @@ import { createEntityHierarchy, createRoleRegistry } from '../config-builder/ent
 import type { HierarchyOverrides, PolicyCellInput, PolicyMatrix } from '../permissions/index.ts';
 import { configurePolicyMatrix } from '../permissions/policy-matrix.ts';
 
-// Deep synthetic hierarchy (projectcampus-shaped): 4 channel levels with an `item` product whose
-// rows attach at any depth, typed independently of any app config. Path, home-resolution,
-// counter, permission-proving, and view-derivation suites all test against this ONE hierarchy so
-// the subsystems that must agree on path semantics are proven against the same shape.
+// Deep synthetic hierarchy: 4 channel levels with an `item` product whose rows attach at any
+// depth, typed independently of any app config. The path, home-resolution, counter, permission
+// and view-derivation suites all run against this one hierarchy, so every subsystem that must
+// agree on path semantics is tested against the same shape.
 export type DeepChannelType = 'organization' | 'course' | 'courseSection' | 'project';
 export type DeepNullableAncestor = 'project' | 'courseSection' | 'course';
 
 export const deepRoles = createRoleRegistry(['admin', 'member', 'staff', 'student', 'owner', 'follower'] as const);
 
-/** Role sets granted per channel level; suites that assert per-role behavior key off these. */
+/** Suites asserting per-role behavior key off these. */
 export const deepChannelRoles = {
   organization: ['admin', 'member'],
   course: ['staff', 'student'],
@@ -20,14 +20,13 @@ export const deepChannelRoles = {
   project: ['owner', 'follower'],
 } as const satisfies Record<DeepChannelType, readonly string[]>;
 
-/** Entity vocabulary for policy configuration (excludes the auxiliary `task` product). */
+/** For policy configuration; excludes the auxiliary `task` product. */
 export const deepEntityTypes = ['user', 'organization', 'course', 'courseSection', 'project', 'item'] as const;
 
 /**
- * Builds the deep hierarchy. The default marks every intermediate ancestor of `item` nullable
- * (rows attach at any depth, organization included). Suites proving nullable-boundary behavior
- * (missing-ancestor warnings, possible home channels) pass a narrower list to keep `course`
- * non-nullable. `task` is a fixed-depth sibling product for declared-parent fallback assertions.
+ * By default every intermediate ancestor of `item` is nullable, so rows attach at any depth.
+ * Suites covering nullable boundaries pass a narrower list to keep `course` non-null. `task` is
+ * a fixed-depth sibling product for declared-parent fallback assertions.
  */
 export const makeDeepHierarchy = (
   itemNullableAncestors: readonly DeepNullableAncestor[] = ['project', 'courseSection', 'course'],
@@ -42,16 +41,13 @@ export const makeDeepHierarchy = (
     .product('task', { parent: 'project' })
     .build();
 
-/** Canonical deep hierarchy: `item` attaches at any depth. */
+/** `item` attaches at any depth. */
 export const deepHierarchy = makeDeepHierarchy();
 
-/** Hierarchy override seam for the permission engine and scope compiler. */
+/** Passed to the permission engine and the scope compiler. */
 export const deepOverrides: HierarchyOverrides = { hierarchy: deepHierarchy };
 
-/**
- * `item` read policies over the deep hierarchy, one read cell per channel level and role.
- * `readValue` decides each cell so suites can express grant matrices as a single function.
- */
+/** One read cell per channel level and role; `readValue` decides each cell. */
 export const deepReadPolicies = (
   readValue: (channelType: DeepChannelType, role: string) => PolicyCellInput,
 ): PolicyMatrix =>

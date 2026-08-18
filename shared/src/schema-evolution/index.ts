@@ -1,8 +1,4 @@
-/**
- * Public barrel for the schema-evolution lens registry.
- *
- * @see README.md
- */
+/** Public barrel for the schema-evolution lens registry. @see README.md */
 
 export { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
 export type {

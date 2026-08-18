@@ -362,7 +362,7 @@
         "batchUntilSeq": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Last sequence position for a batched notification — client should fetch range"
+          "description": "Last sequence position for a batched notification: client should fetch range"
         },
         "count": {
           "type": ["integer", "null"],

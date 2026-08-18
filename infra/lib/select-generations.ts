@@ -6,13 +6,7 @@ export interface Generation {
   id: string;
   /** Image SHA baked into this generation. */
   sha: string;
-  /**
-   * True for the generation already live in the control state (its VM exists and
-   * carries `ignoreChanges` on cloud-init and image). A newly rolling generation
-   * has this unset. Consumers require a pinnable boot image only for the newly
-   * rolling generations; a pre-existing one keeps running on its own booted image
-   * even when that image is no longer resolvable in the registry.
-   */
+  /** True for a generation already live in the control state: its VM carries `ignoreChanges` on cloud-init and image, and needs no resolvable registry image. */
   preexisting?: boolean;
 }
 
@@ -23,12 +17,7 @@ export interface SelectGenerationsOptions {
   genIdFor: (sha: string) => string;
 }
 
-/**
- * The generations the stack provisions for one service, deduplicated by ID.
- * The first entry is the binding target; equal active/pending IDs collapse to
- * one VM. Old generations are reaped after promotion; rollback uses a revert
- * and redeploy. Pure over the control entry; unit-tested in isolation.
- */
+/** Generations the stack provisions for one service, deduplicated by id. The first entry is the binding target, and equal active/pending ids collapse to one VM. */
 export function selectGenerations(entry: ServiceRollout | undefined, opts: SelectGenerationsOptions): Generation[] {
   const activeRef = entry?.active;
   const pending: Generation | undefined = entry?.pendingSha
@@ -47,22 +36,19 @@ export function selectGenerations(entry: ServiceRollout | undefined, opts: Selec
     }
   };
 
-  // First provision, before any deploy initializes the control object: a single
-  // default generation.
+  // First provision, before any deploy initializes the control object: one default generation.
   const fallback = () => {
     if (generations.length === 0) add({ id: opts.genIdFor('latest'), sha: 'latest' });
   };
 
-  // Provision only the selected generation for exclusive services such as CDC:
-  // the replacement happens within one stack update, never as an overlap.
+  // Exclusive services provision only the selected generation: replacement happens within one stack update, never as an overlap.
   if (opts.exclusive) {
     add(pending ?? active);
     fallback();
     return generations;
   }
 
-  // Live binding target first: the active generation, or the pending one on a
-  // first deploy that has no active yet.
+  // Live binding target first: the active generation, or the pending one on a first deploy.
   add(active ?? pending);
   add(pending);
   fallback();

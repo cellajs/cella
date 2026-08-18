@@ -13,7 +13,6 @@ interface DataTableSkeletonProps {
 
 const EMPTY_CELL_WIDTHS: string[] = [];
 
-/** Renders the data table skeleton component. */
 export function DataTableSkeleton({
   columnCount = 4,
   cellHeight = 40,

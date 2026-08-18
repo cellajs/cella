@@ -11,9 +11,7 @@ interface RequestResponseStatic {
   message: string | null;
 }
 
-/**
- * Email template for responses to user requests such as waitlist signups, newsletter subscriptions, or contact form submissions.
- */
+/** Confirms a waitlist signup, newsletter subscription, or contact form submission. */
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
   translate(lng, { type }) {
     return {

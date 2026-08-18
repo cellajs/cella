@@ -15,11 +15,11 @@ interface CreateLoggerOptions {
   redact?: pino.LoggerOptions['redact'];
   formatters?: pino.LoggerOptions['formatters'];
   transportOptions?: Record<string, unknown>;
-  /** When true (and a `mapleSecretIngestKey` is set), ships structured logs to Maple.dev via pino-opentelemetry-transport, in dev and production alike, alongside the console output. */
+  /** With a `mapleSecretIngestKey` set, ships structured logs to Maple.dev alongside the console output, in dev and production alike. */
   enableOtelTransport?: boolean;
   /** Maple.dev secret ingest key. Without it the OTel transport is skipped. */
   mapleSecretIngestKey?: string;
-  /** Reported as `service.name` in the OTel resource for exported logs (should match the service's tracing serviceName). */
+  /** Reported as `service.name` on exported logs; match the service's tracing serviceName. */
   serviceName?: string;
 }
 
@@ -47,9 +47,9 @@ export const createLogger = ({
         },
       };
 
-  // Maple target. pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter,
-  // so it must be handed the endpoint + ingest key explicitly. Enabled in dev too, so logs reach
-  // Maple in the same structured shape as production while the console still shows pretty output.
+  // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it needs
+  // the endpoint and ingest key passed explicitly. Enabled in dev too, so logs reach Maple in the
+  // production shape while the console keeps pretty output.
   const otelTarget: pino.TransportTargetOptions | undefined =
     !isTest && enableOtelTransport && mapleSecretIngestKey
       ? {
@@ -74,8 +74,7 @@ export const createLogger = ({
         }
       : undefined;
 
-  // With OTel on, fan out to console + Maple. Otherwise keep the simple path:
-  // raw stdout in production (no worker thread), pretty transport in dev.
+  // Without OTel: raw stdout in production (no worker thread), pretty transport in dev.
   const destination = otelTarget
     ? pino.transport({ targets: [consoleTarget, otelTarget] })
     : isProduction
@@ -85,12 +84,11 @@ export const createLogger = ({
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
-      // Pino convention: an Error under the `err` key is expanded to { type, message, stack },
-      // with nested `cause` chains preserved (Drizzle wraps pg errors as cause).
-      // pino-pretty renders `err` with its stack in dev; the OTel transport ships it structured.
+      // Pino convention: an Error under `err` expands to { type, message, stack }, keeping nested
+      // `cause` chains, which is where Drizzle puts pg errors.
       serializers: { err: pino.stdSerializers.errWithCause },
-      // Correlate every log line with the active OTel span so Maple can join
-      // logs to traces (including traces originated by the frontend's traceparent).
+      // Tag each line with the active OTel span so Maple joins logs to traces, including those
+      // started by the frontend's traceparent.
       mixin() {
         const spanContext = trace.getActiveSpan()?.spanContext();
         return spanContext?.traceId ? { trace_id: spanContext.traceId, span_id: spanContext.spanId } : {};
@@ -107,9 +105,8 @@ export const createLogger = ({
   );
 };
 
-// Suppress repeats of the same warn/error/fatal line within this window (spam from retry
-// loops, reconnects). The first repeat after the window carries `repeated: N` so suppression
-// is never silent, matching the shape of zap sampling and Kubernetes event counts.
+// Suppress repeats of the same warn/error/fatal line within this window, which retry loops and
+// reconnects would otherwise flood. The first line after the window reports `repeated: N`.
 const DEDUP_WINDOW_MS = 30_000;
 const DEDUP_MAX_KEYS = 500;
 
@@ -129,15 +126,13 @@ export type LogFn = (msg: string, meta?: LogMeta) => void;
 export type Log = Record<Severity, LogFn>;
 
 /**
- * Level-method log facade over a pino logger: `log.warn('msg', { err, ...meta })`.
- * An `err` in meta may be any throwable; it is normalized to an Error and expanded
- * by the `err` serializer to { type, message, stack } at any severity.
+ * Level-method facade over a pino logger: `log.warn('msg', { err, ...meta })`. An `err` in meta
+ * may be any throwable; it becomes an Error and expands to { type, message, stack }.
  */
 export const createLog = (logger: pino.Logger): Log => {
   const recent = new Map<string, { lastEmitAt: number; suppressed: number }>();
 
-  // Dedup applies to warn and above only. Level filtering handles intentional
-  // info/debug/trace repetition such as heartbeats and progress messages.
+  // Warn and above only: level filtering already handles heartbeats and progress messages.
   const shouldEmit = (severity: Severity, msg: string): { emit: boolean; repeated?: number } => {
     if (severity !== 'warn' && severity !== 'error' && severity !== 'fatal') return { emit: true };
     const key = `${severity}:${msg}`;
@@ -186,10 +181,7 @@ interface WorkerLogEnv {
   MAPLE_SECRET_INGEST_KEY?: string;
 }
 
-/**
- * Log facade for worker processes (cdc, yjs): identical logger construction, differing
- * only in the service-name suffix reported to OTel (`<app-slug>-<suffix>`).
- */
+/** For cdc and yjs: same construction, with the OTel service name `<app-slug>-<suffix>`. */
 export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv): Log =>
   createLog(
     createLogger({

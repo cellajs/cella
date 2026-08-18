@@ -1,8 +1,6 @@
 import type { LucideProps } from 'lucide-react';
 import { cn } from '~/utils/cn';
 
-// The `lucide` class opts into the global icon defaults (rem-based size); see tailwind.css.
-/** Renders the element icon. */
 export function ElementIcon({ className, size: _, strokeWidth: __, absoluteStrokeWidth: ___, ...props }: LucideProps) {
   return (
     <svg

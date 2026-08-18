@@ -1,5 +1,4 @@
-// Forced-title mode: BlockNote has no document-template support (TypeCellOS/BlockNote#2426),
-// so an appendTransaction normalizer guarantees the first block is a title heading.
+// BlockNote has no document-template support (TypeCellOS/BlockNote#2426), so an appendTransaction normalizer pins the first block to a title heading.
 import { createExtension, type ExtensionOptions } from '@blocknote/core';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import type { TitleLevel } from '~/modules/common/blocknote/types';
@@ -9,10 +8,8 @@ const PLUGIN_KEY = new PluginKey('forced-title');
 type ForcedTitleOptions = { level?: TitleLevel };
 
 /**
- * Keeps block 0 a heading at the title level: converting or deleting it re-normalizes within the
- * same dispatch (appended transactions join the triggering undo step, so history stays clean).
- * Deleting the title promotes the next block into it, Notion-style. The document layout is
- * `doc > blockGroup > blockContainer+`, so the first block's content node always sits at pos 2.
+ * Keeps block 0 a heading at the title level, re-normalizing within the same dispatch so appended transactions join the triggering undo step.
+ * The layout is `doc > blockGroup > blockContainer+`, so the first block's content node always sits at pos 2.
  */
 export const forcedTitleExtension = createExtension(({ options }: ExtensionOptions<ForcedTitleOptions | undefined>) => {
   const level = options?.level ?? 1;
@@ -35,7 +32,6 @@ export const forcedTitleExtension = createExtension(({ options }: ExtensionOptio
 
           const tr = newState.tr;
           if (content.type === heading) {
-            // Wrong level only: keep the rest of the heading's attrs
             tr.setNodeMarkup(2, heading, { ...content.attrs, level });
           } else if (content.isTextblock) {
             // Attrs of other block types are unknown to heading's spec; defaults fill the rest

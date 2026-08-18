@@ -21,9 +21,6 @@ interface JsonActionsProps {
   viewerUrl?: string;
 }
 
-/**
- * Reusable action buttons for JSON resources: open in new tab, copy to clipboard, and download.
- */
 export function JsonActions({
   url,
   data,
@@ -58,7 +55,6 @@ export function JsonActions({
 
   return (
     <ButtonGroup className={className}>
-      {/* View */}
       {viewerUrl && (
         <TooltipButton toolTipContent={t('c:view')}>
           <Button
@@ -81,21 +77,18 @@ export function JsonActions({
           </Button>
         </TooltipButton>
       )}
-      {/* Open */}
       <TooltipButton toolTipContent={t('c:open')}>
         <Button variant="outline" size={size} className="flex-none gap-2" aria-label={t('c:open')} onClick={handleOpen}>
           <ExternalLinkIcon />
           {!smallMode && <span className="max-lg:hidden">{t('c:open')}</span>}
         </Button>
       </TooltipButton>
-      {/* Copy */}
       <TooltipButton toolTipContent={t('c:copy')}>
         <Button variant="outline" size={size} className="gap-2" aria-label={t('c:copy')} onClick={handleCopy}>
           {copied ? <CopyCheckIcon /> : <CopyIcon />}
           {!smallMode && <span className="max-lg:hidden">{t('c:copy')}</span>}
         </Button>
       </TooltipButton>
-      {/* Download */}
       <TooltipButton toolTipContent={t('c:download')}>
         <Button
           variant="outline"

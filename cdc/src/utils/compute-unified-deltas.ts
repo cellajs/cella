@@ -6,14 +6,11 @@ import { getCountDeltas, isMaxMergeKey } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-/**
- * Plan for a batch of CDC events: one sequence group per organization (needs a RETURNING
- * UPSERT to reserve a contiguous org-sequence range) plus accumulated count deltas.
- */
+/** One sequence group per organization (reserved by RETURNING UPSERT) plus accumulated count deltas. */
 export interface BatchUnifiedDeltaPlan {
   /** One per organization: reserves `sequence` and stamps its events in WAL order. */
   orgSequenceGroups: OrgSequenceGroup[];
-  /** All count deltas merged by channelKey (across all events, excluding sequence/frontier deltas). */
+  /** Merged across all events by channelKey; excludes sequence and frontier deltas. */
   countDeltasByChannelKey: Map<string, Record<string, number>>;
 }
 
@@ -29,9 +26,9 @@ export interface OrgSequenceGroup {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Resolves a product row's home key from its deepest populated ancestor, falling back to
- * the activity organization. Missing organization context violates the hierarchy and fails.
- * The key groups audiences, activity stamps, and unseen counts, not sequence allocation.
+ * Home key of a product row: its deepest populated ancestor, falling back to the activity
+ * organization; a missing organization violates the hierarchy and throws. The key groups audiences,
+ * activity stamps, and unseen counts, never sequence allocation.
  */
 export function resolveChannelKey(
   entityType: string,
@@ -48,9 +45,8 @@ export function resolveChannelKey(
 }
 
 /**
- * The channel-counter nodes a stamped row's frontier propagates to: the organization
- * plus every non-null ancestor. This is the rollup set: `e:f:{type}` at any node answers
- * "did anything of this type change at or below here" with one comparison.
+ * Channel-counter nodes a stamped row's frontier propagates to: the organization plus every non-null
+ * ancestor, so `e:f:{type}` at any node answers "did anything of this type change at or below here".
  */
 export function frontierNodeKeys(
   entityType: string,
@@ -65,11 +61,7 @@ export function frontierNodeKeys(
   return nodes;
 }
 
-/**
- * Merge deltas into an existing map entry, summing values for matching keys.
- * Max-merge keys (`e:li:`/`e:lu:` stamps, `e:f:` frontiers) keep the max on collision
- * (two posts in one batch must not sum their timestamps or watermarks).
- */
+/** Sums matching keys; max-merge keys keep the max, since stamps and frontiers must never sum. */
 export function mergeDelta(
   map: Map<string, Record<string, number>>,
   channelKey: string,
@@ -85,18 +77,13 @@ export function mergeDelta(
   }
 }
 
-/** Check if this event should get a sequence stamp (product entity create/update). */
 function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 
-// ── Batch ────────────────────────────────────────────────────────────────────
-
 /**
- * Compute a unified delta plan for a batch of CDC events.
- * Reserves one org-sequence range per organization (all product entity types share the
- * sequence; WAL order within the batch is preserved), accumulates all count deltas.
- * Frontier (`e:f:`) deltas are emitted at apply time, once sequence values are assigned.
+ * Reserves one sequence range per organization, shared by all product entity types and preserving WAL
+ * order, and accumulates count deltas. Frontier (`e:f:`) deltas wait until seq values are assigned.
  */
 export function computeBatchUnifiedDeltas(
   events: PendingEvent[],
@@ -109,7 +96,6 @@ export function computeBatchUnifiedDeltas(
     const { tableMeta, activity, rowData } = event.result;
     const { action } = activity;
 
-    // Sequence grouping (product entity create/update only): one group per organization.
     if (isStampable(tableMeta, action, h)) {
       const orgKey = activity.organizationId;
       if (!orgKey) {
@@ -126,7 +112,6 @@ export function computeBatchUnifiedDeltas(
       }
     }
 
-    // Count deltas
     const countDeltas = getCountDeltas(tableMeta, activity, rowData, event.result.oldRowData, h);
     for (const { channelKey, deltas } of countDeltas) {
       mergeDelta(countDeltasByChannelKey, channelKey, deltas);

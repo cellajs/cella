@@ -4,16 +4,7 @@ import type { DocContext } from '../constants';
 import { withRlsTx } from './db';
 import { getTableColumnNames } from './permissions';
 
-/**
- * Load the BlockNote content column for the entity backing a Yjs document, to
- * seed a fresh collaborative session server-side.
- *
- * Convention (mirrors {@link resolveEntityScope}'s configuration-independent approach): the
- * Yjs-edited column is `description`. Entity types whose table lacks it (or
- * that this app doesn't declare) simply don't seed. The entity table is app-owned, so it is
- * queried dynamically (never through imported schema), on an RLS-scoped
- * transaction, and only after entity access has been verified.
- */
+/** By convention the Yjs-edited column is `description`; entity types whose table lacks it do not seed. The app-owned table is queried dynamically on an RLS-scoped transaction, after entity access is verified. */
 export async function loadEntityDescription(ctx: DocContext): Promise<string | null> {
   if (!(appConfig.entityTypes as readonly string[]).includes(ctx.entityType)) return null;
 

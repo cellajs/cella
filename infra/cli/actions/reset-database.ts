@@ -30,7 +30,7 @@ function describeTarget(target: ResetTarget, region: string): string {
     '',
     pc.bold('Reset target'),
     `  instance   ${pc.bold(target.instanceName)} ${pc.dim(`(${target.instanceId}, ${region})`)}`,
-    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim('— will be DELETED and recreated empty')}`,
+    `  database   ${pc.red(pc.bold(target.databaseName))} ${pc.dim(': will be DELETED and recreated empty')}`,
     `  survives   ${others.length ? others.join(', ') : pc.dim('(none)')}`,
     '',
     `${warningMark} ${pc.bold('Everything in')} ${pc.red(target.databaseName)} ${pc.bold('is destroyed.')} A backup is taken first, and the`,
@@ -57,7 +57,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   const databaseName = naming.dbName;
 
   console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
-  console.info(pc.dim('Pre-production use, or with services quiesced — this is a hard outage.\n'));
+  console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
   // Only the secret key is needed: the Scaleway API authenticates with X-Auth-Token alone.
   const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
@@ -98,7 +98,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     if (result.aborted) return;
 
     console.info(
-      `\n${checkMark} ${pc.green(`${databaseName} recreated`)} — empty, with ${result.granted.join(' + ')} re-granted.`,
+      `\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`,
     );
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
     console.info(serialConsoleSteps(databaseName));
@@ -109,7 +109,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
       process.exit(1);
     }
     console.error(`\n${crossMark} Reset aborted: ${errorMessage(error)}`);
-    console.error(`  ${pc.dim('Nothing was destroyed — the guards run before the delete.')}\n`);
+    console.error(`  ${pc.dim('Nothing was destroyed: the guards run before the delete.')}\n`);
     process.exit(1);
   }
 }

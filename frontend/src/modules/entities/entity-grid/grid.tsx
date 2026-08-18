@@ -9,10 +9,7 @@ import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
 import { Button } from '~/modules/ui/button';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-/**
- * Preview size shared by grid surfaces: limitedView shows at most this many tiles, and
- * {@link EntityGridBar} hides itself at or below it when unfiltered. One rule, one constant.
- */
+/** limitedView shows at most this many tiles, and {@link EntityGridBar} hides itself at or below it when unfiltered. */
 export const GRID_PREVIEW_LIMIT = 3;
 
 type BaseEntityGridProps<TEntity extends { id: string }> = {
@@ -22,7 +19,6 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   entities?: TEntity[];
   tileComponent: ComponentType<{ entity: TEntity }>;
 
-  // skeleton
   /** Approximate height of each tile in px, passed to skeleton (default: 180) */
   skeletonHeight?: number;
 
@@ -38,10 +34,8 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   // empty-state logic
   isFiltered: boolean;
 
-  // limited view mode
   /** When true, only show up to {@link GRID_PREVIEW_LIMIT} items with a "Show all" button */
   limitedView?: boolean;
-  /** Callback to expand from limited view to full view */
   onExpand?: () => void;
   /** List query key; with limitedView, sources the server total for the "Show all (N)" button. */
   queryKey?: QueryKey;
@@ -50,9 +44,6 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
 // Total subscriptions need a key unconditionally; this one never matches a cached list.
 const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
-/**
- * Displays a paginated grid of entity tiles with loading and empty states.
- */
 export function BaseEntityGrid<TEntity extends { id: string }>({
   label,
   entities,
@@ -93,7 +84,6 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     );
   }
 
-  // In limited view mode, show at most the preview count
   const isLimited = limitedView && entities.length > GRID_PREVIEW_LIMIT;
   const visibleEntities = isLimited ? entities.slice(0, GRID_PREVIEW_LIMIT) : entities;
   const showAllCount = total !== null && total > GRID_PREVIEW_LIMIT ? ` (${total})` : '';

@@ -14,9 +14,6 @@ interface ExpandableListProps<T> {
   expandText: TKey;
 }
 
-/**
- * A list that can be expanded to show all items.
- */
 export function ExpandableList<T>({
   items,
   renderItem,

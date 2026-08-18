@@ -14,7 +14,6 @@ export const openAttachment = async (
 ) => {
   const mediaBlocks: MediaBlock[] = [];
 
-  // Collect all media blocks from the editor
   editor.forEachBlock(({ id, props, type: contentType }) => {
     if (!('url' in props) || !props.url) return true;
 
@@ -28,9 +27,7 @@ export const openAttachment = async (
 
   if (mediaBlocks.length === 0) return;
 
-  // Resolve display URLs. Inline blocks may reference a lightweight thumbnail, so the full-screen
-  // viewer resolves the converted/original variant by attachment id when available; the stored ref
-  // (cloud key or local blob) is the fallback for blocks that predate the id linkage.
+  // Inline blocks may reference a thumbnail, so resolve the converted variant by attachment id and fall back to the stored ref.
   const attachments = await Promise.all(
     mediaBlocks.map(async ({ attachmentId, ...block }) => {
       const fullSize = attachmentId
@@ -41,7 +38,6 @@ export const openAttachment = async (
     }),
   );
 
-  // Find index of clicked media, or default to first
   const attachmentIndex = clickedSrc
     ? Math.max(
         0,

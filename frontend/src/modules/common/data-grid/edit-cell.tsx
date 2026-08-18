@@ -46,8 +46,7 @@ export function EditCell<R, SR>({
   const frameRequestRef = useRef<number>(undefined);
   const commitOnOutsideClick = column.editorOptions?.commitOnOutsideClick ?? true;
 
-  // Access latest props via useEffectEvent so the useLayoutEffect isn't torn down
-  // between re-renders. Otherwise `onWindowCaptureMouseDown` could miss valid mousedowns.
+  // useEffectEvent keeps the useLayoutEffect from tearing down between renders, which would drop valid mousedowns.
   const commitOnOutsideMouseDown = useEffectEvent(() => {
     onClose(true, false);
   });
@@ -74,8 +73,7 @@ export function EditCell<R, SR>({
         const abortController = new AbortController();
         const { signal } = abortController;
         abortControllerRef.current = abortController;
-        // Use postTask to ensure that the event is not called in the middle of a React render
-        // and that it is called before the next paint.
+        // postTask runs the handler outside a React render and before the next paint.
         _scheduler.scheduler
           .postTask(commitOnOutsideMouseDown, {
             priority: 'user-blocking',
@@ -124,7 +122,6 @@ export function EditCell<R, SR>({
     }
 
     if (event.key === 'Escape') {
-      // Discard changes
       onClose();
     } else if (event.key === 'Enter') {
       onClose(true);

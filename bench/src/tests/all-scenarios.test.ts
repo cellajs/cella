@@ -15,15 +15,14 @@ describe('bench scenarios (short)', () => {
   beforeAll(async () => {
     ready = await isInfrastructureReady();
     if (!ready) {
-      console.info('[bench smoke] skipped — local stack not reachable (run `pnpm dev` to enable).');
+      console.info('[bench smoke] skipped: local stack not reachable (run `pnpm dev` to enable).');
     }
   });
 
   it('every scenario completes a short run', () => {
     if (!ready) return;
 
-    // Reuse the exact CLI path users run: `pnpm bench --all --short`.
-    // Throws (failing the test) on a non-zero exit, e.g. a scenario erroring out.
+    // The exact CLI path users run; a non-zero exit throws and fails the test.
     execFileSync('tsx', ['src/bench-cli.ts', '--all', '--short'], {
       cwd: BENCH_ROOT,
       stdio: 'inherit',

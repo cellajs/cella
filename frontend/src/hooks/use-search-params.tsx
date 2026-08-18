@@ -10,10 +10,7 @@ type SearchParams = {
   saveDataInSearch?: boolean;
 };
 
-/**
- * Manage query parameters, optionally reading and writing the URL through `saveDataInSearch`.
- * Routes own defaults through validation and stripping middleware.
- */
+/** Query param state; with `saveDataInSearch` it reads and writes the URL. Routes own defaults and stripping. */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams) {
   const { from, saveDataInSearch = true } = searchParams ?? {};
 
@@ -27,7 +24,6 @@ export function useSearchParams<T extends Record<string, string | string[] | und
 
   const getMergedSearch = () => (saveDataInSearch ? { ...search } : {}) as T;
 
-  // State to hold the current search parameters
   const [currentSearch, setCurrentSearch] = useState<T>(getMergedSearch);
 
   const setSearch = (newValues: Partial<T>) => {
@@ -46,7 +42,6 @@ export function useSearchParams<T extends Record<string, string | string[] | und
       updatedSearch[key] = (arr.length <= 1 ? arr[0] : arr.join('_')) as T[keyof T];
     }
 
-    // Skip if nothing changed
     if (!Object.keys(updatedSearch).some((key) => updatedSearch[key] !== currentSearch[key])) return;
 
     setCurrentSearch(updatedSearch);
@@ -61,7 +56,6 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     }
   };
 
-  // Update current search state when URL search changes
   useEffect(() => {
     if (!saveDataInSearch || searchKey === prevSearchKeyRef.current) return;
     prevSearchKeyRef.current = searchKey;

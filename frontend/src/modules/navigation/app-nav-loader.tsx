@@ -8,10 +8,6 @@ import { Spinner } from '~/modules/common/spinner';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { cn } from '~/utils/cn';
 
-/**
- * Logo intro (3s) then a spinner for later loads. Skips the intro if the menu sheet is already
- * open; loading is debounced to avoid flicker on quick loads.
- */
 export function AppNavLoader({ className }: { className?: string }) {
   const [hasLoaded, setHasLoaded] = useState(false);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
@@ -31,13 +27,12 @@ export function AppNavLoader({ className }: { className?: string }) {
   const navLoading = useNavigationStore((state) => state.navLoading);
   const isLoadingRaw = isFetching > 0 || navLoading;
 
-  // Debounce loading state: delays showing spinner but hides it instantly
+  // Delays showing the spinner, hides it instantly.
   const isLoading = useDebounce(isLoadingRaw, 300, { immediateValue: false });
 
-  // Skip logo phase if menu sheet is open or initial load completed
   const showLogo = !hasLoaded && navSheetOpen !== 'menu';
 
-  // Skip animation if logo was never shown (menu was open during initial phase)
+  // No animation when the logo was never shown.
   const skipInitialAnimation = !hasLoaded && navSheetOpen === 'menu';
 
   return (

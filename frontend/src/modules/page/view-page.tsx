@@ -15,26 +15,17 @@ interface ViewPageProps {
   slug: string;
 }
 
-/**
- * Registers the page's headings with the scroll spy. Mounts inside the Suspense boundary after the
- * content, so the lazy body is in the DOM first: registerSections only observes elements that exist
- * at call time, and its initial-hash scroll needs the targets present.
- */
+/** Mounts after the lazy body inside the Suspense boundary: the spy only observes heading elements that exist at registration time. */
 function RegisterSpySections({ ids }: { ids: string[] }) {
   useScrollSpy(ids);
   return null;
 }
 
-/**
- * Displays a docs page (frontmatter title + compiled MDX). Render modes: `default` (full content),
- * `overview` (intro + auto-generated child page list), `nodeOnly` (child navigation only).
- */
+/** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
 function ViewPage({ slug }: ViewPageProps) {
   const page = getDocPage(slug);
 
-  // Code-split MDX body for this slug. On the docs route the route loader (page.$.tsx) already
-  // resolved it, so it renders synchronously with no Suspense fallback. The lazy path covers callers
-  // without that loader. The component is keyed by slug at the call site, so this memo is per-page.
+  // The docs route loader (page.$.tsx) resolves the MDX body ahead of render; the lazy path covers callers without that loader.
   const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
     const resolved = getResolvedDocPageComponent(slug);
     if (resolved) return resolved;
@@ -42,8 +33,7 @@ function ViewPage({ slug }: ViewPageProps) {
     return loader ? lazy(async () => ({ default: await loader() })) : null;
   }, [slug]);
 
-  // "On this page" nav: h2 only. Deeper levels stay reachable via anchors but
-  // would make the aside noisy. Stable array identity for the spy registration effect.
+  // The aside lists h2 only; deeper levels stay reachable through anchors.
   const tocHeadings = useMemo(() => (page?.headings ?? []).filter((h) => h.depth === 2), [page]);
   const tocIds = useMemo(() => tocHeadings.map((h) => h.id), [tocHeadings]);
 
@@ -60,7 +50,6 @@ function ViewPage({ slug }: ViewPageProps) {
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
-            {/* Default mode: render full content */}
             {renderMode === 'default' && (
               <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
                 <MDXProvider components={mdxComponents}>
@@ -70,7 +59,6 @@ function ViewPage({ slug }: ViewPageProps) {
               </Suspense>
             )}
 
-            {/* Overview mode: intro content + child page cards */}
             {renderMode === 'overview' && (
               <>
                 <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
@@ -83,7 +71,6 @@ function ViewPage({ slug }: ViewPageProps) {
               </>
             )}
 
-            {/* Node-only mode: just navigation to children, no content */}
             {renderMode === 'nodeOnly' && <ChildPagesList parentSlug={slug} />}
           </div>
         </div>
@@ -109,7 +96,6 @@ function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
   );
 }
 
-/** Auto-generated list of child pages with descriptions. */
 function ChildPagesList({ parentSlug }: { parentSlug: string }) {
   const { t } = useTranslation();
   const children = getChildDocPages(parentSlug);
@@ -127,7 +113,6 @@ function ChildPagesList({ parentSlug }: { parentSlug: string }) {
   );
 }
 
-/** Card for a child page in overview/nodeOnly mode. */
 function ChildPageCard({ page }: { page: DocPage }) {
   return (
     <Link

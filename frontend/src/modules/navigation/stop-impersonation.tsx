@@ -13,9 +13,6 @@ interface StopImpersonationProps {
   isCollapsed: boolean;
 }
 
-/**
- * Button to stop impersonation, styled consistently with nav buttons.
- */
 export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();

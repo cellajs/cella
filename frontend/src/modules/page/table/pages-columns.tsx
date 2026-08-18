@@ -12,17 +12,13 @@ import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 
-/** Identifies the page table drag-handle column. */
 export const dragHandleColumnKey = 'drag-handle';
 
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */
 const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
-/**
- * Pages-table columns consume tree behavior from context and expose development-only editing.
- * The dev server persists reorder, reparent, and field changes to MDX frontmatter.
- */
+/** Pages-table columns; editing is development-only and the dev server persists it to MDX frontmatter. */
 export function usePagesTableColumns() {
   const { t } = useTranslation();
 
@@ -142,8 +138,7 @@ export function usePagesTableColumns() {
 
   const [columns, setColumns] = useState(configs);
 
-  // Stable array identity across renders: the DataGrid passes this to memoized Row/Cell, so a
-  // fresh array each render would defeat that memoization and re-render every visible row.
+  // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.
   return {
     columns,
     setColumns,

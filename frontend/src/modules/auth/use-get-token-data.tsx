@@ -3,7 +3,6 @@ import { type GetTokenDataData, getTokenData } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import type { TokenData } from '~/modules/auth/types';
 
-/** Query token data by ID. */
 export const useGetTokenData = (
   type: GetTokenDataData['path']['type'],
   tokenId?: string,

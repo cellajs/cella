@@ -5,14 +5,11 @@ import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { nullableOrganizationMinimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 
-/** Tenant status enum values */
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
-/** Tenant status schema */
 const tenantStatusSchema = z.enum(tenantStatusValues);
 const subscriptionStatusSchema = z.enum(subscriptionStatusValues);
 
-/** Restrictions: rate limits sub-schema */
 const rateLimitsSchema = z.object({
   apiPointsPerHour: z
     .number()
@@ -23,19 +20,13 @@ const rateLimitsSchema = z.object({
     ),
 });
 
-/** Restrictions: quotas sub-schema (entity type string → hard cap) */
 const quotasSchema = z.record(z.string(), z.number().int().min(0)).describe('Entity quotas (0 = unlimited)');
 
-/** Full restrictions schema for API responses */
 const restrictionsSchema = z.object({
   quotas: quotasSchema,
   rateLimits: rateLimitsSchema,
 });
 
-/**
- * Base tenant schema for API responses.
- * Tenants are system-level resources for RLS isolation managed by system admins.
- */
 export const tenantSchema = z
   .object({
     ...createSelectSchema(tenantsTable, {
@@ -49,10 +40,6 @@ export const tenantSchema = z
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });
 
-/**
- * Tenant schema for list responses, carrying the linked organization (null for an orphan tenant
- * created but not yet linked to an org). 1 tenant = 1 organization.
- */
 export const tenantWithOrganizationSchema = tenantSchema
   .extend({
     organization: nullableOrganizationMinimalBaseSchema.describe('The organization this tenant holds, or null if none'),
@@ -62,14 +49,10 @@ export const tenantWithOrganizationSchema = tenantSchema
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });
 
-/**
- * Schema for self-serve tenant creation by authenticated users.
- */
 export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
 }).pick({ name: true });
 
-/** Partial restrictions schema for update operations */
 const partialRestrictionsSchema = z
   .object({
     quotas: quotasSchema.optional(),
@@ -81,15 +64,11 @@ const partialRestrictionsSchema = z
   })
   .describe('Partial restrictions override');
 
-/**
- * Schema for updating a tenant.
- */
 export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
   name: validNameSchema,
   status: tenantStatusSchema,
   subscriptionStatus: subscriptionStatusSchema,
-  // Allowed sign-in strategies for the tenant's members (empty = all enabled). Settable now;
-  // enforcement (tenantGuard) is deferred to the SSO build.
+  // Allowed sign-in strategies for the tenant's members (empty = all enabled); tenantGuard enforcement waits on the SSO build.
   authStrategies: z.array(z.enum(authStrategiesEnum)),
 })
   .pick({
@@ -105,9 +84,6 @@ export const updateTenantBodySchema = createInsertSchema(tenantsTable, {
     restrictions: partialRestrictionsSchema.optional(),
   });
 
-/**
- * Query params for listing tenants.
- */
 export const tenantListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt', 'name']).default('createdAt'),
   status: tenantStatusSchema.optional().describe('Filter by status'),

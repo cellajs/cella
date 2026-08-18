@@ -26,8 +26,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   const organizationId = ctx.var.organization.id;
   const { q, sort, order, limit, offset, seqCursor } = input;
 
-  // Compile unconditional and row-conditional read scopes into one predicate.
-  // Organization-homed attachments reuse the organization column as the unused home column.
+  // Organization-homed attachments reuse the organization column as the home column.
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId, actor);
   const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable.organizationId, actor);
@@ -41,18 +40,16 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
   // Restrict to the caller's readable scope unless org-wide (kind 'all').
   if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
 
-  // Hide tombstones for normal reads; on delta sync they flow through so caches can drop them
+  // Hide tombstones for normal reads; delta sync passes them through so caches can drop rows.
   if (!seqCursor) {
     filters.push(isNull(attachmentsTable.deletedAt));
   }
 
-  // Unpublished drafts are excluded from every read, including deltas, because they are outside
-  // the sync engine until published. No-op here (attachments carry no publishedAt);
-  // kept so app-specific entity operations can copy the pattern.
+  // Unpublished drafts stay out of every read, deltas included. A no-op for attachments, which
+  // carry no publishedAt; kept as the pattern app-specific entity operations copy.
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
 
-  // Sequence-based delta sync filter (org-sequence values)
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
 
   if (q?.trim()) {
@@ -66,7 +63,6 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
     );
   }
 
-  // Seq reads are keyset-paged: seq order (id tiebreak) makes a capped page a clean prefix
   const orderBy = seqCursor
     ? [asc(attachmentsTable.seq), asc(attachmentsTable.id)]
     : getOrderColumns({
@@ -81,11 +77,10 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
         tieBreaker: attachmentsTable.id,
       });
 
-  // Delta sync (seqCursor) must see tombstones so the client can remove soft-deleted attachments
   const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
 
-  // Where `total` comes from: delta reads discard it; an org-wide read with no search maps
-  // to the pre-computed `e:c:attachment` channel counter; anything narrower needs COUNT(*).
+  // Delta reads discard `total`; an org-wide read with no search maps to the pre-computed
+  // `e:c:attachment` channel counter; anything narrower needs COUNT(*).
   const isDelta = !!seqCursor;
   const counterEligible = !isDelta && scopeWhere.kind === 'all' && !q?.trim();
 

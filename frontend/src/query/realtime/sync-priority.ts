@@ -5,7 +5,7 @@ import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { syncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
 
-/** Get the current org ID from the router's matched route context, if user is within an org layout. */
+/** Null outside an org layout. */
 export function getRouteOrgId(): string | null {
   for (const match of getRouter().state.matches) {
     const ctx = match.context;
@@ -16,7 +16,7 @@ export function getRouteOrgId(): string | null {
   return null;
 }
 
-/** Get the current tenant ID from the router's matched route context, if user is within an org layout. */
+/** Null outside an org layout. */
 export function getRouteTenantId(): string | null {
   for (const match of getRouter().state.matches) {
     const ctx = match.context;
@@ -29,7 +29,7 @@ export function getRouteTenantId(): string | null {
 
 type OrgTenantIdSource = { organizationId?: string | null; tenantId?: string | null };
 
-/** Resolve org/tenant IDs for a query, preferring query meta, then cached entity fields, then the current route. */
+/** Prefers query meta, then cached entity fields, then the current route. */
 export function resolveQueryOrgTenantIds(
   meta: OrgTenantIdSource | undefined,
   cached: OrgTenantIdSource | undefined,
@@ -43,9 +43,8 @@ export function resolveQueryOrgTenantIds(
   return { organizationId, tenantId };
 }
 
-/** Resolve tenantId for an organizationId. Checks sync store first (persisted, instant), then query cache. */
 export function getTenantIdForOrg(organizationId: string): string | null {
-  // Sync store is persisted to localStorage, available before query cache hydration.
+  // The sync store is persisted, so it answers before query cache hydration.
   const fromStore = syncStore.getState().getOrgTenantId(organizationId);
   if (fromStore) return fromStore;
 
@@ -55,11 +54,7 @@ export function getTenantIdForOrg(organizationId: string): string | null {
   return membership?.tenantId ?? null;
 }
 
-/**
- * Priority tier for the fetch prioritizer: how soon this client wants a channel view's changes.
- * `min` is the floor (0 = live), `max` the ceiling (offline-freshness guarantee); the fetch prioritizer
- * clamps the server-spread delay between them. `Infinity` = fetch on open only.
- */
+/** How soon this client wants a channel view's changes: the fetch prioritizer clamps the server-spread delay between `min` (0 is live) and `max`. `Infinity` means fetch on open only. */
 export interface SyncTier {
   min: number;
   max: number;
@@ -69,11 +64,7 @@ const TIER_VIEWING: SyncTier = { min: 0, max: 0 };
 const TIER_BACKGROUND: SyncTier = { min: 2_000, max: 30_000 };
 const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
-/**
- * True when the user is looking at the channel view: same org, and (for sub-org channel views) a mounted view
- * observes a query carrying the channel ID. This covers slug routes and boards whose routes do not
- * name every rendered channel. See `observed-channels.ts`.
- */
+/** Same org, and for sub-org channel views a mounted view observes a query carrying the channel id, which covers slug routes and boards whose routes do not name every rendered channel. */
 export function isViewingChannel(organizationId: string, channelId: string | null): boolean {
   const routeOrgId = getRouteOrgId();
   if (!routeOrgId || routeOrgId !== organizationId) return false;

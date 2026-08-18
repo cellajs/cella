@@ -3,17 +3,15 @@ import { getRelativeOrder } from 'shared/utils/display-order';
 import { type BuildTreeOptions, buildTree, type TreeItem, type TreeRow, treeItemAccessors } from './build-tree';
 import type { TreeContextValue } from './tree-context';
 
-/** Persists a tree-shape change to the backing store. Wire to your mutation. */
 export type TreeMutate = (id: string, ops: { displayOrder?: number; parentId?: string | null }) => void;
 
 export interface UseTreeRowsOptions<T> {
   /** Initial expansion baseline. `true` = all expanded, `false` = all collapsed. */
   defaultExpanded?: boolean;
-  /** Pixel height of each row. Forwarded to `TreeProvider` for SVG layout. */
+  /** Pixel height of each row, forwarded to `TreeProvider`. */
   rowHeight: number;
-  /** Maximum allowed nesting depth (inclusive). Drives drop validation + visuals. */
+  /** Maximum allowed nesting depth, inclusive. */
   maxDepth?: number;
-  /** Persists `displayOrder` / `parentId` after a reorder or reparent. */
   mutate: TreeMutate;
   /** Optional accessors for entities that don't use the default field names. */
   getId?: BuildTreeOptions<T>['getId'];
@@ -46,18 +44,10 @@ function isSelfOrDescendantOf<T>(
   return false;
 }
 
-/**
- * Owns expansion, drop validation, reordering, and reparenting for a tree data table.
- * Pair its context with `TreeProvider` and `ExpandToggleColumn`.
- *
- * Rows must satisfy {@link TreeItem}, since the accessors here are all optional and fall back
- * to its field names. For a row shape with different field names, call `buildTree` directly
- * and supply the full accessor set.
- */
+/** Owns expansion, drop validation, reordering, and reparenting; pair its context with `TreeProvider` and `ExpandToggleColumn`. */
 export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
-  // Latest opts behind a ref so the callbacks below stay stable while still
-  // reading current accessors / mutate / maxDepth.
+  // A ref keeps the callbacks below stable while they read the current opts.
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
@@ -70,7 +60,6 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
     });
   }, []);
 
-  // Stable: builds tree rows from a flat list. Pass to a query `select`.
   const buildRows = useCallback(
     (items: T[]): TreeRow<T>[] => {
       const o = optsRef.current;
@@ -99,8 +88,7 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
       const byId = new Map(rows.map((r) => [getId(r), r] as const));
       if (isSelfOrDescendantOf(getId(dragged), getId(target), byId, getParentId)) return false;
 
-      // 'center' lands as a child; 'bottom' on an expanded parent lands as
-      // first child; otherwise the target's depth is reused.
+      // 'center' lands as a child, as does 'bottom' on an expanded parent; otherwise the target's depth is reused.
       const landsAsChild = zone === 'center' || (zone === 'bottom' && target._hasChildren && target._isExpanded);
       const targetDepth = landsAsChild ? target._depth + 1 : target._depth;
       if (o.maxDepth !== undefined && targetDepth + dragged._subtreeHeight > o.maxDepth - 1) return false;
@@ -121,8 +109,7 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
       const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
       const getDisplayOrder = o.getDisplayOrder ?? treeItemAccessors.getDisplayOrder;
 
-      // Bottom-drop on an expanded parent reads visually as "land just under
-      // it" = first child of that parent. Closed parents stay sibling drops.
+      // Bottom-drop on an expanded parent lands as its first child; closed parents stay sibling drops.
       const dropAsFirstChild = edge === 'bottom' && target._hasChildren && target._isExpanded;
       const targetParentId = dropAsFirstChild ? getId(target) : (getParentId(target) ?? null);
       const siblings = rows.filter((r) => (getParentId(r) ?? null) === targetParentId);
@@ -158,8 +145,7 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
       if (!canDrop(rows, { fromIdx, toIdx, zone: 'center' })) return;
 
       o.mutate(getId(dragged), { parentId: getId(target) });
-      // Auto-expand the new parent so the dropped row is visible. Flip the
-      // override state to match the `defaultExpanded` baseline.
+      // Auto-expand the new parent so the dropped row is visible.
       setToggledIds((prev) => {
         const expanded = o.defaultExpanded ?? false;
         const tid = getId(target);
@@ -184,15 +170,12 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
     buildRows,
     /** Toggle a row by id. Stable across renders. */
     onToggle,
-    /** Drop validator; pass current rows + drop args. */
     canDrop,
-    /** Top/bottom drop handler; pass current rows + drag info + edge. */
     onReorder,
-    /** Center drop handler; pass current rows + drag info. */
     onReparent,
     /** Pass to `<TreeProvider value={tree.context}>`. */
     context,
-    /** Convenience re-export of `opts.rowHeight` so `<DataTable>` and `<TreeProvider>` share one source. */
+    /** Same value as `opts.rowHeight`, so `<DataTable>` and `<TreeProvider>` share one source. */
     rowHeight: opts.rowHeight,
   };
 }

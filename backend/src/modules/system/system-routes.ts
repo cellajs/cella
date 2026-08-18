@@ -15,9 +15,6 @@ import { userSchema, userUpdateBodySchema } from '../user/user-schema';
 import { mockSystemInviteResponse } from './system-mocks';
 
 const systemRoutes = {
-  /**
-   * Invite to system
-   */
   createInvite: createXRoute({
     operationId: 'systemInvite',
     method: 'post',
@@ -47,9 +44,6 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete users
-   */
   deleteUsers: createXRoute({
     operationId: 'deleteUsers',
     method: 'delete',
@@ -74,9 +68,6 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Update a user
-   */
   updateUser: createXRoute({
     operationId: 'updateUser',
     method: 'put',
@@ -100,9 +91,6 @@ const systemRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Send newsletter to members
-   */
   sendNewsletter: createXRoute({
     operationId: 'sendNewsletter',
     method: 'post',

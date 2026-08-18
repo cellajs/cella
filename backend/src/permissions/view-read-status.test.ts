@@ -5,10 +5,8 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { resolveViewReadStatusForPolicies } from './view-read-status';
 
 /**
- * Catchup prefix authorization (`resolveViewReadStatus`): `ok` requires PROOF of
- * unconditional subtree read on the prefix's deepest node; readable-but-unproven is
- * `opaque` (no summaries returned); no read route is `forbidden`. Uses the shared
- * deep fixture, same hierarchy as the row-predicates parity suite.
+ * Catchup prefix authorization: `ok` requires PROOF of unconditional subtree read on the prefix's
+ * deepest node, readable-but-unproven is `opaque` (no summaries), no read route is `forbidden`.
  */
 const ROOT_ID = 'org-1';
 
@@ -78,8 +76,7 @@ describe('resolveViewReadStatus', () => {
     expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('ok');
     // Org level: staff can read some org rows, not provably all → no summaries.
     expect(statusFor(ROOT_ID, opts)).toBe('opaque');
-    // Deeper node under the granted course: covered in truth, but the prefix is
-    // client-supplied, so node-id-only proof keeps forged ancestry out (conservative opaque).
+    // Deeper node under the granted course: covered in truth, but the prefix is client-supplied, so proof stops at the node id.
     expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('opaque');
     // A different course: readable-nothing there, but SOME org scope exists → opaque.
     expect(statusFor(`${ROOT_ID}/c2`, opts)).toBe('opaque');
@@ -98,8 +95,7 @@ describe('resolveViewReadStatus', () => {
   });
 
   it('SELF views: a home-scoped grant (non-elevated under elevatedRoles) answers its own node', () => {
-    // Course student read=1 with elevatedRoles configured: the grant is home-scoped.
-    // It covers exactly the course wall (rows homed at c1), which is what a self view asks.
+    // Course student read=1 with elevatedRoles configured: the home-scoped grant covers exactly the course wall (rows homed at c1).
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
     const opts = {
@@ -144,7 +140,6 @@ describe('resolveViewReadStatus', () => {
     const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
     // Claim inside this org, but the node truly lives in another org.
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: 'other-org/c1' })).toBe('opaque');
-    // Truthful claim: ok as before.
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: `${ROOT_ID}/c1` })).toBe('ok');
   });
 

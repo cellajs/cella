@@ -8,12 +8,7 @@ import { replicationState } from '../services/replication-state';
 import { drainBuffers } from './handle-message';
 import { createReplicationService, setupBackpressure, subscribeWithReconnect } from './replication';
 
-/**
- * CDC Worker orchestrator: start & stop. Pipeline stages and their file layout are
- * documented under "Pipeline stages".
- *
- * @see cdc/README.md
- */
+/** Start and stop for the CDC worker; pipeline stages are documented in @see cdc/README.md */
 export async function startCdcWorker(): Promise<void> {
   log.info('CDC worker starting...', {
     publicationName: CDC_PUBLICATION_NAME,
@@ -36,9 +31,6 @@ export async function startCdcWorker(): Promise<void> {
   await subscribeWithReconnect(service, plugin);
 }
 
-/**
- * Stop the CDC worker gracefully.
- */
 export async function stopCdcWorker(): Promise<void> {
   log.info('CDC worker stopping...');
   stopHealthReporter();

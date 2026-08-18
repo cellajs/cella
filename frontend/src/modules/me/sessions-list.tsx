@@ -11,7 +11,6 @@ import type { Session } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
-/** Renders the sessions list. */
 export function SessionsList() {
   const { t } = useTranslation();
 
@@ -29,7 +28,6 @@ export function SessionsList() {
   const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
   const sessions = Array.from(allSessions).sort((a, b) => rank(a) - rank(b));
 
-  // Terminate one or all sessions
   const { mutate: _deleteMySessions, isPending } = useMutation({
     mutationFn: async (ids: string[]) => {
       await deleteMySessions({ body: { ids } });

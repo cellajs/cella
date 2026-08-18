@@ -23,7 +23,6 @@ export type StatusEventHandlers = {
   onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void | Promise<void>;
 };
 
-// Use a mapped object type for the index signature
 export type UploadedUppyFile<T extends UploadTemplateId, K = UserMeta> = {
   [key in TemplateStepKeys<T>]: UploadedFile<K>[];
 };

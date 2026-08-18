@@ -1,6 +1,4 @@
-/**
- * Creates a search middleware that strips specified params from the URL
- */
+/** Search middleware that strips the named params from the URL. */
 export const stripParams = (...keys: string[]) => {
   return ({
     search,

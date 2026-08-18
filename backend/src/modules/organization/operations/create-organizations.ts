@@ -17,18 +17,15 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 type CreateOrganizationItem = { id: string; name: string; slug: string };
 
 export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOrganizationItem[], tenantId: string) {
-  // Lens seam: normalize old-shape field names to their current names before any body access
+  // Normalize old-shape field names to their current names before any body access
   const items = rawItems.map((item) => organizationContract.normalizeBody(item));
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const db = ctx.var.db;
 
-  // Count existing organizations in tenant
   const existingOrgsCount = await countOrganizationsByTenant(ctx, { tenantId });
 
-  // 1 tenant = 1 organization. A hard structural constraint (unique index on
-  // organizations.tenant_id is the backstop), so it binds system admins too, unlike the soft
-  // per-tenant org quota below: a tenant holds at most one org, and a batch creates at most one.
+  // 1 tenant = 1 organization: a hard unique index on organizations.tenant_id, so it binds system admins too.
   const tenantOrgSlots = Math.max(0, 1 - existingOrgsCount);
 
   // Organization quota from tenant restrictions (0 = unlimited; system admins bypass this soft cap).
@@ -38,18 +35,14 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
   // The 1:1 constraint limits everyone (incl. system admins) to the single remaining slot.
   const availableSlots = Math.min(isSystemAdmin ? items.length : quotaSlots, tenantOrgSlots);
 
-  // No slots: the tenant already has its one org, or (non-admins) the soft quota is exhausted.
   if (availableSlots <= 0) throw new AppError(403, 'restrict_by_app', 'warn', { entityType: 'organization' });
 
-  // Check slug availability in database
   const slugs = items.map((item) => item.slug);
   const slugAvailability = slugs.length > 0 ? await checkSlugsAvailable(ctx, slugs, 'organization') : new Map();
 
-  // Filter by slug availability, track rejections
   const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
-  // Clamp to the available slots. Applies to everyone: the soft quota is already bypassed for system
-  // admins via `availableSlots` above, but the hard 1:1 cap must still bind them, so no admin bypass here.
+  // Clamp to the available slots: the hard 1:1 cap binds system admins too, so no bypass here.
   const restrictionFiltered = takeWithRestriction(
     slugFiltered.items,
     availableSlots,
@@ -57,16 +50,14 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
     slugFiltered.rejectionState,
   );
 
-  // Final items to create and rejection state
   const itemsToCreate = restrictionFiltered.items;
   const rejectionState = restrictionFiltered.rejectionState;
 
-  // If nothing to create, return early
   if (itemsToCreate.length === 0) {
     return { data: [] as never[], ...rejectionState };
   }
 
-  // Insert organizations with proper RLS context (all in same tenant from path)
+  // All rows belong to the path's tenant, so the RLS context holds
   const organizationRecords = await insertOrganizations(ctx, {
     orgs: itemsToCreate.map((item) => ({
       name: item.name,
@@ -85,7 +76,6 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
     ids: organizationRecords.map((org) => org.id),
   });
 
-  // Insert memberships (using RLS-enabled db from middleware)
   const membershipInserts = organizationRecords.map((org) => ({
     userId: user.id,
     createdBy: user.id,
@@ -100,12 +90,11 @@ export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOr
 
   const counts = buildZeroCounts('organization');
 
-  // Map memberships by organizationId
   const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 
   const orgsWithAudit = await withAuditUsers(ctx, organizationRecords, user);
 
-  // Build response with included wrapper for optional data (flags stored sparse; merge defaults)
+  // Flags are stored sparse, so merge the config defaults into the response
   const organizationResponses = orgsWithAudit.map((org) => {
     const membership = membershipByOrgId.get(org.id)!;
     const included = { membership: toMembershipBase(membership), counts };

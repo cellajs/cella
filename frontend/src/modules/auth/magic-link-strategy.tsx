@@ -7,9 +7,6 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 
-/**
- * Button that sends a magic link sign-in email and transitions to the magicLinkSent step.
- */
 export function MagicLinkStrategy({ email }: { email?: string }) {
   const { t } = useTranslation();
   const { setStep, setMagicLinkMode, email: storeEmail } = useAuthStore();

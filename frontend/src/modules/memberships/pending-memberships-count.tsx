@@ -16,17 +16,12 @@ const PendingMembershipsTable = lazyNamed(
 type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
 const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
 
-/**
- * Component to display pending memberships count.
- * Users can click to open them in a table in a sheet.
- */
 export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
   const { t } = useTranslation();
   const buttonRef = useRef(null);
 
   const createSheet = sheeter.getState().create;
 
-  // Open pending memberships sheet
   const openSheet = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 

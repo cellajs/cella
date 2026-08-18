@@ -1,19 +1,10 @@
 import { managedKeysConfig } from '../config/managed-keys.config';
 import { type RuntimeSecretId, runtimeSecrets } from './runtime-secrets';
 
-/**
- * A minted Scaleway IAM key exposes two halves (access key + secret key). A
- * managed key routes each half it actually needs into a runtime secret the app
- * already consumes: a single-token credential (an AI Bearer token) uses only
- * `secretKey`; an access/secret pair (S3) uses both.
- */
+/** Which half of a minted Scaleway IAM key a managed key routes into a runtime secret: a single-token credential uses only `secretKey`, an access/secret pair uses both. */
 export type MintedKeyField = 'accessKey' | 'secretKey';
 
-/**
- * One managed key's app-owned data, authored in `managed-keys.config.ts`. The
- * `id` is the config object key, so it is not repeated here (see
- * `ManagedKeyDefinition` for the flattened shape).
- */
+/** One managed key's app-owned data from `managed-keys.config.ts`. The `id` is the config object key; `ManagedKeyDefinition` is the flattened shape. */
 export interface ManagedKeyConfig {
   /** IAM application/policy name suffix: `<slug>-<suffix>`. Also the API-key description prefix. */
   suffix: string;
@@ -27,11 +18,7 @@ export interface ManagedKeyConfig {
   permissionSets: readonly string[];
   /** Bootstrap opt-in prompt. Minting is ALWAYS operator-confirmed, never silent. */
   prompt: { message: string; default: boolean };
-  /**
-   * Routes each minted key half to the runtime secret that stores it. Keys are
-   * `RuntimeSecretId`s (the runtime-secrets.config object keys), so a typo is a
-   * compile error before runtime.
-   */
+  /** Routes each minted key half to the runtime secret that stores it, keyed by `RuntimeSecretId` so a typo is a compile error. */
   assign: Partial<Record<MintedKeyField, RuntimeSecretId>>;
 }
 
@@ -54,8 +41,7 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
   ...definition,
 }));
 
-// Fail fast at load time on an app misconfiguration, preventing a bad IAM
-// call or a mis-seeded secret at bootstrap time.
+// Fail fast at load time: a misconfiguration here becomes a bad IAM call or a mis-seeded secret at bootstrap.
 {
   const operatorSecretIds = new Set(
     runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id),
@@ -68,12 +54,12 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
     }
     seenSuffixes.add(key.suffix);
     if (key.permissionSets.length === 0) {
-      throw new Error(`managed-keys.config: key '${key.id}' has no permissionSets — grant at least one or remove it.`);
+      throw new Error(`managed-keys.config: key '${key.id}' has no permissionSets: grant at least one or remove it.`);
     }
     const assigned = Object.entries(key.assign) as [MintedKeyField, RuntimeSecretId][];
     if (assigned.length === 0) {
       throw new Error(
-        `managed-keys.config: key '${key.id}' assigns no runtime secret — set assign.accessKey and/or assign.secretKey.`,
+        `managed-keys.config: key '${key.id}' assigns no runtime secret: set assign.accessKey and/or assign.secretKey.`,
       );
     }
     for (const [field, secretId] of assigned) {

@@ -195,7 +195,7 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryState(filteredKey)?.isInvalidated).toBe(false);
   });
 
-  it('reports overflow when the seq window overflows one response — no silent 1000-row delta cap', async () => {
+  it('reports overflow when the seq window overflows one response: no silent 1000-row delta cap', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     // A full SYNC_CHUNK_SIZE response means more changes may remain beyond this window
     const items = Array.from({ length: 1000 }, (_, i) => ({

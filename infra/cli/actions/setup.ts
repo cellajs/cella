@@ -67,11 +67,7 @@ interface OperatorSecretValues {
   brevoApiKey: string;
 }
 
-/**
- * What the operator opted into at the initial-bootstrap prompts: which pasted
- * secret values to seed, and which managed keys (scoped Scaleway IAM keys) to
- * mint. Both are applied after the first `pulumi up`, once the containers exist.
- */
+/** What the operator opted into at the bootstrap prompts. Both are applied after the first `pulumi up`, once the containers exist. */
 interface BootstrapSecretInputs {
   operatorSecrets: OperatorSecretValues;
   /** Managed-key id → whether the operator asked to mint it now. */
@@ -85,11 +81,7 @@ interface CiKeyResult {
   organizationId: string;
 }
 
-/**
- * Warn (read-only) about required operator-managed runtime secrets that still
- * have no value. Non-fatal: a brand-new project may not have the containers
- * yet, and the first `pulumi up` creates them.
- */
+/** Read-only warning about required operator-managed runtime secrets with no value. Non-fatal: the first `pulumi up` creates the containers. */
 async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
   try {
     const client = createSecretManagerClient({
@@ -117,11 +109,8 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
 }
 
 /**
- * Advisory-only drift check of the live CI grant against the code-defined
- * rule shapes. Per-rule (sets AND condition), not a permission-set union: a
- * union compare cannot see a rule that went missing while its sets survive on
- * another rule, nor a condition appearing on a rule that must stay
- * unconditioned (the disproven key-mint condition resurfacing).
+ * Advisory-only drift check of the live CI grant against the code-defined rule shapes.
+ * Compared per rule (sets AND condition), because a permission-set union hides a missing rule whose sets survive elsewhere and a condition on a rule that must stay unconditioned.
  */
 async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
   try {
@@ -180,13 +169,9 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
 }
 
 /**
- * Admin IAM application (replaces the keyless operator app), created on
- * fresh/rotate (bootstrap key has IAMManager). Grants Object Storage full +
- * read-only infra surfaces so a human can run `pulumi preview --refresh`,
- * teardown, and bucket recovery, never IAM write. Unlike the operator app it
- * mints a REAL key, stored in Secret Manager (custody: never printed, never a
- * GitHub secret). The app id is exported as SCW_ADMIN_APPLICATION_ID into
- * backend/.env (idempotent: reuses the app and refreshes the id).
+ * Admin IAM application, created on fresh/rotate (the bootstrap key holds IAMManager). It grants Object Storage full plus
+ * read-only infra rights for `pulumi preview --refresh`, teardown, and bucket recovery, never IAM write. Its key lives in
+ * Secret Manager and is never printed or stored as a GitHub secret. Idempotent: reuses the app and refreshes SCW_ADMIN_APPLICATION_ID in backend/.env.
  */
 async function ensureAdminApp(ctx: SetupContext): Promise<string> {
   let adminAppId = process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '';
@@ -225,18 +210,15 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
   if (adminAppId) {
     console.info(
       `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)} ${pc.dim('(SCW_ADMIN_APPLICATION_ID, written to backend/.env)')}\n` +
-        `    ${pc.dim('Its key pair is stored in Secret Manager (admin-key) — retrieve it with a bootstrap key for day-2 pulumi/teardown runs.')}`,
+        `    ${pc.dim('Its key pair is stored in Secret Manager (admin-key): retrieve it with a bootstrap key for day-2 pulumi/teardown runs.')}`,
     );
   }
   console.info(divider);
 }
 
 /**
- * Mint the scoped Scaleway IAM keys the operator opted into at the bootstrap
- * prompts, now that `pulumi up` has created their (empty) runtime-secret
- * containers. Non-fatal per key: a mint failure warns and continues so one bad
- * key never blocks the rest of the bootstrap. It can be minted later via
- * "Manage runtime secrets".
+ * Mint the scoped Scaleway IAM keys the operator opted into, once `pulumi up` has created their empty runtime-secret containers.
+ * Non-fatal per key: a mint failure warns and continues, and the key can be minted later via "Manage runtime secrets".
  */
 async function provisionConfirmedManagedKeys(
   ctx: SetupContext,
@@ -272,8 +254,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig);
   if (hasDomain) {
     try {
-      // Application-owned bootstrap keys need org-wide DNS before the first up
-      // can write records in an org-shared zone (staging on the production apex).
+      // Application-owned bootstrap keys need org-wide DNS before the first up can write records in an org-shared zone.
       const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
       if (organizationId) {
         await ensureBootstrapDnsGrant({
@@ -290,8 +271,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     }
   }
 
-  // Lock provisioning against concurrent operators and CI.
-  // Exit paths release it; abandoned locks expire or can be cleared with "Unlock".
+  // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
     accessKey: ctx.accessKey,
@@ -303,10 +283,9 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   const usingBootstrapKey = ctx.context.state === 'fresh';
   if (usingBootstrapKey) {
     console.info(
-      `${pc.dim('  using bootstrap key for first provisioning (CI key has read-only on VPC/PN/RDB — cannot create them)')}`,
+      `${pc.dim('  using bootstrap key for first provisioning (CI key has read-only on VPC/PN/RDB: cannot create them)')}`,
     );
-    // Fresh provision: no images exist yet, so compute is intentionally deferred
-    // until CI pushes them (helpers gate on this marker).
+    // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
       cwd: infraDir,
@@ -315,8 +294,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     });
   }
 
-  // The Scaleway provider authenticates from SCW_* env (set in childEnv).
-  // On both fresh and resume runs that key is the operator bootstrap key.
+  // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the operator bootstrap key on fresh and resume runs alike.
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
     if (code === 0) break;
@@ -340,8 +318,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     `\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`,
   );
 
-  // Seed prompted values only after Pulumi creates the empty secret containers.
-  // Empty values remain available through "Manage runtime secrets".
+  // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Manage runtime secrets".
   await seedOperatorSecrets({
     secretKey: ctx.secretKey,
     projectId: ctx.projectId,
@@ -361,12 +338,9 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 }
 
 /**
- * Pick or create the Scaleway project when none is configured yet, using the
- * bootstrap key. Lists the organization's projects for an interactive pick and
- * defaults to creating one named after the app slug (or selecting it when it
- * already exists). The chosen id is written to backend/.env as SCW_PROJECT_ID
- * so every later run resolves it without prompting. Non-interactive runs must
- * supply SCW_PROJECT_ID themselves.
+ * Pick or create the Scaleway project when none is configured yet, using the bootstrap key.
+ * The chosen id is written to backend/.env as SCW_PROJECT_ID so later runs resolve it without prompting.
+ * Non-interactive runs must supply SCW_PROJECT_ID themselves.
  */
 async function ensureProjectId(opts: { slug: string; accessKey: string; secretKey: string }): Promise<string> {
   if (nonInteractive()) {
@@ -410,12 +384,9 @@ async function ensureProjectId(opts: { slug: string; accessKey: string; secretKe
 }
 
 /**
- * Offer to run the first deploy right here, so a fresh setup ends with a live
- * app. Runs the exact one-command deploy CI runs, with --build (bakes images
- * locally via docker buildx), authenticated with the freshly minted CI deploy
- * key so the first deploy also proves the CI credential path. Skipped when
- * docker or a git HEAD is unavailable; declining prints the CI and manual
- * paths.
+ * Offer to run the first deploy here, so a fresh setup ends with a live app.
+ * Runs the same one-command deploy CI runs with --build (local docker buildx), authenticated with the freshly minted CI deploy key so it also proves the CI credential path.
+ * Skipped when docker or a git HEAD is unavailable.
  */
 async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: BootstrapSecretInputs): Promise<void> {
   const mode = ctx.context.environment;
@@ -454,9 +425,7 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
     );
     return;
   }
-  // The exact env the GitHub Environment holds: CI deploy key as both the
-  // provider and state-backend credentials, plus passphrase and project ids
-  // (inherited from childEnv).
+  // The exact env the GitHub Environment holds: CI deploy key as both provider and state-backend credentials, plus the passphrase and project ids from childEnv.
   const deployEnv: NodeJS.ProcessEnv = {
     ...ctx.childEnv,
     SCW_ACCESS_KEY: ciKey.accessKey,
@@ -486,18 +455,14 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   }
 }
 
-/**
- * Runs the first setup process for the infra CLI, including handling bootstrap keys, CI keys, and Pulumi stack configuration.
- */
+/** Bootstrap or resume a stack: bootstrap key, project, identities, CI key, state backend, and base infrastructure. */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey;
   const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(
     context.stackYaml,
   );
 
-  // Provider authentication and all IAM / Secret-Manager work use an operator
-  // bootstrap key supplied here. The provider reads it from SCW_* env
-  // (childEnv below), not from stack config.
+  // Provider authentication and all IAM / Secret-Manager work use an operator bootstrap key read from SCW_* env (childEnv below), not from stack config.
   const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
     promptRequiredInput('Scaleway bootstrap access key'),
   );
@@ -510,9 +475,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
 
   const stackName = await promptStackName(context);
 
-  // Prompt for operator secrets and managed-key decisions only on initial bootstrap.
-  // Keys are minted after their first infrastructure update creates the containers; resume and
-  // rotation report missing values without prompting. Declined values remain manageable later.
+  // Prompt for operator secrets and managed-key decisions only on initial bootstrap; keys are minted after the first infrastructure update creates their containers.
   const isInitialBootstrap = !context.hasCiKey;
   const inputs: BootstrapSecretInputs = {
     operatorSecrets: { adminEmail: '', brevoApiKey: '' },
@@ -538,8 +501,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume';
   if (!(await confirmOrDefault({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0);
 
-  // The bootstrap key also holds the object-storage rights needed for the
-  // Pulumi state bucket, so it doubles as the state-backend credential pair.
+  // The bootstrap key holds the object-storage rights for the Pulumi state bucket, so it doubles as the state-backend credential pair.
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: scwAccessKey,
     secretKey: scwSecretKey,
@@ -549,9 +511,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     stateSecretKey: scwSecretKey,
   });
 
-  // The Pulumi program requires SCW_DEFAULT_ORGANIZATION_ID (pulumi-context.ts
-  // requireEnv); CI injects it from its secrets and "Apply infra change"
-  // resolves it the same way, so resolve it here too for the provisioning `up`.
+  // The Pulumi program requires SCW_DEFAULT_ORGANIZATION_ID (pulumi-context.ts requireEnv), so resolve it here for the provisioning `up`.
   try {
     childEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(scwSecretKey, scwProjectId);
   } catch (error) {
@@ -592,7 +552,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     stdio: 'ignore',
   });
   if (selected.status === 0) {
-    console.info(`\n→ Pulumi stack: ${stackName} (exists — selected)`);
+    console.info(`\n→ Pulumi stack: ${stackName} (exists: selected)`);
   } else {
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
   }
@@ -601,8 +561,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // The pre-apply gap check is read-only.
   if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
 
-  // Identities: per-service + boot apps, CI deploy key, admin app.
-  // Service apps come FIRST: their ids feed the CI policy's key-mint rule.
+  // Identities: per-service + boot apps, CI deploy key, admin app. Service apps come FIRST: their ids feed the CI policy's key-mint rule.
   let serviceAppIds: readonly string[] = [];
   if (needsCiKey) {
     console.info('\n→ Service VM applications (per-service principals; keys minted per deploy)');
@@ -619,7 +578,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       serviceAppIds = apps.allAppIds;
     } catch (error) {
       console.warn(
-        `${warningMark} Service app setup failed: ${errorMessage(error)} — the CI key-mint rule will be omitted; re-run "Rotate keys".`,
+        `${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; re-run "Rotate keys".`,
       );
     }
   }
@@ -628,14 +587,13 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   if (needsCiKey) {
     ciKey = await mintCiKey(ctx, serviceAppIds.length > 0 ? serviceAppIds : undefined);
   } else {
-    console.info('\n→ CI deploy key — skipped (already in stack config)');
+    console.info('\n→ CI deploy key: skipped (already in stack config)');
     await warnOnCiPolicyDrift(ctx);
   }
 
   const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : (process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '');
 
-  // Identity ids (CI and admin application ids) are derived from the IAM API,
-  // so stack config only needs a non-secret bootstrap marker.
+  // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey;
   if (bootstrapComplete) {
     await must(
@@ -646,9 +604,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     );
   }
 
-  // The passphrase is synced on every run (idempotent): it is verified against
-  // the stack above, so this self-heals a missing or drifted
-  // PULUMI_CONFIG_PASSPHRASE environment secret.
+  // The passphrase is verified against the stack above and re-synced every run, which repairs a missing or drifted PULUMI_CONFIG_PASSPHRASE environment secret.
   const synced = await syncGithubEnvironment({
     repoRoot: new URL('..', `file://${infraDir}/`).pathname,
     environment: context.environment,
@@ -665,7 +621,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   if (!synced) {
     console.warn(
       `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote).\n` +
-        `  Add the Environment secrets manually${passphraseGenerated ? ` — including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''} (see the secrets table in infra/README.md).`,
+        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''} (see the secrets table in infra/README.md).`,
     );
   }
 
@@ -674,10 +630,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // Base infrastructure provisioning
   const canDeploy = context.hasCiKey || !!ciKey.accessKey;
   if (canDeploy) {
-    console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network — no compute yet)`);
-    // First provision (fresh stack) needs a local `pulumi up` with the bootstrap
-    // key: the CI key can't create VPC/PN/RDB. After that, the recommended path
-    // is to let CI run `pulumi up` on push, so default to skipping it here.
+    console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
+    // A fresh stack's first provision needs a local `pulumi up` with the bootstrap key because the CI key cannot create VPC/PN/RDB; afterwards CI runs `pulumi up` on push.
     const isFirstProvision = context.state === 'fresh';
     if (!isFirstProvision) {
       console.info(
@@ -690,8 +644,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     });
     if (runNow) {
       await provisionBaseInfra(ctx, inputs);
-      // Fresh bootstrap with the CI key secret still in memory: finish with a
-      // live app. Rotate/resume runs skip this; CI owns their deploys.
+      // Only a fresh bootstrap still holds the CI key secret in memory; rotate and resume leave deploys to CI.
       if (isInitialBootstrap && ciKey.secretKey) {
         await offerFirstDeploy(ctx, ciKey, inputs);
       }
@@ -704,9 +657,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     }
   }
   if (needsCiKey && ciKey.accessKey) {
-    // The org-wide bootstrap DNS grant (the widest standing grant the engine
-    // ever creates) must not outlive this wizard: the first `pulumi up` has
-    // run, and CI's own project-scoped DNS grant covers routine deploys.
+    // The org-wide bootstrap DNS grant is the widest grant the engine creates and must not outlive this wizard; CI's project-scoped DNS grant covers routine deploys.
     if (childEnv.SCW_DEFAULT_ORGANIZATION_ID) {
       await removeBootstrapDnsGrant({
         callerSecretKey: scwSecretKey,
@@ -718,9 +669,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         ),
       );
     }
-    // The wizard no longer needs the bootstrap key, so offer to revoke it as
-    // the last call (a key may delete itself). Declining falls back to the
-    // manual reminder; env-supplied keys under automation are never revoked.
+    // Revoking the bootstrap key is the last call because a key may delete itself; env-supplied keys under automation are never revoked.
     const revokeNow = nonInteractive()
       ? false
       : autoAcceptDefaults()
@@ -740,7 +689,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       }
     } else {
       console.info(
-        `\n${pc.dim('Reminder:')} revoke the bootstrap key now — see ${pc.underline('infra/README.md')} → ${pc.italic('"Revoke the bootstrap key"')}`,
+        `\n${pc.dim('Reminder:')} revoke the bootstrap key now, see ${pc.underline('infra/README.md')} → ${pc.italic('"Revoke the bootstrap key"')}`,
       );
     }
   }

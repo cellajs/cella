@@ -8,10 +8,7 @@ import { actionToVerb, extractStxData } from '../utils';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { getRowValue } from '../utils/get-row-value';
 
-/**
- * Build a standardized InsertActivityModel from row data and table metadata.
- * Shared by all handlers (insert, update, delete) to eliminate duplication.
- */
+/** Shared by the insert, update and delete handlers. */
 export function createActivity(
   tableMeta: TableMeta,
   row: Record<string, unknown>,
@@ -22,8 +19,7 @@ export function createActivity(
   const resourceType = tableMeta.kind === 'resource' ? tableMeta.type : null;
   const subjectType = tableMeta.type;
 
-  // Derive channel entity IDs from hierarchy ancestors. Declared-nullable ancestors may
-  // legitimately be null (variable-depth rows, e.g. a course-stream item): no warning.
+  // Channel entity ids come from the hierarchy ancestors; declared-nullable ancestors may be null.
   const channelIds: Record<string, string | null> = {};
   if (subjectType) {
     const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
@@ -40,10 +36,9 @@ export function createActivity(
   const rawSubjectId = getRowValue(row, 'id');
   if (!rawSubjectId) throw new Error(`createActivity: row missing "id" for ${subjectType} ${action}`);
 
-  // For the tenant resource itself, the row has no tenantId column: its own id IS the tenantId.
+  // The tenant row has no tenantId column: its own id is the tenantId.
   const tenantId = getRowValue(row, 'tenantId') ?? (resourceType === 'tenant' ? rawSubjectId : null);
 
-  // Build default nulls for all channel entity ID columns, driven by config
   const defaultChannelIds: Record<string, null> = {};
   for (const idKey of channelIdColumnKeys) {
     defaultChannelIds[idKey] = null;
@@ -58,7 +53,7 @@ export function createActivity(
     tableName: getTableName(tableMeta.table),
     type: `${subjectType}.${actionToVerb(action)}`,
     subjectId: rawSubjectId,
-    // Default context IDs to null, overridden by channelIds for entities with hierarchy ancestors
+    // Null defaults, overridden below by channelIds for entities with hierarchy ancestors.
     ...defaultChannelIds,
     createdAt: new Date().toISOString(),
     ...channelIds,

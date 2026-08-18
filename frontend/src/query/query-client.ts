@@ -13,16 +13,12 @@ function entityTypeOf(key: unknown): ProductEntityType | undefined {
   return typeof head === 'string' && productSet.has(head) ? (head as ProductEntityType) : undefined;
 }
 
-// Lazy import to break circular dependency: query-client -> on-error -> teardown-user-state -> query-client
-// Without this, HMR re-evaluation hits a TDZ error on `onError`.
+// Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
   import('~/query/on-error').then((m) => m.onError(error, meta));
 const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
 
-/**
- * Quarantine a mutation that fails replay with a 4xx so no offline edit is lost
- * after a cache bust. Best-effort, lazy-imported to avoid cycles.
- */
+/** Quarantines a mutation that fails replay with a 4xx so no offline edit is lost after a cache bust. Best-effort, lazy-imported to avoid cycles. */
 function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
   const status = error?.status;
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
@@ -65,14 +61,10 @@ const queryCacheConfig = {
   onSuccess: handleSuccess,
 };
 
-// Stale time constants
 const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
 const defaultGcTime = 1000 * 60 * 60 * 24 * 7; // 7 days
 
-/**
- * Handle online status, guarded to avoid duplicate listeners on HMR.
- */
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
   if (navigator.onLine) resetConnectivityCache();
@@ -107,20 +99,17 @@ export const queryClient: QueryClient =
         retry: false,
       },
       mutations: {
-        // Let connectivity failures reach an offline retry boundary and persist for replay.
-        // Server errors do not retry, so their quarantine/toast handlers run immediately.
+        // Connectivity failures reach an offline retry boundary and persist for replay; server errors do not retry, so quarantine and toast handlers run immediately.
         networkMode: 'offlineFirst',
         retry: mutationRetry,
       },
     },
   });
 
-/** Promise that resolves once the PersistQueryClientProvider has restored the IDB cache. */
 let resolveCacheRestored: () => void;
-/** Tracks completion of the persisted-cache restore. */
+/** Resolves once PersistQueryClientProvider has restored the IDB cache. */
 export const cacheRestored: Promise<void> =
   (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
-/** Marks the persisted-cache restore as complete. */
 export function markCacheRestored() {
   resolveCacheRestored();
 }
@@ -147,10 +136,7 @@ export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void
   console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '30s (online)'}`);
 }
 
-/**
- * Silently revalidate active queries on reconnect.
- * Called when transitioning from offline to online.
- */
+/** Called when going from offline to online. */
 export function silentRevalidateOnReconnect(): void {
   queryClient.invalidateQueries({ refetchType: 'active' });
   console.debug('[Query] Silent revalidation on reconnect');

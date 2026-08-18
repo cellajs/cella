@@ -37,9 +37,6 @@ function StatusCard({ label, status }: { label: string; status: HealthStatus }) 
   );
 }
 
-/**
- * Info content: support links and app status.
- */
 export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement | null>(null);

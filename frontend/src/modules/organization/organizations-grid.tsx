@@ -14,12 +14,8 @@ interface Props {
   limitedView?: boolean;
 }
 
-// Optionally set a custom tile
 const tileComponent = ChannelGridTile;
 
-/**
- * Display a grid of organization tiles.
- */
 export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: Props) {
   const [expanded, setExpanded] = useState(false);
   const limitedView = initialLimitedView && !expanded;

@@ -14,9 +14,8 @@ import { isMain } from '../lib/utils/is-main';
 export type EnsureResult = 'exists' | 'created';
 
 /**
- * Reports when an API key's preferred project would place the state bucket outside CI reach.
+ * Report when an API key's preferred project would place the state bucket outside CI reach.
  * Scaleway Object Storage follows `default_project_id` regardless of cross-project IAM grants.
- * The IAM lookup lives in `keyPreferredProject`.
  */
 export function keyProjectMismatch(
   keyProjectId: string,
@@ -28,7 +27,7 @@ export function keyProjectMismatch(
     `API key ${accessKey} has preferred project ${keyProjectId}, but this app deploys to project ${expectedProjectId}. ` +
     `Scaleway Object Storage follows the key's preferred project, so the state bucket would land out of reach of the CI deploy key. ` +
     `Fix: Scaleway console → IAM → API keys → ${accessKey} → change the preferred project, or ` +
-    `PATCH https://api.scaleway.com/iam/v1alpha1/api-keys/${accessKey} {"default_project_id":"${expectedProjectId}"} — then re-run.`
+    `PATCH https://api.scaleway.com/iam/v1alpha1/api-keys/${accessKey} {"default_project_id":"${expectedProjectId}"}, then re-run.`
   );
 }
 
@@ -43,10 +42,8 @@ export async function keyPreferredProject(auth: ScwAuth, accessKey: string): Pro
 }
 
 /**
- * Returns 'exists' if the bucket is already present (or HEAD returns ambiguous
- * 403 but the subsequent CreateBucket reports BucketAlreadyOwnedByYou). Returns
- * 'created' on a fresh creation. Throws on every other error, including the
- * fatal "name taken by another account".
+ * 'exists' when the bucket is already present, including an ambiguous HEAD 403 whose CreateBucket reports BucketAlreadyOwnedByYou; 'created' on a fresh creation.
+ * Throws on every other error, including the fatal "name taken by another account".
  */
 export async function ensureStateBucket(s3: S3Client, bucketName: string): Promise<EnsureResult> {
   let headWasAmbiguous403 = false;
@@ -55,8 +52,7 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
     .then(() => true)
     .catch((err: { $metadata?: { httpStatusCode?: number } }) => {
       const status = err.$metadata?.httpStatusCode;
-      // 403 is ambiguous on Scaleway (foreign-owned, missing perms, stale
-      // reservation); fall through to CreateBucket for an authoritative answer.
+      // 403 is ambiguous on Scaleway (foreign-owned, missing perms, stale reservation), so CreateBucket gives the authoritative answer.
       if (status === 403) {
         headWasAmbiguous403 = true;
         return false;
@@ -76,7 +72,7 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
     if (name === 'BucketAlreadyExists' && headWasAmbiguous403) return 'exists';
     if (name === 'BucketAlreadyExists') {
       throw new Error(
-        `Bucket name "${bucketName}" is taken by another account — or by another PROJECT in this organization: ` +
+        `Bucket name "${bucketName}" is taken by another account, or by another PROJECT in this organization: ` +
           `Scaleway S3 follows the key's preferred project, so a bucket created with a differently-pointed key is unreachable from this one. ` +
           `Check the bucket's project in the console; otherwise pick a different slug in shared/config/config.default.ts.`,
       );
@@ -89,16 +85,9 @@ export async function ensureStateBucket(s3: S3Client, bucketName: string): Promi
 export const NONCURRENT_VERSION_RETENTION_DAYS = 90;
 
 /**
- * Converge the state bucket onto its hardened configuration: versioning (every
- * checkpoint write becomes a recoverable version), SSE-ONE default encryption
- * (AES-256, Scaleway-managed keys, transparent to the Pulumi backend), and a
- * lifecycle rule bounding noncurrent-version growth. Idempotent: safe to run on
- * every invocation, so pre-existing buckets converge too.
- *
- * Each call tolerates AccessDenied: once the state-bucket policy
- * (resources/state-bucket-policy.ts) is applied, bucket-config writes are
- * reserved to the operator principal and the CI key's attempt is expected to
- * 403; the configuration is already in place from the bootstrap run.
+ * Converge the state bucket onto its hardened configuration: versioning so every checkpoint write is recoverable, SSE-ONE default encryption (AES-256,
+ * Scaleway-managed keys), and a lifecycle rule bounding noncurrent-version growth. Idempotent, so pre-existing buckets converge too.
+ * AccessDenied is tolerated: once resources/state-bucket-policy.ts is applied, bucket-config writes are reserved to the operator principal and the CI key's attempt 403s.
  */
 export async function hardenStateBucket(
   s3: S3Client,
@@ -168,22 +157,20 @@ export async function hardenStateBucket(
 }
 
 /**
- * Post-condition: the bucket this key sees must live in the expected project.
- * Catches the pre-existing-bucket-in-the-wrong-project case that the preflight
- * (which only inspects the key) cannot: ListBuckets' Owner ID is the project
- * the key operates in, and the bucket must be in the returned listing.
+ * Post-condition: the bucket this key sees must live in the expected project, catching a pre-existing bucket in the wrong project that the key-only preflight cannot.
+ * ListBuckets' Owner ID is the project the key operates in, and the bucket must appear in the listing.
  */
 export async function assertBucketProject(s3: S3Client, bucketName: string, expectedProjectId: string): Promise<void> {
   const listing = await s3.send(new ListBucketsCommand({}));
   const ownerId = listing.Owner?.ID ?? '';
   if (!ownerId.startsWith(expectedProjectId)) {
     throw new Error(
-      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}' — the key's preferred project points elsewhere. See the remedy in the preflight error above (IAM → API keys → preferred project).`,
+      `State bucket owner project is '${ownerId}' but the app deploys to '${expectedProjectId}': the key's preferred project points elsewhere. See the remedy in the preflight error above (IAM → API keys → preferred project).`,
     );
   }
   if (!listing.Buckets?.some((bucket) => bucket.Name === bucketName)) {
     throw new Error(
-      `State bucket '${bucketName}' is not visible in project ${expectedProjectId} — it exists in another project of this organization (created with a key whose preferred project pointed elsewhere). Migrate the state or rename the bucket derivation (lib/stack/control-store.ts).`,
+      `State bucket '${bucketName}' is not visible in project ${expectedProjectId}: it exists in another project of this organization (created with a key whose preferred project pointed elsewhere). Migrate the state or rename the bucket derivation (lib/stack/control-store.ts).`,
     );
   }
 }
@@ -200,16 +187,14 @@ export async function main(): Promise<void> {
   const bucketName = stateBucket(appConfig.slug);
   const region = appConfig.s3.region;
 
-  // Preflight: refuse to create/touch the state bucket with a key pointed at
-  // the wrong project (see keyProjectMismatch). Skipped when no expected
-  // project id is in the environment (both the CLI and CI inject one).
+  // Preflight: refuse to touch the state bucket with a key pointed at the wrong project (see keyProjectMismatch). Skipped when the environment carries no expected project id.
   const expectedProjectId = resolveProjectId();
   if (expectedProjectId) {
     const keyProject = await keyPreferredProject({ secretKey }, accessKey);
     const mismatch = keyProjectMismatch(keyProject, expectedProjectId, accessKey);
     if (mismatch) throw new Error(mismatch);
   } else {
-    console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set — skipping the key-preferred-project preflight.');
+    console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: skipping the key-preferred-project preflight.');
   }
 
   const s3 = new S3Client({

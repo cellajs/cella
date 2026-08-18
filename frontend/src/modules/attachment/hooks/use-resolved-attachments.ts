@@ -6,13 +6,12 @@ import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
-/** Cloud-key fields needed to resolve a URL without the react-query cache. */
 type AttachmentMetaFields = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'>;
 
 /** A carousel item that may already carry its own attachment metadata (group/single items do). */
 type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMetaFields> & { id: string };
 
-/** Transient failures (blob mid-download, cache mid-sync) get a few silent retries before "not found". */
+/** Transient failures (blob mid-download, cache mid-sync) get a few retries before "not found". */
 const RESOLVE_RETRY_LIMIT = 3;
 const RESOLVE_RETRY_DELAY_MS = 600;
 
@@ -23,7 +22,6 @@ interface ResolvedAttachmentsResult {
   errorIds: string[];
 }
 
-/** Build CarouselItemData with metadata from cache */
 function buildItemData(
   item: Partial<CarouselItemData> & { id: string },
   url: string,
@@ -41,10 +39,7 @@ function buildItemData(
   };
 }
 
-/**
- * Resolves attachment URLs for carousel items using offline-first approach.
- * Waits for cache restoration before declaring items as not found.
- */
+/** Resolves carousel item URLs offline-first, waiting for cache restoration before reporting not found. */
 export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachmentsResult {
   const [resolvedItems, setResolvedItems] = useState<CarouselItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +52,6 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   const retryCountRef = useRef(0);
   const itemsKey = items.map((i) => `${i.id}:${i.url ?? ''}:${i.name ?? ''}`).join(',');
 
-  // Fresh retry budget whenever the set of items changes.
   useEffect(() => {
     retryCountRef.current = 0;
   }, [itemsKey]);
@@ -83,8 +77,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
 
       const newBlobUrls = new Map<string, string>();
 
-      // Items resolve concurrently so cloud misses coalesce into one presign batch;
-      // each item catches its own failure so one rejection cannot drop the rest.
+      // Items resolve concurrently so cloud misses coalesce into one presign batch, each catching its own failure.
       type Outcome = { data: CarouselItemData } | { errorId: string; permanent: boolean };
       const outcomes: Outcome[] = await Promise.all(
         items.map(async (item): Promise<Outcome> => {
@@ -98,8 +91,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
           }
 
           try {
-            // Prefer the list cache's fresher metadata, but fall back to the item's own keys
-            // (group/single are full attachments) so a dropped cache entry doesn't show "not found".
+            // The list cache holds fresher metadata; group and single items carry full keys as fallback.
             const cachedMeta = findAttachmentInCache(item.id);
             const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMetaFields) : null);
 
@@ -108,8 +100,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
               if (result.isLocal) newBlobUrls.set(item.id, result.url);
               return { data: buildItemData(item, result.url, result.isLocal) };
             }
-            // Make the otherwise-silent failure diagnosable: cachedMeta/itemKey tell us whether this
-            // is a cache miss (both false) or a no-cloud-key resource whose local blob is gone.
+            // cachedMeta/itemKey separate a cache miss (both false) from a resource with no cloud key whose local blob is gone.
             console.warn(
               `[useResolvedAttachments] Unresolvable attachment ${item.id} (no local blob and no cloud URL, ` +
                 `cachedMeta=${!!cachedMeta}, itemKey=${!!item.keys?.original})`,
@@ -137,8 +128,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         setErrorIds(errors);
         setIsLoading(false);
 
-        // Retry transient failures a few times before letting the dialog show "not found". The
-        // blob may still be downloading or the cache mid-sync. Bounded per item-set to avoid loops.
+        // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
         if (hasTransientErrors && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
           retryCountRef.current += 1;
           retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), RESOLVE_RETRY_DELAY_MS);
@@ -153,7 +143,6 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
     };
   }, [itemsKey, isRestoring, retrySignal]);
 
-  // Revoke all blob URLs only on unmount
   useEffect(() => {
     return () => {
       for (const url of blobUrlsRef.current.values()) URL.revokeObjectURL(url);

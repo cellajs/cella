@@ -1,25 +1,18 @@
-/**
- * Canonical names for every IAM principal the engine creates, per app×mode.
- *
- * Principals are per-mode (`<slug>-<mode>-…`) so staging and production never
- * share an application (sharing meant a key re-mint for one environment purged
- * the other's key), and so the per-mode IAM group stays the one navigable unit
- * in Scaleway's flat org-wide console lists.
- */
+/** Canonical names for every IAM principal the engine creates, one set per app and mode. Names are per-mode so a key re-mint in one environment cannot purge the other's key. */
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */
   group: string;
   /** CI deploy application (GitHub Actions credential). */
   ciDeploy: string;
-  /** Human admin application (bucket access + infra reads; replaces operator). */
+  /** Human admin application: bucket access plus infra reads. */
   admin: string;
-  /** Per-service VM application (P3 model). */
+  /** Per-service VM application. */
   vmService: (service: string) => string;
-  /** Boot fetcher application: registry pull + handoff-secret read (P3 model). */
+  /** Boot fetcher application: registry pull and handoff-secret read. */
   boot: string;
 }
 
-/** Derive all principal names for one app×mode. */
+/** Derive all principal names for one app and mode. */
 export function principalNames(slug: string, mode: string): PrincipalNames {
   const prefix = `${slug}-${mode}`;
   return {

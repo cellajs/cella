@@ -64,7 +64,6 @@ function useChart() {
   return context;
 }
 
-/** Renders the styled chart container primitive. */
 export function ChartContainer({
   id,
   className,
@@ -126,10 +125,8 @@ function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
   );
 }
 
-/** Re-exports the Recharts tooltip primitive. */
 export const ChartTooltip = RechartsPrimitive.Tooltip;
 
-/** Renders the styled chart tooltip content primitive. */
 export function ChartTooltipContent({
   active,
   payload,
@@ -247,10 +244,8 @@ export function ChartTooltipContent({
   );
 }
 
-/** Re-exports the Recharts legend primitive. */
 export const ChartLegend = RechartsPrimitive.Legend;
 
-/** Renders the styled chart legend content primitive. */
 export function ChartLegendContent({
   className,
   hideIcon = false,
@@ -293,7 +288,6 @@ export function ChartLegendContent({
   );
 }
 
-// Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
   if (typeof payload !== 'object' || payload === null) {
     return undefined;

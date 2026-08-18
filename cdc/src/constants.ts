@@ -7,67 +7,57 @@ export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 export const RESOURCE_LIMITS = {
   // Runtime monitoring thresholds
   runtime: {
-    /** Pause duration before unhealthy status (5 minutes) */
+    /** How long replication may stay paused before health reports unhealthy. */
     pauseUnhealthyMs: 5 * 60e3,
   },
 
   // Retry configuration for transient errors
   retry: {
-    /** Maximum number of retry attempts */
     maxAttempts: 3,
-    /** Initial delay before first retry (ms) */
     initialDelayMs: 100,
-    /** Maximum delay between retries (ms) */
     maxDelayMs: 5000,
-    /** Backoff multiplier */
     backoffMultiplier: 2,
   },
 
   // Reconnection configuration
   reconnection: {
-    /** Delay before retrying replication subscription (ms) */
+    /** Between replication subscription attempts. */
     retryDelayMs: 5000,
   },
 
-  // Retry quickly while a rolling deployment hands off the singleton slot, then return to the
-  // normal reconnection cadence.
+  // Fast retries while a rolling deployment hands off the singleton slot.
   slotTakeover: {
     /** Number of fast retries that make up the handoff window. */
     maxAttempts: 12,
-    /** Delay between handoff retries (ms), tightened for a sub-second takeover. */
+    /** Sized for a sub-second takeover. */
     retryDelayMs: 500,
   },
 
   // Catchup mode thresholds
   catchup: {
-    /** WAL lag threshold to enter catchup mode (ms) */
     enterLagMs: 10_000,
-    /** WAL lag threshold to exit catchup mode (ms) */
     exitLagMs: 2_000,
-    /** Consecutive live transactions before exiting catchup */
+    /** Consecutive live transactions required before catchup mode exits. */
     exitConsecutiveLive: 3,
-    /** Log progress every N events during catchup */
+    /** Log catchup progress every N events. */
     progressLogInterval: 1000,
   },
 
   // Buffer safety caps
   buffers: {
-    /** Micro-batching window (ms). Fallback deadline for low-traffic periods.
-     *  0 = immediate (no batching), 50 = default */
+    /** Micro-batching fallback deadline for low-traffic periods; 0 disables batching. */
     flushWindowMs: 50,
-    /** Flush as soon as this many events accumulate (primary trigger under load) */
+    /** Primary flush trigger under load. */
     flushBatchSize: 100,
-    /** Force-flush if accumulated events exceed this count */
+    /** Hard cap that force-flushes the buffer. */
     maxBufferedEvents: 20_000,
-    /** Flush events individually if no commit arrives within this window (ms) */
+    /** Events flush individually when no commit arrives within this window. */
     transactionTimeoutMs: 30_000,
   },
 
   // WAL lag thresholds for backpressure
   walLag: {
-    /** WAL lag in bytes before logging a warning */
     warnBytes: 1 * 1024 * 1024 * 1024, // 1 GB
-    /** WAL lag in bytes that triggers unhealthy health status */
     unhealthyBytes: 2 * 1024 * 1024 * 1024, // 2 GB
   },
 } as const;

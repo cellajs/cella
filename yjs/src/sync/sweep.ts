@@ -3,11 +3,7 @@ import { deleteStaleDoc, listStaleDocs } from '../data/storage';
 import { log } from '../lib/pino';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
-/**
- * Recovers stale relay sessions on startup, persisting edited Y.Doc state before deletion.
- * Unedited rows delete directly; retryable failures remain for a later boot or session.
- * Concurrent durable writes converge through server-side HLC resolution.
- */
+/** Persists edited Y.Doc state from stale sessions before deleting them; unedited rows delete directly and retryable failures are left for a later boot. */
 export async function runStartupSweep(): Promise<void> {
   let stale: Awaited<ReturnType<typeof listStaleDocs>>;
   try {
@@ -35,7 +31,7 @@ export async function runStartupSweep(): Promise<void> {
       if (json !== null) {
         const result = await postMaterialize(ctx, doc.lastEditedBy, json);
         if (result === 'retry') {
-          log.warn(`Startup sweep: materialize unavailable for ${doc.entityType}:${doc.entityId} — keeping row`);
+          log.warn(`Startup sweep: materialize unavailable for ${doc.entityType}:${doc.entityId}, keeping row`);
           continue;
         }
       }

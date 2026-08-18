@@ -1,10 +1,4 @@
-/**
- * Same-origin migration: the LB path route forwards `/yjs/...` from the app
- * origin without stripping the prefix (Scaleway routes match, never rewrite),
- * so the server accepts both the bare path (subdomain or direct LB
- * health check) and the `/yjs`-prefixed one. Operates on the raw request URL,
- * so a query string survives the strip.
- */
+/** The load balancer forwards `/yjs/...` without stripping the prefix, so both the bare and prefixed paths are accepted. Operates on the raw request URL, so the query string survives. */
 export function stripYjsPrefix(url: string): string {
   if (url === '/yjs') return '/';
   return url.startsWith('/yjs/') ? url.slice('/yjs'.length) : url;

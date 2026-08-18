@@ -6,7 +6,6 @@ import { otel } from '#/lib/tracing';
 const meterProvider = otel.meterProvider;
 
 export type { Span };
-// Re-export span names and attribute helpers
 export { backendSpanNames as syncSpanNames, eventAttrs };
 export type SyncTraceContext = TraceContext;
 
@@ -44,9 +43,7 @@ interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-/**
- * Execute an async function within a traced sync span.
- */
+/** Execute an async function within a traced sync span. */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {
@@ -73,9 +70,7 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
   });
 }
 
-/**
- * Start a span manually (for cases where withSpan doesn't fit).
- */
+/** Start a span manually, for call sites where withSpan does not fit. */
 export function startSyncSpan(
   name: string,
   attributes?: Record<string, string | number | boolean | null>,
@@ -97,7 +92,6 @@ export function startSyncSpan(
 
 // Metric recording
 
-/** Record a CDC message received from CDC Worker. */
 export function recordMessageReceived(entityType: EntityType | 'unknown'): void {
   cdcMessagesReceived.add(1, { entityType });
 }

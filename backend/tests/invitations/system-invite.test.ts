@@ -30,13 +30,11 @@ afterEach(async () => await clearDatabase());
 describe('System Invitation', async () => {
   const call = await createAppClient();
 
-  // Helper function to create admin session
   async function createAdminSession() {
     const admin = await createSystemAdminUser('admin@example.com');
     return await createTestSession(admin);
   }
 
-  // Helper function to make invite request
   async function makeInviteRequest(emails: string[], sessionCookie: string) {
     return await call(systemInvite, {
       body: { emails },
@@ -61,7 +59,6 @@ describe('System Invitation', async () => {
       expect(response.invitesSentCount).toBe(2);
       expect(response.rejectedIds).toHaveLength(0);
 
-      // Verify invitation tokens were created
       const tokens = await db.select().from(tokensTable).where(eq(tokensTable.type, 'invitation'));
       expect(tokens).toHaveLength(2);
     });
@@ -140,11 +137,9 @@ describe('System Invitation', async () => {
     it('should prevent duplicate invitations across requests', async () => {
       const sessionCookie = await createAdminSession();
 
-      // First invitation
       const { response: firstRes } = await makeInviteRequest(['user@example.com'], sessionCookie);
       expect(firstRes.status).toBe(200);
 
-      // Second invitation for same user
       const { response: secondRes, data } = await makeInviteRequest(['user@example.com'], sessionCookie);
       expect(secondRes.status).toBe(200);
 

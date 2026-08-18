@@ -20,7 +20,7 @@ const download = async ({ name, url, out }: (typeof databases)[number]) => {
   const tmp = `${dest}.tmp`;
   console.info(`[geoip] ${name}: fetching ${url}`);
   const res = await fetch(url);
-  if (!res.ok || !res.body) throw new Error(`[geoip] ${name}: HTTP ${res.status} — try a previous month (e.g. \`pnpm geoip:download 2026-04\`)`);
+  if (!res.ok || !res.body) throw new Error(`[geoip] ${name}: HTTP ${res.status}, try a previous month (e.g. \`pnpm geoip:download 2026-04\`)`);
 
   mkdirSync(dirname(dest), { recursive: true });
   // biome-ignore lint/suspicious/noExplicitAny: web stream to node stream interop is well-typed at runtime

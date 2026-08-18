@@ -7,19 +7,12 @@ type InfiniteLoaderProps = {
   hasNextPage: boolean;
   isFetching?: boolean;
   isFetchMoreError?: boolean;
-  /** Skip the all-loaded dot trail (embedded tables where the end marker is visual noise). */
+  /** Skip the all-loaded dot trail, for embedded tables where the end marker is noise. */
   hideEndIndicator?: boolean;
-  /**
-   * Fetch-more callback. When provided, an intersection observer triggers it as the
-   * loader enters the viewport. Omit with DataGrid because it triggers via onNearEndChange.
-   */
+  /** When set, an intersection observer calls it as the loader enters the viewport. Omit with DataGrid, which uses onNearEndChange. */
   fetchMore?: () => Promise<unknown>;
 };
 
-/**
- * Infinite-scroll status indicators (loading, error, all-loaded, offline).
- * Optionally triggers fetch via intersection observer when `fetchMore` is provided.
- */
 export function InfiniteLoader({
   hasNextPage,
   isFetching,
@@ -30,9 +23,7 @@ export function InfiniteLoader({
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  // Intersection observer for non-DataGrid usage (e.g., entity grids).
-  // inView is consumed as level-triggered state, not an enter-event: a sentinel
-  // that comes into view during a fetch is served when the fetch settles.
+  // inView is level-triggered state: a sentinel entering view during a fetch is served once that fetch settles.
   const { ref: measureRef, inView } = useInView({
     triggerOnce: false,
     delay: 50,
@@ -46,11 +37,9 @@ export function InfiniteLoader({
     fetchMore,
   });
 
-  // Error state
   if (isFetchMoreError)
     return <div className="my-8 text-center text-red-600 text-sm">{t('error:load_more_failed')}</div>;
 
-  // Offline but more data is available
   if (!isOnline && hasNextPage)
     return (
       <div className="mt-4 w-full text-center text-muted-foreground/50 text-sm italic">{t('c:offline.load_more')}</div>
@@ -58,7 +47,6 @@ export function InfiniteLoader({
 
   return (
     <>
-      {/* Intersection observer trigger - only rendered when fetchMore is provided */}
       {fetchMore && hasNextPage && <div ref={measureRef} className="h-8 w-full" />}
 
       {isFetching && hasNextPage && <Loading />}

@@ -12,11 +12,7 @@ import {
 import type { ActivityModel } from '#/modules/activities/activities-db';
 import { getEntityTable } from '#/tables';
 
-/**
- * Mock activity with all fields populated (deterministic per `key`). Channel-entity ID columns are
- * generated dynamically. Schema is oneOf `entityType`/`resourceType`; this mock hardcodes `entityType`.
- * Used for DB seeding, tests, and API examples.
- */
+/** Deterministic per `key`. Schema is oneOf `entityType`/`resourceType`; this mock hardcodes `entityType`. */
 export const mockActivity = (key = 'activity:default', overrides?: Partial<ActivityModel>): ActivityModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
@@ -46,7 +42,6 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
     };
   });
 
-/** Alias for API response examples (activity schema matches DB schema) */
 export const mockActivityResponse = mockActivity;
 
 export const mockPaginatedActivitiesResponse = (count = 2) => mockPaginated(mockActivityResponse, count);

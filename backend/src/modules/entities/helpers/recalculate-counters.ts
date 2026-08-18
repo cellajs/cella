@@ -8,31 +8,17 @@ import { getEntityTable } from '#/tables';
 
 // SQL builder helpers
 
-/** Entity type to SQL table name (e.g. 'task' to 'tasks') */
 const tbl = (et: EntityType) => getTableName(getEntityTable(et));
 
-/**
- * Live-rows-only predicate for soft-deleting tables. CDC decrements e:c: counters on
- * soft-delete transitions (and re-increments on restore), so recalculation must exclude
- * tombstones to agree.
- */
+/** CDC decrements e:c: counters on soft-delete, so recalculation must exclude tombstones to agree. */
 const livePredicate = (et: EntityType, alias: string) =>
   'deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '';
 
-/**
- * Published-rows-only predicate (opt-in `publishedAt` draft lifecycle). The publication
- * row filter keeps drafts out of the CDC stream, so CDC never counts them; recalculation
- * reads the TABLE (which still contains drafts) and must exclude them to agree.
- * Empty for tables without the column.
- */
+/** CDC never counts drafts, so recalculation must exclude them from the table to agree. */
 const publishedPredicate = (et: EntityType, alias: string) =>
   'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
 
-/**
- * Deepest-non-null-ancestor grouping expression (e.g. task → COALESCE(t.project_id, t.organization_id)).
- * Matches CDC's `resolveChannelKey`: variable-depth rows scope to their effective home.
- * Exported for tests; the hierarchy parameter exists to prove the SQL shape on synthetic hierarchies.
- */
+/** Matches CDC's `resolveChannelKey`; the hierarchy parameter lets tests use synthetic trees. */
 export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) =>
   h.deepestAncestorSql(et, alias);
 
@@ -69,11 +55,7 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   `),
   );
 
-/**
- * Rebuilds channel and product counters from database state for seeding or repair.
- * It recomputes context counts, frontiers, activity stamps, and paths before product
- * view and embedding counters.
- */
+/** Rebuilds counters from database state, for seeding or repair. */
 export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 1: Organization-level counters ──────────────────────────────
   const orgPairs = [
@@ -98,8 +80,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   );
 
   // ── Phase 2: Sub-org context counters (e.g. project-level) ────────────
-  // Full attribution: every descendant type counts on every ancestor level it carries a
-  // non-null FK for (matches CDC's getEntityDeltas), not just direct product children.
+  // Every descendant counts on every ancestor level it has a non-null FK for, as in getEntityDeltas.
   for (const ctxType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
     const fk = entityIdColumnName(ctxType);
     const descendants = hierarchy.getOrderedDescendants(ctxType);
@@ -123,8 +104,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // Rebuild organization sequence and per-node entity frontiers from maximum stamped sequence.
-  // Tombstones remain part of the frontier, matching CDC rollup.
+  // Rebuilt from the maximum stamped sequence; tombstones stay part of the frontier, as in CDC.
   const sequenceMaxes = appConfig.productEntityTypes.map(
     (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
   );
@@ -141,8 +121,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const frontierKey = `e:f:${entityType}`;
-    // Exclude unpublished drafts because they are not delta-fetchable; retain tombstones.
-    // This also ignores any stale sequence values on draft rows.
+    // Unpublished drafts are not delta-fetchable so they are excluded; tombstones are retained.
     const frontierPredicate = publishedPredicate(entityType, 't');
 
     // Org node: every stamped countable row rolls up to its organization.
@@ -156,8 +135,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     `,
     );
 
-    // Every non-root ancestor level the table carries a FK column for (full rollup,
-    // matching CDC's frontierNodeKeys: org + every non-null ancestor).
+    // Every non-root ancestor level with a FK column, matching CDC's frontierNodeKeys.
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
       if (ancestor === 'organization') continue;
       const col = entityIdColumnName(ancestor);
@@ -172,9 +150,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
       );
     }
 
-    // Self family (home node only, deepest non-null ancestor):
-    // e:f:h:{type} = MAX(seq) of HOMED rows (drafts excluded, tombstones included);
-    // e:c:h:{type} = COUNT of countable HOMED rows (live AND published).
+    // Self family, home node only: e:f:h:{type} = MAX(seq) of homed rows (drafts excluded,
+    // tombstones included); e:c:h:{type} = COUNT of live and published homed rows.
     const homeExpr = deepestAncestorExpr(entityType, 't');
     if (homeExpr) {
       await upsertChannelCounters(
@@ -198,8 +175,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     }
   }
 
-  // Rebuild home-only activity stamps from latest publish/create and update times.
-  // They do not fan out to ancestors; null update maxima are omitted from JSON.
+  // Home-only stamps: no fan-out to ancestors, and null update maxima are omitted from the JSON.
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);
     const ctxExpr = deepestAncestorExpr(entityType, 't');
@@ -224,8 +200,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // Canonical channel paths let catchup verify ancestry without extra queries.
-  // CDC maintains the same values incrementally.
+  // Canonical channel paths let catchup verify ancestry; CDC maintains them incrementally.
   for (const channelType of hierarchy.channelTypes) {
     await db.execute(
       sql.raw(`
@@ -239,7 +214,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 4: Product counters ─────────────────────────────────────────
   await db.delete(productCountersTable);
 
-  // 4a: viewCount from seen_by (unique user views, 90-day window via pg_partman)
+  // 4a: viewCount from seen_by, unique user views over a 90-day pg_partman window.
   await db.execute(
     sql.raw(`
     INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
@@ -252,9 +227,9 @@ export const recalculateCounters = async (db: DbOrTx) => {
   `),
   );
 
-  // 4b: Array-ref counters → channel_counters (e.g. label usage from tasks.labels[])
+  // 4b: Array-ref counters into channel_counters, e.g. label usage from tasks.labels[].
   for (const ref of appConfig.productEmbeddings) {
-    // Hydrated single-reference embeddings (client cache hints) have no array column to unnest
+    // Hydrated single-reference embeddings have no array column to unnest.
     if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
     const src = tbl(ref.hostProduct as EntityType);
     const key = `e:c:${ref.hostProduct}`;
@@ -269,7 +244,6 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // Return row counts
   const [{ channelRows }] = await db
     .select({ channelRows: sql<number>`count(*)`.mapWith(Number) })
     .from(channelCountersTable);

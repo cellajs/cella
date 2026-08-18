@@ -13,10 +13,7 @@ interface ApiError {
   organizationId?: string;
 }
 
-/**
- * Generates a mock API error response.
- * Messages use translation keys from locales/en/error.json for OpenAPI examples.
- */
+/** Messages are translation keys from locales/en/error.json. */
 export const mockApiError = (status = 400): ApiError => ({
   name: 'BadRequestError',
   message: 'error:bad_request_action',

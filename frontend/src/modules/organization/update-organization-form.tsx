@@ -24,8 +24,7 @@ import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-// Override generated schema: omit fields not managed by this form (welcomeText is in details form),
-// transform empty strings to null for optional fields, and add https:// validation for websiteUrl
+// welcomeText belongs to the details form; empty optional strings are stored as null.
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
   languages: z.array(z.enum(appConfig.languages)).min(1),
   websiteUrl: z
@@ -44,7 +43,6 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-/** Renders the form for updating organization. */
 export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
@@ -63,7 +61,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const formContainerId = 'update-organization';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
 
-  // Prevent data loss
   useBeforeUnload(form.isDirty);
 
   const onSubmit = (body: FormValues) => {

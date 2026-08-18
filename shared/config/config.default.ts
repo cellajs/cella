@@ -2,7 +2,6 @@ import type { ConfigMode, ProductEmbedding, RequiredConfig, S3ConfigInput } from
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
-// Re-export for external consumers
 export { hierarchy, roles } from './hierarchy-config.ts';
 
 export const config = {
@@ -27,10 +26,9 @@ export const config = {
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 
-  /** Available CRUD actions for permission checks */
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
-  /** Resource types that are not entities but have activities logged */
+  /** Not entities, but activities are logged for them. */
   resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role'] as const,
 
   /**
@@ -47,7 +45,6 @@ export const config = {
    */
   menuStructure: [{ entityType: 'organization', subentityType: null } as const],
 
-  /** Default restrictions for tenants (entity quotas and rate limits) */
   defaultRestrictions: {
     quotas: {
       // 1 tenant = 1 organization. Matches the hard structural cap (unique index on
@@ -117,10 +114,10 @@ export const config = {
   maintenance: false,
 
   /**
-   * Local dev service listen ports, also used as the Vite proxy targets. Apps MUST offset this
-   * whole block together with the port in the `frontendUrl` family (e.g. +20 → 3020/4020/4021/…):
-   * service ports are machine-global, so with two stacks running, whichever backend binds :4000
-   * first answers every app's `/api` proxy. `PORT`-style env vars still override at runtime.
+   * Local dev listen ports, also the Vite proxy targets. Ports are machine-global, so an app must
+   * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
+   * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy.
+   * `PORT`-style env vars still override at runtime.
    */
   devPorts: {
     api: 4000,

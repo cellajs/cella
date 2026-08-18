@@ -10,7 +10,6 @@ interface FindExistingRequestOpts {
   type: RequestModel['type'];
 }
 
-/** Check for an existing unique request by normalized email and type. */
 export const findExistingRequest = async (ctx: DbContext, { email, type }: FindExistingRequestOpts) => {
   const { db } = ctx.var;
   const [existing] = await db
@@ -27,12 +26,7 @@ interface InsertRequestOpts {
   message?: string | null;
 }
 
-/**
- * Insert a request and return the created row (without tokenId).
- * Returns undefined when the unique signup index (waitlist/newsletter per lower(email))
- * rejects the row, so concurrent or case-variant duplicates surface as a duplicate
- * signal, not a raw constraint violation.
- */
+/** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
 export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
   const { db } = ctx.var;
   const { tokenId, ...requestsSelect } = getColumns(requestsTable);
@@ -52,7 +46,6 @@ interface FindRequestsPaginatedOpts {
   offset: number;
 }
 
-/** Get paginated requests list with total count. */
 export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
   const { filter, sort, order, limit, offset } = opts;
@@ -90,7 +83,6 @@ interface DeleteRequestsByIdsOpts {
   ids: string[];
 }
 
-/** Delete requests by IDs. */
 export const deleteRequestsByIds = async (ctx: DbContext, { ids }: DeleteRequestsByIdsOpts) => {
   const { db } = ctx.var;
   return db.delete(requestsTable).where(inArray(requestsTable.id, ids));
@@ -101,7 +93,6 @@ interface LinkWaitlistRequestOpts {
   tokenId: string;
 }
 
-/** Link a waitlist request to a token (from activity bus). */
 export const linkWaitlistRequest = async (ctx: DbContext, { email, tokenId }: LinkWaitlistRequestOpts) => {
   const { db } = ctx.var;
   return db

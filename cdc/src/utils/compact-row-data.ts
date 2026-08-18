@@ -3,22 +3,13 @@ import { entityTables, resourceTables } from '#/tables';
 import type { CdcRowData } from '../types';
 
 /**
- * Columns with varchar length >= this threshold are stripped from in-memory row data.
- * The publication itself always carries all columns (column lists are incompatible with
- * REPLICA IDENTITY FULL); stripping happens in the handlers after change detection.
- * Keeps buffered/forwarded events small (e.g. ~1KB vs ~34KB for tasks) while preserving all metadata.
- * Detected automatically from Drizzle schema: no per-entity config needed.
+ * Varchar length at or above which a column is stripped from in-memory row data. The publication
+ * always carries every column, since column lists are incompatible with REPLICA IDENTITY FULL, so
+ * stripping happens in the handlers after change detection.
  */
 const cdcExcludeColumnLengthThreshold = 10_000;
 
-/**
- * Set of camelCase column keys whose schema length exceeds the CDC threshold.
- * These columns carry large text (description, keywords, summary, welcomeText)
- * that the CDC pipeline never reads, only change detection needs them,
- * and that happens before compaction in the handlers.
- *
- * Built once at startup from Drizzle schema introspection.
- */
+/** camelCase keys of large-text columns, from Drizzle introspection at startup. */
 export const excludedRowDataKeys: Set<string> = (() => {
   const keys = new Set<string>();
   const allTables = [...Object.values(entityTables), ...Object.values(resourceTables)];
@@ -31,10 +22,7 @@ export const excludedRowDataKeys: Set<string> = (() => {
   return keys;
 })();
 
-/**
- * Strip large columns from row data so they don't accumulate in the buffer.
- * Called in handlers after changedFields has been computed.
- */
+/** Called in the handlers, after changedFields has been computed. */
 export function compactRowData(rowData: CdcRowData): CdcRowData {
   if (excludedRowDataKeys.size === 0) return rowData;
   const slim: Record<string, unknown> = {};

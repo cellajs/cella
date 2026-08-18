@@ -81,9 +81,7 @@ describe('database resource', () => {
     expect(db).toMatch(/protect:\s*isProduction/);
   });
 
-  // Known gaps surfaced by the testing plan: these are configuration
-  // decisions the operator must make per environment. Listed here so a
-  // reviewer sees them in `pnpm test` output.
+  // Known gaps: per-environment configuration decisions for the operator, listed here so a reviewer sees them in `pnpm test` output.
   it.todo('production instance runs as HA cluster (isHaCluster: true)');
   it.todo('production instance has automated backups (disableBackup: false)');
 });
@@ -107,8 +105,7 @@ describe('secrets module', () => {
     expect(secrets).toContain("import { configuredOrRandomSecret } from './configured-secret'");
     expect(configuredSecret).toMatch(/new random\.RandomPassword\(/);
     expect(configuredSecret).toContain('const configured = infraConfig.getSecret(configKey)');
-    // Random-generated values come generically from the registry definition,
-    // not a hand-maintained per-key list.
+    // Random-generated values come from the registry definition, not a hand-maintained per-key list.
     expect(secrets).toContain('return configuredOrRandomSecret(configKey, `generated-${name}`)');
     expect(secrets).toContain('pulumiOwnedRuntimeSecret(definition.id, definition.secretName)');
     expect(secrets).toMatch(/generation === 'random'/);

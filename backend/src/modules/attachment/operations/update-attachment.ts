@@ -20,7 +20,6 @@ export async function updateAttachmentOp(
   const { fullResponse } = opts;
   const user = ctx.var.user;
 
-  // Single tenantContext wraps permission check + write to avoid double-transaction pool pressure
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
     const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update');
 

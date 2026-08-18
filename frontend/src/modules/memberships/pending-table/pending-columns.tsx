@@ -6,7 +6,6 @@ import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = (path: { tenantId: string; organizationId: string }) => {
   const { t } = useTranslation();
 

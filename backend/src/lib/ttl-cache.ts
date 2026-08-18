@@ -1,22 +1,16 @@
 import { TTLCache as BaseTTLCache } from '@isaacs/ttlcache';
 
-/** Dispose reason from ttlcache */
 export type DisposeReason = 'stale' | 'set' | 'evict' | 'delete';
 
 export interface TTLCacheOptions<T> {
   /** Maximum number of entries */
   maxSize: number;
-  /** Default TTL in milliseconds */
   defaultTtl: number;
   /** Optional callback when entries are removed */
   onDispose?: (key: string, value: T, reason: DisposeReason) => void;
 }
 
-/**
- * TTL cache with prefix invalidation.
- * Automatic expiration via timer (no manual prune needed).
- * Evicts the soonest-expiring entry, independent of access recency.
- */
+/** TTL cache with prefix invalidation: a timer expires entries and eviction takes the soonest-expiring one. */
 export class TTLCache<T> {
   private cache: BaseTTLCache<string, T>;
   private readonly maxSize: number;
@@ -33,38 +27,26 @@ export class TTLCache<T> {
     });
   }
 
-  /**
-   * Get value by key. Returns undefined if not found or expired.
-   */
+  /** Returns undefined when the key is missing or expired. */
   get(key: string): T | undefined {
     return this.cache.get(key);
   }
 
-  /**
-   * Set value with optional custom TTL.
-   */
+  /** Falls back to the cache's default TTL. */
   set(key: string, value: T, ttl?: number): void {
     this.cache.set(key, value, { ttl: ttl ?? this.defaultTtl });
   }
 
-  /**
-   * Check if key exists and is not expired.
-   */
+  /** True only while the key is unexpired. */
   has(key: string): boolean {
     return this.cache.has(key);
   }
 
-  /**
-   * Delete a specific key.
-   */
   delete(key: string): boolean {
     return this.cache.delete(key);
   }
 
-  /**
-   * Invalidate all entries matching a key prefix.
-   * @returns Number of entries deleted
-   */
+  /** Invalidate all entries matching a key prefix, returning the number deleted. */
   invalidateByPrefix(prefix: string): number {
     let deleted = 0;
     for (const key of this.cache.keys()) {
@@ -76,22 +58,15 @@ export class TTLCache<T> {
     return deleted;
   }
 
-  /**
-   * Clear all entries.
-   */
   clear(): void {
     this.cache.clear();
   }
 
-  /**
-   * Get remaining TTL for a key in milliseconds.
-   * Returns 0 if key is not found or expired.
-   */
+  /** Remaining TTL in milliseconds, 0 when the key is missing or expired. */
   getRemainingTTL(key: string): number {
     return this.cache.getRemainingTTL(key);
   }
 
-  /** Current number of entries */
   get size(): number {
     return this.cache.size;
   }
@@ -101,7 +76,6 @@ export class TTLCache<T> {
     return this.maxSize;
   }
 
-  /** Cache statistics */
   get stats(): { size: number; capacity: number; utilization: number } {
     return {
       size: this.cache.size,
@@ -110,10 +84,7 @@ export class TTLCache<T> {
     };
   }
 
-  /**
-   * Cancel internal timer for graceful shutdown.
-   * After calling this, items will not automatically expire.
-   */
+  /** Cancel the internal timer for graceful shutdown; entries stop expiring automatically. */
   cancelTimer(): void {
     this.cache.cancelTimer();
   }

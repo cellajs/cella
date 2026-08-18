@@ -1,11 +1,7 @@
 /**
- * Detect the "publication does not exist" decode error Postgres raises when a
- * replication slot was created before its publication. Such a slot decodes a WAL
- * window in which the publication is absent, so every stream fails even though
- * the publication now exists. The subscribe loop uses this to self-heal by
- * repositioning the slot past the publication.
- *
- * Kept free of DB/env imports so the rule is unit-testable in isolation.
+ * The "publication does not exist" decode error Postgres raises for a slot created before its
+ * publication: the slot decodes a WAL window without the publication, so every stream fails even once
+ * the publication exists. The subscribe loop repositions such a slot past the publication.
  */
 export function isStalePublicationError(error: unknown): boolean {
   const message =

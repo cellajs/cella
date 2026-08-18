@@ -21,17 +21,10 @@ export const tenantReadCondition = (t: { tenantId: unknown; deletedAt?: unknown 
   `;
 };
 
-/**
- * Tenant-scoped SELECT policy for product entity tables.
- * Requires tenant match + authentication for reads.
- */
 export const tenantSelectPolicy = (name: string, table: { tenantId: unknown }) =>
   pgPolicy(`${name}_select_policy`, { for: 'select', using: tenantReadCondition(table) });
 
-/**
- * Unconditional write-through policies (INSERT, UPDATE, DELETE).
- * FORCE RLS requires explicit write policies; guards, FKs, and triggers enforce write isolation.
- */
+/** FORCE RLS requires explicit write policies; guards, FKs, and triggers enforce write isolation. */
 export const writeThroughPolicies = (name: string) => [
   pgPolicy(`${name}_insert_policy`, { for: 'insert', withCheck: sql`true` }),
   pgPolicy(`${name}_update_policy`, { for: 'update', using: sql`true` }),

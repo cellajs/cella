@@ -2,7 +2,6 @@ import { UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useUserStore } from '~/modules/user/user-store';
 
-/** Current user's avatar for the account nav button; falls back to the user icon while signed out. */
 export function AccountNavIcon({ className }: { className?: string }) {
   const { user } = useUserStore();
 

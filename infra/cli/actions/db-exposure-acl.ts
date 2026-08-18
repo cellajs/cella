@@ -1,5 +1,4 @@
-// Pure helpers for validating the operator-supplied public-endpoint ACL. Kept
-// free of prompts and I/O so the validation rules are unit-testable in isolation.
+// Pure helpers for validating the operator-supplied public-endpoint ACL, free of prompts and I/O so the rules are unit-testable.
 
 const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
@@ -21,9 +20,8 @@ export interface CidrCheck {
 }
 
 /**
- * Normalize a single operator entry to a canonical IPv4 CIDR and validate it. A
- * bare address gains a `/32` host suffix. Rejects malformed input and any range
- * that would open the database to the whole internet (`0.0.0.0/...` or a `/0`).
+ * Normalize a single operator entry to a canonical IPv4 CIDR: a bare address gains a `/32` host suffix.
+ * Rejects malformed input and any range opening the database to the whole internet (`0.0.0.0/...` or a `/0`).
  */
 export function toValidatedCidr(entry: string): CidrCheck {
   const raw = entry.trim();
@@ -51,10 +49,7 @@ export function toValidatedCidr(entry: string): CidrCheck {
 /** Validated ACL parse result: the normalized CIDR list, or the first error. */
 export type AclParse = { ok: true; cidrs: string[] } | { ok: false; reason: string };
 
-/**
- * Parse a comma-separated operator ACL string into canonical CIDRs. Returns the
- * first validation failure, or the de-duplicated normalized list.
- */
+/** Parse a comma-separated operator ACL string into de-duplicated canonical CIDRs, or return the first validation failure. */
 export function parseAclInput(raw: string): AclParse {
   const entries = raw
     .split(',')

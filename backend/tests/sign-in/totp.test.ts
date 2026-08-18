@@ -42,14 +42,11 @@ describe('TOTP Authentication', async () => {
 
   describe('TOTP Setup', () => {
     it('should generate TOTP key for authenticated user', async () => {
-      // Create and verify a user
       const user = await createTestUser(signUpUser.email);
       await verifyUserEmail(signUpUser.email);
 
-      // Get authenticated session directly
       const sessionCookie = await createTestSession(user);
 
-      // Request TOTP key generation
       const { response: res, data } = await call(generateTotpKey, {
         headers: { ...defaultHeaders, Cookie: sessionCookie },
       });
@@ -62,14 +59,11 @@ describe('TOTP Authentication', async () => {
     });
 
     it('should create TOTP for user with valid code', async () => {
-      // Create and verify a user
       const user = await createTestUser(signUpUser.email);
       await verifyUserEmail(signUpUser.email);
 
-      // Get authenticated session directly
       const sessionCookie = await createTestSession(user);
 
-      // First generate TOTP key
       const { response: generateRes, data: generateData } = await call(generateTotpKey, {
         headers: { ...defaultHeaders, Cookie: sessionCookie },
       });
@@ -77,11 +71,9 @@ describe('TOTP Authentication', async () => {
       expect(generateRes.status).toBe(200);
       const generatedTotp = generateData as { manualKey: string };
 
-      // Get totp-challenge cookie from generate response
       const generateCookies = generateRes.headers.get('set-cookie');
       const allCookies = [sessionCookie, generateCookies].filter(Boolean).join('; ');
 
-      // Create TOTP with verification code
       const { response: createRes } = await call(createTotp, {
         body: { code: '123456' },
         headers: { ...defaultHeaders, Cookie: allCookies },
@@ -89,7 +81,6 @@ describe('TOTP Authentication', async () => {
 
       expect(createRes.status).toBe(201);
 
-      // Verify TOTP was created in database
       const totpRecord = await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
       expect(totpRecord).toHaveLength(1);
       expect(totpRecord[0].secret).toMatch(/^v1:/);
@@ -121,7 +112,6 @@ describe('TOTP Authentication', async () => {
       const user = await createTotpUser(signUpUser.email);
       const mfaToken = await createMfaToken(user);
 
-      // Mock TOTP validation to fail
       const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
       vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('Invalid TOTP code'));
 
@@ -154,7 +144,7 @@ describe('TOTP Authentication', async () => {
 
       const mfaToken = await createMfaToken(user);
 
-      // Mock validateTOTP to throw 404 error (no TOTP found)
+      // No TOTP registered for the user.
       const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
       vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('TOTP not found'));
 

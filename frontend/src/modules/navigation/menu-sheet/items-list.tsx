@@ -16,7 +16,6 @@ interface MenuSheetItemsProps {
   className?: string;
 }
 
-/** Renders the menu sheet items component. */
 export function MenuSheetItems({ data, type, isArchived, options, className }: MenuSheetItemsProps) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
@@ -48,7 +47,6 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
         {filteredItems.map((item) => (
           <li className={item.submenu?.length && detailedMenu ? 'submenu-section relative my-1' : 'my-1'} key={item.id}>
             <MenuSheetItem item={item} className={className} icon={options?.icon} />
-            {/* Submenu below */}
             {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
               <ul>
                 <MenuSheetItems type={item.submenu[0].entityType} data={item.submenu} isArchived={false} />

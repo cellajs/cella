@@ -17,21 +17,11 @@ interface FindUnseenCountsByUserOpts {
   channelIds: string[];
   productTypes: readonly SeenTrackedProductType[];
   cutoff: string;
-  /**
-   * Per-type collection read filter (same SQL compiler as list endpoints), so badges
-   * only count rows the user can actually fetch. `undefined` value = unrestricted
-   * scope for that type; a type absent from the record is counted unrestricted too
-   * (callers should pre-drop types whose scope resolved to `none`).
-   */
+  /** Per-type collection read filter. An `undefined` value or an absent type counts unrestricted, so callers pre-drop types scoped `none`. */
   scopeWhereByType?: Partial<Record<SeenTrackedProductType, SQL | undefined>>;
 }
 
-/**
- * Counts readable, live, unseen rows within the recency window by home context.
- * Per-entity `NOT EXISTS` queries avoid total-minus-seen skew. Draft-lifecycle rows use
- * publish time while other rows use creation time; `unseen-sync.ts` mirrors this rule.
- * Seen-record retention matches the window, so expired records cannot reintroduce a row.
- */
+/** Counts readable, live, unseen rows in the recency window by home context. Draft-lifecycle rows use publish time, others creation time; `unseen-sync.ts` mirrors this. */
 export const findUnseenCountsByUser = async (
   ctx: DbContext,
   { userId, channelIds, productTypes, cutoff, scopeWhereByType }: FindUnseenCountsByUserOpts,

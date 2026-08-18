@@ -4,12 +4,7 @@ import { db } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
 
-/**
- * DB-backed per-user WebSocket connection rate limiter.
- * Shares the backend's `rate_limits` table through its drizzle schema, mirroring the
- * backend rate-limiter helpers. Falls back to in-memory limiting when the DB is
- * unreachable (fail-open with safety net).
- */
+/** Per-user connection limiter over the backend's `rate_limits` table; falls back to in-memory limiting when the DB is unreachable. */
 const connectionLimiter = env.NODB
   ? new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 })
   : new RateLimiterDrizzle({
@@ -27,7 +22,6 @@ const connectionLimiter = env.NODB
       inMemoryBlockOnConsumed: 20,
     });
 
-/** Consume one connection point for a userId. Rejects if over limit. */
 export async function checkConnectionRate(userId: string): Promise<boolean> {
   try {
     await connectionLimiter.consume(userId);

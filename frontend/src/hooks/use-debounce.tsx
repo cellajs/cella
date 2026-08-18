@@ -6,10 +6,7 @@ type UseDebounceOptions<T> = {
   immediateValue?: T;
 };
 
-/**
- * Debounces a value while allowing one matching value to apply immediately.
- * This can delay showing a loading state while hiding it at once.
- */
+/** Debounces a value, applying `immediateValue` at once when the value matches it. */
 export function useDebounce<T>(value: T, delay = 1000, options?: UseDebounceOptions<T>): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -18,7 +15,6 @@ export function useDebounce<T>(value: T, delay = 1000, options?: UseDebounceOpti
   }, delay);
 
   useEffect(() => {
-    // If immediateValue is set and value matches, cancel pending and apply immediately
     if (options?.immediateValue !== undefined && value === options.immediateValue) {
       debouncedSet.cancel();
       setDebouncedValue(value);

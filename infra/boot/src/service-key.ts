@@ -25,15 +25,9 @@ function parsePair(raw: string, source: string): ServiceKeyPair {
 }
 
 /**
- * Resolve this generation's service key (v2 model).
- *
- * Cache-first: reboots read the pair persisted at first boot and never touch
- * IAM or Secret Manager again. First boot fetches the single-access handoff
- * bundle exactly once. Scaleway disables the version on that read, so a
- * SECOND reader always fails. A fetch failure with no cache therefore means
- * the bundle was consumed by someone else (or the deploy staged it wrong):
- * that is a SECURITY SIGNAL, not a retryable error. The thrown message is
- * explicit so boot-diag and the deploy surface it as such.
+ * Resolve this generation's service key, cache-first: reboots read the pair persisted at first boot and never touch IAM or Secret Manager again.
+ * First boot fetches the single-access handoff bundle once, and Scaleway disables the version on that read so a SECOND reader always fails.
+ * A fetch failure with no cache therefore means the bundle was consumed elsewhere or staged wrong: a security signal, not a retryable error, and the thrown message says so.
  */
 export async function fetchServiceKey(opts: FetchServiceKeyOptions): Promise<ServiceKeyPair> {
   const cached = await readFile(opts.handoff.cacheFile, 'utf-8').catch(() => undefined);
@@ -46,7 +40,7 @@ export async function fetchServiceKey(opts: FetchServiceKeyOptions): Promise<Ser
   if (!res.ok) {
     throw new Error(
       `SECURITY: service-key handoff fetch failed (${res.status}) and no cached key exists. ` +
-        'The single-access bundle was already consumed or is missing — possible credential interception. ' +
+        'The single-access bundle was already consumed or is missing: possible credential interception. ' +
         'Halting boot; investigate before redeploying (a redeploy stages a fresh bundle).',
     );
   }

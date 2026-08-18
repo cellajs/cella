@@ -6,7 +6,6 @@ import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { navItems } from '~/nav-config';
 import { cn } from '~/utils/cn';
 
-// Cached base nav items
 let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
@@ -17,9 +16,6 @@ interface BottomBarNavProps {
   triggerNavItem: TriggerNavItemFn;
 }
 
-/**
- * Mobile bottom navigation bar.
- */
 export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
   const { hasStarted } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);

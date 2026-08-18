@@ -8,18 +8,14 @@ import { createServerStx } from './create-server-stx';
 import { filterNoOpFields, resolveFieldConflicts } from './field-versions';
 import { advanceClock, generateServerHLC } from './hlc';
 
-/** Transform ArrayDelta fields to their resolved string[] type */
 type ResolveDeltas<T> = {
   [K in keyof T]: T[K] extends ArrayDelta | undefined ? string[] | Exclude<T[K], ArrayDelta> : T[K];
 };
 
 interface ResolvedUpdate<T extends Record<string, unknown> = Record<string, unknown>> {
   changed: true;
-  /** Merged accepted scalar + resolved array values */
   values: Partial<ResolveDeltas<T>>;
-  /** All accepted field names (scalars + deltas) */
   acceptedFieldNames: (keyof T & string)[];
-  /** Built stx metadata for the update */
   stx: StxBase;
 }
 
@@ -71,9 +67,8 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
 }
 
 /**
- * Resolves a product update through lens normalization, no-op filtering, HLC conflicts,
- * and AWSet deltas. Keys and expand-window twins are canonicalized before conflict logic;
- * returns unchanged when no operation survives.
+ * Lens normalization, no-op filtering, HLC conflicts and AWSet deltas. Keys and expand-window twins are
+ * canonicalized before conflict logic; returns unchanged when no operation survives.
  */
 export function resolveUpdateOps<T extends Record<string, unknown>>(
   entityType: ProductEntityType,

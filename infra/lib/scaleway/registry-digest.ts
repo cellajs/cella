@@ -1,11 +1,7 @@
 import { createHash } from 'node:crypto';
 import { type FetchLike, resolveFetch } from '../utils/fetch-like';
 
-/**
- * Manifest media types docker/OCI clients pull by. The registry returns the
- * stored representation (index or single manifest) matching one of these; the
- * digest of its exact bytes is the pull-by-digest reference for the tag.
- */
+/** Manifest media types docker/OCI clients pull by. The registry returns the stored representation matching one of these, and the digest of its exact bytes is the pull-by-digest reference. */
 const MANIFEST_ACCEPT = [
   'application/vnd.oci.image.index.v1+json',
   'application/vnd.docker.distribution.manifest.list.v2+json',
@@ -30,7 +26,6 @@ export interface BearerChallenge {
   scope?: string;
 }
 
-/** Parse a `Bearer realm="…",service="…"` challenge into its parameters. */
 export function parseBearerChallenge(header: string): BearerChallenge | undefined {
   if (!/^bearer /i.test(header)) return undefined;
   const params = new Map<string, string>();
@@ -43,13 +38,7 @@ export function parseBearerChallenge(header: string): BearerChallenge | undefine
   return { realm, service: params.get('service'), scope: params.get('scope') };
 }
 
-/**
- * Resolve the manifest digest a tag currently points to, via the Docker
- * Registry HTTP v2 API. The digest is computed as sha256 over the exact
- * manifest bytes (the content-addressing contract), so no trust is placed in
- * response headers. Tries basic auth first; on a 401 bearer challenge it
- * performs the standard token exchange and retries.
- */
+/** Resolve the manifest digest a tag points to via the Docker Registry HTTP v2 API. The digest is sha256 over the exact manifest bytes, never a response header. Basic auth first, then the bearer token exchange on a 401. */
 export async function resolveImageDigest(opts: ResolveImageDigestOptions): Promise<string> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   const [host, ...namespaceParts] = opts.registry.split('/');
@@ -85,8 +74,7 @@ export async function resolveImageDigest(opts: ResolveImageDigestOptions): Promi
   }
 
   if (!response.ok) {
-    // Attach the HTTP status so callers can branch on 404 (tag not found) versus
-    // auth/network failures without parsing the message.
+    // Attach the HTTP status so callers can branch on 404 (tag not found) without parsing the message.
     throw Object.assign(
       new Error(`Could not fetch manifest for ${repository}:${opts.tag} from ${host} (status ${response.status}).`),
       {

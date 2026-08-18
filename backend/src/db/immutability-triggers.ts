@@ -26,10 +26,7 @@ interface TableImmutabilityConfig {
   functionName: string;
 }
 
-/**
- * Generates a plpgsql function that raises an exception when any of the given
- * columns change. Uses `IS DISTINCT FROM` so NULL-to-value transitions are caught.
- */
+/** Raises when any listed column changes. `IS DISTINCT FROM` catches NULL-to-value transitions. */
 function buildFunctionSQL(functionName: string, columns: readonly string[]): string {
   const guard = columns.map((col) => `NEW.${col} IS DISTINCT FROM OLD.${col}`).join('\n       OR ');
 
@@ -48,7 +45,6 @@ $$ LANGUAGE plpgsql;`;
 export const immutableKeysTriggerName = (tableName: string) => `${tableName}_immutable_keys_trigger`;
 export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_admin_only_write_trigger`;
 
-/** Attaches (or replaces) a BEFORE UPDATE trigger that calls `functionName`. */
 function buildTriggerSQL(tableName: string, functionName: string): string {
   const triggerName = immutableKeysTriggerName(tableName);
   return `
@@ -58,8 +54,7 @@ CREATE TRIGGER ${triggerName}
   FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
 }
 
-/** Attaches (or replaces) the write-guard trigger. Covers INSERT/UPDATE/DELETE, unlike the
- *  immutable-keys triggers, because the point is to block the write entirely, not police columns. */
+/** Write-guard trigger: covers INSERT, UPDATE and DELETE, blocking the write outright. */
 function buildAdminOnlyWriteTriggerSQL(tableName: string): string {
   const triggerName = adminOnlyWriteTriggerName(tableName);
   return `
@@ -71,10 +66,8 @@ CREATE TRIGGER ${triggerName}
 
 // Pre-built trigger functions
 
-/** Shared by channel entities with tenant_id. */
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
-/** Product entities with a parent include organization_id. */
 export const productImmutabilityFunctionSQL = buildFunctionSQL(
   'product_entity_immutable_keys',
   productImmutableColumns,
@@ -90,7 +83,6 @@ export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL(
   inactiveMembershipImmutableColumns,
 );
 
-/** Blocks all updates for audit and append-only tables. */
 export const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
 BEGIN
@@ -98,11 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`;
 
-/**
- * Blocks runtime-role writes even if provider reconciliation restores table privileges.
- * Admin operations and owner-executed referential actions remain allowed. `COALESCE(NEW, OLD)`
- * supports INSERT, UPDATE, and DELETE triggers.
- */
+/** Blocks runtime_role writes even if provider reconciliation restores table privileges. Admin operations stay allowed. */
 export const adminOnlyWriteFunctionSQL = `
 CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$
 BEGIN
@@ -134,15 +122,11 @@ const appendOnlyConfigs: TableImmutabilityConfig[] = [
   { tableName: 'activities', functionName: 'append_only_immutable_row' },
 ];
 
-/**
- * Tables the app may read but never write: writes must go over the admin connection.
- * `system_roles` decides who is a system admin, so a write here is a privilege escalation.
- */
+/** Read-only for the app: `system_roles` decides who is a system admin, so writes must use the admin connection. */
 const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [
   { tableName: 'system_roles', functionName: 'admin_only_write_row' },
 ];
 
-/** Every table that has a BEFORE UPDATE immutable-keys trigger. */
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...channelConfigs,
   ...productWithParentConfigs,
@@ -150,16 +134,9 @@ export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...appendOnlyConfigs,
 ];
 
-/** Every table that has a write-guard trigger. */
 export const allAdminOnlyWriteTables: TableImmutabilityConfig[] = adminOnlyWriteConfigs;
 
-/**
- * Every trigger function in creation order. Both emitters build from this single list.
- *
- * Both migration emitters derive from this list, which ensures every trigger function exists
- * before `CREATE TRIGGER` runs. A missing function would fail inside `EXCEPTION WHEN OTHERS`,
- * roll back the subtransaction, and let the migration continue without immutability triggers.
- */
+/** Creation order: both migration emitters build from this list, so every function exists before its `CREATE TRIGGER`. */
 export const allImmutabilityFunctionsSQL: string[] = [
   baseEntityImmutabilityFunctionSQL,
   productImmutabilityFunctionSQL,
@@ -174,10 +151,7 @@ export const allImmutabilityFunctionsSQL: string[] = [
 const baseEntityTables = channelConfigs;
 const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
 
-/**
- * Complete SQL to create all immutability functions and triggers.
- * Run after migrations so protection is in place.
- */
+/** All immutability functions and triggers. Run after migrations. */
 export const immutabilityTriggersSQL = `
 -- Functions (${allImmutabilityFunctionsSQL.length})
 -- Base entities: ${names(baseEntityTables)}
@@ -193,5 +167,3 @@ ${allImmutabilityTables.map((t) => buildTriggerSQL(t.tableName, t.functionName))
 -- Write-guard triggers (${allAdminOnlyWriteTables.length} tables)
 ${allAdminOnlyWriteTables.map((t) => buildAdminOnlyWriteTriggerSQL(t.tableName)).join('\n')}
 `;
-
-// Custom builders (for non-standard tables)

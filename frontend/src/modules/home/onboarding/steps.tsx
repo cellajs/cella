@@ -27,7 +27,6 @@ interface OnboardingProps {
   setCreatedOrganization: (organization: Organization | null) => void;
 }
 
-/** Renders the onboarding component. */
 export function Onboarding({
   onboarding = 'start',
   setOnboardingState,
@@ -42,13 +41,11 @@ export function Onboarding({
 
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
-  // Fetch organizations to determine if user has created any
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
   const hasOrganizations = organizations.length > 0;
 
-  // Lock steps at mount: if user already has orgs, show only profile step.
-  // Don't shrink mid-flow when an org is created during onboarding.
+  // Locked at mount so creating an org mid-flow does not shrink the stepper.
   const [steps] = useState(() => {
     const allSteps = getOnboardingSteps();
     return hasOrganizations ? [allSteps[0]] : allSteps;

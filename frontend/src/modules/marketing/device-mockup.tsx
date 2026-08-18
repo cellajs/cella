@@ -14,9 +14,6 @@ interface DeviceMockupProps {
   type: DeviceType;
 }
 
-/**
- * Component to display a device mockup with a carousel of images, supporting light and dark mode variations.
- */
 export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceMockupProps) {
   const mode = useUIStore((state) => state.mode);
 

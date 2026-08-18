@@ -6,12 +6,9 @@ import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notic
 import { FocusTarget } from '~/modules/navigation/focus-bridge';
 import { getSkipPageEnter } from '~/utils/nav-transition';
 
-/**
- * Main content area for the app layout, includes error boundary and alerter.
- */
 export function AppContent() {
-  // Curtain over the content area that briefly holds the background then reveals, masking scroll-to-header
-  // travel on entity navigation. Skipped on same-base forward nav (org -> org), which has no scroll delta.
+  // The curtain holds the background over the content area to mask scroll-to-header travel on
+  // entity navigation. Same-base forward nav (org to org) has no scroll delta and skips it.
   const channelKey = usePageChannelKey();
   const showCurtain = !!channelKey && !getSkipPageEnter();
 

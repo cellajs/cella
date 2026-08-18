@@ -14,10 +14,6 @@ interface NavButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-/**
- * App nav icon used by both sidebar and bottom bar: the item's `iconSlot` when configured
- * (avatar, loader), its `icon` otherwise.
- */
 function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
   const iconClass = cn('size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110', className);
 
@@ -30,16 +26,12 @@ function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: stri
   return <NavItemIcon className={iconClass} strokeWidth={1.8} />;
 }
 
-/** The item's `badgeSlot` when configured (e.g. unseen counter), positioned by the hosting bar. */
 function AppNavBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
   if (!navItem.badgeSlot) return null;
   const BadgeSlot = navItem.badgeSlot;
   return <BadgeSlot isActive={isActive} className={className} />;
 }
 
-/**
- * App sidebar nav button.
- */
 export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -69,9 +61,6 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
   );
 }
 
-/**
- * Mobile bottom bar nav button
- */
 export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 

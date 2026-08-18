@@ -31,7 +31,6 @@ export const resourceTables = {
   system_role: systemRolesTable,
 } as const satisfies Record<ResourceType, TableWithId>;
 
-// Derived types from the table registries above
 export type EntityType = keyof typeof entityTables;
 export type EntityModel<T extends EntityType> = (typeof entityTables)[T]['$inferSelect'];
 
@@ -39,7 +38,6 @@ type AllTrackedTables = typeof entityTables & typeof resourceTables;
 export type TrackedType = keyof AllTrackedTables;
 export type TrackedModel<T extends TrackedType> = AllTrackedTables[T]['$inferSelect'];
 
-/** Type-safe entity table lookup by entity type key. */
 export function getEntityTable<T extends keyof typeof entityTables>(entityType: T): (typeof entityTables)[T] {
   return entityTables[entityType];
 }

@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getAllDecisions } from '../permissions/index.ts';
 import { configureWidePermissions, wideHierarchy, wideMembership, wideOverrides, wideSubject } from './wide-fixture.ts';
 
-/**
- * Smoke test for the wide fixture kit: proves the hierarchy-override seam drives the engine over the
- * synthetic hierarchy (nested channels + guest role) regardless of the app's real config.
- */
+/** Proves the hierarchy override drives the engine over the synthetic hierarchy. */
 describe('wide fixture kit', () => {
   it('exposes a nested hierarchy with a guest role', () => {
     expect(wideHierarchy.getOrderedAncestors('attachment')).toEqual(['project', 'organization']);

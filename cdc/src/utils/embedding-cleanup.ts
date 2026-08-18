@@ -19,23 +19,19 @@ interface ResolvedEmbedding {
   parentColumn: AnyPgColumn;
 }
 
-/**
- * Map productEmbeddings config → Drizzle column references at module init.
- * Throws on misconfiguration so problems surface at startup, not at runtime.
- */
+/** Resolves productEmbeddings to Drizzle column references at module init; throws on misconfiguration. */
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
   const map = new Map<ProductEntityType, ResolvedEmbedding[]>();
 
   for (const { embeddedProduct, hostProduct, hostColumn: hostColumnName } of appConfig.productEmbeddings) {
     const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
-    // getColumns returns literal-keyed columns; widen for runtime string lookup
+    // getColumns returns literal-keyed columns; widened for runtime string lookup.
     const columns = getColumns(hostTable) as Record<string, AnyPgColumn>;
 
     const hostColumn = columns[hostColumnName];
     if (!hostColumn) {
-      // Hydrated single-reference embedding: the host exposes an id column (`${hostColumnName}Id`)
-      // and no physical array column to clean. The entry exists for client cache hints, and delete
-      // flows reassign the id column synchronously.
+      // Hydrated single-reference embedding: only a `${hostColumnName}Id` column exists, and delete
+      // flows reassign it synchronously, so there is no array to clean.
       if (columns[`${hostColumnName}Id`]) continue;
       throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
     }
@@ -43,7 +39,7 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     const parentType = hierarchy.getParent(embeddedProduct);
     if (!parentType)
       throw new Error(
-        `productEmbeddings: "${embeddedProduct}" has no parent context — cleanup requires a scoping column`,
+        `productEmbeddings: "${embeddedProduct}" has no parent context: cleanup requires a scoping column`,
       );
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
@@ -64,9 +60,8 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
 const embeddingsByProduct = resolveEmbeddings();
 
 /**
- * Removes deleted or unpublished embedded IDs from configured host arrays.
- * CDC performs the indexed, parent-scoped cleanup outside request handlers to avoid row locks;
- * configuration supplies every embedding relationship.
+ * Removes deleted or unpublished embedded ids from configured host arrays. Runs outside request
+ * handlers so the indexed, parent-scoped update does not take row locks on the request path.
  */
 export async function cleanupEmbeddingReferences(
   embeddedProductType: ProductEntityType,
@@ -85,7 +80,7 @@ export async function cleanupEmbeddingReferences(
   if (relevantEvents.length === 0) return;
 
   for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn } of embeddings) {
-    // Group deleted IDs by parent scope (e.g. projectId)
+    // Grouped by parent scope, e.g. projectId.
     const byParent = new Map<string, string[]>();
     for (const { result } of relevantEvents) {
       const { id } = result.rowData;

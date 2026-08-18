@@ -44,9 +44,7 @@ export class TimeSpan {
   }
 }
 
-/**
- * Create an ISO date string from a time span offset from now.
- */
+/** ISO date string offset from now by the time span. */
 export function createDate(timeSpan: TimeSpan): string {
   return new Date(Date.now() + timeSpan.milliseconds()).toISOString();
 }

@@ -19,9 +19,6 @@ interface ResetBlockTypeItemProp {
   titleLevel?: TitleLevel;
 }
 
-/**
- * Renders a block type selector item for the side menu.
- */
 export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels, titleLevel }: ResetBlockTypeItemProp) {
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -38,10 +35,8 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels, titleL
     if (!selectItemsType.includes(item.type)) return false;
 
     if (item.type === 'heading') {
-      // Exclude toggle headings
       if (item.props?.isToggleable) return false;
       if (typeof item.props?.level === 'number') {
-        // Forced-title mode: body blocks must not rank at or above the title
         if (titleLevel !== undefined && item.props.level <= titleLevel) return false;
         return headingLevels.includes(item.props.level as (typeof headingLevels)[number]);
       }
@@ -49,22 +44,19 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels, titleL
     return true;
   });
 
-  // Determine if the current block type should be shown
   const shouldShow = filteredItems.some((item) => item.type === block.type);
 
-  // Handle item click for updating the block type
   const handleItemClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {
     if (item.oneInstanceOnly) {
       const existingBlock = editor.document.find((block) => block.type === item.type);
       if (existingBlock) editor.updateBlock(existingBlock, { type: 'paragraph' });
     }
 
-    // Update the selected block
     editor.updateBlock(block, {
       type: item.type as Exclude<CustomBlockTypes, 'emoji'>,
-      props: item.props, // Pass props (to get heading level: 1 | 2 | 3)
+      props: item.props,
     });
-    // to reset editor focus so side menu open state does not block the on blur update
+    // Refocus the editor so the open side menu does not block the blur update.
     setTimeout(() => focusEditor(editor, block.id), 0);
   };
 
@@ -77,7 +69,6 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels, titleL
       onClick: () => handleItemClick(item),
     };
   });
-  // If block type should not be shown or the editor is not editable, return null early
   if (!shouldShow || !editor.isEditable) return null;
 
   return (

@@ -41,7 +41,7 @@ describe('storage module', () => {
     }
   });
 
-  it('private uploads bucket policy admits signers only — never a public statement', () => {
+  it('private uploads bucket policy admits signers only: never a public statement', () => {
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
     const privatePolicies = policies.filter((p) => /private/i.test(p.name));
     // P3: the private bucket gained its first policy (deny-by-default), but

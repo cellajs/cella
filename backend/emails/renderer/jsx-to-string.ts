@@ -47,7 +47,6 @@ export async function jsxToString(element: ReactNode): Promise<string> {
     return html;
   }
 
-  // Handle Promise case
   if (element instanceof Promise) {
     const resolvedElement = await element;
     return jsxToString(resolvedElement);
@@ -70,7 +69,6 @@ export async function jsxToString(element: ReactNode): Promise<string> {
       const value = props[prop];
 
       if (prop === 'children' || prop === 'key' || prop === 'ref' || value == null) {
-        // Why not use a continue statement? It's slower ¯\_(ツ)_/¯
       } else if (prop === 'class' || prop === 'className') {
         // This condition is here because it is the most common attribute
         // and short-circuiting results in a ~5% performance boost.
@@ -125,7 +123,6 @@ export async function jsxToString(element: ReactNode): Promise<string> {
     }
     if (typeof type === 'symbol') {
       const key = Symbol.keyFor(type);
-      // is this react fragment?
       if (key === 'react.fragment') {
         return jsxToString((props as { children?: ReactNode }).children);
       }

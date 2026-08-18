@@ -7,16 +7,14 @@ export function defineServices<const T extends AppServices>(services: T): T {
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.pathPrefix;
     if (prefix === undefined) {
-      // A path-routed service is reachable ONLY through its path route.
       if (cfg.lbRoute === 'path')
-        throw new Error(`services config: '${slug}' has lbRoute 'path' but no pathPrefix — nothing would route to it.`);
+        throw new Error(`services config: '${slug}' has lbRoute 'path' but no pathPrefix: nothing would route to it.`);
       continue;
     }
-    // The LB matches the raw path-begin string, so a malformed prefix silently
-    // routes wrong traffic, so validation fails during synth/plan.
+    // The LB matches the raw path-begin string, so a malformed prefix routes wrong traffic: validate at synth time.
     if (!cfg.lbRoute)
       throw new Error(
-        `services config: '${slug}' declares pathPrefix without lbRoute — an internal-only service has no LB backend to route to.`,
+        `services config: '${slug}' declares pathPrefix without lbRoute: an internal-only service has no LB backend to route to.`,
       );
     if (!/^\/[a-z0-9-]+$/.test(prefix)) {
       throw new Error(
@@ -26,7 +24,7 @@ export function defineServices<const T extends AppServices>(services: T): T {
     const owner = seenPrefixes.get(prefix);
     if (owner)
       throw new Error(
-        `services config: pathPrefix '${prefix}' declared by both '${owner}' and '${slug}' — path prefixes must be unique.`,
+        `services config: pathPrefix '${prefix}' declared by both '${owner}' and '${slug}': path prefixes must be unique.`,
       );
     seenPrefixes.set(prefix, slug);
   }
@@ -81,12 +79,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
 
 /**
  * Expand one app service entry into a full Compose service block.
- *
- * `extraEnv` is the service's release-step `appEnv` (the env applied to the app
- * block whenever a release companion exists, e.g. to keep the app from repeating
- * the release work on its own boot). Under the immutable-node model the app
- * container binds the host port directly (the per-VM ingress proxy is gone) and
- * the LB health-checks the app's own health endpoint.
+ * `extraEnv` is the service's release-step `appEnv`, applied to the app block whenever a release companion exists.
  */
 function appBlock(
   slug: string,
@@ -102,8 +95,7 @@ function appBlock(
     image: cfg.image,
     profiles: [slug],
     restart: 'unless-stopped',
-    // Publish the host port directly: the LB targets it and health-checks the
-    // app's own health path (no ingress hop in the immutable-node model).
+    // The LB targets the host port directly and health-checks the app's own health path; there is no per-VM ingress hop.
     ports: [`${cfg.port}:${cfg.port}`],
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
     ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
@@ -120,14 +112,9 @@ export function releaseServiceName(slug: string): string {
 }
 
 /**
- * One-shot release companion derived from a service that declares a `release`
- * step. Reuses the service image with the app's release command/env, then
- * exits. Run at the new generation's boot BEFORE the app starts
- * (expand-before-cutover), gated on exit 0. No port/healthcheck (not long-running).
- * Shares the service's profile; the boot runner invokes it explicitly by name
- * and starts long-running services by name, so a profile-wide `up` never races
- * it. The profile membership is genId-fingerprinted, so moving it to its own
- * profile would re-roll every generation.
+ * One-shot release companion for a service that declares a `release` step: the service image with the app's
+ * release command/env, run at the new generation's boot BEFORE the app starts and gated on exit 0.
+ * It shares the service's profile because profile membership is genId-fingerprinted; a separate profile would re-roll every generation.
  */
 function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   const release = cfg.release;
@@ -141,21 +128,12 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
   };
 }
 
-// Template machinery for the one-shot release companion and Compose assembly,
-// driven by the app's service registry.
-
 /**
- * Assemble the full `ComposeFile` from the app's service registry. Under the
- * immutable-node model each service is a single app block that binds the host
- * port directly (no per-VM ingress proxy); zero-downtime overlap happens at the
- * load balancer between VM generations, not inside the VM. A service that
- * declares a `release` step additionally emits a one-shot companion, run at the
- * new generation's boot before the app starts.
- *
- * `processIdentityEnv` names the env keys that select a container's process
- * identity (which worker/mode, which port); they are never folded from a
- * co-hosted worker into the singleVM host. App-owned so the engine names no
- * app-specific env key.
+ * Assemble the full `ComposeFile` from the app's service registry. Each service is one app block binding the host
+ * port directly; zero-downtime overlap happens at the load balancer between VM generations, not inside the VM.
+ * A `release` step additionally emits a one-shot companion run at the new generation's boot before the app starts.
+ * `processIdentityEnv` names the env keys selecting a container's process identity (which worker/mode, which port);
+ * they are never folded from a co-hosted worker into the singleVM host.
  */
 export function assembleCompose(
   appServices: AppServices,
@@ -173,11 +151,8 @@ export function assembleCompose(
 }
 
 /**
- * Folds co-hosted service environments into the single-VM host block.
- * The host profile supplies their placeholders and bindings because worker blocks do not start.
- * Equal collisions are accepted; conflicting values fail synthesis. Process-identity
- * env keys are skipped: under `singleVM` the folded workers boot in-process under
- * the host's own identity and read only their service-specific vars.
+ * Fold co-hosted service environments into the single-VM host block, which supplies their placeholders because worker blocks do not start.
+ * Equal collisions are accepted, conflicting values fail synthesis, and process-identity keys are skipped (folded workers boot under the host's identity).
  */
 function publishCoHostedEnv(
   appServices: AppServices,
@@ -196,7 +171,7 @@ function publishCoHostedEnv(
       const existing = merged[key];
       if (existing !== undefined && existing !== value) {
         throw new Error(
-          `compose synth: co-hosted service '${slug}' env '${key}=${value}' conflicts with '${existing}' already on host '${hostSlug}' — rename the worker's variable in services.config.ts (folded env must not overload host keys).`,
+          `compose synth: co-hosted service '${slug}' env '${key}=${value}' conflicts with '${existing}' already on host '${hostSlug}': rename the worker's variable in services.config.ts (folded env must not overload host keys).`,
         );
       }
       merged[key] = value;
@@ -206,9 +181,8 @@ function publishCoHostedEnv(
 }
 
 /**
- * Publishes co-hosted worker ports on the single-VM host for load-balancer access.
- * Shared Compose output includes them in split mode too, where nothing binds them and network
- * policy keeps them unreachable. Does nothing when no service opts in.
+ * Publish co-hosted worker ports on the single-VM host for load-balancer access.
+ * Split mode keeps them in the shared Compose output, where nothing binds them and network policy keeps them unreachable.
  */
 function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, ComposeService>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0];

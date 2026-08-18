@@ -9,29 +9,18 @@ export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;
 /** Cloud-key fields an attachment carries, enough to resolve any variant's URL. */
 type CloudKeyFields = Pick<Attachment, 'keys' | 'publicBucket'>;
 
-/**
- * The cloud key holding a given variant, or null when the variant has no cloud object.
- * 'raw' is local-only (the pre-processing user file) and never has one.
- */
+/** The cloud key for a variant, or null when it has none; 'raw' is the local-only pre-processing file. */
 export function getVariantKey(attachment: CloudKeyFields, variant: BlobVariant): string | null {
   if (variant === 'raw') return null;
   return attachment.keys[variant] || null;
 }
 
-/**
- * Constructs a public CDN URL for a file key.
- * Use for public files to avoid the presigned URL endpoint.
- */
+/** Public CDN URL for a file key, which skips the presigned URL endpoint. */
 export function getPublicFileUrl(key: string): string {
   return `${appConfig.s3.publicCDNUrl}/${key}`;
 }
 
-/**
- * Presigned URL for a private attachment referenced by id + variant.
- * The server resolves the row (RLS + permission) and signs the variant's key;
- * the client never submits a storage key. Concurrent calls coalesce into one
- * batch request and signed URLs are memoized.
- */
+/** Presigned URL by id + variant: the server signs the key, and concurrent calls coalesce into one memoized batch request. */
 export async function getPrivateFileUrlById(
   attachmentId: string,
   variant: CloudFileVariant,
@@ -41,12 +30,7 @@ export async function getPrivateFileUrlById(
   return getPresignedUrlBatched(attachmentId, variant, tenantId, organizationId);
 }
 
-/**
- * Cloud URL for a variant: public files build a CDN URL from the key, private files are signed
- * server-side by id. Returns null when the variant has no cloud key.
- *
- * This is the single place the public-vs-private branch lives; callers should not re-derive it.
- */
+/** Cloud URL for a variant: public keys become CDN URLs, private ones are signed server-side by id. Null when the variant has no cloud key. */
 export async function getCloudUrl(
   attachment: CloudKeyFields & Pick<Attachment, 'id' | 'tenantId' | 'organizationId'>,
   variant: CloudFileVariant,

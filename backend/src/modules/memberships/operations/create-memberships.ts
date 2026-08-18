@@ -50,12 +50,8 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
 
   const { slug: entitySlug, name: entityName } = entity;
 
-  /**
-   * Draft context (publishedAt null): invites are recorded (inactive memberships + tokens)
-   * but email dispatch is held and existing users are not added directly. Everything is
-   * released when the context is published. The context's most-privileged role (first in
-   * its vocabulary, e.g. admin/staff/owner) stays live so staff can collaborate in drafts.
-   */
+  // Draft context (publishedAt null): invites are recorded but emails are held and existing users are not added, all released at publish.
+  // The context's most-privileged role (first in its vocabulary) stays live so staff can collaborate in drafts.
   const channelIsDraft = entity.publishedAt === null;
   const deferDispatch = channelIsDraft && role !== hierarchy.getRoles(entityType)[0];
 

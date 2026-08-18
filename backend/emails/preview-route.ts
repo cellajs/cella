@@ -12,7 +12,7 @@ app.get('/', (c) => {
   const rows = emailPreviewNames
     .map((name) => {
       const links = appConfig.languages.map((lng) => `<a href="./${name}?lng=${lng}">${lng}</a>`).join(' · ');
-      return `<li><strong>${name}</strong> — ${links}</li>`;
+      return `<li><strong>${name}</strong>: ${links}</li>`;
     })
     .join('\n');
 

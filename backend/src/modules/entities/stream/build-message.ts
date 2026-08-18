@@ -12,9 +12,8 @@ const SPREAD_MS_PER_SUBSCRIBER = 20;
 const MAX_SPREAD_WINDOW_MS = 120_000;
 
 /**
- * The server's say in sync timing (RTCP-style): a spread window scaled by the org channel's
- * online audience and DB pool pressure. Identical for every subscriber, so it rides in the
- * shared (serialize-once) notification body; each client picks a deterministic slot in it.
+ * A spread window scaled by the org channel's online audience and DB pool pressure. Identical for
+ * every subscriber, so it rides in the serialize-once body and each client picks a slot in it.
  */
 function computeSpreadWindow(organizationId: string | null): number | null {
   if (!organizationId) return null;
@@ -24,42 +23,25 @@ function computeSpreadWindow(organizationId: string | null): number | null {
   return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SPREAD_WINDOW_MS);
 }
 
-/**
- * The app stream carries exactly two concerns: product entity sync (seq range fetch
- * on the client) and membership changes (query invalidation). This is the
- * single source of the `kind` discriminant, used both to shape the wire notification
- * and to branch dispatch/handling on either end.
- */
+/** The single source of the `kind` discriminant: product entity sync, or membership change. */
 export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
   return isProduct(event.entityType) ? 'product' : 'membership';
 }
 
-/** Type-guard form of {@link appNotificationKind}: narrows an app-stream event to the membership member. */
+/** Type-guard form of {@link appNotificationKind}. */
 export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMembershipEvent {
   return appNotificationKind(event) === 'membership';
 }
 
-/**
- * Build stream notification from activity event.
- * Notification-only format - no entity data included.
- *
- * For product entities:
- * - Includes stx, seq for sync engine
- *
- * For membership:
- * - stx/seq are null (memberships detected via activity scan on catchup)
- */
+/** No entity data. Product events carry `stx` and `seq`; membership events leave both null. */
 export function buildStreamNotification(event: ActivityEvent): StreamNotification {
   const { entityType } = event;
   const isProductEvent = isProduct(entityType);
 
-  // Extract channelType for membership events
   const membership = event.resourceType === 'membership' ? getEventData(event, 'membership') : null;
   const channelType: ChannelEntityType | null = (membership?.channelType as ChannelEntityType | undefined) ?? null;
 
-  // Resolve the home channel id for fetch prioritizer and unseen-count grouping: the row's deepest
-  // non-null ancestor. Variable-depth rows group under their effective home. Grouping only:
-  // the org sequence does not key on this.
+  // Home channel id for fetch prioritizing and unseen grouping; the org sequence does not key on it.
   let channelId: string | null = null;
   if (isProductEvent && entityType) {
     channelId = hierarchy.resolveDeepestAncestorId(entityType, asRecord(event));
@@ -67,19 +49,15 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   const stx = (isProductEvent && event.stx) || null;
 
-  // Location path of the affected rows, computed from ancestor id columns (message groups
-  // are per path, so the representative row's path speaks for the whole batch).
+  // Message groups are per path, so the representative row's path speaks for the whole batch.
   const rowData = event.rowData as Record<string, unknown> | null;
 
-  // Derive propagation hint for embedded product types (e.g., label → task.labels).
-  // For batch events, propagation is pre-set by the CDC worker. For single entity
-  // events, derive from productEmbeddings config without DB queries.
+  // Batch events arrive with the hint pre-set by CDC; single-entity events derive it from config.
   let propagation = event.propagation;
   if (!propagation && entityType) {
     const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
-      // Soft deletes arrive as updates with deletedAt set; hosts must drop the embedded
-      // copy, and an update-shaped hint cannot (the row leaves the client cache).
+      // Soft deletes arrive as updates; the host must drop its embedded copy, so hint a removal.
       const isRemoval = event.action === 'delete' || rowData?.deletedAt != null;
       propagation = {
         embeddedProduct: embedding.embeddedProduct,
@@ -93,8 +71,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   const path = isProductEvent && rowData && entityType ? hierarchy.computeProductPath(entityType, rowData) : null;
 
   return {
-    // Discriminant: product entities go through the seq sync path;
-    // everything else on this stream is a membership change (query invalidation).
+    // Product entities take the seq sync path; everything else here is a membership change.
     kind: appNotificationKind(event),
     action: event.action,
     productType: isProductEvent ? entityType : null,
@@ -115,10 +92,8 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 }
 
 /**
- * Move-out notification: the row left the location computed from `movedFrom` (reparent). Sent ONLY to
- * subscribers who could read the old location but not the new one. For them the
- * row effectively disappeared, and no delta fetch will return it (permission-filtered),
- * so the notification itself is the removal instruction.
+ * Sent only to subscribers who could read the old location but not the new one: no delta fetch
+ * returns the row for them, so this notification is itself the removal instruction.
  */
 export function buildMoveOutNotification(event: ActivityEvent, movedFrom: Record<string, unknown>): StreamNotification {
   const base = buildStreamNotification(event);

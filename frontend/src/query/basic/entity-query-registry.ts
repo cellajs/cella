@@ -12,17 +12,10 @@ export interface EntityQueryKeys {
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
-/**
- * Chunk size for delta fetches (the backend's max limit). A response of exactly this size means
- * the seq window may exceed one response; fetchRangeAndPatch treats that as overflow and falls
- * back to full list invalidation without paging.
- */
+/** The backend's max limit for delta fetches: a response of exactly this size may truncate the seq window, and fetchRangeAndPatch treats that as overflow. */
 export const SYNC_CHUNK_SIZE = 1000;
 
-/**
- * Fetches one bounded inclusive sequence range for catchup, optionally narrowed to a subtree.
- * Public entities omit organization, and implementations use `SYNC_CHUNK_SIZE` as their limit.
- */
+/** Fetches one bounded inclusive sequence range for catchup, optionally narrowed to a subtree. Public entities omit organization; implementations limit by `SYNC_CHUNK_SIZE`. */
 export type DeltaFetchFn = (
   organizationId: string | null,
   tenantId: string | null,
@@ -38,10 +31,7 @@ const SENTINEL_ORG = '__org__';
 const SENTINEL_HOME = '__home__';
 const SENTINEL_ID = '__id__';
 
-/**
- * Validate entity-key builders against the list and detail shapes required by live routing.
- * Deterministic startup failure prevents malformed custom keys from silently degrading sync.
- */
+/** Validates key builders against the list and detail shapes live routing requires, so a malformed custom key fails at startup and not during sync. */
 function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void {
   const carries = (key: readonly unknown[], id: string) =>
     key.some(
@@ -69,11 +59,7 @@ function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void 
   if (!carries(detail, SENTINEL_ID)) fail('detail.byId(...)', 'carry the entity id');
 }
 
-/**
- * Registers validated entity query keys and an optional sequence delta fetcher at module load.
- * Canonical list data must use home keys because live sync placement and channel observation derive
- * from that shape; hand-written keys fail validation.
- */
+/** Canonical list data must use home keys, because live sync placement and channel observation derive from that shape; hand-written keys fail validation. */
 export function registerEntityQueryKeys(
   entityType: EntityType,
   keys: EntityQueryKeys,
@@ -91,12 +77,10 @@ export function getEntityQueryKeys(entityType: string): EntityQueryKeys {
   return keys;
 }
 
-/** Whether query keys are registered for an entity type. */
 export function hasEntityQueryKeys(entityType: string): boolean {
   return entityQueryKeysRegistry.has(entityType);
 }
 
-/** All registered entity types. */
 export function getRegisteredEntityTypes(): string[] {
   return Array.from(entityQueryKeysRegistry.keys());
 }
@@ -106,7 +90,7 @@ export function getRegisteredProductEntityTypes(): ProductEntityType[] {
   return getRegisteredEntityTypes().filter((t) => isProduct(t));
 }
 
-/** The entity type's delta fetch function, or undefined if it does not support delta fetching. */
+/** Undefined when the entity type does not support delta fetching. */
 export function getEntityDeltaFetch(entityType: string): DeltaFetchFn | undefined {
   return deltaFetchRegistry.get(entityType);
 }

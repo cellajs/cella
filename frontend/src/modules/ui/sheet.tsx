@@ -4,17 +4,14 @@ import type * as React from 'react';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled sheet primitive. */
 export function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
-/** Renders the styled sheet trigger primitive. */
 export function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
-/** Renders the styled sheet close primitive. */
 export function SheetClose({ ...props }: SheetPrimitive.Close.Props & React.RefAttributes<HTMLButtonElement>) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
@@ -36,7 +33,6 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & R
   );
 }
 
-/** Renders the styled sheet content primitive. */
 export function SheetContent({
   className,
   children,
@@ -57,7 +53,6 @@ export function SheetContent({
     /** Enable auto-scrolling when dragging elements near edges. */
     autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   }) {
-  // When container is provided, render inline without portal/overlay
   const content = (
     <SheetPrimitive.Popup
       data-slot="sheet-content"
@@ -65,7 +60,6 @@ export function SheetContent({
       finalFocus={finalFocus}
       className={cn(
         'flex flex-col bg-background shadow-lg focus-visible:outline-none',
-        // Only apply animations and fixed positioning when not in container
         !container &&
           'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
@@ -91,12 +85,10 @@ export function SheetContent({
     </SheetPrimitive.Popup>
   );
 
-  // If container provided, portal to it without overlay
   if (container) {
     return <SheetPortal container={container}>{content}</SheetPortal>;
   }
 
-  // Default: portal to body with optional overlay
   return (
     <SheetPortal>
       {overlay && <SheetOverlay />}
@@ -105,7 +97,6 @@ export function SheetContent({
   );
 }
 
-/** Renders the styled sheet header primitive. */
 export function SheetHeader({
   className,
   sticky,
@@ -134,12 +125,10 @@ export function SheetHeader({
   );
 }
 
-/** Renders the styled sheet footer primitive. */
 export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
-/** Renders the styled sheet title primitive. */
 export function SheetTitle({
   className,
   ...props
@@ -153,7 +142,6 @@ export function SheetTitle({
   );
 }
 
-/** Renders the styled sheet description primitive. */
 export function SheetDescription({
   className,
   ...props

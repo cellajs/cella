@@ -8,9 +8,7 @@ import {
   runtimeSecretsForConsumer,
 } from '../../lib/runtime-secrets';
 
-// The config module and lib/runtime-secrets form an import cycle (config imports the
-// define helper, lib derives the registry from config), so the cycle must be entered
-// from the lib side. A static import sorts alphabetically ahead of the lib import.
+// The config module and lib/runtime-secrets form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib import.
 const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.config');
 
 const backendEnvSource = readFileSync(resolve(__dirname, '../../../backend/src/env.ts'), 'utf-8');
@@ -18,8 +16,7 @@ const cdcEnvSource = readFileSync(resolve(__dirname, '../../../cdc/src/env.ts'),
 const yjsEnvSource = readFileSync(resolve(__dirname, '../../../yjs/src/env.ts'), 'utf-8');
 const workerEnvBaseSource = readFileSync(resolve(__dirname, '../../../shared/src/utils/worker-env.ts'), 'utf-8');
 
-// The worker env schemas extend workerEnvBase, so shared declarations (e.g.
-// DATABASE_SSL_CA) count as declared for cdc and yjs.
+// The worker env schemas extend workerEnvBase, so shared declarations such as DATABASE_SSL_CA count as declared for cdc and yjs.
 const envSources = {
   backend: backendEnvSource,
   cdc: `${workerEnvBaseSource}\n${cdcEnvSource}`,
@@ -28,8 +25,7 @@ const envSources = {
 
 describe('runtime secret registry', () => {
   it('merges store-owned declarations ahead of app-config entries', () => {
-    // The per-consumer union order is genId-fingerprinted: the primary store's
-    // DSN/CA declarations must keep their historical lead positions.
+    // The per-consumer union order is genId-fingerprinted, so the primary store's DSN and CA declarations must keep their lead positions.
     const ids = runtimeSecrets.map((secret) => secret.id);
     expect(ids.slice(0, 4)).toEqual(['databaseUrlRuntime', 'databaseUrlAdmin', 'databaseUrlCdc', 'databaseSslCa']);
     expect(Object.keys(runtimeSecretsConfig)).not.toContain('databaseUrlRuntime');

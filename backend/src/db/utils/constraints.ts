@@ -1,7 +1,4 @@
-/**
- * Column length constraints used in both Drizzle DB schemas and Zod validation.
- * Single source of truth: defined here at the DB level, re-exported by #/schemas for API validation.
- */
+/** Column length constraints, re-exported by `#/schemas` so Zod validation matches the DB. */
 export const maxLength = {
   /** Max length for entity IDs, FKs, and ID-like references. */
   id: 50,

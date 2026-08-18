@@ -16,9 +16,6 @@ export interface FooterLinkProps {
   href: string;
 }
 
-/**
- * Component for rendering a single footer link.
- */
 function AppFooterLink({ id, href }: FooterLinkProps) {
   const { t } = useTranslation();
 
@@ -36,9 +33,6 @@ interface FooterLinksProps {
   className?: string;
 }
 
-/**
- * Row of footer links including a contact button
- */
 export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: FooterLinksProps) {
   const { t } = useTranslation();
   const contactButtonRef = useRef(null);
@@ -66,9 +60,6 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: F
   );
 }
 
-/**
- * App Footer component
- */
 export function AppFooter({ className = '' }) {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>

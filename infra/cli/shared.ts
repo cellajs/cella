@@ -33,9 +33,7 @@ export type CliMode =
   | 'unlock'
   | 'teardown';
 
-/**
- * Context for the infra CLI, including stack information and state. Passed to each service handler to provide necessary information about the current infra status and configuration.
- */
+/** Stack information and state, passed to every CLI action handler. */
 export interface InfraContext {
   environment: Environment;
   stackPath: string;
@@ -47,30 +45,18 @@ export interface InfraContext {
   projectId: string;
 }
 
-/**
- * Options for running a step in the infra CLI, including command execution settings and retry behavior.
- */
 export interface StepOptions {
   cwd?: string;
   retry?: boolean;
   env?: NodeJS.ProcessEnv;
 }
 
-/**
- * Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its
- * default (confirms), the env-provided value, or empty (optional inputs), so
- * the CLI can run unattended in automation. Prompts without a safe default
- * still throw, which is the correct failure for automation.
- */
+/** Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its default, its env value, or empty; a prompt without a safe default throws. */
 export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1';
 
 /**
- * True when the run should accept prompt defaults without asking: the
- * `--defaults` flag (an interactive human choosing the fast path) OR
- * INFRA_NON_INTERACTIVE (unattended automation). The two differ only for
- * genuinely required inputs (bootstrap key, admin email): `--defaults` still
- * prompts for those because a human is present, while automation lets the
- * required prompt throw on a non-TTY.
+ * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
+ * They differ only for required inputs such as the bootstrap key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
  */
 export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
 
@@ -98,10 +84,7 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
   return input({ message: opts.message, default: opts.default });
 }
 
-/**
- * Gets the first set environment variable from `envName` (a single name or an
- * ordered list of fallbacks), or prompts for it if none are set.
- */
+/** First set variable from `envName` (a single name or ordered fallbacks), prompting when none are set. */
 export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
   const names = Array.isArray(envName) ? envName : [envName];
   for (const name of names) {
@@ -112,9 +95,8 @@ export const envOr = async (envName: string | string[], prompt: () => Promise<st
 };
 
 /**
- * Resolves and verifies the Pulumi passphrase against existing stack encryption metadata.
- * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts
- * the environment or one prompt without verification.
+ * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
+ * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
@@ -124,7 +106,7 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
   if (fromEnv) {
     console.warn(
-      `${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack — prompting instead.')}`,
+      `${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`,
     );
   }
 
@@ -135,11 +117,7 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   }
 }
 
-/**
- * Show a newly established passphrase exactly once and block until the operator
- * confirms it is stored: it encrypts stack state, is unrecoverable if lost, and
- * cannot be read back from GitHub later (Actions secrets are write-only).
- */
+/** Show a new passphrase once and block until the operator confirms storage: it encrypts stack state, is unrecoverable if lost, and GitHub Actions secrets are write-only. */
 export async function confirmPassphraseStored(passphrase: string, heading: string, note?: string): Promise<void> {
   console.info(`\n→ ${heading}`);
   console.info(`\n    ${pc.cyanBright(passphrase)}\n`);
@@ -149,17 +127,13 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
       (note ? `\n  ${pc.dim(note)}` : ''),
   );
   while (!(await confirm({ message: 'Passphrase stored in your password manager?', default: false }))) {
-    console.warn(`${warningMark} Store it before continuing — this is the only time it is shown.`);
+    console.warn(`${warningMark} Store it before continuing: this is the only time it is shown.`);
   }
 }
 
 /**
- * The bootstrap-time counterpart of `resolveVerifiedPassphrase`: when the stack
- * already encrypts something (or `PULUMI_CONFIG_PASSPHRASE` is set), defer to
- * the verify/prompt flow. A brand-new stack with nothing encrypted yet gets a
- * generated passphrase,
- * showing it once via `confirmPassphraseStored`. `generated` tells the caller
- * this is a newly established passphrase.
+ * Bootstrap-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
+ * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
 export async function resolveOrCreatePassphrase(
   stackYaml?: string,
@@ -172,7 +146,7 @@ export async function resolveOrCreatePassphrase(
   const passphrase = generatePassphrase();
   await confirmPassphraseStored(
     passphrase,
-    `Pulumi passphrase ${pc.dim('(encrypts stack secret state — generated for this new stack)')}`,
+    `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`,
     'To supply your own instead, abort and re-run with PULUMI_CONFIG_PASSPHRASE set.',
   );
   return { passphrase, generated: true };
@@ -197,8 +171,7 @@ export function pulumiLoginUrl(appConfig: AppConfigType): string {
   return `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`;
 }
 
-/** `pulumi login` (exits on failure) + `pulumi stack select` (best-effort: the
- *  caller may be about to init the stack) against the S3 state backend. */
+/** `pulumi login` (exits on failure) plus a best-effort `pulumi stack select` against the S3 state backend; the caller may still be about to init the stack. */
 export function pulumiLoginAndSelect(
   infraDir: string,
   env: NodeJS.ProcessEnv,
@@ -221,10 +194,8 @@ export interface StackLockHandle {
 }
 
 /**
- * Acquire the S3 conditional-write stack lock (so a second operator or CI
- * cannot mutate the stack concurrently), or exit(1) with pointers to the
- * "Unlock" escape hatch when it is already held. A dead run's lock self-expires
- * after the TTL.
+ * Acquire the S3 conditional-write stack lock so a second operator or CI cannot mutate the stack concurrently, or exit(1) pointing at the "Unlock" action when it is held.
+ * A dead run's lock self-expires after the TTL.
  */
 export async function acquireStackLockOrExit(opts: {
   appConfig: AppConfigType;
@@ -258,9 +229,7 @@ export async function acquireStackLockOrExit(opts: {
   };
 }
 
-/**
- * Creates a step runner for executing commands with retry and error handling.
- */
+/** Step runner: runs a labelled command, offering retry on failure; `must` exits the process on a non-zero code. */
 export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv) {
   const step = async (
     label: string,

@@ -36,13 +36,13 @@ const buildMembershipIndex = <T extends AccessMembership>(memberships: T[]): Mem
 };
 
 /**
- * Validated indexes cached by array identity. Membership update paths replace arrays, making a
- * stable reference safe to reuse; the WeakMap releases entries with their arrays. Callers must
- * not mutate a memberships array after passing it to a permission check.
+ * Validated indexes cached by array identity: membership updates replace arrays, so a stable
+ * reference is safe to reuse and the WeakMap releases entries with them. Never mutate a
+ * memberships array after passing it to a permission check.
  */
 const membershipIndexMemo = new WeakMap<object, MembershipIndex<AccessMembership>>();
 
-/** Returns a validated membership index, memoized by input identity. */
+/** Memoized by input identity. */
 export const getMembershipIndex = <T extends AccessMembership>(memberships: T[]): MembershipIndex<T> => {
   const cached = membershipIndexMemo.get(memberships);
   if (cached) return cached as MembershipIndex<T>;
@@ -92,10 +92,7 @@ export const getSubjectChannelId = (
   return subject.channelIds[channelType];
 };
 
-/**
- * Evaluates one subject against prebuilt membership and policy indexes. Named row conditions
- * are matched against the subject's row fields.
- */
+/** Named row conditions are matched against the subject's row fields. */
 export const checkWithIndices = <T extends AccessMembership>(
   membershipIndex: MembershipIndex<T>,
   policyIndex: PolicyIndex,
@@ -144,8 +141,8 @@ export const checkWithIndices = <T extends AccessMembership>(
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
-  // Non-elevated roles grant product access only at the row's home channel. Channel subjects
-  // retain ancestor elevation semantics.
+  // Non-elevated roles grant product access only at the row's home channel; channel subjects
+  // keep ancestor elevation.
   const isProductSubject = (subject.entityType as string) !== primaryChannel;
   const homeChannel =
     elevatedRoles && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
@@ -218,10 +215,7 @@ export const checkWithIndices = <T extends AccessMembership>(
   };
 };
 
-/**
- * Checks all permissions for one or more subjects. A single subject returns a
- * `PermissionDecision`; an array returns a `Map` keyed by subject.id.
- */
+/** One subject returns a `PermissionDecision`; an array returns a `Map` keyed by subject.id. */
 export function getAllDecisions<T extends AccessMembership>(
   policies: PolicyMatrix,
   memberships: T[],
@@ -247,7 +241,6 @@ export function getAllDecisions<T extends AccessMembership>(
   const publicGrants = options?.publicGrants;
   const elevatedRoles = options?.elevatedRoles;
   const debug = options?.debug === true;
-  // Tests may inject a synthetic hierarchy; production defaults to the app configuration.
   const { hierarchy: resolvedHierarchy, entityActions, getRoles } = resolveHierarchy(options);
 
   const results = new Map<string, PermissionDecision<T>>();
@@ -266,8 +259,8 @@ export function getAllDecisions<T extends AccessMembership>(
 
   const channelCache = new Map<ChannelEntityType | ProductEntityType, ChannelEntityType[]>();
 
-  // Channel subjects include themselves before their ancestors; product subjects contain only
-  // ancestors. The first entry is the primary channel used for membership capture.
+  // Channel subjects list themselves before their ancestors, products only ancestors. The first
+  // entry is the primary channel for membership capture.
   const resolveOrderedChannels = (entityType: ChannelEntityType | ProductEntityType): ChannelEntityType[] => {
     let orderedChannels = channelCache.get(entityType);
     if (!orderedChannels) {

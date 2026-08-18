@@ -6,12 +6,8 @@ try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {}
 
-/**
- * Load-test config derived from the app's own config (`appConfig`, `backend/.env`)
- * so bench follows an app's port offset automatically. Dev-only, local stack.
- */
-// Benchmark the backend port directly to avoid Vite proxy serialization and connection resets.
-// Preserve the configured mount path so API routes still resolve.
+/** Derived from `appConfig` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
+// Measures the backend port directly: the Vite proxy serializes requests and resets connections. The configured mount path is preserved so API routes resolve.
 const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
 // biome-ignore lint/style/noProcessEnv: bench reads the app's backend PORT from backend/.env here.
 export const BACKEND_PORT = Number(process.env.PORT ?? '4000');

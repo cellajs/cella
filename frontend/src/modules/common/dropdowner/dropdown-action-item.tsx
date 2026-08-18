@@ -12,16 +12,12 @@ interface Props {
   variant?: ButtonProps['variant'];
   className?: ButtonProps['className'];
   /**
-   * Whether the menu should close after this item is selected (desktop only).
-   * Callers that swap to a confirmation panel (e.g. PopConfirm) via
-   * `useDropdowner.update` should set this to false. Defaults to true.
+   * Close the menu after selection (desktop only). Defaults to true; pass false when the item
+   * swaps in a confirmation panel via `useDropdowner.update`.
    */
   closeOnSelect?: boolean;
 }
 
-/**
- * Renders a dropdown action as a button or menu item based on viewport.
- */
 export function DropdownActionItem({
   isMobile,
   onSelect,

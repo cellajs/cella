@@ -8,9 +8,6 @@ import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { appTitle } from '~/utils/app-title';
 
-/**
- * Main authentication page for user sign-in and sign-up flows.
- */
 export const Route = createFileRoute('/_public/auth/authenticate')({
   validateSearch: authenticateRouteSearchParamsSchema,
   staticData: { isAuth: false },
@@ -18,12 +15,10 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
   beforeLoad: async ({ cause, search }) => {
     useAuthStore.getState().resetSteps();
 
-    // Only check auth if entering. `fromRoot` means a route guard already probed the session
-    // and found none, so don't probe again (prevents a redirect loop).
+    // `fromRoot` means a route guard already probed the session and found none; probing again would loop.
     if (cause !== 'enter' || search.fromRoot) return;
 
-    // The session cookie is the authority, not the persisted store: after a backend-driven
-    // sign-in (magic link, OAuth) the cookie is valid while the store is still empty.
+    // The session cookie is the authority: after a magic-link or OAuth sign-in it is valid while the store is empty.
     if (!useUserStore.getState().user) {
       try {
         await queryClient.ensureQueryData({ ...meQueryOptions() });
@@ -32,7 +27,6 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
       }
     }
 
-    // Signed in: honor a validated redirect target, else go home
     throw redirect({ to: resolvePostAuthRedirect(search.redirect), replace: true });
   },
   component: AuthenticatePage,

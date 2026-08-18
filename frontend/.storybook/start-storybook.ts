@@ -37,7 +37,7 @@ function isPortInUse(p: number, host = '127.0.0.1'): Promise<boolean> {
 const inUse = await isPortInUse(port);
 if (inUse) {
   // Reuse an existing server so test commands can share a manually started Storybook.
-  console.log(`[storybook] Port ${port} already in use — reusing existing Storybook server.`);
+  console.log(`[storybook] Port ${port} already in use: reusing existing Storybook server.`);
   process.exit(0);
 }
 

@@ -15,11 +15,7 @@ const withAppName = (text: string) => text.replaceAll('{{appName}}', appName);
 
 const { welcomeEmail } = welcomeConfig;
 
-/**
- * Founder-style welcome email. The marketing copy (intro, getting-started steps,
- * P.S., founder details) is app-specific in `json/text-blocks.json` under
- * `welcomeEmail`, so apps can tailor it without touching code or translations.
- */
+/** The marketing copy is app-specific, in `json/text-blocks.json` under `welcomeEmail`. */
 export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, WelcomeRecipient>()({
   translate(lng) {
     return {

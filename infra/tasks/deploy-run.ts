@@ -16,11 +16,9 @@ import { frontendBuildEnv } from './print-frontend-build-env';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
- * The whole deploy after image builds, as ONE command: preflights, stack lock,
- * base stack update, waved rollout, public version verification, atomic
- * frontend entry publish, smoke checks, boot diagnostics on failure. CI
- * (.github/workflows/deploy.yml) is a thin trigger around this; any CI system
- * (or an operator shell) that provides the SCW_* credentials can run it.
+ * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
+ * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
+ * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* credentials can run it.
  */
 export interface DeployOptions {
   mode: string;
@@ -32,9 +30,8 @@ export interface DeployOptions {
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string;
   /**
-   * Skip the rollout's final displaced-generation reap so verification, entry
-   * publish, and smoke run right after cutover. The displaced VMs stay off
-   * every LB pool; a follow-up `reap` run (runReap below) destroys them.
+   * Skip the rollout's final displaced-generation reap so verification, entry publish, and smoke run right after cutover.
+   * The displaced VMs stay off every LB pool until a follow-up `reap` run destroys them.
    */
   deferReap?: boolean;
 }
@@ -52,8 +49,7 @@ export type TaskName =
   | 'assert-secrets-deliverable'
   | 'smoke';
 
-/** One executed step. Steps run in-process via `task`; `exec` remains for
- *  genuinely external binaries (pulumi login/select, docker login). */
+/** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select, docker login). */
 export interface DeployEffects {
   /** Create the deploy emitter (OTLP config resolution may hit Secret Manager). */
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;
@@ -134,8 +130,7 @@ export async function runDeploy(
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
   const telemetry = deployTelemetry();
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
-  // New generations bake this context into their boot plans, so VM boot
-  // spans join the deploy trace (the pulumi program inherits this env).
+  // New generations bake this context into their boot plans, so VM boot spans join the deploy trace; the pulumi program inherits this env.
   if (deploySpan) process.env.TRACEPARENT = deploySpan.traceparent();
   telemetry?.event(deployEvents.started, { mode: opts.mode, sha: opts.sha });
 
@@ -184,9 +179,7 @@ export async function runDeploy(
       }),
     );
 
-    // Images and frontend converge concurrently: the image path builds (with
-    // --build) or waits for CI's registry pushes; the frontend path builds the
-    // bundle (unless --dist provided prebuilt) and uploads hashed assets.
+    // Images and frontend converge concurrently: images build (with --build) or wait for CI's registry pushes, while the frontend builds and uploads hashed assets.
     // Entry files stay out until after version verification below.
     const distDir = opts.distDir ?? resolve(infraDir, '..', 'frontend', 'dist');
     const imagesReady = (async () => {
@@ -234,14 +227,12 @@ export async function runDeploy(
       if (settled.status === 'rejected') throw settled.reason;
     }
 
-    // Mint this generation's keys + handoff bundles BEFORE the stack update
-    // bakes their references into cloud-init.
+    // Mint this generation's keys and handoff bundles BEFORE the stack update bakes their references into cloud-init.
     await step('Mint generation keys', async () => {
       const { tmpdir } = await import('node:os');
       const outFile = resolve(tmpdir(), `generation-keys-${stack}-${opts.sha.slice(0, 10)}.json`);
       await fx.task('mint-generation-keys', ['--sha', opts.sha, '--out', outFile]);
-      // The pulumi child (fx.update) inherits this env and bakes the boot
-      // key + handoff ids into the new generation's cloud-init.
+      // The pulumi child (fx.update) inherits this env and bakes the boot key and handoff ids into the new generation's cloud-init.
       process.env.INFRA_GENERATION_KEYS_FILE = outFile;
     });
 
@@ -303,10 +294,7 @@ export async function runDeploy(
     }
 
     await step('Verify public versions', async () => {
-      // Every LB-exposed service, not just the VM-owning rollout rows:
-      // co-hosted and collocated followers are repointed by cutover without
-      // their own version probe, so they gate here too, before the new entry
-      // files publish.
+      // Every LB-exposed service, not just the VM-owning rollout rows: co-hosted and collocated followers are repointed by cutover without their own version probe.
       const rows: RolloutRow[] = JSON.parse(env.enabled_services_json);
       for (const row of rows) {
         if (!row.health_url) continue;
@@ -315,9 +303,7 @@ export async function runDeploy(
       }
     });
 
-    // Strictly after rollout verification: users only load the new entry
-    // files once every service already serves the new release. Skipped for a
-    // frontend-less registry (no SPA bucket).
+    // Strictly after rollout verification, so users only load the new entry files once every service serves the new release. Skipped for a frontend-less registry.
     if (env.frontend_bucket) {
       await step('Publish frontend entry files', () =>
         fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }),
@@ -329,13 +315,11 @@ export async function runDeploy(
         opts.sha,
         '--services-json',
         env.enabled_services_json,
-        // The primary-rollout service owns smoke's aggregate-health/OpenAPI
-        // checks; derived from the rollout matrix, no service-name literal.
+        // The primary-rollout service owns smoke's aggregate-health and OpenAPI checks, derived from the rollout matrix, with no service-name literal.
         ...((JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]
           ? ['--primary', (JSON.parse(env.primary_rollout_matrix) as RolloutRow[])[0]!.service]
           : []),
-        // A provided-but-unreadable --dist is a hard failure in smoke, so a
-        // frontend-less registry omits the flag entirely.
+        // A provided-but-unreadable --dist is a hard failure in smoke, so a frontend-less registry omits the flag.
         ...(env.frontend_bucket ? ['--dist', resolve(distDir, 'index.html')] : []),
       ]),
     );
@@ -371,13 +355,9 @@ export function parseReapArgs(argv: string[]): ReapOptions {
 }
 
 /**
- * Converge the stack on the control object's promoted pointers, destroying the
- * generations a `--defer-reap` deploy displaced. Runs off the deploy's critical
- * path (CI's follow-up reap job, or an operator shell). Safe without the
- * generation keys file: only planning a NEW generation requires it, and a reap
- * plans none (active generations are pre-existing and carry `ignoreChanges`
- * on cloud-init and image). Idempotent: with nothing displaced the update is a
- * no-op, and a skipped reap is recovered by any later stack update.
+ * Converge the stack on the control object's promoted pointers, destroying the generations a `--defer-reap` deploy displaced. Runs off the deploy's critical path.
+ * The generation keys file is not needed because only planning a NEW generation requires it and a reap plans none.
+ * Idempotent: with nothing displaced the update is a no-op, and a skipped reap is recovered by any later stack update.
  */
 export async function runReap(
   opts: ReapOptions,
@@ -416,8 +396,7 @@ export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
   await runReap(parseReapArgs(argv), createRealEffects());
 }
 
-// Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware
-// log grouping. Kept thin; every ordering/failure decision lives in runDeploy.
+// Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware log grouping. Every ordering and failure decision lives in runDeploy.
 
 const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
   { name: 'index.html', contentType: 'text/html; charset=utf-8' },
@@ -453,9 +432,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
   }
 }
 
-// Each task stays an independent CLI (tsx tasks/<name>.ts) for operators; the
-// deploy runs the same mains in-process, so one node process reads config once
-// and a failing step surfaces with its full stack trace.
+// Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
   'stack-lock': async (argv) => (await import('./stack-lock')).main(argv),
@@ -532,8 +509,7 @@ function createRealEffects(): DeployEffects {
     async bootDiagnostics(sinceIso) {
       const { main: diag } = await import('./diag');
       await diag([]);
-      // Re-ship black-box events from VMs that died before their exporter was
-      // configured (pre-hydration failures); best-effort like all telemetry.
+      // Re-ship black-box events from VMs that died before their exporter was configured; best-effort like all telemetry.
       await diag(['--replay', ...(sinceIso ? ['--since', sinceIso] : [])]).catch((err) => {
         console.warn(`[deploy] black-box replay failed: ${err instanceof Error ? err.message : String(err)}`);
       });

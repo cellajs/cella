@@ -1,6 +1,5 @@
 /**
- * Boot-time cache migration: when the persisted schema ordinal is behind the running bundle, cached
- * entity rows and queued mutations are rewritten in place via the lens engine (no refetch).
+ * Boot-time cache migration: a persisted schema ordinal behind the running bundle rewrites cached entity rows and queued mutations in place through the lens engine, without refetching.
  * Migrations are idempotent, so an interrupted pass is safe to re-run.
  */
 import type { DehydratedState } from '@tanstack/react-query';
@@ -21,10 +20,7 @@ function isEntityRecord(value: unknown): value is AnyRecord {
   return typeof value === 'object' && value !== null && 'id' in (value as AnyRecord);
 }
 
-/**
- * Walks the common React Query data shapes (single entity, array, `{ items }`,
- * `{ data }`, and infinite `{ pages }`) and migrates each entity-like leaf.
- */
+/** Walks single entity, array, `{ items }`, `{ data }`, and infinite `{ pages }` shapes, migrating each entity-like leaf. */
 async function migrateData(entityType: LensEntityType, data: unknown, fromVersion: number): Promise<unknown> {
   if (Array.isArray(data)) {
     return Promise.all(data.map((item) => migrateData(entityType, item, fromVersion)));

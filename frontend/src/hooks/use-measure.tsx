@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * Hook to measure the size of an element.
- *
- * @returns ref to attach to the element and its bounds (width, height, etc.).
- */
 export const useMeasure = <T extends Element = Element>() => {
   const ref = useRef<T>(null);
   const [bounds, setBounds] = useState({ width: 0, height: 0 });
@@ -15,7 +10,6 @@ export const useMeasure = <T extends Element = Element>() => {
     const observer = new ResizeObserver(([entry]) => {
       if (!entry) return;
 
-      // border-box width (content + padding + border)
       const box = entry.borderBoxSize?.[0];
       if (box) {
         setBounds({

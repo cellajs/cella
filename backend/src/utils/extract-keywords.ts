@@ -1,18 +1,10 @@
 import type { Block } from '@blocknote/core';
 import { getTextFromBlock } from 'shared/blocknote';
 
-/**
- * Extracts unique keywords from one or more text inputs.
- * Useful for building searchable keyword fields from entity content (name, description, etc.).
- *
- * - Lowercases all words
- * - Preserves internal punctuation (hyphens, apostrophes)
- * - Deduplicates words
- */
+/** Lowercased, deduplicated words; internal hyphens and apostrophes are kept alongside the stripped form. */
 export const extractKeywords = (...inputs: (string | null | undefined)[]): string => {
   const combined = inputs.filter(Boolean).join(' ');
 
-  // Regex to capture words and include internal punctuation (e.g., apostrophes and hyphens)
   const regex = /[a-z0-9]+(?:[-'][a-z0-9]+)?/gi;
 
   const words = new Set<string>();
@@ -28,10 +20,6 @@ export const extractKeywords = (...inputs: (string | null | undefined)[]): strin
   return Array.from(words).join(' ');
 };
 
-/**
- * Extracts keywords from BlockNote JSON content combined with additional text inputs.
- * Parses the BlockNote blocks to extract plain text, then runs keyword extraction.
- */
 export const extractKeywordsFromBlocks = (blocksJson: string, ...extras: (string | null | undefined)[]): string => {
   const blocks = JSON.parse(blocksJson) as Block[];
   const fullText = blocks.map(getTextFromBlock).join(' ').trim();

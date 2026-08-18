@@ -63,9 +63,8 @@ const collectMediaUrls = (blocks: BlockLike[]): string[] => {
 type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] };
 
 /**
- * Validates that all media URLs in BlockNote blocks are from trusted sources.
- * Only checks media blocks (image, video, audio, file) that auto-load resources.
- * Inline links (href) are intentionally not checked since they require user clicks.
+ * Checks only media blocks (image, video, audio, file), which auto-load resources. Inline link
+ * hrefs are left unchecked because they need a user click.
  */
 export const validateBlockMediaUrls = (blocks: BlockLike[], trustedDomains: string[]): ValidationResult => {
   const urls = collectMediaUrls(blocks);
@@ -76,10 +75,6 @@ export const validateBlockMediaUrls = (blocks: BlockLike[], trustedDomains: stri
   return invalidUrls.length === 0 ? { valid: true } : { valid: false, invalidUrls };
 };
 
-/**
- * Checks BlockNote blocks for untrusted media URLs.
- * Returns true if any media URLs are from untrusted sources.
- */
 export const hasUntrustedMediaUrls = (blocks: BlockLike[], trustedDomains: string[]): boolean => {
   return !validateBlockMediaUrls(blocks, trustedDomains).valid;
 };

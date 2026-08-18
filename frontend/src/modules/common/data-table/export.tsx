@@ -19,7 +19,6 @@ interface Props<TData> {
   className?: string;
 }
 
-/** Renders the export component. */
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 export function Export<R extends Record<string, any>>({
   filename,

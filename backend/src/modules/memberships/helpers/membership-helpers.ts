@@ -9,19 +9,13 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
-/**
- * The root channel entity type: the parentless channel entity (e.g. 'organization').
- * Derived from the hierarchy so apps that change the root entity type
- * don't need to update membership helper code.
- */
+/** The parentless channel entity type (e.g. 'organization'), derived from the hierarchy so apps can change the root type. */
 const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
 const rootIdColumnKey = appConfig.entityIdColumnKeys[rootChannelType];
 
 /**
- * Role for an auto-created parent/associated membership. Defaults to the least-privileged
- * fitting role: `member` when the target vocabulary has it, else the vocabulary's last role
- * (roles are declared most → least privileged). With `carryRole` (menuStructure), the invited
- * role carries over when valid in the target vocabulary.
+ * Role for an auto-created parent or associated membership: `member` when the target vocabulary has it, else that
+ * vocabulary's last role (roles are declared most to least privileged). With `carryRole`, the invited role carries over when valid.
  */
 export const resolveParentMembershipRole = (
   channelType: ChannelEntityType,
@@ -48,10 +42,7 @@ interface InsertMultipleProps<T> {
   extraFields?: Partial<InsertMembershipModel>;
 }
 
-/**
- * Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`
- * (e.g. `{ organizationId, projectId }`).
- */
+/** Maps a channel entity to its ancestor channel IDs, keyed by `appConfig.entityIdColumnKeys`. */
 export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: EntityModel<T>) => {
   return appConfig.channelEntityTypes.reduce(
     (acc, channelEntityType) => {
@@ -72,46 +63,38 @@ export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: Enti
 };
 
 /**
- * Batch-insert direct memberships for existing users. Assumes `items` are already deduped,
- * normalized, and valid. Root-context and associated parent memberships are upserted (unique
- * constraint + onConflictDoNothing → inserted only when missing); per-user `displayOrder` is
- * computed in one grouped query, spaced by `orderGap`. Returns the inserted target memberships.
+ * Batch-inserts direct memberships for existing users; `items` must already be deduped, normalized and valid.
+ * Root and associated parent memberships are upserted (unique constraint plus onConflictDoNothing), per-user `displayOrder`
+ * comes from one grouped query spaced by `orderGap`, and the inserted target memberships are returned.
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
   ctx: DbContext,
   { items }: { items: Array<InsertMultipleProps<T>> },
 ): Promise<Array<MembershipBaseModel>> => {
   const { db } = ctx.var;
-  // Early exit: nothing to insert
   if (!items.length) return [];
 
-  // Collect the distinct userIds appearing in this batch (for order calc)
   const userIds = Array.from(new Set(items.map((i) => i.userId)));
 
-  // Fetch per-user max(displayOrder) in one query to determine the next displayOrder baseline
+  // One query for per-user max(displayOrder), the baseline for the next order
   const maxOrderRows = await db
     .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.displayOrder) })
     .from(membershipsTable)
     .where(inArray(membershipsTable.userId, userIds))
     .groupBy(membershipsTable.userId);
 
-  // Map userId -> current max(order) (default 0 if none)
   const maxOrdersByUser = new Map<string, number>(maxOrderRows.map((r) => [r.userId, r.maxOrder ?? 0]));
 
-  // Track how many rows we've assigned per user in this run (to increment order by +10 each time)
+  // Rows assigned per user in this run, to step the order by orderGap
   const assignedCounts = new Map<string, number>();
 
-  // Precompute per-item resolved details (entity fields, associated relation, base row)
   const prepared = items.map((info) => {
-    // Resolve defaults and contextual fields
     const { userId, role, entity } = info;
     const createdBy = info.createdBy ?? userId;
 
-    // Get organizationId: prefer entity.organizationId if present, else entity.id (organization)
     const targetEntitiesIdColumnKeys = getMembershipEntityIds(entity);
 
-    // Compute incremental order per user: start from global max, then +orderGap per assignment.
-    // For users with no existing memberships, seed so the first assignment lands on `defaultOrder`.
+    // Order per user: start at the global max and add orderGap per assignment, seeded so a first assignment lands on `defaultOrder`.
     const prevMax = maxOrdersByUser.get(userId) ?? 0;
     const alreadyAssigned = assignedCounts.get(userId) ?? 0;
     const base = prevMax === 0 ? defaultOrder - orderGap : prevMax;
@@ -119,7 +102,6 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
     assignedCounts.set(userId, alreadyAssigned + 1);
 
-    // Build base row used in all inserts for this item
     const baseMembership = {
       userId,
       role,
@@ -130,18 +112,14 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     return { targetEntitiesIdColumnKeys, baseMembership, entity, extraFields: info.extraFields };
   });
 
-  /**
-   * Build root context membership rows (only for non-root entities).
-   * These are parent memberships and always get role "member".
-   * Creation is effectively "only if not existing" thanks to unique constraint + onConflictDoNothing.
-   */
+  // Root context membership rows for non-root entities; unique constraint plus onConflictDoNothing makes this insert-if-missing.
   const rootRows: InsertMembershipModel[] = prepared
     .filter(({ entity }) => entity.entityType !== rootChannelType)
     .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        // parent membership defaults to the least-privileged fitting role ('member' in cella)
+        // Parent membership defaults to the least-privileged fitting role
         role: resolveParentMembershipRole(rootChannelType, baseMembership.role),
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
         channelType: rootChannelType,
@@ -149,14 +127,11 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       } as InsertMembershipModel;
     });
 
-  // Build associated entity membership rows (when an associated relationship exists)
   const associatedRows = prepared
     .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
-      // Find a associated relationship for this entity type
       const relation = appConfig.menuStructure.find((rel) => rel.subentityType === entity.entityType);
       if (!relation) return null;
 
-      //  Get associated entity type and corresponding ID field name
       const associatedType = relation.entityType;
       if (!associatedType) return null;
 
@@ -184,7 +159,6 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  // Build target entity membership rows (the ones we return after insert)
   const targetRows: InsertMembershipModel[] = prepared.map(
     ({ baseMembership, targetEntitiesIdColumnKeys, entity, extraFields }) => ({
       ...baseMembership,
@@ -197,10 +171,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   );
 
   const [insertedTarget] = await Promise.all([
-    // targetRows → main insert (returns inserted memberships)
     db.insert(membershipsTable).values(targetRows).returning(membershipBaseSelect),
 
-    // optional root context + associated inserts (safe upserts)
     rootRows.length ? db.insert(membershipsTable).values(rootRows).onConflictDoNothing() : Promise.resolve(),
     associatedRows.length
       ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()

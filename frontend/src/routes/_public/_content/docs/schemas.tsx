@@ -9,9 +9,6 @@ import { stripParams } from '~/utils/strip-search-params';
 
 const SchemasPage = lazyNamed(() => import('~/modules/docs/schemas/schemas-page'), 'SchemasPage');
 
-/**
- * Schemas list route - displays all API schemas.
- */
 export const Route = createFileRoute('/_public/_content/docs/schemas')({
   staticData: { isAuth: false },
   validateSearch: schemasRouteSearchParamsSchema,
@@ -20,7 +17,6 @@ export const Route = createFileRoute('/_public/_content/docs/schemas')({
   },
   head: () => ({ meta: [{ title: appTitle('Schemas') }] }),
   loader: async () => {
-    // Prefetch schemas and schema tags used by SchemasPage and SchemasSidebar
     await Promise.all([
       queryClient.ensureQueryData(schemasQueryOptions),
       queryClient.ensureQueryData(schemaTagsQueryOptions),

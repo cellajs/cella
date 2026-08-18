@@ -23,8 +23,6 @@ function isProductQuery(queryKey: unknown): boolean {
   return typeof entity === 'string' && productSet.has(entity);
 }
 
-// Session ID management
-
 function getTabSessionId(): string {
   let id = sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
   if (!id) {
@@ -34,9 +32,7 @@ function getTabSessionId(): string {
   return id;
 }
 
-// Persist paused mutations per tab so one tab cannot overwrite another's queue.
-// Restore combines the current record, shared compatibility data, and records whose tab lock is
-// dead; record age supplies the fallback when Web Locks are unavailable.
+// Paused mutations persist per tab so no tab overwrites another's queue; restore absorbs records whose tab lock is dead, falling back to record age without Web Locks.
 const MUTATION_LOCK_PREFIX = `${appConfig.slug}-mutation-owner:`;
 
 const mutationRecordPrefix = (scope: string) => `${scope}:mut:`;
@@ -72,16 +68,15 @@ const PERSIST_THROTTLE_MS = 1000;
 const trackerResets: Array<() => void> = [];
 
 /**
- * Hybrid IndexedDB persister for React Query, backed by the live `localUserDb`: product entity queries
- * are individual IDB records (incremental diffing), context queries are bundled into the meta
- * record. All ops no-op while no per-user DB is bound (signed out).
+ * IndexedDB persister backed by the live `localUserDb`: product entity queries get one record each for incremental diffing, context queries bundle into the meta record.
+ * Every operation no-ops while no per-user DB is bound (signed out).
  */
 export function createIDBPersister(scope = 'rq') {
-  /** In-memory change tracker: queryHash → last persisted dataUpdatedAt (product queries only) */
+  /** queryHash to last persisted dataUpdatedAt, product queries only. */
   const lastPersistedAt = new Map<string, number>();
-  /** In-memory snapshot of last persisted context queries for diffing */
+  /** Snapshot of the last persisted context queries, for diffing. */
   let lastChannelSnapshot = '';
-  /** In-memory snapshot of this tab's last persisted paused mutations for diffing */
+  /** Snapshot of this tab's last persisted paused mutations, for diffing. */
   let lastMutationsSnapshot = '';
   let pendingClient: PersistedClient | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -121,16 +116,12 @@ export function createIDBPersister(scope = 'rq') {
   /** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
   const MIGRATION_CHUNK_SIZE = 200;
 
-  /**
-   * Migrate cached rows, context queries, and mutation variables locally in restart-safe chunks.
-   * Advance the schema pointer only in the final metadata transaction.
-   */
+  /** Migrate cached rows, context queries, and mutation variables in restart-safe chunks; the schema pointer advances only in the final metadata transaction. */
   async function migrateScopeToCurrent(db: LocalUserDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
     for (let i = 0; i < records.length; i += MIGRATION_CHUNK_SIZE) {
       const chunk = records.slice(i, i + MIGRATION_CHUNK_SIZE);
-      // Rewrites are computed before the write: Dexie transactions auto-commit
-      // on non-Dexie awaits, and the lens chain (doba) is async.
+      // Rewrites precede the write: Dexie transactions auto-commit on non-Dexie awaits and the lens chain is async.
       const rewritten: PersistedQueryRecord[] = [];
       for (const record of chunk) {
         const entityType = entityTypeOf(record.queryKey);
@@ -180,12 +171,11 @@ export function createIDBPersister(scope = 'rq') {
     if (!db) return;
 
     try {
-      // Disk-side guard: another tab may have migrated the store forward since
-      // this bundle booted (broadcast can race the first write).
+      // Another tab may have migrated the store forward since this bundle booted; the broadcast can lose the race to the first write.
       const existing = await db.meta.get(scope);
       if ((existing?.schemaVersion ?? 0) > currentSchemaVersion) {
         markBundleStale();
-        console.debug(`[QueryPersister] Store is at a newer schema version — persisting disabled (${scope})`);
+        console.debug(`[QueryPersister] Store is at a newer schema version, persisting disabled (${scope})`);
         return;
       }
 
@@ -225,13 +215,10 @@ export function createIDBPersister(scope = 'rq') {
         }
       }
 
-      // Diff context queries by a lightweight snapshot
       const channelSnapshot = JSON.stringify(channelQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
       const channelChanged = channelSnapshot !== lastChannelSnapshot;
 
-      // This tab's paused mutations go to its per-tab record (see "Per-tab mutation
-      // ownership"); the shared meta record stays mutation-free so no tab can clobber
-      // another's queue.
+      // Paused mutations go to this tab's own record; the shared meta record stays mutation-free so no tab clobbers another's queue.
       const mutationsSnapshot = JSON.stringify(mutations);
       const mutationsChanged = mutationsSnapshot !== lastMutationsSnapshot;
       const ownMutationKey = `${mutationRecordPrefix(scope)}${getTabSessionId()}`;
@@ -303,9 +290,7 @@ export function createIDBPersister(scope = 'rq') {
         let meta = await db.meta.get(scope);
         if (!meta) return undefined;
 
-        // Cache-bust on breaking schema change: a mismatch between the persisted
-        // version and appConfig.clientCacheVersion wipes cached query data
-        // (keeping queued mutations). A missing version seeds without wiping.
+        // A clientCacheVersion mismatch wipes cached query data but keeps queued mutations; a missing version seeds without wiping.
         const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
         if (persistedVersion !== appConfig.clientCacheVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
@@ -317,8 +302,7 @@ export function createIDBPersister(scope = 'rq') {
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
-        // Upgrade cached rows and queued mutations locally when their lens ordinal trails the bundle.
-        // Missing ordinals seed current; cache-version busting covers older formats.
+        // Upgrade rows and queued mutations when their lens ordinal trails the bundle; a missing ordinal seeds current.
         const pointer = meta.schemaVersion ?? currentSchemaVersion;
         if (pointer !== currentSchemaVersion) {
           if (scope.startsWith(SESSION_KEY_PREFIX)) {
@@ -327,8 +311,7 @@ export function createIDBPersister(scope = 'rq') {
             return undefined;
           }
           if (pointer > currentSchemaVersion) {
-            // Disk is ahead (another tab migrated forward, or a rollback deploy):
-            // stop persisting and let the PWA update flow replace this bundle.
+            // Disk is ahead after another tab migrated forward or a rollback deploy: stop persisting and let the PWA update flow replace this bundle.
             markBundleStale();
             return undefined;
           }
@@ -356,13 +339,12 @@ export function createIDBPersister(scope = 'rq') {
           ...(meta.channelQueries ?? []),
         ];
 
-        // Seed the context snapshot for diffing on next write
+        // Seed the snapshot the next write diffs against.
         lastChannelSnapshot = JSON.stringify(
           (meta.channelQueries ?? []).map((q) => [q.queryHash, q.state.dataUpdatedAt]),
         );
 
-        // Restore shared compatibility data, this tab's record, and orphaned tab records.
-        // Live tabs retain ownership; age substitutes for lock liveness when needed.
+        // Restores shared data, this tab's record, and orphaned tab records; live tabs keep their own, and age substitutes when lock liveness is undetectable.
         const prefix = mutationRecordPrefix(scope);
         const mutationRecords = (await db.meta.where('key').startsWith(prefix).toArray()) ?? [];
         const live = await liveTabSessionIds();
@@ -421,10 +403,8 @@ export function resetPersisters(): void {
 }
 
 /**
- * Remove session records older than 2 hours left behind by closed tabs. This is the sole
- * reclaim path for session scopes (a reload must keep its scope, so nothing is torn down on
- * unload). Skips the current tab. Call once on app startup (fire-and-forget); no-ops while
- * signed out.
+ * Remove session records left behind by closed tabs, older than ORPHAN_MAX_AGE_MS and excluding the current tab.
+ * The sole reclaim path for session scopes: a reload must keep its scope, so nothing is torn down on unload. Call once on app startup; no-ops while signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
   const db = getLocalUserDb();
@@ -448,13 +428,10 @@ export async function cleanupOrphanedSessions(): Promise<void> {
       console.debug(`[QueryPersister] Cleaned up ${orphanScopes.length} orphaned session(s)`);
     }
   } catch (error) {
-    // Non-critical; orphans are cleaned up on a later startup
+    // Non-critical: a later startup reclaims these orphans.
     console.debug('[QueryPersister] Orphan cleanup failed:', error);
   }
 }
 
-// Advertise this tab's liveness for mutation-record ownership (see "Per-tab mutation ownership").
+// Advertise this tab's liveness for mutation-record ownership.
 holdMutationOwnershipLock();
-
-// `beforeunload` also fires on reload, so orphan cleanup uses age and mutation-lock
-// liveness to preserve refresh caches while reclaiming closed tabs.

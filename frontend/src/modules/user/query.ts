@@ -17,15 +17,10 @@ type UsersListParams = UserFilters & { limit?: number };
 
 const keys = createEntityKeys<UserFilters>('user');
 
-/** Defines React Query cache keys for user. */
 export const userQueryKeys = keys;
 
-/** Find a user in cache by id. */
 const findUserInCache = createCacheFinder<User>('user');
 
-/**
- * Query options for fetching a user by ID.
- */
 export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
@@ -33,9 +28,6 @@ export const userQueryOptions = (id: string) =>
     placeholderData: () => findUserInCache(id),
   });
 
-/**
- * Infinite query options to get a paginated list of users.
- */
 export const usersListQueryOptions = (params: UsersListParams) => {
   const defaults = usersSearchDefaults;
   const {
@@ -59,9 +51,6 @@ export const usersListQueryOptions = (params: UsersListParams) => {
   });
 };
 
-/**
- * Mutation hook for updating a user.
- */
 export const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
@@ -80,9 +69,6 @@ export const useUserUpdateMutation = () => {
   });
 };
 
-/**
- * Mutation hook for deleting users.
- */
 export const useUserDeleteMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;

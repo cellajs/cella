@@ -7,11 +7,7 @@ const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
 /** In-memory throttle: tracks last DB write timestamp per user */
 const lastSeenMemory = new Map<string, number>();
 
-/**
- * Update lastSeenAt if more than 5 minutes have passed.
- * Uses an in-memory timestamp check to avoid DB reads for throttle logic.
- * The DB write is fire-and-forget (not awaited) since it's non-critical.
- */
+/** Writes lastSeenAt at most once per THROTTLE_MS, deciding from memory. The write is fire-and-forget. */
 export const updateLastSeenAt = (userId: string): void => {
   const now = Date.now();
   const last = lastSeenMemory.get(userId) ?? 0;

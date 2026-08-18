@@ -13,7 +13,6 @@ interface FindCredentialIdsByUserOpts {
   userId: string;
 }
 
-/** Find all passkey credential IDs for a user. */
 export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCredentialIdsByUserOpts) => {
   const { db } = ctx.var;
   return db
@@ -26,7 +25,6 @@ interface FindUserIdByCredentialIdOpts {
   credentialId: string;
 }
 
-/** Find the user ID that owns a given passkey credential. */
 export const findUserIdByCredentialId = async (ctx: DbContext, { credentialId }: FindUserIdByCredentialIdOpts) => {
   const { db } = ctx.var;
   const [record] = await db
@@ -41,14 +39,12 @@ interface FindUserMfaOpts {
   userId: string;
 }
 
-/** Check if a user has an existing TOTP entry. */
 export const findExistingTotp = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   const [existing] = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
   return existing;
 };
 
-/** Check remaining MFA methods after removing one. Returns passkeys and totps. */
 export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   const [passkeys, totps] = await Promise.all([
@@ -58,7 +54,6 @@ export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUs
   return { passkeys, totps };
 };
 
-/** Disable MFA for a user. */
 export const disableMfa = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
   const { db } = ctx.var;
   return db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, userId));
@@ -69,7 +64,6 @@ interface VerifyEmailOpts {
   verifiedAt: string;
 }
 
-/** Mark an email as verified. */
 export const verifyEmail = async (ctx: DbContext, { email, verifiedAt }: VerifyEmailOpts) => {
   const { db } = ctx.var;
   return db.update(emailsTable).set({ verified: true, verifiedAt }).where(eq(emailsTable.email, email));
@@ -80,7 +74,6 @@ interface InsertTotpOpts {
   secret: string;
 }
 
-/** Insert a TOTP row. */
 export const insertTotp = async (ctx: DbContext, { userId, secret }: InsertTotpOpts) => {
   const { db } = ctx.var;
   return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret) });
@@ -91,7 +84,6 @@ interface LinkTokenToUserOpts {
   userId: string;
 }
 
-/** Link a userId to an existing token. */
 export const linkTokenToUser = async (ctx: DbContext, { tokenId, userId }: LinkTokenToUserOpts) => {
   const { db } = ctx.var;
   return db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId));
@@ -101,7 +93,6 @@ interface FindLatestSessionByUserOpts {
   userId: string;
 }
 
-/** Find the latest session for a user (by expiry). */
 export const findLatestSessionByUser = async (ctx: DbContext, { userId }: FindLatestSessionByUserOpts) => {
   const { db } = ctx.var;
   const [session] = await db
@@ -133,7 +124,6 @@ interface InsertInvitationTokenOpts {
   values: typeof tokensTable.$inferInsert;
 }
 
-/** Insert an invitation token. */
 export const insertInvitationToken = async (ctx: DbContext, { values }: InsertInvitationTokenOpts) => {
   const { db } = ctx.var;
   return db.insert(tokensTable).values(values);
@@ -143,7 +133,6 @@ interface FindInactiveMembershipByIdOpts {
   id: string;
 }
 
-/** Find an inactive membership by ID. */
 export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
   const { db } = ctx.var;
   const [membership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
@@ -155,7 +144,6 @@ interface DeleteSessionOpts {
   userId: string;
 }
 
-/** Delete a session by ID and userId. */
 export const deleteSession = async (ctx: DbContext, { sessionId, userId }: DeleteSessionOpts) => {
   const { db } = ctx.var;
   return db.delete(sessionsTable).where(and(eq(sessionsTable.id, sessionId), eq(sessionsTable.userId, userId)));

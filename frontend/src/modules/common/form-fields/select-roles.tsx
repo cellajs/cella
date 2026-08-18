@@ -11,9 +11,6 @@ interface SelectRoleProps {
 
 const EMPTY_ROLES: EntityRole[] = [];
 
-/**
- * Checkbox group for selecting multiple entity roles.
- */
 export function SelectRoles({ onValueChange, value = EMPTY_ROLES, className }: SelectRoleProps) {
   const { t } = useTranslation();
 

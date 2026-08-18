@@ -8,14 +8,14 @@ import { createDoc, deleteState, loadState, saveState } from '../../data/storage
 
 const DATABASE_URL = testDatabaseUrl;
 
-// Use a known tenant/user that won't conflict with other tests
+// A dedicated tenant/user so parallel tests do not collide.
 const testTenantId = 'yjs-integ-tenant';
 const testUserId = 'yjs-integ-user';
 const testOrgId = '00000000-0000-4000-a000-000000000001';
 
 function ctx(entityId: string): DocContext {
   return {
-    // Config-derived: yjs_documents has no FK to the entity table, so any product type works.
+    // yjs_documents has no FK to the entity table, so any product type works.
     entityType: appConfig.productEntityTypes[0],
     entityId,
     tenantId: testTenantId,
@@ -25,7 +25,6 @@ function ctx(entityId: string): DocContext {
   };
 }
 
-// Deterministic UUIDs for each test case
 const ids = {
   lifecycle: '10000000-0000-4000-a000-000000000001',
   idempotent: '10000000-0000-4000-a000-000000000002',
@@ -34,24 +33,18 @@ const ids = {
   deleteNoop: '10000000-0000-4000-a000-000000000005',
 };
 
-/**
- * Seed minimal rows so RLS context (`set_config`) doesn't cause FK violations.
- * Uses the postgres superuser which bypasses RLS.
- */
+/** Seeds the rows the RLS context needs so `set_config` does not trigger FK violations; runs as the superuser, which bypasses RLS. */
 async function seedTestTenant(client: pg.Client) {
-  // Ensure tenant exists (idempotent)
   await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
     testTenantId,
     'YJS Integration Test Tenant',
   ]);
-  // Ensure organization exists
   await client.query(
     'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
     [testOrgId, testTenantId, 'yjs-integ-org', 'YJS Test Org', 'yto'],
   );
 }
 
-/** Remove all test data. */
 async function cleanupTestData(client: pg.Client) {
   await client.query('DELETE FROM yjs_documents WHERE tenant_id = $1', [testTenantId]);
   await client.query('DELETE FROM organizations WHERE tenant_id = $1', [testTenantId]);
@@ -75,34 +68,27 @@ describe('6.1 Storage CRUD', () => {
   it('full create → load → save → load → delete lifecycle', async () => {
     const c = ctx(ids.lifecycle);
 
-    // Create
     await createDoc(c);
 
-    // Load: row exists with empty state
     const empty = await loadState(c);
     expect(empty).not.toBeNull();
     expect(empty!.length).toBe(0);
 
-    // Save real Y.Doc state
     const doc = new Y.Doc();
     doc.getMap('test').set('hello', 'world');
     const update = Y.encodeStateAsUpdate(doc);
     await saveState(c, update);
 
-    // Load: should return saved state
     const loaded = await loadState(c);
     expect(loaded).not.toBeNull();
     expect(loaded!.length).toBeGreaterThan(0);
 
-    // Verify round-trip fidelity
     const verify = new Y.Doc();
     Y.applyUpdate(verify, loaded!);
     expect(verify.getMap('test').get('hello')).toBe('world');
 
-    // Delete
     await deleteState(c);
 
-    // Load: should return null (no row)
     const deleted = await loadState(c);
     expect(deleted).toBeNull();
   });
@@ -148,7 +134,6 @@ describe('6.1 Storage CRUD', () => {
 
   it('deleteState is safe on non-existent doc', async () => {
     const c = ctx(ids.deleteNoop);
-    // Should not throw
     await deleteState(c);
   });
 });

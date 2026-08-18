@@ -6,16 +6,13 @@ import { productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
-/**
- * Attachments table to store file metadata and relations.
- * Each attachment belongs to exactly one tenant and organization (RLS isolation boundary).
- */
+/** Each attachment belongs to exactly one tenant and organization: the RLS isolation boundary. */
 export const attachmentsTable = snakeCase.table(
   'attachments',
   {
     ...productColumns('attachment'),
-    // Bytes live in the public S3 bucket and are served from the CDN. Storage placement only:
-    // row readability for non-members is the separate `publicAt` permission grant.
+    // Storage placement only: bytes in the public S3 bucket, served from the CDN. Row
+    // readability for non-members is the separate `publicAt` grant.
     publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */
@@ -24,9 +21,8 @@ export const attachmentsTable = snakeCase.table(
     contentType: varchar({ length: maxLength.field }).notNull(),
     convertedContentType: varchar({ length: maxLength.field }),
     size: varchar({ length: maxLength.field }).notNull(),
-    // Storage object keys per variant, keyed by variant name. `original` is always present;
-    // other variants appear only once the upload pipeline generates them. One map replaces the
-    // former per-variant columns so signing/resolution never enumerates variant names.
+    // Storage object keys per variant. `original` is always present; other variants appear only
+    // once the upload pipeline generates them.
     keys: jsonb()
       .$type<AttachmentKeys>()
       .notNull()
@@ -35,8 +31,8 @@ export const attachmentsTable = snakeCase.table(
   },
   (table) => [
     index('attachments_organization_id_index').on(table.organizationId),
-    // Delta-sync reads filter organization_id + a seq range and order by seq: this composite
-    // turns the SSE fan-out stampede's list reads into an index range scan.
+    // Delta-sync reads filter organization_id plus a seq range and order by seq, so this
+    // composite makes the SSE fan-out list reads an index range scan.
     index('attachments_organization_id_seq_index').on(table.organizationId, table.seq),
     index('attachments_tenant_id_index').on(table.tenantId),
     index('attachments_created_by_index').on(table.createdBy),

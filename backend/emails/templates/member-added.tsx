@@ -26,10 +26,6 @@ type MemberAddedRecipient = EmailRecipient & { name: string; entityLink: string 
 
 const appName = appConfig.name;
 
-/**
- * Email template for users directly added to an entity (Scenario 2b).
- * Unlike invite emails, no action is required - the user is already a member.
- */
 export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAddedRecipient>()({
   translate(lng, { senderName, senderThumbnailUrl, entityName, role }) {
     return {

@@ -7,9 +7,6 @@ import { useUserStore } from '~/modules/user/user-store';
 import { userQueryOptions } from './query';
 import { UserProfilePage as UserProfile } from './user-profile';
 
-/**
- * Sheet wrapper for user profile. Handles its own data fetching.
- */
 export function UserSheet({ id, organizationId }: { id: string; organizationId: string | undefined }) {
   const isOnline = useOnlineManager();
   const { user: currentUser } = useUserStore();

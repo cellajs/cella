@@ -13,9 +13,6 @@ import type {
   PolicyMatrix,
 } from './types.ts';
 
-/**
- * Creates a channel policy builder for fluent role-permission configuration.
- */
 const createChannelPolicyBuilder = (
   channelType: ChannelEntityType,
   roles: readonly string[],
@@ -26,9 +23,8 @@ const createChannelPolicyBuilder = (
 
   for (const role of roles) {
     builder[role] = (permissions: Partial<Record<EntityActionType, PolicyCellInput>>) => {
-      // Expand to a full record so the engine always reads an explicit value: any action the
-      // policy omits defaults to 0 (denied). A cell is the config literal verbatim. The `'own'`
-      // name IS the value the engine reads, so there is nothing to normalize.
+      // Expand to a full record so the engine always reads an explicit value; an omitted action
+      // defaults to 0 (denied).
       const fullPermissions = {} as EntityActionPermissions;
       for (const action of entityActions) {
         const value = permissions[action] ?? 0;
@@ -48,9 +44,6 @@ const createChannelPolicyBuilder = (
   return builder as ChannelPolicyBuilder;
 };
 
-/**
- * Creates a channels object with builders for all channel types.
- */
 const createChannelBuilders = (
   entries: PolicyEntry[],
   channelEntityTypes: readonly ChannelEntityType[],
@@ -67,17 +60,12 @@ const createChannelBuilders = (
   return channels;
 };
 
-/** Result of `configurePermissions`: the role x channel policy matrix + per-entity-type grants. */
 export interface PermissionsConfigResult {
   policyMatrix: PolicyMatrix;
   publicReadGrants: PublicReadGrants;
 }
 
-/**
- * Configures entity policies through per-entity-type role/channel builders and a
- * per-entity-type public-read grant.
- * @see public-read.ts
- */
+/** @see public-read.ts */
 export const configurePermissions = (
   entityTypes: readonly EntityType[],
   callback: PolicyCallback,
@@ -86,7 +74,6 @@ export const configurePermissions = (
   const policies: PolicyMatrix = {};
   const publicReadGrants: PublicReadGrants = {};
 
-  // Hierarchy defaults to the app's real config; tests pass a synthetic one (wide-fixture.ts).
   const { entityActions, channelEntityTypes, getRoles } = resolveHierarchy(overrides);
 
   const permissionableTypes = entityTypes.filter(
@@ -118,11 +105,7 @@ export const configurePermissions = (
   return { policyMatrix: policies, publicReadGrants };
 };
 
-/**
- * Configures a policy matrix only (no public read grants). Kept for tests and callers
- * that drive the engine with synthetic policies; app configs should use
- * `configurePermissions`.
- */
+/** No public read grants. For tests and callers driving the engine with synthetic policies. */
 export const configurePolicyMatrix = (
   entityTypes: readonly EntityType[],
   callback: PolicyCallback,
@@ -132,20 +115,15 @@ export const configurePolicyMatrix = (
 };
 
 /**
- * Gets the policy entries for a specific entity type.
- * The lookup is total: an entity type the matrix does not cover yields no entries, which the
- * engine reads as denied. Callers hold runtime strings (app-configurable entity names), so the
- * parameter is a string and the miss is a normal result.
+ * Total lookup: an entity type the matrix does not cover yields no entries, which the engine
+ * reads as denied. Callers hold runtime strings, so a miss is a normal result.
  */
 export const getEntityPolicies = (entityType: string, policies: PolicyMatrix): EntityPolicies => {
   const byEntityType: Partial<Record<string, EntityPolicies>> = policies;
   return byEntityType[entityType] ?? [];
 };
 
-/**
- * Gets the permissions for a specific channel and role combination.
- * A channel/role pair with no entry yields `undefined`, which callers read as denied.
- */
+/** A channel/role pair with no entry yields `undefined`, which callers read as denied. */
 export const getPolicyPermissions = (
   policies: EntityPolicies,
   channelType: string,

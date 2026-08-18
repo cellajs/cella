@@ -6,35 +6,35 @@ import type { NavItemId } from '~/modules/navigation/types';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface NavigationStoreState {
-  recentSearches: string[]; // Recent search (from AppSearch),
-  setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
+  recentSearches: string[]; // Search values entered in AppSearch
+  setRecentSearches: (searchValue: string[]) => void;
 
-  navSheetOpen: NavItemId | null; // Currently open navigation sheet
-  setNavSheetOpen: (sheet: NavItemId | null) => void; // Sets navigation sheet
+  navSheetOpen: NavItemId | null;
+  setNavSheetOpen: (sheet: NavItemId | null) => void;
 
-  keepNavOpen: boolean; // Nav sheet remains open state
-  setKeepNavOpen: (status: boolean) => void; // Toggles nav open state
+  keepNavOpen: boolean; // Nav sheet stays open beside the content
+  setKeepNavOpen: (status: boolean) => void;
 
-  keepOpenPreference: boolean; // User Preference for keeping the menu open
-  toggleKeepOpenPreference: (status: boolean) => void; // Toggles keep-open preference
+  keepOpenPreference: boolean; // User preference behind keepNavOpen
+  toggleKeepOpenPreference: (status: boolean) => void;
 
-  detailedMenu: boolean; // Hides submenu state(for Menu sheet)
-  toggleDetailedMenu: (status: boolean) => void; // Toggles submenu visibility
+  detailedMenu: boolean; // Menu sheet shows submenus
+  toggleDetailedMenu: (status: boolean) => void;
 
-  activeSections: Record<string, boolean> | null; // Tracks expanded/collapsed entities sections and their archived sections
-  toggleSection: (section: string) => void; // Toggle a section expanded/collapsed state
-  setSectionsDefault: () => void; // Resets all sections to default state
+  activeSections: Record<string, boolean> | null; // Expanded state per section, including archived ones
+  toggleSection: (section: string) => void;
+  setSectionsDefault: () => void;
 
-  menuSheetPanel: string | null; // Currently open bottom panel in menu sheet (accordion: max one open)
-  toggleMenuSheetPanel: (panel: string) => void; // Toggle a bottom panel open/closed (closes others)
+  menuSheetPanel: string | null; // Open bottom panel in the menu sheet; at most one
+  toggleMenuSheetPanel: (panel: string) => void;
 
-  floatingNavActive: boolean; // Floating nav is visible (hides bottom bar, adjusts layout)
-  setFloatingNavActive: (status: boolean) => void; // Updates floating nav state
+  floatingNavActive: boolean; // Floating nav is visible, which hides the bottom bar
+  setFloatingNavActive: (status: boolean) => void;
 
-  navLoading: boolean; // Navigation is in a loading state
-  setNavLoading: (status: boolean) => void; // Updates the loading state
+  navLoading: boolean;
+  setNavLoading: (status: boolean) => void;
 
-  reset: () => void; // Resets in-memory state to initial (call on sign-out)
+  reset: () => void; // Called on sign-out
 }
 
 interface InitStore
@@ -51,7 +51,6 @@ interface InitStore
     | 'menuSheetPanel'
   > {}
 
-// Default state values
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
@@ -64,9 +63,6 @@ const initStore: InitStore = {
   menuSheetPanel: null,
 };
 
-/**
- * Navigation store for managing navigation state: menu, recent searches, onboarding
- */
 export const useNavigationStore = create<NavigationStoreState>()(
   devtools(
     immer(
@@ -147,5 +143,5 @@ export const useNavigationStore = create<NavigationStoreState>()(
   ),
 );
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+// Non-hook alias for use outside React components (e.g. getState).
 export { useNavigationStore as navigationStore };

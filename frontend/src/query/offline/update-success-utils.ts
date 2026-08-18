@@ -3,9 +3,8 @@ import { cacheUpdate } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 
 /**
- * Merge only this mutation's mutated fields from the server response onto the cached entity,
- * preserving optimistic values for fields it didn't touch (avoids clobbering concurrent mutations),
- * while always syncing stx/updatedAt/updatedBy. Returns the server entity when nothing is cached.
+ * Merges only this mutation's mutated fields from the server response onto the cached entity, so a concurrent mutation's optimistic values survive; stx, updatedAt, and updatedBy always sync.
+ * Returns the server entity when nothing is cached.
  */
 export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(opts: {
   cached?: T;
@@ -31,9 +30,6 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   } as T;
 }
 
-/**
- * Write an entity to both the list cache and the detail cache.
- */
 export function syncEntityToCache<T extends ItemData>(opts: {
   entity: T;
   listKey: QueryKey;

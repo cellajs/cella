@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { createSpanStoreProcessor } from './span-store-processor.ts';
 import { createSpanStore } from './tracing.ts';
 
-/** Build a minimal ReadableSpan mock for testing. */
 function mockReadableSpan(
   overrides: Partial<{
     traceId: string;

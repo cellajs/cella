@@ -21,41 +21,31 @@ interface LegalSubjectConfig {
 }
 
 interface LegalAsideProps {
-  /** Array of legal subjects with their sections */
   subjects: LegalSubjectConfig[];
-  /** Currently active subject ID */
   currentSubject: LegalSubject;
   className?: string;
 }
 
-/**
- * Legal Aside Component that shows collapsible subjects with section navigation.
- * Receives sections from config.
- */
 export const LegalAside = ({ subjects, currentSubject, className }: LegalAsideProps) => {
   const { t } = useTranslation();
 
   const isMobile = useBreakpointBelow('sm');
 
-  // Unique layoutId for the animated indicator
   const [layoutId] = useState(() => nanoid());
 
-  // Track which subject is expanded and the previous subject to detect changes
   const [expanded, setExpanded] = useState<LegalSubject | null>(currentSubject);
   const [prevSubject, setPrevSubject] = useState(currentSubject);
 
-  // When currentSubject changes, expand it (sync update during render)
+  // State update during render: expands the newly selected subject.
   if (prevSubject !== currentSubject) {
     setExpanded(currentSubject);
     setPrevSubject(currentSubject);
   }
 
-  // Toggle expanded state for a subject
   const toggleExpanded = (id: LegalSubject) => {
     setExpanded((prev) => (prev === id ? null : id));
   };
 
-  // Get current section from scroll spy store
   const spySection = useCurrentSection();
   const currentSection = spySection || 'overview';
 
@@ -64,13 +54,11 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
-        // Only show sections with labels in the sidebar
         const subjectSections = sections.filter((s) => s.label);
 
         return (
           <Collapsible key={id} open={isExpanded} onOpenChange={() => toggleExpanded(id)}>
             <div className="group/subject relative" data-active={isActive} data-expanded={isExpanded}>
-              {/* Rail line - visible when expanded */}
               <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/subject:flex">
                 <div className="w-px flex-1 bg-muted-foreground/30" />
               </div>

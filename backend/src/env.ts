@@ -15,9 +15,6 @@ dotenv({
   files: ['.env'],
 });
 
-/**
- * Environment variables validated with zod
- */
 export const env = createEnv({
   server: {
     NODB: z
@@ -31,9 +28,7 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     DATABASE_ADMIN_URL: z.url(),
     DATABASE_POOL_MAX: z.coerce.number().default(80),
-    // PEM CA cert (Scaleway RDB instance) for verifying the managed PostgreSQL
-    // TLS connection. Auto-provisioned by `pulumi up`; required in production
-    // (the DB client fails fast if missing). Unused in local development.
+    // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([
       z.literal('development'),
@@ -47,9 +42,8 @@ export const env = createEnv({
 
     COOKIE_SECRET: z.string(),
 
-    // Optional operator-managed runtime secret (system-admin-ip-allowlist). When
-    // the secret has no version the env var is omitted, so it defaults to 'none'
-    // (deny). Sys-admin routes stay off until an operator sets the allowlist.
+    // Operator-managed runtime secret. When the secret has no version the env var is omitted and this
+    // defaults to 'none' (deny), so sys-admin routes stay off until an operator sets the allowlist.
     SYSTEM_ADMIN_IP_ALLOWLIST: z
       .union([
         z.literal('none'),
@@ -98,8 +92,7 @@ export const env = createEnv({
 
     MODE: z.enum(['api', 'mcp', 'cdc', 'migrate']).default('api'),
 
-    // Apply migrations and roles before binding the API port.
-    // Production uses separate migrate mode; local development and tests default to boot-time setup.
+    // Apply migrations and roles before binding the API port. Production runs migrations in a separate mode.
     RUN_MIGRATIONS_ON_BOOT: z
       .string()
       .default('true')
@@ -109,16 +102,13 @@ export const env = createEnv({
       .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),
 
-    // Build-time release identifier (git SHA from CI), baked into the image
-    // as an ENV. Surfaced via `/health` so the deploy verifier can confirm
-    // the running container matches the SHA CI just pushed.
+    // Build-time git SHA baked into the image, reported by `/health` so a deploy can be verified against CI.
     RELEASE_SHA: z.string().default('unknown'),
   },
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
-  // Skip validation when running in Vitest (env vars set by vitest.config.ts test.env)
-  // This allows vitest workspace to import tests before env vars are fully configured
+  // Skip validation under Vitest, whose env vars come from vitest.config.ts test.env.
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   skipValidation: !!process.env.VITEST,
 });

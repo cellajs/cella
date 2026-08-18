@@ -201,16 +201,16 @@ export async function main(): Promise<void> {
   });
 
   for (const c of checks) {
-    console.info(`${c.ok ? '✓' : '✗'} [${c.expected}] ${c.name} — ${c.detail}`);
+    console.info(`${c.ok ? '✓' : '✗'} [${c.expected}] ${c.name}: ${c.detail}`);
   }
   const failures = checks.filter((c) => !c.ok);
   if (failures.length > 0) {
     console.error(
-      `\n✗ ${failures.length} of ${checks.length} checks failed — the state-bucket policy is NOT validated.`,
+      `\n✗ ${failures.length} of ${checks.length} checks failed: the state-bucket policy is NOT validated.`,
     );
     process.exit(1);
   }
-  console.info(`\n✓ All ${checks.length} checks passed — state-bucket policy validated (H3 (b) + (c)).`);
+  console.info(`\n✓ All ${checks.length} checks passed: state-bucket policy validated (H3 (b) + (c)).`);
 }
 
 if (isMain(import.meta.url)) {

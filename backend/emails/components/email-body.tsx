@@ -1,9 +1,6 @@
 import type { JSX } from 'react';
 import { Section } from './primitives';
 
-/**
- * Email body component to wrap content with consistent padding and styling.
- */
 export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Element => (
   <Section
     style={{
@@ -30,5 +27,4 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
   </Section>
 );
 
-// Template export
 export const Template = EmailBody;

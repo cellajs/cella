@@ -46,7 +46,7 @@ describe('mutationRetry', () => {
     expect(mutationRetry(10, netErr)).toBe(false);
   });
 
-  it('never retries server errors — they must fail fast (4xx quarantine / 5xx toast)', () => {
+  it('never retries server errors: they must fail fast (4xx quarantine / 5xx toast)', () => {
     expect(mutationRetry(0, new ApiError({ status: 409 }))).toBe(false);
     expect(mutationRetry(0, new ApiError({ status: 500 }))).toBe(false);
   });

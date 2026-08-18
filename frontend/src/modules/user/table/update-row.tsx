@@ -13,9 +13,6 @@ interface Props {
   tabIndex: number;
 }
 
-/**
- * Opens the update user sheet anchored to the given button ref.
- */
 export function openUpdateUserSheet(user: BaseUser, buttonRef: RefObject<HTMLButtonElement | null>) {
   const title = i18n.t('c:edit_resource', { resource: i18n.t('c:user').toLowerCase() });
   const createSheet = useSheeter.getState().create;
@@ -39,7 +36,6 @@ export function openUpdateUserSheet(user: BaseUser, buttonRef: RefObject<HTMLBut
   );
 }
 
-/** Renders the update table row. */
 export function UpdateRow({ user, tabIndex }: Props) {
   const buttonRef = useRef(null);
 

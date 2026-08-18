@@ -2,10 +2,7 @@ import { useParams } from '@tanstack/react-router';
 import { appConfig } from 'shared';
 import { channelRouteConfig } from '~/routes-config';
 
-/**
- * Return a stable composite key for the route's deepest channel, or undefined outside channels.
- * It changes on channel navigation but not tab changes within the same channel.
- */
+/** Composite key for the route's deepest channel, undefined outside channels. Stable across tab changes. */
 export const usePageChannelKey = (): string | undefined => {
   const params = useParams({ strict: false }) as Record<string, string | undefined>;
 

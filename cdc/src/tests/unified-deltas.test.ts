@@ -6,9 +6,8 @@ import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
-// `attachment` has parent = organization. resolveChannelKey() therefore returns
-// organizationId, so seq and entity-count deltas collapse onto a single
-// channelKey (no separate parent delta because parentType === 'organization').
+// `attachment` parents on organization, so resolveChannelKey returns organizationId and seq plus
+// entity-count deltas collapse onto a single channelKey.
 function attachmentEntry(): EntityTableMeta {
   return {
     kind: 'entity',
@@ -134,14 +133,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    // One sequence group per organization (all product types share the org sequence)
+    // One sequence group per organization; all product types share it.
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].orgKey).toBe('org-1');
     expect(plan.orgSequenceGroups[0].count).toBe(5);
     expect(plan.orgSequenceGroups[0].events).toHaveLength(5);
 
-    // Count deltas: accumulated across all 5 events on org, plus one activity stamp
-    // (rows carry no createdAt here, so the stamp falls back to Date.now())
+    // Accumulated across all 5 events, plus one activity stamp falling back to Date.now().
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
       'e:c:attachment': 5,
       'e:c:h:attachment': 5,
@@ -347,9 +345,8 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   });
 });
 
-// The publication row filter (`published_at IS NOT NULL`) rewrites draft transitions at
-// decode time: publish arrives as INSERT, unpublish as DELETE carrying the old row, plain
-// draft edits never arrive (parse-message.ts guard). These tests exercise events AS DELIVERED.
+// The publication row filter rewrites draft transitions at decode time: publish arrives as INSERT,
+// unpublish as DELETE carrying the old row, and plain draft edits never arrive.
 describe('draft lifecycle count deltas (publication row filter delivery)', () => {
   const createdAt = '2026-07-01T10:00:00.000Z';
   const publishedAt = '2026-07-04T09:00:00.000Z';
@@ -379,7 +376,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
   });
 
   it('an unpublish arrives as DELETE with the old published row: counts as a delete, stamps nothing', () => {
-    // CDC deletes snapshot the OLD row into rowData (oldRowData is null).
+    // CDC deletes snapshot the old row into rowData; oldRowData is null.
     const plan = computeBatchUnifiedDeltas([
       mockEvent({
         tableMeta: attachmentEntry(),

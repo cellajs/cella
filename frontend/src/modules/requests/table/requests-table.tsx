@@ -15,7 +15,6 @@ import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 
 const LIMIT = appConfig.requestLimits.requests;
 
-/** Stable row key getter function defined outside the component to prevent re-renders. */
 function rowKeyGetter(row: Request) {
   return row.id;
 }

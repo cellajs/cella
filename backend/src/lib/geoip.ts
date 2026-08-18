@@ -12,7 +12,7 @@ const loadCountry = async (): Promise<Reader<CountryResponse> | null> => {
   if (countryReader) return countryReader;
   if (!existsSync(env.GEOIP_COUNTRY_DB_PATH)) {
     if (!countryWarned) {
-      baseLog.warn('GeoIP country database not found — country lookups disabled', {
+      baseLog.warn('GeoIP country database not found: country lookups disabled', {
         path: env.GEOIP_COUNTRY_DB_PATH,
       });
       countryWarned = true;
@@ -27,7 +27,7 @@ const loadAsn = async (): Promise<Reader<AsnResponse> | null> => {
   if (asnReader) return asnReader;
   if (!existsSync(env.GEOIP_ASN_DB_PATH)) {
     if (!asnWarned) {
-      baseLog.warn('GeoIP ASN database not found — ASN lookups disabled', { path: env.GEOIP_ASN_DB_PATH });
+      baseLog.warn('GeoIP ASN database not found, ASN lookups disabled', { path: env.GEOIP_ASN_DB_PATH });
       asnWarned = true;
     }
     return null;
@@ -37,10 +37,8 @@ const loadAsn = async (): Promise<Reader<AsnResponse> | null> => {
 };
 
 /**
- * Look up the ISO-3166 alpha-2 country code and ASN for an IP address.
- * Both fields are independent: either can be null if the database is missing
- * or the IP is unknown. Never throws; auth/session paths can call this safely.
- *
+ * ISO-3166 alpha-2 country code and ASN for an IP; either is null when its database is missing or the IP is unknown.
+ * Never throws, so auth and session paths can call it directly.
  * Attribution: IP geolocation by DB-IP (https://db-ip.com), required by CC BY 4.0.
  */
 export const lookupIp = async (

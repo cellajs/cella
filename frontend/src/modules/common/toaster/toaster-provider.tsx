@@ -4,7 +4,6 @@ import { useToastStore } from '~/modules/common/toaster/toast-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Toaster } from '~/modules/ui/sonner';
 
-/** Provides toaster state to descendant components. */
 export function ToasterProvider() {
   const isMobile = useBreakpointBelow('sm');
   const toast = useToastStore((state) => state.toast);

@@ -7,9 +7,7 @@ import type { ActivityModel } from '#/modules/activities/activities-db';
 import type { TrackedModel, TrackedType } from '#/tables';
 import { log } from '#/utils/logger';
 
-/**
- * Set of valid event types for onAny/offAny wildcard iteration.
- */
+/** Valid event types, iterated by the onAny/offAny wildcard subscriptions. */
 const allEventTypes = new Set<TrackedEventType>(trackedEventTypes);
 
 /** Per-row batch payload (permission-relevant fields only), mirrored from the CDC wire. */
@@ -20,10 +18,7 @@ export interface ActivityBatchRow {
   movedFrom?: Record<string, unknown> | null;
 }
 
-/**
- * In-memory CDC event emitted by ActivityBus. Sync fields flow to client stream
- * notifications, while `trace` remains internal for OTel correlation.
- */
+/** In-memory CDC event. Sync fields flow to client stream notifications; `trace` stays internal for OTel correlation. */
 export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'> {
   type: TrackedEventType;
   rowData: unknown;
@@ -40,24 +35,15 @@ export interface ActivityEvent extends Omit<ActivityModel, 'type' | 'createdAt'>
   trace: SyncTraceContext | null;
 }
 
-/**
- * Get typed data from an activity event if it matches the specified tracked type (entity or resource).
- */
+/** Returns the row data typed when the event's entity or resource type matches. */
 export function getEventData<T extends TrackedType>(event: ActivityEvent, trackedType: T): TrackedModel<T> | undefined {
   const matches = event.entityType === trackedType || event.resourceType === trackedType;
   return matches ? (event.rowData as TrackedModel<T>) : undefined;
 }
 
-/**
- * Event handler function type.
- */
 type EventHandler = (event: ActivityEvent) => void | Promise<void>;
 
-/**
- * ActivityBus receives CDC messages via WebSocket, transforms them into
- * in-memory events, and distributes to internal handlers and stream subscribers.
- *
- */
+/** Receives CDC messages over the WebSocket and distributes them to internal handlers and stream subscribers. */
 class ActivityBus {
   private emitter = new EventEmitter();
 
@@ -66,39 +52,29 @@ class ActivityBus {
     this.emitter.setMaxListeners(100);
   }
 
-  /** Subscribe to a specific activity event type. */
   on(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.on(eventType, handler);
     return this;
   }
 
-  /** Subscribe to a specific activity event type (one-time). */
   once(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.once(eventType, handler);
     return this;
   }
 
-  /** Unsubscribe from a specific activity event type. */
   off(eventType: TrackedEventType, handler: EventHandler): this {
     this.emitter.off(eventType, handler);
     return this;
   }
 
-  /**
-   * Subscribe to all activity events (wildcard).
-   * Useful for stream handlers that need to fan out to subscribers.
-   */
+  /** Subscribe to every event type, used by stream handlers that fan out to subscribers. */
   onAny(handler: EventHandler): this {
-    // Subscribe to all valid event types
     for (const eventType of allEventTypes) {
       this.emitter.on(eventType, handler);
     }
     return this;
   }
 
-  /**
-   * Unsubscribe from all activity events.
-   */
   offAny(handler: EventHandler): this {
     for (const eventType of allEventTypes) {
       this.emitter.off(eventType, handler);
@@ -106,20 +82,15 @@ class ActivityBus {
     return this;
   }
 
-  /**
-   * Emit an activity event transformed from a CDC message.
-   * Called by the CDC WebSocket handler when messages arrive.
-   */
+  /** Called by the CDC WebSocket handler for each arriving message. */
   emit(event: ActivityEvent): void {
     if (!isValidEventType(event.type)) {
       log.warn('Unknown activity event type from CDC message', { type: event.type });
       return;
     }
 
-    // Start span for tracing
     const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace?.traceId);
 
-    // Record CDC message received metric
     recordMessageReceived(event.entityType || 'unknown');
 
     this.emitter.emit(event.type, event);
@@ -130,5 +101,4 @@ class ActivityBus {
   }
 }
 
-/** Singleton ActivityBus instance */
 export const activityBus = new ActivityBus();

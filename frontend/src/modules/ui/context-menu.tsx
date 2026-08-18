@@ -11,12 +11,10 @@ function ContextMenuTrigger({ ...props }: ContextMenuPrimitive.Trigger.Props & R
   return <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />;
 }
 
-/** Renders the styled context menu group primitive. */
 export function ContextMenuGroup({ ...props }: ContextMenuPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
   return <ContextMenuPrimitive.Group data-slot="context-menu-group" {...props} />;
 }
 
-/** Renders the styled context menu portal primitive. */
 export function ContextMenuPortal({ ...props }: ContextMenuPrimitive.Portal.Props) {
   return <ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />;
 }

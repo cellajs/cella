@@ -4,9 +4,6 @@ import { ContactForm } from '~/modules/common/contact-form/contact-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 
-/**
- * Launch contact form dialog
- */
 export const contactFormHandler = (ref: RefObject<HTMLButtonElement | null>) => {
   useDialoger.getState().create(<ContactForm dialog />, {
     id: 'contact-form',

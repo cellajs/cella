@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Engine-purity gate (.todos/INFRA.md): the deploy engine — resources/,
-# compose/, lib/, boot/src/ — must not contain app knowledge. Refined per
+# Engine-purity gate (.todos/INFRA.md): the deploy engine (resources/,
+# compose/, lib/, boot/src/) must not contain app knowledge. Refined per
 # P-F1 so it can actually go green: case-sensitive \bMODE\b (lowercase "mode"
 # is a legitimate engine concept), the quoted literal '/health' (import paths
 # and prose don't count), and service(Url|Host) called with a literal service
 # name. Tests and build artifacts are excluded. (The former runMigrate genId
-# pin was retired in the 2026-08 planned generation roll — no allowlist left.)
+# pin was retired in the 2026-08 planned generation roll, so no allowlist is left.)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -31,6 +31,6 @@ done
 if [ "$violations" -eq 0 ]; then
   echo "engine gate: clean"
 else
-  echo "engine gate: violations above — engine code must not know the app (see .todos/INFRA.md)"
+  echo "engine gate: violations above; engine code must not know the app (see .todos/INFRA.md)"
   exit 1
 fi

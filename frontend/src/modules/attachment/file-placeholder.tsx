@@ -17,7 +17,6 @@ const contentTypeMap = [
   { match: ['zip', 'rar'], icon: FileArchiveIcon },
 ];
 
-/** Get the icon component for a content type */
 export function getFileIcon(contentType?: string) {
   if (contentType) {
     const found = contentTypeMap.find(({ match }) => match.some((type) => contentType.includes(type)));
@@ -33,7 +32,6 @@ interface Props {
   className?: string;
 }
 
-/** Renders the file placeholder component. */
 export function FilePlaceholder({ contentType, strokeWidth, className = 'icon-lg' }: Props) {
   const FileIconComponent = getFileIcon(contentType);
   return <FileIconComponent strokeWidth={strokeWidth} className={className} />;

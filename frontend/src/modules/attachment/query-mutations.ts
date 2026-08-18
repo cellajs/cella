@@ -12,21 +12,18 @@ export type CreateAttachmentVars = QueryOrgContext & { data: CreateAttachmentInp
 export type UpdateAttachmentFullVars = QueryOrgContext & UpdateAttachmentVars & { stx?: StxBase };
 export type DeleteAttachmentVars = QueryOrgContext & { attachments: Attachment[]; stx?: StxBase };
 
-/** Calls the attachment creation operation for a mutation. */
 export async function createAttachmentsMutationFn({ tenantId, organizationId, data, stx }: CreateAttachmentVars) {
   const effectiveStx = stx ?? createStxForCreate();
   const body = data.map((item) => ({ ...item, stx: effectiveStx }));
   return createAttachments({ path: { tenantId, organizationId }, body });
 }
 
-/** Calls the attachment update operation for a mutation. */
 export async function updateAttachmentMutationFn({ tenantId, organizationId, id, ops, stx }: UpdateAttachmentFullVars) {
   const scalarFieldNames = ops ? Object.keys(ops) : [];
   const effectiveStx = stx ?? createStxForUpdate(scalarFieldNames);
   return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx: effectiveStx } });
 }
 
-/** Calls the attachment deletion operation for a mutation. */
 export async function deleteAttachmentsMutationFn({
   tenantId,
   organizationId,

@@ -28,7 +28,6 @@ defineFrontendModule({
       order: 20,
       render: () => <AccountSessionsCard />,
     },
-    // Authentication only registers when at least one auth strategy is enabled
     ...(appConfig.enabledAuthStrategies.length
       ? [
           {

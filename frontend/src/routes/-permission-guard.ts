@@ -5,13 +5,8 @@ import { useUserStore } from '~/modules/user/user-store';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
-/**
- * Route-level permission guards. Nav gating only hides LINKS; a direct URL still renders the
- * page and leaves enforcement to the backend. These guards give routes the same `can`-derived
- * answer in `beforeLoad`, so a denied visitor is redirected before reaching a 403 affordance.
- */
+// Nav gating only hides links; these guards apply the same `can` answer in `beforeLoad`, and the backend enforces.
 
-/** Throw a redirect unless the current user is a system admin (system panel surfaces). */
 export function requireSystemAdmin(): void {
   if (useUserStore.getState().isSystemAdmin) return;
   throw redirect({ to: appConfig.defaultRedirectPath, replace: true });

@@ -3,12 +3,12 @@ import { typedEntries } from 'shared';
 import { entityTables, resourceTables } from '#/tables';
 import type { EntityTableMeta, ResourceTableMeta, TableMeta } from './types';
 
-/** Convert camelCase to snake_case (used only at startup for column name map building) */
+/** Startup only, for building the column name map. */
 function camelToSnake(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-/** Pre-compute snake_case → camelCase column name mapping from Drizzle schema */
+/** snake_case to camelCase column names, from the Drizzle schema. */
 function buildColumnNameMap(columnKeys: string[]): Map<string, string> {
   const map = new Map<string, string>();
   for (const camelKey of columnKeys) {
@@ -17,9 +17,6 @@ function buildColumnNameMap(columnKeys: string[]): Map<string, string> {
   return map;
 }
 
-/**
- * Build the table registry with O(1) lookup by table name.
- */
 function buildTableRegistry(): Map<string, TableMeta> {
   const registry = new Map<string, TableMeta>();
 
@@ -48,5 +45,5 @@ function buildTableRegistry(): Map<string, TableMeta> {
   return registry;
 }
 
-/** Registry of all tracked tables, keyed by Drizzle table name */
+/** Tracked tables, keyed by Drizzle table name. */
 export const tableRegistry = buildTableRegistry();

@@ -1,5 +1,2 @@
-/**
- * Tags an OpenAPI schema with registered schema-kind, module, and owner tags.
- * `openapi-registration` validates the names after every module registers its tags.
- */
+/** Schema-kind, module and owner tags; `openapi-registration` validates the names after all modules register. */
 export const schemaTags = (...tags: string[]): string[] => tags;

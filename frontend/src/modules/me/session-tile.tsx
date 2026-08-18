@@ -15,7 +15,6 @@ interface SessionTileProps {
   isPending: boolean;
 }
 
-/** Renders the session tile component. */
 export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, isPending }: SessionTileProps) {
   const { t, i18n } = useTranslation();
 

@@ -2,23 +2,12 @@ import { z } from '@hono/zod-openapi';
 import type { EntityIdColumns, EntityType, ProductEntityType, RelatedChannelType } from 'shared';
 import { appConfig, hierarchy } from 'shared';
 
-/**
- * Zod raw-shape type for an entity's optional related-context id fields.
- */
 export type RelatedChannelShape<E extends string> = EntityIdColumns<
   RelatedChannelType<E> & EntityType,
   z.ZodOptional<z.ZodString>
 >;
 
-/**
- * Builds a Zod raw shape with optional uuid fields for an entity's declared `relatedChannels`.
- * Spread into request body/query schemas to expose denormalized context references without
- * hardcoding app-specific column names. Returns an empty shape when the entity has none.
- *
- * Counterpart to `channelRelationColumns` (which builds the drizzle columns): this keeps the
- * request/query validation layer in lockstep with the hierarchy config, so apps only adjust
- * the hierarchy, keeping this rule out of individual schemas.
- */
+/** Optional uuid fields for the entity's `relatedChannels`: the validation twin of `channelRelationColumns`. */
 export const relatedChannelShape = <E extends ProductEntityType>(entityType: E): RelatedChannelShape<E> => {
   const shape = {} as Record<string, z.ZodOptional<z.ZodString>>;
 

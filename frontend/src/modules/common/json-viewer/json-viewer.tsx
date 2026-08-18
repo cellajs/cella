@@ -6,18 +6,12 @@ import { defaultTheme } from './types';
 
 const EMPTY_VALUE_TYPES: DataType[] = [];
 
-/**
- * Parses a $ref path into an array of keys.
- * e.g., "#/components/schemas/UserSchema" -> ["components", "schemas", "UserSchema"]
- */
+/** "#/components/schemas/UserSchema" becomes ["components", "schemas", "UserSchema"]. */
 function parseRefPath(refPath: string): string[] {
   if (!refPath.startsWith('#/')) return [];
   return refPath.slice(2).split('/');
 }
 
-/**
- * Scrolls to the target schema and highlights it for 3 seconds.
- */
 function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPath: string) {
   if (!containerRef.current) return;
 
@@ -37,7 +31,6 @@ function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPa
           if (parentEl) {
             parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            // Add highlight class, then remove after 3 seconds
             parentEl.classList.add('json-ref-highlight');
             setTimeout(() => {
               parentEl.classList.remove('json-ref-highlight');
@@ -51,9 +44,6 @@ function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPa
   });
 }
 
-/**
- * Creates a custom data type for OpenAPI $ref values.
- */
 function createRefDataType(onNavigate: (targetPath: string) => void): DataType<string> {
   return {
     is: (value, path) => {
@@ -77,10 +67,6 @@ function createRefDataType(onNavigate: (targetPath: string) => void): DataType<s
   };
 }
 
-/**
- * A lightweight JSON viewer component with collapsible nodes.
- * Supports OpenAPI spec mode with $ref navigation and mode for schema viewing.
- */
 export function JsonViewer({
   value,
   defaultInspectDepth = 3,
@@ -102,7 +88,6 @@ export function JsonViewer({
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // OpenAPI mode: track target path for $ref navigation (nodes along this path will expand)
   const [targetPath, setTargetPath] = useState<string[] | null>(null);
 
   const handleRefNavigate = useCallback((refPath: string) => {
@@ -114,7 +99,6 @@ export function JsonViewer({
     }, 200);
   }, []);
 
-  // OpenAPI spec mode: create $ref data type
   const refDataType = useMemo(
     () => (openapiMode === 'spec' ? createRefDataType(handleRefNavigate) : null),
     [openapiMode, handleRefNavigate],
@@ -147,7 +131,6 @@ export function JsonViewer({
 
   return (
     <JsonViewerContext.Provider value={contextValue}>
-      {/* Scoped highlight styles */}
       <style>
         {`
           .json-ref-highlight {

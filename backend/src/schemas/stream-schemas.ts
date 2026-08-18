@@ -4,7 +4,6 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { mockStreamNotification } from './stream-mocks';
 import { nullableStxBaseSchema } from './sync-transaction-schemas';
 
-/** Reusable schema for embedded-product propagation hints */
 const propagationHintSchema = z.object({
   embeddedProduct: z
     .enum(appConfig.productEntityTypes)
@@ -17,10 +16,7 @@ const propagationHintSchema = z.object({
   remove: z.array(z.string()).describe('Host product IDs that need the embedded reference removed'),
 });
 
-/**
- * Lightweight app-stream notification schema; clients fetch entity data separately.
- * Product events carry sync metadata, while membership events leave sequence and STX null.
- */
+/** Clients fetch the entity data separately. Membership events leave `seq` and `stx` null. */
 export const streamNotificationSchema = z
   .object({
     kind: z
@@ -56,7 +52,7 @@ export const streamNotificationSchema = z
       .number()
       .int()
       .nullable()
-      .describe('Last sequence position for a batched notification — client should fetch range'),
+      .describe('Last sequence position for a batched notification: client should fetch range'),
     count: z
       .number()
       .int()
@@ -95,7 +91,7 @@ export const catchupViewSchema = z.object({
   entityTypes: z.array(z.enum(appConfig.productEntityTypes)).min(1),
   depth: z.enum(['self', 'subtree']).optional().openapi({
     description:
-      'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.',
+      'View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.',
   }),
   cursor: z.number().int().min(0).openapi({
     description: 'Org-sequence position this view has fully ingested (0 = baseline not yet established)',
@@ -104,11 +100,7 @@ export const catchupViewSchema = z.object({
 
 export type CatchupView = z.infer<typeof catchupViewSchema>;
 
-/**
- * Body schema for stream catchup POST requests.
- * `views` is the sequence-sync contract: client-declared views over path prefixes with
- * org-sequence cursors, answered per view after prefix authorization.
- */
+/** `views` is the sequence-sync contract: prefix views with org-sequence cursors, answered after prefix authorization. */
 export const streamCatchupBodySchema = z.object({
   cursor: z.string().optional().openapi({
     description: 'Last activity cursor received by the client (LSN-based). Omit on first sync.',
@@ -119,25 +111,19 @@ export const streamCatchupBodySchema = z.object({
   }),
 });
 
-/**
- * Per-org catchup change summary (sequence sync). Product entity sync is answered per
- * VIEW (`catchupViewAnswerSchema`); this block carries the remaining org-level concerns:
- * the `membership` change signal and embedding propagation hints.
- */
+/** Product entity sync is answered per view (`catchupViewAnswerSchema`); this carries the org-level concerns. */
 export const catchupChangeSummarySchema = z.object({
   /** Org-level change signals: bump-only counters, no sequence semantics claimed. */
   signals: z.object({ membership: z.number().int().optional() }).optional(),
-  /** Embedded-product propagation hints (embedded-product changes that require host cache patching) */
+  /** Embedded-product changes that require patching the host's cache. */
   propagation: z.array(propagationHintSchema).optional(),
 });
 
 export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
 
 /**
- * Per-view catchup answer. Summaries (`frontiers`, `counts`) are present only for
- * `status: 'ok'` views (unconditional read of the whole prefix subtree, see
- * `resolveViewReadStatus`); `opaque` views get no numbers and fall back to normal
- * staleness; `forbidden` views must be dropped by the client.
+ * `frontiers` and `counts` are present only for `status: 'ok'` views (unconditional read of the whole prefix
+ * subtree). `opaque` views get no numbers and fall back to normal staleness; `forbidden` views must be dropped.
  */
 export const catchupViewAnswerSchema = z.object({
   key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
@@ -152,11 +138,7 @@ export const catchupViewAnswerSchema = z.object({
 
 export type CatchupViewAnswer = z.infer<typeof catchupViewAnswerSchema>;
 
-/**
- * Catchup response schema for app stream.
- * `views` answers the client-declared views (sequence-sync contract); `changes` is the
- * legacy per-org summary, still authoritative for membership screening and propagation.
- */
+/** `views` answers the client-declared views; `changes` is the per-org summary for membership screening and propagation. */
 export const appCatchupResponseSchema = z.object({
   changes: z.record(z.string(), catchupChangeSummarySchema).openapi({
     description: 'Per-org change summary: { [organizationId]: { signals?, propagation? } }',

@@ -14,14 +14,12 @@ import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
 import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
-/** Renders the menu sheet component. */
 export function MenuSheet() {
   const { user } = useUserStore();
   const { mutateAsync } = useMemberUpdateMutation();
 
   const { menu, isLoading } = useMenu(user?.id);
 
-  // monitoring drop event
   useEffect(() => {
     const cleanups = [
       monitorForElements({
@@ -47,7 +45,6 @@ export function MenuSheet() {
             edge,
           );
 
-          // Exit early if displayOrder remains the same
           if (newOrder === sourceItem.membership.displayOrder) return;
 
           await mutateAsync({
@@ -87,7 +84,6 @@ export function MenuSheet() {
       {renderedSections}
       <span className="mt-10" />
       <MenuSheetPanels />
-      {/* Keyboard-only skip links at end of sheet */}
       <div className="flex flex-col focus-within:p-3">
         <FocusBridge direction="to-content" className="focus:relative" />
         <FocusBridge direction="to-sidebar" className="focus:relative" />

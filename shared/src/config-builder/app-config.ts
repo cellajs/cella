@@ -12,8 +12,8 @@ const configModes = { development, tunnel, staging, production, test } satisfies
 
 // APP_MODE selects config independently so production-mode containers can use development naming.
 const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
-// Fail loud on an unknown mode so an undefined `configModes` entry cannot silently boot the
-// default configuration for the wrong environment.
+// Fail loud: an undefined `configModes` entry would otherwise boot the default configuration
+// for the wrong environment with no error.
 if (!Object.hasOwn(configModes, rawMode)) {
   throw new Error(
     `Invalid config mode "${rawMode}": must be one of ${Object.keys(configModes).join(', ')} (set APP_MODE or NODE_ENV).`,
@@ -21,22 +21,17 @@ if (!Object.hasOwn(configModes, rawMode)) {
 }
 const mode = rawMode as Config['mode'];
 
-/**
- * Merged app configuration which combines default config with environment-specific overrides.
- * Type is preserved from _default to maintain literal types for Drizzle v1 strict enum typing.
- */
+// The type comes from _default so literal types survive for Drizzle v1 strict enum typing.
 const merged = mergeDeep(structuredClone(_default), configModes[mode]);
 
-// Allow environment variables to override URLs: enables deploying the dev
-// config to Scaleway containers while keeping localhost defaults for local dev.
+// URL overrides let the dev config deploy to Scaleway containers while local dev keeps localhost.
 if (process.env.FRONTEND_URL) merged.frontendUrl = process.env.FRONTEND_URL;
 if (process.env.BACKEND_URL) merged.backendUrl = process.env.BACKEND_URL;
 if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AUTH_URL;
 if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
 if (process.env.MCP_API_URL) merged.mcpUrl = process.env.MCP_API_URL;
 
-// Cost escape hatch: backend co-hosts every enabled service in-process. Set via
-// env so `pnpm dev:single` (or a preview deploy) flips it without a config edit.
+// Set via env so `pnpm dev:single` or a preview deploy flips it without a config edit.
 if (process.env.SINGLE_VM) merged.singleVM = process.env.SINGLE_VM === 'true';
 
 merged.services = {
@@ -47,8 +42,8 @@ merged.services = {
   mcp: { ...(merged.services.mcp ?? {}), publicUrl: merged.mcpUrl },
 };
 
-// Require a URL-safe resource slug with at least four non-hyphen characters for Scaleway.
-// Apps must provide a valid value; validation never rewrites it.
+// Scaleway needs a URL-safe slug of at least four non-hyphen characters. Apps must supply a
+// valid value; this check never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
   throw new Error(
@@ -61,8 +56,8 @@ if (merged.slug.replace(/-/g, '').length < 4) {
   );
 }
 
-// Derive environment-specific bucket names, CDN URLs, and Transloadit credentials from the slug.
-// Explicit bucket config can share storage across applications.
+// Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage
+// across applications.
 const s3 = merged.s3 as S3Config;
 const bucketPrefix = merged.slug;
 s3.publicBucket ??= `${bucketPrefix}-public`;

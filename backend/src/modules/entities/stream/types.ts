@@ -3,41 +3,26 @@ import type { ChannelIdColumns, ProductEntityType } from 'shared';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { StreamNotification } from '#/schemas';
 
-/**
- * Base subscriber interface.
- * Modules extend this with their own fields.
- */
+/** Modules extend this with their own fields. */
 export interface BaseStreamSubscriber {
-  /** Unique ID for this subscriber */
   id: string;
-  /** SSE stream for sending messages */
   stream: SSEStreamingApi;
-  /** Primary channel for event routing (e.g., 'org:abc', 'user:123') */
+  /** Primary channel for event routing, e.g. 'org:abc' or 'user:123'. */
   channel?: string;
-  /** Internal: all channels this subscriber is registered on (set by manager) */
+  /** @internal Every channel this subscriber is registered on; set by the manager. */
   _channels?: string[];
 }
 
-/**
- * Subscriber with cursor tracking.
- */
 export interface CursoredSubscriber extends BaseStreamSubscriber {
   cursor: string | null;
 }
 
-/**
- * Configuration for creating a stream dispatcher.
- */
 export interface DispatcherConfig<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent> {
-  /** Get channel from event (return null to skip dispatch) */
+  /** Return null to skip dispatch. */
   getChannel: (event: E) => string | null;
-  /**
-   * Select which of the channel's subscribers receive the event, as ONE batch call: the
-   * eligibility engine collapses subscribers into access classes per event, which a
-   * per-subscriber callback shape would defeat.
-   */
+  /** One batch call: the eligibility engine collapses subscribers into access classes per event. */
   selectEligible: (subscribers: T[], event: E) => T[];
-  /** Optional: transform notification before sending (e.g., sign cache token per subscriber) */
+  /** Transform the notification before sending, e.g. to sign a per-subscriber cache token. */
   transformNotification?: (notification: StreamNotification, subscriber: T) => StreamNotification;
 }
 
@@ -52,7 +37,6 @@ export type AppStreamProductEvent = EntityScopedEvent<
   ActivityEvent & { entityType: ProductEntityType } & Partial<ChannelIdColumns>
 >;
 
-/** Membership event routed via the app (authenticated) stream. */
 export type AppStreamMembershipEvent = EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
 
 /** Combined event type accepted by the app stream dispatcher. */

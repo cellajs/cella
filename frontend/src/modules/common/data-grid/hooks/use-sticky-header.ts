@@ -3,10 +3,7 @@ import { useLayoutEffect } from 'react';
 
 const STICKY_CLASS = 'rdg-header-sticky';
 
-/**
- * Pin measured header cells to the viewport with compositor-fixed vertical positioning.
- * Synchronize horizontal offsets in animation frames.
- */
+/** Pins measured header cells to the viewport with fixed positioning, syncing horizontal offsets in animation frames. */
 export function useStickyHeader(
   gridRef: RefObject<HTMLDivElement | null>,
   headerRowsCount: number,
@@ -25,7 +22,6 @@ export function useStickyHeader(
     let resizeSettleTimer = 0;
     let isSticky = false;
     let headerCells: HTMLElement[] = [];
-    // Cache original inline styles to restore on unpin
     let originalStyles: { cssText: string }[] = [];
 
     function getHeaderCells(): HTMLElement[] {
@@ -69,7 +65,6 @@ export function useStickyHeader(
       isSticky = false;
     }
 
-    /** Update horizontal position of fixed cells based on grid scroll */
     function syncHorizontal() {
       if (!isSticky || headerCells.length === 0) return;
       const gridRect = grid!.getBoundingClientRect();
@@ -138,7 +133,6 @@ export function useStickyHeader(
 
     const onResize = () => {
       if (!isSticky) return;
-      // Immediate rAF for responsiveness
       cancelAnimationFrame(resizeRafId);
       resizeRafId = requestAnimationFrame(syncWidths);
       // Trailing settle: guarantee final sync after resize activity stops
@@ -146,7 +140,6 @@ export function useStickyHeader(
       resizeSettleTimer = window.setTimeout(syncWidths, 150);
     };
 
-    // Find the vertical scroll container
     let scrollTarget: HTMLElement | Window = window;
     let parent: HTMLElement | null = grid.parentElement;
     while (parent && parent !== document.body && parent !== document.documentElement) {
@@ -160,7 +153,6 @@ export function useStickyHeader(
 
     scrollTarget.addEventListener('scroll', onScrollVertical, { passive: true });
     window.addEventListener('resize', onScrollVertical, { passive: true });
-    // Also sync widths on window resize (viewport change)
     window.addEventListener('resize', onResize, { passive: true });
     // Track horizontal scroll on the grid itself (it has overflow-x: auto)
     grid.addEventListener('scroll', onScrollHorizontal, { passive: true });
@@ -171,7 +163,6 @@ export function useStickyHeader(
       resizeObserver.observe(mc);
     }
 
-    // Initial check
     update();
 
     return () => {

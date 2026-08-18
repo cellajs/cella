@@ -201,7 +201,6 @@ function SelectItem({
   const registry = useContext(SelectLabelRegistryContext);
   const isSelected = selectValue !== undefined && props.value !== undefined && selectValue === props.value;
 
-  // Register this item's label so SelectValue can display it for the selected value.
   useEffect(() => {
     if (!registry || typeof props.value !== 'string') return;
     return registry.register(props.value, children);

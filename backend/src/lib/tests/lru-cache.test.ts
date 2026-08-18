@@ -97,7 +97,6 @@ describe('LRUCache', () => {
       shortTtlCache.set('key1', 'value1');
       expect(shortTtlCache.get('key1')).toBe('value1');
 
-      // Wait for expiration
       await new Promise((resolve) => setTimeout(resolve, 60));
 
       expect(shortTtlCache.get('key1')).toBeUndefined();

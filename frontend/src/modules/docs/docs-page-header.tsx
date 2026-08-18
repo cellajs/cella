@@ -5,11 +5,7 @@ interface DocsPageHeaderProps {
   className?: string;
 }
 
-/**
- * Page title for docs pages that are not MDX content (operations, schemas). The `prose` wrapper is
- * what gives the h1 its size and weight, so generated pages match a written one (see view-page).
- * Scoped to the heading only: the rest of these pages is cards and tables, which prose would restyle.
- */
+/** The `prose` wrapper sizes the h1; it is scoped to the heading so the cards and tables below keep their styles. */
 export function DocsPageHeader({ title, className }: DocsPageHeaderProps) {
   return (
     <div className={cn('prose dark:prose-invert max-w-none', className)}>

@@ -8,9 +8,6 @@ import { log } from '#/utils/logger';
 
 type MatrixMsgTypes = 'm.text' | 'm.notice';
 
-/**
- * Sends a Element message via Matrix API to.
- */
 export const sendMatrixMessage = async ({
   msgtype,
   textMessage,
@@ -24,14 +21,12 @@ export const sendMatrixMessage = async ({
     log.info('Missing required Element env values (roomId and/or  botAccessToken).');
     return;
   }
-  // Construct payload
   const bodyPayload: Record<string, unknown> = {
     msgtype,
     body: textMessage,
     ...(html ? { format: 'org.matrix.custom.html', formatted_body: html } : {}),
   };
 
-  // Build Matrix send message URL
   const txnId = nanoid(6);
   const roomId = env.ELEMENT_ROOM_ID;
   const botAccessToken = env.ELEMENT_BOT_ACCESS_TOKEN;

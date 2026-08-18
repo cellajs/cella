@@ -118,10 +118,10 @@ export async function assertSecretsDeliverable(
   const ok = offenders.length === 0;
   if (ok) {
     log(
-      `✓ Runtime secrets deliverable — all ${opts.secrets.length} probed secrets are single-line and present where required`,
+      `✓ Runtime secrets deliverable: all ${opts.secrets.length} probed secrets are single-line and present where required`,
     );
   } else {
-    log(`✗ Runtime secrets NOT deliverable — ${offenders.map((o) => `${o.envVar} (${o.reason})`).join(', ')}`);
+    log(`✗ Runtime secrets NOT deliverable: ${offenders.map((o) => `${o.envVar} (${o.reason})`).join(', ')}`);
   }
   return { ok, checked: opts.secrets.length, offenders };
 }

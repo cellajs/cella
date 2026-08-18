@@ -53,5 +53,4 @@ function operationItemEqual(prev: OperationItemProps, next: OperationItemProps) 
   return prev.operation === next.operation && prev.isActive === next.isActive;
 }
 
-/** Renders an API operation in the documentation sidebar. */
 export const OperationItem = memo(OperationItemBase, operationItemEqual);

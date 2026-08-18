@@ -9,11 +9,7 @@ import { toolingProvider } from './providers/tooling';
 import type { Check, CheckStatus, NextAction, ProbeSession, StatusProvider, StatusReport } from './types';
 import { STATUS_SCHEMA_VERSION } from './types';
 
-/**
- * The registered status providers, in report order. Each owns its domain's
- * gather + evaluate; the engine here owns the envelope, the summary, and the
- * cross-domain next-action priority, knowledge no single provider can hold.
- */
+/** The registered status providers, in report order. Each owns its domain's gather and evaluate; this module owns the envelope, summary, and cross-domain next-action priority. */
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous provider fact types collapse at the registry boundary
 export const statusProviders: readonly StatusProvider<any>[] = [
   toolingProvider,
@@ -27,12 +23,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   storesProvider,
 ];
 
-/**
- * Priority order for the single top-level `nextAction`: the earliest
- * problematic check in this list wins. Roughly the setup → deploy → operate
- * lifecycle, so the surfaced step is always the next one that unblocks the
- * rest. Prefix entries (trailing `.`) match by id prefix.
- */
+/** Priority order for the single top-level `nextAction`: the earliest problematic check wins, following the setup to deploy to operate lifecycle. A trailing `.` matches by id prefix. */
 const NEXT_ACTION_PRIORITY = [
   'tooling.pulumi',
   'identity.project',
@@ -59,10 +50,7 @@ function pickNextAction(checks: Check[]): NextAction | undefined {
   return undefined;
 }
 
-/**
- * The pure envelope over evaluated checks: schema version, summary counts,
- * and the highest-priority pending action. Total: never throws.
- */
+/** The pure envelope over evaluated checks: schema version, summary counts, and the highest-priority pending action. Never throws. */
 export function assembleReport(
   session: Pick<ProbeSession, 'mode' | 'stackState'>,
   checks: Check[],
@@ -79,10 +67,7 @@ export function assembleReport(
   };
 }
 
-/**
- * Gather every provider in parallel (a gather failure degrades that domain to
- * its undefined-facts evaluation, never a throw) and assemble the report.
- */
+/** Gather every provider in parallel and assemble the report. A gather failure degrades that domain to its undefined-facts evaluation. */
 export async function buildStatusReport(session: ProbeSession): Promise<StatusReport> {
   const checks = (
     await Promise.all(

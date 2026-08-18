@@ -27,8 +27,7 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 describe('Attachment seq reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  // Ancestor context chain for attachment, derived from the app's real hierarchy: an app with
-  // organization → project → attachment seeds a project; an org-only app seeds nothing.
+  // Ancestor chain derived from the app hierarchy; an org-only app seeds nothing.
   let plan: TestEntityHierarchyPlan;
 
   const listAttachments = async (query: Record<string, string | number>) => {
@@ -56,8 +55,7 @@ describe('Attachment seq reads', async () => {
       slugPrefix: 'attachment-seq',
     });
 
-    // Insert order is descending seq, so createdAt order disagrees with seq order.
-    // B1 would pass accidentally if the endpoint sorted by createdAt.
+    // Insert order is descending seq, so a createdAt sort would not match seq order.
     const makeRow = (id: string, seq: number, key: string, extra: Record<string, unknown> = {}) =>
       // Audit users beyond createdBy are nulled: the mock's random ids reference no users rows.
       buildInsertableProduct(
@@ -82,8 +80,7 @@ describe('Attachment seq reads', async () => {
       makeRow(attachmentIds.seq10, 10, 'seq10'),
     ];
     for (const row of rows) {
-      // Cast: buildInsertableProduct returns a config-derived Record<string,unknown>; the runtime
-      // shape matches the attachment insert (mock scalars + organization/project ancestor ids).
+      // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
       await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
     }
   });
@@ -99,8 +96,7 @@ describe('Attachment seq reads', async () => {
     const result = await listAttachments({ seqCursor: '1,999999', limit: '2', sort: 'createdAt', order: 'desc' });
 
     expect(result.status).toBe(200);
-    // Rows in seq order are 10, 20, 30 (tombstone), 40, 50. The capped response
-    // must be exactly the two lowest seqs, nothing skipped below the cap.
+    // Rows in seq order are 10, 20, 30 (tombstone), 40, 50; the cap takes the two lowest.
     expect(result.items.map((a) => a.seq)).toEqual([10, 20]);
   });
 
@@ -111,7 +107,6 @@ describe('Attachment seq reads', async () => {
     const tombstone = delta.items.find((a) => a.seq === 30);
     expect(tombstone?.deletedAt).not.toBeNull();
 
-    // Normal read: no tombstones
     const normal = await listAttachments({ limit: '100' });
     expect(normal.items.some((a) => a.id === attachmentIds.seq30Deleted)).toBe(false);
   });
@@ -127,7 +122,7 @@ describe('Attachment seq reads', async () => {
     const result = await listAttachments({ seqCursor: '20,40', limit: '100' });
 
     expect(result.status).toBe(200);
-    // Before the fix, "20,40" joined the OR'd search group as (seq >= 20 OR seq <= 40) = all rows
+    // Regression guard: "20,40" must not join the OR'd search group as (seq >= 20 OR seq <= 40).
     expect(result.items.map((a) => a.seq)).toEqual([20, 30, 40]);
   });
 });

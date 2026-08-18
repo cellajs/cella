@@ -15,17 +15,14 @@ export const getRelativeItemOrder = (
 ) => {
   const flatData = Object.values(data).flat();
 
-  // Sort and filter main menu items
   const items = sortAndFilterMenu(flatData, entityType, archived);
 
-  // If no main menu items found, check submenu for the given itemId
   let neededItems = items;
   if (!items.length) {
     const parentMenu = flatData.find((el) => el.submenu?.some((subEl) => subEl.id === itemId));
     if (parentMenu) neededItems = sortAndFilterMenu(parentMenu.submenu ?? [], entityType, archived);
   }
 
-  // Map to the shape expected by the shared helper
   const ordered = neededItems.map((item) => ({ id: item.id, displayOrder: item.membership.displayOrder }));
 
   return getRelativeOrder(ordered, targetOrder, itemId, edge === 'top' ? 'top' : 'bottom');

@@ -10,75 +10,57 @@ import type {
 } from './engine/types.ts';
 
 /**
- * Explicit authenticated or anonymous actor used by SQL permission predicates.
- * The discriminant prevents an accidentally omitted user ID from silently denying actor-based
- * conditions.
+ * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
+ * omitted user id a type error, so no actor-based condition is denied by accident.
  */
 export type Actor = { userId: string; isSystemAdmin?: boolean } | { anonymous: true };
 
 /**
- * Who is asking, WITH what they hold: the one input object of {@link checkAccess}.
- *
- * Memberships and actor travel together by construction: the old `(memberships, …, actor)`
- * signature let a call site pair one user's memberships with another user's actor, a bug no
- * type could catch. An anonymous access carries no memberships at all: anonymity and
- * membership are contradictory, so the shape forbids the combination outright.
+ * Memberships and actor travel together, so no call site can pair one user's memberships with
+ * another's actor. An anonymous access carries no memberships.
  */
 export type Access<T extends AccessMembership = AccessMembership> =
   | { userId: string; isSystemAdmin?: boolean; memberships: T[] }
   | { anonymous: true };
 
-/** Access → engine access. System admins bypass every check; anonymous actors hold nothing. */
+/** System admins bypass every check; anonymous actors hold nothing. */
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>
   'anonymous' in access
     ? { memberships: [] }
     : { memberships: access.memberships, userId: access.userId, isSystemAdmin: access.isSystemAdmin === true };
 
-/**
- * Permission result containing membership and whether the action is allowed.
- */
 export interface PermissionResult<T extends AccessMembership = AccessMembership> {
-  /** Whether the specific action is allowed */
   allowed: boolean;
-  /** The user's membership for this entity, if any */
+  /** The user's membership for this entity, null when none applies. */
   membership: T | null;
 }
 
-/**
- * Batch permission result containing results for multiple entities.
- */
 export interface BatchPermissionResult<T extends AccessMembership = AccessMembership> {
-  /** Map from entity ID to simplified permission result */
+  /** Keyed by entity id. */
   results: Map<string, PermissionResult<T>>;
-  /** Map from entity ID to full permission decision (for debugging/auditing) */
+  /** Keyed by entity id; the full decision, for debugging and auditing. */
   decisions: Map<string, PermissionDecision<T>>;
 }
 
-/** Options accepted by {@link checkAccessFanout}. */
 export interface CheckAccessFanoutOptions {
   /**
-   * `'throw'` (default) surfaces a malformed membership like the single-access form;
-   * `'deny'` fail-closes just that access and keeps resolving the rest (stream fan-out).
+   * `'throw'` (default) reports a malformed membership like the single-access form. `'deny'`
+   * fail-closes that one access and keeps resolving the rest, which stream fan-out needs.
    */
   onInvalidMembership?: 'throw' | 'deny';
 }
 
-/** Config-bound engine options: every entry point of the family injects the same grants. */
-// Shared JS permission entry points inject identical public and elevated grants.
-// SQL collection predicates are the tested database-side projection of the same decisions.
+// Every entry point injects the same public and elevated grants. SQL collection predicates are
+// the tested database-side projection of the same decisions.
 const boundOptions = { publicGrants: publicReadGrants, elevatedRoles };
 
-/** Engine options for one access, on top of the config-bound grants. */
 const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>): PermissionCheckOptions => ({
   ...boundOptions,
   userId: engineAccess.userId,
   isSystemAdmin: engineAccess.isSystemAdmin,
 });
 
-/**
- * May this actor perform this action on this subject? The request-path check: guards,
- * detail reads, the yjs relay, and dispatch's `canReceiveProductEvent` all land here.
- */
+/** The request-path check. @see cella/PERMISSIONS.md */
 export function checkAccess<T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,
@@ -94,10 +76,7 @@ export function checkAccess<T extends AccessMembership>(
   return { allowed: can[action], membership };
 }
 
-/**
- * One actor, many rows: list splitting (`splitByPermission`). The same decision as mapping
- * {@link checkAccess} over the subjects, computed in one engine pass.
- */
+/** One actor, many rows: `splitByPermission`, in one engine pass. */
 export function checkAccessBatch<T extends AccessMembership>(
   access: Access<T>,
   action: EntityActionType,
@@ -112,12 +91,7 @@ export function checkAccessBatch<T extends AccessMembership>(
   return { results, decisions };
 }
 
-/**
- * Many actors, one row: stream fan-out. The engine collapses accesses into equivalence
- * classes and runs the policy walk once per class, so cost scales with distinct access
- * classes, not with actors. Same decision per access as {@link checkAccess}; the property
- * test in `resolve-access.test.ts` pins the two.
- */
+/** Many actors, one row: stream fan-out. @see resolve-access.ts */
 export function checkAccessFanout<T extends AccessMembership>(
   accesses: Access<T>[],
   action: EntityActionType,

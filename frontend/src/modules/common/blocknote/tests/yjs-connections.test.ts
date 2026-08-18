@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ── Mocks ───────────────────────────────────────────────────────────────────
-
 class MockProvider {
   params: Record<string, string>;
   private listeners = new Map<string, Set<(...args: unknown[]) => void>>();

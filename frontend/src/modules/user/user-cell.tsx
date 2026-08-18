@@ -20,9 +20,6 @@ interface BaseProps {
 // DataGrid sets data-is-compact on its root/merged slots; keep the name accessible while hiding it visually.
 const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
 
-/**
- * Render a user cell with avatar and name, wrapped in a link to open user sheet.
- */
 export function UserCell({ user, tabIndex, compactable, className, readOnly }: BaseProps & { user: UserMinimalBase }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -60,7 +57,6 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();
 
-        // Store trigger to bring focus back
         setTriggerRef(user.id, cellRef);
 
         navigate({

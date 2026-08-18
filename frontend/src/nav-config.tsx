@@ -25,9 +25,6 @@ export const navItems = [
     iconSlot: AccountNavIcon,
   },
 ] as const;
-/**
- * Set footer links
- */
 export const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
   { id: 'legal', href: '/legal' },

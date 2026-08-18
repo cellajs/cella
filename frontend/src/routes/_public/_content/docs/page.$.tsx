@@ -4,10 +4,7 @@ import { ensureDocPageComponent, getDocPage } from '~/modules/page/content';
 import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 
-/**
- * View page route - displays an individual documentation page. The splat param
- * is the page slug, which may contain slashes (e.g. architecture/sync-engine).
- */
+/** The splat param is the page slug and may contain slashes (e.g. architecture/sync-engine). */
 export const Route = createFileRoute('/_public/_content/docs/page/$')({
   staticData: { isAuth: false },
   // Title/description resolve synchronously from the docs metadata index (frontmatter)
@@ -20,7 +17,7 @@ export const Route = createFileRoute('/_public/_content/docs/page/$')({
       ],
     };
   },
-  // Resolve code-split MDX before mount to avoid a fallback flash; unknown slugs remain missing.
+  // Resolve code-split MDX before mount to avoid a fallback flash.
   loader: async ({ params }) => {
     await ensureDocPageComponent(params._splat ?? '');
   },

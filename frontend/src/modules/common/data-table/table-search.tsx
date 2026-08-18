@@ -17,9 +17,6 @@ interface TableSearchProps {
   setQuery: (value: string) => void;
 }
 
-/**
- * Search input component for data tables.
- */
 export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
@@ -32,12 +29,10 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
   const isSearching = tableFetchingCount > 0 && !!inputValue.length;
   const debouncedQuery = useDebounce(inputValue, 250);
 
-  // Sync debounced query to parent
   useEffect(() => {
     if (debouncedQuery !== value) setQuery(debouncedQuery);
   }, [debouncedQuery]);
 
-  // Sync external value changes to input (e.g. resets)
   useEffect(() => {
     if (!inputRef.current || document.activeElement !== inputRef.current) setInputValue(value);
   }, [value]);
@@ -55,12 +50,10 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
         aria-label={t('c:placeholder.search')}
       />
 
-      {/* Search Spinner */}
       <InputGroupAddon className="pl-1.5">
         <SearchSpinner value={inputValue} isSearching={isSearching} />
       </InputGroupAddon>
 
-      {/* Clear Button */}
       <InputGroupAddon className="pr-2 max-sm:hidden" align="inline-end">
         <CircleXIcon
           className={cn('cursor-pointer opacity-70 hover:opacity-100', inputValue.length ? 'visible' : 'invisible')}

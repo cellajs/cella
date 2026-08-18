@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm';
 import { type PgDB, unsafeInternalAdminDb } from '#/db/db';
 import { baseLog } from '#/lib/pino';
 
-/** Check if the pg_partman extension is installed. */
 async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
   try {
     const result = await db.execute<{ exists: boolean }>(
@@ -15,13 +14,9 @@ async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
 }
 
 /**
- * Run a single pg_partman maintenance pass (creates upcoming partitions, drops expired ones).
- * Skips with a warning when the pg_partman extension is not installed.
- *
- * Runs on the admin connection: run_maintenance() creates and drops partition tables,
- * which requires ownership of the parent tables and exceeds runtime_role's grants.
- *
- * @param log - Optional log sink (defaults to console.info). Throws on failure; callers decide how to handle it.
+ * Runs one pg_partman pass on the admin connection: run_maintenance() creates and drops partition tables, which
+ * needs ownership of the parents and exceeds runtime_role's grants. Warns and skips when the extension is missing.
+ * @param log - Optional log sink (defaults to console.info). Throws on failure.
  */
 export async function runDbMaintenance(log: (msg: string) => void = console.info): Promise<void> {
   const db = unsafeInternalAdminDb;
@@ -43,13 +38,8 @@ export async function runDbMaintenance(log: (msg: string) => void = console.info
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Start an in-process daily scheduler that runs {@link runDbMaintenance}.
- *
- * Gated by the caller to a single instance (the migration owner) to avoid redundant runs,
- * though the underlying operations are idempotent. Failures are logged and swallowed so a
- * transient DB hiccup never crashes the server.
- *
- * @returns A stop function that clears the interval.
+ * Daily in-process scheduler for {@link runDbMaintenance}, gated by the caller to the migration owner instance.
+ * Failures are logged and absorbed. Returns a stop function that clears the interval.
  */
 export function scheduleDbMaintenance(intervalMs: number = ONE_DAY_MS): () => void {
   const run = () => {

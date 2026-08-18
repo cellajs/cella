@@ -33,10 +33,7 @@ function hashSpread(key: string): number {
   return hash >>> 0;
 }
 
-/**
- * Merge app-stream ranges per scope and fetch after deterministic sync-window jitter.
- * Immediate mode fetches each notification as the comparison baseline.
- */
+/** Merges app-stream ranges per scope and fetches after deterministic sync-window jitter; immediate mode fetches each notification as the comparison baseline. */
 export async function subscribeAndReact(
   context: { vars: Record<string, unknown> },
   events: ArtilleryEvents,

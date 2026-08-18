@@ -32,11 +32,7 @@ type CollaborativeBlockNoteProps = PassthroughProps & {
   waitingFallback?: ReactNode;
 };
 
-/**
- * BlockNote host for an entity description with optional Yjs collaboration. Owns the
- * token/online/permission gates, the relay connection, the brief sync-wait before
- * standalone fallback, and the standalone reconcile of unsaved editor content on load.
- */
+/** BlockNote host for an entity description: owns the token, online and permission gates, the relay connection, and the standalone fallback. */
 export function CollaborativeBlockNote({
   entityType,
   entityId,
@@ -54,19 +50,15 @@ export function CollaborativeBlockNote({
   const isOnline = useOnlineManager();
   const canCollaborate = !!appConfig.yjsUrl && isOnline && !!yjsToken && canEdit;
 
-  // Latch the collaboration mode for this mounted editor's lifetime (see below). Read the committed
-  // value first so once collaborative we keep the Yjs connection alive across a transient offline blip;
-  // releasing it would let the grace period destroy the shared doc under a still-mounted editor.
+  // Once collaborative, hold the connection across an offline blip: releasing it lets the grace period destroy the shared doc under a mounted editor.
   const committedRef = useRef<'collab' | 'solo' | null>(null);
   const keepConnection = canCollaborate || committedRef.current === 'collab';
 
-  // Connect to the Yjs relay; the connection manager handles ref-counting and grace periods.
-  // The token proves update permission; entity-level access is verified asynchronously.
+  // The token proves update permission; entity-level access is verified asynchronously by the relay.
   const yjsConn = useYjsConnection(keepConnection ? entityId : undefined, entityType, tenantId);
   const wsReady = yjsConn?.synced ?? false;
 
-  // Wait briefly for WS sync before falling back to standalone mode.
-  // This avoids mounting the editor twice (standalone -> collaborative).
+  // Wait briefly for WS sync before falling back to standalone, so the editor is not mounted twice.
   const [syncTimedOut, setSyncTimedOut] = useState(false);
   const toastShownRef = useRef(false);
   useEffect(() => {
@@ -81,11 +73,8 @@ export function CollaborativeBlockNote({
     return () => clearTimeout(timer);
   }, [canCollaborate, wsReady]);
 
-  // useCreateBlockNote captures the Yjs config at creation, so switching solo<->collab means a full
-  // editor remount that discards an open upload dialog and any text typed before the first sync.
-  // Commit the mode once (collab when the first sync lands, solo when we stop waiting or cannot
-  // collaborate) and hold it for this editor's lifetime; a later online/token/sync change no longer
-  // remounts. Reopening the editor mounts fresh and re-evaluates from scratch.
+  // useCreateBlockNote captures the Yjs config at creation, so a solo/collab switch remounts the editor and discards
+  // an open upload dialog and unsynced text. Commit the mode once per mount; reopening re-evaluates from scratch.
   const liveCollaborative = canCollaborate && wsReady;
   if (committedRef.current === null) {
     if (liveCollaborative) committedRef.current = 'collab';
@@ -115,8 +104,7 @@ export function CollaborativeBlockNote({
 
   const editor = (
     <BlockNote
-      // The mode is latched for this mount, so this key is stable; it still guards against ever
-      // reusing a standalone editor instance as collaborative.
+      // Stable for this mount; the key still guards against reusing a standalone editor instance as collaborative.
       key={collaborative ? 'collab' : 'solo'}
       id={`blocknote-${entityId}`}
       defaultValue={description ?? undefined}
@@ -135,8 +123,7 @@ export function CollaborativeBlockNote({
     />
   );
 
-  // Hoist the upload dialog above the editor so it survives any editor remount (defense in depth
-  // beyond the latch). Only needed when this editor accepts uploads.
+  // The upload dialog renders above the editor so it survives an editor remount.
   return uploadHostProps ? (
     <UploadHostProvider baseFilePanelProps={uploadHostProps}>{editor}</UploadHostProvider>
   ) : (

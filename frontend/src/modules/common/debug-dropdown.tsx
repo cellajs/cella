@@ -38,7 +38,6 @@ const debugOptions: DebugItem[] = [
 function DebugDropdown({ className }: DebugDropdownProps) {
   const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
 
-  // Function to handle toggling debug options in different ways
   const debugToggle = (item: DebugItem) => {
     if (item.id === 'sync-devtools') {
       setSyncDevtoolsOpen((prev) => !prev);
@@ -66,7 +65,6 @@ function DebugDropdown({ className }: DebugDropdownProps) {
     htmlElement.click();
   };
 
-  // Check if react-scan is enabled
   useEffect(() => {
     const enabled = localStorage.getItem('react-scan-enabled') === 'true';
     if (enabled) {

@@ -20,7 +20,7 @@ export async function updateOrganizationOp(
   tenantId: string,
   rawInput: Record<string, unknown>,
 ) {
-  // Lens seam: normalize old-shape field names to their current names before any body access
+  // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
   const user = ctx.var.user;
 

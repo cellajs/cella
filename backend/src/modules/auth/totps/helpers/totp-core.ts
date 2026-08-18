@@ -23,10 +23,7 @@ export const generateTOTP = (
   return generateHOTP(key, BigInt(Math.floor(unixTimeInSeconds / intervalInSeconds)), digits);
 };
 
-/**
- * Verifies a TOTP `otp` against every interval within ±`gracePeriodInSeconds` of now, so codes
- * survive clock drift and entry delay. Comparison is constant-time per candidate interval.
- */
+/** Verifies `otp` against every interval within ±`gracePeriodInSeconds` of now, so codes survive clock drift. Comparison is constant-time per interval. */
 export const verifyTOTPWithGracePeriod = (
   key: Uint8Array,
   intervalInSeconds: number,

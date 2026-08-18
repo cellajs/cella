@@ -7,7 +7,6 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = () => {
   const { t } = useTranslation();
 

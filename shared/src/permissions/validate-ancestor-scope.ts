@@ -4,10 +4,8 @@ import type { SubjectForPermission } from './engine/types.ts';
 import { MissingScopeError } from './missing-scope-error.ts';
 
 /**
- * Validates that every ancestor ID is present. `null` marks an unused ancestor; `undefined`
- * is missing.
- *
- * @throws MissingScopeError if any ancestor channel ID is undefined (missing)
+ * `null` marks an unused ancestor; `undefined` is missing.
+ * @throws MissingScopeError when an ancestor channel id is `undefined`
  */
 export const validateAncestorScope = (entity: SubjectForPermission) => {
   const ancestors = hierarchy.getOrderedAncestors(entity.entityType);

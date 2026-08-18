@@ -13,7 +13,7 @@ export function ScrollReset({ children }: { children: ReactNode }) {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    // Only scroll when sentinel is above the viewport (user scrolled past it)
+    // Only scroll when the sentinel is above the viewport
     if (rect.top < 0) {
       window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
     }

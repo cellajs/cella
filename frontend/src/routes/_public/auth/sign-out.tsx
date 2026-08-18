@@ -3,9 +3,6 @@ import { z } from 'zod';
 import { SignOut } from '~/modules/auth/sign-out';
 import { appTitle } from '~/utils/app-title';
 
-/**
- * Sign out route that terminates the user session.
- */
 export const Route = createFileRoute('/_public/auth/sign-out')({
   validateSearch: z.object({ force: z.boolean().optional() }),
   staticData: { isAuth: false },

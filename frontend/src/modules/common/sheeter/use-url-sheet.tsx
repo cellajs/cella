@@ -9,21 +9,17 @@ type SheetOptions = Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
 interface OverlayConfig<TOptions> {
   /** The search param key to watch (e.g., 'userSheetId') */
   searchParamKey: string;
-  /** Additional search param keys to clear when closing */
   additionalSearchParamKeys?: string[];
   /** Render overlay content. Receives the search param value and org ID from URL context. */
   renderContent: (id: string, organizationId: string | undefined) => ReactNode;
   /** Called after close (not during cleanup). Receives the search param value. */
   onAfterClose?: (id: string) => void;
-  /** Overlay configuration options */
   options: TOptions;
 }
 
 type UseUrlSheetConfig = OverlayConfig<SheetOptions>;
 
-/**
- * Navigate to clear search params (always replace, no history.back)
- */
+/** Clears the search params by replacing the current history entry. */
 function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] = []) {
   const navigate = useNavigate();
   const paramsToRemove = [searchParamKey, ...additionalParamKeys];

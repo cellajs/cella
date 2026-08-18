@@ -2,7 +2,6 @@ import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled slider primitive. */
 export function Slider({
   className,
   defaultValue,

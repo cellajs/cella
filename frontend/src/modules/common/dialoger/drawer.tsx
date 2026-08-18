@@ -2,16 +2,14 @@ import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
-/** Renders the dialoger drawer component. */
 export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;
 
   const updateDialog = useDialoger((state) => state.update);
 
-  // Check if dropdown is open, then disable dismissible
+  // An open dropdown makes the drawer non-dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  // onClose trigger handles by remove method
   const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (open: boolean) => {

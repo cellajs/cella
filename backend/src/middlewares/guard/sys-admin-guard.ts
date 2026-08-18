@@ -11,10 +11,7 @@ import { env } from '../../env';
 
 const allowList = env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(',');
 
-/**
- * Internal middleware to check if user is a system admin based on their role.
- * Only allows users with 'admin' in their role to proceed.
- */
+/** Only users holding the 'admin' system role proceed; anyone else triggers a security notification. */
 const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;
@@ -32,12 +29,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
   await next();
 };
 
-/**
- * Middleware that combines system admin check with IP restriction.
- * Uses `every` function from Hono to ensure both system admin check and IP restriction are passed.
- *
- * @returns Error response or undefined if the user is allowed to proceed.
- */
+/** Both the system admin check and the IP restriction must pass. */
 const combinedMiddleware: MiddlewareHandler = every(
   sysAdminCheck,
   // hono's ipRestriction wants a `(c) => string` getter; coerce a null IP to '' so it matches no

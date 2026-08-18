@@ -51,10 +51,6 @@ interface UserThemeProps {
   buttonClassName?: string;
 }
 
-/**
- * Component to switch between light/dark modes and optionally select color themes.
- * Renders a dropdown menu with available themes or a switch if only one theme is available.
- */
 export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
   const { t } = useTranslation();
   const { mode, setMode, setTheme } = useUIStore();
@@ -67,7 +63,6 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
-  // if just one theme, use toggle button
   if (!themes.length) {
     return (
       <Button
@@ -130,7 +125,6 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
     });
   };
 
-  // Else use dropdowner (dropdown on desktop, drawer on mobile)
   return (
     <Button
       ref={triggerRef}

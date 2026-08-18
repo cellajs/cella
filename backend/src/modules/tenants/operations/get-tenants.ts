@@ -11,7 +11,6 @@ type GetTenantsInput = z.infer<typeof tenantListQuerySchema>;
 export async function getTenantsOp(ctx: AuthContext, input: GetTenantsInput) {
   const { q, status, limit, offset, sort, order } = input;
 
-  // Build where conditions
   const conditions: SQL[] = [];
   if (q) {
     const searchQuery = prepareStringForILikeFilter(q);

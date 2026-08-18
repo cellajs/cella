@@ -87,7 +87,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
   const { skip, reason, hash } = canSkipGeneration();
   if (skip) {
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-    console.info(`${checkMark} OpenAPI generation skipped — ${reason} (${elapsed}s)`);
+    console.info(`${checkMark} OpenAPI generation skipped: ${reason} (${elapsed}s)`);
     process.exit(0);
   }
 
@@ -117,7 +117,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
 
     if (hasFallbackCache && isDevModeError) {
       // Recoverable: NODB issue but we have an existing cache
-      console.warn(`${checkMark} OpenAPI generation skipped — NODB unavailable, using existing cache (${elapsed}s)`);
+      console.warn(`${checkMark} OpenAPI generation skipped: NODB unavailable, using existing cache (${elapsed}s)`);
       process.exit(0);
     }
 
@@ -129,7 +129,7 @@ function canSkipGeneration(): { skip: boolean; reason: string; hash: string | nu
     }
 
     // Fatal: no cache to fall back on
-    console.error(`${crossMark} Failed to generate OpenAPI cache — no fallback available (${elapsed}s)`);
+    console.error(`${crossMark} Failed to generate OpenAPI cache: no fallback available (${elapsed}s)`);
     console.error(err instanceof Error ? err.stack || err.message : err);
     process.exit(1);
   }

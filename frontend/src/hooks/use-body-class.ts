@@ -1,10 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-/**
- * Custom hook to conditionally add/remove body classes based on the provided class mappings.
- *
- * @param classMappings - An object where keys are class names and values are booleans indicating whether the class should be applied or not.
- */
+/** Applies each class in the map to document.body while its value is true. */
 export function useBodyClass(classMappings: Record<string, boolean>) {
   const addedClassesRef = useRef<Set<string>>(new Set());
   const prevRef = useRef<Record<string, boolean>>({});
@@ -28,7 +24,6 @@ export function useBodyClass(classMappings: Record<string, boolean>) {
     prevRef.current = { ...classMappings };
   });
 
-  // Cleanup only on unmount
   useEffect(() => {
     return () => {
       const bodyClassList = document.body.classList;

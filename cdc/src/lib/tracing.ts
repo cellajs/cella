@@ -21,7 +21,7 @@ const debugProcessor = createSpanStoreProcessor({
   },
 });
 
-/** OTel SDK instance: real tracer via the shared factory; SpanStoreProcessor bridges spans to pino debug logging. */
+/** SpanStoreProcessor bridges spans to pino debug logging. */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
@@ -80,10 +80,7 @@ interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-/**
- * Execute an async function within a traced CDC span.
- * Returns W3C-format traceId/spanId for _trace propagation.
- */
+/** Runs `fn` in a CDC span and hands it W3C traceId/spanId for `_trace` propagation. */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {

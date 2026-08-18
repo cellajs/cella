@@ -14,11 +14,7 @@ export interface DatabaseUrlConfig {
   description?: string;
   /** Whether deploy gating treats an unset URL as fatal. Defaults to true. */
   required?: boolean;
-  /**
-   * Optional CA certificate delivered alongside the URL (base64-encoded PEM,
-   * kept single-line for the line-based `.env.runtime`). Provide when the
-   * external database uses a private CA the client must trust.
-   */
+  /** Optional CA certificate delivered with the URL, base64-encoded PEM kept single-line for `.env.runtime`. Provide when the external database uses a private CA. */
   ca?: {
     services?: readonly string[];
     envVar?: string;
@@ -27,13 +23,7 @@ export interface DatabaseUrlConfig {
   };
 }
 
-/**
- * External database store: provisions nothing and contributes an
- * operator-supplied connection URL (plus an optional CA cert) as runtime
- * secrets. Dialect-agnostic: any URL a client library accepts (Neon, Turso,
- * Supabase, PlanetScale, a self-hosted instance) works, and the release step
- * owns whatever migration tool the app uses.
- */
+/** External database store: provisions nothing and contributes an operator-supplied connection URL, plus an optional CA cert, as runtime secrets. Dialect-agnostic. */
 export function databaseUrl(config: DatabaseUrlConfig): StoreProvisioner {
   return {
     kind: 'database-url',

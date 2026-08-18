@@ -12,10 +12,7 @@ interface StepperFooterProps {
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
 }
 
-/**
- * Footer for onboarding stepper. Renders a skip button on optional steps
- * and prompts confirmation when skipping organization creation.
- */
+/** Skipping the organization step asks for confirmation; other optional steps skip straight through. */
 export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
   const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
@@ -26,7 +23,6 @@ export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
     if (hasCompletedAllSteps) setOnboardingState('completed');
   }, [hasCompletedAllSteps]);
 
-  // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (getOnboardingSteps()[activeStep].id === 'organization') {

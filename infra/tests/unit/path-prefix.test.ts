@@ -12,9 +12,7 @@ const base = {
   instanceType: 'DEV1-S',
 } as const;
 
-// pathPrefix feeds the LB's raw matchPathBegin string; a malformed or
-// duplicated prefix silently misroutes traffic, so defineServices rejects it
-// at synth/plan time.
+// pathPrefix feeds the LB's raw matchPathBegin string, where a malformed or duplicated prefix misroutes traffic, so defineServices rejects it at synth/plan time.
 describe('pathPrefix registry validation', () => {
   it('accepts a single lowercase segment with a leading slash', () => {
     expect(() => defineServices({ a: { ...base, lbRoute: 'default', pathPrefix: '/api' } })).not.toThrow();

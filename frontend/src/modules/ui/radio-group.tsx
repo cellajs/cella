@@ -4,12 +4,10 @@ import { CircleIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled radio group primitive. */
 export function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive>) {
   return <RadioGroupPrimitive data-slot="radio-group" className={cn('grid gap-3', className)} {...props} />;
 }
 
-/** Renders the styled radio group item primitive. */
 export function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof Radio.Root>) {
   return (
     <Radio.Root

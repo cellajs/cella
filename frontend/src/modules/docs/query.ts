@@ -9,11 +9,7 @@ import type {
   GenTagSummary,
 } from '~/modules/docs/types';
 
-/**
- * Append the build SHA to a /static URL. These files keep stable names with
- * per-release content, so the param rolls browser HTTP and service worker
- * caches over on each release.
- */
+/** Append the build SHA to a /static URL, so browser and service worker caches roll over per release. */
 export const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;
 
 /** Base URL for docs JSON files served at /static/docs.gen (generated into sdk/gen, copied by Vite) */
@@ -32,12 +28,8 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 const openApiPath = `${appConfig.frontendUrl}/static/openapi.json`;
 
-/** OpenAPI spec URL in public/static (version param busts long-lived caches) */
 export const openApiUrl = versionedUrl(openApiPath);
 
-/**
- * Query keys for docs-related queries.
- */
 const docsKeys = {
   spec: ['openapi-spec'] as const,
   operations: ['docs', 'operations'] as const,
@@ -48,13 +40,10 @@ const docsKeys = {
   tagDetails: (tagName: string) => ['docs', 'tag-details', tagName] as const,
 };
 
-/**
- * Query options for fetching the OpenAPI specification JSON.
- */
 export const openApiSpecQueryOptions = queryOptions({
   queryKey: docsKeys.spec,
   queryFn: () => fetchJson(openApiPath),
-  staleTime: Number.POSITIVE_INFINITY, // Static file, cache indefinitely
+  staleTime: Number.POSITIVE_INFINITY,
 });
 
 /** Group items by key(s). Supports single-key and multi-key (array) extractors. */
@@ -70,72 +59,48 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<s
   return result;
 }
 
-/**
- * Query options for fetching operations list (reduces bundle size).
- */
 export const operationsQueryOptions = queryOptions({
   queryKey: docsKeys.operations,
   queryFn: () => fetchJson<GenOperationSummary[]>(`${docsBaseUrl}/operations.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-/**
- * Operations pre-grouped by tag name. Shares cache with operationsQueryOptions.
- * Uses select to derive grouped data per-observer without extra fetches.
- */
+/** Operations grouped by tag name, derived per observer from the operationsQueryOptions cache. */
 export const operationsByTagQueryOptions = queryOptions({
   ...operationsQueryOptions,
   select: (ops: GenOperationSummary[]) => groupBy(ops, (op) => op.tags),
 });
 
-/**
- * Query options for fetching tags list.
- */
 export const tagsQueryOptions = queryOptions({
   queryKey: docsKeys.operationTags,
   queryFn: () => fetchJson<GenTagSummary[]>(`${docsBaseUrl}/tags.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-/**
- * Query options for fetching OpenAPI info summary.
- */
 export const infoQueryOptions = queryOptions({
   queryKey: docsKeys.info,
   queryFn: () => fetchJson<GenInfoSummary>(`${docsBaseUrl}/info.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-/**
- * Query options for fetching schemas list.
- */
 export const schemasQueryOptions = queryOptions({
   queryKey: docsKeys.schemas,
   queryFn: () => fetchJson<GenComponentSchema[]>(`${docsBaseUrl}/schemas.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-/**
- * Schemas pre-grouped by schema tag. Shares cache with schemasQueryOptions.
- * Uses select to derive grouped data per-observer without extra fetches.
- */
+/** Schemas grouped by schema tag, derived per observer from the schemasQueryOptions cache. */
 export const schemasByTagQueryOptions = queryOptions({
   ...schemasQueryOptions,
   select: (schemas: GenComponentSchema[]) => groupBy(schemas, (s) => s.schemaTag),
 });
 
-/**
- * Query options for fetching schema tags list.
- */
 export const schemaTagsQueryOptions = queryOptions({
   queryKey: docsKeys.schemaTags,
   queryFn: () => fetchJson<GenSchemaTagSummary[]>(`${docsBaseUrl}/schema-tags.gen.json`),
   staleTime: Number.POSITIVE_INFINITY,
 });
 
-/**
- * Query options for fetching tag operation details.
- */
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),

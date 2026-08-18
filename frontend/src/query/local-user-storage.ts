@@ -16,9 +16,7 @@ export interface LocalUserStore {
   getState: () => { reset: () => void };
 }
 
-/** Persisted zustand stores that live in `localUserDb.kv` (per-user; in-memory while signed out).
- *  Each exposes a uniform `reset()` so {@link unbind} can drop in-memory state on sign-out.
- * An app appends its own stores via {@link extraLocalUserStores}. */
+/** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
 const localUserStores = [
   seenStore,
   syncStore,
@@ -35,10 +33,7 @@ let readyPromise: Promise<void> = Promise.resolve();
 /** Listeners notified after every actual owner change (new owner id, or `null` on sign-out). */
 const ownerListeners = new Set<(owner: string | null) => void>();
 
-/**
- * Fires AFTER the DB is (re)bound or closed, so callbacks see the live instance via `getLocalUserDb()`.
- * Long-lived consumers (e.g. attachment services holding a `liveQuery`) must re-subscribe here.
- */
+/** Fires after the DB is rebound or closed, so callbacks see the live instance via `getLocalUserDb()`. Long-lived holders of a `liveQuery` must re-subscribe here. */
 export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
   ownerListeners.add(listener);
   return () => ownerListeners.delete(listener);
@@ -66,7 +61,7 @@ function unbind(): void {
   boundOwner = null;
   closeLocalUserDb();
   resetPersisters();
-  // Reset in-memory state of every per-user store (DB is closed, so these writes no-op on persist).
+  // The DB is already closed, so these resets no-op on persist.
   for (const store of localUserStores) store.getState().reset();
   readyPromise = Promise.resolve();
 }

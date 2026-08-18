@@ -9,10 +9,7 @@ import type { CdcRowData, TableMeta } from '../types';
 /** Activity without id, assigned later from WAL LSN in prepareActivity. */
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 
-/**
- * Parsed activity, row data, and table metadata. Reparented products include the old row's
- * permission fields so dispatch can remove them from subscribers who lost access.
- */
+/** Reparented products carry the old row's permission fields so dispatch can drop subscribers who lost access. */
 export interface ParseMessageResult {
   activity: ActivityWithoutId;
   rowData: CdcRowData;
@@ -26,9 +23,8 @@ const DRAFT_GUARD_WARN_INTERVAL_MS = 60_000;
 let lastDraftGuardWarnAt = 0;
 
 /**
- * Drops draft product rows that bypass the expected publication filter, preserving counters
- * and sequence stamps while warning about migration drift. Delete events use the old row,
- * so true draft deletes remain filtered and unpublishes still pass as published-row deletes.
+ * Drops draft product rows that bypassed the publication filter, keeping counters and sequence stamps
+ * correct. Delete events use the old row, so draft deletes stay filtered and unpublishes still pass.
  */
 function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   if (result.tableMeta.kind !== 'entity' || !isProduct(result.tableMeta.type)) return false;
@@ -37,7 +33,7 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {
     lastDraftGuardWarnAt = now;
     log.warn(
-      'Draft product row reached CDC — publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).',
+      'Draft product row reached CDC: publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).',
       {
         entityType: result.tableMeta.type,
         action: result.activity.action,
@@ -47,21 +43,16 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   return true;
 }
 
-/**
- * Parse a pgoutput message and return activity + row data for tracked tables.
- */
+/** @returns null for untracked tables, non-DML messages, and filtered draft events. */
 export function parseMessage(message: Pgoutput.Message): ParseMessageResult | null {
-  // Only process DML messages with a relation
   const { tag } = message;
   if (tag !== 'insert' && tag !== 'update' && tag !== 'delete') {
     return null;
   }
 
-  // Skip untracked tables
   const tableMeta = tableRegistry.get(message.relation.name);
   if (!tableMeta) return null;
 
-  // Dispatch to handlers
   const result = (() => {
     switch (tag) {
       case 'insert':

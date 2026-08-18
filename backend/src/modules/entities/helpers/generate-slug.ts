@@ -5,9 +5,6 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 
 type EntityTypeWithSlug = ChannelEntityType | 'user';
 
-/**
- * Generate a unique slug by trying candidates in order.
- */
 export const generateUniqueSlug = async (
   ctx: DbContext,
   baseSlug: string,

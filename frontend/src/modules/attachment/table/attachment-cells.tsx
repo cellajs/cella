@@ -26,7 +26,6 @@ interface ThumbnailCellProps {
   tabIndex: number;
 }
 
-/** Renders the thumbnail table cell. */
 export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
@@ -35,12 +34,10 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
 
   const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
 
-  // Use attachment URL hook - prefer the tiny thumbnail for table cells (falls back to the
-  // mid-size preview for non-image types, which have no tiny variant).
+  // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
-    // Store focus anchor
     setTriggerRef(id, cellRef);
 
     navigate({
@@ -66,7 +63,6 @@ function SyncStatusBadge({ attachmentId }: { attachmentId: string }) {
   const { t } = useTranslation();
   const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(attachmentId);
 
-  // No local blob or already uploaded, no badge needed.
   if (!hasLocalBlob || isUploaded) return null;
 
   let icon: React.ReactNode;
@@ -104,7 +100,6 @@ interface DownloadCellProps {
   tabIndex: number;
 }
 
-/** Renders the download table cell. */
 export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
   const { t } = useTranslation();
   const { download, error, isInProgress } = useDownloader();
@@ -114,8 +109,7 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
     toaster.error(t('error:download_failed'));
   }, [error, t]);
 
-  // Local-first: a stored blob (downloaded earlier, or local-only pending upload) saves
-  // without the network; that is the point of keeping it. Cloud is the fallback.
+  // Local-first: a stored blob saves without the network, and the cloud URL is the fallback.
   const handleDownload = async () => {
     try {
       const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);
@@ -159,7 +153,6 @@ interface EllipsisCellProps {
   canDelete: boolean;
 }
 
-/** Renders the ellipsis table cell. */
 export function EllipsisCell({ row, tabIndex, canDelete }: EllipsisCellProps) {
   // Delete is the only option; without it there is no menu to offer.
   if (!canDelete) return null;

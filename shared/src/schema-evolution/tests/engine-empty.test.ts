@@ -4,7 +4,7 @@ import { currentSchemaVersion, migrateCachedEntity, normalizeOps } from '../engi
 
 // No mock here: exercises the real (empty) lens list shipped in lens-list.ts.
 // Every runtime touch point must be a safe passthrough until a lens is appended.
-describe('empty lens list — passthrough', () => {
+describe('empty lens list: passthrough', () => {
   it('currentSchemaVersion is 0', () => {
     expect(currentSchemaVersion).toBe(0);
   });

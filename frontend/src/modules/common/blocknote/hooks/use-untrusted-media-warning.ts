@@ -4,10 +4,7 @@ import { hasUntrustedMediaUrls } from '~/modules/common/blocknote/helpers/valida
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-/**
- * Warns once per untrusted-media "episode": the warned flag resets once the document is free of untrusted
- * media, so a later occurrence warns again.
- */
+/** Warns once per run of untrusted media: the flag resets once the document is clean, so a later occurrence warns again. */
 export function useUntrustedMediaWarning() {
   const hasWarnedRef = useRef(false);
 

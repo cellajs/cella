@@ -39,11 +39,9 @@ describe('Passkey Authentication', async () => {
     it('should generate challenge for authentication', async () => {
       const user = await createUser(signUpUser.email);
 
-      // Create passkey row
       const passkeyRecord = mockPasskeyRecord(user.id);
       await db.insert(passkeysTable).values(passkeyRecord);
 
-      // Generate challenge
       const { response: res, data } = await call(generatePasskeyChallenge, {
         body: { type: 'authentication', email: signUpUser.email },
         headers: defaultHeaders,
@@ -60,9 +58,7 @@ describe('Passkey Authentication', async () => {
       const user = await createUser(signUpUser.email);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      // MFA challenge requires confirm-mfa token which is set during initial authentication
-      // Since we don't have the full MFA flow set up, this test verifies the endpoint exists
-      // and handles the missing token appropriately
+      // The MFA challenge needs a confirm-mfa token from initial authentication; without one, 401.
       const { response: res, error } = await call(generatePasskeyChallenge, {
         body: { type: 'mfa' },
         headers: defaultHeaders,
@@ -177,7 +173,6 @@ describe('Passkey Authentication', async () => {
       // The delete is scoped to the caller, so it is a no-op for the attacker.
       expect(res.status).toBe(204);
 
-      // The victim's passkey remains.
       const remaining = await db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       expect(remaining).toHaveLength(1);
     });
@@ -241,12 +236,10 @@ describe('Passkey Authentication', async () => {
     it('should handle multiple passkeys for user', async () => {
       const user = await createUser(signUpUser.email);
 
-      // Create multiple passkeys
       const passkey1 = mockPasskeyRecord(user.id, 'Mac Device');
       const passkey2 = mockPasskeyRecord(user.id, 'Linux Device');
       await db.insert(passkeysTable).values([passkey1, passkey2]);
 
-      // Generate challenge
       const { response: res, data } = await call(generatePasskeyChallenge, {
         body: { type: 'authentication', email: signUpUser.email },
         headers: defaultHeaders,
@@ -280,7 +273,6 @@ describe('Passkey Authentication', async () => {
       const passkeyRecord = mockPasskeyRecord(user.id);
       await db.insert(passkeysTable).values(passkeyRecord);
 
-      // Generate challenge first
       const { response: challengeRes, data: challengeData } = await call(generatePasskeyChallenge, {
         body: { type: 'authentication', email: signUpUser.email },
         headers: defaultHeaders,
@@ -290,7 +282,6 @@ describe('Passkey Authentication', async () => {
       const challengeResponse = challengeData as { challenge: string; credentialIds: string[] };
       expect(challengeResponse.challenge).toBeDefined();
 
-      // Perform passkey verification
       const { response: verificationRes } = await call(signInWithPasskey, {
         body: passkeySignInBody({
           credentialId: passkeyRecord.credentialId,
@@ -302,7 +293,6 @@ describe('Passkey Authentication', async () => {
 
       expect(verificationRes.status).toBe(204);
 
-      // Check session cookie is set
       const setCookieHeader = verificationRes.headers.get('set-cookie');
       expect(setCookieHeader).toBeDefined();
       expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
@@ -326,7 +316,6 @@ describe('Passkey Authentication', async () => {
       });
       expect(res.status).toBe(204);
 
-      // Check session cookie is set
       const setCookieHeader = res.headers.get('set-cookie');
       expect(setCookieHeader).toBeDefined();
       expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);

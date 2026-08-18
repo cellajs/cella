@@ -5,9 +5,6 @@ import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchem
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const seenRoutes = {
-  /**
-   * Mark entities as seen (batch)
-   */
   markSeen: createXRoute({
     operationId: 'markSeen',
     method: 'post',
@@ -34,9 +31,6 @@ const seenRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get unseen counts per parent channel entity per entity type
-   */
   getUnseenCounts: createXRoute({
     operationId: 'getUnseenCounts',
     method: 'get',

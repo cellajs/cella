@@ -21,10 +21,7 @@ type ResolveChannelBySlugConfig<
   fetchBySlug: () => Promise<T>;
   /** Cache key `fetchSlugCacheId` seeds once `fetchBySlug` resolves. */
   slugFetchCacheKey: (id: string) => readonly unknown[];
-  /**
-   * Gate the id-based `ensureQueryData` call behind online status. Default true skips the call
-   * offline (resolving to undefined); false always ensures, letting it wait for reconnection.
-   */
+  /** Default true: skip the id-based `ensureQueryData` while offline, resolving to undefined. False always ensures and waits for reconnection. */
   ensureRequiresOnline?: boolean;
   /** Forwarded to `ensureQueryData` to force revalidation on fresh navigations. */
   revalidateIfStale?: boolean;
@@ -35,10 +32,8 @@ type ResolveChannelBySlugConfig<
 };
 
 /**
- * Resolves a channel entity (e.g. organization) from a route param that may be
- * an id or a slug. Reads the list cache, seeds and reads the detail cache, falls back to a slug
- * fetch when no id is cached, redirects to /home when nothing resolves, and rewrites the URL to
- * the canonical slug.
+ * Resolves a channel entity from a route param that may be an id or a slug.
+ * Reads the list cache, seeds and reads the detail cache, fetches by slug when no id is cached, redirects to /home when nothing resolves, and rewrites the URL to the canonical slug.
  */
 export async function resolveChannelBySlug<
   T extends { id: string; slug: string },
@@ -61,7 +56,6 @@ export async function resolveChannelBySlug<
 
   const isOnline = onlineManager.isOnline();
 
-  // Resolve slug to ID via list cache (from menu), or fetch if not cached
   const cached = findInCache(idOrSlug, tenantId);
   const id = cached?.id;
 
@@ -70,8 +64,7 @@ export async function resolveChannelBySlug<
   if (id) {
     const options = detailQueryOptions(id);
 
-    // Seed detail cache from list cache so ensureQueryData returns immediately without
-    // blocking on a fetch. It still revalidates in background if stale.
+    // Seeding the detail cache lets ensureQueryData return without blocking on a fetch; a stale entry still revalidates in the background.
     if (cached && !queryClient.getQueryData<T>(options.queryKey)) {
       queryClient.setQueryData<T>(options.queryKey, cached);
     }
@@ -81,13 +74,11 @@ export async function resolveChannelBySlug<
       queryClient.getQueryData<T>(options.queryKey) ??
       (shouldEnsure ? await queryClient.ensureQueryData({ ...options, revalidateIfStale }) : undefined);
   } else if (isOnline) {
-    // Not in cache, fetch by slug.
     entity = await fetchSlugCacheId(fetchBySlug, slugFetchCacheKey);
   }
 
   redirectOnMissing(entity);
 
-  // Rewrite URL to use slug if user navigated with ID
   rewriteUrlToSlug(params, buildSlugOverrides(entity), routeTo);
 
   return entity;

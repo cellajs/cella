@@ -25,8 +25,6 @@ const { policyMatrix: policies } = configureWidePermissions(({ entityType, chann
 });
 
 describe('computeCan with own permissions', () => {
-  // --- Pass cases: 'own' state should be preserved ---
-
   it('returns own for member attachment update/delete', () => {
     const membership = wideMembership('organization', 'org1', 'member');
     const can = computeCan('organization', membership, policies, wideOverrides);
@@ -43,8 +41,6 @@ describe('computeCan with own permissions', () => {
     expect(can.attachment?.read).toBe(true);
   });
 
-  // --- Pass cases: admin gets unconditional true ---
-
   it('returns true (not own) for admin on all attachment actions', () => {
     const membership = wideMembership('organization', 'org1', 'admin');
     const can = computeCan('organization', membership, policies, wideOverrides);
@@ -55,8 +51,6 @@ describe('computeCan with own permissions', () => {
     expect(can.attachment?.delete).toBe(true);
   });
 
-  // --- Fail cases: denied actions stay false ---
-
   it('returns false for member organization create/update/delete', () => {
     const membership = wideMembership('organization', 'org1', 'member');
     const can = computeCan('organization', membership, policies, wideOverrides);
@@ -65,8 +59,6 @@ describe('computeCan with own permissions', () => {
     expect(can.organization?.update).toBe(false);
     expect(can.organization?.delete).toBe(false);
   });
-
-  // --- Edge case: no membership ---
 
   it('returns empty map when membership is null', () => {
     const can = computeCan('organization', null, policies, wideOverrides);
@@ -77,8 +69,6 @@ describe('computeCan with own permissions', () => {
     const can = computeCan('organization', undefined, policies, wideOverrides);
     expect(can).toEqual({});
   });
-
-  // --- Wider coverage: channels/roles the shallow org/attachment shape couldn't express ---
 
   it('grants read-only access to a project guest on attachment (guest-only grant)', () => {
     const membership = wideMembership('project', 'p1', 'guest');
@@ -97,11 +87,11 @@ describe('computeCan with own permissions', () => {
     const orgCan = computeWideCan('organization', orgMembership, policies);
     const projectCan = computeWideCan('project', projectMembership, policies);
 
-    // Org members can read tasks across the org, but not update them...
+    // Org members read tasks across the org but cannot update them.
     expect(orgCan.task?.read).toBe(true);
     expect(orgCan.task?.update).toBe(false);
 
-    // ...while project members additionally get update rights scoped to their project.
+    // Project members also get update rights, scoped to their project.
     expect(projectCan.task?.read).toBe(true);
     expect(projectCan.task?.update).toBe(true);
   });
@@ -128,7 +118,7 @@ describe('computeCan three-state semantics', () => {
     expect(can.attachment?.delete).toBe('own');
   });
 
-  it('does not conflate own with true — they are distinct values', () => {
+  it('does not conflate own with true: they are distinct values', () => {
     const membership = wideMembership('organization', 'org1', 'member');
     const can = computeCan('organization', membership, allOwnPolicies, wideOverrides);
 

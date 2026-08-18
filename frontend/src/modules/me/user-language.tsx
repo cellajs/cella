@@ -15,7 +15,6 @@ interface Props {
   triggerClassName?: string;
 }
 
-/** Renders the user language component. */
 export function UserLanguage({ triggerClassName = '' }: Props) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);

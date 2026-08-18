@@ -19,9 +19,6 @@ interface MenuSectionButtonProps {
   handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
-/**
- * Menu section component that is sticky and can contain action buttons.
- */
 export function MenuSectionButton({
   data,
   channelIds,
@@ -34,7 +31,7 @@ export function MenuSectionButton({
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
-  // Cumulative unseen count for non-archived, non-muted items in this section
+  // Cumulative over the section's non-archived, non-muted items.
   const sectionUnseenCount = useUnseenCount(channelIds);
 
   const createButtonRef = useRef(null);
@@ -43,7 +40,6 @@ export function MenuSectionButton({
     <div className="sticky top-0 z-10">
       <div className="z-10 flex items-center bg-card py-2">
         <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex w-full items-center">
-          {/* Main section toggle button */}
           <Button
             onClick={() => toggleSection(options.entityType)}
             className="min-w-0 flex-1 justify-between shadow-none"
@@ -52,7 +48,7 @@ export function MenuSectionButton({
           >
             <div className="flex items-center">
               <span className="mr-1 flex items-center">{t(options.label)}</span>
-              {/* Unseen count badge or item count when section is collapsed */}
+              {/* Unseen count, or the item count while the section is collapsed. */}
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -73,7 +69,6 @@ export function MenuSectionButton({
             <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180" />
           </Button>
 
-          {/* Settings button */}
           <AnimatePresence>
             {isSectionVisible && !!data.length && (
               <motion.div
@@ -98,7 +93,6 @@ export function MenuSectionButton({
             )}
           </AnimatePresence>
 
-          {/* Create button */}
           <AnimatePresence>
             {isSectionVisible && handleCreateAction && (
               <motion.div

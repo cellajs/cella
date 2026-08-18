@@ -8,7 +8,6 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
-/** Defines the style variants for button. */
 export const buttonVariants = cva(
   'focus-effect inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50 [&:not(.absolute):not(.relative)]:active:translate-y-[.05rem]',
   {
@@ -65,7 +64,6 @@ export interface ButtonProps
   render?: React.ReactElement;
 }
 
-/** Renders the styled button primitive. */
 export function Button({
   className,
   variant,
@@ -94,10 +92,7 @@ type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
   icon?: React.ReactNode;
 };
 
-/**
- * Form submit button that warns when offline. With `icon`, it swaps to a spinner on loading;
- * without `icon`, loading overlays a spinner on the whole button.
- */
+/** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
 export function SubmitButton({
   onClick,
   children,

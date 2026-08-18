@@ -11,7 +11,6 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
-/** Provides stepper state and actions. */
 export const useStepper = () => {
   const context = React.useContext(StepperContext);
 

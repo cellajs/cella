@@ -14,7 +14,6 @@ import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-/** Renders the cella custom block type select component. */
 export function CellaCustomBlockTypeSelect({
   headingLevels,
   titleLevel,
@@ -54,14 +53,13 @@ export function CellaCustomBlockTypeSelect({
       !!el.props?.isToggleable === currentBlock.props.isToggleable,
   );
 
-  // Handle item click for updating the block type
   const handleItemClick = (item: BlockTypeSelectItem) => {
     editor.focus();
     for (const block of selectedBlocks) {
       editor.updateBlock(block, {
         type: item.type,
         // biome-ignore lint/suspicious/noExplicitAny: required by author
-        props: item.props as any, // Pass props (to get heading level: 1 | 2 | 3)
+        props: item.props as any,
       });
     }
   };
@@ -76,7 +74,6 @@ export function CellaCustomBlockTypeSelect({
     };
   });
 
-  // Update the block whenever the editor content or selection changes
   useEditorState({
     editor,
     selector: ({ editor }) => {
@@ -85,7 +82,6 @@ export function CellaCustomBlockTypeSelect({
     },
   });
 
-  // Return null if the menu should not be shown or the editor is not editable
   if (!shouldShow || !editor.isEditable) return null;
 
   return (

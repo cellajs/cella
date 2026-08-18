@@ -5,9 +5,7 @@ import { env } from '../env';
 
 export type { ParseKeys } from 'i18next';
 
-/**
- *  Set up i18n options. In backend, all translations are loaded at once during server start.
- */
+/** All backend translations load at once during server start. */
 const initOptions: InitOptions = {
   resources: locales,
   debug: env.DEBUG,
@@ -21,7 +19,5 @@ const initOptions: InitOptions = {
   defaultNS: 'backend',
 };
 
-/**
- * Init i18n instance. Email templates call i18n.t() directly, so no React bindings needed.
- */
+/** Email templates call i18n.t() directly, so no React bindings are needed. */
 i18n.init(initOptions);

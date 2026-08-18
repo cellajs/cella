@@ -3,10 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockUserBase } from './entity-base-mocks';
 
-/**
- * Base schema for user, including common fields. Exported separately to avoid circular dependencies.
- * Users do not have the permissions field (only channel entities do).
- */
+/** Exported separately to avoid circular dependencies. Users carry no permissions field; channel entities do. */
 export const userBaseSchema = channelBaseSchema
   .omit({ entityType: true, tenantId: true })
   .extend({

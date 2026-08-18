@@ -4,12 +4,7 @@ export interface EngineServiceEndpoint {
   publicUrl?: string;
 }
 
-/**
- * The engine's input contract: everything the deploy engine (resources, tasks,
- * CLI) reads about the app it deploys. A host injects a value satisfying this
- * interface; cella's merged appConfig satisfies it structurally. Keep this the
- * complete list: a new field read anywhere in the engine belongs here first.
- */
+/** The engine's input contract: everything the deploy engine reads about the app. A host injects a value satisfying it, and any new field the engine reads belongs here first. */
 export interface EngineConfig {
   /** URL-safe resource prefix for every Scaleway resource and bucket. */
   slug: string;
@@ -35,11 +30,7 @@ export interface EngineConfig {
 
 let injected: EngineConfig | undefined;
 
-/**
- * Inject the config the engine deploys. Must run BEFORE any engine module that
- * reads config at evaluation is imported; entrypoints call
- * {@link loadEngineConfig} first and dynamic-import the rest.
- */
+/** Inject the config the engine deploys. Must run before importing any engine module that reads config at evaluation, so entrypoints call {@link loadEngineConfig} first and dynamic-import the rest. */
 export function setEngineConfig(config: EngineConfig): void {
   injected = config;
 }
@@ -48,7 +39,7 @@ export function setEngineConfig(config: EngineConfig): void {
 export function engineConfig(): EngineConfig {
   if (!injected) {
     throw new Error(
-      'engine-config: no config loaded — await loadEngineConfig() (or call setEngineConfig) before importing engine modules.',
+      'engine-config: no config loaded, await loadEngineConfig() (or call setEngineConfig) before importing engine modules.',
     );
   }
   return injected;
@@ -66,12 +57,7 @@ function isEngineConfig(value: unknown): value is EngineConfig {
   return true;
 }
 
-/**
- * Resolve and inject the engine config, idempotently: the module named by
- * INFRA_CONFIG_MODULE (its `engineConfig` or default export; the package-mode
- * path), or the workspace's shared appConfig (cella in-repo mode). The shared
- * import stays dynamic so this module can be imported before APP_MODE is set.
- */
+/** Resolve and inject the engine config idempotently, from INFRA_CONFIG_MODULE or the workspace's shared appConfig. The shared import stays dynamic so this module can load before APP_MODE is set. */
 export async function loadEngineConfig(): Promise<EngineConfig> {
   if (injected) return injected;
   const configModule = process.env.INFRA_CONFIG_MODULE;

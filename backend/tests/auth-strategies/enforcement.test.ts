@@ -13,7 +13,6 @@ import { type ErrorResponse, passkeySignInBody } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
-// Global setup
 beforeAll(async () => {
   mockFetchRequest();
 });
@@ -22,7 +21,6 @@ afterEach(async () => {
   await clearDatabase();
 });
 
-// OAuth strategy disabled
 describe('oauth strategy disabled', async () => {
   beforeAll(() => {
     setTestConfig({
@@ -72,7 +70,6 @@ describe('oauth provider configuration', async () => {
   });
 });
 
-// Passkey strategy disabled
 describe('passkey strategy disabled', async () => {
   beforeAll(() => {
     setTestConfig({
@@ -101,7 +98,6 @@ describe('passkey strategy disabled', async () => {
   });
 });
 
-// TOTP strategy disabled
 describe('totp strategy disabled', async () => {
   beforeAll(() => {
     setTestConfig({
@@ -123,7 +119,6 @@ describe('totp strategy disabled', async () => {
   });
 });
 
-// All strategies disabled
 describe('all strategies disabled', async () => {
   beforeAll(() => {
     setTestConfig({

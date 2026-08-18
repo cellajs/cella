@@ -4,16 +4,12 @@ import { appProductMocks } from '#/mocks/app-product-mocks';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { getEntityTable } from '#/tables';
 
-/**
- * Factory producing a fully-populated row (SELECT shape) for a product entity, keyed by a
- * deterministic seed so the same key yields the same data.
- */
+/** Produces a fully-populated SELECT-shape row, keyed by a seed so the same key yields the same data. */
 export type ProductMockFn = (key?: string) => Record<string, unknown>;
 
 /**
- * Maps every product entity type to its mock factory. Cella registers its own product entities here;
- * apps add theirs in `appProductMocks`. Exhaustive typing and a drift test keep shared
- * product-seeding suites aligned with app schemas.
+ * The template registers its own product entities here; apps add theirs in `appProductMocks`.
+ * Exhaustive typing and a drift test keep the shared product-seeding suites aligned with app schemas.
  */
 export const productMocksByType = {
   attachment: mockAttachment,

@@ -2,12 +2,9 @@ import { scwS3Endpoint } from '../scaleway/scw-fetch';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
-/** A provisioned, content-addressed generation: the VM resource is
- *  `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
+/** A provisioned, content-addressed generation: VM resource `vm-<svc>-<id>`, baked with `sha`, promoted at monotonic `seq`. */
 export interface GenRef {
-  /** Content-addressed generation id. Authoritative resource suffix. The live VM
-   *  exists under THIS id, so it is stored, not re-derived.
-   *  @see lib/gen-id.ts */
+  /** Content-addressed generation id, authoritative resource suffix. Stored because the live VM exists under this id; never re-derived. @see lib/gen-id.ts */
   id: string;
   /** Image SHA baked into this generation. */
   sha: string;
@@ -15,12 +12,7 @@ export interface GenRef {
   seq: number;
 }
 
-/**
- * Per-service rollout pointers stored in the S3 control object.
- * `active` identifies live traffic, `pendingSha` records deploy intent until Pulumi derives
- * the generation ID, and `seq` orders promotion and garbage collection. Rollback uses a
- * revert and forward deployment, so no previous pointer is retained.
- */
+/** Per-service rollout pointers in the S3 control object: `active` takes live traffic, `pendingSha` holds deploy intent until Pulumi derives the generation id, `seq` orders promotion and garbage collection. */
 export interface ServiceRollout {
   active?: GenRef;
   pendingSha?: string;
@@ -113,16 +105,12 @@ export function emptyControlState(): ControlState {
   return { schemaVersion: 2, bootstrap: {}, rollout: {} };
 }
 
-/** Bucket holding both the Pulumi state and the control object. Must live in
- *  the app project: Scaleway Object Storage pins API keys to their preferred
- *  project, so a bucket elsewhere is out of reach of the project-scoped CI key
- *  (see ensure-state-bucket's preflight). */
+/** Bucket holding the Pulumi state and the control object. Must live in the app project: Scaleway Object Storage pins API keys to their preferred project, so a bucket elsewhere is unreachable for the project-scoped CI key. */
 export function stateBucket(slug: string): string {
   return `${slug}-pulumi-state`;
 }
 
-/** Control object key for a stack. Accepts a full Pulumi stack name
- *  (`organization/infra/production`) or a bare mode (`production`). */
+/** Control object key for a stack. Accepts a full Pulumi stack name (`organization/infra/production`) or a bare mode (`production`). */
 export function controlKey(stack: string): string {
   const short = stack.split('/').pop() ?? stack;
   return `control/${short}.json`;
@@ -198,33 +186,27 @@ export function serializeControlState(state: ControlState): string {
   return `${JSON.stringify(state, null, 2)}\n`;
 }
 
-// Pure rollout-state transitions: every state change is a total function over
-// the previous rollout, so the orchestrator never hand-mutates pointer fields
-// and the transitions are unit-tested in isolation.
+// Pure rollout-state transitions: every state change is a total function over the previous rollout, so the orchestrator never hand-mutates pointer fields.
 
 /** A service with no recorded rollout yet. */
 export function emptyRollout(): ServiceRollout {
   return { seq: 0 };
 }
 
-/** Record the deploy INTENT to roll `sha` in. Idempotent: re-recording the same
- *  pending sha is a no-op. Pointers are untouched until promotion. */
+/** Record the deploy intent to roll `sha` in. Idempotent, and pointers stay untouched until promotion. */
 export function setPending(current: ServiceRollout | undefined, sha: string): ServiceRollout {
   const base = current ?? emptyRollout();
   return { ...base, pendingSha: sha };
 }
 
-/** Promote a resolved generation to active: `seq` advances and the pending
- *  intent is cleared. The old active is not retained; its VM is reaped once the
- *  new one is healthy, so rollback is a revert commit + redeploy. */
+/** Promote a resolved generation to active: `seq` advances, pending intent clears, and the old active is dropped (its VM is reaped once the new one is healthy). */
 export function promote(current: ServiceRollout | undefined, resolved: { id: string; sha: string }): ServiceRollout {
   const base = current ?? emptyRollout();
   const seq = base.seq + 1;
   return { seq, active: { id: resolved.id, sha: resolved.sha, seq } };
 }
 
-/** Read the control object. Returns the empty state (and no etag) when the
- *  object does not exist yet. The caller decides whether that is acceptable. */
+/** Read the control object. Returns the empty state and no etag when the object does not exist yet. */
 export async function readControlState(
   s3: S3Like,
   bucket: string,
@@ -234,8 +216,7 @@ export async function readControlState(
   return { state: body ? parseControlState(body) : emptyControlState(), etag };
 }
 
-/** Write the control object. `ifMatch`/`ifNoneMatch` map to the conditional-write
- *  headers Scaleway supports; pass `ifNoneMatch: '*'` for atomic create-if-absent. */
+/** Write the control object. `ifMatch`/`ifNoneMatch` map to Scaleway's conditional-write headers; pass `ifNoneMatch: '*'` for atomic create-if-absent. */
 export async function writeControlState(
   s3: S3Like,
   bucket: string,
@@ -246,14 +227,12 @@ export async function writeControlState(
   return putJsonObject(s3, bucket, key, serializeControlState(state), opts);
 }
 
-// Orchestrator helpers (used by the deploy tasks; read process.env / build a
-// client, so not part of the pure unit-tested core above).
+// Orchestrator helpers: read process.env and build a client, so not part of the pure core above.
 
 /** Build an S3 client for the state bucket with explicit credentials. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
   const { S3Client } = await s3sdk();
-  // The cast keeps the SDK behind the minimal structural port above, so tests
-  // can satisfy S3Like with a plain fake.
+  // The cast keeps the SDK behind S3Like so tests can pass a plain fake.
   return new S3Client({
     region,
     endpoint: scwS3Endpoint(region),
@@ -279,14 +258,8 @@ export interface ControlContext {
 }
 
 /**
- * Resolve the control-object context for a fully-qualified stack from the
- * environment: sets APP_MODE from the stack's short name (so `shared`'s
- * appConfig resolves the right mode), builds the S3 client from AWS_* (or
- * SCW_*) credentials, and derives bucket + keys. Returns null (with a warning)
- * when no credentials are present; the caller then skips control-store writes.
- * AWS-first: the control object lives in the state bucket, whose
- * deny-by-default policy admits the state-backend identity (what AWS_*
- * carries on split-identity runs), not necessarily the SCW provider key.
+ * Resolve a stack's control-object context from the environment: sets APP_MODE from the stack's short name, builds the S3 client, derives bucket and keys. Returns null when no credentials are present.
+ * AWS_* credentials take precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
  */
 export async function controlContextForStack(
   stack: string,
@@ -306,11 +279,7 @@ export async function controlContextForStack(
   return { s3, bucket: stateBucket(appConfig.slug), controlKey: controlKey(stack), lockKey: lockKey(stack) };
 }
 
-/** Read-modify-write a single service's rollout entry. Uses `If-Match` when the
- *  object already exists so optimistic concurrency rejects a racing writer.
- *  Retries the whole read-patch-write on a conditional-write conflict: entries
- *  are per-service, so re-applying the patch over the winner's state is safe.
- *  Parallel cutovers promote concurrently and rely on this. */
+/** Read-modify-write one service's rollout entry under `If-Match` optimistic concurrency, retrying the whole read-patch-write on conflict. Entries are per-service, so re-applying the patch over the winner's state is safe. */
 export async function updateServiceRollout(
   s3: S3Like,
   bucket: string,
@@ -371,14 +340,12 @@ async function putLock(s3: S3Like, bucket: string, key: string, info: LockInfo, 
   await putJsonObject(s3, bucket, key, `${JSON.stringify(info, null, 2)}\n`, opts);
 }
 
-/** Read the lock object without mutating it (the `infra status` reader). Returns
- *  undefined when no lock is held or the object is unparseable. */
+/** Read the lock object without mutating it. Undefined when no lock is held or the object is unparseable. */
 export async function peekLock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
   return (await readLock(s3, bucket, key)).info;
 }
 
-/** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is
- *  held by someone else; breaks and takes an expired lock. */
+/** Acquire the stack lock. Returns `{acquired:false, held}` when a live lock is held by someone else; breaks and takes an expired lock. */
 export async function acquireLock(
   s3: S3Like,
   bucket: string,
@@ -411,8 +378,7 @@ export async function acquireLock(
   }
 }
 
-/** Release the lock only if we still own it (avoids deleting a lock that was
- *  broken and re-taken by someone else). */
+/** Release the lock only when we still own it, so a lock broken and re-taken by someone else is left alone. */
 export async function releaseLock(s3: S3Like, bucket: string, key: string, owner: string): Promise<void> {
   const { DeleteObjectCommand } = await s3sdk();
   const { info } = await readLock(s3, bucket, key);

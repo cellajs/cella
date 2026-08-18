@@ -329,7 +329,7 @@
                 "depth": {
                   "type": "string",
                   "required": false,
-                  "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.",
+                  "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.",
                   "enum": ["self", "subtree"]
                 },
                 "cursor": {

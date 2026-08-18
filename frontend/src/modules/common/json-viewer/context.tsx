@@ -10,25 +10,17 @@ export interface JsonViewerContextValue {
   enableClipboard: boolean;
   valueTypes: DataType[];
   collapseStringsAfterLength: number;
-  /** Target path for $ref navigation - nodes along this path will expand */
+  /** Path from $ref navigation; nodes along it expand */
   targetPath: string[] | null;
-  /** Path to current search match - nodes along this path will expand */
   searchMatchPath: (string | number)[] | null;
-  /** Search text to filter/highlight matching nodes */
   searchText: string;
-  /** When true, expand all nodes */
   expandAll: boolean;
-  /** Current match index for navigation */
   currentMatchIndex: number;
-  /** Whether to show quotes around keys */
   showKeyQuotes: boolean;
-  /** How many levels deep to expand when clicking a node */
   expandChildrenDepth: number;
-  /** OpenAPI mode: 'spec' or 'schema' */
   openapiMode?: 'spec' | 'schema';
 }
 
-/** Shares json viewer state with descendant components. */
 export const JsonViewerContext = createContext<JsonViewerContextValue>({
   theme: defaultTheme,
   indentWidth: 2,
@@ -47,5 +39,4 @@ export const JsonViewerContext = createContext<JsonViewerContextValue>({
   openapiMode: undefined,
 });
 
-/** Provides json viewer context state and actions. */
 export const useJsonViewerContext = () => useContext(JsonViewerContext);

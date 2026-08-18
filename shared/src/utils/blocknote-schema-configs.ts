@@ -12,19 +12,17 @@ export const checklistItemConfig = {
 };
 
 /**
- * Media blocks carry a reference to the attachment entity they were uploaded as, so
- * derivation and lifecycle logic read an id prop and never parse URLs. External media
- * (pasted URLs without an attachment row) leave it empty.
+ * The attachment entity a media block was uploaded as, so derivation and lifecycle code read an
+ * id prop and never parse URLs. Media pasted as an external URL leaves it empty.
  */
 export const attachmentRefPropSchema = {
   attachmentId: { default: '' as string },
 };
 
 /**
- * Intrinsic pixel dimensions of the media, captured at upload time from the source file.
- * Renderers set them as the img width/height attributes so the browser reserves the correct
- * box before the image loads, removing layout reflow and the broken-image flash while the
- * presigned URL resolves. Zero means unknown (e.g. media pasted as an external URL).
+ * Pixel dimensions read from the source file at upload. Renderers pass them as the img
+ * width/height attributes so the browser reserves the box before the image loads. Zero means
+ * unknown, as for media pasted as an external URL.
  */
 export const mediaDimensionsPropSchema = {
   width: { default: 0 as number },
@@ -32,9 +30,8 @@ export const mediaDimensionsPropSchema = {
 };
 
 /**
- * Widen a media block spec's props with the attachment reference and intrinsic dimensions.
- * Apply to the same specs on every schema that round-trips a shared Y.Doc (frontend editor
- * and Yjs relay), so the ProseMirror node specs stay identical.
+ * Apply to the same specs on every schema that round-trips a shared Y.Doc (frontend editor and
+ * Yjs relay), so the ProseMirror node specs stay identical.
  */
 export const withAttachmentRef = <S extends { config: { propSchema: Record<string, unknown> } }>(spec: S) => ({
   ...spec,
@@ -44,7 +41,7 @@ export const withAttachmentRef = <S extends { config: { propSchema: Record<strin
   },
 });
 
-/** Notify variants. Presentation (icons, colors) lives in the frontend's notify-options. */
+/** Presentation (icons, colors) lives in the frontend's notify-options. */
 export const notifyTypeValues = ['warning', 'error', 'info', 'success'] as const;
 
 export const notifyConfig = {
@@ -67,7 +64,7 @@ export const mentionConfig = {
   content: 'none' as const,
 };
 
-/** Options for the code block spec: shared so the `language` attribute behaves identically. */
+/** Shared so the `language` attribute behaves identically everywhere. */
 export const codeBlockConfig = {
   indentLineWithTab: true,
   defaultLanguage: 'text' as const,

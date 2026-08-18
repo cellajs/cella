@@ -7,9 +7,8 @@ import type { PendingEvent } from '../types';
 const channelTypes: Set<string> = new Set(appConfig.channelEntityTypes);
 
 /**
- * Mirror channel rows' canonical id-path (STORED generated column, present in WAL images)
- * onto their channel_counters row. Reparents ride the same pipeline as counter updates;
- * recalc backfills. Delete events are skipped: the counters row dies with the channel.
+ * Mirrors a channel row's canonical id-path onto its channel_counters row. Deletes are skipped: the
+ * counters row dies with the channel.
  */
 export async function syncChannelPaths(events: PendingEvent[]): Promise<void> {
   const paths = new Map<string, string>();

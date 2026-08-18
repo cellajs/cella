@@ -26,7 +26,6 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
-/** Renders the action and filter toolbar for the users table. */
 export function UsersTableBar({
   selected,
   queryKey,
@@ -49,12 +48,10 @@ export function UsersTableBar({
 
   const isFiltered = role !== undefined || !!q;
 
-  // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
   };
-  // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
@@ -108,7 +105,6 @@ export function UsersTableBar({
   return (
     <>
       <TableBarContainer searchVars={searchVars} offsetTop={48}>
-        {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {!isFiltered && (
@@ -136,14 +132,11 @@ export function UsersTableBar({
           </FilterBarFilters>
         </TableFilterBar>
 
-        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-        {/* Focus view */}
         <FocusView iconOnly />
       </TableBarContainer>
 
-      {/* Floating actions for the current selection */}
       <SelectionActionBar count={selected.length} onClear={clearSelection}>
         <TableBarButton
           ref={deleteButtonRef}

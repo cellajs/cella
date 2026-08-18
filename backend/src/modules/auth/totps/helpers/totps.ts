@@ -18,11 +18,9 @@ export const signInWithTotp = (otp: string, secret: string): boolean => {
 
 /** Loads the user's stored TOTP secret and verifies `code`; throws if no credentials or the code is invalid. */
 export const validateTOTP = async ({ code, userId }: { code: string; userId: string }) => {
-  // Get totp credentials
   const [credentials] = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
   if (!credentials) throw new AppError(404, 'not_found', 'warn');
 
-  // Verify TOTP code using stored secret
   const secret = decryptTotpSecret(credentials.secret);
   const isValid = signInWithTotp(code, secret);
   if (!isValid) throw new AppError(401, 'invalid_token', 'warn');

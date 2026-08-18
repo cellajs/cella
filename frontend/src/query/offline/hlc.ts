@@ -1,23 +1,16 @@
 import { hashSourceId } from 'shared/utils/hash-source-id';
 import { uuidv7 } from 'uuidv7';
 
-/**
- * Unique id for this browser tab, generated once per page load. Used for mutation source tracking
- * (`stx.sourceId`) and "is this mine?" echo checks on stream notifications.
- */
+/** Unique per browser tab, generated once per page load: carried as `stx.sourceId` and compared for echo checks on stream notifications. */
 export const sourceId = uuidv7();
 
-// Module-scoped state: one clock per tab.
 let lastTimestamp = 0;
 let lastCounter = 0;
 
-// Derive 5-char hash from sourceId for compact HLC strings
+// 5-char hash of sourceId, for compact HLC strings.
 const sourceHash = hashSourceId(sourceId);
 
-/**
- * Create an HLC string for this tab.
- * Format: "millis:counter:source"; lexicographic comparison gives causal ordering.
- */
+/** Format `millis:counter:source`; lexicographic comparison gives causal ordering. */
 export function createHLC(): string {
   const now = Date.now();
   if (now > lastTimestamp) {
@@ -31,10 +24,7 @@ export function createHLC(): string {
   return `${ts}:${cnt}:${sourceHash}`;
 }
 
-/**
- * Generate HLC timestamps for a set of field names.
- * All fields in a single mutation get the same HLC (atomic update).
- */
+/** Every field of one mutation shares a single HLC, making the update atomic. */
 export function createFieldTimestamps(fieldNames: string[]): Record<string, string> {
   if (fieldNames.length === 0) return {};
   const hlc = createHLC();

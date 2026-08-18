@@ -53,7 +53,6 @@ function isFQDN(str: string, IFqdnOptions?: IFqdnOptions) {
   const options = { ...defaultFqdnOptions, ...IFqdnOptions };
   let emailString = str;
 
-  /* Remove the optional trailing dot before checking validity */
   if (options.allowTrailingDot && str[str.length - 1] === '.') {
     emailString = str.substring(0, str.length - 1);
   }
@@ -89,9 +88,6 @@ function isFQDN(str: string, IFqdnOptions?: IFqdnOptions) {
   return true;
 }
 
-/**
- * Validates whether a string is a well-formed email address.
- */
 export function isEmail(str: string, IEmailOptions?: IEmailOptions) {
   const options = { ...defaultEmailOptions, ...IEmailOptions };
   let emailString = str;

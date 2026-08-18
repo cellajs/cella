@@ -24,7 +24,6 @@ type AccountButtonProps = {
   action: string;
 } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
-/** Create a button for each account action */
 function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) {
   const { t } = useTranslation();
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
@@ -44,7 +43,6 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
               toaster.warning(t('c:action.offline.text'));
               return;
             }
-            // Close the nav sheet on navigation unless the user pinned it open
             if (!keepNavOpen) useSheeter.getState().remove();
           }}
           id={id}
@@ -59,9 +57,6 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
   );
 }
 
-/**
- * Account navigation sheet content.
- */
 export function AccountSheet() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -157,7 +152,6 @@ export function AccountSheet() {
       <span className="mt-10" />
       <MenuSheetPanels />
 
-      {/* Keyboard-only skip links at end of sheet */}
       <div className="flex flex-col focus-within:p-3">
         <FocusBridge direction="to-content" className="focus:relative" />
         <FocusBridge direction="to-sidebar" className="focus:relative" />

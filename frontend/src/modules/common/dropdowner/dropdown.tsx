@@ -6,15 +6,12 @@ import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
-/** Renders the dropdowner dropdown component. */
 export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
   const triggerEl = dropdown.triggerRef?.current;
 
-  // Portaled content (popup positioning, combobox autofocus) can jump the document scroll
-  // to the top while the popup is still at (0,0), and this fires across several async frames
-  // (positioning, entry animation, data-gated autofocus), not just the first. Pin the
-  // pre-open scroll position: snap it back on any programmatic scroll until the user
-  // themselves scrolls (wheel/touch/key), which releases the pin.
+  // Portaled content can jump the document scroll to the top while the popup still sits at
+  // (0,0), across several async frames. Pin the pre-open scroll position and snap back on any
+  // programmatic scroll until a wheel/touch/key scroll releases the pin.
   useLayoutEffect(() => {
     const scroller = document.scrollingElement ?? document.documentElement;
     const pinned = { top: scroller.scrollTop, left: scroller.scrollLeft };
@@ -46,7 +43,6 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
     };
   }, []);
 
-  // Watch for trigger removal from DOM
   useEffect(() => {
     if (!triggerEl) return;
 

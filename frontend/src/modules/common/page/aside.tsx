@@ -19,7 +19,6 @@ interface PageAsideProps<T> {
   setFocus?: boolean;
 }
 
-/** Renders the page aside component. */
 export function PageAside<T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) {
   const isMobile = useBreakpointBelow('sm', false);
   const { t } = useTranslation();
@@ -29,7 +28,6 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
 
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
-  // Focus the first tab on mount
   useEffect(() => {
     if (!isMobile && setFocus) firstTabRef.current?.focus();
   }, []);

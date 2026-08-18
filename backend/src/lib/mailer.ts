@@ -9,11 +9,7 @@ import type { EmailRecipient, EmailTemplateDef } from '../../emails/types';
 const brevoClient = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : undefined;
 if (!brevoClient && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
 
-/* -------------------------------- Constants ------------------------------- */
-
 const MAX_VERSIONS_PER_CALL = 99;
-
-/* ---------------------------------- Types --------------------------------- */
 
 type Mailer = {
   prepareEmails<TStatic, TRecipient extends EmailRecipient>(
@@ -32,14 +28,7 @@ type Mailer = {
 };
 
 export const mailer: Mailer = {
-  /**
-   * Prepare and send emails using Brevo `messageVersions` batching.
-   *
-   * 1. Groups recipients by language
-   * 2. Calls `translate(lng, statics)` once per language group
-   * 3. Renders the component once per language with Brevo `{{params.x}}` placeholders
-   * 4. Sends in batches of 99 recipients via `messageVersions`
-   */
+  /** Renders once per language group with Brevo `{{params.x}}` placeholders, then sends in batches of 99. */
   async prepareEmails<TStatic, TRecipient extends EmailRecipient>(
     template: EmailTemplateDef<TStatic, TRecipient>,
     staticProps: TStatic,
@@ -48,7 +37,6 @@ export const mailer: Mailer = {
   ) {
     if (!recipients.length) return;
 
-    // Group by language
     const byLng = new Map<string, TRecipient[]>();
     for (const r of recipients) {
       const group = byLng.get(r.lng) ?? [];
@@ -70,10 +58,8 @@ export const mailer: Mailer = {
         placeholderProps[k] = `{{params.${k}}}`;
       }
 
-      // Render HTML once with translated strings + placeholders
       const html = await render(template.component({ ...componentProps, ...placeholderProps }));
 
-      // Build messageVersions and send in batches
       for (let i = 0; i < lngRecipients.length; i += MAX_VERSIONS_PER_CALL) {
         const batch = lngRecipients.slice(i, i + MAX_VERSIONS_PER_CALL);
 
@@ -92,9 +78,6 @@ export const mailer: Mailer = {
     }
   },
 
-  /**
-   * Send a batch of emails via Brevo `messageVersions`.
-   */
   async sendBatch(subject, html, versions, replyTo) {
     if (!brevoClient) return;
     if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;

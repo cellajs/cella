@@ -12,10 +12,7 @@ interface ResolvedWidthOverrides {
   maxWidth?: number;
 }
 
-/**
- * Resolve width/minWidth/maxWidth overrides from all active modes.
- * Higher-precedence modes win per property (mobile > compact).
- */
+/** Width, minWidth and maxWidth overrides from all active modes, resolved per property (mobile > compact). */
 export function resolveModeOverrides<R, SR>(column: Column<R, SR>, activeModes: ActiveModes): ResolvedWidthOverrides {
   const resolved: ResolvedWidthOverrides = {};
   for (const mode of modePrecedence) {
@@ -29,10 +26,7 @@ export function resolveModeOverrides<R, SR>(column: Column<R, SR>, activeModes: 
   return resolved;
 }
 
-/**
- * Resolve the winning merge rule for a column: the `merge` of the
- * highest-precedence active mode that defines one.
- */
+/** The `merge` of the highest-precedence active mode that defines one. */
 export function resolveMergeRule<R, SR>(column: Column<R, SR>, activeModes: ActiveModes): ColumnMergeRule | undefined {
   for (let i = modePrecedence.length - 1; i >= 0; i--) {
     const mode = modePrecedence[i];
@@ -56,11 +50,7 @@ export function warnInvalidMergeRule(columnKey: string, into: string): void {
   );
 }
 
-/**
- * Extra row height needed for merged host cells with occupied top/bottom slot
- * rows (left/right slots render inline and add no height). Constant per grid;
- * row virtualization needs heights without rendering.
- */
+/** Extra row height for occupied top and bottom slot rows; left and right slots render inline and add none. */
 export function computeMergedSlotExtraHeight<R, SR>(columns: readonly CalculatedColumn<R, SR>[]): number {
   let extra = 0;
   for (const column of columns) {

@@ -5,11 +5,7 @@ import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
-/**
- * Append-only CDC activity log partitioned weekly with 90-day retention.
- * LSN-derived IDs make WAL replay idempotent. The partitioned table intentionally has no
- * foreign keys; Drizzle accesses it as a regular table.
- */
+/** Append-only CDC log, weekly partitions, 90-day retention. LSN-derived IDs make WAL replay idempotent; no foreign keys. */
 export const activitiesTable = snakeCase.table(
   'activities',
   {
@@ -31,7 +27,7 @@ export const activitiesTable = snakeCase.table(
     // Composite PK required for pg_partman partitioning
     primaryKey({ columns: [table.id, table.createdAt] }),
     index('activities_created_at_index').on(table.createdAt.desc()),
-    // Composite indexes matching actual query patterns (cursor-based scans)
+    // Composite indexes for cursor-based scans
     index('activities_org_id_index').on(table.organizationId, table.id),
     index('activities_entity_type_subject_id_index').on(table.entityType, table.id),
   ],
