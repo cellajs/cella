@@ -1,11 +1,11 @@
-import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { bootEvents } from '../../lib/telemetry/deploy-telemetry';
 import { createTelemetry, type Telemetry } from '../../lib/telemetry/emitter';
 import { errorMessage } from '../../lib/utils/errors';
 import { retry } from '../../lib/utils/retry';
 import { scrubSecretLines, uploadBootDiagnostics } from './diagnostics';
 import { type ExecFn, execCommand, mustExec } from './exec';
+import { writeFileMode } from './fs-utils';
 import { createJsonLogger } from './logger';
 import { type BootPlan, parseBootPlanJson } from './plan';
 import { hydrateRuntimeSecrets } from './runtime-secrets';
@@ -23,12 +23,6 @@ export interface WaitForPrivateNetworkOptions {
   exec: ExecFn;
   timeoutSeconds: number;
   retryDelayMs?: number;
-}
-
-async function writeFileMode(path: string, content: string, mode: number): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, content, 'utf-8');
-  await chmod(path, mode);
 }
 
 async function readCredential(path: string): Promise<string> {

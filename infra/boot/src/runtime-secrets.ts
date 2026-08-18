@@ -1,7 +1,7 @@
-import { chmod, writeFile } from 'node:fs/promises';
 import { isEnvFileDeliverable } from '../../lib/utils/env-file';
 import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like';
 import { parseJsonBody } from '../../lib/utils/json';
+import { writeFileMode } from './fs-utils';
 import type { RuntimeSecretManifestEntry } from './plan';
 
 export interface HydrateRuntimeSecretsOptions {
@@ -54,6 +54,5 @@ export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions):
 
   if (errors.length > 0) throw new Error(`runtime-secret-sync failed: ${errors.join(', ')}`);
   const allLines = [...lines, ...(opts.extraLines ?? [])];
-  await writeFile(opts.outputPath, allLines.length > 0 ? `${allLines.join('\n')}\n` : '', 'utf-8');
-  await chmod(opts.outputPath, 0o600);
+  await writeFileMode(opts.outputPath, allLines.length > 0 ? `${allLines.join('\n')}\n` : '', 0o600);
 }

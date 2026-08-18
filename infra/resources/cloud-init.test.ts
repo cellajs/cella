@@ -30,11 +30,16 @@ describe('renderCloudInit', () => {
     expect(out).toContain('cat > /etc/cella/scw-access-key');
     expect(out).toContain('cat > /etc/cella/scw-secret-key');
     expect(out).toContain('cat > /etc/cella/run-boot.sh');
-    // Host logs into the registry to pull the boot runner image, then runs it.
-    expect(out).toContain('docker login rg.fr-par.scw.cloud -u nologin --password-stdin < /etc/cella/scw-secret-key');
+    // Host logs into the registry to pull the boot runner image, then runs it. The
+    // registry host + image ref arrive via the systemd EnvironmentFile, so the
+    // launcher references them as env vars, never interpolated shell literals.
+    expect(out).toContain('cat > /etc/cella/boot.env');
+    expect(out).toContain('REGISTRY_HOST=rg.fr-par.scw.cloud');
+    expect(out).toContain('docker login "$REGISTRY_HOST" -u nologin --password-stdin < /etc/cella/scw-secret-key');
     expect(out).toContain('docker run --rm --network host');
     expect(out).toContain('-v /var/run/docker.sock:/var/run/docker.sock');
-    expect(out).toContain('rg.fr-par.scw.cloud/my-namespace/infra-boot:abc123def');
+    expect(out).toContain('BOOT_IMAGE=rg.fr-par.scw.cloud/my-namespace/infra-boot:abc123def');
+    expect(out).toContain('EnvironmentFile=/etc/cella/boot.env');
     expect(out).toContain('boot --plan /etc/cella/boot-plan.json');
     expect(out).toContain('systemctl start infra-boot.service');
     // Enabled so it re-runs on every reboot and re-hydrates runtime secrets.
@@ -57,8 +62,26 @@ describe('renderCloudInit', () => {
     const digest = 'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08';
     const out = renderCloudInit(params({ bootImageDigest: digest }));
 
-    expect(out).toContain(`rg.fr-par.scw.cloud/my-namespace/infra-boot@${digest}`);
+    expect(out).toContain(`BOOT_IMAGE=rg.fr-par.scw.cloud/my-namespace/infra-boot@${digest}`);
     expect(out).not.toContain('infra-boot:abc123def');
+  });
+
+  it('keeps the release SHA out of every shell command position (systemd EnvironmentFile carries the image ref)', () => {
+    // A hostile SHA is not reachable through today's callers (github.sha / git
+    // rev-parse), but this proves the structural property: the value lands only in
+    // the EnvironmentFile (parsed by systemd, never shell-evaluated) and in the
+    // boot plan (JSON), never in a bash command position.
+    const evil = '$(curl evil)';
+    const out = renderCloudInit(params({ releaseSha: evil }));
+
+    const launcher = out.split("cat > /etc/cella/run-boot.sh <<'RUN_BOOT_EOF'")[1]?.split('RUN_BOOT_EOF')[0] ?? '';
+    expect(launcher).toContain('"$BOOT_IMAGE"');
+    expect(launcher).not.toContain(evil);
+    expect(out).toContain(`BOOT_IMAGE=rg.fr-par.scw.cloud/my-namespace/infra-boot:${evil}`);
+  });
+
+  it('refuses a value whose line collides with a heredoc terminator', () => {
+    expect(() => renderCloudInit(params({ secretKey: 'SCW_SECRET_KEY_EOF' }))).toThrow(/terminator/);
   });
 
   it('passes service boot data through the schema-v1 boot plan', () => {

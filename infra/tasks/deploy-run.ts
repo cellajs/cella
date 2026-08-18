@@ -8,6 +8,7 @@ import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { errorMessage } from '../lib/utils/errors';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
+import { scrubSecretEnv } from '../lib/utils/scrub-secret-env';
 import { getFlag } from './args';
 import { bakeDefinition, parseBuildRows } from './build-images';
 import { main as runWavedRolloutCli } from './deploy-rollout';
@@ -59,7 +60,7 @@ export interface DeployEffects {
   exec(
     cmd: string,
     args: string[],
-    opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> },
+    opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string>; secretless?: boolean },
   ): void;
   /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
   uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
@@ -215,6 +216,9 @@ export async function runDeploy(
         await step('Build frontend', () =>
           fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
             env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) },
+            // The Vite build runs a large third-party plugin graph; deny it the
+            // deploy's cloud credentials so a compromised build dep cannot exfiltrate them.
+            secretless: true,
           }),
         );
       }
@@ -477,9 +481,14 @@ function createRealEffects(): DeployEffects {
     },
     task: (name, argv = []) => taskRunners[name](argv),
     exec(cmd, args, opts = {}) {
+      // `secretless` strips the deploy's credentials (Scaleway keys, Pulumi
+      // passphrase, GitHub token) from the child's environment before layering
+      // opts.env on top, so an untrusted build (the frontend Vite plugin graph)
+      // cannot read them. The default path is unchanged: full env inheritance.
+      const baseEnv = opts.secretless ? scrubSecretEnv(process.env) : process.env;
       const res = spawnSync(cmd, args, {
         cwd: infraDir,
-        env: opts.env ? { ...process.env, ...opts.env } : process.env,
+        env: opts.env ? { ...baseEnv, ...opts.env } : baseEnv,
         stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
         input: opts.stdin,
       });

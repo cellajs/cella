@@ -89,7 +89,11 @@ jobs:
   # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
   # migrations in the Vitest global setup, so the job needs no service container.
   test:
-    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--main')
+    # Same-repo branch only: release-please pushes its branch into this repo, so a
+    # PR from another repository (whose branch name its author fully controls)
+    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
+    # pull_request events.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -123,7 +127,11 @@ jobs:
 
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
-    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--branches--main')
+    # Same-repo branch only: release-please pushes its branch into this repo, so a
+    # PR from another repository (whose branch name its author fully controls)
+    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
+    # pull_request events.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -190,9 +198,10 @@ jobs:
           cp "$SPEC" /tmp/head-openapi.json
 
           # Classify breaking changes (oasdiff exits non-zero on breaking errors).
-          # TODO [#19]: pin tufin/oasdiff by digest once chosen.
+          # Pinned by digest (v1.20.0) so a repushed tag cannot swap the image that
+          # runs in CI with access to the mounted /tmp. Bump both tag comment and digest together.
           set +e
-          docker run --rm -v /tmp:/specs tufin/oasdiff:v1.20.0 \
+          docker run --rm -v /tmp:/specs tufin/oasdiff@sha256:d0a6de7b3389adc358dd34981f6091a907dbd788ce21b3d51f315a00928e3e01 \
             breaking /specs/base-openapi.json /specs/head-openapi.json --fail-on ERR
           BREAKING=$?
           set -e

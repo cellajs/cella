@@ -57,19 +57,35 @@ const bootPaths = (slug: string) => {
     secretKey: `${etcDir}/scw-secret-key`,
     plan: `${etcDir}/boot-plan.json`,
     launcher: `${etcDir}/run-boot.sh`,
+    // systemd EnvironmentFile carrying the registry host + boot-image ref, so the
+    // launcher interpolates no per-deploy values into shell (see bootLauncher).
+    bootEnv: `${etcDir}/boot.env`,
   };
 };
 
-const writeHeredoc = (path: string, marker: string, content: string): string => `cat > ${path} <<'${marker}'
+const writeHeredoc = (path: string, marker: string, content: string): string => {
+  // A body line equal to the quoted heredoc terminator would close the document
+  // early and splice the remainder into the root boot script. Values here are
+  // config- or secret-derived, not attacker-controlled at runtime; a collision
+  // throws at render time so the deploy fails loudly at the source.
+  if (content.split('\n').some((line) => line === marker)) {
+    throw new Error(`cloud-init: heredoc content for ${path} contains its terminator '${marker}'`);
+  }
+  return `cat > ${path} <<'${marker}'
 ${content}
 ${marker}`;
+};
 
-const bootHeader = (slug: string, service: string, releaseSha: string): string => `#!/bin/bash
+// The service name and release SHA travel in the boot plan (JSON, so structurally
+// escaped) and the boot runner logs them itself; keeping them out of this shell
+// header means no per-deploy value is interpolated into a bash command position.
+// `slug` is validated kebab-case at the config boundary (config/engine-config.ts).
+const bootHeader = (slug: string): string => `#!/bin/bash
 exec > >(tee -a /var/log/infra-boot.log 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
 say() { echo "::${slug}:: $*" ; }
 trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc)"; fi' EXIT
-say "boot start: service=${service} release=${releaseSha}"`;
+say "boot start"`;
 
 const bootReplayUnit = `[Unit]
 Description=Replay the first-boot log to the serial console
@@ -143,29 +159,41 @@ const bootImageRef = (p: CloudInitParams): string => {
   return p.bootImageDigest ? `${p.registry}/${image}@${p.bootImageDigest}` : `${p.registry}/${image}:${p.releaseSha}`;
 };
 
-/** Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts. */
-const bootLauncher = (p: CloudInitParams): string => {
+/** `REGISTRY_HOST` and `BOOT_IMAGE` for the launcher's systemd EnvironmentFile. systemd parses `KEY=value` without shell evaluation, so a value can never reach a bash command context; the launcher then references them quoted (`"$BOOT_IMAGE"`), and bash parameter expansion does not re-scan the value for command substitution. This is what retires the release SHA from shell. */
+const bootEnvContent = (p: CloudInitParams): string => {
   const registryHost = p.registry.split('/')[0];
+  return `REGISTRY_HOST=${registryHost}\nBOOT_IMAGE=${bootImageRef(p)}`;
+};
+
+const writeBootEnv = (p: CloudInitParams): string => {
+  const paths = bootPaths(p.slug);
+  return `${writeHeredoc(paths.bootEnv, 'BOOT_ENV_EOF', bootEnvContent(p))}
+chmod 600 ${paths.bootEnv}`;
+};
+
+/** Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts. The registry host and boot-image ref arrive via the EnvironmentFile (bootEnv), so this script is fixed apart from the slug-namespaced paths. */
+const bootLauncher = (p: CloudInitParams): string => {
   const paths = bootPaths(p.slug);
   return `#!/bin/bash
 set -uo pipefail
-docker login ${registryHost} -u nologin --password-stdin < ${paths.secretKey}
+docker login "$REGISTRY_HOST" -u nologin --password-stdin < ${paths.secretKey}
 exec docker run --rm --network host \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v /opt/app:/opt/app \\
   -v ${paths.etcDir}:${paths.etcDir} \\
   -v /etc/runtime-secrets:/etc/runtime-secrets \\
-  ${bootImageRef(p)} \\
+  "$BOOT_IMAGE" \\
   boot --plan ${paths.plan}`;
 };
 
 // The unit runs on first boot and each reboot: the idempotent boot runner re-hydrates /opt/app/.env.runtime from Secret Manager.
-const bootUnit = (launcherPath: string): string => `[Unit]
+const bootUnit = (launcherPath: string, bootEnvPath: string): string => `[Unit]
 Description=Boot runner (first boot + every reboot)
 After=docker.service network-online.target
 Wants=docker.service network-online.target
 [Service]
 Type=oneshot
+EnvironmentFile=${bootEnvPath}
 ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log/infra-boot.log > /dev/console'
 [Install]
 WantedBy=multi-user.target`;
@@ -179,22 +207,24 @@ ${writeHeredoc(paths.accessKey, 'SCW_ACCESS_KEY_EOF', p.accessKey)}
 chmod 600 ${paths.accessKey}
 ${writeHeredoc(paths.secretKey, 'SCW_SECRET_KEY_EOF', p.secretKey)}
 chmod 600 ${paths.secretKey}
+${writeBootEnv(p)}
 ${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
 chmod 700 ${paths.launcher}`;
 };
 
 // `enable` binds the unit to multi-user.target so it re-runs on every reboot; `start` runs it on this first boot.
-const startBootRunner = (
-  p: CloudInitParams,
-): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit(bootPaths(p.slug).launcher))}
+const startBootRunner = (p: CloudInitParams): string => {
+  const paths = bootPaths(p.slug);
+  return `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit(paths.launcher, paths.bootEnv))}
 systemctl daemon-reload
 systemctl enable infra-boot.service 2>&1 | tail -1
 systemctl start infra-boot.service`;
+};
 
 /** Render the first-boot cloud-init script for one service generation VM. */
 export function renderCloudInit(p: CloudInitParams): string {
   return `${[
-    bootHeader(p.slug, p.service, p.releaseSha),
+    bootHeader(p.slug),
     installBootReplayService(),
     writeBootInputs(p),
     startBootRunner(p),

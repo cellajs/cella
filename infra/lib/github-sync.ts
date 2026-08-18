@@ -21,8 +21,10 @@ export interface GithubSyncOptions {
   };
   /** The stack's Pulumi passphrase; written as `PULUMI_CONFIG_PASSPHRASE`. */
   passphrase?: string;
-  /** Injected for testability. Returns the spawn exit status. */
-  run?: (cmd: string, args: string[], opts: { cwd: string }) => number;
+  /** Injected for testability. Returns the spawn exit status. `input`, when set,
+   *  is fed to the child's stdin, which carries secret values so they never
+   *  appear as argv elements. */
+  run?: (cmd: string, args: string[], opts: { cwd: string; input?: string }) => number;
 }
 
 /** The `gh secret set` name/value pairs a sync would write. Pure. */
@@ -42,8 +44,14 @@ export function githubSecretEntries(
   return entries;
 }
 
-const defaultRun = (cmd: string, args: string[], opts: { cwd: string }): number =>
-  spawnSync(cmd, args, { cwd: opts.cwd, stdio: 'inherit' }).status ?? 1;
+const defaultRun = (cmd: string, args: string[], opts: { cwd: string; input?: string }): number =>
+  spawnSync(cmd, args, {
+    cwd: opts.cwd,
+    // When a secret is supplied it goes in on stdin; otherwise inherit so the
+    // command stays interactive/visible. `input` is never echoed.
+    stdio: opts.input === undefined ? 'inherit' : ['pipe', 'inherit', 'inherit'],
+    input: opts.input,
+  }).status ?? 1;
 
 /** Ensures the GitHub Environment exists, then writes CI secrets (if given).
  *  No-op (with warning) when gh isn't authenticated or origin isn't a GitHub
@@ -64,12 +72,9 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<bo
     return false;
   }
 
-  const step = (label: string, cmd: string, args: string[]) => {
-    // Redact the secret value (`--body <value>`) from the echoed command so it
-    // does not land in terminal scrollback.
-    const shown = args.map((arg, i) => (args[i - 1] === '--body' ? '<redacted>' : arg));
-    console.info(`\n→ ${label}\n  $ ${cmd} ${shown.join(' ')}`);
-    const code = run(cmd, args, { cwd: opts.repoRoot });
+  const step = (label: string, cmd: string, args: string[], input?: string) => {
+    console.info(`\n→ ${label}\n  $ ${cmd} ${args.join(' ')}`);
+    const code = run(cmd, args, { cwd: opts.repoRoot, input });
     if (code !== 0) console.error(`${crossMark} ${label} failed (exit ${code})`);
   };
 
@@ -82,17 +87,15 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<bo
   ]);
 
   for (const [name, value] of githubSecretEntries(opts)) {
-    step(`gh secret set ${name} (env: ${opts.environment})`, 'gh', [
-      'secret',
-      'set',
-      name,
-      '--env',
-      opts.environment,
-      '--repo',
-      ownerRepo,
-      '--body',
+    // The secret value is fed on stdin via `--body-file -`, never as an argv
+    // element, so it cannot leak through `ps`, execve audit logs, or the echoed
+    // command above (the args now hold no secret to redact).
+    step(
+      `gh secret set ${name} (env: ${opts.environment})`,
+      'gh',
+      ['secret', 'set', name, '--env', opts.environment, '--repo', ownerRepo, '--body-file', '-'],
       value,
-    ]);
+    );
   }
   return true;
 }
