@@ -22,7 +22,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
 
   const pageTree = buildPageNodeTree(pages);
 
-  // Ancestor chain seeds expansion on route change and tells rows whether a subpage is active
+  // Ancestor chain of the active page: seeds expansion on route change.
   const activeAncestorIds = useMemo(() => computeAncestorIds(pages, activePageId), [pages, activePageId]);
 
   // Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree)
@@ -68,7 +68,6 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
             node={node}
             variant="root"
             activePageId={activePageId}
-            activeAncestorIds={activeAncestorIds}
             expandedIds={expandedIds}
             onToggle={togglePageExpanded}
             onClose={onClose}
