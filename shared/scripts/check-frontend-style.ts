@@ -1,6 +1,7 @@
 /**
- * Enforces frontend declaration and export-documentation conventions that
- * Biome cannot express reliably.
+ * Enforces frontend declaration conventions that Biome cannot express reliably. Export
+ * descriptions are not required here: the comment budget in cella/AGENTS.md governs which
+ * exports earn a doc.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -44,17 +45,6 @@ function report(sourceFile: ts.SourceFile, node: ts.Node, rule: string, message:
   failures.push(`${sourceFile.fileName}:${lineAndColumn(sourceFile, node.getStart(sourceFile))} [${rule}] ${message}`);
 }
 
-function isExported(node: ts.Node): boolean {
-  return (
-    ts.canHaveModifiers(node) &&
-    !!ts.getModifiers(node)?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
-  );
-}
-
-function hasJsDoc(node: ts.Node): boolean {
-  return ts.getJSDocCommentsAndTags(node).some((comment) => ts.isJSDoc(comment));
-}
-
 function containsJsx(node: ts.Node): boolean {
   let found = false;
   function visit(child: ts.Node): void {
@@ -69,11 +59,6 @@ function containsJsx(node: ts.Node): boolean {
   return found;
 }
 
-function bindingNames(name: ts.BindingName): string[] {
-  if (ts.isIdentifier(name)) return [name.text];
-  return name.elements.flatMap((element) => (ts.isOmittedExpression(element) ? [] : bindingNames(element.name)));
-}
-
 function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node): void {
   if (!ts.isTypeReferenceNode(node)) return;
   const name = node.typeName.getText(sourceFile);
@@ -86,25 +71,7 @@ function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node): void
   );
 }
 
-function checkFunctionExport(
-  sourceFile: ts.SourceFile,
-  node: ts.FunctionDeclaration,
-  documentedFunctionNames: Set<string>,
-): void {
-  if (!isExported(node) || hasJsDoc(node) || (node.name && documentedFunctionNames.has(node.name.text))) {
-    return;
-  }
-  const name = node.name?.text ?? 'default function';
-  report(sourceFile, node, 'export-description', `add a concise JSDoc description for ${name}`);
-}
-
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement): void {
-  const isExportedConstant = isExported(node) && (node.declarationList.flags & ts.NodeFlags.Const) !== 0;
-  if (isExportedConstant && !hasJsDoc(node)) {
-    const names = node.declarationList.declarations.flatMap((declaration) => bindingNames(declaration.name)).join(', ');
-    report(sourceFile, node, 'export-description', `add a concise JSDoc description for ${names}`);
-  }
-
   if (extname(sourceFile.fileName) !== '.tsx') return;
   for (const declaration of node.declarationList.declarations) {
     const name = ts.isIdentifier(declaration.name) ? declaration.name.text : null;
@@ -145,19 +112,7 @@ for (const file of trackedFrontendFiles().filter(isRequested)) {
     true,
     extname(file) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
-  const documentedFunctionNames = new Set(
-    sourceFile.statements
-      .filter(
-        (statement): statement is ts.FunctionDeclaration =>
-          ts.isFunctionDeclaration(statement) && isExported(statement) && hasJsDoc(statement) && !!statement.name,
-      )
-      .map((statement) => statement.name!.text),
-  );
-
   for (const statement of sourceFile.statements) {
-    if (ts.isFunctionDeclaration(statement)) {
-      checkFunctionExport(sourceFile, statement, documentedFunctionNames);
-    }
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
   }
   sourceFile.forEachChild(function visit(node) {
@@ -172,4 +127,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[frontend:style] OK, component declarations and export descriptions follow the frontend conventions.');
+console.log('[frontend:style] OK, component declarations follow the frontend conventions.');
