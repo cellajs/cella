@@ -4,7 +4,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
 import { revalidateConnectivity } from '~/query/offline/connectivity';
 
-// Sustained-offline duration required before surfacing the UI toast.
+// Sustained-offline duration required before the UI toast appears (ms).
 const showDelay = 2000;
 
 /**
@@ -14,7 +14,6 @@ const showDelay = 2000;
 export const useUiOffline = () => {
   const isOnline = useOnlineManager();
 
-  // Debounced derivation: surface offline only after sustained disconnection; clear instantly.
   useEffect(() => {
     const { downAlert, setDownAlert } = useAlertStore.getState();
 
@@ -27,8 +26,7 @@ export const useUiOffline = () => {
     return () => clearTimeout(timer);
   }, [isOnline]);
 
-  // On returning to a backgrounded/frozen tab, re-verify connectivity so a stale offline
-  // state clears as soon as the network is actually back (don't wait for the laggy 'online' event).
+  // Re-verify on tab resume: the 'online' event lags, leaving a stale offline state
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;

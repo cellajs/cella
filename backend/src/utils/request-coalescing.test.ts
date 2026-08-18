@@ -23,21 +23,16 @@ describe('request-coalescing', () => {
       });
       const fetcher = vi.fn().mockReturnValue(fetcherPromise);
 
-      // Start 3 concurrent requests
       const promise1 = coalesce('key1', fetcher);
       const promise2 = coalesce('key1', fetcher);
       const promise3 = coalesce('key1', fetcher);
 
-      // Fetcher should only be called once
       expect(fetcher).toHaveBeenCalledTimes(1);
 
-      // All should be in-flight
       expect(isInFlight('key1')).toBe(true);
 
-      // Resolve the promise
       resolvePromise!('shared-result');
 
-      // All should get same result
       const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3]);
       expect(result1).toBe('shared-result');
       expect(result2).toBe('shared-result');

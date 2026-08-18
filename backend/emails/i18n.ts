@@ -7,7 +7,6 @@ import nlBackend from '../../locales/nl/backend.json';
 import nlCommon from '../../locales/nl/common.json';
 import nlError from '../../locales/nl/error.json';
 
-// Email templates use the same translation resources in server runtime and CLI preview.
 // Templates call i18n.t() directly, so no React bindings are needed.
 if (!i18n.isInitialized) {
   i18n.init({

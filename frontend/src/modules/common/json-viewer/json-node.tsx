@@ -14,18 +14,14 @@ interface JsonNodeProps {
   path: Path;
   keyName?: string | number | false;
   depth: number;
-  /** Visual depth for indentation (doesn't increment for flattened nodes) */
+  /** Visual depth for indentation; does not increment for flattened nodes */
   visualDepth?: number;
-  /** How many more levels to auto-expand (passed down when parent expands with cascade) */
+  /** How many more levels to auto-expand, passed down when a parent expands */
   cascadeDepth?: number;
 }
 
-/**
- * Renders a single node in the JSON tree.
- */
 export const JsonNode = memo(
   function JsonNode({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }: JsonNodeProps) {
-    // Use visualDepth if provided, otherwise fall back to depth
     const effectiveVisualDepth = visualDepth ?? depth;
 
     const {
@@ -45,60 +41,52 @@ export const JsonNode = memo(
       openapiMode,
     } = useJsonViewerContext();
 
-    // In schema mode, arrays of primitives render on a single line
     const singleLineArrays = openapiMode === 'schema';
 
-    // Track current cascade depth for children (when user clicks to expand)
     const [childCascadeDepth, setChildCascadeDepth] = useState(0);
 
-    // In schema mode, check if this is a node that should be flattened (always expanded, no key shown)
+    // Flattened nodes render always expanded and without a key.
     const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
     const isCompositionNode = openapiMode === 'schema' && (keyName === 'anyOf' || keyName === 'oneOf');
     const isFlattenedNode = isPropertiesNode || isCompositionNode;
 
-    // In schema mode, hide the root expand (depth 0) - content is always visible
     const isRootInSchemaMode = openapiMode === 'schema' && depth === 0;
 
-    // Determine if this node should be expanded by default
     const getDefaultExpanded = () => {
-      // Flattened nodes (properties, anyOf, oneOf) and root in schema mode are always expanded
       if (isFlattenedNode || isRootInSchemaMode) return true;
-      if (cascadeDepth > 0) return true; // Auto-expand if cascading from parent
+      if (cascadeDepth > 0) return true;
       if (expandAll) return true;
       return depth < defaultInspectDepth;
     };
 
     const [isExpanded, setIsExpanded] = useState(getDefaultExpanded);
 
-    // Check if this node is on the path to the target (for $ref navigation)
+    // targetPath is set by $ref navigation.
     const isOnTargetPath = (() => {
       if (!targetPath || targetPath.length === 0) return false;
       if (path.length > targetPath.length) return false;
       return path.every((p, i) => String(p) === targetPath[i]);
     })();
 
-    // Check if this node is on the path to the current search match
     const isOnSearchMatchPath = (() => {
       if (!searchMatchPath || searchMatchPath.length === 0) return false;
       if (path.length > searchMatchPath.length) return false;
       return path.every((p, i) => String(p) === String(searchMatchPath[i]));
     })();
 
-    // Expand when expandAll changes to true, or when on target path
     useEffect(() => {
       if (expandAll && !isExpanded) {
         setIsExpanded(true);
       }
     }, [expandAll]);
 
-    // Expand this node when it's on the target path (without collapsing others)
+    // Expanding along the target path leaves other nodes untouched.
     useEffect(() => {
       if (isOnTargetPath && !isExpanded) {
         setIsExpanded(true);
       }
     }, [isOnTargetPath, targetPath]);
 
-    // Expand this node when it's on the search match path
     useEffect(() => {
       if (isOnSearchMatchPath && !isExpanded) {
         setIsExpanded(true);
@@ -129,14 +117,12 @@ export const JsonNode = memo(
 
     const isObjectValue = valueType === 'object';
 
-    // In schema mode, check if this node itself has required: true (boolean property on the object)
     const hasSelfRequired =
       openapiMode === 'schema' &&
       typeof value === 'object' &&
       value !== null &&
       (value as Record<string, unknown>).required === true;
 
-    // Common props for KeyRenderer
     const keyProps = {
       keyName,
       showKeyQuotes,
@@ -147,7 +133,6 @@ export const JsonNode = memo(
       theme,
     };
 
-    // Primitive values
     if (valueType !== 'object' && valueType !== 'array') {
       return (
         <div className="whitespace-nowrap" style={{ paddingLeft }}>
@@ -166,15 +151,13 @@ export const JsonNode = memo(
       );
     }
 
-    // Object or Array
     const isArray = valueType === 'array';
 
-    // In schema mode, check if parent key is 'properties' (type keys inside properties should NOT be filtered)
+    // Entries inside 'properties' keep their type keys unfiltered.
     const parentKey = path.length > 0 ? path[path.length - 1] : null;
     const isInsideProperties = parentKey === 'properties';
 
-    // Show a present 'type' value as a label, not inside 'properties'.
-    // Type can be a string (e.g., "string") or an array (e.g., ["string", "null"] for nullable)
+    // 'type' renders as a label: a string, or an array such as ["string", "null"] for nullable.
     const typeValue = (() => {
       if (!openapiMode || openapiMode !== 'schema' || isArray || isInsideProperties) return null;
       if (typeof value !== 'object' || value === null) return null;
@@ -186,17 +169,15 @@ export const JsonNode = memo(
       return null;
     })();
 
-    // Check if we can extract schema labels (type, anyOf, oneOf, ref) from this value
     const canExtractLabels =
       openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null;
     const valueObj = canExtractLabels ? (value as Record<string, unknown>) : null;
 
-    // Check if this node has 'anyOf' or 'oneOf' (composition type) - will be shown as type label
+    // anyOf/oneOf render as a type label.
     const hasAnyOf = valueObj ? Array.isArray(valueObj.anyOf) : false;
     const hasOneOf = valueObj ? Array.isArray(valueObj.oneOf) : false;
 
-    // Show a present 'ref' value as a label, not inside 'properties'.
-    // Extract just the schema name from the full ref path (e.g., '#/components/schemas/User' -> 'User')
+    // 'ref' renders as a label holding only the schema name: '#/components/schemas/User' becomes 'User'.
     const refValue = (() => {
       if (valueObj && typeof valueObj.ref === 'string') {
         return valueObj.ref.split('/').pop() || valueObj.ref;
@@ -204,13 +185,13 @@ export const JsonNode = memo(
       return null;
     })();
 
-    // Extract contentType value for label display (filtered out of entries below, like type/ref)
+    // Rendered as a label and filtered out of the entries below.
     const contentTypeValue =
       openapiMode === 'schema' && !isInsideProperties && valueObj && typeof valueObj.contentType === 'string'
         ? valueObj.contentType
         : null;
 
-    // Extract constraint values for inline display (filtered out of entries below, like required)
+    // Rendered inline and filtered out of the entries below.
     const constraints = (() => {
       if (openapiMode !== 'schema' || isArray || typeof value !== 'object' || value === null) return null;
       const obj = value as Record<string, unknown>;
@@ -222,7 +203,7 @@ export const JsonNode = memo(
       return Object.keys(c).length > 0 ? c : null;
     })();
 
-    // Extract additionalProperties for dictionary/map rendering (shown as synthetic [key] entry)
+    // Rendered as a synthetic [key] entry.
     const additionalPropsSchema = (() => {
       if (openapiMode !== 'schema' || isArray || isInsideProperties) return null;
       if (typeof value !== 'object' || value === null) return null;
@@ -238,13 +219,11 @@ export const JsonNode = memo(
       value !== null &&
       (value as Record<string, unknown>).type === 'array';
 
-    // In schema mode, extract entries and filter out 'required' key
     const rawEntries = isArray
       ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
       : Object.entries(value as Record<string, unknown>);
 
     // Hide schema keys promoted into labels and hoist array-item properties.
-    // Flatten `anyOf`/`oneOf` like properties while retaining their rendered nodes.
     const filteredEntries =
       openapiMode === 'schema' && !isArray
         ? rawEntries.filter(
@@ -260,7 +239,6 @@ export const JsonNode = memo(
           )
         : rawEntries;
 
-    // For array schemas, hoist items.properties as direct children
     const hoistedItemsEntries = (() => {
       if (!isArraySchema) return [];
       const items = (value as Record<string, unknown>).items;
@@ -273,10 +251,9 @@ export const JsonNode = memo(
       return [];
     })();
 
-    // Combine filtered entries with hoisted items properties
     const combinedEntries = [...filteredEntries, ...hoistedItemsEntries];
 
-    // In schema mode, sort entries: primitives first, then objects/arrays
+    // Primitives sort before objects and arrays.
     const entries =
       openapiMode === 'schema' && !isArray
         ? [...combinedEntries].sort(([, a], [, b]) => {
@@ -287,18 +264,15 @@ export const JsonNode = memo(
           })
         : filteredEntries;
 
-    // Append synthetic dictionary entry for additionalProperties (renders as [key]: <value type>)
     if (additionalPropsSchema) {
       entries.push(['[key]', additionalPropsSchema] as [string, unknown]);
     }
 
-    // In schema mode, compute the count of hoisted properties (what users see as children)
+    // Counts the children a reader actually sees.
     const schemaPropertiesCount = (() => {
       if (openapiMode !== 'schema' || isArray) return entries.length;
       const obj = value as Record<string, unknown>;
-      // For array schemas, count items.properties
       if (isArraySchema) return hoistedItemsEntries.length;
-      // For object schemas, count properties
       if (obj.properties && typeof obj.properties === 'object') return Object.keys(obj.properties).length;
       return entries.length;
     })();
@@ -311,9 +285,8 @@ export const JsonNode = memo(
     const hasNestedObjects =
       openapiMode === 'schema' && !isArray
         ? entries.some(([, val]) => val !== null && typeof val === 'object' && !Array.isArray(val))
-        : true; // Non-schema mode or arrays: always expandable
+        : true;
 
-    // In schema mode, brackets are hidden via Tailwind group-data selector
     const bracketClass = `font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`;
 
     if (isEmpty) {
@@ -360,14 +333,11 @@ export const JsonNode = memo(
       );
     }
 
-    // Count search matches in collapsed node (to show indicator with count)
     const hiddenMatchCount = !isExpanded && searchText ? countSearchMatchesInValue(value, searchText) : 0;
 
-    // In schema mode, objects without nested object children are not expandable
     const isExpandable = hasNestedObjects;
 
-    // Should hide the expand header (for flattened nodes or root in schema mode)
-    // Items nodes remain visible to show the array item structure.
+    // Items nodes keep their header so the array item structure stays visible.
     const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
     return (
@@ -381,10 +351,8 @@ export const JsonNode = memo(
               isExpandable
                 ? () => {
                     if (!isExpanded && expandChildrenDepth > 1) {
-                      // When expanding, cascade to children
                       setChildCascadeDepth(expandChildrenDepth - 1);
                     } else {
-                      // When collapsing, reset cascade
                       setChildCascadeDepth(0);
                     }
                     setIsExpanded(!isExpanded);
@@ -451,7 +419,7 @@ export const JsonNode = memo(
     if (prev.depth !== next.depth) return false;
     if (prev.visualDepth !== next.visualDepth) return false;
     if (prev.cascadeDepth !== next.cascadeDepth) return false;
-    // Shallow compare path arrays by value to avoid new-reference re-renders
+    // Compare path arrays by value so a new reference does not re-render.
     if (prev.path.length !== next.path.length) return false;
     for (let i = 0; i < prev.path.length; i++) {
       if (prev.path[i] !== next.path[i]) return false;

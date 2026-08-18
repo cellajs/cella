@@ -3,7 +3,6 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-/** Renders the action and filter toolbar for the pending memberships table. */
 export function PendingMembershipsTableBar({ queryKey }: { queryKey: QueryKey }) {
   const total = useListQueryTotal(queryKey);
 

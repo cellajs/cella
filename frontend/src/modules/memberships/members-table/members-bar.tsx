@@ -32,7 +32,6 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
-/** Renders the action and filter toolbar for the members table. */
 export function MembersTableBar({
   channel,
   selected,
@@ -56,18 +55,14 @@ export function MembersTableBar({
   const { q, role, order, sort } = searchVars;
 
   const isFiltered = role !== undefined || !!q;
-  // Managing members is a channel-scoped affordance (not a per-row question), and the enriched
-  // The entity has no `createdBy` for resolving `'own'`, so require an unconditional grant.
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
   const entityType = channel.entityType;
 
-  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
   };
 
-  // Clear selected rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as MembersRouteSearchParams['role']) });
@@ -141,7 +136,6 @@ export function MembersTableBar({
   return (
     <>
       <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 48}>
-        {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {!isFiltered && canUpdate && (
@@ -172,10 +166,8 @@ export function MembersTableBar({
           </FilterBarFilters>
         </TableFilterBar>
 
-        {/* Columns view dropdown */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-        {/* Export */}
         {!isSheet && (
           <Export
             className="max-lg:hidden"
@@ -186,11 +178,9 @@ export function MembersTableBar({
           />
         )}
 
-        {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
       </TableBarContainer>
 
-      {/* Floating actions for the current selection */}
       <SelectionActionBar count={selected.length} onClear={clearSelection}>
         <TableBarButton
           ref={deleteButtonRef}
@@ -201,7 +191,6 @@ export function MembersTableBar({
         />
       </SelectionActionBar>
 
-      {/* Container ref to embed dialog */}
       <div ref={inviteContainerRef} className="empty:hidden" />
     </>
   );

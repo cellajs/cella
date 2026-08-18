@@ -2,16 +2,10 @@ import { faker } from '@faker-js/faker';
 import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import type { RequestModel } from '#/modules/requests/requests-db';
 
-/** Response type for request schema (excludes tokenId, adds wasInvited) */
 export interface RequestResponse extends Omit<RequestModel, 'tokenId'> {
   wasInvited: boolean;
 }
 
-/**
- * Generates a mock request with all fields populated.
- * Uses deterministic seeding - same key produces same data.
- * Used for DB seeding, tests, and API response examples.
- */
 export const mockRequest = (key = 'request:default'): RequestModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
@@ -22,7 +16,6 @@ export const mockRequest = (key = 'request:default'): RequestModel =>
     tokenId: null,
   }));
 
-/** Request wire response excludes tokenId and includes invitation state. */
 export const mockRequestResponse = (key = 'request:default'): RequestResponse => {
   const { tokenId: _, ...request } = mockRequest(key);
   return {

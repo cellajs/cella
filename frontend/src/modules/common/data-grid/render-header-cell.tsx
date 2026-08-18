@@ -1,7 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import type { RenderHeaderCellProps } from './types';
 
-/** Renders header cell. */
 export function renderHeaderCell<R, SR>({ column, sortDirection }: RenderHeaderCellProps<R, SR>) {
   // Native tooltip so a truncated header stays readable on hover; only strings are valid title text.
   const title = typeof column.name === 'string' ? column.name : undefined;

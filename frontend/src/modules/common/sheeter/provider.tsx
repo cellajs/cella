@@ -14,14 +14,12 @@ import { getRouter } from '~/routes/-router-instance';
 export function Sheeter() {
   const isMobile = useBreakpointBelow('sm');
   const sheets = useSheeter((state) => state.sheets);
-  // Mode string used in keys to force clean remount when crossing breakpoint,
-  // ensuring overlays are properly destroyed and recreated
+  // Part of the element keys, so crossing the breakpoint remounts the overlay
   const mode = isMobile ? 'drawer' : 'sheet';
   const { lockUI, unlockUI } = useUIStore();
 
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
 
-  // Lock UI when sheets are open
   useEffect(() => {
     if (sheets.length > 0) {
       lockUI('sheeter');
@@ -29,7 +27,6 @@ export function Sheeter() {
     }
   }, [sheets.length > 0]);
 
-  // Handle route changes (respects nav menu keepOpen preference)
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
@@ -43,7 +40,6 @@ export function Sheeter() {
         return;
       }
 
-      // Keep nav-sheet open, close others
       for (const sheet of sheetsToClose.filter((s) => s.id !== 'nav-sheet')) {
         useSheeter.getState().remove(sheet.id, { isCleanup: true });
       }

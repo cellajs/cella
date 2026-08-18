@@ -9,69 +9,41 @@ import type { MeUser } from '~/modules/me/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { placementOverrides } from '~/placement-config';
 
-/**
- * Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via
- * `staticData.navTab`; tools extend it with a `slot` and a renderer.
- */
+/** Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via `staticData.navTab`. */
 export interface PlacementDescriptor {
   /** Stable id: anchors, tab ids, stored config references, and React keys derive from it. */
   id: string;
-  /** i18n key for the tab or card label. */
   label: TKey;
   /** Optional resource i18n key interpolated into the label. */
   resource?: TKey;
-  /** Sort position within the slot (lower first; each slot documents its default). */
+  /** Sort position, lower first. Settings slots use 10/20 for built-ins, 90 for the danger zone, 50 by default. */
   order?: number;
   /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */
   requires?: string;
-  /**
-   * Context-role pairs (e.g. 'organization.admin', 'course.staff') that may see this placement;
-   * hidden unless the consumer passes a matching held pair. A UI visibility condition only,
-   * never data authorization. Prefer `requires`: capability grants already inherit down the
-   * ancestor chain, so declare `visibleTo` only when the audience is a role, not a capability.
-   */
+  /** Context-role pairs (e.g. 'course.staff') that may see this placement. A UI condition, never data authorization. */
   visibleTo?: ContextRole[];
-  /**
-   * Locked placements cannot be hidden by channel-stored config (reorder still works); app
-   * overrides in code may still hide them, since code layers are reviewed decisions.
-   */
+  /** Channel-stored config cannot hide a locked placement (reorder still works); app overrides in code still can. */
   locked?: boolean;
 }
 
-/**
- * Render context per channel type, shared by that channel's `settings` and `tabs` slots. Apps
- * augment this interface (via `declare module '~/lib/placements'`) to type their channels' slots
- * precisely; unlisted channel types fall back to {@link EnrichedChannel}.
- */
+/** Render context per channel type, augmented by apps via `declare module '~/lib/placements'`. */
 export interface ChannelEntityByType {
   organization: EnrichedOrganization;
 }
 
-/**
- * Render context for a channel type's slots: always at least the enriched channel base,
- * intersected with the app-declared type from {@link ChannelEntityByType} so generic channel
- * components can read base fields while concrete slots stay precisely typed.
- */
+/** Render context for a channel type's slots: the enriched channel base intersected with its app-declared type. */
 export type ChannelEntityContext<C extends ChannelEntityType> = EnrichedChannel &
   (C extends keyof ChannelEntityByType ? ChannelEntityByType[C] : unknown);
 
-/** The channel settings slot family: one entry per channel type, context is its enriched entity. */
 type ChannelSettingsSlotContexts = {
   [C in ChannelEntityType as `${C}.settings`]: ChannelEntityContext<C>;
 };
 
-/** The channel tabs slot family: one entry per channel type, context is its enriched entity. */
 type ChannelTabsSlotContexts = {
   [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C>;
 };
 
-/**
- * The slot map: every slot id a tool can be placed into, mapped to the context its `render`
- * receives. The slot id names the surface; this map is the single place binding surface to
- * context. New slot families add entries here (and apps could augment via module declaration).
- * A slot's presentation (stacked sections vs a tab bar) is the consumer's choice, not the tool's:
- * one tool shape feeds settings sections, channel tabs, and the non-entity system tab bar alike.
- */
+/** Every slot id a tool can be placed into, mapped to the context its `render` receives. */
 export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSlotContexts {
   /** The current user's account settings page (the consumer passes no grants or pairs). */
   'account.settings': MeUser;
@@ -81,29 +53,17 @@ export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSl
   'system.tabs': undefined;
 }
 
-/** Every slot id a frontend module can place tools into. */
 export type Slot = keyof SlotContexts & string;
 
-/**
- * A tool placed into one slot: descriptor plus a renderer receiving that slot's context.
- * `render` returns the slot's full content unit (a card for settings slots; use `ToolCard` for
- * the standard look) and must lazy-load heavy UI. Settings slots sort built-ins 10/20, danger
- * zone 90, module tools default 50.
- */
+/** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */
 export type ToolFor<S extends Slot> = PlacementDescriptor & {
   slot: S;
-  /** Renders the tool for the slot's context. */
   render: (context: SlotContexts[S]) => ReactNode;
 };
 
-/** Union of tool shapes a frontend module can declare under `tools`, discriminated by `slot`. */
 export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 
-/**
- * App adjustment to a declared placement or nav tab (see `~/placement-config`, a pinned file).
- * Overrides only hide and reorder; changing who sees a tool means declaring the tool differently
- * in its module.
- */
+/** App adjustment to a declared placement or nav tab (see `~/placement-config`), limited to hiding and reordering. */
 export interface PlacementOverride {
   /** Drops the placement from its host (applies even to `locked` placements: this layer is code). */
   hidden?: boolean;
@@ -149,21 +109,12 @@ export function getTools<S extends Slot>(slot: S): (ToolFor<S> & { order: number
   return registered.map((tool) => ({ ...tool, order: tool.order ?? 50 })) as (ToolFor<S> & { order: number })[];
 }
 
-/**
- * Registered tool descriptors for a slot given at runtime (render context erased, `order` left
- * raw so each surface applies its own default). Navigation and arrangement consumers use this
- * when the slot id is dynamic (e.g. a tab bar resolving a surface's `tabsSlot`); rendering still
- * goes through {@link getTools} with the statically known slot.
- */
+/** Descriptors for a slot id known only at runtime; render context erased and `order` left raw. */
 export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot: string })[] {
   return bySlot.get(slot) ?? [];
 }
 
-/**
- * Orders a slot's placements against channel-stored arrangement: stored ids come first in their
- * stored sequence, unlisted placements append by their declared `order`, and stored ids with no
- * matching placement are ignored (fail-closed reconciliation of code registry vs stored config).
- */
+/** Stored ids first in stored order, unlisted placements appended by declared `order`, unmatched stored ids ignored. */
 export function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(
   items: T[],
   slotConfig?: SlotToolsConfig,
@@ -193,13 +144,7 @@ export interface ResolvePlacementOptions {
   overrides?: PlacementOverrides;
 }
 
-/**
- * Whether the arrangement layers alone drop a placement from its host: an app override or the
- * channel-stored hidden list (`locked` placements ignore the latter). Grant (`requires`) and
- * context-role (`visibleTo`) gating are viewer conditions, not arrangement, and are deliberately
- * excluded. This answers "is this placement disabled on the surface", e.g. to forward away from
- * a hidden tab a viewer navigated to directly.
- */
+/** Hiding only: app override or channel-stored list (`locked` ignores the latter); no `requires`/`visibleTo` gating. */
 export function isPlacementHidden(
   host: string,
   item: PlacementDescriptor,
@@ -210,11 +155,7 @@ export function isPlacementHidden(
   return !item.locked && (slotConfig?.hidden ?? []).includes(item.id);
 }
 
-/**
- * Resolves a host's final placement list: applies app overrides, channel-stored hiding, grant
- * (`requires`) and context-role (`visibleTo`) gating, then channel-stored ordering with the
- * stable `order` sort as fallback. `locked` placements ignore channel-stored hiding only.
- */
+/** Applies app overrides, channel-stored hiding (`locked` immune), `requires`/`visibleTo`, then stored ordering. */
 export function resolvePlacementList<T extends PlacementDescriptor & { order: number }>(
   host: string,
   items: T[],

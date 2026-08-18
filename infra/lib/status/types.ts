@@ -1,25 +1,12 @@
 import type { StackState } from '../stack/bootstrap-stack-state';
 
-/**
- * Public JSON contract for `infra status`. Apps, agents, and CI may depend on
- * this shape; a breaking change bumps `STATUS_SCHEMA_VERSION`. See the schema
- * section in infra/README.md.
- */
+/** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
 export const STATUS_SCHEMA_VERSION = 1;
 
-/**
- * A check's verdict. `unknown` specifically means "could not be evaluated"
- * (usually a missing credential), never "evaluated and inconclusive": a check
- * that ran always resolves to one of the other four.
- */
+/** A check's verdict. `unknown` means "could not be evaluated", usually a missing credential; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
 
-/**
- * Credential tier a check needs to run. `none` reads local files, env-var
- * presence, or public HTTP. `scaleway` needs an API key with state-bucket +
- * Secret Manager read (any operator OR CI deploy key satisfies it). A
- * `scaleway` check with no key available reports `unknown`, never `error`.
- */
+/** Credential tier a check needs. `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket and Secret Manager read, and reports `unknown` (never `error`) when no key is available. */
 export type CredentialTier = 'none' | 'scaleway';
 
 /** A runnable remediation: a one-line description and the exact command. */
@@ -60,8 +47,7 @@ export interface LockFacts {
   acquiredAt?: string;
   /** ISO expiry. */
   expiresAt?: string;
-  /** True when `expiresAt` is in the past (breakable). The gatherer computes
-   *  this against the wall clock so evaluation stays pure. */
+  /** True when `expiresAt` is in the past, so the lock is breakable. Computed by the gatherer against the wall clock so evaluation stays pure. */
   stale?: boolean;
 }
 
@@ -81,12 +67,7 @@ export interface ScalewayFacts {
   rollout?: RolloutRowFact[];
 }
 
-/**
- * Everything a provider's `gather` may draw on: the resolved stack context,
- * credentials, and the memoized control-store read (so the state and live
- * providers share one S3 round-trip). Built once per report by
- * `tasks/status.ts`.
- */
+/** Everything a provider's `gather` may draw on: stack context, credentials, and the memoized control-store read that lets the state and live providers share one S3 round-trip. */
 export interface ProbeSession {
   mode: string;
   appConfig: import('../../config/engine-config').EngineConfig;
@@ -104,12 +85,7 @@ export interface ProbeSession {
   scalewayFacts(): Promise<ScalewayFacts>;
 }
 
-/**
- * One status domain: `gather` does best-effort I/O (undefined = could not
- * probe), `evaluate` turns facts into checks and never throws, so a
- * partially-credentialed run still produces a complete report. Providers are
- * registered in `registry.ts`; registry order is report order.
- */
+/** One status domain: `gather` does best-effort I/O (undefined = could not probe) and `evaluate` never throws, so a partially-credentialed run still yields a complete report. Registry order is report order. */
 export interface StatusProvider<F> {
   domain: string;
   gather(session: ProbeSession): Promise<F | undefined>;

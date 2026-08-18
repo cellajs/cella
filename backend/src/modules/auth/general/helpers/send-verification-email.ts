@@ -18,13 +18,9 @@ interface Props {
   redirectPath?: string;
 }
 
-/**
- * Send a verification email to user.
- */
 export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
-  // User not found
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
@@ -32,19 +28,16 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
     .from(emailsTable)
     .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
 
-  // email verified
   if (emailInUse) {
     throw new AppError(422, 'email_already_verified', 'warn', { entityType: 'user' });
   }
 
-  // Delete previous token
   await deleteVerificationTokens(user.id, 'email-verification');
 
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
   const email = user.email;
 
-  // Create new token
   const [tokenRecord] = await db
     .insert(tokensTable)
     .values({
@@ -65,16 +58,13 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
       .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, user.id), eq(emailsTable.verified, false)));
   }
 
-  // Send email
   const lng = user.language;
 
-  // Create verification link. Concatenate onto backendAuthUrl (which already ends in /auth) so the
-  // /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
+  // Concatenate onto backendAuthUrl (which already ends in /auth) so the /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
   const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
 
   if (redirectPath) verificationURL.searchParams.set('redirect', redirectPath);
 
-  // Prepare & send email
   const staticProps = { verificationLink: verificationURL.toString(), name: user.name };
   const recipients = [{ email, lng }];
 

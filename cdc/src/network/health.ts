@@ -50,7 +50,7 @@ export function getHealthResponse(): {
   if (replStatus === 'stopped') status = 'unhealthy';
   else if (replStatus === 'paused' || !wsConnected) status = 'degraded';
 
-  // Check WAL lag threshold for unhealthy status
+  // WAL lag threshold for unhealthy status.
   const lagBytes = metrics.lagBytes;
   if (lagBytes !== null && lagBytes >= unhealthyBytes && status !== 'unhealthy') {
     status = 'unhealthy';

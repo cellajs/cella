@@ -42,10 +42,7 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
   };
 }
 
-/**
- * Get upload status for an attachment, reactively.
- * Returns the default ("uploaded") info while no attachmentId is provided or no blob exists.
- */
+/** Reactive upload status; falls back to the default "uploaded" info with no id or no blob. */
 export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
   const blobs = useLiveQuery(
     () =>

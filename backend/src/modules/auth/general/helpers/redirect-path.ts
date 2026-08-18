@@ -1,20 +1,14 @@
 import { appConfig } from 'shared';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 
-/**
- * Returns the appropriate redirect path after authentication.
- * New users (never signed in) are sent to the welcome/onboarding page.
- */
+/** New users (never signed in) are sent to the welcome page. */
 export const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
   return user.lastSignInAt ? appConfig.defaultRedirectPath : appConfig.welcomeRedirectPath;
 };
 
 /**
- * Resolves the final post-auth redirect path for all sign-in strategies.
- * Order: MFA challenge (carrying the redirect along) → validated explicit redirect → welcome/default.
- *
- * An explicit redirect wins over the welcome page. Untrusted input is re-validated here so callers
- * can pass stored token values or cookie payloads directly.
+ * Resolves the final post-auth path: MFA challenge (carrying the redirect along), then validated explicit redirect, then welcome or default.
+ * Untrusted input is re-validated here, so callers can pass stored token values or cookie payloads directly.
  */
 export const resolvePostAuthRedirectPath = (
   user: { lastSignInAt: string | null },
@@ -29,8 +23,7 @@ export const resolvePostAuthRedirectPath = (
 
   if (!explicitRedirect) return getPostAuthRedirectPath(user);
 
-  // A deep link targeting home would still be bounced to welcome by the frontend onboarding
-  // guard; mark it to skip that since the redirect was explicit.
+  // A deep link targeting home would be bounced to welcome by the frontend onboarding guard; mark it to skip that.
   const resolved = new URL(explicitRedirect, appConfig.frontendUrl);
   if (resolved.pathname === appConfig.defaultRedirectPath) {
     resolved.searchParams.set('skipWelcome', 'true');

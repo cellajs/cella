@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { trustedMediaDomains, validateBlockMediaUrls } from '#/utils/validate-block-urls';
 
-// Helper to create a minimal BlockNote block JSON string
 const makeBlocks = (...blocks: Record<string, unknown>[]) => JSON.stringify(blocks);
 
 const cdnImage = (url: string) => ({
@@ -100,7 +99,7 @@ describe('validateBlockMediaUrls', () => {
       expect(result).toEqual({ valid: true });
     });
 
-    it('should ignore inline links (href) — only media blocks are checked', () => {
+    it('should ignore inline links (href): only media blocks are checked', () => {
       const result = validateBlockMediaUrls(makeBlocks(linkParagraph('https://evil.com/phishing')));
       expect(result).toEqual({ valid: true });
     });

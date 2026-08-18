@@ -21,12 +21,8 @@ export type LogContext = {
 const logContextStorage = new AsyncLocalStorage<LogContext>();
 
 /**
- * Run `fn` with ambient log context: the log facade binds tenant/user/org/request ids
- * from it without call sites passing ctx. Installed per-request by contextMiddleware;
- * worker jobs can wrap their execution with a synthetic context.
- *
- * Ambient context follows await chains, not event emitters or timers. Code invoked
- * from detached callbacks logs without ids, same as code outside any request.
+ * Ambient ids for the log facade, installed per request by contextMiddleware. It follows await chains,
+ * not event emitters or timers, so code invoked from detached callbacks logs without ids.
  */
 export const runWithLogContext = <T>(ctx: LogContext, fn: () => T): T => logContextStorage.run(ctx, fn);
 
@@ -44,8 +40,7 @@ const extractBase = (ctx: LogContext) => {
 const logAt =
   (severity: Severity) =>
   (msg: string, meta?: LogMeta): void => {
-    // Reads the LIVE ctx at log time, so vars set by guards after the context
-    // middleware (userId, tenantId, organizationId) are picked up.
+    // Read at log time, so ids set by guards after the context middleware are picked up.
     const ctx = logContextStorage.getStore() ?? null;
 
     // Always log errors; for everything else, suppress bench traffic.

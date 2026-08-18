@@ -30,9 +30,6 @@ const initial: State = {
   magicLinkMode: 'signin',
 };
 
-/**
- * Simple authenticate store for managing email and step state.
- */
 export const useAuthStore = create<State & Actions>((set) => ({
   ...initial,
   setStep: (step, email) => set(() => ({ step, email })),

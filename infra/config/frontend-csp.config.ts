@@ -12,12 +12,10 @@ const servicePublicUrl = (slug: string): string => {
   return url;
 };
 
-// Same-origin services collapse into connect-src 'self': emit an origin only
-// when it differs from the app origin (an app still on per-service subdomains).
+// Same-origin services collapse into connect-src 'self', so emit an origin only when it differs from the app origin.
 const appOrigin = new URL(appConfig.frontendUrl).origin;
 const originUnlessSelf = (url: string): string => {
-  // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the
-  // app origin are covered by 'self' too.
+  // ws(s):// normalizes to http(s) for the comparison; WebSocket URLs on the app origin are covered by 'self'.
   const origin = new URL(url.replace(/^ws/, 'http')).origin;
   return origin === appOrigin ? '' : new URL(url).origin;
 };

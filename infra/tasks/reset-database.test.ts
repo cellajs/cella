@@ -149,7 +149,7 @@ describe('sequenceDatabaseReset', () => {
     expect((error as Error).message).toMatch(/quota exceeded/);
   });
 
-  it('treats a failed re-grant as unrecoverable — an ungranted database is an outage', async () => {
+  it('treats a failed re-grant as unrecoverable: an ungranted database is an outage', async () => {
     const { plan } = makePlan({
       setPrivilege: vi.fn(async (_i: string, _d: string, user: string) => {
         if (user === 'runtime_role') throw new Error('boom');
@@ -161,7 +161,7 @@ describe('sequenceDatabaseReset', () => {
     expect((error as ResetIrrecoverableError).backupId).toBe('bk-1');
   });
 
-  it('keeps a failed delete a plain error — nothing was destroyed', async () => {
+  it('keeps a failed delete a plain error: nothing was destroyed', async () => {
     const { plan } = makePlan({
       deleteDatabase: vi.fn(async () => {
         throw new Error('403 forbidden');

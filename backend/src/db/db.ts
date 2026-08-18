@@ -17,12 +17,7 @@ const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'produc
 const connect = (connectionString: string, max: number): PgDB =>
   createPgConnection(connectionString, { max, sslCa, logger: dbConfig.logger });
 
-/**
- * Stand-in for `baseDb` when `NODB` is set. Every property access throws with the accessed
- * name, so a code path that reaches the database under `NODB` names itself in the stack trace.
- * Capability probes are exempt: `prepared.ts` reads `select` to decide whether prepared
- * statements can be built, and `dbPoolPressure` reads `$client` to sample the pool.
- */
+/** Probes exempt from the NODB throw: `prepared.ts` reads `select`, `dbPoolPressure` reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
 
 const createNoDbStub = (): DB =>
@@ -51,13 +46,9 @@ const connections = initConnections();
 
 export const baseDb: DB = connections.db;
 
-/**
- * Runtime pool pressure: waiting clients relative to pool size (0 = idle, ≥1 = queueing).
- * Feeds the sync spread window so the notification fan-out decelerates under DB load.
- */
+/** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). Feeds the sync spread window. */
 export const dbPoolPressure = (): number => {
-  // `$client` is a pg Pool or Client; only the Pool carries these counters, so both are read
-  // defensively. Absent under NODB, where the client probe yields undefined.
+  // Only a pg Pool carries these counters; a Client or the NODB probe yields undefined.
   const client: unknown = baseDb.$client;
   if (typeof client !== 'object' || client === null) return 0;
   const { waitingCount, options } = client as { waitingCount?: unknown; options?: { max?: unknown } };
@@ -68,5 +59,4 @@ export const dbPoolPressure = (): number => {
 export const migrationDb: PgDB | undefined = connections.migrationDb;
 export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;
 
-/** Admin connection for seed scripts */
 export const seedDb: DB = (connections.adminDb ?? connections.db) as DB;

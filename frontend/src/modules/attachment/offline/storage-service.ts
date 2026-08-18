@@ -14,20 +14,10 @@ const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
 const previewFallbackChain: BlobVariant[] = ['preview', 'original', 'raw'];
 const thumbnailFallbackChain: BlobVariant[] = ['thumbnail', 'preview', 'original', 'raw'];
 
-/**
- * Attachment storage service with local-first capabilities.
- */
 class AttachmentStorageService {
-  /**
-   * Stable blob URLs for the shared render path (BlockNote), keyed by attachment id + variant.
-   * The service owns their lifecycle: an entry is revoked and dropped when the attachment's blobs
-   * change (store/evict/delete), so consumers must not revoke these URLs themselves.
-   */
+  /** Blob URLs keyed by attachment id + variant; the service revokes them when the attachment's blobs change, so consumers must not. */
   private sharedBlobUrls = new Map<string, string>();
 
-  /**
-   * Get a blob by attachment ID and variant, with optional fallback chain.
-   */
   private async getBlobWithVariant(
     attachmentId: string,
     variant: BlobVariant,
@@ -51,10 +41,6 @@ class AttachmentStorageService {
     return null;
   }
 
-  /**
-   * Create a blob URL for a specific variant with fallback.
-   * Returns the URL and which variant was actually used.
-   */
   async createBlobUrlWithVariant(
     attachmentId: string,
     variant: BlobVariant,
@@ -67,10 +53,7 @@ class AttachmentStorageService {
     return { url, actualVariant: result.actualVariant };
   }
 
-  /**
-   * Returns a cached blob URL that remains stable until attachment data changes.
-   * The service owns URL revocation.
-   */
+  /** Cached blob URL, stable until the attachment's blobs change; the service owns revocation. */
   async getSharedBlobUrl(attachmentId: string, variant: BlobVariant, useFallback = true): Promise<string | null> {
     const key = `${attachmentId}::${variant}::${useFallback ? 'fb' : 'nf'}`;
     const cached = this.sharedBlobUrls.get(key);
@@ -98,9 +81,6 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Store a downloaded blob with variant.
-   */
   async storeDownloadBlobWithVariant(
     attachmentId: string,
     variant: BlobVariant,
@@ -125,7 +105,7 @@ class AttachmentStorageService {
 
     try {
       await attachmentsDb.blobs.put(record);
-      // A better/different variant is now available: drop stale shared URLs so the next resolve picks it up.
+      // Drop stale shared URLs so the next resolve picks up this variant.
       this.invalidateSharedBlobUrls(attachmentId);
       return record;
     } catch (error) {
@@ -134,27 +114,22 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Evict raw blob after processed version is available.
-   * Call this when 'original' variant is successfully downloaded.
-   */
+  /** Evicts the raw blob once a processed variant is stored. */
   async evictRawBlob(attachmentId: string): Promise<boolean> {
     const rawKey = makeBlobKey(attachmentId, 'raw');
     try {
-      // Never evict raw unless a durable variant ('original'/'converted') is actually persisted.
-      // If an 'original' store raced or rolled back, dropping raw could leave a no-cloud-key
-      // resource with no local blob at all, making it permanently unresolvable.
+      // Never evict raw without a durable variant stored: a resource with no cloud key would become unresolvable.
       const hasDurable =
         (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
       if (!hasDurable) {
-        console.debug(`[AttachmentStorage] Skipped raw eviction for ${attachmentId} — no durable variant stored`);
+        console.debug(`[AttachmentStorage] Skipped raw eviction for ${attachmentId}: no durable variant stored`);
         return false;
       }
 
       const exists = await attachmentsDb.blobs.get(rawKey);
       if (exists) {
         await attachmentsDb.blobs.delete(rawKey);
-        // A shared URL may have fallen back to the now-removed raw blob; drop it so the next resolve re-picks.
+        // A shared URL may have fallen back to the removed raw blob.
         this.invalidateSharedBlobUrls(attachmentId);
         console.debug(`[AttachmentStorage] Evicted raw blob for ${attachmentId}`);
         return true;
@@ -166,10 +141,7 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Check if a specific variant of an attachment exists locally.
-   * Cheap: single primary-key lookup on the composite key.
-   */
+  /** Single primary-key lookup on the composite key. */
   async hasVariant(attachmentId: string, variant: BlobVariant): Promise<boolean> {
     try {
       const key = makeBlobKey(attachmentId, variant);
@@ -180,9 +152,6 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Get all variants stored for an attachment.
-   */
   async getStoredVariants(attachmentId: string): Promise<BlobVariant[]> {
     try {
       const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
@@ -200,7 +169,6 @@ class AttachmentStorageService {
     uploadContext?: UploadContext,
     attachmentId?: string,
   ): Promise<AttachmentBlob> {
-    // Validate file has blob data
     if (!file.data || !(file.data instanceof Blob)) {
       throw new Error('File data must be a Blob');
     }
@@ -208,7 +176,7 @@ class AttachmentStorageService {
     const blobData = file.data;
     const size = file.size ?? blobData.size ?? 0;
 
-    // Use provided attachmentId or fall back to file.id for temp storage
+    // Fall back to file.id while no attachment id exists yet.
     const actualAttachmentId = attachmentId || file.id;
     const key = makeBlobKey(actualAttachmentId, 'raw');
 
@@ -240,9 +208,7 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Get a blob by composite key (id:variant format).
-   */
+  /** Get a blob by composite key (`id:variant`). */
   private async getBlob(id: string): Promise<AttachmentBlob | undefined> {
     try {
       return await attachmentsDb.blobs.get(id);
@@ -252,12 +218,9 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Delete blobs by attachment IDs (deletes all variants).
-   */
+  /** Delete every variant blob of each attachment id. */
   async deleteBlobs(ids: string[]): Promise<void> {
     try {
-      // Delete all variants for each attachment ID
       for (const id of ids) {
         await attachmentsDb.blobs.where('attachmentId').equals(id).delete();
         this.invalidateSharedBlobUrls(id);
@@ -268,15 +231,11 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Update upload status for a blob.
-   */
   async updateUploadStatus(id: string, status: UploadStatus, error?: string): Promise<void> {
     try {
       const updates: Partial<AttachmentBlob> = { uploadStatus: status };
 
-      // Every failure bumps the attempt count and schedules the next retry slot, error message
-      // or not; the retry selector (upload-service) reads exactly these fields.
+      // Every failure bumps the attempt count and schedules the next retry slot, which the upload-service retry selector reads.
       if (status === 'failed') {
         const blob = await attachmentsDb.blobs.get(id);
         if (blob) {
@@ -284,7 +243,6 @@ class AttachmentStorageService {
           updates.uploadAttempts = attempts + 1;
           updates.lastError = error ?? blob.lastError ?? 'Upload failed';
 
-          // Exponential backoff using config
           const config = appConfig.localBlobStorage;
           const delays = config?.uploadRetryDelays ?? [60000, 300000, 900000];
           const delay = delays[Math.min(attempts, delays.length - 1)];
@@ -304,16 +262,10 @@ class AttachmentStorageService {
     }
   }
 
-  /**
-   * Mark upload as uploaded (successfully uploaded to cloud).
-   */
   async markUploaded(id: string): Promise<void> {
     await this.updateUploadStatus(id, 'uploaded');
   }
 
-  /**
-   * Mark upload as failed with error.
-   */
   async markFailed(id: string, error: string): Promise<void> {
     await this.updateUploadStatus(id, 'failed', error);
   }

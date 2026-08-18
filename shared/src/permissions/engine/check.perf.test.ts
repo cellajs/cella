@@ -4,7 +4,6 @@ import { configurePolicyMatrix } from '../../testing/policies.ts';
 import { getAllDecisions } from './check.ts';
 import type { SubjectForPermission } from './types.ts';
 
-/** Minimal test membership matching MembershipBaseModel structure */
 type TestMembership = {
   id: string;
   tenantId: string;
@@ -56,9 +55,7 @@ const createSubjects = (count: number): SubjectForPermission[] =>
     channelIds: { organization: `org${i % 20}` },
   }));
 
-/** Run function multiple times and return average execution time in ms */
 const measureAverage = (fn: () => void, runs = 10): number => {
-  // Warmup
   for (let i = 0; i < 3; i++) fn();
 
   const times: number[] = [];
@@ -84,7 +81,6 @@ describe('Permission batch performance', () => {
 
     console.info(`  Array of 100 entities: ${avgTime.toFixed(2)}ms average`);
 
-    // Absolute threshold: should be fast enough for real-time use
     expect(avgTime).toBeLessThan(10);
   });
 

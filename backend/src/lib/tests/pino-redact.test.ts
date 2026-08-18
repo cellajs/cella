@@ -4,10 +4,7 @@ import { redactedFields } from '#/lib/pino';
 
 const CENSOR = '[REDACTED]';
 
-/**
- * Build a pino logger that writes to an in-memory buffer using the real
- * `redactedFields` list, so we validate the exact redaction config used in production.
- */
+/** Pino logger writing to an in-memory buffer with the real `redactedFields`, so the production config is tested. */
 const collectLog = (obj: object): Record<string, unknown> => {
   const lines: string[] = [];
   const stream = { write: (line: string) => lines.push(line) };

@@ -45,7 +45,7 @@ function makeService(failures: number): LogicalReplicationService {
 
 const plugin = {} as PgoutputPlugin;
 
-describe('subscribeWithReconnect — replication slot lifecycle', () => {
+describe('subscribeWithReconnect: replication slot lifecycle', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     execute.mockReset();
@@ -122,7 +122,7 @@ function makeStaleService(failures: number): LogicalReplicationService {
   } as unknown as LogicalReplicationService;
 }
 
-describe('subscribeWithReconnect — stale-publication self-heal guards', () => {
+describe('subscribeWithReconnect: stale-publication self-heal guards', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     execute.mockReset();

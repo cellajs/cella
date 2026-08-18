@@ -15,7 +15,6 @@ function getScrollParent(node: HTMLElement) {
   return window;
 }
 
-// Passive event listeners are baseline in all supported browsers.
 const passiveArg = { passive: true } as const;
 
 type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
@@ -27,32 +26,20 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   enabled?: boolean;
   /** Hide the bar while scrolling down and reveal it while scrolling up. */
   hideWhenOutOfView?: boolean;
-  /**
-   * Classes for the zero-height sentinel that marks the bar's natural top. Use
-   * this for breathing-room margin (e.g. `my-2`) around the pin point.
-   */
+  /** Classes for the zero-height sentinel that marks the bar's natural top, e.g. `my-2` margin. */
   placeholderClassName?: string;
-  /**
-   * CSS custom property name to publish the bar's height to (on the parent element),
-   * e.g. `--sticky-stack-nav` for page tabs that lower sticky bars pin below.
-   */
+  /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
 };
 
 /**
- * Pins a header within its scroll container using CSS sticky positioning.
- * A sentinel observer drives styling state, and `offsetBottom` releases the bar before the
- * container edge. Tall sidebars should use plain sticky CSS.
- *
- * Stacking: the bar pins below the sticky layers above it, at the larger of
- * `--sticky-stack-top` (section bars, which fold the nav offset in) and
- * `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar publishing one of these
- * variables via `publishVar` never consumes that variable itself, since it inherits its
- * own published value from the parent it publishes on. Variable changes animate,
- * tracking the ancestor bar's show/hide transition.
+ * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
+ * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
+ * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
+ * publishes one of those variables never consumes it, since it would inherit its own value back
+ * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
  */
 const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
-/** Renders the sticky box component. */
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
@@ -70,12 +57,10 @@ export function StickyBox({
 
   const [stuck, setStuck] = useState(false);
   const [visible, setVisible] = useState(true);
-  // When set, the bar is docked near the container bottom (offsetBottom release)
-  // via `position: relative`, so it scrolls away with content.
+  // When set, the bar is docked near the container bottom via `position: relative` and scrolls away
   const [clampedTop, setClampedTop] = useState<number | null>(null);
 
-  // Source of truth for `data-sticky`: a zero-height sentinel at the bar's
-  // natural top. Once it scrolls past the pin line, the bar is considered stuck.
+  // `data-sticky` follows the sentinel: once it scrolls past the pin line the bar counts as stuck
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!enabled || !sentinel) {
@@ -120,9 +105,7 @@ export function StickyBox({
         );
         const stickyBottom = scrollTop + stackPx + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
-        // Relative offset from the bar's natural top, marked by the sentinel: at the release
-        // boundary this equals the stuck position exactly, so the mode switch is seamless
-        // regardless of parent padding or content preceding the bar.
+        // Offset from the sentinel: at the release boundary it equals the stuck position exactly
         const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
         const releasedTop = parentRect.bottom - offsetBottom - barHeight - naturalTop;
         setClampedTop(spaceBelow <= offsetBottom ? Math.max(0, releasedTop) : null);
@@ -178,13 +161,11 @@ export function StickyBox({
     return () => scrollParent.removeEventListener('scroll', onScroll);
   }, [hideWhenOutOfView, enabled, offsetTop]);
 
-  // Ensure visible again whenever the bar is back in its natural position.
   useEffect(() => {
     if (hideWhenOutOfView && !stuck) setVisible(true);
   }, [hideWhenOutOfView, stuck]);
 
-  // Publish the bar's height under `publishVar` on the parent, so dependent sticky
-  // stacks (section bars, card headers) can pin below this bar.
+  // Publish the height on the parent so dependent sticky bars can pin below this one
   useEffect(() => {
     const bar = barRef.current;
     const host = bar?.parentElement;
@@ -199,7 +180,6 @@ export function StickyBox({
     };
   }, [publishVar, enabled]);
 
-  // Disabled: render children in a plain div (no sentinel, no sticky).
   if (!enabled) {
     return (
       <div className={className} style={style} {...rest}>
@@ -208,9 +188,7 @@ export function StickyBox({
     );
   }
 
-  // `top` itself must never transition: the stack offset animates via the registered
-  // stack properties on their publishers, and a top transition here would also
-  // interpolate the stuck/released mode switch, parking the bar at stale offsets.
+  // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
   const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
   const stackExpr = consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
   const barStyle: React.CSSProperties = {
@@ -231,8 +209,7 @@ export function StickyBox({
     }
   }
 
-  // The bar is a near-direct child (only preceded by the sentinel) so its sticky
-  // containing block is the caller's parent, letting it travel the full content.
+  // Only the sentinel precedes the bar, so its sticky containing block is the caller's parent
   return (
     <>
       <div ref={sentinelRef} aria-hidden className={cn('pointer-events-none -mb-px h-px', placeholderClassName)} />

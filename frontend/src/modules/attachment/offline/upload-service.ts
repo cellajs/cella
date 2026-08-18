@@ -10,29 +10,21 @@ import { attachmentStorage } from '~/modules/attachment/offline/storage-service'
 import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
 import { getLocalUserDb } from '~/query/local-user-db';
 
-/**
- * Background service that uploads pending local blobs to cloud, periodically and on reconnect.
- * Headless Uppy + @uppy/transloadit: Tus resumable protocol, built-in backoff, lazy per-upload
- * token fetch (never expires mid-upload), and assembly-completion polling.
- */
+/** Uploads pending local blobs to cloud on a timer and on reconnect, through headless Uppy + Transloadit (Tus resumable, lazy per-upload token). */
 class AttachmentUploadService {
   private processing = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private onlineHandler: (() => void) | null = null;
 
-  /** Start the upload service. Listens for online events and polls periodically. */
   start(): void {
     this.onlineHandler = () => this.processPendingUploads();
     window.addEventListener('online', this.onlineHandler);
 
-    // Poll every 60 seconds
     this.intervalId = setInterval(() => this.processPendingUploads(), 60000);
 
-    // Initial upload attempt
     this.processPendingUploads();
   }
 
-  /** Stop the upload service. */
   stop(): void {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -44,7 +36,6 @@ class AttachmentUploadService {
     }
   }
 
-  /** Attempt to upload all pending blobs. */
   async processPendingUploads(): Promise<void> {
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
@@ -56,7 +47,6 @@ class AttachmentUploadService {
       const pending = await this.selectUploadCandidates();
       if (pending.length === 0) return;
 
-      // Group by organization for batch processing
       const byOrg = new Map<string, AttachmentBlob[]>();
       for (const blob of pending) {
         const existing = byOrg.get(blob.organizationId) || [];
@@ -83,7 +73,6 @@ class AttachmentUploadService {
     return candidates.filter((blob) => isUploadCandidate(blob, retryLimit, now));
   }
 
-  /** Check if cloud upload is available for an organization. */
   private async checkCloudAvailability(organizationId: string): Promise<boolean> {
     try {
       const token = await getUploadToken({
@@ -116,7 +105,6 @@ class AttachmentUploadService {
     }
   }
 
-  /** Upload a single blob using headless Uppy with lazy token fetching. */
   private async uploadBlob(blob: AttachmentBlob): Promise<void> {
     await attachmentStorage.updateUploadStatus(blob.id, 'uploading');
 

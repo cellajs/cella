@@ -1,10 +1,6 @@
 /**
- * Track the visual viewport and write how much of the layout viewport is hidden at the
- * bottom (on-screen keyboard, overlaying browser chrome in webviews, URL bar transitions)
- * to `--vv-bottom` on <html>. Fixed-to-bottom UI consumes it through `--bottom-inset`
- * (tailwind.css) so it stays visible when `position: fixed` and the visible viewport disagree.
- *
- * JS writes, CSS reads: no React state, no re-renders.
+ * Writes how much of the layout viewport is hidden at the bottom (on-screen keyboard, browser chrome, URL bar) to
+ * `--vv-bottom` on <html>. Fixed-to-bottom UI consumes it through `--bottom-inset` in tailwind.css.
  */
 export const initViewportObserver = () => {
   const viewport = window.visualViewport;

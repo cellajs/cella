@@ -4,7 +4,7 @@ import { withRlsTx } from '../../data/db';
 
 describe('6.2 Pool behavior', () => {
   it('withRlsTx releases connection back to pool even on error', async () => {
-    // Run 50 iterations: if pool leaks, it will hang (pool exhausted at 20)
+    // 50 iterations against a pool of 20: a leaked connection hangs the loop.
     for (let i = 0; i < 50; i++) {
       try {
         await withRlsTx('test-tenant', 'test-user', async (tx) => {
@@ -12,11 +12,10 @@ describe('6.2 Pool behavior', () => {
           await tx.execute(sql`SELECT 1`);
         });
       } catch {
-        // Expected for every 5th iteration
+        // Expected on every 5th iteration.
       }
     }
 
-    // Verify pool is still functional
     await withRlsTx('test-tenant', 'test-user', async (tx) => {
       const result = await tx.execute(sql`SELECT 1 AS ok`);
       expect(result.rows[0].ok).toBe(1);
@@ -71,8 +70,7 @@ describe('6.2 Pool behavior', () => {
       await tx.execute(sql`SELECT 1`);
     });
 
-    // `set_config(..., true)` is transaction-local: a fresh transaction on the same
-    // pool must not observe the previous transaction's tenant context.
+    // `set_config(..., true)` is transaction-local, so a fresh transaction on the same pool must not see the previous tenant context.
     await withRlsTx('other-tenant', 'other-user', async (tx) => {
       const res = await tx.execute(sql`SELECT current_setting('app.tenant_id') AS tid`);
       expect(res.rows[0].tid).toBe('other-tenant');

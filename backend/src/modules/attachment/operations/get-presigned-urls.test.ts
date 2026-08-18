@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthContext } from '#/core/context';
 
-// Mock the boundaries: RLS transaction passes through, DB query + signer + permission are stubbed.
+// Boundaries mocked: the RLS transaction passes through; DB query, signer and permission are stubbed.
 vi.mock('#/db/tenant-context', () => ({
   tenantRead: (ctx: AuthContext, fn: (c: AuthContext) => unknown) => fn(ctx),
 }));

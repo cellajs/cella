@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 
-// Single home for the Yjs auth token scheme: the backend signs, the relay verifies.
-// Format: base64url(JSON payload) + '.' + first 16 hex chars of HMAC-SHA256(payload).
+// The Yjs auth token scheme: the backend signs, the relay verifies. Format is
+// base64url(JSON payload) + '.' + the first 16 hex chars of HMAC-SHA256(payload).
 
 const DELIMITER = '.';
 const SIGNATURE_LENGTH = 16;
@@ -18,10 +18,9 @@ export const yjsTokenPayloadSchema = z.object({
 export type YjsTokenPayload = z.infer<typeof yjsTokenPayloadSchema>;
 
 /**
- * Discriminated verification outcome. The reason lets the caller log by severity:
- * `expired` is routine and self-healing (the 30-minute token lapses on a long-lived
- * editor socket; the client reconnects with a fresh one), while `bad_signature` and
- * `malformed` are genuine anomalies (secret drift, truncation, or tampering).
+ * The reason lets callers log by severity. `expired` is routine and self-healing: the 30-minute
+ * token lapses on a long-lived editor socket and the client reconnects with a fresh one.
+ * `bad_signature` and `malformed` mean secret drift, truncation or tampering.
  */
 export type VerifyYjsTokenResult =
   | { ok: true; payload: YjsTokenPayload }
@@ -32,9 +31,8 @@ function computeSignature(encodedPayload: string, secret: string): string {
 }
 
 /**
- * Sign a context-scoped Yjs auth token. The token embeds the tenant scope and
- * product entity type the user may edit, so the relay can verify access locally
- * without calling back to the backend.
+ * The token embeds the tenant scope and product entity type the user may edit, so the relay
+ * verifies access locally with no call back to the backend.
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>, secret: string, ttlMs: number): string {
   const payload: YjsTokenPayload = {
@@ -56,7 +54,6 @@ export function verifyYjsToken(token: string, secret: string): VerifyYjsTokenRes
 
   const expectedSig = computeSignature(payloadB64, secret);
 
-  // Timing-safe comparison
   if (providedSig.length !== expectedSig.length) return { ok: false, reason: 'bad_signature' };
   const isValid = timingSafeEqual(Buffer.from(providedSig, 'utf8'), Buffer.from(expectedSig, 'utf8'));
   if (!isValid) return { ok: false, reason: 'bad_signature' };

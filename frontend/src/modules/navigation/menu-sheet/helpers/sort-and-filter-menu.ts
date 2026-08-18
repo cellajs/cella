@@ -8,15 +8,11 @@ export const sortAndFilterMenu = (
   archived: boolean,
   reverse = false,
 ): UserMenuItem[] => {
-  return (
-    data
-      //filter by type and archive state
-      .filter((el) => el.entityType === entityType && el.membership.archived === archived)
-      .sort((a, b) => {
-        // sort items by displayOrder
-        const orderA = a.membership?.displayOrder ?? 0; // Fallback to 0 if displayOrder is missing
-        const orderB = b.membership?.displayOrder ?? 0;
-        return reverse ? orderB - orderA : orderA - orderB;
-      })
-  );
+  return data
+    .filter((el) => el.entityType === entityType && el.membership.archived === archived)
+    .sort((a, b) => {
+      const orderA = a.membership?.displayOrder ?? 0;
+      const orderB = b.membership?.displayOrder ?? 0;
+      return reverse ? orderB - orderA : orderA - orderB;
+    });
 };

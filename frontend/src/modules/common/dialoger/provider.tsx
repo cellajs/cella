@@ -8,8 +8,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 
 /**
- * Dialoger provider to render drawers on mobile and dialogs on other screens.
- * State is managed by the useDialoger zustand store hook.
+ * Renders drawers on mobile and dialogs on other screens, from the useDialoger store.
  */
 export function Dialoger() {
   const isMobile = useBreakpointBelow('sm');
@@ -18,7 +17,6 @@ export function Dialoger() {
 
   useBodyClass({ 'dialoger-open': dialogs.length > 0 });
 
-  // Lock UI when dialogs are open
   useEffect(() => {
     if (dialogs.length > 0) {
       lockUI('dialoger');
@@ -26,7 +24,6 @@ export function Dialoger() {
     }
   }, [dialogs.length > 0]);
 
-  // Close all dialogs on route change
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (pathChanged) useDialoger.getState().remove();

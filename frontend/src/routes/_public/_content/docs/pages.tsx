@@ -7,9 +7,6 @@ import { stripParams } from '~/utils/strip-search-params';
 
 const PagesTable = lazyNamed(() => import('~/modules/page/table/pages-table'), 'PagesTable');
 
-/**
- * Pages table route - manages documentation pages.
- */
 export const Route = createFileRoute('/_public/_content/docs/pages')({
   validateSearch: pagesRouteSearchParamsSchema,
   search: {

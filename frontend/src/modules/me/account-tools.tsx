@@ -26,7 +26,6 @@ const enabledStrategies = appConfig.enabledAuthStrategies;
 
 const cardClass = 'mx-auto sm:w-full';
 
-/** General account settings card (profile fields). */
 export function AccountGeneralCard() {
   const user = useCurrentUser();
 
@@ -37,7 +36,6 @@ export function AccountGeneralCard() {
   );
 }
 
-/** Active sessions card with per-session revocation. */
 export function AccountSessionsCard() {
   const { t } = useTranslation();
 
@@ -48,7 +46,6 @@ export function AccountSessionsCard() {
   );
 }
 
-/** Authentication card: MFA, passkeys, TOTP, and OAuth connections per enabled strategy. */
 export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -63,7 +60,6 @@ export function AccountAuthenticationCard() {
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
-    // Proceed to OAuth URL with redirect and connect
     try {
       setLoadingProvider(provider);
 
@@ -181,7 +177,6 @@ export function AccountAuthenticationCard() {
   );
 }
 
-/** Danger-zone card: delete the account behind a confirm dialog. */
 export function AccountDeleteCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();

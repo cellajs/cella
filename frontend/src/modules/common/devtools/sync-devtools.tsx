@@ -7,17 +7,12 @@ import { useEffect, useState } from 'react';
 import { isDebugMode } from '~/env';
 import { clearSpans, getSpanStats, type SpanData, subscribeToSpans } from '~/lib/tracing';
 
-// Types
-
 interface SyncDevtoolsState {
   isOpen: boolean;
   activeTab: 'spans' | 'stats' | 'timeline';
   filter: string;
 }
 
-// Helpers
-
-/** Format duration in ms. */
 function formatDuration(ms: number | null): string {
   if (ms === null) return '...';
   if (ms < 1) return '<1ms';
@@ -25,7 +20,6 @@ function formatDuration(ms: number | null): string {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
-/** Format timestamp relative to now. */
 function formatTimeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp;
   if (diff < 1000) return 'just now';
@@ -34,7 +28,6 @@ function formatTimeAgo(timestamp: number): string {
   return `${Math.floor(diff / 3600000)}h ago`;
 }
 
-/** Get status color. */
 function getStatusColor(status: SpanData['status']): string {
   switch (status) {
     case 'ok':
@@ -46,7 +39,6 @@ function getStatusColor(status: SpanData['status']): string {
   }
 }
 
-/** Get span category color. */
 function getCategoryColor(name: string): string {
   if (name.startsWith('sync.sse')) return '#3b82f6';
   if (name.startsWith('sync.message')) return '#8b5cf6';
@@ -54,8 +46,6 @@ function getCategoryColor(name: string): string {
   if (name.startsWith('sync.seq')) return '#ec4899';
   return '#6b7280';
 }
-
-// Styles (inline for zero deps)
 
 const styles = {
   container: {
@@ -210,9 +200,6 @@ const styles = {
   },
 };
 
-// Components
-
-/** Span list view. */
 function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
   const filtered = filter ? spans.filter((s) => s.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
@@ -220,7 +207,6 @@ function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
     return <div style={styles.empty}>No spans recorded yet</div>;
   }
 
-  // Show most recent first
   const sorted = [...filtered].reverse().slice(0, 50);
 
   return (
@@ -250,7 +236,6 @@ function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
   );
 }
 
-/** Statistics view. */
 function StatsView({ spans: _spans }: { spans: SpanData[] }) {
   const stats = getSpanStats();
 
@@ -312,7 +297,6 @@ function StatsView({ spans: _spans }: { spans: SpanData[] }) {
   );
 }
 
-/** Timeline view showing end-to-end latency. */
 function TimelineView({ spans }: { spans: SpanData[] }) {
   const spansWithLatency = spans.filter((s) => 'sync.e2e_latency_ms' in s.attributes);
 
@@ -388,14 +372,11 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
   );
 }
 
-// Main component
-
 interface SyncDevtoolsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-/** Sync Devtools floating panel. Only renders in debug mode. */
 export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
   const [state, setState] = useState<SyncDevtoolsState>({
     isOpen: true,
@@ -405,19 +386,16 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
 
   const [spans, setSpans] = useState<SpanData[]>([]);
 
-  // Subscribe to span updates
   useEffect(() => {
     const unsubscribe = subscribeToSpans(setSpans);
     return unsubscribe;
   }, []);
 
-  // Only render in debug mode
   if (!isDebugMode || !isOpen) return null;
 
   return (
     <div style={styles.container}>
       <div style={styles.panel}>
-        {/* Header */}
         <div style={styles.header}>
           <div style={styles.title}>⚡ Sync Devtools</div>
           <div style={styles.tabs}>
@@ -440,14 +418,12 @@ export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
           </div>
         </div>
 
-        {/* Content */}
         <div style={styles.content}>
           {state.activeTab === 'spans' && <SpanList spans={spans} filter={state.filter} />}
           {state.activeTab === 'stats' && <StatsView spans={spans} />}
           {state.activeTab === 'timeline' && <TimelineView spans={spans} />}
         </div>
 
-        {/* Actions */}
         <div style={styles.actions}>
           <input
             type="text"

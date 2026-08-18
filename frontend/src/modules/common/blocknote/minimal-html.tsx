@@ -10,10 +10,7 @@ type BlockNoteMinimalHtmlProps = {
   html: string;
 } & HTMLAttributes<HTMLDivElement>;
 
-/**
- * Lightweight component for rendering pre-generated HTML strings (e.g. task summaries)
- * with BlockNote styling. Use BlockNoteFullHtml for full BlockNote JSON content.
- */
+/** Renders a pre-generated HTML string with BlockNote styling; BlockNoteFullHtml handles BlockNote JSON. */
 export function BlockNoteMinimalHtml({ html, className = '', ...rest }: BlockNoteMinimalHtmlProps) {
   const mode = useUIStore.getState().mode;
 

@@ -4,9 +4,6 @@ import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
-/**
- * Core fields shared by all entities (id, name, timestamps).
- */
 const entityCoreShape = {
   id: z.string(),
   name: z.string(),
@@ -14,21 +11,14 @@ const entityCoreShape = {
   updatedAt: z.string().nullable(),
 };
 
-/**
- * Audit fields for entities that track who created/modified them.
- */
 const auditShape = {
   createdBy: nullableUserMinimalBaseSchema,
   updatedBy: nullableUserMinimalBaseSchema,
 };
 
 /**
- * Base schema for channel entities, including common fields. Exported separately to avoid circular dependencies.
- *
- * `included` is not part of the base schema to avoid circular dependencies.
- * Channel entity response schemas add `included: channelIncludedSchema` explicitly.
- * Import `channelIncludedSchema` directly from its channel entity included schema module.
- * See organizationSchema for reference.
+ * Exported separately to avoid circular dependencies, which is also why `included` is left out: channel
+ * response schemas add `included: channelIncludedSchema` explicitly (see `organizationSchema`).
  */
 export const channelBaseSchema = z
   .object({
@@ -45,9 +35,7 @@ export const channelBaseSchema = z
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });
 
-/**
- * Base schema for product entities, including common fields. Exported separately to avoid circular dependencies.
- */
+/** Exported separately to avoid circular dependencies. */
 export const productBaseSchema = z
   .object({
     ...entityCoreShape,

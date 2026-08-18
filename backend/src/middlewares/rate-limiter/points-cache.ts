@@ -14,7 +14,6 @@ const FAST_PATH_THRESHOLD = 0.8;
 /** LRU capacity: one entry per unique (tenantId:userId) key. */
 const MAX_ENTRIES = 50_000;
 
-/** Rate limit window duration in ms (1 hour). */
 const WINDOW_MS = 60 * 60 * 1000;
 
 const cache = new LRUCache<PointsEntry>({
@@ -23,9 +22,7 @@ const cache = new LRUCache<PointsEntry>({
 });
 
 /**
- * Attempts the in-memory points-budget fast path.
- * Local consumption accrues as debt settled by `takeDebt`; each process can consume up to
- * the configured threshold before its first database flush.
+ * Local consumption accrues as debt settled by `takeDebt`, so each process reaches the threshold before its first flush.
  * @returns Whether to allow locally or check the database.
  */
 export function tryFastConsume(key: string, cost: number, budget: number): 'allow' | 'check-db' {
@@ -35,8 +32,7 @@ export function tryFastConsume(key: string, cost: number, budget: number): 'allo
   const isFresh = !entry || now - entry.windowStart >= WINDOW_MS;
   const priorConsumed = isFresh ? 0 : entry.consumed;
 
-  // Everything at/above the threshold goes to the DB, including a first request
-  // whose own cost is already over it (e.g. an oversized bulk body).
+  // At or above the threshold goes to the DB, including a first request whose own cost already exceeds it
   if (priorConsumed + cost >= budget * FAST_PATH_THRESHOLD) return 'check-db';
 
   if (isFresh) {
@@ -48,11 +44,7 @@ export function tryFastConsume(key: string, cost: number, budget: number): 'allo
   return 'allow';
 }
 
-/**
- * Claim the unflushed fast-path consumes for a key, marking them as flushed.
- * The caller must add the returned debt to its DB consume; on a failed DB write
- * (other than a rate limit rejection) call {@link restoreDebt} so it isn't lost.
- */
+/** Claims the unflushed consumes and marks them flushed; on a DB failure other than a 429 call {@link restoreDebt}. */
 export function takeDebt(key: string): number {
   const entry = cache.get(key);
   if (!entry) return 0;
@@ -62,7 +54,6 @@ export function takeDebt(key: string): number {
   return debt;
 }
 
-/** Restore claimed debt after a failed DB write. */
 export function restoreDebt(key: string, debt: number): void {
   if (debt <= 0) return;
   const entry = cache.get(key);
@@ -71,11 +62,7 @@ export function restoreDebt(key: string, debt: number): void {
   cache.set(key, entry);
 }
 
-/**
- * Sync the cache after a DB consume (successful or rejected).
- * The DB count is authoritative: it includes our flushed debt and any
- * consumption from other processes.
- */
+/** Called after a DB consume, accepted or rejected. The DB count is authoritative across all processes. */
 export function syncFromDb(key: string, consumedPoints: number): void {
   const now = Date.now();
   const entry = cache.get(key);
@@ -83,7 +70,6 @@ export function syncFromDb(key: string, consumedPoints: number): void {
   cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowStart });
 }
 
-/** Exposed for testing. */
 export function clearCache(): void {
   cache.clear();
 }

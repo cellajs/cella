@@ -25,10 +25,8 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
   };
 });
 
-// Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 
-/** Helper to build a POST Request with proper content-length */
 function jsonRequest(path: string, body: Record<string, unknown>) {
   const json = JSON.stringify(body);
   return new Request(`http://localhost${path}`, {
@@ -38,11 +36,7 @@ function jsonRequest(path: string, body: Record<string, unknown>) {
   });
 }
 
-/**
- * Creates a minimal Hono test app with error handling that applies
- * the given rate limiter middleware before a simple 200 handler.
- * Pass `userId` to simulate an authenticated request (authGuard runs before limiters).
- */
+/** Minimal Hono app running the given limiter before a 200 handler. Pass `userId` for an authenticated request. */
 function createTestApp(middleware: ReturnType<typeof rateLimiter>, userId?: string) {
   const app = new Hono<Env>();
   app.onError((err, c) => {
@@ -87,9 +81,7 @@ describe('rate limiter identifier validation', () => {
     });
 
     it('should normalize email case and whitespace into a single bucket', async () => {
-      // Handlers lowercase+trim before delivering mail, so without the same normalization
-      // here, `Victim@x.com` / `victim@x.com` / ` VICTIM@X.COM ` were three separate rate
-      // limit buckets all hitting one inbox.
+      // Handlers lowercase and trim before delivering mail, so the limiter must too or one inbox gets three buckets
       consumeSpy.mockClear();
       for (const email of ['Victim@Example.COM', 'victim@example.com', ' VICTIM@example.com ']) {
         await app.request(jsonRequest('/test', { email }));

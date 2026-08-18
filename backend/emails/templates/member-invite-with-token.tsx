@@ -26,9 +26,7 @@ type MemberInviteWithTokenRecipient = EmailRecipient & { name: string; inviteLin
 
 const appName = appConfig.name;
 
-/**
- * Email template for new users that receive a new membership invitation with a token.
- */
+/** For new users, who need the token; existing users get member-invite. */
 export const memberInviteWithTokenEmail = defineEmailTemplate<
   MemberInviteWithTokenStatic,
   MemberInviteWithTokenRecipient

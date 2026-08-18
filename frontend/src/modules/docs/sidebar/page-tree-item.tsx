@@ -42,8 +42,7 @@ export function PageBranch({
   const isActive = activePageId === page.id;
   const expanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
-  // Sheet-mode threshold (below `md`): keeps the active-indicator animation consistent with the
-  // rest of the docs sidebar across the sm–md band where the sidebar is a sheet.
+  // Sheet-mode threshold (below `md`), where the sidebar is a sheet and the indicator animates as elsewhere
   const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
@@ -69,8 +68,7 @@ export function PageBranch({
             buttonVariants({ variant: 'ghost' }),
             'group w-full justify-start gap-2 pl-5 text-left lowercase',
             isRoot
-              ? // Sticky tier-1 row: pins just below the scroller top (top-2; the sidebar's mask
-                // bar covers the gap) while its subtree scrolls, pushed out when the subtree ends.
+              ? // Sticky tier-1 row: pins just below the scroller top while its subtree scrolls
                 'sticky top-2 z-10 bg-card px-3 font-medium data-[active=true]:bg-accent'
               : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
@@ -81,20 +79,18 @@ export function PageBranch({
               onToggle(page.id);
               return;
             }
-            // Re-click on an expanded branch collapses it without navigating, unless the
-            // user is viewing one of its subpages; then it navigates to the branch page itself
+            // Re-click on an expanded branch collapses it, unless the user is viewing one of its subpages
             if (hasChildren && isExpanded && !activeAncestorIds.has(page.id)) {
               e.preventDefault();
               onToggle(page.id);
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
-            // On mobile the sheet only closes when navigating to a leaf; branch nodes keep it
-            // open so the children just revealed by the expand stay explorable in place.
+            // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
             if (!hasChildren) onClose();
           }}
         >
-          {/* Leading dot (parent tier only), reads expanded state from the row scope */}
+          {/* Leading dot (parent tier only) */}
           {!isRoot && (
             <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
           )}
@@ -114,8 +110,7 @@ export function PageBranch({
         {hasChildren && (
           <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
             {isRoot ? (
-              // A <ul> so the nested parent-tier rows (each a SidebarMenuItem <li>)
-              // aren't direct <li> children of this row's <li> (invalid HTML).
+              // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
               <ul className="flex list-none flex-col gap-1 py-1">
                 {children.map((child) => (
                   <PageBranch

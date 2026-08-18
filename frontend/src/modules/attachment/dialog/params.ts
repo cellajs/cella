@@ -13,7 +13,6 @@ export const attachmentDialogClassName = 'min-w-full h-dvh max-h-dvh border-0 p-
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
 export const attachmentDialogContentClassName = 'relative -z-1 flex h-dvh grow flex-wrap justify-center p-2';
 
-/** Search-param patch that opens the dialog on `attachmentId`. */
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
   return (prev: Record<string, unknown>) => ({
     ...prev,
@@ -22,19 +21,13 @@ export function openAttachmentDialogSearch(attachmentId: string, groupId?: strin
   });
 }
 
-/** Search-param patch that closes the dialog. */
 export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
   const next: Record<string, unknown> = { ...prev };
   for (const key of [ATTACHMENT_DIALOG_PARAM, ...ATTACHMENT_DIALOG_EXTRA_PARAMS]) next[key] = undefined;
   return next;
 }
 
-/**
- * Clear the dialog's search params from the current location.
- *
- * Kept on the router instance because `useNavigate()` with `to: '.'` resolves against the current
- * location here, where a hook would resolve it against the calling component's match.
- */
+/** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */
 export const clearAttachmentDialogSearchParams = () => {
   getRouter().navigate({
     to: '.',

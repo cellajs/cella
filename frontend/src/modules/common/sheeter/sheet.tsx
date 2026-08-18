@@ -8,7 +8,6 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
-/** Renders the sheeter sheet component. */
 export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const {
     id,
@@ -33,35 +32,30 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const isMobile = useBreakpointBelow('sm', false);
   const containerElement = container?.ref?.current ?? null;
 
-  // onClose trigger handles by remove method
   const closeSheet = () => {
     useSheeter.getState().remove(sheet.id);
 
-    // Close dialogs opened in sheet with sheet close
+    // Closing the sheet closes the dialogs it opened
     const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
     for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
   };
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
-    // Handle escape key
     if (!nextOpen && eventDetails.reason === 'escape-key') {
       if (!closeSheetOnEsc) return;
       closeSheet();
       return;
     }
 
-    // Handle outside press
     if (!nextOpen && eventDetails.reason === 'outside-press') {
-      // Dont close if interact outside is caused by dropdown
+      // An outside press landing on a dropdown or dialog must not close the sheet
       const dropdown = useDropdowner.getState().dropdown;
       if (dropdown) return;
 
-      // Dont close if interact outside is caused by dialog
       const dialogs = useDialoger.getState().dialogs;
       if (dialogs.some((d) => d.open)) return;
 
-      // Nav sheet: let the nav button's own click handler toggle it.
-      // If we close here first, the button click would then see navSheetOpen=null and reopen.
+      // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
       if (sheet.id === 'nav-sheet') {
         const navState = useNavigationStore.getState();
         if (navState.keepNavOpen && navState.navSheetOpen) return;
@@ -82,7 +76,6 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
     } else closeSheet();
   };
 
-  // Create a ref for finalFocus to return focus to trigger on close
   const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (

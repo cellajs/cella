@@ -22,9 +22,6 @@ export type BaseTableBarProps<T, K> = {
   setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
 };
 
-/**
- * Generic pattern for callbacks to pass to parent components.
- */
 export type CallbackArgs<T = void> =
   | (T extends void ? { status: 'success' } : { status: 'success'; data: T })
   | { status: 'fail'; error?: ApiError | Error }

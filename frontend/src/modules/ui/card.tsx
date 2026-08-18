@@ -1,7 +1,6 @@
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled card primitive. */
 export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -15,7 +14,6 @@ export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** Renders the styled card header primitive. */
 export function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -29,7 +27,6 @@ export function CardHeader({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-/** Renders the styled card title primitive. */
 export function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -40,7 +37,6 @@ export function CardTitle({ className, ...props }: React.ComponentProps<'div'>) 
   );
 }
 
-/** Renders the styled card description primitive. */
 export function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -51,7 +47,6 @@ export function CardDescription({ className, ...props }: React.ComponentProps<'d
   );
 }
 
-/** Renders the styled card action primitive. */
 export function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -62,12 +57,10 @@ export function CardAction({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-/** Renders the styled card content primitive. */
 export function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-content" className={cn('px-3 sm:px-6', className)} {...props} />;
 }
 
-/** Renders the styled card footer primitive. */
 export function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

@@ -3,10 +3,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 export type LegalSubject = keyof typeof legalConfig;
 
-/**
- * Config to set legal text components to be used in Legal page.
- * Sections are defined statically to avoid DOM scanning.
- */
+/** Sections are declared statically so the legal page needs no DOM scanning. */
 export const legalConfig = {
   privacy: {
     component: lazyNamed(() => import('~/modules/auth/legal/privacy-text'), 'PrivacyText'),
@@ -48,16 +45,12 @@ export const legalConfig = {
   },
 } as const satisfies LegalTexts;
 
-/** All legal subjects, derived from the config keys. */
 export const legalSubjects = Object.keys(legalConfig) as [LegalSubject, ...LegalSubject[]];
 
 /** Default legal subject used when no or an unknown subject is requested. */
 export const defaultLegalSubject = legalSubjects[0];
 
-/**
- * Categories of personal data collected by the service.
- * Apps should update these to match their actual data collection.
- */
+/** Personal data categories collected by this app; update when data collection changes. */
 export const collectedData: CollectedDataCategory[] = [
   {
     label: 'Account information',
@@ -84,10 +77,7 @@ export const collectedData: CollectedDataCategory[] = [
   },
 ];
 
-/**
- * Subprocessors that handle personal data on behalf of the service.
- * Mark optional services with `optional: true`; apps can filter by this.
- */
+/** Subprocessors handling personal data; `optional: true` marks services an app can filter out. */
 export const subprocessors: Subprocessor[] = [
   {
     slug: 'scaleway',
@@ -157,10 +147,7 @@ export const subprocessors: Subprocessor[] = [
   },
 ];
 
-/**
- * Shared data types describing how personal data flows through the service.
- * Mark optional types with `optional: true`; apps can filter by this.
- */
+/** Shared data types describing personal data flows; `optional: true` marks filterable entries. */
 export const sharedDataTypes: SharedDataType[] = [
   {
     slug: 'user_profile',

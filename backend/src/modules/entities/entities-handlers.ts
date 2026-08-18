@@ -20,9 +20,8 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
   return result.available ? ctx.body(null, 204) : ctx.body(null, 409);
 });
 
-// Subscriber caps: memory/dispatch-CPU backpressure for the single-process stream. The
-// per-user cap leans on leader-tab election (one connection per browser profile); the global
-// cap protects the VM. Both reject with 429 so clients ride their normal reconnect backoff.
+// Caps bound memory and dispatch CPU for the single-process stream; both reject with 429 so
+// clients use their normal reconnect backoff.
 const MAX_STREAMS_PER_USER = 10;
 const MAX_STREAM_SUBSCRIBERS = 5000;
 
@@ -55,9 +54,8 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       cursor,
     };
 
-    // The user channel carries self-membership events regardless of org registration: a
-    // membership in a NEW org reaches the user here (org channels are registered at connect
-    // time), and the frontend reconnects to re-register + catch up on that org's history.
+    // The user channel carries self-membership events regardless of org registration, so a
+    // membership in a new org reaches the user here and the frontend reconnects to re-register.
     streamSubscriberManager.register(subscriber, [...orgChannels.slice(1), `user:${user.id}`]);
     log.debug('App stream subscriber registered', {
       subscriberId: subscriber.id,

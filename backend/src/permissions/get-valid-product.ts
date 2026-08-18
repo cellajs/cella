@@ -9,17 +9,13 @@ import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
-/**
- * Result type for product entity validation including the can object.
- */
 export interface ValidProductResult<K extends ProductEntityType> {
   entity: EntityModel<K>;
 }
 
 /**
- * Checks whether the current user may perform `action` on a product entity, resolving it by `id`
- * (system-admin bypass handled inside `checkAccess`). Returns the resolved entity; throws 404 if
- * not found, 403 if not allowed.
+ * Checks whether the user may perform `action` on a product entity resolved by `id` (system-admin
+ * bypass sits inside `checkAccess`); throws 404 if not found, 403 if not allowed.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
   ctx: AuthContext,
@@ -27,22 +23,20 @@ export const getValidProduct = async <K extends ProductEntityType>(
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductResult<K>> => {
-  // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
-  // Skip tenantRead for tenant-less entities (e.g. pages) where tenantId is not set
+  // Auto-wrap in tenantRead outside an RLS context (bare baseDb); tenant-less entities (e.g. pages) skip it.
   const entity =
     ctx.var.db === baseDb && ctx.var.tenantId
       ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id }))
       : await resolveEntity(ctx, { entityType, identifier: id });
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Unpublished drafts (publishedAt null) read as absent to everyone but their author.
+  // Unpublished drafts (publishedAt null) read as absent to everyone but their author, with the
   // same 404 shape as a soft-deleted row, so a draft's existence is never revealed.
   if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.userId)) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
 
-  // Step 2: Check permission for the requested action. The entity doubles as `row`, so
-  // 'own' row conditions and public read grants evaluate from real row data.
+  // The entity doubles as `row`, so 'own' row conditions and public read grants evaluate from real row data.
   const subject = buildSubjectFromEntity(entityType, entity);
   const { allowed } = checkAccess(accessFrom(ctx), action, subject);
 

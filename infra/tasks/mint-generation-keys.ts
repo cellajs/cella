@@ -14,10 +14,8 @@ import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /**
- * How many API keys each service/boot app retains after a mint: the fresh key
- * plus the previous generation's (blue-green overlap AND the presigned-URL
- * floor). URLs signed by the outgoing backend generation stay valid until the
- * key created two deploys ago is pruned, i.e. at least one full deploy cycle.
+ * How many API keys each service/boot app retains after a mint: the fresh key plus the previous generation's, covering blue-green overlap and presigned URLs.
+ * URLs signed by the outgoing backend generation stay valid until the key from two deploys ago is pruned, at least one full deploy cycle.
  */
 const KEYS_TO_KEEP = 2;
 
@@ -48,12 +46,11 @@ export interface GenerationKeys {
 async function resolveAppId(auth: IamAuth, organizationId: string, name: string): Promise<string> {
   const id = await resolveApplicationIdByName(auth, organizationId, name);
   if (!id)
-    throw new Error(`mint-generation-keys: IAM application '${name}' not found — run the infra CLI bootstrap first.`);
+    throw new Error(`mint-generation-keys: IAM application '${name}' not found: run the infra CLI bootstrap first.`);
   return id;
 }
 
-/** Mint a fresh key on the app. Pruning happens separately, AFTER every
- *  handoff bundle is staged; see pruneStaleKeys. */
+/** Mint a fresh key on the app. Pruning runs separately, AFTER every handoff bundle is staged; see pruneStaleKeys. */
 async function mintKey(
   auth: IamAuth,
   projectId: string,
@@ -85,21 +82,12 @@ async function pruneStaleKeys(
 }
 
 /**
- * Per-deploy credential mint (D3/REQ-7/REQ-10). Runs as CI, allowed by the
- * conditioned IAMApplicationManager grant (key CRUD on exactly the service +
- * boot apps; creating apps/policies stays denied).
- *
- *  1. Mint a fresh boot-fetcher key (baked into cloud-init; registry pull +
- *     handoff-read only) and prune stale ones.
- *  2. Per service: mint a fresh service key, stage it as a SINGLE-ACCESS
- *     secret under /handoff/<service>/ (first read disables the version, so a
- *     VM whose read fails knows the bundle was intercepted and halts), prune
- *     older handoff bundles, prune stale service keys.
- *
- * The result JSON (boot pair + handoff secret ids) goes to `outFile`; the
- * deploy passes its path to `pulumi up` via INFRA_GENERATION_KEYS_FILE.
- * Old keys survive one full deploy cycle (KEYS_TO_KEEP=2): the outgoing
- * generation keeps hydrating/signing until it is destroyed.
+ * Per-deploy credential mint (D3/REQ-7/REQ-10), run as CI under the conditioned IAMApplicationManager grant: key CRUD on exactly the service and boot apps, no app or policy creation.
+ *  1. Mint a fresh boot-fetcher key (registry pull and handoff-read only, baked into cloud-init) and prune stale ones.
+ *  2. Per service: mint a fresh service key, stage it as a SINGLE-ACCESS secret under /handoff/<service>/ so a VM whose read fails knows the bundle was
+ *     intercepted and halts, then prune older handoff bundles and stale service keys.
+ * The result JSON (boot pair plus handoff secret ids) goes to `outFile`, whose path the deploy passes to `pulumi up` via INFRA_GENERATION_KEYS_FILE.
+ * Old keys survive one full deploy cycle (KEYS_TO_KEEP=2), so the outgoing generation keeps hydrating and signing until it is destroyed.
  */
 export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promise<GenerationKeys> {
   const log = opts.log ?? ((msg: string) => console.info(msg));
@@ -111,19 +99,15 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     projectId: opts.projectId,
   });
 
-  // Resolve every app id first: a missing principal fails before anything is
-  // minted or pruned.
+  // Resolve every app id first, so a missing principal fails before anything is minted or pruned.
   const bootAppId = await resolveAppId(auth, opts.organizationId, names.boot);
   const serviceAppIds = new Map<string, string>();
   for (const service of opts.services) {
     serviceAppIds.set(service, await resolveAppId(auth, opts.organizationId, names.vmService(service)));
   }
 
-  // Transactional-ish ordering: mint and stage EVERYTHING first, prune keys
-  // LAST. A failure mid-staging then aborts with all existing keys intact:
-  // the old generation keeps hydrating/signing, and a retry re-mints cleanly.
-  // (The keep-newest-2 window can still age out the live key after repeated
-  // failed attempts within one deploy; bounded, documented, accepted.)
+  // Mint and stage EVERYTHING first, prune keys LAST, so a failure mid-staging leaves every existing key intact and a retry re-mints from a working state.
+  // Repeated failed attempts within one deploy can still age the live key out of the keep-newest-2 window.
   const bootKey = await mintKey(auth, opts.projectId, bootAppId, names.boot, opts.sha);
   log(`✓ minted boot key ${bootKey.access_key}`);
 
@@ -134,9 +118,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     if (!appId) throw new Error(`mint-generation-keys: no app id resolved for ${appName}`);
     const serviceKey = await mintKey(auth, opts.projectId, appId, appName, opts.sha);
 
-    // Prune older handoff bundles first: an unconsumed bundle from a failed
-    // deploy is stale (VMs cache the key after their single read), and leaving
-    // it would accumulate disabled/unread versions forever.
+    // Prune older handoff bundles first: VMs cache the key after their single read, so an unconsumed bundle from a failed deploy is stale and would accumulate forever.
     const folder = handoffServicePath(opts.slug, opts.mode, service);
     for (const stale of await client.listSecretsUnder(folder)) {
       await client.deleteSecret(stale.id);

@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { appConfig } from 'shared';
 
-// Sort breakpoints once for efficiency
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
 const sortedBreakpoints = Object.keys(breakpoints).sort(
   (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
@@ -10,7 +9,7 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
 // Largest breakpoint whose threshold is ≤ current width, matching CSS min-width media queries.
 function getMatchedBreakpoints() {
   const width = window.innerWidth;
-  let matched = sortedBreakpoints[0]; // Default to smallest breakpoint
+  let matched = sortedBreakpoints[0];
 
   for (const bp of sortedBreakpoints) {
     if (width >= Number.parseInt(breakpoints[bp], 10)) {
@@ -22,11 +21,9 @@ function getMatchedBreakpoints() {
   return matched;
 }
 
-// Store global state in a module-level variable - initialize immediately
 let currentBreakpoint = getMatchedBreakpoints();
 const listeners = new Set<() => void>();
 
-// Function to update global breakpoint state (runs only when necessary)
 function updateGlobalBreakpoint() {
   const newBreakpoint = getMatchedBreakpoints();
   if (newBreakpoint !== currentBreakpoint) {
@@ -46,20 +43,15 @@ export function subscribeToBreakpointChanges(callback: () => void) {
   return () => listeners.delete(callback);
 }
 
-/**
- * Get the current breakpoint snapshot (works outside React components).
- */
 export function getBreakpointSnapshot() {
   return currentBreakpoint;
 }
 
-// Subscribe function for useSyncExternalStore (internal use)
 function subscribe(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
 }
 
-// Snapshot functions for useSyncExternalStore
 function getSnapshot() {
   return currentBreakpoint;
 }
@@ -68,20 +60,15 @@ function getServerSnapshot() {
   return sortedBreakpoints[0];
 }
 
-/** Breakpoint key type for responsive utilities. */
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-/**
- * Hook to get the current breakpoint key based on viewport width.
- * Uses useSyncExternalStore for efficient single subscription.
- */
 export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},
     getSnapshot,
     getServerSnapshot,
   );
-  // Handle 'xs' case when breakpoint is smaller than 'sm'
+  // `xs` is not in screenSizes: derive it below the `sm` threshold.
   const smIndex = sortedBreakpoints.indexOf('sm');
   const currentIndex = sortedBreakpoints.indexOf(breakpointState);
   if (currentIndex <= smIndex && window.innerWidth < Number.parseInt(breakpoints.sm, 10)) {
@@ -90,7 +77,6 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   return breakpointState as BreakpointKey;
 }
 
-/** Internal hook for breakpoint state, not exported directly. */
 function useBreakpointState(enableReactivity = true) {
   const breakpointState = useSyncExternalStore(
     enableReactivity ? subscribe : () => () => {},
@@ -100,14 +86,12 @@ function useBreakpointState(enableReactivity = true) {
   return sortedBreakpoints.indexOf(breakpointState);
 }
 
-/** Returns whether the viewport is strictly below `breakpoint`; optionally reactive to resize. */
 export function useBreakpointBelow(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   const currentIndex = useBreakpointState(enableReactivity);
   const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
   return currentIndex < targetIndex;
 }
 
-/** Returns whether the viewport is at or above `breakpoint`; optionally reactive to resize. */
 export function useBreakpointAbove(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
   const currentIndex = useBreakpointState(enableReactivity);
   const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);

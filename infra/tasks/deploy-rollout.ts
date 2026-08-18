@@ -48,7 +48,7 @@ export function buildWavedPlan(args: {
 }): WavedRolloutPlan {
   if (args.primary.length > 1)
     throw new Error(`Expected at most one primary rollout service, got ${args.primary.length}`);
-  if (args.primary.length === 0) console.info('No primary rollout service configured — skipping wave 1.');
+  if (args.primary.length === 0) console.info('No primary rollout service configured: skipping wave 1.');
   const [primaryItem] = args.primary;
   return {
     sha: args.sha,

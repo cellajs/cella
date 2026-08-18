@@ -16,10 +16,7 @@ interface UseSmartBlurArgs {
   onBlur: () => void;
 }
 
-/**
- * Returns an `onBlur` that fires only when focus truly leaves the editor, ignoring moves into BlockNote's
- * own UI (side menu, formatting toolbar, slash menu, file panel) and descendants of the editor container.
- */
+/** Fires only when focus leaves the editor, ignoring moves into BlockNote's own UI and into container descendants. */
 export function useSmartBlur({ editor, containerRef, onBlur }: UseSmartBlurArgs): FocusEventHandler {
   const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
   const suggestionMenuExt = useExtension(SuggestionMenu, { editor });

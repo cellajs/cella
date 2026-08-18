@@ -25,9 +25,6 @@ interface AccountSecurityStatic {
   details?: Record<string, string | number>;
 }
 
-/**
- * Email template for account security notifications.
- */
 export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
   translate(lng, { name, type, details }) {
     const baseProps = { lng, appName: appConfig.name };

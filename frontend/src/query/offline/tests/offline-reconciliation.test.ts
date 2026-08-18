@@ -2,10 +2,7 @@ import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-qu
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { squashPendingMutation } from '../squash-utils';
 
-/**
- * Helper: create a PAUSED mutation (offline at mutate time), the state offline edits queue in
- * and the only state squashing may touch. Returns a cleanup restoring online mode.
- */
+/** Creates a paused mutation, the state offline edits queue in and the only state squashing may touch. Returns a cleanup restoring online mode. */
 function queuePendingMutation(
   queryClient: QueryClient,
   mutationKey: readonly unknown[],
@@ -73,15 +70,12 @@ describe('offline reconciliation lifecycle', () => {
   it('squash accumulates fields from sequential edits to same entity', () => {
     const mutationKey = ['test', 'update'] as const;
 
-    // Simulate 3 offline edits to the same entity, each changing different fields
-    // First edit: no pending, returns as-is.
+    // Three offline edits to the same entity, each changing different fields. Nothing is pending yet, so the first returns as-is.
     const r1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Edit 1' }, stxFor(['name']));
     expect(r1.ops).toEqual({ name: 'Edit 1' });
 
-    // Queue first mutation as pending
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r1.ops, stx: r1.stx }));
 
-    // Second edit: squashes with first.
     const r2 = squashPendingMutation(
       queryClient,
       mutationKey,
@@ -93,10 +87,8 @@ describe('offline reconciliation lifecycle', () => {
     // Inherited field keeps its original intent timestamp; the new field carries its own.
     expect(r2.stx.fieldTimestamps).toEqual({ name: 't-name', description: 't-description' });
 
-    // Queue second mutation
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r2.ops, stx: r2.stx }));
 
-    // Third edit: squashes with accumulated.
     const r3 = squashPendingMutation(queryClient, mutationKey, entityId, { status: 'done' }, stxFor(['status']));
     expect(r3.ops).toEqual({ name: 'Edit 1', description: 'Edit 2', status: 'done' });
   });
@@ -104,29 +96,20 @@ describe('offline reconciliation lifecycle', () => {
   it('squash uses latest value when same field is edited multiple times', () => {
     const mutationKey = ['test', 'update'] as const;
 
-    // First edit: name = 'Draft 1'
     const r1 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 1' }, stxFor(['name']));
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r1.ops, stx: r1.stx }));
 
-    // Second edit: name = 'Draft 2' (overrides)
     const r2 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Draft 2' }, stxFor(['name']));
     expect(r2.ops).toEqual({ name: 'Draft 2' });
 
     cleanups.push(queuePendingMutation(queryClient, mutationKey, { id: entityId, ops: r2.ops, stx: r2.stx }));
 
-    // Third edit: name = 'Final' (overrides again)
     const r3 = squashPendingMutation(queryClient, mutationKey, entityId, { name: 'Final' }, stxFor(['name']));
     expect(r3.ops).toEqual({ name: 'Final' });
-
-    // Result: only 1 mutation queued with the final value
   });
 
   it('HLC timestamps are updated through sequential mutation replay', async () => {
-    /**
-     * Simulates: two mutations queued offline, replayed on reconnect.
-     * The scope ensures sequential execution, so the second mutation reads
-     * fresh stx timestamps from the first mutation's onSuccess.
-     */
+    // The shared scope forces sequential replay, so the second mutation reads fresh stx timestamps from the first mutation's onSuccess.
     const capturedTimestamps: Record<string, string>[] = [];
     let counter = 1;
 
@@ -164,34 +147,26 @@ describe('offline reconciliation lifecycle', () => {
 
     await Promise.all([p1, p2]);
 
-    // First mutation sees initial timestamps
     expect(capturedTimestamps[0].name).toBe('100:0001:aaa');
-    // Second mutation sees updated name timestamp from first's onSuccess
     expect(capturedTimestamps[1].name).toBe('202:0001:srv');
-    // Cache has final timestamps for both fields
     const final = queryClient.getQueryData<FakeEntity>(listKey);
     expect(final?.stx?.fieldTimestamps?.name).toBe('202:0001:srv');
     expect(final?.stx?.fieldTimestamps?.description).toBe('203:0001:srv');
   });
 
   it('server error does not corrupt the cache', async () => {
-    /**
-     * Simulates: mutation fails on server.
-     * The onError should restore the previous cached entity.
-     */
+    // onError must restore the entity that was cached before the mutation.
     const mutationOptions = {
       scope: { id: 'test-entity' },
       mutationFn: async () => {
         throw Object.assign(new Error('field_conflict'), { status: 409 });
       },
       onMutate: async () => {
-        // Optimistic update
         const previous = queryClient.getQueryData<FakeEntity>(listKey);
         queryClient.setQueryData<FakeEntity>(listKey, (old) => (old ? { ...old, name: 'Optimistic' } : old));
         return { previous };
       },
       onError: (_err: Error, _vars: unknown, context: { previous?: FakeEntity } | undefined) => {
-        // Rollback optimistic update
         if (context?.previous) {
           queryClient.setQueryData<FakeEntity>(listKey, context.previous);
         }
@@ -202,28 +177,21 @@ describe('offline reconciliation lifecycle', () => {
 
     try {
       await observer.mutate({});
-    } catch {
-      // Expected 409
-    }
+    } catch {}
 
-    // Cache should be restored to original
     const cached = queryClient.getQueryData<FakeEntity>(listKey);
     expect(cached?.name).toBe('Original');
     expect(cached?.stx?.fieldTimestamps?.name).toBe('100:0001:aaa');
   });
 
   it('independent entities can mutate concurrently (different scope)', async () => {
-    /**
-     * Mutations for different entities should not block each other.
-     * They use different scope IDs, so they run concurrently.
-     */
+    // Different scope ids, so the two run concurrently.
     const executionOrder: string[] = [];
 
     const createMutationOptions = (entityId: string) => ({
       scope: { id: `entity-${entityId}` },
       mutationFn: async () => {
         executionOrder.push(`start-${entityId}`);
-        // Minimal async delay
         await Promise.resolve();
         executionOrder.push(`end-${entityId}`);
         return { id: entityId };
@@ -235,7 +203,7 @@ describe('offline reconciliation lifecycle', () => {
 
     await Promise.all([observer1.mutate(), observer2.mutate()]);
 
-    // Both should have started before either ended (concurrent execution)
+    // Both start before either ends, proving concurrent execution.
     expect(executionOrder[0]).toBe('start-A');
     expect(executionOrder[1]).toBe('start-B');
   });
@@ -260,7 +228,6 @@ describe('create + edit coalescing', () => {
   it('offline create followed by edit produces single create with merged fields', () => {
     const createKey = ['test', 'create'] as const;
 
-    // Simulate create queued (offline)
     const createVars = { id: 'temp-1', name: 'New Task', status: 'todo' };
     cleanups.push(queuePendingMutation(queryClient, createKey, createVars));
 
@@ -273,7 +240,6 @@ describe('create + edit coalescing', () => {
 
     expect(pendingCreate).toBeDefined();
 
-    // Merge description into the create variables
     const vars = pendingCreate!.state.variables as Record<string, unknown>;
     Object.assign(vars, { description: 'Added offline' });
 

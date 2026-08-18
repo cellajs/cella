@@ -7,7 +7,6 @@ interface CountEntityRowsOpts {
   entityType: EntityType;
 }
 
-/** Count total rows in a given entity table. */
 export const countEntityRows = async (ctx: DbContext, { entityType }: CountEntityRowsOpts) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);

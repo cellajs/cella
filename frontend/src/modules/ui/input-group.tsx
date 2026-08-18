@@ -5,7 +5,6 @@ import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled input group primitive. */
 export function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -15,16 +14,13 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
         'group/input-group relative flex w-full items-center rounded-md border border-input bg-background shadow-xs outline-none transition-[color,box-shadow]',
         'h-10 min-w-0 has-[>textarea]:h-auto',
 
-        // Variants based on alignment.
         'has-[>[data-align=inline-start]]:[&>input]:pl-2',
         'has-[>[data-align=inline-end]]:[&>input]:pr-2',
         'has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3',
         'has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3',
 
-        // Focus state.
         'sm:has-[[data-slot=input-group-control]:focus-visible]:ring-2 sm:has-[[data-slot=input-group-control]:focus-visible]:ring-ring sm:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 sm:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background',
 
-        // Error state.
         'has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40',
 
         className,
@@ -52,7 +48,6 @@ const inputGroupAddonVariants = cva(
   },
 );
 
-/** Renders the styled input group addon primitive. */
 export function InputGroupAddon({
   className,
   align = 'inline-start',
@@ -90,7 +85,6 @@ const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-non
   },
 });
 
-/** Renders the styled input group button primitive. */
 export function InputGroupButton({
   className,
   type = 'button',
@@ -109,7 +103,6 @@ export function InputGroupButton({
   );
 }
 
-/** Renders the styled input group text primitive. */
 export function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -122,7 +115,6 @@ export function InputGroupText({ className, ...props }: React.ComponentProps<'sp
   );
 }
 
-/** Renders the styled input group input primitive. */
 export function InputGroupInput({ className, ...props }: React.ComponentProps<'input'>) {
   return (
     <Input
@@ -136,7 +128,6 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
   );
 }
 
-/** Renders the styled input group textarea primitive. */
 export function InputGroupTextarea({ className, ...props }: React.ComponentProps<'textarea'>) {
   return (
     <Textarea

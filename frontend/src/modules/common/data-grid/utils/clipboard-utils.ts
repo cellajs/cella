@@ -1,10 +1,7 @@
 import type { CalculatedColumn, CellRange } from '../types';
 import { normalizeCellRange } from './cell-range-utils';
 
-/**
- * Cell value → clipboard string. Objects fall back to their `name` field (the
- * convention for entity-shaped values like users, orgs, labels); else `String(value)`.
- */
+/** Cell value to clipboard string: objects use their `name` field, everything else `String(value)`. */
 export function cellValueToText(value: unknown): string {
   if (value == null) return '';
   if (typeof value === 'object') {
@@ -14,10 +11,7 @@ export function cellValueToText(value: unknown): string {
   return String(value);
 }
 
-/**
- * Serialize cells in a range to TSV (Tab-Separated Values) format.
- * This is the standard format for spreadsheet clipboard operations.
- */
+/** Serializes a cell range to TSV, the standard spreadsheet clipboard format. */
 export function serializeCellsToTSV<R, SR>(
   range: CellRange,
   rows: readonly R[],
@@ -39,7 +33,6 @@ export function serializeCellsToTSV<R, SR>(
       const column = columns[colIdx];
       const value = row[column.key as keyof R];
       const textValue = cellValueToText(value);
-      // Escape tabs and newlines within cell values
       cells.push(textValue.replace(/\t/g, ' ').replace(/\n/g, ' '));
     }
 
@@ -49,18 +42,13 @@ export function serializeCellsToTSV<R, SR>(
   return lines.join('\n');
 }
 
-/**
- * Parse TSV string into a 2D array of cell values.
- */
 export function parseTSVToCells(tsv: string): string[][] {
   if (!tsv || tsv.trim() === '') return [];
 
   return tsv.split('\n').map((line) => line.split('\t'));
 }
 
-/**
- * Serialize cells to HTML table format for rich paste support.
- */
+/** Serializes cells to an HTML table, for rich paste targets. */
 export function serializeCellsToHTML<R, SR>(
   range: CellRange,
   rows: readonly R[],
@@ -82,7 +70,6 @@ export function serializeCellsToHTML<R, SR>(
       const column = columns[colIdx];
       const value = row[column.key as keyof R];
       const textValue = cellValueToText(value);
-      // Escape HTML entities
       const escapedValue = textValue.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       html += `<td>${escapedValue}</td>`;
     }
@@ -94,9 +81,6 @@ export function serializeCellsToHTML<R, SR>(
   return html;
 }
 
-/**
- * Get the dimensions of parsed TSV data.
- */
 export function getTSVDimensions(cells: string[][]): { rows: number; cols: number } {
   if (cells.length === 0) return { rows: 0, cols: 0 };
 

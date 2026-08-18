@@ -1,8 +1,6 @@
 import slugify from 'slugify';
 
-/**
- * Sanitizes a filename by slugifying the base name.
- */
+/** Slugifies the base name and keeps the extension; empty input becomes "na". */
 export function cleanFileName(name: string): string {
   const originalName = name || 'na';
   const lastDotIndex = originalName.lastIndexOf('.');

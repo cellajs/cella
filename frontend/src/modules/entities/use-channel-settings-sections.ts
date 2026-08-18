@@ -12,24 +12,19 @@ import { heldContextRoles } from '~/modules/entities/context-roles';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 
-/** The hosting channel entity a settings consumer passes: enriched, with its stored arrangement. */
 export type ChannelSettingsHost<C extends ChannelEntityType> = ChannelEntityContext<C> & {
   entityType: C;
   toolsConfig?: ToolsConfig;
 };
 
-/** A resolved settings section: descriptor plus renderer receiving the hosting channel entity. */
 export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescriptor & {
   order: number;
   render: (entity: ChannelEntityContext<C>) => ReactNode;
 };
 
 /**
- * Resolves a channel entity's final settings section list: the `${channelType}.settings` slot's
- * registered tools, arranged by app overrides and the entity's stored `toolsConfig`, gated on the
- * actor's resolved action grants (`requires`) and held context-role pairs (`visibleTo`). Headless
- * by design: this hook owns all resolution, while presentation (page, sheet, dialog, tab bar)
- * stays a consumer-side map over the returned sections.
+ * Resolves the `${channelType}.settings` slot tools, arranged by app overrides and the entity's
+ * stored `toolsConfig`, gated on the actor's grants (`requires`) and context-role pairs (`visibleTo`).
  */
 export function useChannelSettingsSections<C extends ChannelEntityType>(
   entity: ChannelSettingsHost<C>,
@@ -45,8 +40,7 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());
   const pairs = heldContextRoles(entity, myMemberships?.items ?? []);
 
-  // Cast: registered settings tools carry a render the descriptor type erases; the slot key
-  // guarantees this family's shape
+  // Cast: registered settings tools carry a render the descriptor type erases
   const tools = getSlotDescriptors(slot).map((tool) => ({
     ...tool,
     order: tool.order ?? 50,

@@ -98,13 +98,11 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
   const [inputValue, setInputValue] = React.useState('');
   const [tagCount, setTagCount] = React.useState(Math.max(0, tags.length));
 
-  /** Check if delimiter matches in value (supports regex or string) */
   const delimiterMatches = (value: string): boolean => {
     if (delimiter instanceof RegExp) return delimiter.test(value);
     return value.includes(delimiter);
   };
 
-  /** Split value by delimiter (supports regex or string) */
   const splitByDelimiter = (value: string): string[] => {
     if (delimiter instanceof RegExp) return value.split(delimiter);
     return value.split(delimiter);
@@ -134,7 +132,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     if (addOnPaste && delimiterMatches(newValue)) {
       const splitValues = splitByDelimiter(newValue)
         .map((v) => v.trim())
-        .filter((v) => v && v.length > 0); // Remove empty strings
+        .filter((v) => v && v.length > 0);
 
       for (const newTag of splitValues) {
         const errorMessage = newTagValidation(newTag);
@@ -151,7 +149,7 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
   };
 
   const handleInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-    setActiveTagIndex(null); // Reset active tag index when the input field gains focus
+    setActiveTagIndex(null);
     onFocus?.(event);
   };
 
@@ -181,7 +179,6 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     // Check if key matches delimiter (string match for non-regex, or Enter as universal confirm)
     const isDelimiterKey = delimiter instanceof RegExp ? key === 'Enter' : key === delimiter || key === 'Enter';
 
-    // Adding a new tag
     if (isDelimiterKey && hasInput) {
       e.preventDefault();
 
@@ -266,7 +263,6 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
     onClearAll?.();
   };
 
-  // Bring focus to input when clicking on tag wrapper
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if ((e.target as HTMLElement)?.id !== 'tag-input-wrapper') return;
     inputRef.current?.focus();
@@ -375,7 +371,7 @@ function TagList({ tags, classStyleProps, onTagClick, onRemoveTag, activeTagInde
             variant="ghost"
             size="micro"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent event from bubbling up to the tag span
+              e.stopPropagation();
               onRemoveTag(tag);
             }}
             className={cn(

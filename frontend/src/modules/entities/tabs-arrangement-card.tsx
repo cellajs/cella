@@ -11,7 +11,6 @@ import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Switch } from '~/modules/ui/switch';
 
-/** One manageable tab: descriptor fields plus its current visibility on this channel. */
 interface TabRow {
   id: string;
   label: TKey;
@@ -23,18 +22,16 @@ interface TabRow {
   visible: boolean;
 }
 
-/** Stable row key getter, defined outside the component to keep its identity stable. */
+// Module scope keeps DataGrid's prop identity stable across renders
 function rowKeyGetter(row: TabRow) {
   return row.id;
 }
 
-/** Stable drag preview renderer, defined at module scope so DataGrid's prop identity stays stable. */
 function renderRowDragPreview(row: TabRow) {
   return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
 }
 
 interface TabsArrangementCardProps {
-  /** The hosting channel entity; the tabs slot and stored arrangement derive from it. */
   entity: EnrichedChannel & { toolsConfig?: ToolsConfig };
   /** The tabbed surface whose candidates are managed (route navTabs plus registry slot tools). */
   parentRouteId: string;
@@ -43,10 +40,9 @@ interface TabsArrangementCardProps {
 }
 
 /**
- * Admin card arranging a channel surface's tabs in a data grid: drag rows to reorder, toggle
- * visibility per tab, persisted on the channel in `toolsConfig['<channelType>.tabs']`. Candidates
- * list ungated, so tabs the viewer's own grants would hide stay manageable; `locked` tabs cannot
- * be hidden. UI visibility only, never authorization: enforcement belongs to permissions/quotas.
+ * Arranges a channel surface's tabs, persisted in `toolsConfig['<channelType>.tabs']`. Candidates
+ * list ungated, so tabs the viewer's own grants would hide stay manageable; `locked` tabs cannot be
+ * hidden. UI visibility only, never authorization.
  */
 export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
@@ -55,8 +51,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
-  // Draft order applied at drop time so the reorder animates as a response to the drop,
-  // without waiting on the mutation round-trip; cleared once a persisted order arrives.
+  // Draft order applied at drop time so the reorder does not wait on the mutation round-trip
   const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);

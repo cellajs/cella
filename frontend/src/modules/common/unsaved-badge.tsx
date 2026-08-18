@@ -2,9 +2,6 @@ import { SquarePenIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 
-/**
- * A badge to indicate that there are unsaved changes.
- */
 export function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
   const { t } = useTranslation();
   return (

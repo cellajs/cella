@@ -4,13 +4,8 @@ import { log } from '../lib/pino';
 
 const { enterLagMs, exitLagMs, exitConsecutiveLive } = RESOURCE_LIMITS.catchup;
 
-/** Replication state for health monitoring */
 type ReplicationState = 'active' | 'paused' | 'stopped';
 
-/**
- * Centralized state management for CDC replication.
- * Encapsulates module-level state with getters/setters for testability.
- */
 class ReplicationStateManager {
   private _replicationState: ReplicationState = 'stopped';
   private _lastLsn: string | null = null;
@@ -25,92 +20,78 @@ class ReplicationStateManager {
   private _lastLagMs: number | null = null;
   private _lastEventAt: Date | null = null;
 
-  /** Get current replication status */
   get status(): ReplicationState {
     return this._replicationState;
   }
 
-  /** Set replication status */
   set status(state: ReplicationState) {
     this._replicationState = state;
   }
 
-  /** Get last processed LSN */
+  /** Last processed LSN. */
   get lastLsn(): string | null {
     return this._lastLsn;
   }
 
-  /** Set last processed LSN */
   set lastLsn(lsn: string | null) {
     this._lastLsn = lsn;
   }
 
-  /** Get replication service instance */
   get service(): LogicalReplicationService | null {
     return this._service;
   }
 
-  /** Set replication service instance */
   set service(svc: LogicalReplicationService | null) {
     this._service = svc;
   }
 
-  /** Get time when replication was paused (null if not paused) */
+  /** Null while replication is not paused. */
   get replicationPausedAt(): Date | null {
     return this._replicationPausedAt;
   }
 
-  /** Set time when replication was paused */
   set replicationPausedAt(date: Date | null) {
     this._replicationPausedAt = date;
   }
 
-  /**
-   * Mark replication as active (WebSocket connected).
-   */
+  /** WebSocket connected. */
   markActive(): void {
     this._replicationState = 'active';
     this._replicationPausedAt = null;
   }
 
-  /**
-   * Mark replication as paused (WebSocket disconnected).
-   */
+  /** WebSocket disconnected. */
   markPaused(): void {
     this._replicationState = 'paused';
     this._replicationPausedAt = new Date();
   }
 
-  /**
-   * Mark replication as stopped.
-   */
   markStopped(): void {
     this._replicationState = 'stopped';
   }
 
   // ── Catchup mode ───────────────────────────────────────────────────────
 
-  /** Whether the worker is replaying old WAL events */
+  /** True while the worker is replaying old WAL events. */
   get catchingUp(): boolean {
     return this._catchingUp;
   }
 
-  /** When catchup started (epoch ms), null if not catching up */
+  /** Epoch ms, null when not catching up. */
   get catchupStartedAt(): number | null {
     return this._catchupStartedAt;
   }
 
-  /** Number of events processed during current catchup */
   get catchupEventsProcessed(): number {
     return this._catchupEventsProcessed;
   }
 
-  /** Last measured WAL lag in milliseconds */
+  /** Last measured WAL lag in ms. */
   get lastLagMs(): number | null {
     return this._lastLagMs;
   }
 
-  /** When the last DML change was applied (null if none yet this run) */
+  /** Null when no DML change has been applied this run. */
   get lastEventAt(): Date | null {
     return this._lastEventAt;
   }
@@ -120,28 +101,25 @@ class ReplicationStateManager {
     this._lastEventAt = new Date();
   }
 
-  /** Increment catchup event counter */
   incrementCatchupEvents(count = 1): void {
     this._catchupEventsProcessed += count;
   }
 
   /**
-   * Update WAL lag from a BEGIN message's commitTime.
-   * Manages catchup mode enter/exit with hysteresis.
+   * Records WAL lag from a BEGIN message's commitTime and enters or exits catchup mode with hysteresis.
    *
-   * @returns true if currently in catchup mode (after this update)
+   * @returns whether catchup mode is active after this update.
    */
   updateLag(lagMs: number): boolean {
     this._lastLagMs = lagMs;
 
     if (!this._catchingUp) {
-      // Enter catchup when lag crosses the upper threshold.
       if (lagMs > enterLagMs) {
         this._catchingUp = true;
         this._catchupStartedAt = Date.now();
         this._catchupEventsProcessed = 0;
         this._consecutiveLiveTxns = 0;
-        log.info('Entering catchup mode — WAL lag exceeds threshold', {
+        log.info('Entering catchup mode: WAL lag exceeds threshold', {
           lagMs: Math.round(lagMs),
           thresholdMs: enterLagMs,
         });
@@ -149,12 +127,11 @@ class ReplicationStateManager {
       return this._catchingUp;
     }
 
-    // Exit catchup when lag falls below the lower threshold.
     if (lagMs < exitLagMs) {
       this._consecutiveLiveTxns++;
       if (this._consecutiveLiveTxns >= exitConsecutiveLive) {
         const duration = Date.now() - (this._catchupStartedAt ?? Date.now());
-        log.info('Exiting catchup mode — WAL lag below threshold', {
+        log.info('Exiting catchup mode: WAL lag below threshold', {
           lagMs: Math.round(lagMs),
           consecutiveLive: this._consecutiveLiveTxns,
           catchupDurationMs: duration,
@@ -164,25 +141,21 @@ class ReplicationStateManager {
         return false;
       }
     } else {
-      // Reset consecutive live counter if lag spikes back up
+      // A lag spike restarts the consecutive-live count.
       this._consecutiveLiveTxns = 0;
     }
 
     return this._catchingUp;
   }
 
-  /**
-   * Reset catchup state after post-catchup recovery completes.
-   */
+  /** Called once post-catchup recovery completes. */
   resetCatchup(): void {
     this._catchupStartedAt = null;
     this._catchupEventsProcessed = 0;
     this._consecutiveLiveTxns = 0;
   }
 
-  /**
-   * Reset all state (for testing).
-   */
+  /** Test helper. */
   reset(): void {
     this._replicationState = 'stopped';
     this._lastLsn = null;
@@ -197,5 +170,4 @@ class ReplicationStateManager {
   }
 }
 
-/** Singleton state manager instance */
 export const replicationState = new ReplicationStateManager();

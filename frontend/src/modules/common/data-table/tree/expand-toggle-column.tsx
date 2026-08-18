@@ -3,19 +3,12 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { TreeRow } from './build-tree';
 import { useTreeContext } from './tree-context';
 
-/** Identifies the tree-table expansion column. */
 export const expandToggleColumnKey = 'expand-toggle-column';
 
-/**
- * Minimal row contract this column reads. Any `TreeRow<T>` produced by
- * {@link buildTree} satisfies it.
- */
+/** Minimal row contract this column reads; any {@link buildTree} output satisfies it. */
 type AnyTreeRow = TreeRow<{ id: string }>;
 
-/**
- * Inner component so `useTreeContext()` is called inside a real React render
- * (one component per cell instance), not directly in the renderCell callback.
- */
+/** Separate component so `useTreeContext()` runs inside a React render, not in the renderCell callback. */
 function ExpandToggleCell({ row, tabIndex }: { row: AnyTreeRow; tabIndex: number }) {
   const { onToggle, rowHeight, maxDepth } = useTreeContext();
   return (
@@ -39,8 +32,7 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
   width: 36,
   minWidth: 36,
   maxWidth: 36,
-  // Move the focus ring to toggle buttons, while leaf rows retain the cell outline so keyboard
-  // focus remains visible.
+  // Focus ring moves to the toggle button; leaf rows keep the cell outline.
   cellClass: (row) =>
     row._hasChildren
       ? 'flex items-center justify-center !p-0 aria-selected:outline-none aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'

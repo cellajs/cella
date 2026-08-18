@@ -35,10 +35,7 @@ interface SyncStoreState {
   orgs: Record<string, OrgSyncState>;
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
-  /**
-   * Track non-persisted server-known sequence per view, including muted notifications.
-   * Catchup rebuilds this side; persisted organization state holds caught-up sequences.
-   */
+  /** Server-known sequence per view including muted notifications, not persisted: catchup rebuilds it, while persisted org state holds caught-up sequences. */
   known: Record<string, Record<string, number>>;
 
   setCursor: (cursor: string | null) => void;
@@ -53,9 +50,8 @@ interface SyncStoreState {
   setKnownSeq: (channelViewId: string, entityType: string, seq: number) => void;
   getKnownSeq: (channelViewId: string, entityType: string) => number;
   /**
-   * Register a grant-boundary view. RE-BASELINE RULE: identity = prefix set + entity
-   * types + depth; any identity change resets the cursor to 0 (a grown prefix set has
-   * history predating the cursor, and a delta fetch would silently skip it).
+   * Register a grant-boundary view. Identity is prefix set plus entity types plus depth, and any identity change resets the cursor to 0:
+   * a grown prefix set has history predating the cursor that a delta fetch would skip.
    */
   declareSyncView: (key: string, view: Omit<RegisteredSyncView, 'cursor'>) => void;
   removeSyncView: (key: string) => void;
@@ -79,7 +75,6 @@ function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
   return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
 }
 
-/** Ensure an org entry exists, creating it with defaults if needed. */
 function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?: string): OrgSyncState {
   const existing = orgs[orgId];
   if (!existing) {
@@ -119,9 +114,7 @@ export const syncStore = createStore<SyncStoreState>()(
           }),
         getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
 
-        // Org-homed channel views arrive with channelId === orgId on the live wire, while catchup
-        // reports them at org level. Normalize both to the org slot so live and catchup
-        // share ONE caught-up cursor per channel view.
+        // Org-homed channel views arrive with channelId === orgId live but at org level in catchup; both normalize to the org slot so they share one caught-up cursor.
         setChannelSeq: (orgId, channelId, entityType, seq) =>
           set((s) => {
             const org = ensureOrg(s.orgs, orgId);
@@ -170,15 +163,12 @@ export const syncStore = createStore<SyncStoreState>()(
                 organizationId: orgId,
                 prefixes: [orgId],
                 entityTypes: [entityType],
-                // Org-view cursor over the org sequence. Only the org slot proves org-WIDE
-                // ingestion (child-channel-view cursors cover their own subtree only); 0 means
-                // no baseline yet: catchup stores the frontier and route loaders supply data.
+                // Only the org slot proves org-wide ingestion, since child-channel cursors cover their own subtree; 0 means no baseline, so catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
               });
             }
           }
-          // Registered grant-boundary views ride the same request (precision on top of
-          // the org-view correctness baseline).
+          // Registered grant-boundary views ride the same request, adding precision over the org-view baseline.
           for (const [key, view] of Object.entries(get().views)) {
             views.push({ key, ...view });
           }

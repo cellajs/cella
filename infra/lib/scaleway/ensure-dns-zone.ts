@@ -76,7 +76,7 @@ export async function ensureDnsZone(opts: {
   const orgApex = findApex(await listZones(secretKey, undefined, domain));
   if (orgApex?.status === 'active') {
     console.info(
-      `  ${tildeMark} DNS zone ${pc.cyan(domain)} is active in a sibling project — reusing it (org-shared zone)`,
+      `  ${tildeMark} DNS zone ${pc.cyan(domain)} is active in a sibling project: reusing it (org-shared zone)`,
     );
     return { status: 'active' };
   }
@@ -95,7 +95,7 @@ export async function ensureDnsZone(opts: {
   console.info('  Scaleway has sent an email with the exact records to add at your current DNS provider');
   console.info(`  (TXT ${pc.cyan(`${CHALLENGE_NAME}.${domain}`)} + apex NS delegation). Follow that email,`);
   console.info(`  or manage the domain at ${pc.underline('https://console.scaleway.com/domains/external')}.`);
-  console.info('  A second email will arrive once ownership is validated — then recheck below.\n');
+  console.info('  A second email will arrive once ownership is validated: then recheck below.\n');
 
   while (true) {
     const action = nonInteractive()
@@ -103,7 +103,7 @@ export async function ensureDnsZone(opts: {
       : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
       console.info(
-        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes — re-run bootstrap to retry.`,
+        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run bootstrap to retry.`,
       );
       return { status: 'skipped' };
     }
@@ -114,7 +114,7 @@ export async function ensureDnsZone(opts: {
       return { status: 'active' };
     }
     console.info(
-      `  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? ` — ${fresh.message}` : ''}`,
+      `  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? `: ${fresh.message}` : ''}`,
     );
     if (process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1') {
       console.info(`  ${tildeMark} Raw zones matching ${domain}:`);

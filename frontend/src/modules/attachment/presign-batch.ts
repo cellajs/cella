@@ -3,10 +3,7 @@ import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
 import { subscribeOwnerChange } from '~/query/local-user-storage';
 
-/**
- * The server rejected this attachment id: denied or nonexistent (the response deliberately does
- * not say which). Permanent for this session; retrying the same request will not help.
- */
+/** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
 export class PresignRejectedError extends Error {
   constructor(attachmentId: string) {
     super(`Presign rejected for attachment ${attachmentId}`);

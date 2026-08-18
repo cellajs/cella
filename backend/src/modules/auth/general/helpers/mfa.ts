@@ -13,12 +13,8 @@ import { getValidToken } from '#/utils/get-valid-token';
 import { hashToken } from '#/utils/hash-token';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
-/**
- * Starts an MFA challenge: stores a hashed `confirm-mfa` token and sets its cookie. Returns the
- * `/auth/mfa` redirect path, or null when the user has no MFA enabled.
- */
+/** Starts an MFA challenge: stores a hashed `confirm-mfa` token, sets its cookie, and returns the `/auth/mfa` path or null when MFA is off. */
 export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
-  // If the user does not have MFA enabled, do nothing
   if (!user.mfaRequired) return null;
 
   const timespan = new TimeSpan(10, 'm');
@@ -27,7 +23,6 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
 
-  // Generate a new random token and insert it
   await db
     .insert(tokensTable)
     .values({
@@ -40,10 +35,8 @@ export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
     })
     .returning({ secret: tokensTable.secret });
 
-  // Track the MFA confirmation session in a short-lived auth cookie.
   await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
 
-  // Return the path to redirect the user to MFA authentication page
   return '/auth/mfa';
 };
 
@@ -56,7 +49,6 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
       meta: { errorPagePath: '/auth/error' },
     });
 
-  // Fetch token row and associated user
   const tokenRecord = await getValidToken({
     ctx,
     token: tokenFromCookie,
@@ -64,7 +56,6 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
     tokenType: 'confirm-mfa',
   });
 
-  // Sanity check
   if (!tokenRecord.userId) throw new AppError(400, 'invalid_request', 'error');
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, tokenRecord.userId)).limit(1);

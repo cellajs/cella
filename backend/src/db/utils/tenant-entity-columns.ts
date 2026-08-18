@@ -4,10 +4,7 @@ import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-/**
- * Creates base columns shared by all tenant-scoped entities (channel entities, product entities).
- * Users are cross-tenant and do not use this.
- */
+/** Shared by channel and product entities. Users are cross-tenant and do not use this. */
 export const tenantEntityColumns = <T extends string>(entityType: T) => ({
   createdAt: timestampColumns.createdAt,
   id: uuid().primaryKey().$defaultFn(generateId),

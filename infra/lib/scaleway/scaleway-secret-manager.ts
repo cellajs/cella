@@ -48,11 +48,7 @@ export interface EnsureSecretInput {
   path: string;
   description: string;
   protect?: boolean;
-  /**
-   * Scaleway ephemeral policy, set at creation and irremovable afterwards.
-   * `expires_once_accessed: true` + action 'disable' = single-access versions:
-   * the first read disables the version, which is the handoff tamper alarm.
-   */
+  /** Scaleway ephemeral policy, set at creation and irremovable. `expires_once_accessed` with action 'disable' makes versions single-access: the first read disables it, which is the handoff tamper alarm. */
   ephemeralPolicy?: {
     expires_once_accessed: boolean;
     action: 'disable' | 'delete';
@@ -72,14 +68,7 @@ function buildSecretsUrl(region: string, query: URLSearchParams) {
   return `${SECRET_MANAGER_BASE}/regions/${region}/secrets${suffix}`;
 }
 
-/**
- * Scaleway stores secret folder paths in canonical form WITHOUT a trailing
- * slash (it normalizes `/foo/` → `/foo`). Both the `path` list filter and the
- * `path` returned on each secret use that form, so we must normalize before
- * filtering or comparing; otherwise a container created by an earlier run
- * (queried/compared as `/foo/`) is never found, breaking idempotency and
- * triggering a `cannot have same secret name in same path` 400 on re-create.
- */
+/** Scaleway stores secret folder paths without a trailing slash and uses that form in both the `path` list filter and each secret's `path`. Compare in canonical form or re-creates 400 with `cannot have same secret name in same path`. */
 function normalizeSecretPath(path: string): string {
   return path === '/' ? path : path.replace(/\/+$/, '');
 }
@@ -98,11 +87,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
       return response.secrets;
     },
 
-    /**
-     * Every secret at `root` or in a folder below it. The API's `path` filter
-     * is exact-match only, so subtree listing filters client-side over the
-     * project listing (per-service folders made env listings subtree-shaped).
-     */
+    /** Every secret at `root` or below. The API's `path` filter is exact-match only, so subtree listing filters client-side over the project listing. */
     async listSecretsUnder(root: string): Promise<SecretManagerSecret[]> {
       const normalizedRoot = normalizeSecretPath(root);
       const secrets = await this.listSecrets();

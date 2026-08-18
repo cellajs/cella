@@ -9,7 +9,7 @@ import {
 } from './define.ts';
 import { lenses } from './lens-list.ts';
 
-/** Re-exported doba type so telemetry consumers don't import dobajs directly. */
+/** Re-exported so telemetry callers need no direct dobajs import. */
 export type { RegistryHooks } from 'dobajs';
 
 type AnyRecord = Record<string, unknown>;
@@ -23,18 +23,18 @@ const passthroughSchema = {
   },
 };
 
-/** Optional telemetry hooks injected by the host (server wires otel; client stays bare). */
+/** Injected by the host: the server passes otel hooks, the client passes none. */
 let registryHooks: RegistryHooks<string> | undefined;
 
-/** Inject doba lifecycle hooks (otel). Call once at startup before first migration. */
+/** Call once at startup, before the first migration. */
 export function configureLensTelemetry(hooks: RegistryHooks<string>): void {
   registryHooks = hooks;
 }
 
-/** Global schema version = lens count (monotonic, append-only). */
+/** Lens count: monotonic and append-only. */
 export const currentSchemaVersion: number = lenses.length;
 
-/** Lenses for an entity, paired with their 1-based global ordinal, in order. */
+/** Paired with their 1-based global ordinal, in order. */
 function lensesFor(entityType: LensEntityType): { lens: LensDefinition; ordinal: number }[] {
   const result: { lens: LensDefinition; ordinal: number }[] = [];
   lenses.forEach((lens, i) => {
@@ -174,18 +174,14 @@ function getRegistry(entityType: LensEntityType): Registry<Record<string, typeof
   return registry;
 }
 
-/** Clears memoized registries. Test-only, after telemetry/lens reconfiguration. */
+/** Test-only, after telemetry or lens reconfiguration. */
 export function resetLensEngine(): void {
   registryCache.clear();
 }
 
 // ── Public API ──
 
-/**
- * Migrate a cached entity row from a persisted global version up to current.
- * Idempotent: re-running over already-migrated rows is a no-op. Async because
- * doba's `transform` is async.
- */
+/** Idempotent: re-running over already-migrated rows changes nothing. */
 export async function migrateCachedEntity<T extends AnyRecord>(
   entityType: LensEntityType,
   entity: T,
@@ -200,10 +196,7 @@ export async function migrateCachedEntity<T extends AnyRecord>(
   return result.ok ? (result.value as T) : entity;
 }
 
-/**
- * Phase 2 only: down-migrate a current-shape entity to an older peer version.
- * `lossyBackward` lenses keep removed fields absent during backward migration.
- */
+/** Phase 2 only. `lossyBackward` lenses keep removed fields absent going backward. */
 export async function downgradeEntity<T extends AnyRecord>(
   entityType: LensEntityType,
   entity: T,
@@ -223,12 +216,11 @@ interface StxLike {
   [key: string]: unknown;
 }
 
-/** Options for `normalizeOps` unknown-field detection. */
 export interface NormalizeOpsOptions {
   /**
-   * Canonical field names of the entity's current ops schema. When provided,
-   * ops keys that are neither canonical nor a live expand-window alias after
-   * lens mapping are handled per `unknownFieldHandling` and reported.
+   * Canonical field names of the entity's current ops schema. When given, ops keys that are
+   * neither canonical nor a live expand-window alias after lens mapping are reported and
+   * handled per `unknownFieldHandling`.
    */
   canonicalKeys?: ReadonlySet<string>;
   /** Per-call override of `schemaEvolutionPolicy.unknownFieldHandling`. */
@@ -236,9 +228,9 @@ export interface NormalizeOpsOptions {
 }
 
 /**
- * Server seam (runtime touch point 1): normalize old-shape `ops` + `stx.fieldTimestamps`
- * to canonical keys, then mirror-write the twin field during expand windows so old
- * readers stay fresh. No-op when the entity has no lenses.
+ * Server entry point: maps old-shape `ops` and `stx.fieldTimestamps` to canonical keys, then
+ * mirror-writes the twin field during expand windows so old readers stay fresh. Does nothing
+ * when the entity has no lenses.
  */
 export function normalizeOps<O extends AnyRecord, S extends StxLike>(
   entityType: LensEntityType,
@@ -285,8 +277,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
     }
   }
 
-  // Unknown-field policy: keys that survived lens mapping but are neither
-  // canonical nor an intentional expand-window twin.
+  // Keys surviving lens mapping that are neither canonical nor an expand-window twin.
   const unknownFields: string[] = [];
   if (options?.canonicalKeys) {
     const expandAliases = new Set<string>();
@@ -320,9 +311,8 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
 }
 
 /**
- * Client seam: rewrite a queued mutation's variables from its persisted global
- * version up to current canonical keys (applied to top-level keys, `ops`, and
- * `stx.fieldTimestamps`). Sync: pure key renames.
+ * Client entry point: rewrites a queued mutation's variables from its persisted global version
+ * to current canonical keys, across top-level keys, `ops` and `stx.fieldTimestamps`.
  */
 export function migrateQueuedMutation<V extends AnyRecord>(
   entityType: LensEntityType,
@@ -364,10 +354,7 @@ export function migrateQueuedMutation<V extends AnyRecord>(
   return next as V;
 }
 
-/**
- * Build-time helper: old→new key alias map for an entity's active expand lenses.
- * Consumed by ops/create wire-schema widening (and tests). Empty when no expand lenses.
- */
+/** Old to new key aliases for an entity's active expand lenses, read by wire-schema widening. */
 export function widenedOpsKeyMap(entityType: LensEntityType): Record<string, string> {
   const map: Record<string, string> = {};
   for (const { lens } of lensesFor(entityType)) {

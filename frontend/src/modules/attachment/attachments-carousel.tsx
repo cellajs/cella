@@ -31,16 +31,10 @@ export type CarouselItemData = {
   url: string;
   name?: string;
   filename?: string;
-  /**
-   * Content type driving renderer choice. BlockNote passes a block *type* ('image', 'video'…)
-   * or a MIME type; `AttachmentRender` matches both by substring.
-   */
+  /** Renderer choice: a BlockNote block type ('image', 'video') or a MIME type, matched by substring. */
   contentType?: string;
   convertedContentType?: string | null;
-  /**
-   * URL is a local blob object URL. `blob:` URLs fail the CDN check, so without this flag the
-   * toolbar's affordances would vanish exactly when the file is available offline.
-   */
+  /** URL is a local blob object URL, which fails the CDN check the toolbar buttons rely on. */
   isLocal?: boolean;
 };
 
@@ -53,14 +47,13 @@ interface CarouselPropsBase {
 type CarouselProps =
   | (CarouselPropsBase & {
       isDialog: true;
-      saveInSearchParams: boolean; // Required when isDialog is true
+      saveInSearchParams: boolean;
     })
   | (CarouselPropsBase & {
       isDialog?: false;
-      saveInSearchParams?: never; // Disallowed when isDialog is false
+      saveInSearchParams?: never;
     });
 
-/** Renders the attachments carousel component. */
 export function AttachmentsCarousel({
   items,
   isDialog = false,
@@ -84,8 +77,7 @@ export function AttachmentsCarousel({
     return index !== -1 ? index : itemIndex;
   })();
 
-  // startIndexRef stays stable across URL-only changes so Embla doesn't reInit (flash) on slide
-  // nav; it only re-syncs when the item set size changes (e.g. group data arrives).
+  // A stable start index stops Embla reinitializing (flashing) on slide nav; it re-syncs only on item count change.
   const startIndexRef = useRef<number | null>(null);
   const itemCountRef = useRef(items.length);
   if (startIndexRef.current === null || itemCountRef.current !== items.length) {
@@ -102,7 +94,6 @@ export function AttachmentsCarousel({
       return;
     }
 
-    // Update URL for sharing/bookmarking - dialog uses select to avoid re-render
     navigate({
       to: '.',
       replace: true,
@@ -113,8 +104,7 @@ export function AttachmentsCarousel({
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
-  // Stable setApi registers Embla's `select` listener once, reading latest items via refs. An
-  // inline setApi re-ran each render, stacking duplicate listeners → redundant navigations.
+  // Stable setApi registers Embla's `select` listener once; an inline one stacks duplicate listeners.
   const itemsRef = useLatestRef(items);
   const handleSelect = useLatestCallback(updateSearchParam);
   const handleSetApi = useCallback(
@@ -137,8 +127,7 @@ export function AttachmentsCarousel({
     >
       {currentItem && isDialog && (
         <div className="fixed top-0 left-0 z-10 flex w-full gap-2 bg-background/60 p-3 text-center backdrop-blur-xs sm:text-left">
-          {/* The visible name is the dialog's accessible name (Base UI has no VisuallyHidden component).
-              When there is no name, render a screen-reader-only title so the dialog is still labelled. */}
+          {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
           {currentItem.name ? (
             <DialogTitle className="ml-1 flex h-6 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
               {currentItem.contentType && (
@@ -161,8 +150,7 @@ export function AttachmentsCarousel({
             </Button>
           )}
 
-          {/* Download works for local blob URLs too (same-document fetch, works offline).
-              Open-in-new-tab above stays CDN-only: top-level blob navigation is browser-dependent. */}
+          {/* Download also handles blob URLs; open-in-new-tab stays CDN-only since top-level blob navigation is browser-dependent. */}
           {(isCDNUrl(currentItem.url) || currentItem.isLocal) && (
             <Button
               variant="ghost"

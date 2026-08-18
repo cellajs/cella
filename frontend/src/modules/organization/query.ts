@@ -32,9 +32,6 @@ const keys = createEntityKeys<OrganizationFilters>('organization');
 // Register query keys for dynamic lookup in stream handlers
 registerEntityQueryKeys('organization', keys);
 
-/**
- * Organization query keys.
- */
 export const organizationQueryKeys = keys;
 
 const findOrganizationInCache = createCacheFinder<Organization>('organization');
@@ -60,10 +57,6 @@ type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 
   limit?: number;
 };
 
-/**
- * Paginated organizations infinite query. `include` is deliberately not part of the cache key because
- * queries with/without counts share one cache for offline behavior; the most recent fetch wins.
- */
 export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
   const {
     q = organizationsSearchDefaults.q,
@@ -99,9 +92,6 @@ export const organizationsListQueryOptions = (params: OrganizationsListParams) =
   });
 };
 
-/**
- * Mutation hook for creating a new organization.
- */
 export const useOrganizationCreateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
@@ -111,7 +101,6 @@ export const useOrganizationCreateMutation = () => {
     mutationFn: async ({ path, body }) => {
       const result = await createOrganizations({ path, body });
 
-      // If the org was not created (empty data), check rejection reasons
       if (!result.data.length) {
         const reasons = result.rejectionReasons ? Object.keys(result.rejectionReasons) : [];
         if (reasons.includes('org_limit_reached')) {
@@ -120,7 +109,7 @@ export const useOrganizationCreateMutation = () => {
         throw new ApiError({ status: 422, type: 'create_resource' });
       }
 
-      // Return the first created organization (currently only single creation supported)
+      // The endpoint creates a list; single creation is the only caller.
       return result.data[0] as EnrichedOrganization;
     },
     onSuccess: (createdOrganization) => {
@@ -134,9 +123,6 @@ export const useOrganizationCreateMutation = () => {
   });
 };
 
-/**
- * Mutation hook for updating an existing organization.
- */
 export const useOrganizationUpdateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
@@ -156,9 +142,6 @@ export const useOrganizationUpdateMutation = () => {
   });
 };
 
-/**
- * Mutation hook for deleting organizations.
- */
 export const useOrganizationDeleteMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
@@ -182,9 +165,7 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/**
- * Fetch organizations for table export. Bypasses cache; returns flat items.
- */
+/** Fetch organizations for table export. Bypasses cache; returns flat items. */
 export const fetchOrganizationsForExport = async (params: {
   limit: number;
   offset?: number;
@@ -193,7 +174,6 @@ export const fetchOrganizationsForExport = async (params: {
   order?: NonNullable<GetOrganizationsData['query']>['order'];
 }) => {
   const { limit, offset = 0, q = '', sort = organizationsSearchDefaults.sort } = params;
-  // displayOrder reads ascending; every other column defaults to descending
   const order = params.order ?? (sort === 'displayOrder' ? 'asc' : 'desc');
   const response = await getOrganizations({
     query: { limit: String(limit), q, sort, order, offset: String(offset) },

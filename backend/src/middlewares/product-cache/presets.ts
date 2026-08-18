@@ -9,13 +9,8 @@ import { coalesce, isInFlight } from '#/utils/request-coalescing';
 import { productCache as productCacheStore } from './app-product-cache';
 
 /**
- * Entity-keyed detail cache middleware.
- *
- * Keyed by `entityType:{id}` from the request path with no cache token. On a hit, the caller is
- * re-authorized against the cached row with `checkPermission` (live authorization, replacing the
- * old session-signed token capability), then the enriched response is served. On a miss, the
- * handler runs once (coalesced) and its enriched result is cached. CDC invalidates the entry by
- * entity id on change (see cdc-websocket `handleMessage`), so the next fetch re-enriches.
+ * Detail cache keyed by `entityType:{id}` from the request path, with no cache token. A hit re-authorizes the caller
+ * against the cached row; a miss runs the handler once (coalesced) and caches it. CDC invalidates by entity id.
  */
 export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
@@ -35,7 +30,6 @@ export const productCache = (entityType: ProductEntityType): MiddlewareHandler<E
       const key = `${entityType}:${id}`;
       const cached = productCacheStore.get(key);
 
-      // Enriched hit: re-authorize this caller against the cached row, then serve.
       if (isEnriched(cached)) {
         if (callerCanRead(ctx, entityType, cached)) {
           ctx.header('X-Cache', 'HIT');
@@ -72,11 +66,8 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
 }
 
 /**
- * Re-authorize a cache hit against the cached row: the draft veto first (an author-cached
- * draft must never serve to a non-author, matching SSE dispatch and the detail read),
- * then the engine. The enriched response replaces `createdBy` with a user object, so
- * normalize it back to the raw id the permission subject expects; every other field the
- * check needs (channel ids, publicAt, publishedAt) is already present on the response.
+ * Re-authorizes a cache hit, draft veto first so an author-cached draft never serves to a non-author. `createdBy` is
+ * normalized from the enriched user object back to the raw id the permission subject expects.
  */
 function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached: Record<string, unknown>): boolean {
   try {

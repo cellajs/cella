@@ -3,7 +3,6 @@ import { appConfig } from 'shared';
 import { seenStore, setupSeenBeaconFlush } from '~/modules/seen/seen-store';
 import { useTotalUnseenCount } from './use-unseen-count';
 
-// Periodic Background Sync API (Chromium-only) and dev-only window helper.
 interface PeriodicSyncManager {
   register(tag: string, options?: { minInterval?: number }): Promise<void>;
 }
@@ -25,10 +24,9 @@ export function SeenTracker() {
 
     const isDev = appConfig.mode === 'development';
 
-    // Expose manual flush in dev for debugging
     if (isDev) {
       window.__flushSeen = flush;
-      console.debug('[SeenTracker] initialized — call window.__flushSeen() to flush manually');
+      console.debug('[SeenTracker] initialized, call window.__flushSeen() to flush manually');
     }
 
     return () => {
@@ -40,13 +38,12 @@ export function SeenTracker() {
     };
   }, []);
 
-  // Sync PWA app badge with total unseen count
   useAppBadge();
 
   return null;
 }
 
-/** Syncs the PWA app badge with total unseen count. Badging API only (Chrome/Edge/Safari iOS 16.4+); no-ops elsewhere. */
+/** Syncs the PWA app badge with the total unseen count. Badging API only (Chrome/Edge/Safari iOS 16.4+); no-ops elsewhere. */
 function useAppBadge() {
   const total = useTotalUnseenCount();
 
@@ -60,19 +57,17 @@ function useAppBadge() {
     }
   }, [total]);
 
-  // Register periodic background sync for badge updates when app is closed (Chromium only)
   useEffect(() => {
     registerPeriodicBadgeSync();
   }, []);
 }
 
-/** Registers periodic background sync so the service worker updates the badge while the app is closed. Chromium-only (Chrome 80+, Edge); no-ops elsewhere. */
+/** Lets the service worker update the badge while the app is closed. Chromium-only (Chrome 80+, Edge); no-ops elsewhere. */
 async function registerPeriodicBadgeSync() {
   try {
     const registration = await navigator.serviceWorker?.ready;
     if (!registration?.periodicSync) return;
 
-    // Check if permission is granted
     const status = await navigator.permissions.query({ name: 'periodic-background-sync' as PermissionName });
     if (status.state !== 'granted') return;
 

@@ -10,10 +10,6 @@ interface CollapsedPreviewProps {
   };
 }
 
-/**
- * Renders the preview shown when a node is collapsed.
- * Shows item count, close bracket, match indicator, and optional type label.
- */
 export function CollapsedPreview({
   itemCount,
   closeBracket,

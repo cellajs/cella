@@ -20,11 +20,9 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
   const activeMatch = location.pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
   const activePageId = activeMatch ? decodeURIComponent(activeMatch) : undefined;
 
-  // Tree of pages for nested rendering
   const pageTree = buildPageNodeTree(pages);
 
-  // Ancestor chain of the active page: seeds expansion on route change and lets rows
-  // know whether the user is viewing one of their subpages.
+  // Ancestor chain seeds expansion on route change and tells rows whether a subpage is active
   const activeAncestorIds = useMemo(() => computeAncestorIds(pages, activePageId), [pages, activePageId]);
 
   // Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree)
@@ -40,8 +38,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
     next.add(id);
   };
 
-  // Ancestors of the active page are seeded on route change (accordion-pruned per level);
-  // the user remains free to collapse them afterwards without them snapping back open.
+  // Ancestors are seeded per route change (accordion-pruned per level); later collapses stick
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     if (activeAncestorIds.size === 0) return;

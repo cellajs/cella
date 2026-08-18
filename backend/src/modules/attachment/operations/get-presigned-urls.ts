@@ -22,20 +22,15 @@ interface PresignedUrlsResult {
   rejectedIds: string[];
 }
 
-/**
- * Key to sign for a variant, resolved from the row only (never client input).
- * Variants that were never generated fall back to the always-present original key.
- */
+/** Resolved from the row, never client input; an ungenerated variant falls back to `original`. */
 const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string =>
   attachment.keys[variant] ?? attachment.keys.original;
 
 /**
- * Sign private-bucket download URLs for up to 50 attachments the caller may read.
- *
- * Fails closed: rows resolve under tenant RLS and are permission-checked in one
- * batch before anything is signed. Missing and denied ids merge into a uniform
- * `rejectedIds` list with no reason split, so the response is not an existence
- * oracle. Succeeds even when every item is rejected.
+ * Signs private-bucket download URLs for up to 50 attachments the caller may read.
+ * Fails closed: rows resolve under tenant RLS and are permission-checked in one batch before
+ * anything is signed. Missing and denied ids merge into one `rejectedIds` list, so the response
+ * is not an existence oracle. Succeeds even when every item is rejected.
  */
 export async function getPresignedUrlsOp(ctx: AuthContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
   const pairs = new Map<string, { attachmentId: string; variant: AttachmentVariant }>();

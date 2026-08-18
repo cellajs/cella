@@ -1,7 +1,6 @@
 /**
- * Parses channel counter JSON into typed singleton and per-entity maps.
- * The `e` domain contains entity metrics, `m` contains membership metrics, and an `h`
- * segment marks a home-only summary. Activity and membership counts are parsed elsewhere.
+ * The `e` key domain holds entity metrics, `m` membership metrics, and an `h` segment marks a
+ * home-only summary. Activity and membership counts are parsed elsewhere.
  */
 export function parseCounterCounts(counts: Record<string, unknown> | null | undefined) {
   const entityCounts: Record<string, number> = {};

@@ -27,10 +27,6 @@ const disabledServices = new Set(
     .map(([slug]) => slug),
 );
 
-/**
- * Result of parsing an OpenAPI spec.
- * Contains all the data needed to generate documentation files.
- */
 interface ParsedOpenApiSpec {
   operations: GenOperationSummary[];
   tags: GenTagSummary[];
@@ -40,10 +36,7 @@ interface ParsedOpenApiSpec {
   tagDetails: Map<string, GenOperationDetail[]>;
 }
 
-/**
- * Parse an OpenAPI spec into documentation-ready data structures.
- * Pure function (no side effects), kept separate from the plugin handler for testability.
- */
+/** Pure function, kept separate from the plugin handler for testability. */
 export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const operations: GenOperationSummary[] = [];
   const tagMap = new Map<string, { description?: string; count: number; kind?: string }>();
@@ -51,11 +44,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   // Count operations dropped by a hidden-kind tag so the overview can report the documented/hidden split.
   let hiddenOperationCount = 0;
 
-  // Extract extension definitions from info
   const extensionDefs = (spec.info?.['x-extensions'] ?? []) as GenExtensionDefinition[];
 
-  // Split tags by kind: module tags feed the sidebar, schema tags feed the schemas page buckets,
-  // hidden tags drop their operations (see openapi-tag-registry for the kind semantics).
+  // Tag kinds: module feeds the sidebar, schema feeds the schemas page buckets, hidden drops its operations.
   const tagKindMap = new Map<string, string>();
   const excludedTags = new Set<string>();
   const hiddenTags = new Set<string>();
@@ -82,10 +73,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const schemaTagNameSet = new Set(schemaKindTags.map((t) => t.name));
   const defaultSchemaTag = schemaKindTags.find((t) => t.isDefault)?.name ?? schemaKindTags[0]?.name ?? 'data';
 
-  // Iterate through spec.paths directly to preserve order
+  // Iterating spec.paths directly preserves order.
   const httpMethods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
 
-  // Helper to resolve $ref to component responses
   const componentResponses: Record<string, OpenApiResponseObject> = {};
   if (spec.components?.responses) {
     for (const [name, value] of Object.entries(spec.components.responses)) {
@@ -99,13 +89,11 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     for (const [path, pathItem] of Object.entries(spec.paths)) {
       if (!pathItem) continue;
 
-      // Iterate using typed method access on PathItemObject
       for (const method of httpMethods) {
         const op = pathItem[method];
         if (!op?.operationId) continue;
 
-        // Skip operations gated by a service that is disabled in this build.
-        // Keeps the SDK a stable superset while the docs reflect the effective config.
+        // Operations gated by a disabled service are dropped from the docs, keeping the SDK a stable superset.
         const service = op['x-service' as `x-${string}`];
         if (typeof service === 'string' && disabledServices.has(service)) continue;
 
@@ -115,14 +103,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           continue;
         }
 
-        // Strip excluded tags (e.g., ownership tags) from operation tags
         const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));
 
-        // Extract responses for operation details
         const responses: GenResponseSummary[] = [];
         if (op.responses) {
           for (const [statusCode, responseEntry] of Object.entries(op.responses)) {
-            // ResponsesObject index signature includes | unknown, so we need a boundary cast
+            // The ResponsesObject index signature includes `unknown`, so a boundary cast is required.
             const response = responseEntry as OpenApiResponseObject | OpenApiReferenceObject | undefined;
             if (!response) continue;
 
@@ -132,14 +118,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
             let contentType: string | undefined;
             let schema: GenSchema | undefined;
 
-            // Resolve $ref if present (e.g., "#/components/responses/BadRequestError")
             if ('$ref' in response) {
               ref = response.$ref;
               name = response.$ref.split('/').pop();
               if (name && componentResponses[name]) {
                 const componentResponse = componentResponses[name];
                 description = componentResponse.description ?? '';
-                // Get schema from component response (check all content types, prefer JSON)
                 if (componentResponse.content) {
                   const contentTypes = Object.keys(componentResponse.content);
                   const jsonType = contentTypes.find((ct) => ct.includes('json'));
@@ -157,7 +141,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
               description = response.description ?? '';
             }
 
-            // Check for inline response content with schema (only on ResponseObject, not ReferenceObject)
             const content = !('$ref' in response) ? response.content : undefined;
             let example: unknown;
             if (content) {
@@ -172,12 +155,10 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
                   const responseSchema = mediaTypeObject.schema;
                   schema = resolveSchema(responseSchema, spec);
 
-                  // Extract ref info if the schema itself is a $ref
                   if (responseSchema.$ref) {
                     ref = responseSchema.$ref;
                     name = responseSchema.$ref.split('/').pop();
 
-                    // Extract example from the referenced component schema
                     if (name && spec.components?.schemas?.[name]) {
                       const componentSchema = spec.components.schemas[name];
                       if (componentSchema.example !== undefined) {
@@ -186,13 +167,12 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
                     }
                   }
 
-                  // Check for inline example on the schema itself
                   if (example === undefined && responseSchema.example !== undefined) {
                     example = responseSchema.example;
                   }
                 }
 
-                // Check for example at the media type level (preferred in OpenAPI 3.1)
+                // OpenAPI 3.1 prefers the example at the media type level.
                 if (example === undefined && mediaTypeObject?.example !== undefined) {
                   example = mediaTypeObject.example;
                 }
@@ -208,10 +188,9 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
             if (ref) responseSummary.ref = ref;
             if (contentType) responseSummary.contentType = contentType;
 
-            // Skip embedding error schemas - they'll be resolved from schemas.gen.json using response.name
+            // Error schemas are not embedded: the viewer resolves them from schemas.gen.json by response.name.
             const isErrorSchema = schema?.ref?.endsWith('Error') && schema.ref.includes('/schemas/');
             if (!isErrorSchema && schema) {
-              // Add contentType to schema so it appears in the viewer
               if (contentType) {
                 schema.contentType = contentType;
               }
@@ -223,13 +202,10 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
-        // Check if any success response (2xx) has an example
         const hasExample = responses.some((r) => r.status >= 200 && r.status < 300 && r.example !== undefined);
 
-        // Check if any response has a body (schema)
         const hasResponseBody = responses.some((r) => r.schema !== undefined);
 
-        // Extract extensions dynamically based on extensionDefs
         const extensions: Record<string, string[]> = {};
         for (const ext of extensionDefs) {
           const value = op[ext.key as `x-${string}`];
@@ -238,10 +214,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
-        // Derive entityType from the first tag that matches a known entity type
         const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
 
-        // Group all operation tags by kind
         const allOpTags = op.tags ?? [];
         const tagsByKind: Record<string, string[]> = {};
         for (const tag of allOpTags) {
@@ -270,10 +244,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
 
         operations.push(operationSummary);
 
-        // Build combined request with path, query, and body sections
         const request: GenRequest = {};
 
-        // Extract path parameters into a 'path' section
         if (op.parameters) {
           const pathParamProps: Record<string, GenSchemaProperty> = {};
           const queryParamProps: Record<string, GenSchemaProperty> = {};
@@ -286,7 +258,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
               ? resolveSchemaProperty(param.schema, param.required ?? false, spec)
               : { type: 'string', required: param.required ?? false };
 
-            // Add description from param level if not in schema
             if (param.description && !paramSchema.description) {
               paramSchema.description = param.description;
             }
@@ -311,7 +282,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
-        // Extract request body into a 'body' section
         if (op.requestBody && !('$ref' in op.requestBody)) {
           const requestBody = op.requestBody;
           const content = requestBody.content;
@@ -319,7 +289,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
             const contentType = Object.keys(content).find((ct) => ct.includes('json')) || Object.keys(content)[0];
             if (contentType && content[contentType]?.schema) {
               const bodySchema = resolveSchema(content[contentType].schema, spec);
-              // Spread all schema properties to avoid missing any, then add body-specific fields
               request.body = {
                 ...bodySchema,
                 required: requestBody.required ?? false,
@@ -329,28 +298,24 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
           }
         }
 
-        // Create operation detail for per-tag files
         const operationDetail: GenOperationDetail = {
           operationId: op.operationId,
           responses,
         };
 
-        // Only add request if there are any sections
         if (Object.keys(request).length > 0) {
           operationDetail.request = request;
         }
 
-        // Count operations per tag and store details
         for (const tag of opTags) {
           const existing = tagMap.get(tag);
           if (existing) {
             existing.count++;
           } else {
-            // Tag not in spec but used in operations
+            // Used by an operation but absent from spec.tags.
             tagMap.set(tag, { count: 1 });
           }
 
-          // Store operation detail for this tag
           const tagDetails = tagDetailsMap.get(tag);
           if (tagDetails) {
             tagDetails.push(operationDetail);
@@ -362,7 +327,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     }
   }
 
-  // Convert tag map to array (maintain order from spec)
+  // Array order follows the spec's tag order.
   const tags: GenTagSummary[] = Array.from(tagMap.entries()).map(([name, data]) => ({
     name,
     description: data.description || undefined,
@@ -370,7 +335,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     kind: data.kind,
   }));
 
-  // Extract OpenAPI info
   const specInfo = spec.info || {};
   const info: GenInfoSummary = {
     title: specInfo.title ?? '',
@@ -383,25 +347,20 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     extensions: extensionDefs,
   };
 
-  // Extract component schemas. Each schema's bucket is driven by its `x-tags`
-  // extension (intersected with the registered schema-kind tags), with a
-  // fallback to the tag flagged `x-default: true`.
+  // A schema's bucket comes from its `x-tags`, intersected with the registered schema-kind tags, falling back to the `x-default: true` tag.
   const componentSchemas: GenComponentSchema[] = [];
   const schemaTagCounts = new Map<string, number>(schemaKindTags.map((t) => [t.name, 0]));
   if (!schemaTagCounts.has(defaultSchemaTag)) schemaTagCounts.set(defaultSchemaTag, 0);
 
   if (spec.components?.schemas) {
     for (const [schemaName, schemaValue] of Object.entries(spec.components.schemas)) {
-      // Resolve the schema to get full property details
       const resolvedSchema = resolveSchema(schemaValue, spec);
 
-      // Extract extendsRef if present (from allOf merging)
+      // extendsRef is set by allOf merging.
       const extendsRef = resolvedSchema.extendsRef;
 
-      // Build the ref path for this schema
       const schemaRef = `#/components/schemas/${schemaName}`;
 
-      // Resolve schema tag from x-tags (first match against schema-kind tags), else default.
       const xTags = (schemaValue as { 'x-tags'?: unknown })['x-tags'];
       const declaredTags = Array.isArray(xTags)
         ? (xTags as unknown[]).filter((t): t is string => typeof t === 'string')
@@ -409,7 +368,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       const schemaTag = declaredTags.find((t) => schemaTagNameSet.has(t)) ?? defaultSchemaTag;
       schemaTagCounts.set(schemaTag, (schemaTagCounts.get(schemaTag) ?? 0) + 1);
 
-      // Group declared tags by their registered kind (mirrors operation tagsByKind).
       const tagsByKind: Record<string, string[]> = {};
       for (const tag of declaredTags) {
         const kind = tagKindMap.get(tag) ?? 'other';
@@ -417,8 +375,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         tagsByKind[kind].push(tag);
       }
 
-      // Remove description from nested schema to avoid duplication in UI
-      // (description is shown in the card header, not in the JsonViewer)
+      // The card header shows the description, so the nested schema drops it.
       const { description: _schemaDescription, ...schemaWithoutDescription } = resolvedSchema;
 
       const componentSchema: GenComponentSchema = {
@@ -430,7 +387,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         tagsByKind,
       };
 
-      // Add optional fields
       if (schemaValue.description) {
         componentSchema.description = schemaValue.description;
       }
@@ -445,8 +401,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     }
   }
 
-  // Group schemas by ownership, module, and name for stable presentation across route registration.
-  // Untagged schemas sort last at their level.
+  // Sorted by ownership, module, and name for stable output; untagged schemas sort last at their level.
   componentSchemas.sort((a, b) => {
     const ownershipA = a.tagsByKind?.ownership?.[0] ?? '';
     const ownershipB = b.tagsByKind?.ownership?.[0] ?? '';
@@ -465,7 +420,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     return a.name.localeCompare(b.name);
   });
 
-  // Build schemaTags array from registered schema-kind tags (preserves backend order)
+  // Preserves the backend's schema-kind tag order.
   const schemaTags: GenSchemaTagSummary[] = schemaKindTags.map((t) => ({
     name: t.name,
     description: t.description,

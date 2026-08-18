@@ -6,9 +6,6 @@ import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import { Button } from '~/modules/ui/button';
 
-/**
- * Displays an error notice in authentication layout.
- */
 export function AuthErrorPage() {
   const { t } = useTranslation();
 
@@ -16,7 +13,6 @@ export function AuthErrorPage() {
 
   const { email, error } = useAuthStore();
 
-  // Show a resend invitation button if necessary
   const showResendButton = errorType === 'invitation_expired';
   const resendData = tokenId ? { tokenId } : email ? { email } : false;
 

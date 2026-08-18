@@ -26,10 +26,7 @@ export async function exportToCsv<R extends Row>(
   downloadFile(fileName, new Blob([content], { type: 'text/csv;charset=utf-8;' }));
 }
 
-/**
- * Exports table data to a PDF, styled for dark/light `mode`, with a page-name + export-date header.
- * Lazy-imports `jsPDF`/`jspdf-autotable` to keep them out of the main bundle.
- */
+/** Exports visible table columns/rows to a PDF styled for `mode`, with a page-name and export-date header. */
 export async function exportToPdf<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],
   rows: R[],
@@ -37,19 +34,16 @@ export async function exportToPdf<R extends Row>(
   pageName: string,
   mode: Mode,
 ) {
-  // Redo type assign into the  columns
   const preparedColumns = columns.filter((column) => filterColumns(column));
   const head = [preparedColumns.map((column) => String(column.name))];
   const body = formatBodyData(rows, preparedColumns);
 
-  // Import jsPDF and jsPDF autoTable dynamically
   const [{ jsPDF }, autoTable] = await Promise.all([import('jspdf'), (await import('jspdf-autotable')).default]);
   const doc = new jsPDF({
     orientation: 'l',
     unit: 'px',
   });
 
-  // Add date of export and name of the page that is exported.
   const exportDate = dayjs().format('lll');
   const exportInfo = `Exported from page: ${pageName}\nExport Date: ${exportDate}`;
   doc.text(exportInfo, 10, 10);
@@ -79,9 +73,7 @@ export async function exportToPdf<R extends Row>(
   doc.save(fileName);
 }
 
-// Format data for a single row based on column configuration
 const formatRowData = <R extends Row>(row: R, column: Column) => {
-  // Handle special cases
   if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'membership' in row.counts) {
     const key = column.key.replace('Count', '');
     return row.counts.membership[key];
@@ -94,19 +86,16 @@ const formatRowData = <R extends Row>(row: R, column: Column) => {
   return row[column.key] ?? '-';
 };
 
-// Format the body data based on column definitions
 const formatBodyData = <R extends Row>(rows: R[], columns: Column[]): (string | number)[][] => {
   return rows.map((row) => columns.map((column) => formatRowData(row, column)));
 };
 
-// Filter columns based on visibility
 const filterColumns = (column: Column) => {
   const invalidColumnKeys = ['subscription', 'checkbox-column'];
   if ('visible' in column && !invalidColumnKeys.includes(column.key) && column.name !== '') return column.visible;
   return false;
 };
 
-// Serialize cell values for CSV export
 function serialiseCellValue(value: unknown) {
   if (typeof value === 'string') {
     const formattedValue = value.replace(/"/g, '""');
@@ -115,7 +104,6 @@ function serialiseCellValue(value: unknown) {
   return value;
 }
 
-// Trigger file download in the browser
 function downloadFile(fileName: string, data: Blob) {
   const downloadLink = document.createElement('a');
   downloadLink.download = fileName;

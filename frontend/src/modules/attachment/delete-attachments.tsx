@@ -12,10 +12,9 @@ interface Props {
   onCancel?: () => void;
 }
 
-/** Renders the deletion flow for attachments. */
 export function DeleteAttachments({ attachments, callback, dialog: isDialog, onCancel }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
-  // Use tenantId and organizationId from first attachment - all attachments belong to same org
+  // All attachments belong to one organization, so the first one carries the ids.
   const deleteAttachments = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
 
   const [isPending, setIsPending] = React.useState(false);

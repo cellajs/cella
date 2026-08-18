@@ -42,7 +42,7 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
   return Array.isArray(route.children) ? route.children : [];
 }
 
-/** Override/arrangement host key for a tabbed surface: its tabs slot id when declared, else the parent route id. */
+/** Override and arrangement host key: the tabs slot id when declared, else the parent route id. */
 function getTabsHost(parentRouteId: string): string {
   // Cast: generated FileRoutesById is a closed interface without index signature
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
@@ -50,10 +50,9 @@ function getTabsHost(parentRouteId: string): string {
   return routesById[parentRouteId].options?.staticData?.tabsSlot ?? parentRouteId;
 }
 
-/** A resolved nav candidate: a placement descriptor plus where its tab links. */
 export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
 
-/** Resolution inputs for a tabbed surface (all optional; absent conditions never hide a tab). */
+/** Resolution inputs for a tabbed surface. An absent condition never hides a tab. */
 export interface ResolveNavTabsOptions {
   /** Grants the actor holds; tabs declaring `requires` hide without a match. */
   grants?: readonly string[];
@@ -66,16 +65,13 @@ export interface ResolveNavTabsOptions {
 }
 
 /**
- * All tab candidates a surface declares, ungated and unordered by stored config: child routes
- * with `staticData.navTab` (linked to their own path) plus, when the parent route declares
- * `staticData.tabsSlot`, that slot's registry tab tools (linked through the surface's `$tool`
- * host child). Management surfaces (the tabs arrangement card) read this raw list; rendering
- * goes through {@link resolveNavTabs}, which gates and orders it.
+ * All tab candidates a surface declares, ungated and unordered: child routes with
+ * `staticData.navTab` plus, when the parent declares `staticData.tabsSlot`, that slot's registry
+ * tools. Rendering goes through {@link resolveNavTabs}, which gates and orders this list.
  */
 export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   if (!parentRouteId) return [];
 
-  // Cast: generated FileRoutesById is a closed interface without index signature
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
@@ -83,7 +79,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   const children = getChildRoutes(parentRoute);
   const slot = parentRoute.options?.staticData?.tabsSlot;
 
-  // Route-file tabs: each child declaring staticData.navTab, linked to its own path.
+  // Route-file tabs: each child declaring staticData.navTab, linked to its own path
   const routeCandidates = children
     .map((route): NavCandidate | null => {
       const navTab = route.options?.staticData?.navTab;
@@ -115,15 +111,12 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
 }
 
 /**
- * Tabs for a tabbed surface: the {@link getNavTabCandidates} list, gated and ordered. App
- * overrides and channel arrangement key by the slot id when present, else the parent route id;
- * `requires` gates on `grants` and `visibleTo` on `pairs` before the stable sort on `order`
- * (default 0, lower first; ties keep registration order).
+ * The {@link getNavTabCandidates} list, gated and ordered: `requires` gates on `grants` and
+ * `visibleTo` on `pairs`, then a stable sort on `order` (default 0, lower first).
  */
 export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
   if (!parentRouteId) return [];
 
-  // Cast: generated FileRoutesById is a closed interface without index signature
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
@@ -137,34 +130,23 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
   return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
 }
 
-/**
- * First visible tab path under a parent route: the derived default-tab redirect target for
- * layout routes, so the landing tab follows `order` and app overrides.
- */
+/** First visible tab path under a parent route: the default-tab redirect target for layout routes. */
 export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTabsOptions): string | undefined {
   return resolveNavTabs(parentRouteId, options)[0]?.path;
 }
 
-/** Landing preference for {@link guardNavTabs} (arrangement inputs only; see the guard's doc). */
 export interface GuardNavTabsOptions {
-  /** Channel-stored arrangement for the surface's tabs slot (order + hidden). */
   slotConfig?: SlotToolsConfig;
   /** Preferred landing tab id; falls back to the first resolved tab when absent or disabled. */
   defaultTabId?: string;
 }
 
 /**
- * `beforeLoad` guard for a tabbed surface: forwards a navigation that would land nowhere useful
- * before any tab route mounts or fetches. Two cases redirect to the surface's landing tab: the
- * bare parent layout (links and deep URLs stay tab-less), and a tab candidate that app overrides
- * or channel-stored arrangement disable. Without the guard, the disabled tab's route would mount,
- * fire its suspense queries, and only then forward, costing a second transition and a wasted
- * fetch. Detection uses {@link isPlacementHidden}: the arrangement layers only, never
- * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
- * to the API. The landing tab prefers `defaultTabId` when the arrangement resolves it, else the
- * first resolved tab; with no resolved tabs the guard no-ops. Live config changes while sitting
- * on a tab are covered separately by {@link useNavTabRedirect}, since `beforeLoad` only reruns
- * on navigation.
+ * `beforeLoad` guard for a tabbed surface: redirects to the landing tab from the bare parent
+ * layout and from a tab that app overrides or channel arrangement disable, before that tab's
+ * route mounts and fetches. Detection uses {@link isPlacementHidden} on the arrangement layers
+ * only, never `requires`/`visibleTo`, whose inputs may still be loading. Config changes while
+ * sitting on a tab are handled by {@link useNavTabRedirect}.
  * @throws A history-replacing redirect preserving params, search, and hash.
  */
 export function guardNavTabs(
@@ -177,8 +159,7 @@ export function guardNavTabs(
 
   const { slotConfig, defaultTabId } = options;
 
-  // Targeted candidate: registry tabs match on the deepest match's `$tool` param, route tabs on
-  // its route path. A bare parent match (no tab in the URL) always needs the landing redirect.
+  // Registry tabs match on the deepest match's `$tool` param, route tabs on its route path
   let needsLanding = deepest.routeId === parentRouteId;
   if (!needsLanding) {
     const candidates = getNavTabCandidates(parentRouteId);
@@ -198,18 +179,15 @@ export function guardNavTabs(
 }
 
 /**
- * Forwards off a disabled tab: when the current location sits on a tab candidate that app
- * overrides or channel-stored arrangement hide, replace-navigates to the surface's first
- * resolved tab. Detection uses {@link isPlacementHidden} with the arrangement layers only, never
- * `requires`/`visibleTo` gating, whose inputs may still be loading and whose enforcement belongs
- * to the API. No-ops when the surface resolves no tabs to forward to. {@link PageTabNav} runs
- * this for route-derived tab bars, so every channel surface gets the forwarding without wiring.
+ * Replace-navigates to the first resolved tab when the current location sits on a tab that app
+ * overrides or channel arrangement hide. Detection uses {@link isPlacementHidden} on the
+ * arrangement layers only, never `requires`/`visibleTo`. {@link PageTabNav} runs this for
+ * route-derived tab bars.
  */
 export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabsOptions = {}): void {
   const navigate = useNavigate();
   const leaf = useRouterState({ select: (state) => state.matches[state.matches.length - 1] });
 
-  // Active candidate: registry tabs match on the leaf's `$tool` param, route tabs on its path
   const toolId = (leaf?.params as { tool?: string } | undefined)?.tool;
   const candidates = parentRouteId ? getNavTabCandidates(parentRouteId) : [];
   const active = toolId
@@ -230,11 +208,8 @@ interface Props {
   tabs?: PageTab[];
   /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
   parentRouteId?: string;
-  /** Grants held by the current user; tabs declaring navTab.requires are hidden unless granted */
   grants?: readonly string[];
-  /** Context-role pairs held by the current user; registry tabs declaring visibleTo hide without a match */
   pairs?: readonly ContextRole[];
-  /** Channel-stored arrangement for the surface's tabs slot (order + hidden) */
   slotConfig?: SlotToolsConfig;
   title?: string;
   avatar?: {
@@ -246,9 +221,6 @@ interface Props {
   className?: string;
 }
 
-/**
- * Horizontal page tab navigation
- */
 export function PageTabNav({
   tabs: explicitTabs,
   parentRouteId,
@@ -264,7 +236,6 @@ export function PageTabNav({
   const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
 
-  // Use explicit tabs or auto-generate from parent route's children
   const autoTabs = resolveNavTabs(parentRouteId ?? '', { grants, pairs, slotConfig });
   const tabs = explicitTabs ?? autoTabs;
 
@@ -275,7 +246,6 @@ export function PageTabNav({
 
   const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
-  // Focus the first tab on mount
   useEffect(() => {
     if (!isMobile && hasStarted && tabs[0]) tabRefs.current[tabs[0].id]?.focus();
   }, [hasStarted]);

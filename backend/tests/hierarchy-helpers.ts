@@ -13,9 +13,7 @@ export async function seedEntityHierarchy(
   opts: { tenantId: string; createdBy: string; slugPrefix: string },
 ): Promise<void> {
   for (const row of plan.seedChannelRows) {
-    // Insert every ancestor id column, not just the immediate parent: deep hierarchies keep all
-    // ancestor columns NOT NULL on channel tables. With cella's default hierarchy the chain has
-    // length 1 (the parent), so the generated SQL is unchanged.
+    // Every ancestor id column is NOT NULL on channel tables, so insert all of them.
     const ancestorNames = sql.join(
       row.ancestorColumns.map((column) => sql.raw(quoteIdent(column.columnName))),
       sql`, `,

@@ -15,15 +15,10 @@ import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
 const LIMIT = appConfig.requestLimits.users; // Use users limit as fallback
 
-/** Stable row key getter function. */
 function rowKeyGetter(row: TenantWithOrganization) {
   return row.id;
 }
 
-/**
- * Tenants table for system admin panel.
- * Allows viewing and managing all tenants in the system.
- */
 function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });

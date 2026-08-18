@@ -9,8 +9,7 @@ let referencedIds: string[] = [];
 /** Captured soft-delete writes: the set() values and the flattened where-clause params. */
 const updates: Array<{ values: Record<string, unknown>; params: unknown[] }> = [];
 
-// Synthetic host/embedded tables: the GC reads columns off whatever `getEntityTable` returns,
-// so an app's real tables are irrelevant to the mechanism under test.
+// Synthetic host/embedded tables: the GC reads columns off whatever `getEntityTable` returns.
 vi.mock('#/tables', async () => {
   const { pgTable, jsonb, text, uuid } = await import('drizzle-orm/pg-core');
 
@@ -34,8 +33,7 @@ vi.mock('#/tables', async () => {
   return { getEntityTable: (type: string) => (type === 'task' ? tasks : items) };
 });
 
-// Deep synthetic hierarchy: `item` under project > courseSection > course > organization, so the
-// GC's root-channel scope resolution has a non-trivial ancestor chain to walk.
+// Deep synthetic hierarchy so root-channel scope resolution has a non-trivial ancestor chain.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const { deepHierarchy } = await import('shared/testing/deep-fixture');
@@ -100,7 +98,7 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates).toHaveLength(1);
     expect(updates[0].values).toMatchObject({ deletedBy: 'u1', updatedBy: 'u1' });
     expect(updates[0].values.deletedAt).toEqual(expect.any(String));
-    // Stripped changedFields keeps the write attributed to the WAL diff
+    // Stripped changedFields keeps the write attributed to the WAL diff.
     expect(updates[0].values.stx).toBeDefined();
     expect(updates[0].params).toContain('i2');
     expect(updates[0].params).not.toContain('i1');
@@ -118,7 +116,7 @@ describe('gcOwnedEmbeddedRows', () => {
     await gc('task', [hostEvent(removedHost, { ...base, items: ['i1', 'i2'] })]);
 
     expect(updates).toHaveLength(1);
-    // The deleting actor is attributed over the updating one
+    // The deleting actor wins over the updating one.
     expect(updates[0].values.deletedBy).toBe('u2');
     expect(updates[0].params).toEqual(expect.arrayContaining(['i1', 'i2']));
   });

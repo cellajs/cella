@@ -15,7 +15,6 @@ import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
 export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
-  // Lens seam: normalize old-shape field names to their current names before any body access
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
@@ -24,7 +23,6 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
     throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
-  // Idempotency check
   const batchStxId = input[0].stx.mutationId;
   const existing = await checkIdempotency(batchStxId, () =>
     tenantRead(ctx, async (readCtx) => {
@@ -55,8 +53,8 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       stx: buildStx(stx),
     };
 
-    // Derive the create-check channel scope from the row per the hierarchy (org for cella; an app
-    // that re-homes attachments on a product entity picks up its channel ids with no change here).
+    // The create-check channel scope comes from the row's hierarchy ancestors, so re-homing
+    // attachments on a product entity needs no change here.
     canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
     return attachment;
   });

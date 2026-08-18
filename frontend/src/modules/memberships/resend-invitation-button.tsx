@@ -18,12 +18,7 @@ type ResendButtonPrpos = {
   callback?: (args: CallbackArgs) => void;
 };
 
-/**
- * Button to resend an invitation token email. It can either be a membership invitation or a
- * system-level invitation, and the invitee may or may not already have an account. Prefer
- * `resendData: { tokenId }` when the token is known: email-only resolution targets the
- * address's newest invitation token, which may belong to another context.
- */
+/** Prefer `resendData: { tokenId }`: email-only resolution targets the address's newest token, which may belong to another context. */
 export function ResendInvitationButton({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) {
   const { t } = useTranslation();
   const [disabledResend, setDisabledResend] = useState(false);

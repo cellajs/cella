@@ -1,6 +1,5 @@
 import type { Maybe } from '../types';
 
-/** Stops propagation for a React synthetic event. */
 export function stopPropagation(event: React.SyntheticEvent) {
   event.stopPropagation();
 }

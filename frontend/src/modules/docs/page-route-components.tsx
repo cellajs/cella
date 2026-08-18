@@ -7,7 +7,6 @@ const DocsLandingPage = lazyNamed(() => import('~/modules/docs/docs-landing-page
 
 const docsPageApi = getRouteApi('/_public/_content/docs/page/$');
 
-/** Renders the documentation index route. */
 export function DocsIndexComponent() {
   return (
     <Suspense>
@@ -16,7 +15,6 @@ export function DocsIndexComponent() {
   );
 }
 
-/** Renders a documentation page route. */
 export function DocsPageComponent() {
   const { _splat } = docsPageApi.useParams();
   const slug = _splat ?? '';

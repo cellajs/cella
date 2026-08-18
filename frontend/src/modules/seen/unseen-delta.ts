@@ -3,10 +3,7 @@ import type { ProductEntityType } from 'shared';
 import { seenKeys } from '~/modules/seen/helpers';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Batch unseen-count deltas into one idle cache write to avoid repeated full-cache persistence.
- * Counts clamp at zero; periodic exact recounts absorb residual drift.
- */
+// Deltas batch into one idle cache write; counts clamp at zero and exact recounts absorb residual drift.
 const pendingDeltas: { channelId: string; productType: ProductEntityType; delta: number }[] = [];
 let flushScheduled = false;
 
@@ -18,7 +15,6 @@ const scheduleIdle =
     ? (cb: () => void) => requestIdleCallback(cb, { timeout: MAX_DELAY_MS })
     : (cb: () => void) => setTimeout(cb, MAX_DELAY_MS);
 
-/** Queue a ± adjustment to a channel's unseen count */
 export function applyUnseenDelta(channelId: string, productType: ProductEntityType, delta: number) {
   pendingDeltas.push({ channelId, productType, delta });
   if (flushScheduled) return;

@@ -8,7 +8,6 @@ interface ImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   imgType?: 'svg' | 'png';
 }
 
-/** Renders the country flag component. */
 export function CountryFlag({ countryCode, className, imgType = 'svg', width = 16, height = 12, ...props }: ImgProps) {
   const isOnline = useOnlineManager();
 

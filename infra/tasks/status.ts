@@ -129,7 +129,6 @@ const MARKS: Record<CheckStatus, string> = {
   unknown: pc.dim('?'),
 };
 
-/** Render the report for a terminal. */
 export function formatReport(report: StatusReport): string {
   const lines: string[] = [];
   const s = report.summary;

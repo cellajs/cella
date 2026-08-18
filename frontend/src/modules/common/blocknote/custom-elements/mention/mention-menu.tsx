@@ -3,7 +3,6 @@ import { getMentionMenuItems } from '~/modules/common/blocknote/custom-elements/
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
 
-/** Renders the mention component. */
 export function Mention({ members, editor }: { members?: Member[]; editor: CustomBlockNoteEditor }) {
   if (!members || members.length === 0) return;
   return (

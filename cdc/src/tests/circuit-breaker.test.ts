@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { log } from '../lib/pino';
 import { circuitBreaker } from '../services/circuit-breaker';
 
-// Access private state for reset between tests
+// Resets private state between tests.
 function resetCircuitBreaker() {
   // @ts-expect-error: accessing private field for test isolation
   circuitBreaker.circuits.clear();
@@ -61,7 +61,7 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordFailure('tasks');
 
-      // tasks is open, but labels should still work
+      // The open circuit is per table.
       expect(circuitBreaker.shouldProcess('tasks')).toBe(false);
       expect(circuitBreaker.shouldProcess('labels')).toBe(true);
     });
@@ -73,7 +73,7 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordSuccess('tasks');
 
-      // After success, 2 more failures should NOT open circuit (count was reset)
+      // Success reset the count, so 2 further failures stay below the threshold.
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordFailure('tasks');
       expect(circuitBreaker.shouldProcess('tasks')).toBe(true);
@@ -92,7 +92,6 @@ describe('CircuitBreaker', () => {
       circuitBreaker.recordFailure('tasks');
       circuitBreaker.recordFailure('tasks');
 
-      // Fast-forward past cooldown
       // @ts-expect-error: accessing private field for test
       const entry = circuitBreaker.circuits.get('tasks')!;
       entry.openedAt = Date.now() - 61_000;

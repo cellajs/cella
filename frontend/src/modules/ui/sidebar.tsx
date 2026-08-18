@@ -26,11 +26,7 @@ type UseSidebarReturn = {
   toggleSidebar: () => void;
 };
 
-/**
- * Accesses sidebar state from the navigation store (no provider). With nested sidebars (sidebar-09
- * pattern) the outer bar stays icon-width and the content panel collapses, so this hook only tracks
- * `keepNavOpen` for keyboard shortcuts. Mobile sheets are handled by the sheeter service.
- */
+/** Sidebar state from the navigation store (no provider): only `keepNavOpen`, since the sheeter service owns mobile sheets. */
 function useSidebar(): UseSidebarReturn {
   const isMobile = useBreakpointBelow('sm');
 
@@ -41,8 +37,7 @@ function useSidebar(): UseSidebarReturn {
     setKeepNavOpen(!keepNavOpen);
   };
 
-  // With nested sidebars, we always use 'collapsed' state for the outer sidebar
-  // since it just shows icons. The content panel visibility is controlled separately.
+  // Nested sidebars pin the outer bar to 'collapsed' (icons only); the content panel tracks its own visibility.
   const state: SidebarState = 'collapsed';
 
   return {
@@ -124,7 +119,6 @@ function Sidebar({
             side === 'left'
               ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
               : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
-            // Adjust the padding for floating and inset variants.
             variant === 'floating' || variant === 'inset'
               ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
               : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
@@ -167,7 +161,6 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
   );
 }
 
-/** Renders the styled sidebar rail primitive. */
 export function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
   const { toggleSidebar } = useSidebar();
 
@@ -193,7 +186,6 @@ export function SidebarRail({ className, ...props }: React.ComponentProps<'butto
   );
 }
 
-/** Renders the styled sidebar inset primitive. */
 export function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
   return (
     <main
@@ -208,7 +200,6 @@ export function SidebarInset({ className, ...props }: React.ComponentProps<'main
   );
 }
 
-/** Renders the styled sidebar input primitive. */
 export function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>) {
   return (
     <Input
@@ -242,7 +233,6 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** Renders the styled sidebar separator primitive. */
 export function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
@@ -303,7 +293,6 @@ function SidebarGroupLabel({
   return <div {...computedProps}>{children}</div>;
 }
 
-/** Renders the styled sidebar group action primitive. */
 export function SidebarGroupAction({
   className,
   render,
@@ -433,7 +422,6 @@ function SidebarMenuButton({
   );
 }
 
-/** Renders the styled sidebar menu action primitive. */
 export function SidebarMenuAction({
   className,
   render,
@@ -468,7 +456,6 @@ export function SidebarMenuAction({
   );
 }
 
-/** Renders the styled sidebar menu badge primitive. */
 export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -488,7 +475,6 @@ export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'
   );
 }
 
-/** Renders the styled sidebar menu skeleton primitive. */
 export function SidebarMenuSkeleton({
   className,
   showIcon = false,
@@ -496,7 +482,6 @@ export function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean;
 }) {
-  // Random width between 50 to 90%.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
   return (
@@ -520,7 +505,6 @@ export function SidebarMenuSkeleton({
   );
 }
 
-/** Renders the styled sidebar menu sub primitive. */
 export function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul'>) {
   return (
     <ul
@@ -536,7 +520,6 @@ export function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul
   );
 }
 
-/** Renders the styled sidebar menu sub item primitive. */
 export function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
@@ -548,7 +531,6 @@ export function SidebarMenuSubItem({ className, ...props }: React.ComponentProps
   );
 }
 
-/** Renders the styled sidebar menu sub button primitive. */
 export function SidebarMenuSubButton({
   render,
   size = 'md',

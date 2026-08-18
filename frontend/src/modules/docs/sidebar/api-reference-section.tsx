@@ -19,26 +19,20 @@ interface ApiReferenceSectionProps {
   isMobile: boolean;
 }
 
-/**
- * Sidebar section with the operations and schemas collapsibles. Expansion is derived
- * from the route (mutually exclusive) with a forced-collapse override per section.
- */
+/** Expansion is derived from the route, mutually exclusive, with a per-section forced-collapse override. */
 export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
   const { data: schemas } = useQuery(schemasQueryOptions);
 
-  // Get current pathname to determine active/expanded section
   const { location } = useRouterState();
   const isOperationsRoute = location.pathname === '/docs/operations';
   const isOperationsTableRoute = location.pathname === '/docs/operations/table';
   const isSchemasRoute = location.pathname.includes('/docs/schemas');
 
-  // Derive expanded section directly from route (mutually exclusive)
-  // Only expand operations sidebar when on list view, not table view
+  // Operations expand only in list view, not table view
   const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
 
-  // Track if current section is forcibly collapsed
   // Start collapsed when landing directly via URL without search params
   const searchParams = location.search as Record<string, unknown>;
   const activeOperationTag = searchParams.operationTag as string | undefined;
@@ -53,15 +47,12 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
         : null,
   );
 
-  // Prefetch operations data on hover for instant expand
   const prefetchOperations = () => {
     queryClient.prefetchQuery(operationsQueryOptions);
     queryClient.prefetchQuery(tagsQueryOptions);
   };
 
-  // Determine if we're in list mode (not on table route)
   const isListMode = !isOperationsTableRoute;
-  // Operations sidebar is active when on either operations route
   const isOperationsActive = isOperationsRoute || isOperationsTableRoute;
 
   return (
@@ -71,12 +62,9 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
       </div>
 
       <SidebarGroupContent>
-        {/* Operations */}
         <SidebarGroup className="p-1 pt-0">
           <Collapsible open={isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations'}>
-            {/* Sticky tier-1 row: pins to the scroller top while its section is scrolled,
-                pushed out when the section (the Collapsible root) ends. Opaque bg so
-                section content passes underneath invisibly. */}
+            {/* Sticky tier-1 row: opaque bg so section content passes underneath */}
             <SidebarMenuItem className="sticky top-2 z-10 list-none bg-card">
               <CollapsibleTrigger
                 render={
@@ -87,7 +75,6 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                     onFocus={prefetchOperations}
                     draggable={false}
                     onClick={(e) => {
-                      // If already on operations list route, toggle collapse
                       if (isOperationsRoute) {
                         e.preventDefault();
                         setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
@@ -125,7 +112,6 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               )}
             >
               <SidebarGroupContent>
-                {/* Operation tags sidebar */}
                 <Suspense fallback={null}>
                   <OperationsSidebar activeTag={activeOperationTag} />
                 </Suspense>
@@ -134,10 +120,8 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
           </Collapsible>
         </SidebarGroup>
 
-        {/* Schemas */}
         <SidebarGroup className="p-1 pt-0">
           <Collapsible open={expandedSection === 'schemas' && forcedCollapsed !== 'schemas'}>
-            {/* Sticky tier-1 row, same pattern as operations above */}
             <SidebarMenuItem className="sticky top-2 z-10 list-none bg-card">
               <CollapsibleTrigger
                 render={
@@ -150,7 +134,6 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                         e.preventDefault();
                         setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
                       } else {
-                        // Only clear if schemas was forcibly collapsed, preserve other section's state
                         setForcedCollapsed((prev) => (prev === 'schemas' ? null : prev));
                       }
                     }}
@@ -181,7 +164,6 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               )}
             >
               <SidebarGroupContent>
-                {/* Schemas tags list */}
                 <Suspense fallback={null}>
                   <SchemasSidebar activeTag={activeSchemaTag} />
                 </Suspense>

@@ -16,9 +16,6 @@ interface MenuSheetPanelProps {
   children: ReactNode;
 }
 
-/**
- * Single accordion panel button + expandable content.
- */
 function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   const { t } = useTranslation();
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
@@ -55,17 +52,14 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   );
 }
 
-/**
- * Bottom panels container for the menu sheet.
- * Sticks to the bottom and overlays content when a panel is expanded.
- */
+/** Sticks to the bottom of the menu sheet and overlays its content while a panel is expanded. */
 export function MenuSheetPanels() {
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
 
   const hasOpenPanel = !!menuSheetPanel;
 
-  // Stay sticky during exit animation, clear after it completes
+  // Stays sticky through the exit animation, cleared on its completion.
   const [isSticky, setIsSticky] = useState(false);
   useEffect(() => {
     if (hasOpenPanel) setIsSticky(true);
@@ -83,7 +77,6 @@ export function MenuSheetPanels() {
 
   return (
     <div className={cn('relative z-20 mt-auto', isSticky && 'sticky bottom-0')} onKeyDown={onKeyDown}>
-      {/* Overlay that covers menu content above when a panel is open */}
       <AnimatePresence onExitComplete={() => setIsSticky(false)}>
         {hasOpenPanel && (
           <motion.div

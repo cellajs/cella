@@ -1,39 +1,28 @@
 import { defineServices } from '../compose/infrastructure';
 
-/**
- * App-owned registry synthesized into Compose and deployment resources.
- * Entry presence controls the service's VM, routing, certificate, profile, and release
- * metadata. Run `pnpm --filter infra compose:synth` after editing.
- */
+/** App-owned registry synthesized into Compose and deployment resources: an entry controls the service's VM, routing, certificate, profile, and release metadata. Run `pnpm --filter infra compose:synth` after editing. */
 export const appServices = defineServices({
   backend: {
     image: '${REGISTRY}/backend:${BACKEND_TAG:-latest}',
     dockerfile: 'Dockerfile',
     target: 'backend',
     port: 4000,
-    // API services answer /health with 204 (no body); the LB matches it exactly.
+    // API services answer /health with 204 and no body; the LB matches it exactly.
     healthExpectStatus: 204,
     healthTimeoutSeconds: 240,
     startPeriod: '15s',
-    // Immutable-node cutover: a new generation is health-gated, the LB overlaps
-    // both generations, then contracts to the new one. The one-shot release
-    // companion runs at the new generation's boot (expand-before-cutover): it
-    // applies migrations via MODE=migrate, and the app block is told not to
-    // migrate on its own boot.
+    // Immutable-node cutover: the new generation is health-gated, the LB overlaps both, then contracts. The one-shot release companion applies migrations at the new generation's boot, so the app block does not migrate on its own.
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     release: { env: { MODE: 'migrate' }, appEnv: { RUN_MIGRATIONS_ON_BOOT: 'false' } },
     primaryRollout: true,
     drainSeconds: 10,
-    // Same-origin: reached at https://<app-host>/api/... via an LB path-begin
-    // route; the backend self-mounts '/api' (no LB stripping).
+    // Reached at https://<app-host>/api/... through an LB path-begin route; the backend self-mounts '/api', so the LB strips nothing.
     lbRoute: 'path',
     pathPrefix: '/api',
-    // Private ACL-guarded LB frontend: in-network consumers (cdc) dial a stable
-    // address that follows every cutover.
+    // Private ACL-guarded LB frontend so in-network consumers dial a stable address that follows every cutover.
     internalRoute: true,
-    // Attachment uploads + presigned URLs are signed with the backend's own
-    // per-deploy service key (replaces the retired s3 managed key).
+    // Attachment uploads and presigned URLs are signed with the backend's own per-deploy service key.
     s3Access: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
@@ -51,22 +40,17 @@ export const appServices = defineServices({
     healthExpectStatus: 204,
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
-    // CDC must cut over exclusively because it owns one PostgreSQL replication slot.
-    // It is internal-only and reached through the private network.
+    // CDC cuts over exclusively because it owns one PostgreSQL replication slot, and is reached only through the private network.
     replacementStrategy: 'stop-first',
     instanceType: 'DEV1-S',
-    // singleVM: fold into the backend process in-process (holds the same slot).
+    // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
     env: {
       API_WS_URL: '${API_WS_URL}',
       BACKEND_URL: '${BACKEND_URL}',
       CDC_HEALTH_PORT: '4001',
     },
-    // cdc → backend is a server-to-server WebSocket on the internal /internal/cdc
-    // path, dialed through the LB's private ACL-guarded internal frontend. The
-    // address is stable across backend cutovers (the LB stays inside the VPC,
-    // so the backend's loopback/VPC source check still passes), and the LB
-    // kills sessions on mark-down so cdc re-dials the new generation.
+    // A server-to-server WebSocket on /internal/cdc, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the VPC so the backend's source check passes, and mark-down kills sessions so cdc re-dials.
     bindings: {
       API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
     },
@@ -81,19 +65,16 @@ export const appServices = defineServices({
     healthTimeoutSeconds: 90,
     startPeriod: '10s',
     replacementStrategy: 'start-first',
-    // WebSocket clients reconnect to the new generation and resync from durable
-    // CRDT state while sessions close during drain.
+    // Sessions close during drain; WebSocket clients reconnect to the new generation and resync from durable CRDT state.
     drainPolicy: 'reconnect',
     drainSeconds: 5,
-    // Same-origin: reached at wss://<app-host>/yjs/... via an LB path-begin
-    // route; the yjs server accepts the unstripped prefix.
+    // Reached at wss://<app-host>/yjs/... through an LB path-begin route; the yjs server accepts the unstripped prefix.
     lbRoute: 'path',
     pathPrefix: '/yjs',
-    // WebSocket service: LB keeps connections open for up to an hour.
+    // The LB keeps these WebSocket connections open for up to an hour.
     lbWebsockets: true,
-    // Only deployed when appConfig.services.yjs.enabled is true.
     instanceType: 'DEV1-S',
-    // singleVM: fold into the backend process (LB still routes to the host VM).
+    // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
     env: {
       BACKEND_URL: '${BACKEND_URL}',
@@ -110,15 +91,13 @@ export const appServices = defineServices({
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
     drainSeconds: 10,
-    // Reuses the backend image at the same SHA; CI builds no separate mcp image.
+    // Reuses the backend image at the same SHA, so CI builds no separate mcp image.
     reusesImageOf: 'backend',
-    // Same-origin: reached at https://<app-host>/mcp/... via an LB path-begin
-    // route; the shared base app self-mounts '/mcp'.
+    // Reached at https://<app-host>/mcp/... through an LB path-begin route; the shared base app self-mounts '/mcp'.
     lbRoute: 'path',
     pathPrefix: '/mcp',
-    // Only deployed when appConfig.services.mcp.enabled is true.
     instanceType: 'DEV1-S',
-    // singleVM: fold into the backend process (LB still routes to the host VM).
+    // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
     env: {
       MODE: 'mcp',
@@ -127,15 +106,14 @@ export const appServices = defineServices({
       BACKEND_URL: '${BACKEND_URL}',
       MCP_API_URL: '${MCP_API_URL}',
     },
-    // The worker's own public URL (host-routed through the LB).
+    // The worker's own public URL, host-routed through the LB.
     bindings: {
       MCP_API_URL: '@{self.url}',
     },
   },
 
   frontend: {
-    // Production-only reverse-proxy in front of the SPA bucket. Image built per
-    // release from infra/caddy/Dockerfile; runtime knobs are ORIGIN_HOST + CSP.
+    // Production-only reverse proxy in front of the SPA bucket, built per release from infra/caddy/Dockerfile; its runtime knobs are ORIGIN_HOST and CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
     dockerfile: 'infra/caddy/Dockerfile',
     port: 80,
@@ -143,14 +121,12 @@ export const appServices = defineServices({
     startPeriod: '10s',
     replacementStrategy: 'start-first',
     drainPolicy: 'requests',
-    // The app origin: the LB's fallback backend. Everything no path route
-    // matches (/api, /yjs, /mcp) lands on the SPA proxy.
+    // The app origin and the LB's fallback backend: anything no path route matches lands on the SPA proxy.
     lbRoute: 'default',
-    // The SPA proxy reads no app secret: no standard env, no .env files.
+    // The SPA proxy reads no app secret, so it gets no standard env and no .env files.
     includeStandardEnv: false,
     includeEnvFile: false,
-    // singleVM: run the Caddy container on the host VM (no in-process fold
-    // possible for a non-Node runtime); its LB pool follows the host cutover.
+    // singleVM runs the Caddy container on the host VM, since a non-Node runtime cannot fold in-process; its LB pool follows the host cutover.
     placement: 'host',
     instanceType: 'DEV1-S',
     env: {
@@ -160,11 +136,5 @@ export const appServices = defineServices({
   },
 });
 
-/**
- * Env keys that select a container's process identity: which in-process worker
- * to boot (`MODE`) and which port it binds (`PORT`). Under `singleVM` these are
- * never folded from a co-hosted worker onto the host, since the workers run
- * in-process under the host's own identity. App-owned so the engine names no
- * app-specific env key.
- */
+/** Env keys selecting a container's process identity: which in-process worker to boot (`MODE`) and which port it binds (`PORT`). Never folded from a co-hosted worker onto the host, which runs them under its own identity. */
 export const processIdentityEnv = ['MODE', 'PORT'] as const;

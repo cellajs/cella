@@ -1,15 +1,6 @@
-/**
- * Mock generators for system role schemas.
- * Used for OpenAPI examples and tests.
- */
-
 import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import type { SystemRoleModel } from '#/modules/system/system-roles-db';
 
-/**
- * Generates a mock system role base response (without timestamps).
- * Used for SystemRoleBase schema examples.
- */
 export const mockSystemRoleBase = (key = 'system-role:base') =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
@@ -17,10 +8,6 @@ export const mockSystemRoleBase = (key = 'system-role:base') =>
     role: 'admin' as const,
   }));
 
-/**
- * Generates a mock system role API response with all fields.
- * Used for SystemRole schema examples.
- */
 export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
@@ -34,10 +21,6 @@ export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleM
     };
   });
 
-/**
- * Generates a mock system invite response.
- * Used for systemInvite endpoint example.
- */
 export const mockSystemInviteResponse = () => ({
   data: [] as never[],
   rejectedIds: [] as string[],

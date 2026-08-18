@@ -10,7 +10,6 @@ import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
 interface ViewerGroupProps {
-  /** Schema to display in format mode */
   schema: GenSchema | GenSchemaProperty | GenRequest;
   /** Code to display in zod mode */
   zodCode?: string;
@@ -18,16 +17,10 @@ interface ViewerGroupProps {
   typeCode?: string;
   /** Example JSON to display in example mode */
   example?: unknown;
-  /** Default inspect depth for JsonViewer */
   defaultInspectDepth?: number;
-  /** Default view mode to show initially */
   defaultViewMode?: SchemaViewMode;
 }
 
-/**
- * Reusable component for displaying schema data with format/zod/type toggle views.
- * Used for responses, request body, and parameter schemas.
- */
 export function ViewerGroup({
   schema,
   zodCode,

@@ -40,10 +40,7 @@ export interface PersistedMetaRecord {
   channelQueries: DehydratedQuery[];
 }
 
-/**
- * Per-user Dexie database. All tables share one version ladder: bump the single
- * `version(n)` here and centralize schema changes (concurrent PRs must serialize).
- */
+/** All tables share one version ladder: bump the single `version(n)` here, which means concurrent PRs changing it must serialize. */
 export class LocalUserDatabase extends Dexie {
   kv!: Dexie.Table<KvRecord, string>;
   queries!: Dexie.Table<PersistedQueryRecord, string>;

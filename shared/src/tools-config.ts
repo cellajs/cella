@@ -1,10 +1,10 @@
 import type { ChannelEntityType, EntityRole } from '../types.ts';
 
 /**
- * A context-role pair: a membership role qualified by the channel type that holds it. Tools use
- * these in `visibleTo` as a UI visibility condition (never data authorization); a pair matches
- * when the actor holds that role on the hosting entity or one of its ancestors, so elevation is
- * explicit per tool. Pairs are validated against the hierarchy at registration.
+ * A membership role qualified by the channel type holding it. Used in a tool's `visibleTo` as a
+ * UI visibility condition, never data authorization. A pair matches when the actor holds the role
+ * on the hosting entity or an ancestor, and pairs are validated against the hierarchy at
+ * registration.
  */
 export type ContextRole = `${ChannelEntityType}.${EntityRole}`;
 

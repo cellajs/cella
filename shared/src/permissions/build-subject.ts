@@ -6,10 +6,8 @@ import type { AncestorChannelIds, ChannelIdColumns, SubjectForPermission } from 
 import { validateAncestorScope } from './validate-ancestor-scope.ts';
 
 /**
- * Builds a permission subject from database-shaped ancestor ID columns, ignoring unrelated
- * properties. `null` marks an unused ancestor; `undefined` fails validation.
- *
- * @throws MissingScopeError if any required ancestor channel ID is missing (undefined)
+ * From database-shaped ancestor id columns, ignoring unrelated properties. `null` marks an
+ * unused ancestor. @throws MissingScopeError when a required ancestor id is `undefined`
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,
@@ -43,7 +41,7 @@ export const buildSubject = (
   return subject;
 };
 
-/** Builds a subject from a resolved DB row and exposes the full row to row-derived rules. */
+/** Exposes the full row to row-derived rules. */
 export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
   entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns> & Record<string, unknown>,

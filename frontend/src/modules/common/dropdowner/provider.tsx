@@ -14,10 +14,8 @@ export function Dropdowner() {
   const isMobile = useBreakpointBelow('sm');
   const { lockUI, unlockUI } = useUIStore();
 
-  // Apply body class
   useBodyClass({ 'dropdowner-open': !!dropdown });
 
-  // Lock UI when dropdown is open
   useEffect(() => {
     if (dropdown) {
       lockUI('dropdowner');

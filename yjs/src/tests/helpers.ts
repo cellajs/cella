@@ -36,7 +36,6 @@ export function createSignedToken(opts: string | TokenOptions, exp?: number, sec
   return `${payloadB64}${DELIMITER}${signature}`;
 }
 
-/** Generate an expired token. */
 export function createExpiredToken(userId: string): string {
   return createSignedToken({ userId, exp: Date.now() - 1000 });
 }
@@ -54,11 +53,9 @@ export function mockDocContext(overrides?: Partial<DocContext>): DocContext {
   };
 }
 
-// y-protocols message types
 const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Update: 2 } as const;
 
-/** Encode a sync-step-1 binary message. */
 export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Sync);
@@ -67,7 +64,6 @@ export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Encode a sync-update binary message. */
 export function buildSyncUpdate(update: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Sync);
@@ -76,7 +72,6 @@ export function buildSyncUpdate(update: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Encode an awareness binary message. */
 export function buildAwarenessMessage(data: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Awareness);
@@ -84,7 +79,6 @@ export function buildAwarenessMessage(data: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Decode a sync-step-2 response to extract the update payload. */
 export function decodeSyncStep2(message: Uint8Array): Uint8Array {
   const decoder = decoding.createDecoder(message);
   decoding.readVarUint(decoder); // MESSAGE_SYNC
@@ -111,10 +105,7 @@ export interface MockWebSocket {
   send(data: Uint8Array): void;
 }
 
-/**
- * Mock factory for storage module.
- * Use at top level: vi.mock('../data/storage', () => storageMock())
- */
+/** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
   loadState: vi.fn().mockResolvedValue(null),
   saveState: vi.fn().mockResolvedValue(undefined),

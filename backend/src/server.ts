@@ -11,19 +11,15 @@ import { app as middlewares } from '#/middlewares/app';
 
 const baseApp = new OpenAPIHono<Env>();
 
-// The load balancer preserves same-origin `/api` and `/mcp` prefixes. Redispatching
-// through `mount()` strips the prefix and applies global middleware once.
+// The load balancer preserves same-origin `/api` and `/mcp` prefixes; redispatch through `mount()` strips them.
 baseApp.mount('/api', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
 baseApp.mount('/mcp', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
 
-// Redirect favicon
 baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
 
-// Add global middleware
 baseApp.route('/', middlewares);
 
-// Shallow health checks return 204; full checks return diagnostics with 200 or 503.
-// Both include the release SHA so deployment verification preserves the LB contract.
+// Shallow health checks return 204, full checks 200 or 503; both carry the release SHA the LB contract requires.
 baseApp.route(
   '/',
   createHealthApp({
@@ -35,12 +31,10 @@ baseApp.route(
   }),
 );
 
-// Not found handler
 baseApp.notFound(() => {
   throw new AppError(404, 'route_not_found', 'warn');
 });
 
-// Error handler
 baseApp.onError(appErrorHandler);
 
 export { baseApp };

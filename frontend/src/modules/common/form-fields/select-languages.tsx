@@ -16,10 +16,7 @@ interface SelectLanguagesContentProps extends Pick<SelectLanguagesProps, 'onChan
   triggerWidth?: number;
 }
 
-/**
- * Dropdowner content for multi-selecting languages.
- * Maintains local state because dropdowner renders a snapshot.
- */
+/** Keeps local state because the dropdowner renders a snapshot of its content. */
 function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: SelectLanguagesContentProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<Language[]>(initialValue);
@@ -67,9 +64,6 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
   );
 }
 
-/**
- * Multi-select dropdowner for choosing one or more languages from the configured app languages.
- */
 export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   const { t } = useTranslation();
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();

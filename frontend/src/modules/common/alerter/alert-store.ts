@@ -26,7 +26,6 @@ interface AlertStoreState {
   reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
 
-// Module-level abort controller for recovery polling
 let recoveryController: AbortController | null = null;
 
 const cancelRecovery = () => {
@@ -34,7 +33,6 @@ const cancelRecovery = () => {
   recoveryController = null;
 };
 
-// Initial store state, using config to determine maintenance mode
 const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = {
   downAlert: appConfig.maintenance ? 'maintenance' : null,
   alertsSeen: [],
@@ -57,10 +55,9 @@ export const useAlertStore = create<AlertStoreState>()(
           },
           setDownAlert: (alert) => {
             const current = get().downAlert;
-            // Skip if already set to same value (prevents recovery restart loops)
+            // Re-setting the same alert would restart recovery polling
             if (current === alert) return;
 
-            // Don't let a lower-priority alert overwrite a higher-priority one
             if (alert && current && alertPriority[alert] < alertPriority[current]) return;
 
             cancelRecovery();

@@ -3,9 +3,6 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import { OpenApiSpecViewer } from './openapi-spec-viewer';
 import { OverviewTable } from './overview-table';
 
-/**
- * Overview page component displaying OpenAPI specification details.
- */
 function OverviewPage() {
   const { t } = useTranslation();
 

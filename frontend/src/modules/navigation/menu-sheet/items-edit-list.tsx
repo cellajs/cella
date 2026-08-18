@@ -5,7 +5,6 @@ import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-w
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
-/** Renders the menu sheet items edit component. */
 export function MenuSheetItemsEdit({
   data,
   isArchived,

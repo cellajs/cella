@@ -51,7 +51,6 @@ export const uploadTokenSchema = z
           key: z.string(),
           expires: z.string().optional(),
         }),
-        // Allow additional arbitrary keys with any type in params
       })
       .catchall(z.any())
       .nullable(),
@@ -62,7 +61,6 @@ export const uploadTokenSchema = z
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
-// Re-export types from types.ts for convenience
 export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
 export const uploadTokenQuerySchema = z.object({

@@ -5,14 +5,12 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
-// Base option type
 type SortOptionBase = {
   name: TKey;
   value: string;
   icon: IconComponent;
 };
 
-// Inferred from sortOptions passed in
 interface SelectSortProps<T extends readonly SortOptionBase[]> {
   sortOptions: T;
   value: T[number]['value'];
@@ -21,9 +19,6 @@ interface SelectSortProps<T extends readonly SortOptionBase[]> {
   iconOnly?: boolean;
 }
 
-/**
- * Dropdown select for choosing a sort option, with optional icon-only display.
- */
 export function SelectSort<T extends readonly SortOptionBase[]>({
   sortOptions,
   onChange,

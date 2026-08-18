@@ -3,12 +3,10 @@ import { ChevronDownIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled accordion primitive. */
 export function Accordion({ ...props }: AccordionPrimitive.Root.Props) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }
 
-/** Renders the styled accordion item primitive. */
 export function AccordionItem({
   className,
   ...props
@@ -22,7 +20,6 @@ export function AccordionItem({
   );
 }
 
-/** Renders the styled accordion trigger primitive. */
 export function AccordionTrigger({
   className,
   children,
@@ -45,7 +42,6 @@ export function AccordionTrigger({
   );
 }
 
-/** Renders the styled accordion content primitive. */
 export function AccordionContent({
   className,
   children,

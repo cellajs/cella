@@ -11,13 +11,10 @@ import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 
 type MockUserOptions = { email?: string; enforceUnique?: boolean };
 
-// Enforces unique user slugs and emails
 const userSlug = new UniqueEnforcer();
 const userEmail = new UniqueEnforcer();
 
-/**
- * Reset unique enforcers - call this when clearing the database in tests.
- */
+/** Call when clearing the database in tests. */
 export const resetUserMockEnforcers = () => {
   userSlug.reset();
   userEmail.reset();
@@ -56,10 +53,6 @@ const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserO
 export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): InsertUserModel =>
   generateUser({ ...overrides, enforceUnique: true });
 
-/**
- * Generates a mock user API response with deterministic seeding.
- * Same key produces same data across runs.
- */
 export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
   withFakerSeed(key, () => {
     const user = generateUser();
@@ -71,16 +64,11 @@ export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
     };
   });
 
-/** User list item type for getUsers endpoint (includes memberships array and optional role) */
 export interface UserListItem extends UserWithCounters {
   memberships: ReturnType<typeof mockMembershipBase>[];
   role?: SystemRole;
 }
 
-/**
- * Generates a mock user list item for getUsers response.
- * Includes user data with memberships array and optional system role.
- */
 export const mockUserListItem = (key = 'userListItem:default'): UserListItem => ({
   ...mockUserResponse(`${key}:user`),
   memberships: [mockMembershipBase(`${key}:membership`)],
@@ -89,10 +77,7 @@ export const mockUserListItem = (key = 'userListItem:default'): UserListItem => 
 
 export const mockPaginatedUsersResponse = (count = 2) => mockPaginated(mockUserListItem, count);
 
-/**
- * Generates a fixed "Admin" user with provided email and optional ID.
- * Used for default admin seeding.
- */
+/** Fixed "Admin" user for default admin seeding. */
 export const mockAdmin = (id: string | undefined, email: string): InsertUserModel => {
   return {
     ...(id ? { id } : {}),
@@ -108,9 +93,6 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
   };
 };
 
-/**
- * Generates an unsubscribeToken row for a given user.
- */
 export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsubscribeTokenModel> => {
   const { generateUnsubscribeToken } = await import('#/utils/unsubscribe-token');
   return {
@@ -120,9 +102,6 @@ export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsub
   };
 };
 
-/**
- * Generates a verified email row for a given user.
- */
 export const mockEmail = (user: UserModel): InsertEmailModel => {
   return {
     email: user.email,

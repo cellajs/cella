@@ -5,8 +5,7 @@ import { servicesByName } from '../lib/services';
 import { deployMode, mode } from '../pulumi-context';
 import { generalConfig } from './general.config';
 
-// Compute is deferred only during a fresh provision: the bootstrap CLI sets
-// `bootstrap:computeDeferred` before the first `pulumi up`.
+// Compute is deferred only during a fresh provision, marked by `bootstrap:computeDeferred` before the first `pulumi up`.
 const computeDeferred = new pulumi.Config('bootstrap').get('computeDeferred') !== undefined;
 
 // VM size is per-service, declared in config/services.config.ts
@@ -20,8 +19,7 @@ const registryInstanceType = (serviceName: ServiceName): string => {
   return resolved;
 };
 
-/** Mode-aware sizing defaults (compute image, db sizing) as a single object for
- *  convenient import in resource modules. */
+/** Mode-aware sizing defaults (compute image, db sizing) as one object for resource modules. */
 export const sizing = {
   computeImage: resolvePerMode(generalConfig.compute.image, deployMode),
   dbNodeType: resolvePerMode(generalConfig.database.nodeType, deployMode),

@@ -1,20 +1,13 @@
 import type { BaseStreamSubscriber } from './types';
 
-/**
- * Subscriber manager with multi-channel routing.
- * Stores subscribers and provides O(1) lookup by channel.
- * Subscribers can register on multiple channels to receive events from different sources.
- */
+/** O(1) lookup by channel; a subscriber may register on several channels. */
 class StreamSubscriberManager {
   private subscribers = new Map<string, BaseStreamSubscriber>();
   private byChannel = new Map<string, Set<string>>();
 
   /**
-   * Register a subscriber on one or more channels.
-   * Primary channel is on subscriber.channel, additional channels for multi-org routing.
-   *
+   * The primary channel is `subscriber.channel`; additional ones cover multi-org routing.
    * @example
-   * // App stream subscribes to user channel + all org channels
    * const orgChannels = [...organizationIds].map(id => `org:${id}`);
    * manager.register(subscriber, orgChannels);
    */
@@ -31,19 +24,15 @@ class StreamSubscriberManager {
       set.add(subscriber.id);
     }
 
-    // Store all channels for cleanup on unregister
+    // Stored for cleanup on unregister.
     subscriber._channels = allChannels;
   }
 
-  /**
-   * Unregister a subscriber by ID.
-   * Removes from all channels it was registered on.
-   */
+  /** Removes the subscriber from every channel it registered on. */
   unregister(id: string): void {
     const subscriber = this.subscribers.get(id);
     if (!subscriber) return;
 
-    // Remove from ALL channels
     const allChannels = subscriber._channels ?? [subscriber.channel].filter(Boolean);
     for (const channel of allChannels) {
       if (!channel) continue;
@@ -64,9 +53,6 @@ class StreamSubscriberManager {
     return this.subscribers.size;
   }
 
-  /**
-   * Get subscribers on a channel - O(1) lookup.
-   */
   getByChannel<T extends BaseStreamSubscriber>(channel: string): T[] {
     const ids = this.byChannel.get(channel);
     if (!ids) return [];
@@ -76,5 +62,4 @@ class StreamSubscriberManager {
   }
 }
 
-/** Singleton subscriber manager instance */
 export const streamSubscriberManager = new StreamSubscriberManager();

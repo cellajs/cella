@@ -21,9 +21,6 @@ interface MagicLinkStatic {
   isNewUser: boolean;
 }
 
-/**
- * Email template for magic link sign-in and sign-up.
- */
 export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipient & { email: string }>()({
   translate(lng, { magicLinkUrl, name, isNewUser }) {
     const keyBase = isNewUser ? 'backend:email.magic_link.signup' : 'backend:email.magic_link';

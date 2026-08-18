@@ -24,10 +24,8 @@ const keys = {
   delete: ['member', 'delete'] as const,
 };
 
-/** Defines React Query cache keys for member. */
 export const memberQueryKeys = keys;
 
-/** Infinite query options for a paginated list of members of the target entity. */
 export const membersListQueryOptions = (params: MembersListParams) => {
   const defaults = membersSearchDefaults;
   const {
@@ -58,7 +56,6 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   });
 };
 
-/** Infinite query options for a paginated list of invited (pending) members of the target entity. */
 export const pendingMembershipsQueryOptions = (params: PendingMembershipsListParams) => {
   const {
     entityId,

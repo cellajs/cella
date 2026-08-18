@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(resolve(__dirname, '../../resources/loadbalancer.ts'), 'utf-8');
 
-// Pins registry-driven LB wiring and the cutover-owned server list contract.
-describe('loadbalancer module — registry-driven wiring', () => {
+// Pins the registry-driven LB resources and the cutover-owned server list contract.
+describe('loadbalancer module: registry-driven wiring', () => {
   it('derives the LB-exposed service set from the registry, never by name', () => {
     expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.lbRoute\)/);
     // The default backend comes from the lbRoute 'default' declaration.
@@ -15,8 +15,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('creates one DNS record per unique public host pointing at the LB IP', () => {
-    // Deduped by HOSTNAME because path-routed services share the app host and a
-    // per-service loop would emit duplicate records.
+    // Deduped by HOSTNAME because path-routed services share the app host and a per-service loop would emit duplicate records.
     expect(src).toMatch(/for \(const \{ host, base \} of publicHosts\)/);
     expect(src).toMatch(/new scaleway\.domain\.Record\(`\$\{base\}-dns`/);
     expect(src).toMatch(/data:\s*lbPublicIp/);
@@ -25,9 +24,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   it('issues a Lets Encrypt certificate per DNS record, gated on public propagation', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Certificate\(\s*`\$\{base\}-cert`/);
     expect(src).toMatch(/commonName:\s*host/);
-    // Cert creation waits for the record to answer publicly (not merely exist),
-    // and the frontend attach waits for the cert to be `ready`. Both via the
-    // create-only gates in resources/dns-cert-gates.ts.
+    // Cert creation waits for the record to answer publicly, and the frontend attach waits for the cert to be `ready`; both via the create-only gates in resources/dns-cert-gates.ts.
     expect(src).toMatch(/dependsOn:\s*\[dns,\s*dnsGates\.get\(host\)!\]/);
     expect(src).toMatch(/new DnsPropagationGate\(/);
     expect(src).toMatch(/new CertReadyGate\(/);
@@ -41,21 +38,17 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('lets the explicit cutover task own the live server list', () => {
-    // Pulumi sets the initial serverIps, then ignores live drift so
-    // tasks/cutover.ts can do expand/contract with SetBackendServers.
+    // Pulumi sets the initial serverIps, then ignores live drift so tasks/cutover.ts can expand and contract with SetBackendServers.
     expect(src).toMatch(/ignoreChanges:\s*\['serverIps'\]/);
   });
 
   it("health-checks the app's own health path (no ingress hop)", () => {
-    // The app binds the host port directly in the immutable-node model, so the
-    // LB health-checks its real health path (the app's health contract): a
-    // crashed generation is marked down.
+    // The app binds the host port directly, so the LB health-checks its real health path and a crashed generation is marked down.
     expect(src).toMatch(/uri:\s*healthContract\.path/);
     expect(src).not.toContain('__ingress/health');
     // onMarkedDownAction follows the service drainPolicy.
     expect(src).toMatch(/onMarkedDownAction:/);
-    // Exactly two Backend construction sites: the public registry loop and the
-    // internal-route loop.
+    // Exactly two Backend construction sites: the public registry loop and the internal-route loop.
     expect(src.match(/new scaleway\.loadbalancers\.Backend\(/g)).toHaveLength(2);
   });
 
@@ -70,8 +63,7 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('adds a path-begin route for every pathPrefix service (same-origin migration)', () => {
-    // Registry-driven like the host routes: the prefix comes from the service
-    // declaration, never hardcoded per service, and targets the same backend.
+    // Registry-driven like the host routes: the prefix comes from the service declaration and targets the same backend.
     expect(src).toMatch(/if \(!service\.pathPrefix\) continue/);
     expect(src).toMatch(/new scaleway\.loadbalancers\.Route\(`\$\{baseName\(service\.slug\)\}-path-route`/);
     expect(src).toMatch(/matchPathBegin:\s*service\.pathPrefix/);
@@ -79,13 +71,11 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 
   it('keeps pre-refactor Pulumi resource names stable (regression guard)', () => {
-    // backend→api and frontend→app produce the original URNs (api-dns,
-    // api-cert, app-dns, app-cert, app-route) so no resource is replaced.
+    // backend→api and frontend→app produce the original URNs (api-dns, api-cert, app-dns, app-cert, app-route), so no resource is replaced.
     expect(src).toMatch(
       /legacyBaseNames:\s*Partial<Record<ServiceName,\s*string>>\s*=\s*\{\s*backend:\s*'api',\s*frontend:\s*'app'\s*\}/,
     );
-    // The default (app) service claims its host first, so the shared app host
-    // keeps the frontend's `app-*` URNs after every endpoint collapses onto it.
+    // The default (app) service claims its host first, so the shared app host keeps the frontend's `app-*` URNs after every endpoint collapses onto it.
     expect(src).toMatch(/\[defaultService, \.\.\.lbServices\.filter\(\(s\) => s !== defaultService\)\]/);
   });
 
@@ -104,16 +94,14 @@ describe('loadbalancer module — registry-driven wiring', () => {
   });
 });
 
-// Internal routes: private, ACL-guarded frontends giving in-network consumers a
-// stable address that follows every cutover (the cdc -> backend binding).
-describe('loadbalancer module — internal routes', () => {
+// Internal routes: private, ACL-guarded frontends giving in-network consumers a stable address that follows every cutover.
+describe('loadbalancer module: internal routes', () => {
   it('derives internal routes from the registry internalRoute knob', () => {
     expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.internalRoute\)/);
   });
 
   it('keeps the DHCP private-network attachment and resolves the LB IP from IPAM', () => {
-    // Recreating the attachment would sever LB-to-VM traffic; the address is
-    // read back from IPAM (resource type lb_server) after the LB exists.
+    // Recreating the attachment would sever LB-to-VM traffic, so the address is read back from IPAM (resource type lb_server) after the LB exists.
     expect(src).not.toMatch(/ipamIds:/);
     expect(src).toMatch(/ipam\/v1\/regions/);
     expect(src).toMatch(/resource_type=lb_server/);

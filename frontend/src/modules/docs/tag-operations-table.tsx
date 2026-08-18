@@ -13,14 +13,10 @@ interface TagOperationsTableProps {
   onPrerender?: () => void;
 }
 
-/**
- * Columns for TagOperationsTable
- */
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   const navigate = useNavigate();
 
-  // Enqueue scroll (store retries until the target is laid out), then navigate. The <Link>'s
-  // default nav covers keyboard/middle-click; this path queues the scroll before nav re-renders.
+  // Enqueue the scroll (the store retries until the target is laid out), then navigate
   const handleOperationClick = (hash: string) => {
     scrollToSectionById(hash);
     navigate({
@@ -85,9 +81,6 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
   ];
 }
 
-/**
- * Simple read-only operations table for displaying operations within a tag section
- */
 export function TagOperationsTable({ operations, tagName, onPrerender }: TagOperationsTableProps) {
   const columns = useColumns(tagName);
 

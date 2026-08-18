@@ -14,11 +14,7 @@ import { setupConnectionHandler, setupUpgradeHandler } from './upgrade';
 let httpServer: Server | null = null;
 let wss: WebSocketServer | null = null;
 
-/**
- * HTTP side of the relay: the shared health app, mounted on both the bare path and
- * the `/yjs` prefix (same-origin migration: the LB forwards `/yjs/...` without
- * stripping; the WS upgrade path keeps its own prefix handling).
- */
+/** The shared health app, mounted on both the bare path and the `/yjs` prefix, since the load balancer forwards `/yjs/...` without stripping it. */
 function buildHttpApp(): Hono {
   // biome-ignore lint/style/noProcessEnv: RELEASE_SHA is baked into the image by Docker, not part of the validated env schema
   const version = process.env.RELEASE_SHA ?? 'unknown';
@@ -49,9 +45,7 @@ function buildHttpApp(): Hono {
 }
 
 export function startWsServer(): void {
-  // serve() uses node:http's createServer by default, so the upgrade event is available.
-  // hostname doubles as the Host fallback for the LB's host-less HTTP/1.0 health
-  // probe: without it @hono/node-server rejects the probe with 400 Missing host header.
+  // hostname doubles as the Host fallback for the load balancer's host-less HTTP/1.0 probe, which @hono/node-server otherwise rejects with 400.
   const server = serve({ fetch: buildHttpApp().fetch, hostname: '0.0.0.0', port: env.YJS_PORT }, () => {
     log.info('Yjs WebSocket server listening', { port: env.YJS_PORT });
   }) as Server;
@@ -85,9 +79,6 @@ export async function closeWsServer(): Promise<void> {
   log.info('Yjs worker stopped');
 }
 
-/**
- * Number of raw WebSocket connections to the server.
- */
 export function getConnectionCount(): number {
   return wss?.clients.size ?? 0;
 }

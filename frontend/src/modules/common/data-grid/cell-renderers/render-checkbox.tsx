@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { RenderCheckboxProps } from '../types';
 
-/** Renders the render checkbox component. */
 export function RenderCheckbox({ onChange, indeterminate: _indeterminate, ...props }: RenderCheckboxProps) {
   const withShift = useRef(false);
 
@@ -14,8 +13,7 @@ export function RenderCheckbox({ onChange, indeterminate: _indeterminate, ...pro
     <Checkbox
       {...props}
       onMouseDown={(e) => {
-        // Prevent the surrounding cell's mousedown handler from also bridging
-        // to row selection, which would double-toggle and cancel out this click.
+        // The cell's mousedown also toggles row selection, which would cancel out this click.
         e.stopPropagation();
       }}
       onClick={(e) => {

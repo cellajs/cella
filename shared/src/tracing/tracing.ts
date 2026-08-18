@@ -3,15 +3,10 @@ import type { EntityType } from '../../types.ts';
 export * from './span-names.ts';
 export { createSpanStoreProcessor, type SpanStoreProcessorOptions } from './span-store-processor.ts';
 
-// Types
-/** Span status aligned with OTel conventions. */
+/** Aligned with OTel conventions. */
 export type SpanStatus = 'ok' | 'error' | 'unset';
 
-/**
- * Span data structure for storage and display; real OTel tracers create the underlying spans.
- *
- * @see span-store-processor.ts
- */
+/** Stored and displayed shape; real OTel tracers create the spans. @see span-store-processor.ts */
 export interface SpanData {
   traceId: string;
   spanId: string;
@@ -25,14 +20,12 @@ export interface SpanData {
   parentSpanId?: string;
 }
 
-/** Span event for recording notable moments. */
 export interface SpanEvent {
   name: string;
   time: number;
   attributes?: Record<string, unknown>;
 }
 
-/** Trace context for propagation across services. */
 export interface TraceContext {
   traceId: string;
   spanId: string;
@@ -40,13 +33,11 @@ export interface TraceContext {
   lsn?: string;
 }
 
-/** Span store configuration. */
 export interface SpanStoreOptions {
   maxSpans?: number;
   onSpanEnd?: (span: SpanData) => void;
 }
 
-/** Span statistics. */
 export interface SpanStats {
   total: number;
   byPrefix: Record<string, number>;
@@ -54,16 +45,11 @@ export interface SpanStats {
   errorCount: number;
 }
 
-// ================================
-// Span Store
-// ================================
+// Span store
 
-/** Callback for span updates. */
 export type SpanSubscriber = (spans: SpanData[]) => void;
 
-/**
- * Create an in-memory span store with subscription support.
- */
+/** In-memory, with subscription support. */
 export function createSpanStore(options: SpanStoreOptions = {}) {
   const { maxSpans = 500, onSpanEnd } = options;
 
@@ -122,11 +108,6 @@ export function createSpanStore(options: SpanStoreOptions = {}) {
 
 export type SpanStore = ReturnType<typeof createSpanStore>;
 
-// ================================
-// Span Statistics
-// ================================
-
-/** Compute statistics from a list of spans. */
 export function computeSpanStats(spans: SpanData[]): SpanStats {
   const byPrefix: Record<string, number> = {};
   const durationSums: Record<string, number> = {};
@@ -153,11 +134,9 @@ export function computeSpanStats(spans: SpanData[]): SpanStats {
   return { total: spans.length, byPrefix, avgDurationMs, errorCount };
 }
 
-// ================================
-// Span Attribute Types
-// ================================
+// Span attribute types
 
-/** Trace context passed in message payloads for e2e correlation. */
+/** Carried in message payloads for end-to-end correlation. */
 export interface IncomingTraceContext {
   traceId?: string;
   spanId?: string;
@@ -165,30 +144,26 @@ export interface IncomingTraceContext {
   lsn?: string;
 }
 
-/** Base span attributes (primitives only). */
+/** Primitives only. */
 export type SpanAttributeValue = string | number | boolean | null | undefined;
 
-/** Span attributes with optional trace context for auto e2e latency. */
+/** The optional trace context yields end-to-end latency. */
 export interface SpanAttributes {
   [key: string]: SpanAttributeValue | IncomingTraceContext;
   _trace?: IncomingTraceContext;
 }
 
-// ================================
-// Attribute Helpers
-// ================================
+// Attribute helpers
 
-/** Clean span attributes (no undefined values). */
+/** No undefined values. */
 export type CleanSpanAttributes = Record<string, string | number | boolean | null>;
 
-/** Input for CDC WAL message attributes. */
 export interface CdcInput {
   lsn: string;
   tag?: string;
   table?: string;
 }
 
-/** Build prefixed CDC attributes from a CDC message context. */
 export function cdcAttrs(input: CdcInput): CleanSpanAttributes {
   return {
     lsn: input.lsn,
@@ -197,7 +172,6 @@ export function cdcAttrs(input: CdcInput): CleanSpanAttributes {
   };
 }
 
-/** Input for activity attributes (partial activity-like object). */
 export interface ActivityInput {
   type?: string | null;
   action?: string | null;
@@ -205,7 +179,6 @@ export interface ActivityInput {
   entityType?: EntityType | null;
 }
 
-/** Build prefixed activity attributes from an activity object. */
 export function activityAttrs(input: ActivityInput): CleanSpanAttributes {
   return {
     'activity.type': input.type ?? 'unknown',
@@ -215,14 +188,12 @@ export function activityAttrs(input: ActivityInput): CleanSpanAttributes {
   };
 }
 
-/** Input for event attributes (activity event in bus context). */
 export interface EventInput {
   type: string;
   subjectId?: string | null;
   entityType?: EntityType | null;
 }
 
-/** Build prefixed event attributes for ActivityBus spans. */
 export function eventAttrs(input: EventInput): CleanSpanAttributes {
   return {
     'event.type': input.type,

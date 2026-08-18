@@ -136,10 +136,8 @@ describe('EntityHierarchyBuilder', () => {
     });
 
     it('getOrderedAncestors returns ancestors most-specific first', () => {
-      // Inherits permissions from both ancestors
       expect(hierarchy.getOrderedAncestors('task')).toEqual(['project', 'organization']);
       expect(hierarchy.getOrderedAncestors('label')).toEqual(['project', 'organization']);
-      // Gets both ancestors via the parent chain
       expect(hierarchy.getOrderedAncestors('attachment')).toEqual(['project', 'organization']);
       expect(hierarchy.getOrderedAncestors('workspace')).toEqual(['organization']);
       expect(hierarchy.getOrderedAncestors('project')).toEqual(['organization']);
@@ -164,9 +162,7 @@ describe('EntityHierarchyBuilder', () => {
     });
 
     it('relatableChannelTypes contains only channel parents of products', () => {
-      // project is parent of task, label, attachment
       expect(hierarchy.relatableChannelTypes).toContain('project');
-      // organization and workspace are NOT direct parents of any product
       expect(hierarchy.relatableChannelTypes).not.toContain('organization');
       expect(hierarchy.relatableChannelTypes).not.toContain('workspace');
       expect(hierarchy.relatableChannelTypes).toHaveLength(1);

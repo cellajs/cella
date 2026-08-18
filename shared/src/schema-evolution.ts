@@ -1,3 +1,2 @@
-// Public barrel for the schema-evolution module (see ./schema-evolution/).
-// Kept as a flat file so `shared/schema-evolution` resolves via the `./*` -> `./src/*.ts` export.
+// Flat re-export of ./schema-evolution/, matching the `./*` -> `./src/*.ts` export map.
 export * from './schema-evolution/index.ts';

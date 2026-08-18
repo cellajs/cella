@@ -10,10 +10,7 @@ const menuEntityTypes = Array.from(
   new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
 ) as ChannelEntityType[];
 
-/**
- * Builds the user menu from cached entity data. Assumes entity lists were already enriched with
- * memberships by the cache subscriber (initChannelEnrichment). Used by useMenu + getMenuData.
- */
+/** Assumes entity lists were already enriched with memberships by the cache subscriber (initChannelEnrichment). */
 export function buildMenuFromCache(userId: string): UserMenu {
   const registry = channelListQueriesByType;
   const byType = new Map<ChannelEntityType, UserMenuItem[]>();
@@ -38,5 +35,4 @@ export function buildMenuFromCache(userId: string): UserMenu {
   return buildMenu(byType, appConfig.menuStructure);
 }
 
-/** The menu entity types used for query subscriptions */
 export { menuEntityTypes };

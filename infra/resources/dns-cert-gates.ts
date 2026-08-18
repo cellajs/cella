@@ -10,7 +10,7 @@ export function certVerdict(status: string, statusDetails?: string): 'ready' | '
   if (status === 'ready') return 'ready';
   if (status === 'error') {
     throw new Error(
-      `certificate issuance failed${statusDetails ? `: ${statusDetails}` : ''} — fix the cause (usually DNS), then redeploy; tasks/repair-certs.ts removes the errored cert first.`,
+      `certificate issuance failed${statusDetails ? `: ${statusDetails}` : ''}, fix the cause (usually DNS), then redeploy; tasks/repair-certs.ts removes the errored cert first.`,
     );
   }
   return 'wait';
@@ -52,7 +52,7 @@ const dnsPropagationProvider: pulumi.dynamic.ResourceProvider = {
       await sleep(POLL_INTERVAL_MS);
     }
     throw new Error(
-      `DNS for ${inputs.fqdn} did not propagate to ${inputs.expectedIp} within ${DNS_TIMEOUT_MS / 1000}s (${lastSeen}) — certificates were NOT requested against stale DNS; re-run the deploy once the record resolves.`,
+      `DNS for ${inputs.fqdn} did not propagate to ${inputs.expectedIp} within ${DNS_TIMEOUT_MS / 1000}s (${lastSeen}): certificates were NOT requested against stale DNS; re-run the deploy once the record resolves.`,
     );
   },
 };

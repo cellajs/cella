@@ -1,7 +1,6 @@
 /** DOM id prefix (e.g. id="spy-intro") prevents browser auto-scroll on hash change */
 const SPY_PREFIX = 'spy-';
 
-// State
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
 let currentSection = '';
@@ -17,10 +16,7 @@ const notify = () => {
   for (const fn of listeners) fn();
 };
 
-/**
- * Toggle data-spy-active on DOM elements with matching data-spy-link.
- * Called from IO callback, bypasses React for jank-free scroll updates.
- */
+/** Toggles data-spy-active on matching data-spy-link elements, bypassing React to keep scrolling smooth. */
 const syncActiveDOM = () => {
   for (const el of document.querySelectorAll('[data-spy-active]')) {
     delete (el as HTMLElement).dataset.spyActive;
@@ -32,7 +28,6 @@ const syncActiveDOM = () => {
   }
 };
 
-/** Subscribe to currentSection changes (useSyncExternalStore contract). */
 export const subscribeSection = (listener: () => void) => {
   listeners.add(listener);
   return () => {
@@ -40,13 +35,10 @@ export const subscribeSection = (listener: () => void) => {
   };
 };
 
-/** Get current section snapshot (useSyncExternalStore contract). */
 export const getSection = () => currentSection;
 
-/** Check if hash writes are currently allowed */
 const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Date.now() - initTime > 300;
 
-/** Check if a programmatic scroll is currently in progress */
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
 /** Within this many px of the top, no section counts as anchored. */
@@ -58,7 +50,6 @@ let topWatchFrame = 0;
 const scrollTopOf = (target: HTMLElement | Window) =>
   target === window ? window.scrollY : (target as HTMLElement).scrollTop;
 
-/** Parked at (or within a hair of) the top of whichever scroller the sections live in. */
 const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= TOP_THRESHOLD;
 
 /** Drop the hash, keeping path and search intact. */
@@ -67,22 +58,14 @@ const clearHash = () => {
   history.replaceState(null, '', location.pathname + location.search);
 };
 
-/**
- * Reflect the active section in the URL. Near the top, drop the hash because no anchor applies
- * up there, and a leftover one would make a reload jump to the last section scrolled past rather
- * than back to the top. `currentSection` is deliberately left alone, so the TOC still highlights.
- */
+/** Near the top the hash is dropped so a reload returns to the top; `currentSection` stays set for the TOC. */
 const syncHash = (id: string) => {
   if (!canWriteHash()) return;
   if (isAtTop()) clearHash();
   else if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
 };
 
-/**
- * The observer only fires on intersection-ratio changes, so the final stretch back to the top often
- * fires nothing at all and the last hash sticks. Watch scroll directly to catch it. Clear only
- * writes stay with the observer, so this can't introduce a hash the spy wouldn't have set itself.
- */
+/** The observer misses the final stretch back to the top, so watch scroll directly; this only clears the hash. */
 const onScrollNearTop = () => {
   if (topWatchFrame) return;
   topWatchFrame = requestAnimationFrame(() => {
@@ -115,7 +98,6 @@ const unwatchScroller = () => {
 
 let blockReEvalTimer = 0;
 
-/** Block hash writes for a duration, then re-evaluate best section */
 const blockHashWrites = (ms: number) => {
   hashWriteBlockedUntil = Date.now() + ms;
 
@@ -131,8 +113,7 @@ const blockHashWrites = (ms: number) => {
   }, ms + 50);
 };
 
-/** Find the best visible section using a "pin to top" approach.
- *  Picks the last anchor to have crossed a trigger line near the top of the viewport. */
+/** Picks the last anchor to have crossed a trigger line near the top of the viewport. */
 const getBestSection = (): string | null => {
   const visible = [...sections.entries()].filter(([, r]) => r > 0);
   if (!visible.length) return null;
@@ -146,15 +127,12 @@ const getBestSection = (): string | null => {
     }))
     .sort((a, b) => a.top - b.top);
 
-  // Among anchors that have scrolled past the trigger line, pick the most recent (largest top ≤ trigger)
   const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);
   if (pastTrigger.length) return pastTrigger[pastTrigger.length - 1].id;
 
-  // No anchor past trigger yet, pick the closest one approaching it.
   return withPositions[0].id;
 };
 
-/** Rebuild observer for current sections */
 const rebuild = () => {
   observer?.disconnect();
   if (!sections.size) {
@@ -177,10 +155,9 @@ const rebuild = () => {
         currentSection = best;
         syncActiveDOM();
 
-        // Write hash (skip during initial load delay, drop it entirely near the top)
         syncHash(best);
 
-        // Notify React subscribers after scroll settles (no re-render during active scroll)
+        // Notify subscribers only after scrolling settles.
         clearTimeout(scrollSettleTimer);
         scrollSettleTimer = window.setTimeout(notify, 150);
       }
@@ -196,7 +173,6 @@ const rebuild = () => {
   watchScroller();
 };
 
-/** Register section IDs for observation */
 export const registerSections = (ids: string[]) => {
   if (!initTime) initTime = Date.now();
 
@@ -205,7 +181,6 @@ export const registerSections = (ids: string[]) => {
   }
   rebuild();
 
-  // Resolve pending scroll target if it was just registered
   if (pendingScrollTarget && sections.has(pendingScrollTarget)) {
     savedSection = '';
     pendingFrameAttempts = 0;
@@ -223,22 +198,20 @@ export const registerSections = (ids: string[]) => {
   }
   savedSection = '';
 
-  // Scroll to initial hash. Allowed during the init window even if a child set currentSection
-  // first, so early registration can't override the parent's hash-matched section.
+  // Allowed during the init window even when a child already set currentSection, so the parent's hash wins.
   const hash = location.hash.slice(1);
   const inInitWindow = Date.now() - initTime < 500;
   if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {
     currentSection = hash;
     syncActiveDOM();
     notify();
-    blockHashWrites(1000); // Block writes during initial scroll
+    blockHashWrites(1000);
     requestAnimationFrame(() => {
       document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
     return;
   }
 
-  // Default to first section if nothing active yet
   if (!currentSection && ids.length) {
     currentSection = ids[0];
     syncActiveDOM();
@@ -246,7 +219,6 @@ export const registerSections = (ids: string[]) => {
   }
 };
 
-/** Unregister section IDs */
 export const unregisterSections = (ids: string[]) => {
   for (const id of ids) sections.delete(id);
 
@@ -254,7 +226,7 @@ export const unregisterSections = (ids: string[]) => {
     observer?.disconnect();
     observer = null;
     unwatchScroller();
-    savedSection = currentSection; // Preserve for potential re-registration
+    savedSection = currentSection;
     if (currentSection !== '') {
       currentSection = '';
       syncActiveDOM();
@@ -281,7 +253,6 @@ const findScrollParent = (el: HTMLElement): HTMLElement => {
   return (document.scrollingElement as HTMLElement) ?? document.documentElement;
 };
 
-/** Scroll to element and update hash, reasserting across router scroll restoration. */
 const performScroll = (el: HTMLElement, id: string) => {
   // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
   const scroller = findScrollParent(el);
@@ -311,9 +282,7 @@ const performScroll = (el: HTMLElement, id: string) => {
   }
 };
 
-/** Element is in the DOM AND has real layout (not display:none, content-visibility:hidden, height:0).
- *  Prevents scrolling to a stale position when the target is mounted but inside a collapsed/prerendered
- *  container that hasn't been laid out yet. */
+/** True when the element has real layout, so a queued scroll can't land on a collapsed container. */
 const isLaidOut = (el: HTMLElement): boolean => {
   if (typeof el.checkVisibility === 'function') {
     return el.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
@@ -325,7 +294,7 @@ const isLaidOut = (el: HTMLElement): boolean => {
 const MAX_PENDING_FRAMES = 60; // ~1s at 60fps
 let pendingFrameAttempts = 0;
 
-/** Poll once per frame until the queued target is laid out, then scroll. Bails after ~1s. */
+/** Polls once per frame until the queued target is laid out, then scrolls. */
 const tryFlushPendingScroll = () => {
   if (!pendingScrollTarget) return;
 

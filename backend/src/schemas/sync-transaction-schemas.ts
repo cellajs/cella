@@ -3,12 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { isValidHLC } from '#/core/stx/hlc';
 import { mockStxBase } from './sync-transaction-mocks';
 
-/**
- * Zod schema for StxBase (sync transaction base).
- * Used for both storage and request validation.
- *
- * Enables HLC-based conflict resolution, idempotency, and sync tracking.
- */
+/** Used for both storage and request validation. */
 export const stxBaseSchema = z
   .object({
     mutationId: z.string().max(36).describe('Unique mutation ID'),
@@ -24,10 +19,7 @@ export const stxBaseSchema = z
     'x-tags': schemaTags('base', 'cella'),
   });
 
-/**
- * Nullable sync-transaction reference shared by response schemas. Unnamed so each
- * use site emits an inline `anyOf: [$ref, {type: 'null'}]`.
- */
+/** Unnamed, so each use site emits an inline `anyOf: [$ref, {type: 'null'}]`. */
 export const nullableStxBaseSchema = z.union([stxBaseSchema, z.null()]);
 
 export type StxBase = z.infer<typeof stxBaseSchema>;

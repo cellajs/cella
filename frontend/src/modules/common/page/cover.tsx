@@ -30,7 +30,6 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
     coverUpdateCallback(bannerUrl);
   };
 
-  // Open upload dialog
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     upload.create({
@@ -71,5 +70,4 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   );
 }
 
-/** Renders a responsive page cover image. */
 export const PageCover = memo(PageCoverBase);

@@ -13,14 +13,10 @@ interface HttpCacheOptions {
   immutable?: boolean;
 }
 
-/**
- * Builds `Cache-Control` middleware for a route's `xCache` option.
- * Private responses remain browser-only; public responses permit shared caches.
- */
+/** Builds `Cache-Control` middleware for a route's `xCache` option; only `public` reaches shared caches. */
 export const httpCache = (options: HttpCacheOptions = {}): MiddlewareHandler<Env> => {
   const { scope = 'private', maxAge = 3600, staleWhileRevalidate = 600, immutable = false } = options;
 
-  // Build directive string once at startup
   const directives = [
     scope,
     `max-age=${maxAge}`,
@@ -40,7 +36,6 @@ export const httpCache = (options: HttpCacheOptions = {}): MiddlewareHandler<Env
     async (ctx, next) => {
       await next();
 
-      // Only cache successful GET responses
       if (ctx.req.method === 'GET' && ctx.res.status >= 200 && ctx.res.status < 300) {
         ctx.header('Cache-Control', directives);
       }

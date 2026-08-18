@@ -1,12 +1,8 @@
 import { isIPv4, isIPv6 } from 'node:net';
 
 /**
- * Reduce an IP to its enclosing privacy-preserving subnet.
- * - IPv4 → /24 (zero the last octet, e.g. `1.2.3.4` → `1.2.3.0/24`)
- * - IPv6 → /48 (keep first 3 groups, e.g. `2001:db8:abcd:1234::1` → `2001:db8:abcd::/48`)
- *
- * Returns `null` for invalid input. The output is a canonical string suitable
- * for hashing with `hashSubnet()`.
+ * Privacy-preserving subnet: IPv4 to /24, IPv6 to /48, `null` for invalid input. The canonical output
+ * string is what `hashSubnet()` expects.
  */
 export const toSubnet = (ip: string): string | null => {
   if (!ip) return null;
@@ -17,7 +13,6 @@ export const toSubnet = (ip: string): string | null => {
     return `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
   }
   if (isIPv6(normalized)) {
-    // Expand to full form, take first 3 groups, zero the rest.
     const groups = expandIPv6(normalized);
     if (!groups) return null;
     return `${groups[0]}:${groups[1]}:${groups[2]}::/48`;
@@ -25,11 +20,7 @@ export const toSubnet = (ip: string): string | null => {
   return null;
 };
 
-/**
- * Normalizes an IP for stable rate-limit buckets.
- * IPv4-mapped addresses collapse to IPv4, IPv4 remains per host, and IPv6 collapses to /64
- * to prevent address rotation. Unrecognized input passes through.
- */
+/** Stable rate-limit buckets: IPv4 stays per host, IPv6 collapses to /64 so address rotation cannot evade it. */
 export const toRateLimitIp = (ip: string): string => {
   if (!ip) return ip;
   const normalized = ip.startsWith('::ffff:') ? ip.slice(7) : ip;

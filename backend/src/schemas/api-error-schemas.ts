@@ -4,7 +4,6 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { mockApiError } from './api-error-mocks';
 import { entityTypeSchema } from './common-schemas';
 
-/** Severity levels array for zod enum */
 export const severityLevels = [
   'fatal',
   'error',
@@ -14,10 +13,7 @@ export const severityLevels = [
   'trace',
 ] as const satisfies readonly Severity[];
 
-/**
- * HTTP error status code (4xx or 5xx).
- * Runtime validation ensures valid error codes, OpenAPI represents as number with min/max.
- */
+/** OpenAPI represents this as a number with min and max. */
 const errorStatusCodeSchema = z
   .number()
   .int()
@@ -25,23 +21,21 @@ const errorStatusCodeSchema = z
   .max(599)
   .refine((val) => val >= 400 && val < 600, { message: 'Must be a valid error status code (400-599)' });
 
-/**
- * Schema for errors in a response.
- */
 export const apiErrorSchema = z
   .object({
-    name: z.string(), // Error name
-    message: z.string(), // Error message
-    type: z.string(), // Error type identifier
-    status: errorStatusCodeSchema, // HTTP status code (single schema, no union duplication)
-    severity: z.enum(severityLevels), // Severity level
-    entityType: entityTypeSchema.optional(), // Optional related entity type
-    logId: z.string().optional(), // Optional log identifier
-    path: z.string().optional(), // Optional request path
-    method: z.string().optional(), // Optional HTTP method
-    timestamp: z.string().optional(), // Optional timestamp
-    userId: z.string().optional(), // Optional user identifier
-    organizationId: z.string().optional(), // Optional organization identifier
+    name: z.string(),
+    message: z.string(),
+    /** Error key from `locales/en/error.json`, e.g. 'invalid_request'. */
+    type: z.string(),
+    status: errorStatusCodeSchema,
+    severity: z.enum(severityLevels),
+    entityType: entityTypeSchema.optional(),
+    logId: z.string().optional(),
+    path: z.string().optional(),
+    method: z.string().optional(),
+    timestamp: z.string().optional(),
+    userId: z.string().optional(),
+    organizationId: z.string().optional(),
     meta: z
       .record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()]))
       .optional(), // Optional structured metadata (e.g. retryAfter, slug, reason)

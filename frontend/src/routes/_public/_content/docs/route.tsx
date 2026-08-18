@@ -12,9 +12,6 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const DocsLayout = lazyNamed(() => import('~/modules/docs/docs-layout'), 'DocsLayout');
 
-/**
- * Documentation layout route for API reference and developer guides.
- */
 export const Route = createFileRoute('/_public/_content/docs')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Docs') }] }),
@@ -30,8 +27,7 @@ export const Route = createFileRoute('/_public/_content/docs')({
     for (const tag of tags) {
       if (tag.count > 0) queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
     }
-    // Operations feed the sidebar sections and the docs search corpus; prefetching
-    // here also lets the service worker cache them for offline search.
+    // Prefetching operations also lets the service worker cache them for offline search.
     queryClient.prefetchQuery(operationsQueryOptions);
   },
   component: withSuspense(DocsLayout),

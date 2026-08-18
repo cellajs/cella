@@ -24,20 +24,17 @@ function OperationsPage() {
   const { t } = useTranslation();
   const { operationTag: activeTag } = useSearch({ from: '/_public/_content/docs/operations' });
 
-  // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
   const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
   const tags = allTags.filter((t) => t.count > 0);
 
-  // Total operation count derived from tags
   const operationCount = tags.reduce((sum, t) => sum + t.count, 0);
 
-  // Tag section IDs - operation hashes are contributed by OperationDetail when rendered
+  // Operation hashes are contributed by OperationDetail when rendered
   const tagSectionIds = tags.map((t) => `tag/${t.name}`);
 
-  // Enable scroll spy with tag section IDs
   useScrollSpy(tagSectionIds);
 
   // Retry hash scrolling on mount to cover child registration races and collapsed content layout.
@@ -89,10 +86,7 @@ interface TagSectionProps {
   onPrerender: () => void;
 }
 
-/**
- * Single tag section with prerender-aware collapsible content.
- * Extracted as component so usePrerenderSection hook can be called per-tag.
- */
+/** Separate component so usePrerenderSection can be called per tag. */
 function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
   // Defer page content mount by one frame so the sidebar can update first
   const [deferredIsOpen, setDeferredIsOpen] = useState(isOpen);
@@ -106,8 +100,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
 
   const { shouldMount, style } = usePrerenderSection('operations', tag.name, deferredIsOpen);
 
-  // Track tag-details loading so the expand link can swap chevron → spinner while open.
-  // `enabled: isOpen` keeps this dormant until the user actually expands the section.
+  // `enabled: isOpen` keeps tag details dormant until the user expands the section
   const { isFetching: detailsLoading } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
 
   return (
@@ -121,10 +114,8 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
           {tag.description && <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>}
         </CardHeader>
         <CardContent className="rdg-readonly flex flex-col gap-4">
-          {/* Readonly data table with operations in this tag */}
           <TagOperationsTable operations={operations} tagName={tag.name} onPrerender={onPrerender} />
 
-          {/* Show details button */}
           <TagExpandLink
             isOpen={isOpen}
             loading={isOpen && detailsLoading}

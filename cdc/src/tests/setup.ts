@@ -1,7 +1,6 @@
 import { vi } from 'vitest';
 
-// Mock pino to avoid env.ts parsing at import time.
-// Applied to all CDC test files via vitest setupFiles.
+// Mocks pino so env.ts is not parsed at import time; applied to every CDC test via setupFiles.
 vi.mock('../lib/pino', () => ({
   log: {
     trace: vi.fn(),

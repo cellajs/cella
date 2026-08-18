@@ -4,14 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 // Undo setup.ts mock: this test needs the real rateLimiter to exercise the slow-limiter path.
 vi.unmock('#/middlewares/rate-limiter/core');
 
-// Record the keys each limiter instance is called with, so we can assert get/consume parity,
-// and every created keyPrefix, so we can assert which modes get a slow instance at all.
+// Record the keys each instance is called with for get/consume parity, and every keyPrefix created
 const slowCalls = { get: [] as string[], consume: [] as string[] };
 const fastCalls = { get: [] as string[], consume: [] as string[] };
 const createdPrefixes: string[] = [];
 
-// Mock only the limiter factory; keep the real extractIdentifiers/rateLimitError so key derivation
-// (getIp → `ip:<normalized>`) runs exactly as in production.
+// Mock only the limiter factory, so the real key derivation (getIp to `ip:<normalized>`) runs as in production
 vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
   const original = await importOriginal<typeof import('#/middlewares/rate-limiter/helpers')>();
   return {
@@ -35,7 +33,6 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
   };
 });
 
-// Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 
 describe('slow brute-force limiter key parity (F7)', () => {
@@ -50,15 +47,13 @@ describe('slow brute-force limiter key parity (F7)', () => {
     // The slow bucket was both read and written...
     expect(slowCalls.get.length).toBeGreaterThan(0);
     expect(slowCalls.consume.length).toBeGreaterThan(0);
-    // ...against the exact same key (the pre-fix bug consumed an un-prefixed `1.2.3.4` while
-    // reading `ip:1.2.3.4`, so the 24h bucket never accumulated and could never block).
+    // ...against the exact same key, or the 24h bucket never accumulates and can never block
     expect(slowCalls.consume[0]).toBe(slowCalls.get[0]);
     expect(slowCalls.get[0]).toBe('ip:1.2.3.4');
   });
 
   it('never creates or reads a slow bucket for non-fail modes', async () => {
-    // Only fail-driven modes ever CONSUME the slow bucket, so reading it for 'limit' and
-    // 'success' was a wasted DB round-trip on every request against a bucket stuck at zero.
+    // Only fail-driven modes consume the slow bucket, so reading it elsewhere is a DB round-trip against zero
     const slowGetsBefore = slowCalls.get.length;
     createdPrefixes.length = 0;
 

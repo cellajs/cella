@@ -14,22 +14,15 @@ import {
 } from './index';
 import type { EmailTemplateDef } from './types';
 
-/**
- * `statics` are props shared across all recipients (passed to `translate`);
- * `recipient` are per-recipient display props. The mailer turns these values into
- * Brevo `{{params.x}}` placeholders at send time. Sample data lives on each
- * template's `preview` field, type-checked against the template's own props.
- */
+/** Sample data lives on each template's `preview` field, type-checked against its own props. */
 export interface EmailPreviewFixture {
-  // Template defs are heterogeneous (each binds its own statics/recipient shape).
   // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
   def: EmailTemplateDef<any, any>;
   statics: Record<string, unknown>;
   recipient: Record<string, string>;
 }
 
-// Maps each preview slug to its template. Slugs are stable public identifiers
-// (URLs + Storybook stories) and intentionally differ from some export names.
+// Preview slugs are stable public identifiers (URLs, Storybook) and differ from some export names.
 const previewTemplates = {
   welcome: welcomeEmailTemplate,
   'account-security': accountSecurityEmail,

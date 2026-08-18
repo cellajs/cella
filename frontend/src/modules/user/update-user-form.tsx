@@ -40,7 +40,6 @@ interface UpdateUserFormProps {
   callback?: (args: CallbackArgs<User>) => void;
 }
 
-/** Renders the form for updating user. */
 export function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const currentUser = useCurrentUser();
@@ -59,7 +58,6 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
 
-  // Prevent data loss
   useBeforeUnload(form.isDirty);
 
   const onSubmit = (values: FormValues) => {
@@ -72,7 +70,6 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
       form.reset(updatedUser);
       if (isSheet) useSheeter.getState().remove(formContainerId);
 
-      // Onboarding advances through stepper state; the callback is optional.
       nextStep?.();
 
       callback?.({ data: updatedUser, status: 'success' });
@@ -95,7 +92,6 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
           name="thumbnailUrl"
           entity={user}
         />
-        {/* Personal fields only shown for self. Admins edit avatar/slug only. */}
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
             <InputFormField

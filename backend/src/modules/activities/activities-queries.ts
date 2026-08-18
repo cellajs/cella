@@ -13,7 +13,6 @@ interface FindActivitiesPaginatedOpts {
   offset: number;
 }
 
-/** Find a paginated activity list and its exact total. */
 export const findActivitiesPaginated = (
   ctx: DbContext,
   { filters, sort, order, limit, offset }: FindActivitiesPaginatedOpts,

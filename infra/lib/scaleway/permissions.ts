@@ -1,11 +1,6 @@
 // CI deploy key (`<slug>-ci-deploy`): project scope
 
-/**
- * Permission sets granted to the CI deploy key at project scope. The `…ReadOnly`
- * entries are bootstrap-owned (see BOOTSTRAP_OWNED_FRAGMENTS): CI refreshes them
- * on every `pulumi up` but may not mutate them; structural changes go through
- * a local bootstrap `pulumi up`.
- */
+/** Permission sets granted to the CI deploy key at project scope. The `…ReadOnly` entries are bootstrap-owned: CI refreshes but may not mutate them. */
 export const PROJECT_PERMISSION_SETS = [
   // Write: touched by routine CI deploys.
   'BlockStorageFullAccess', // block volumes attached to instances (split from InstancesFullAccess upstream)
@@ -23,22 +18,10 @@ export const PROJECT_PERMISSION_SETS = [
 
 // CI deploy key: grants beyond the app project
 
-/**
- * DNS permission set. "Scoped by Project" on Scaleway. The CI key receives it
- * project-scoped (the app project plus the serving zone's project, resolved in
- * setup-ci-key.ts), so a compromised CI key cannot touch unrelated zones. The
- * bootstrap grant (scaleway-iam.ts ensureBootstrapDnsGrant) still applies it
- * org-wide until the bootstrap key is revoked.
- */
+/** DNS permission set, "Scoped by Project" on Scaleway. The CI key gets it project-scoped (app project plus the serving zone's project) so it cannot touch unrelated zones. */
 export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
-/**
- * Organization-scoped sets. IAMReadOnly lets `pulumi up` and the deploy's
- * "Verify VM IAM grants" step look up the CI/VM applications by name
- * (org-scoped IAM reads); self-introspection alone doesn't cover listing others.
- * A single IAM policy rule may only hold permission sets of ONE scope type, so
- * this stays a separate org-keyed rule in setup-ci-key.ts buildRules.
- */
+/** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A single IAM policy rule may hold permission sets of only ONE scope type, so this needs its own org-keyed rule. */
 export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
@@ -47,14 +30,8 @@ export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMIS
 // Admin app (`<slug>-<mode>-admin`): the standing human principal
 
 /**
- * Permission sets granted to the admin application at project scope. The admin
- * app replaces the keyless operator app: it is what a human authenticates as
- * for day-2 operations (`pulumi preview --refresh`, teardown, state-bucket
- * recovery). Object Storage is the only write (bucket policies are
- * deny-by-default, so the admin needs both the IAM allow and its bucket-policy
- * statements); everything else is read-only: deliberately NO IAM write, no
- * instance/LB/secret writes. Structural changes still go through a transient
- * bootstrap key ("Apply infra change").
+ * Project-scoped sets for the admin application, the principal a human authenticates as for day-2 operations.
+ * Object Storage is the only write (bucket policies are deny-by-default, so admin needs the IAM allow AND the bucket-policy statement); everything else is read-only, with no IAM write.
  */
 export const ADMIN_PROJECT_PERMISSION_SETS = [
   'ObjectStorageFullAccess', // bucket reads/refresh + state-bucket recovery (s3:* comes from bucket policies)
@@ -75,54 +52,26 @@ export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // Per-service model (P3): service, boot, and CI key-mint grants
 
-/**
- * Secret-value read sets; always paired with a resource-level path condition.
- * SecretManagerSecretAccess decrypts secret VALUES (read-only, no write);
- * SecretManagerReadOnly alone is metadata-only and 403s the sync.
- */
+/** Secret-value read sets, always paired with a resource-level path condition. SecretManagerReadOnly alone is metadata-only and 403s the sync; SecretManagerSecretAccess decrypts the values. */
 export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
 
-/**
- * Extra sets for the backend service app (REQ-20): S3 request signing for
- * attachment uploads + presigned URLs, replacing the retired `<slug>-s3`
- * managed key. Granular object sets, NOT FullAccess. Bucket policies then
- * scope which buckets.
- */
+/** Backend service app S3 signing sets for attachment uploads and presigned URLs. Granular object sets, NOT FullAccess; bucket policies scope which buckets. */
 export const BACKEND_S3_PERMISSION_SETS = [
   'ObjectStorageObjectsRead',
   'ObjectStorageObjectsWrite',
   'ObjectStorageObjectsDelete',
 ] as const;
 
-/**
- * Boot application sets: pull images (boot runner + service images) and write
- * boot diagnostics. Its Secret Manager rule is separate and conditioned to the
- * handoff folder only (bootKeyCondition).
- */
+/** Boot application sets: pull images and write boot diagnostics. Its Secret Manager rule is separate and conditioned to the handoff folder (bootKeyCondition). */
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
 /**
- * The CI key-mint grant (D3): IAMApplicationManager, unconditioned. The
- * former `resource.id in [<app ids>]` condition is disproven on live
- * Scaleway (probe 2026-08-10: api-key POST on a LISTED app id → 403; the
- * api-key request carries no `resource.id` for the condition to match).
- * raak's live rule has run unconditioned since its migration and its repo
- * condition was live/repo drift, not validation. Documented widening: CI can
- * manage applications/api-keys org-wide; the remaining firewall is the
- * absent IAMPolicyManager (CI cannot grant permissions). Re-narrow when the
- * condition vocabulary can address an api-key's parent application
- * (IAM_PRIVILEGE_RETHINK).
+ * CI key-mint grant. Must stay unconditioned: an api-key POST carries no `resource.id`, so a `resource.id in [<app ids>]` condition 403s even for a listed app.
+ * Accepted widening: CI can manage applications and api-keys org-wide; the boundary is the absent IAMPolicyManager, so CI cannot grant permissions.
  */
 export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
 
-/**
- * The CI policy's full per-rule shape (permission sets + scope kind), shared
- * by the rule builder (setup-ci-key.ts) and the advisory drift check
- * (setup.ts warnOnCiPolicyDrift) so the two cannot diverge. Every CI rule is
- * UNCONDITIONED by design (the key-mint resource.id condition is disproven on
- * live Scaleway, see CI_KEY_MINT_PERMISSION_SETS); a condition appearing on
- * any CI rule is drift worth surfacing.
- */
+/** The CI policy's per-rule shape, shared by the rule builder and the drift check so the two cannot diverge. Every CI rule is unconditioned; a condition on any CI rule is drift. */
 export interface CiRuleShape {
   id: 'project' | 'dns' | 'org-read' | 'key-mint';
   scope: 'project' | 'dns-projects' | 'organization';
@@ -135,14 +84,9 @@ export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
   { id: 'key-mint', scope: 'organization', permissionSets: CI_KEY_MINT_PERMISSION_SETS },
 ];
 
-// Bootstrap-owned boundary
-
 /**
- * Resource-token fragments that are bootstrap-owned: NOT write-granted to the CI
- * key. When `pulumi up` reports "insufficient permissions: write <resource>" and
- * the token contains one of these, the fix is the CLI's "Apply infra change" (a
- * human bootstrap `pulumi up`), never widening the CI key. Matched as a
- * case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
+ * Resource-token fragments that are bootstrap-owned and NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a human bootstrap `pulumi up`, never widening the CI key.
+ * Matched as a case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
  */
 export const BOOTSTRAP_OWNED_FRAGMENTS = [
   'private_network', // VPC private network; CI is read-only

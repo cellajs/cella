@@ -12,11 +12,7 @@ import {
 } from '#/core/openapi-extensions';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 
-/**
- * Build a service-gate middleware for a route declaring `x-service`.
- * Runs before guards so a disabled feature 404s without exposing auth behavior.
- * The service entry is read per-request, so test config overrides are respected.
- */
+/** Runs before guards so a disabled service 404s without exposing auth behavior. Read per request. */
 const createServiceGate =
   (service: ServiceGate): MiddlewareHandler =>
   async (_ctx, next) => {
@@ -31,15 +27,12 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
 >;
 
 /**
- * Custom wrapper around hono/zod-openapi createRoute to extend it with extension middleware.
- * Extension middleware (xGuard, xRateLimiter) are documented in OpenAPI via x-* properties.
- *
+ * Wraps `createRoute` with extension middleware (xGuard, xRateLimiter), documented in OpenAPI as `x-*` properties.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(
   config: R,
 ): Route<P, R> => {
-  // Collect extension middleware dynamically from registry and combine with existing
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = config.middleware
     ? Array.isArray(config.middleware)
@@ -52,7 +45,6 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const serviceGate = service ? [createServiceGate(service)] : [];
   const middleware = [...serviceGate, ...extensionMiddleware, ...existing];
 
-  // Get specification extensions (x-*) from middleware
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler =>
       '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',

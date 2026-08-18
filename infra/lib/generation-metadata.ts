@@ -1,12 +1,6 @@
 import type { ServiceName } from '../compose/compose';
 
-/**
- * One entry of the `computeGenerationMetadata` Pulumi stack output
- * (resources/compute.ts): the recorded facts of a live generation VM, read
- * back as JSON by the deploy tasks. Single source of truth so the producer and
- * both consumers (tasks/deploy-service.ts, tasks/sync-rollout-config.ts) cannot
- * drift into partial, inconsistent shapes.
- */
+/** One entry of the `computeGenerationMetadata` stack output: a live generation VM's recorded facts, read back as JSON by the deploy tasks. */
 export interface GenerationMetadata {
   /** Service slug this generation belongs to. */
   service: ServiceName;

@@ -11,9 +11,6 @@ interface Props {
   className?: string;
 }
 
-/**
- * Radio group for selecting a single entity role.
- */
 export function SelectRoleRadio({ onValueChange, value, entityType, className }: Props) {
   const { t } = useTranslation();
 

@@ -1,9 +1,6 @@
 import { sharedDataTypes } from '~/modules/auth/legal/legal-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
-/**
- * Component to display a list of processed data types in a table format.
- */
 export function ProcessedDataTypes() {
   return (
     <Table title="Processed Data Types" className="mt-2">

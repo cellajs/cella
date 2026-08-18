@@ -1,6 +1,3 @@
-/**
- * Returns a Tailwind color class based on HTTP status code ranges
- */
 export const getStatusColor = (status: number): string => {
   if (status >= 200 && status < 300) {
     return 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/50';

@@ -12,10 +12,10 @@ import {
   resolveVerifiedPassphrase,
 } from '../shared';
 
-/** Read-only `pulumi preview` against the stack. Authenticates the provider
- *  from SCW_* env (not stack config) using a Scaleway key supplied here, so it
- *  doubles as the validation that env-based auth resolves. Any key with read
- *  access works (CI deploy key or a bootstrap key). Never mutates anything. */
+/**
+ * Read-only `pulumi preview`, authenticating the provider from SCW_* env, not stack config, so it also validates that env-based auth resolves.
+ * Any key with read access works, and nothing is mutated.
+ */
 export async function runPreview(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
     console.error(

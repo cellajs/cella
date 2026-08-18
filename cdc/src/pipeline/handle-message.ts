@@ -15,27 +15,21 @@ import { processEvents } from './process-events';
 
 // Message helpers
 
-/** Narrowed DML message type. */
 type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.MessageDelete;
 
-/** Type guard for DML messages. */
 function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
 }
 
-/**
- * Extract row data from a DML message (new for INSERT/UPDATE, old for DELETE).
- */
+/** New row for INSERT/UPDATE, old row for DELETE. */
 function getMessageRow(msg: DmlMessage): Record<string, unknown> | null {
   const row = 'new' in msg ? msg.new : 'old' in msg ? msg.old : null;
   return row && typeof row === 'object' ? (row as Record<string, unknown>) : null;
 }
 
 /**
- * Check if a message is a seeded INSERT during catch-up and should be skipped.
- * Detects seeded entities by UUID prefix '00000000-' (from mockUuid in script context)
- * or the supported nanoid prefix 'gen-'.
- * Only skips inserts; updates/deletes to seeded entities must still be tracked.
+ * Seeded rows are recognized by the id prefix '00000000-' (mockUuid) or 'gen-'. Only inserts are
+ * skipped: updates and deletes to seeded rows must still be tracked.
  */
 function isSeededInsert(msg: DmlMessage): boolean {
   if (msg.tag !== 'insert' || !replicationState.catchingUp) return false;
@@ -43,9 +37,7 @@ function isSeededInsert(msg: DmlMessage): boolean {
   return typeof id === 'string' && (id.startsWith('00000000-') || id.startsWith('gen-'));
 }
 
-/**
- * Acknowledge LSN if WebSocket is connected, otherwise log a hold.
- */
+/** Acknowledgment is held while the WebSocket is disconnected. */
 async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
     await replicationState.service?.acknowledge(lsn);
@@ -54,36 +46,26 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
   }
 }
 
-// Buffers
-
-/** Flush buffer: accumulates events across transactions for micro-batching */
+/** Accumulates events across transactions for micro-batching. */
 const flushBuffer = new FlushBuffer(processEvents, acknowledgeLsn, RESOURCE_LIMITS.buffers.flushWindowMs);
 
-/** Transaction buffer: cascade suppression within a single transaction */
+/** Cascade suppression within a single transaction. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 
-// Message handling
-
-/**
- * Handle incoming replication data message.
- * Transaction-aware: buffers events between BEGIN and COMMIT, suppresses
- * cascaded child deletes when a channel entity (project/org) is deleted.
- */
+/** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
   const { tag } = msg;
 
-  // Transaction boundary: BEGIN
   if (tag === 'begin') {
     const beginMsg = msg as Pgoutput.MessageBegin;
 
-    // Detect WAL lag from commit timestamp for catchup mode
     if (beginMsg.commitTime) {
       const wasCatchingUp = replicationState.catchingUp;
       const commitTimeMs = Number(beginMsg.commitTime.valueOf() / 1000n) + Number(PG_EPOCH_MS);
       const lagMs = Date.now() - commitTimeMs;
       const stillCatchingUp = replicationState.updateLag(lagMs);
 
-      // catchup → live transition: run post-catchup recovery
+      // Catchup to live transition.
       if (wasCatchingUp && !stillCatchingUp) {
         await flushBuffer.drain();
         runPostCatchupRecovery();
@@ -94,7 +76,6 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     return;
   }
 
-  // Transaction boundary: COMMIT; analyze and flush buffered events
   if (tag === 'commit') {
     try {
       await txBuffer.onCommit();
@@ -104,12 +85,11 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     return;
   }
 
-  // Skip non-DML messages (relation, origin, type, etc.)
+  // Skips relation, origin, type and other non-DML messages.
   if (!isDmlMessage(msg)) return;
 
   const tableName = msg.relation?.name;
 
-  // Early exit for seeded inserts during catch-up (UUID prefix '00000000-' or nanoid 'gen-').
   if (isSeededInsert(msg)) {
     if (wsClient.isConnected()) await replicationState.service?.acknowledge(lsn);
     return;
@@ -126,16 +106,13 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
 
     replicationState.markEvent();
 
-    // Buffer the event (or process immediately if no active transaction)
     await txBuffer.onEvent(lsn, parseResult);
   } catch (error) {
     log.error('Error processing CDC message - LSN NOT acknowledged', { err: error });
   }
 }
 
-/**
- * Drain all buffered events. Called during graceful shutdown.
- */
+/** Called during graceful shutdown. */
 export async function drainBuffers(): Promise<void> {
   await flushBuffer.drain();
 }

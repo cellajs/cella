@@ -6,10 +6,6 @@ interface EntityGridSkeletonProps {
   tileHeight?: number;
 }
 
-/**
- * Renders a loading skeleton for the entity grid.
- * Pass `tileHeight` to match the approximate height of the real tile component.
- */
 export function EntityGridSkeleton({ tileHeight = 180 }: EntityGridSkeletonProps) {
   const { hasStarted } = useMountedState();
 

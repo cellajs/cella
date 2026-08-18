@@ -28,8 +28,7 @@ import { mockOrganizationResponse } from './organization-mocks';
 
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
-/** Flag keys come from the app-owned config, so the wire contract stays strictly typed per app.
- *  Built loose then cast: with zero flags (cella default) `keyof OrganizationFlags` is `never`. */
+/** Flag keys come from the app-owned config; built loose then cast because with zero flags `keyof OrganizationFlags` is `never`. */
 export const organizationFlagsSchema = z.object(
   Object.keys(appConfig.defaultOrganizationFlags).reduce(
     (acc, key) => {
@@ -61,7 +60,7 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
   included: organizationIncludedSchema.extend({ membership: membershipBaseSchema }),
 });
 
-/** Wire registration: lens-widened schemas + entity-bound runtime seam for organization */
+/** Wire registration: lens-widened schemas bound to the organization entity at runtime. */
 export const organizationContract = evolutionContract.channel('organization', {
   createItem: z.object({
     id: validTempIdSchema,

@@ -6,26 +6,18 @@ import { pick } from '#/utils/pick';
 
 export type MembershipBaseModel = z.infer<typeof membershipBaseSchema>;
 
-// Infer types of membership base columns
 type TableColumns = (typeof membershipsTable)['_']['columns'];
 type MembershipBaseKeys = keyof typeof membershipBaseSchema.shape;
 type MembershipBaseSelect = Pick<TableColumns, MembershipBaseKeys>;
 
 const membershipBaseKeys = Object.keys(membershipBaseSchema.shape) as MembershipBaseKeys[];
 
-/**
- * Membership select for base data only.
- */
 export const membershipBaseSelect: MembershipBaseSelect = (() => {
   const cols = getColumns(membershipsTable);
   return pick(cols, membershipBaseKeys);
 })();
 
-/**
- * Pick only the base membership fields from a full membership object.
- * This is schema-driven so apps with extra channel entity ID columns
- * (e.g. workspaceId, projectId) are handled automatically.
- */
+/** Schema-driven, so apps with extra channel entity ID columns (workspaceId, projectId) are handled automatically. */
 export const toMembershipBase = (membership: Record<string, unknown>): MembershipBaseModel => {
   const result = {} as Record<string, unknown>;
   for (const key of membershipBaseKeys) {

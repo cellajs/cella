@@ -10,10 +10,6 @@ export const mockMeResponse = (key = 'me:default'): MeResponse => ({
   isSystemAdmin: false,
 });
 
-/**
- * Generates a mock MeAuthData response.
- * Used for getMyAuth endpoint example.
- */
 export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
   withFakerSeed(key, () => {
     const sessionCreatedAt = faker.date.past({ refDate: MOCK_REF_DATE });
@@ -46,10 +42,6 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
     };
   });
 
-/**
- * Generates a mock UploadToken response.
- * Used for getUploadToken endpoint example.
- */
 export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTokenResponse =>
   withFakerSeed(key, () => {
     const expiresAt = faker.date.soon({ days: 1, refDate: MOCK_REF_DATE });

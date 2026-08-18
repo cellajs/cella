@@ -6,11 +6,7 @@ import {
 } from 'shared';
 import { AppError } from '#/core/error';
 
-/**
- * Translate the tier-neutral `MissingScopeError` thrown by the shared engine into the backend's
- * `AppError(400, 'missing_scope')`, preserving the exact HTTP behavior callers relied on before
- * the engine moved into `shared`.
- */
+/** Translate the shared engine's tier-neutral `MissingScopeError` into `AppError(400, 'missing_scope')`. */
 const translateMissingScope = (e: unknown): never => {
   if (e instanceof MissingScopeError) {
     throw new AppError(400, 'missing_scope', 'error', {
@@ -22,11 +18,7 @@ const translateMissingScope = (e: unknown): never => {
 };
 
 /**
- * Build a permission subject from an entity type and ancestor channel ID columns.
- *
- * Thin backend wrapper over the shared `buildSubject` that translates `MissingScopeError` to
- * `AppError(400, 'missing_scope')`. See the shared implementation for full semantics.
- *
+ * Backend wrapper over the shared `buildSubject`; see it for full semantics.
  * @throws AppError 400 if any required ancestor channel ID is missing (undefined)
  */
 export const buildSubject = (

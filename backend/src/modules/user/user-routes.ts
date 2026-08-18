@@ -6,9 +6,6 @@ import { errorResponseRefs, paginationSchema, relatableUserIdParamSchema, slugQu
 import { mockPaginatedUsersResponse, mockUserResponse } from './user-mocks';
 
 const userRoutes = {
-  /**
-   * Get list of users (cross-tenant)
-   */
   getUsers: createXRoute({
     operationId: 'getUsers',
     method: 'get',
@@ -35,9 +32,6 @@ const userRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get a user by ID (cross-tenant). Pass ?slug=true to resolve by slug.
-   */
   getUser: createXRoute({
     operationId: 'getUser',
     method: 'get',

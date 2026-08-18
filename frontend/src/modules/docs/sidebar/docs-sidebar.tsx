@@ -26,15 +26,10 @@ interface DocsSidebarProps {
   tags: GenTagSummary[];
 }
 
-/**
- * Docs sidebar: logo + theme, then sections from the global docs config (content root index.mdx
- * frontmatter). Label, order, and visibility are config-driven; each section id maps to a renderer.
- */
+/** Sections come from the global docs config (content root index.mdx frontmatter): label, order, visibility. */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
-  // "Sheet mode" matches the layout: the sidebar renders as a sheet whenever the viewport is
-  // below `md` (docs-layout's isDesktop = above md). Gate close/animation behavior on the same
-  // threshold so the sm–md band behaves like the sheet it actually is, not like desktop.
+  // The sidebar renders as a sheet below `md`, the same threshold as docs-layout's isDesktop
   const isMobile = useBreakpointBelow('md', false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -81,7 +76,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         </div>
       </div>
 
-      {/* Config-driven sections (pre-sorted by order in content.ts) */}
+      {/* Sections are pre-sorted by order in content.ts */}
       {docsConfig.sections
         .filter((section) => section.visible)
         .map((section) => {
@@ -97,7 +92,6 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           }
         })}
 
-      {/* Debug Toolbars */}
       <Suspense>{DebugDropdown ? <DebugDropdown className="absolute bottom-0 m-1" /> : null}</Suspense>
     </SidebarContent>
   );

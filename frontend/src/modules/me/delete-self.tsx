@@ -14,7 +14,6 @@ interface Props {
   callback?: (user: CallbackArgs<User>) => void;
 }
 
-/** Renders the deletion flow for self. */
 export function DeleteSelf({ callback, dialog: isDialog }: Props) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);

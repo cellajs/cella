@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockBatchEvent } from './factories';
 
-// Mock dependencies before importing the module under test
 vi.mock('../network/websocket-client', () => ({
   wsClient: { send: vi.fn(() => true) },
 }));
@@ -54,13 +53,11 @@ describe('sendBatchMessageToApi', () => {
 
     expect(activity.seq).toBe(10); // minSeq
     expect(activity.batchUntilSeq).toBe(12); // maxSeq
-    // No error log for contiguous seqs
     expect(log.error).not.toHaveBeenCalled();
   });
 
   it('accepts non-contiguous sequence positions within one group and carries the exact count', () => {
-    // Under the shared org sequence a group's range may interleave with other groups'
-    // values: 10..12 with only 2 rows is legal, and `count` is authoritative.
+    // Ranges may interleave across groups: 10..12 with 2 rows is legal, `count` is authoritative.
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
@@ -79,7 +76,7 @@ describe('sendBatchMessageToApi', () => {
       const event = mockBatchEvent(seq, `entity-${org}-${seq}`);
       return { ...event, rowData: { ...event.rowData, organizationId: org } };
     };
-    // Interleaved on purpose: grouping must not depend on input order
+    // Interleaved on purpose: grouping must not depend on input order.
     const events = [inOrg('org-a', 10), inOrg('org-b', 5), inOrg('org-a', 11), inOrg('org-b', 6), inOrg('org-b', 7)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
@@ -118,7 +115,7 @@ describe('sendBatchMessageToApi', () => {
     const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as {
       batchRows: { seq?: number; rowData: Record<string, unknown> }[];
     };
-    // Context ids + identity/audit fields stay; content fields (name) never hit the wire
+    // Context ids and audit fields stay; content fields never hit the wire.
     expect(payload.batchRows[0].rowData).toEqual({
       id: event.rowData.id,
       organizationId: 'org-a',
@@ -127,8 +124,7 @@ describe('sendBatchMessageToApi', () => {
   });
 
   it('groups non-product entities (user) by org instead of demanding a channel ancestor', () => {
-    // Non-product user batches lack sequence context and organization ancestry.
-    // They group under the resource fallback without resolving a product home.
+    // Non-product batches lack sequence context, so they group under the resource fallback.
     const asUser = (seq: number): ReturnType<typeof mockBatchEvent> => {
       const event = mockBatchEvent(seq, `user-${seq}`);
       return {
@@ -155,7 +151,6 @@ describe('sendBatchMessageToApi', () => {
 
   it('handles events without seqs (delete batches)', () => {
     const events = [mockBatchEvent(1), mockBatchEvent(2)].map((e) => ({ ...e, seq: undefined }));
-    // Override action to delete
     for (const e of events) (e.activity as Record<string, unknown>).action = 'delete';
 
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);

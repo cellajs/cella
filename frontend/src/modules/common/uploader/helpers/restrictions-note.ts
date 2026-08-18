@@ -18,7 +18,6 @@ const formatCategories = (categories: string[]) => {
   return `${rest.join(', ')} and ${last} only`;
 };
 
-/** Generates restriction note. */
 export const generateRestrictionNote = (passedRestrictions?: Partial<CustomUppyOpt['restrictions']>): string => {
   const { allowedFileTypes, minNumberOfFiles, maxNumberOfFiles, maxFileSize } = {
     ...appConfig.uppy.defaultRestrictions,
@@ -26,10 +25,8 @@ export const generateRestrictionNote = (passedRestrictions?: Partial<CustomUppyO
   };
 
   const categories = (() => {
-    // If '*/*' is present, allow all categories
     if (allowedFileTypes?.includes('*/*')) return ['Images', 'Videos', 'Audio', 'Files'];
 
-    // Otherwise, map normally
     return Array.from(
       new Set(
         (allowedFileTypes ?? []).map((type) => {

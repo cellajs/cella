@@ -28,7 +28,6 @@ describe('Sign-out scoping', async () => {
     const victim = await createTestUser('victim@example.com');
     const victimCookie = await createTestSession(victim); // real session row
 
-    // Extract the victim's sessionId from the issued cookie value.
     const cookieValue = victimCookie.split('=')[1];
     const [, victimSessionId] = cookieValue.split('.');
 
@@ -44,7 +43,6 @@ describe('Sign-out scoping', async () => {
     // The forged secret matches no session row → fail closed.
     expect(res.status).toBe(401);
 
-    // The victim's session remains.
     const remaining = await db.select().from(sessionsTable).where(eq(sessionsTable.id, victimSessionId));
     expect(remaining).toHaveLength(1);
   });

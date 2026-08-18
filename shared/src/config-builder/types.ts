@@ -8,7 +8,7 @@ export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | '
 export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic';
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
 
-/** Input S3 config: only host and region are required, rest derived from slug in app-config */
+/** Only host and region are required; app-config derives the rest from the slug. */
 export interface S3ConfigInput {
   region: string;
   host: string;
@@ -18,7 +18,6 @@ export interface S3ConfigInput {
   privateCDNUrl?: string;
 }
 
-/** Resolved S3 config with all fields present after derivation */
 export interface S3Config extends Required<S3ConfigInput> {}
 
 export interface RequestLimitsConfig {
@@ -104,9 +103,9 @@ export interface CompanyConfig {
 }
 
 /**
- * A product entity embedded as an ID array inside a host product entity.
- * `lifecycle: 'owned'` lets CDC garbage-collect embedded rows no live host
- * references; the default 'shared' only strips references to dead rows.
+ * A product entity embedded as an id array inside a host product entity. `lifecycle: 'owned'`
+ * lets CDC delete embedded rows no live host references; the default 'shared' only strips
+ * references to dead rows.
  */
 export interface ProductEmbedding<P extends string = string> {
   readonly embeddedProduct: P;
@@ -119,10 +118,9 @@ export interface MenuStructureItem<C extends string = string> {
   entityType: C;
   subentityType: C | null;
   /**
-   * When a subentity membership is created, an associated membership on the parent entity is
-   * auto-created. By default it gets the least-privileged fitting role (`member` when the parent
-   * vocabulary has it). Set `carryRole` to preserve the invited role when it is valid in the
-   * parent's vocabulary (e.g. courseSection `student` → course `student`).
+   * A subentity membership auto-creates one on the parent, by default with the least-privileged
+   * fitting role (`member` where the parent vocabulary has it). `carryRole` keeps the invited
+   * role when the parent vocabulary also has it (courseSection `student` to course `student`).
    */
   carryRole?: boolean;
 }
@@ -146,7 +144,6 @@ export interface ConfigStringArrays {
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
  */
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
-  // Entity data model - use T['key'] to preserve literal types
   entityTypes: T['entityTypes'];
   channelEntityTypes: T['channelEntityTypes'];
   productEntityTypes: T['productEntityTypes'];
@@ -161,40 +158,28 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     rateLimits: { apiPointsPerHour: number };
   };
 
-  // System roles
   systemRoles: T['systemRoles'];
 
-  // Authentication
   tokenTypes: T['tokenTypes'];
 
-  // Localization
   languages: T['languages'];
 
-  // Storage & uploads
   uploadTemplateIds: T['uploadTemplateIds'];
 
-  // App identity
   name: string;
   slug: string;
   domain: string;
   description: string;
   keywords: string;
 
-  // URLs & endpoints
   frontendUrl: string;
   backendUrl: string;
   backendAuthUrl: string;
   yjsUrl: string;
 
   mcpUrl: string;
-  /**
-   * Local dev service listen ports and Vite proxy targets. Apps offset the whole block
-   * together with the `frontendUrl` family's port so parallel stacks never collide.
-   */
   devPorts: { api: number; cdcHealth: number; yjs: number; mcp: number };
   services: Record<string, AppServiceEndpointConfig>;
-  // Cost escape hatch: backend (MODE=api) also boots every enabled service
-  // in-process when true. Default false keeps the split (one service/process).
   singleVM: boolean;
   aboutUrl: string;
   statusUrl: string;
@@ -202,69 +187,54 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultRedirectPath: string;
   welcomeRedirectPath: string;
 
-  // Email
   supportEmail: string;
   senderEmail: string;
   securityEmail: string;
 
-  // Mode & flags
   mode: ConfigMode;
   maintenance: boolean;
 
-  // Feature flags (in-app UX/behavior toggles)
   has: HasFlagsConfig;
 
-  // Authentication
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
   totp: TotpConfig;
-  /** Per-user concurrent regular-session cap; oldest beyond it are evicted on sign-in. */
   maxSessionsPerUser: number;
 
-  // Versioning
   apiVersion: string;
   cookieVersion: string;
   clientCacheVersion: string;
 
-  // API configuration
   apiDescription: string;
 
-  // Request limits
   requestLimits: RequestLimitsConfig;
   jsonBodyLimit: number;
   fileUploadLimit: number;
   defaultBodyLimit: number;
 
-  // Storage & uploads
   s3: S3ConfigInput;
   uppy: { defaultRestrictions: UppyRestrictionsConfig };
   localBlobStorage: LocalBlobStorageConfig;
 
-  // Third-party services
   gleapToken: string;
   googleMapsKey: string;
   matrixURL: string;
   maplePublicIngestKey: string;
 
-  // Theming & UI
   themeColor: string;
   theme: ThemeConfig;
   placeholderColors: readonly string[];
 
-  // Localization
   defaultLanguage: string;
   c: { countries: readonly string[]; timezones: readonly string[] };
 
-  // Company details
   company: CompanyConfig;
 
-  // User defaults
   defaultUserFlags: Record<string, boolean>;
 
-  // Organization defaults
   defaultOrganizationFlags: Record<string, boolean>;
 
-  // Per-organization setup config: app-configured defaults layered under each org's stored jsonb.
-  // Cella ships {}; apps widen the value (e.g. `{ primaryLabels: [...] }`) in their config.
+  // Defaults layered under each organization's stored jsonb. The template ships {}; apps widen
+  // the value (e.g. `{ primaryLabels: [...] }`) in their own config.
   defaultSetupConfig: Record<string, unknown>;
 }

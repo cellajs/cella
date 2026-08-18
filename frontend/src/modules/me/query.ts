@@ -32,10 +32,6 @@ import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
 
-/**
- * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
- * For managing query caching and invalidation.
- */
 export const meKeys = {
   all: ['me'] as const,
   auth: ['me', 'auth'] as const,
@@ -55,33 +51,13 @@ export const meKeys = {
   handleInvitation: ['me', 'handle-invitation'] as const,
 };
 
-/**
- * Query options for fetching the current user's data.
- *
- * @returns Query options.
- */
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
 
-/**
- * Query options for fetching the auth information of the current user.
- *
- * @returns Query options.
- */
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
-/**
- * Query options for fetching the current user's invites.
- *
- * @returns Query options.
- */
 export const meInvitationsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
-/**
- * Mutation hook for updating current user (self) info
- *
- * @returns The mutation hook for updating the user info.
- */
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
     mutationKey: meKeys.update.info,
@@ -91,11 +67,6 @@ export const useUpdateSelfMutation = () => {
   });
 };
 
-/**
- * Mutation hook for updating current user (self) MFA requirement state
- *
- * @returns The mutation hook for updating the user MFA requirement state.
- */
 export const useToggleMfaMutation = () => {
   return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
     mutationKey: meKeys.update.info,
@@ -109,11 +80,6 @@ export const useToggleMfaMutation = () => {
   });
 };
 
-/**
- * Mutation hook for updating current user (self) flags
- *
- * @returns The mutation hook for updating the user flags.
- */
 export const useUpdateSelfFlagsMutation = () => {
   return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
@@ -123,11 +89,6 @@ export const useUpdateSelfFlagsMutation = () => {
   });
 };
 
-/**
- * Mutation hook to register a new passkey for current user (self)
- *
- * @returns The mutation hook for registering passkey.
- */
 export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
     mutationKey: meKeys.register.passkey,
@@ -153,11 +114,6 @@ export const useCreatePasskeyMutation = () => {
   });
 };
 
-/**
- * Mutation hook to delete a passkey by ID for current user (self)
- *
- * @returns The mutation hook for deleting passkey.
- */
 export const useDeletePasskeyMutation = () => {
   return useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
@@ -179,11 +135,6 @@ export const useDeletePasskeyMutation = () => {
   });
 };
 
-/**
- * Mutation hook for unlink current user (self) totp
- *
- * @returns The mutation hook for unlink totp.
- */
 export const useDeleteTotpMutation = () => {
   return useMutation<DeleteTotpResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
@@ -209,10 +160,7 @@ const applyUpdatedSelf = (updatedUser: User) => {
   updateUser(updatedUser);
 };
 
-/**
- * Query options to fetch all memberships for the current user.
- * This is the source of truth for user memberships in the frontend.
- */
+/** Source of truth for the current user's memberships in the frontend. */
 export const myMembershipsQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.memberships,
@@ -220,10 +168,7 @@ export const myMembershipsQueryOptions = () =>
     staleTime: 0,
   });
 
-/**
- * Mutation hook to accept or reject a membership invitation.
- * Removes the settled invite from cache and refreshes the menu.
- */
+/** Accepting or rejecting drops the settled invite from cache and refreshes the menu. */
 export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
     mutationKey: meKeys.handleInvitation,

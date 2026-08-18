@@ -14,7 +14,7 @@ export async function runPostCatchupRecovery(): Promise<void> {
 
   log.info('Starting post-catchup recovery', { eventsProcessed });
 
-  // Phase 1: Recalculate all counters from source-of-truth tables
+  // Phase 1: recalculate counters from the source-of-truth tables.
   try {
     const { channelRows, productRows } = await recalculateCounters(cdcDb);
     log.info('Post-catchup counter recalculation complete', {
@@ -26,7 +26,7 @@ export async function runPostCatchupRecovery(): Promise<void> {
     log.error('Post-catchup counter recalculation failed', { err: error });
   }
 
-  // Phase 2: Signal backend to bust entity caches
+  // Phase 2: tell the backend to bust entity caches.
   const controlPayload = {
     _control: 'catchup_complete',
     eventsProcessed,
@@ -37,7 +37,6 @@ export async function runPostCatchupRecovery(): Promise<void> {
     log.warn('Failed to send catchup_complete control message to backend');
   }
 
-  // Phase 3: Reset catchup state
   replicationState.resetCatchup();
 
   log.info('Post-catchup recovery complete', {

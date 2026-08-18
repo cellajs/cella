@@ -17,23 +17,18 @@ import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 import { getHashUrl } from '../hash-url';
 
-/**
- * Schemas page displaying all component schemas from the OpenAPI spec.
- * Schemas are categorized into base, data, and errors tags.
- */
+/** All component schemas from the OpenAPI spec, categorized into base, data, and errors tags. */
 function SchemasPage() {
   const { t } = useTranslation();
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });
 
-  // Prerender trigger for hover-intent DOM preparation
   const { prerender } = usePrerenderTrigger('schemas');
 
   const { data: allSchemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
-  // Derive distinct non-schema tag kinds (e.g., 'module', 'ownership') for dynamic columns.
-  // The `schema` kind is excluded because this section already implies it.
+  // Distinct non-schema tag kinds (e.g., 'module', 'ownership') drive the dynamic columns
   const tagKinds = useMemo(() => {
     const kinds = new Set<string>();
     for (const s of allSchemas) {
@@ -45,13 +40,11 @@ function SchemasPage() {
     return Array.from(kinds);
   }, [allSchemas]);
 
-  // Total schema count derived from schema tags
   const schemaCount = schemaTags.reduce((sum, t) => sum + t.count, 0);
 
-  // Tag section IDs - schema refs are contributed by SchemaDetail when rendered
+  // Schema refs are contributed by SchemaDetail when rendered
   const schemaTagIds = schemaTags.map((t) => t.name);
 
-  // Enable scroll spy with tag section IDs
   useScrollSpy(schemaTagIds);
 
   return (
@@ -88,10 +81,6 @@ interface SchemaTagSectionProps {
   onPrerender: () => void;
 }
 
-/**
- * Single schema tag section with prerender-aware collapsible content.
- * Extracted as component so usePrerenderSection hook can be called per-tag.
- */
 function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPrerender }: SchemaTagSectionProps) {
   const { shouldMount, style } = usePrerenderSection('schemas', tag.name, isOpen);
 
@@ -106,10 +95,8 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
           <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {/* Schemas table */}
           <TagSchemasTable schemas={tagSchemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
 
-          {/* Show details button */}
           <TagExpandLink
             isOpen={isOpen}
             to="."
@@ -123,7 +110,6 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
         </CardContent>
       </Card>
 
-      {/* Schema details list, prerendered with content-visibility: hidden on hover */}
       {shouldMount && (
         <CollapsibleContent keepMounted>
           <div style={style}>

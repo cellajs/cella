@@ -1,10 +1,6 @@
 import type { AttachmentBlob } from './attachments-db';
 
-/**
- * Whether a blob is eligible for an upload attempt: `pending` always, `failed` when the
- * backoff slot (`nextRetryAt`) has passed and `uploadAttempts` is under the configured budget.
- * Blobs past the budget stay `failed` terminally and surface through the upload-status badge.
- */
+/** Eligible for an upload attempt: `pending` always, `failed` once `nextRetryAt` passed and `uploadAttempts` is under the budget, past which it stays `failed`. */
 export function isUploadCandidate(
   blob: Pick<AttachmentBlob, 'uploadStatus' | 'uploadAttempts' | 'nextRetryAt'>,
   retryLimit: number,

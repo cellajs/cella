@@ -11,32 +11,26 @@ import { log } from '../lib/pino';
 import { materializeState, stateToBlocksJson } from './materialize';
 import { broadcastToCollab, getCollab } from './session-manager';
 
-// y-protocols message types
 const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
-/**
- * Per-client message buffer: queues all sync messages (reads and writes) while entity verification is pending.
- * Once verified, the buffered messages are released and applied. If denied, they're discarded.
- */
+/** Sync messages queued per client while entity verification is pending: replayed once verified, dropped if denied. */
 const pendingBuffers = new WeakMap<WebSocket, { ctx: DocContext; messages: Uint8Array[] }>();
 
-/** Queue a message for later replay, or drop if buffer is too large (safety limit). */
 function bufferMessage(ws: WebSocket, ctx: DocContext, rawMessage: Uint8Array): void {
   let buf = pendingBuffers.get(ws);
   if (!buf) {
     buf = { ctx, messages: [] };
     pendingBuffers.set(ws, buf);
   }
-  // Safety: cap buffer at 100 messages (~200KB typical) to prevent memory issues
+  // Cap the queue to bound memory per connection.
   if (buf.messages.length < 100) {
     buf.messages.push(rawMessage);
   }
 }
 
-/** Release queued messages after entity verification succeeds. Replays them through handleMessage. */
 export function releaseBufferedMessages(ws: WebSocket): void {
   const buf = pendingBuffers.get(ws);
   if (!buf || buf.messages.length === 0) {
@@ -54,7 +48,6 @@ export function releaseBufferedMessages(ws: WebSocket): void {
   }
 }
 
-/** Discard queued messages (entity verification failed or client disconnected). */
 export function discardPendingBuffer(ws: WebSocket): void {
   const buf = pendingBuffers.get(ws);
   if (buf) {
@@ -71,7 +64,7 @@ function encodeSyncStep2(update: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Merge two updates, falling back to the new update if merging fails (e.g. corrupted state). */
+/** Falls back to the new update when the merge throws on corrupted state. */
 function safeMerge(existing: Uint8Array, update: Uint8Array): Uint8Array {
   try {
     return Y.mergeUpdates([existing, update]);
@@ -80,11 +73,7 @@ function safeMerge(existing: Uint8Array, update: Uint8Array): Uint8Array {
   }
 }
 
-/**
- * Handle an incoming WebSocket message from a client. Routes based on y-protocols message type.
- * All sync messages (reads and writes) are gated on ctx.verified: buffered until async
- * entity verification completes. Awareness (cursors) is always allowed since it's ephemeral.
- */
+/** Sync messages are gated on ctx.verified and buffered until entity verification completes; awareness is ephemeral and always allowed. */
 export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
 
@@ -92,7 +81,6 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
   const messageType = decoding.readVarUint(decoder);
 
   if (messageType === YMessage.Sync) {
-    // Buffer all sync messages (reads + writes) until entity access is verified
     if (!ctx.verified) {
       bufferMessage(ws, ctx, data);
       return;
@@ -109,7 +97,6 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
       await handleSyncUpdate(ctx, ws, update, data);
     }
   } else if (messageType === YMessage.Awareness) {
-    // Awareness (cursor positions) is always allowed: it's ephemeral and read-like
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
@@ -119,16 +106,11 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
   }
 }
 
-/**
- * Client sends state vector, server responds with missing updates.
- * Uses Y.diffUpdate to compute the diff without instantiating a full Y.Doc.
- * Merges any un-flushed pendingState so the client doesn't miss recent edits.
- */
+/** Answers a client state vector with the missing updates, diffed without instantiating a Y.Doc. */
 async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
   const storedState = await loadState(ctx);
 
-  // Merge in-memory pendingState (un-flushed updates within the debounce window)
-  // so the connecting client receives the most up-to-date state.
+  // Merge un-flushed pendingState so a connecting client does not miss edits inside the debounce window.
   const collab = getCollab(ctx.entityType, ctx.entityId);
   const pending = collab?.pendingState;
 
@@ -141,40 +123,29 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     fullState = storedState;
   }
 
-  // The durable entity description (the entity's stored description) anchors both the fresh-session
-  // seed and the materialize baseline below. Load it once, lazily, and reuse.
+  // The durable entity description anchors both the fresh-session seed and the materialize baseline below.
   let durableDescription: string | null | undefined;
   const getDurableDescription = async () => {
     if (durableDescription === undefined) durableDescription = await loadEntityDescription(ctx);
     return durableDescription;
   };
 
-  // No row in DB and no pending state: fresh session. Seed the doc from the
-  // entity's stored description server-side, so clients never seed (no client
-  // seed race, no undo-history pollution, no markContentAsSent handshake).
+  // Fresh session: the server seeds the doc from the stored description so clients never seed it.
   if (!fullState && storedState === null) {
     const seed = descriptionToYUpdate(await getDurableDescription());
     await createDoc(ctx, seed);
-    // Re-load the canonical row: a concurrent connector (this or another instance)
-    // may have won the insert with its own seed; merging two independently
-    // generated seeds would duplicate content, so everyone adopts the winner's.
+    // A concurrent connector may have won the insert; adopt its row, since merging two seeds duplicates content.
     const canonical = await loadState(ctx);
     if (canonical && canonical.length > 0) fullState = canonical;
   }
 
-  // Seed the materialize baseline from the DURABLE description, never from the Y.Doc state. The Y.Doc
-  // row (yjs_documents.state) and the entity description are separate stores that can diverge: an
-  // image url can be saved to the Y.Doc row but not yet materialized into the description. Anchoring
-  // the baseline on the Y.Doc would mark that content as already materialized and permanently suppress
-  // the corrective write, dropping the url from the description. Anchoring on the durable description
-  // keeps unchanged rejoins from POSTing, while a divergence forces the next save window to heal it.
+  // Anchor the materialize baseline on the durable description, never on yjs_documents.state: the two stores can diverge, and a Y.Doc-anchored baseline would suppress the corrective write forever.
   const collabForBaseline = getCollab(ctx.entityType, ctx.entityId);
   if (collabForBaseline && !collabForBaseline.lastMaterializedJson) {
     const durableState = descriptionToYUpdate(await getDurableDescription());
     if (durableState) collabForBaseline.lastMaterializedJson = stateToBlocksJson(durableState) ?? undefined;
   }
 
-  // No content to diff against: send empty doc update
   if (!fullState) {
     ws.send(encodeSyncStep2(Y.encodeStateAsUpdate(new Y.Doc())));
     return;
@@ -184,12 +155,12 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
     const diff = Y.diffUpdate(fullState, clientStateVector);
     ws.send(encodeSyncStep2(diff));
   } catch {
-    // If diffUpdate fails (corrupted state), send full state
+    // Corrupted state: fall back to the full state.
     ws.send(encodeSyncStep2(fullState));
   }
 }
 
-/** Client sends document updates. Merge into stored state and broadcast to peers. Saves are debounced. */
+/** Merges a client update into stored state, broadcasts it to peers, and debounces the save. */
 async function handleSyncUpdate(
   ctx: DocContext,
   ws: WebSocket,
@@ -207,7 +178,6 @@ async function handleSyncUpdate(
   if (collab.pendingState && collab.pendingState.length > 0) {
     collab.pendingState = safeMerge(collab.pendingState, update);
   } else {
-    // Use cached DB state within the debounce window to avoid redundant reads
     if (collab.cachedDbState === undefined) {
       collab.cachedDbState = await loadState(ctx);
     }
@@ -220,15 +190,13 @@ async function handleSyncUpdate(
     if (!collab.pendingState) return;
     const snapshotToSave = collab.pendingState;
     collab.pendingState = undefined;
-    // Clear cached DB state: next window should re-fetch
     collab.cachedDbState = undefined;
 
     const savePromise = saveState(ctx, snapshotToSave, collab.lastEditor?.userId ?? null);
     collab.savingPromise = savePromise;
     try {
       await savePromise;
-      // Persist blocks once per document and save window, regardless of active client count.
-      // Retry failures leave the baseline stale so the next save or cleanup converges it.
+      // Runs once per document per save window; a failure leaves the baseline stale so the next save converges it.
       await materializeState(collab, snapshotToSave);
     } catch (err) {
       log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });

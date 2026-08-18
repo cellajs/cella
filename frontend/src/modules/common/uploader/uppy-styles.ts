@@ -6,7 +6,4 @@ import '@uppy/url/css/style.css';
 import '@uppy/webcam/css/style.css';
 import '~/modules/common/uploader/uppy.css';
 
-/**
- * Uppy CSS imports - shared module to ensure styles load regardless of route context.
- * Import this file in any component that renders Uppy Dashboard.
- */
+/** Uppy CSS, imported by any component rendering the Uppy Dashboard. */

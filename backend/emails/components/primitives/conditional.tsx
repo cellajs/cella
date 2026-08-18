@@ -32,8 +32,7 @@ export const Conditional: JsxEmailComponent<ConditionalProps> = (props) => {
   if (typeof expression !== 'undefined' && typeof mso !== 'undefined')
     throw new RangeError('jsx-email: Conditional expects the `expression` or `mso` prop to be defined, not both');
 
-  // Always render a JSX custom element with data-* markers.
-  // A rehype plugin will replace this element with proper conditional comments.
+  // A rehype plugin replaces this data-* marked element with real conditional comments.
   return (
     <jsx-email-cond data-mso={mso} data-expression={expression} data-head={head}>
       {children}

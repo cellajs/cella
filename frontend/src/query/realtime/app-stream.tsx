@@ -6,17 +6,14 @@ import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
 
 const debugLabel = 'AppStream';
 
-/**
- * Thin React wrapper around appStreamManager for real-time updates.
- * All reconnect logic (visibility, leader changes) is handled by StreamManager.
- */
+/** React wrapper around appStreamManager. StreamManager owns all reconnect logic, including visibility and leader changes. */
 function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
   const { enabled = true } = options;
 
   const state = appStreamManager.useStore((s) => s.state);
   const cursor = appStreamManager.useStore((s) => s.cursor);
 
-  // Connect based on enabled prop (disconnect lifecycle managed by route beforeLoad)
+  // Route beforeLoad owns the disconnect lifecycle.
   useEffect(() => {
     if (enabled) {
       appStreamManager.connect();
@@ -25,18 +22,16 @@ function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
     }
   }, [enabled]);
 
-  // Debug log state transitions
   useEffect(() => {
     if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
     if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
   }, [state]);
 
-  // Run sync service when stream goes live
   const syncAbortRef = useRef<AbortController | null>(null);
   const offlineAccess = useUIStore((s) => s.offlineAccess);
 
   useEffect(() => {
-    // Abort previous sync run on re-trigger or cleanup
+    // Abort the previous sync run on re-trigger or cleanup.
     syncAbortRef.current?.abort();
 
     if (state === 'live') {

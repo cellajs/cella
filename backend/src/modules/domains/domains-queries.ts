@@ -3,13 +3,11 @@ import type { AuthContext, DbContext } from '#/core/context';
 import { domainsTable } from '#/modules/domains/domains-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-/** List all domains for a tenant, ordered by domain name. */
 export const findDomainsByTenant = async (ctx: AuthContext) => {
   const { db, tenantId } = ctx.var;
   return db.select().from(domainsTable).where(eq(domainsTable.tenantId, tenantId)).orderBy(asc(domainsTable.domain));
 };
 
-/** Check that a tenant exists. Returns the tenant ID or undefined. */
 export const findTenantExists = async (ctx: AuthContext) => {
   const { db, tenantId } = ctx.var;
   const [tenant] = await db
@@ -24,7 +22,6 @@ interface FindDomainByNameOpts {
   domain: string;
 }
 
-/** Find a domain by its domain name (uniqueness check). */
 export const findDomainByName = async (ctx: DbContext, { domain }: FindDomainByNameOpts) => {
   const { db } = ctx.var;
   const [existing] = await db.select().from(domainsTable).where(eq(domainsTable.domain, domain)).limit(1);
@@ -35,7 +32,6 @@ interface InsertDomainOpts {
   domain: string;
 }
 
-/** Insert a new domain and return the created row. */
 export const insertDomain = async (ctx: AuthContext, { domain }: InsertDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [created] = await db.insert(domainsTable).values({ tenantId, domain }).returning();
@@ -46,7 +42,6 @@ interface FindDomainByIdOpts {
   id: string;
 }
 
-/** Find a domain by ID and tenant. */
 export const findDomainById = async (ctx: AuthContext, { id }: FindDomainByIdOpts) => {
   const { db, tenantId } = ctx.var;
   const [domain] = await db
@@ -61,7 +56,6 @@ interface DeleteDomainOpts {
   id: string;
 }
 
-/** Delete a domain by ID and tenant. Returns the deleted row. */
 export const deleteDomain = async (ctx: AuthContext, { id }: DeleteDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [deleted] = await db
@@ -77,7 +71,6 @@ interface UpdateDomainOpts {
     Partial<Pick<typeof domainsTable.$inferInsert, 'verified' | 'verifiedAt'>>;
 }
 
-/** Update a domain by ID and tenant, then return the updated row. */
 export const updateDomain = async (ctx: AuthContext, { id, values }: UpdateDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [updated] = await db

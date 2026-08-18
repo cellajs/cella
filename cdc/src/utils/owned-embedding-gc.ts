@@ -25,10 +25,7 @@ interface ResolvedOwnedEmbedding {
   scopeColumnName: string;
 }
 
-/**
- * Map lifecycle-'owned' productEmbeddings config to Drizzle references at module init.
- * Throws on misconfiguration so problems surface at startup, not at runtime.
- */
+/** Resolves lifecycle-'owned' productEmbeddings to Drizzle references at module init; throws on misconfiguration. */
 function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedEmbedding[]> {
   const map = new Map<ProductEntityType, ResolvedOwnedEmbedding[]>();
 
@@ -37,7 +34,7 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
     const { embeddedProduct, hostProduct, hostColumn: hostColumnName } = embedding;
 
     const hostTable = getEntityTable(hostProduct as Parameters<typeof getEntityTable>[0]);
-    // getColumns returns literal-keyed columns; widen for runtime string lookup
+    // getColumns returns literal-keyed columns; widened for runtime string lookup.
     const hostColumns = getColumns(hostTable) as Record<string, AnyPgColumn>;
     const hostColumn = hostColumns[hostColumnName];
     if (!hostColumn) throw new Error(`owned embedding: column "${hostColumnName}" not found on "${hostProduct}" table`);
@@ -49,8 +46,7 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
         throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
     }
 
-    // Refcounting is scoped to the root channel: the broadest context both products share,
-    // so a host in a sibling subtree still counts as a reference and spares the row.
+    // Refcounting is scoped to the root channel, so a host in a sibling subtree still spares the row.
     const rootChannel = hierarchy.getOrderedAncestors(embeddedProduct).at(-1);
     if (!rootChannel)
       throw new Error(`owned embedding: "${embeddedProduct}" has no channel ancestor to scope garbage collection by`);
@@ -95,16 +91,11 @@ interface ScopeCandidates {
 }
 
 /**
- * Garbage-collect owned embedded rows after their host arrays shrink.
- *
- * Dispatch is host-type-first: call this only for update batches of a product that is a
- * registered owned-embedding HOST. Removal candidates are ids observed leaving a host
- * array (soft-deleted hosts surrender their whole array); a candidate is soft-deleted
- * only when no live host row in the same root channel still references it. Rows never
- * referenced by any host are structurally exempt: only observed removals become candidates.
- *
- * The embedded row's soft-delete is a plain product UPDATE, so it flows through the
- * normal pipeline (seq stamp, activity, counter delta, propagation.remove hint).
+ * Garbage-collects owned embedded rows after their host arrays shrink. Call only for update batches
+ * of a registered owned-embedding host. Candidates are ids observed leaving a host array (a
+ * soft-deleted host surrenders its whole array), and a candidate is soft-deleted only when no live
+ * host row in the same root channel still references it, so rows never referenced stay exempt. The
+ * soft-delete is a plain product UPDATE and flows through the normal pipeline.
  */
 export async function gcOwnedEmbeddedRows(
   hostProductType: ProductEntityType,
@@ -117,13 +108,13 @@ export async function gcOwnedEmbeddedRows(
     const { embeddedProduct, embeddedTable, embeddedColumns, embeddedScopeColumn } = embedding;
     const { hostTable, hostColumn, hostColumnName, hostScopeColumn, scopeColumnName } = embedding;
 
-    // Group removal candidates by root channel (the GC scope boundary)
+    // Root channel is the GC scope boundary.
     const byScope = new Map<string, ScopeCandidates>();
 
     for (const { result } of events) {
       const newRow = result.rowData;
       const oldRow = result.oldRowData;
-      // No old image (REPLICA IDENTITY not FULL): nothing safe to diff
+      // No old image (REPLICA IDENTITY not FULL): nothing safe to diff.
       if (!oldRow) continue;
 
       const oldIds = toIdArray(oldRow[hostColumnName]);
@@ -152,8 +143,7 @@ export async function gcOwnedEmbeddedRows(
       [...byScope].map(async ([scopeId, { ids, actorId }]) => {
         const candidates = [...ids];
         try {
-          // WAL events arrive post-commit, so host arrays already reflect the removal:
-          // any candidate still present in a live host row is referenced and survives.
+          // WAL events arrive post-commit, so a candidate still present in a live host row survives.
           const referencedRows = await cdcDb
             .selectDistinct({ id: sql<string>`referenced.id` })
             .from(sql`${hostTable}, unnest(${hostColumn}) AS referenced(id)`)
@@ -190,8 +180,7 @@ export async function gcOwnedEmbeddedRows(
           if (deleted.length > 0)
             log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
         } catch (err) {
-          // The flush pipeline acks the WAL position regardless; a failed GC batch is a
-          // leak, never a wrong delete. Log the ids so leaks stay diagnosable.
+          // The flush pipeline acks the WAL position regardless: a failed GC batch leaks, never wrongly deletes.
           log.error('gcOwnedEmbeddedRows failed; candidates leaked', { embeddedProduct, scopeId, candidates, err });
         }
       }),

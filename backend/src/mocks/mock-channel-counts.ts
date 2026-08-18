@@ -4,10 +4,7 @@ import { withFakerSeed } from './faker-seed';
 import { generateMockMembershipCounts } from './mock-membership-counts';
 import { MOCK_REF_DATE } from './mock-timestamps';
 
-/**
- * Counts scoped to one channel's configured descendants, matching `channelIncludedSchema`.
- * The hierarchy controls the keys, so deeper apps need no mock-specific branches.
- */
+/** Scoped to the channel's configured descendants, matching `channelIncludedSchema`. The hierarchy controls the keys. */
 export const generateMockChannelCounts = (channelType: ChannelEntityType, key: string) => {
   const descendants = hierarchy.getOrderedDescendants(channelType);
   const productDescendants = descendants.filter(isProduct);

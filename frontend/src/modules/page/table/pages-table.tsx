@@ -15,29 +15,21 @@ import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { canEditDocs, type DocEditOps, editDocPage } from '~/modules/page/utils/edit-doc-page';
 
-/** Stable row key getter, defined outside the component to keep its identity stable. */
+// Module scope keeps these prop identities stable, which DataGrid's memoized rows depend on.
 function rowKeyGetter(row: PageTreeRow) {
   return row.id;
 }
 
-/** Stable drag preview renderer, defined at module scope so DataGrid's prop identity stays stable. */
 function renderRowDragPreview(row: PageTreeRow) {
   return <PageRowPreview page={row} />;
 }
 
-/**
- * Whether the pages tree starts fully expanded. Set to `true` so the docs
- * hierarchy is visible at a glance; the user can collapse subtrees individually.
- */
 const DEFAULT_EXPANDED = true;
 
 /** Content is file-based and read-only in the UI; the tree never mutates. */
 const noopMutate = () => {};
 
-/**
- * Render the build-time MDX index; development edits persist to frontmatter and reconcile on reload.
- * Bundled production content remains read-only.
- */
+/** Renders the build-time MDX index; development edits persist to frontmatter, and bundled production content is read-only. */
 function PagesTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
@@ -46,21 +38,17 @@ function PagesTable() {
 
   const { columns, setColumns } = usePagesTableColumns();
 
-  // Optimistic copy of the content index so edits show immediately, ahead of the
-  // dev server's write + full reload. On reload the module re-inits from disk.
   const [pages, setPages] = useState<DocPage[]>(docPages);
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
 
-  // Apply an edit optimistically, then persist. On failure revert to the last
-  // on-disk snapshot (`docPages`); the toast is raised by `editDocPage`.
+  // Optimistic update; a failed write reverts to the on-disk snapshot (`docPages`) and `editDocPage` raises the toast.
   const applyEdit = useCallback((id: string, patch: Partial<DocPage>, ops: DocEditOps) => {
     setPages((prev) => prev.map((page) => (page.id === id ? { ...page, ...patch } : page)));
     editDocPage(id, ops).catch(() => setPages(docPages));
   }, []);
 
-  // Reorder/reparent handler for the tree. `parentId` changes move files on
-  // disk (see vite/docs-editor.ts); `displayOrder` rewrites the `order` field.
+  // A `parentId` change moves files on disk (vite/docs-editor.ts); `displayOrder` rewrites the `order` frontmatter field.
   const treeMutate = useCallback(
     (id: string, ops: { displayOrder?: number; parentId?: string | null }) => {
       const patch: Partial<DocPage> = {};
@@ -71,7 +59,6 @@ function PagesTable() {
     [applyEdit],
   );
 
-  // Owns expansion state; when editing is disabled the mutation handlers are inert.
   const tree = useTreeRows<DocPage>({
     defaultExpanded: DEFAULT_EXPANDED,
     rowHeight: PAGES_ROW_HEIGHT,
@@ -80,8 +67,7 @@ function PagesTable() {
   });
 
   const buildRows = tree.buildRows;
-  // `filtered` = flat set of matching pages; `rows` = visible tree (collapsed descendants omitted).
-  // The header count uses `filtered.length` to stay the true total regardless of expansion.
+  // `rows` omits collapsed descendants, so the header count uses `filtered.length` to stay the true total.
   const { filtered, rows } = useMemo(() => {
     const query = q?.trim().toLowerCase();
     const filtered = query
@@ -92,7 +78,6 @@ function PagesTable() {
     return { filtered, rows: buildRows(filtered) };
   }, [q, pages, buildRows]);
 
-  // Commit inline cell edits (title / render mode / published status) to files.
   const onRowsChange = (changedRows: PageTreeRow[], { indexes, column }: RowsChangeData<PageTreeRow>) => {
     if (column.key !== 'name' && column.key !== 'renderMode' && column.key !== 'status') return;
     for (const index of indexes) {

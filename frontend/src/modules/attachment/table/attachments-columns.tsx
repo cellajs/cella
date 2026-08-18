@@ -25,16 +25,13 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
   return Date.now() - createdTime > seenWindowMs;
 };
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   const { t } = useTranslation();
 
-  // Allow table editing for unconditional and owner grants; the backend resolves ownership per row.
-  // Per-entity affordances use `useResolveCan` for a precise decision.
+  // Table editing covers unconditional and owner grants; the backend resolves ownership per row.
   const canUpdate = !!channel.can?.attachment?.update;
 
-  // Per-row delete resolves 'own' against the row's creator (resolveCan is what
-  // useResolveCan wraps; used directly here so the memo can depend on plain values).
+  // Per-row delete resolves 'own' against the row's creator, called directly so the memo depends on plain values.
   const deleteState = channel.can?.attachment?.delete;
   const userId = useUserStore((state) => state.user?.id);
 
@@ -65,8 +62,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
             <span className="truncate font-medium">{row.name || '-'}</span>
           </>
         ),
-        // Enable inline editing when user has update permission (unconditional or owner-scoped).
-        // For 'own' policies, the backend enforces the final owner check on save.
+        // For 'own' policies the backend enforces the final owner check on save.
         ...(canUpdate && {
           renderEditCell: ({ row, onRowChange }) => (
             <EditCellInput value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />

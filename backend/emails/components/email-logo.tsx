@@ -35,5 +35,4 @@ export const EmailLogo = ({ style }: { style?: React.CSSProperties }): JSX.Eleme
   </a>
 );
 
-// Template export
 export const Template = EmailLogo;

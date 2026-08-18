@@ -28,8 +28,8 @@ const parseUrl = (rawUrl: string): URL | null => {
 };
 
 /**
- * Extracts safe search terms from a URL without indexing query strings or fragments.
- * This keeps links discoverable by domain/path/slug while avoiding tokens and tracking params.
+ * Search terms from a URL, excluding query strings and fragments so tokens and tracking params
+ * stay unindexed while domain, path and slug remain searchable.
  */
 export const getSearchableTextFromUrl = (rawUrl: string): string => {
   const url = parseUrl(rawUrl);
@@ -51,10 +51,7 @@ export const getSearchableTextFromUrl = (rawUrl: string): string => {
   return [hostname, ...hostParts, decodedPath].filter(Boolean).join(' ');
 };
 
-/**
- * Recursively extracts plain text from a BlockNote block,
- * including inline content, table content, file-based blocks, and children.
- */
+/** Covers inline content, table content, file-based blocks and children. */
 export const getTextFromBlock = (block: Block): string => {
   const { content, children } = block;
 
@@ -110,10 +107,7 @@ const getSearchableTextFromInlineContent = (content: unknown[]): string => {
     .trim();
 };
 
-/**
- * Recursively extracts text intended for search indexing.
- * Unlike getTextFromBlock, this includes safe URL metadata from link/media URLs.
- */
+/** For search indexing: adds URL metadata from link and media URLs to `getTextFromBlock`. */
 export const getSearchableTextFromBlock = (block: Block): string => {
   const { content, children } = block;
   const parts: string[] = [];

@@ -1,15 +1,11 @@
 import { useRouterState } from '@tanstack/react-router';
 import type { Organization } from 'sdk';
 
-// String route IDs avoid circular imports from route objects.
-// This avoids circular imports between route files and component modules, which cause Vite HMR failures.
+// String route IDs avoid circular imports between route files and component modules, which break Vite HMR.
 
 type OrganizationLayoutContext = { organization: Organization; tenantId: string };
 
-/**
- * Organization context from the nearest active route that provides it. Works for authenticated
- * (OrganizationLayoutRoute) and public routes carrying tenantId + a minimal organization. Throws if none.
- */
+/** Organization context from the nearest route that provides it; throws when no match carries one. */
 export const useOrganizationLayoutContext = (): OrganizationLayoutContext => {
   const match = useRouterState({
     select: (s) =>

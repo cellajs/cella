@@ -12,7 +12,6 @@ interface SectionArchiveButtonProps {
 
 const EMPTY_CHANNEL_IDS: string[] = [];
 
-/** Renders the section archive button. */
 export function SectionArchiveButton({
   archiveToggleClick,
   archivedCount,

@@ -3,9 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { handleMcpMessage } from '#/modules/mcp/mcp-server';
 import { describeMcpTools, type ExecutableTool } from '#/modules/mcp/tool-source';
 
-// The MCP server is chat-free: it only depends on the tool registry, not on any
-// chat/message persistence. A minimal context is enough for these unit tests
-// because the default tool registry ignores it.
+// The MCP server only depends on the tool registry, and the default registry ignores ctx.
 const ctx = { var: {} } as unknown as AuthContext;
 
 describe('mcp-server', () => {

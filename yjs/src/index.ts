@@ -9,23 +9,16 @@ import { runStartupSweep } from './sync/sweep';
 
 export { closeWsServer };
 
-/**
- * Boot the Yjs relay: start the WebSocket server, OTel, register graceful
- * shutdown, then (in dev) wait for the backend. Used by both the `yjs` package
- * entrypoint (split deploy) and the backend single-VM boot.
- */
+/** Entrypoint for both the `yjs` package (split deploy) and the backend single-VM boot. */
 export async function startYjsWorker(): Promise<void> {
-  // Stop if yjs is disabled via config
   if (appConfig.services.yjs.enabled === false) {
     log.info('Yjs server disabled by appConfig');
     return;
   }
 
-  // Start the WebSocket server first so the container platform can see
-  // the port is open. waitForBackend runs after the server is listening.
+  // Starts first so the container platform sees an open port before waitForBackend runs.
   startWsServer();
 
-  // Start OTel SDK
   otel.start();
   otel.verifyConnection();
 
@@ -39,9 +32,7 @@ export async function startYjsWorker(): Promise<void> {
   });
 
   if (env.NODE_ENV === 'development') {
-    // Wait for backend, but don't crash if it times out: the server
-    // is already listening and can handle requests once backend is up.
-    // Sweep crash-orphaned session rows once the backend is reachable.
+    // A timeout here must not crash the process: the server already listens and serves once the backend is up.
     waitForBackend()
       .then(() => runStartupSweep())
       .catch((err) => {

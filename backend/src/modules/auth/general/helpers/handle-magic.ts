@@ -11,10 +11,8 @@ import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {
-  // Token requires userId
   if (!token.userId) throw new AppError(500, 'server_error', 'error');
 
-  // Get user
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, token.userId)).limit(1);
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user', meta: { userId: token.userId } });
 

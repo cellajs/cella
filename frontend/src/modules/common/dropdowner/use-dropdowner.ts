@@ -10,16 +10,11 @@ export type DropdownData = {
   align?: 'start' | 'center' | 'end';
   modal?: boolean;
   /**
-   * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead).
-   * 'panel' uses a Popover with a focus trap for arbitrary content (forms,
-   * comboboxes, date pickers). Defaults to 'panel'.
+   * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead); 'panel' uses a
+   * Popover with a focus trap for arbitrary content. Defaults to 'panel'.
    */
   kind?: DropdownKind;
-  /**
-   * Bypass the 300ms "reopen with same triggerId" guard. Set this for
-   * programmatic openers (e.g. data-grid edit cells) where there's no race
-   * between a button onClick and a popover dismiss to debounce.
-   */
+  /** Bypass the 300ms "reopen with same triggerId" guard, for openers with no click to debounce. */
   programmatic?: boolean;
   /** Extra classes merged onto a 'menu' popup, e.g. to widen its default min-width. */
   popupClassName?: string;
@@ -44,7 +39,6 @@ interface DropdownStoreState {
   get: () => InternalDropdown | null;
 }
 
-/** Provides actions for opening and closing the dropdown. */
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   dropdown: null,
   lastRemovedTriggerId: null,
@@ -53,17 +47,15 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   create: (content, data) => {
     const current = get().dropdown;
 
-    // Remove active styling from previous trigger
     current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
 
-    // Close dropdown if it's already open
+    // The same trigger toggles the dropdown closed
     if (current?.triggerId === data.triggerId) {
       set({ dropdown: null, lastRemovedTriggerId: data.triggerId, lastRemovedAt: Date.now() });
       return data.id;
     }
 
-    // Suppress click-trigger reopen races immediately after dismissal.
-    // Programmatic openers bypass this guard so StrictMode remounts remain valid.
+    // Suppress click-trigger reopen races immediately after dismissal
     if (!data.programmatic) {
       const { lastRemovedTriggerId, lastRemovedAt } = get();
       if (lastRemovedTriggerId === data.triggerId && Date.now() - lastRemovedAt < 300) {
@@ -72,7 +64,6 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
       }
     }
 
-    // Mark new trigger as active
     data.triggerRef.current?.setAttribute('data-dropdowner-active', '');
 
     // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors

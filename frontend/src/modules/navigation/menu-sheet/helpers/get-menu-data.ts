@@ -7,15 +7,10 @@ import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { buildMenuFromCache } from './build-menu-from-cache';
 
-/**
- * Ensures entity data is in the cache and returns the user menu. Fetches memberships first so the
- * cache subscriber (initChannelEnrichment) can enrich entity lists, then delegates to
- * buildMenuFromCache.
- */
 export async function getMenuData() {
   const userId = getCurrentUser().id;
 
-  // Fetch memberships first; the subscriber reads from this cache.
+  // Memberships come first: the cache subscriber (initChannelEnrichment) reads from this cache.
   await queryClient.ensureQueryData({
     queryKey: meKeys.memberships,
     queryFn: async ({ signal }) => getMyMemberships({ signal }),

@@ -3,7 +3,6 @@ import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled scroll area primitive. */
 export function ScrollArea({
   className,
   children,
@@ -37,12 +36,8 @@ export function ScrollArea({
   }, [autoScrollOnDrag, viewportRef]);
 
   // TODO [#13]: Remove when Base UI observes content subtrees.
-  // Base UI recomputes scrollbar state on viewport resize and scroll events, and its
-  // content ResizeObserver cannot fire while the content div is height-pinned to 100%.
-  // When a subtree mutation changes the scrollable size, re-dispatch a scroll event on
-  // the viewport: React attaches onScroll directly to the node, so this runs the
-  // primitive's recompute without touching layout. Mutations that leave the scrollable
-  // size unchanged (virtualized lists churning while scrolling) are ignored.
+  // Base UI's content ResizeObserver cannot fire while the content div is height-pinned to 100%, so a subtree
+  // mutation that changes the scrollable size re-dispatches a scroll event to trigger the primitive's recompute.
   React.useEffect(() => {
     const viewport = viewportRef.current;
     if (typeof MutationObserver === 'undefined' || !viewport) return;
@@ -90,7 +85,6 @@ export function ScrollArea({
   );
 }
 
-/** Renders the styled scroll bar primitive. */
 export function ScrollBar({
   className,
   orientation = 'vertical',

@@ -83,8 +83,7 @@ function Carousel({
     }
   };
 
-  // Expose the api to the consumer once it's ready. Keep setApi in a ref so an unstable
-  // (inline) setApi prop doesn't re-run this effect every render and re-register listeners.
+  // setApi lives in a ref so an inline prop does not re-run this effect and re-register listeners.
   const setApiRef = React.useRef(setApi);
   setApiRef.current = setApi;
   React.useEffect(() => {
@@ -104,17 +103,14 @@ function Carousel({
     };
   }, [api, onSelect]);
 
-  // Define the mouse enter handler
   const handleMouseEnter = () => {
     if (api && !isDialog) document.addEventListener('keydown', handleKeyDown);
   };
 
-  // Define the mouse leave handler
   const handleMouseLeave = () => {
     if (!isDialog) document.removeEventListener('keydown', handleKeyDown);
   };
 
-  //remove keydown listener on unmount
   React.useEffect(() => {
     if (!api) return;
     if (isDialog) document.addEventListener('keydown', handleKeyDown);

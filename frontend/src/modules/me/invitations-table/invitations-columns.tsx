@@ -8,7 +8,6 @@ import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = () => {
   const { t } = useTranslation();
 

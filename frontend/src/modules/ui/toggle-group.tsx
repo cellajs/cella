@@ -21,7 +21,6 @@ interface ToggleGroupProps
   onValueChange?: (value: string | string[]) => void;
 }
 
-/** Renders the styled toggle group primitive. */
 export function ToggleGroup({
   className,
   variant,
@@ -35,7 +34,6 @@ export function ToggleGroup({
 }: ToggleGroupProps) {
   const multiple = type === 'multiple';
 
-  // Normalize value to array for Base UI
   const normalizedValue = value === undefined ? undefined : Array.isArray(value) ? value : value ? [value] : [];
   const normalizedDefault =
     defaultValue === undefined
@@ -69,7 +67,6 @@ export function ToggleGroup({
   );
 }
 
-/** Renders the styled toggle group item primitive. */
 export function ToggleGroupItem({
   className,
   children,

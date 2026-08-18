@@ -1,11 +1,8 @@
 import pc from 'picocolors';
 
-/** Thin line divider for console output (60 chars wide) */
+/** 60 characters wide. */
 export const DIVIDER = '─'.repeat(60);
 
-/**
- * Prints the shared CLI header with optional version and right-aligned label.
- */
 export function printHeader(name: string, version?: string, right = 'cellajs.com'): void {
   const visibleLeft = version ? `⧈ ${name} · v${version}` : `⧈ ${name}`;
   const padding = Math.max(1, 60 - visibleLeft.length - right.length);
@@ -16,10 +13,7 @@ export function printHeader(name: string, version?: string, right = 'cellajs.com
   console.info();
 }
 
-/**
- * Print a completed step with a green checkmark.
- * An optional detail line is shown in dim below, followed by a blank line.
- */
+/** An optional detail line prints dimmed below, followed by a blank line. */
 export function printStep(label: string, detail?: string): void {
   console.info(`${pc.green('✓')} ${label}`);
   if (detail) {
@@ -28,7 +22,6 @@ export function printStep(label: string, detail?: string): void {
   }
 }
 
-/** Print a failure line with a red cross. */
 export function printError(label: string): void {
   console.info(`${pc.red('✗')} ${label}`);
 }

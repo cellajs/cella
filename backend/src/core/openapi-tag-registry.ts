@@ -17,7 +17,6 @@ export interface OpenApiTag {
   parent?: string;
   /** Category (OpenAPI 3.2.0): `module`=sidebar group, `owner`/`entity`=annotation, `schema`=schema bucket, `hidden`=drop from docs. */
   kind?: 'module' | 'owner' | 'schema' | 'entity' | 'hidden';
-  /** Link to external documentation. */
   externalDocs?: { url: string; description?: string };
   /** For schema-kind tags: marks the fallback bucket when a component schema has no `x-tags`. */
   default?: boolean;
@@ -26,13 +25,12 @@ export interface OpenApiTag {
 /** Ordered registry of OpenAPI tags. Insertion order = display order. */
 const tagRegistry = new Map<string, OpenApiTag>();
 
-/** Register a tag for OpenAPI documentation, skipping entries that are already registered. */
+/** Skips entries that are already registered. */
 export const registerTag = (tag: OpenApiTag): OpenApiTag => {
   if (!tagRegistry.has(tag.tag)) tagRegistry.set(tag.tag, tag);
   return tag;
 };
 
-/** Returns all registered tags in registration (display) order. */
 export const getRegisteredTags = (): OpenApiTag[] => [...tagRegistry.values()];
 
 /** Default owner tags, registered eagerly so module tags can reference them as parents. */
@@ -48,8 +46,7 @@ registerTag({
   description: 'Application-specific modules.',
 });
 
-// Schema tags group OpenAPI components in the docs UI. Components opt in through
-// `x-tags`; unmatched schemas use the tag marked as the default.
+// Schema tags group OpenAPI components in the docs UI: components opt in through `x-tags`, unmatched ones use the default.
 registerTag({
   tag: 'data',
   kind: 'schema',
@@ -69,11 +66,7 @@ registerTag({
   description: 'Error schemas',
 });
 
-/**
- * Default entity-kind tags declare an operation's entity scope. Routes opt in
- * by adding `'channel'` or `'product'` to their `tags` array, the same way they
- * declare ownership (`'cella'` / `'app'`).
- */
+// Entity-kind tags declare an operation's entity scope: a route adds `'channel'` or `'product'` to its `tags`.
 registerTag({
   tag: 'channel',
   kind: 'entity',

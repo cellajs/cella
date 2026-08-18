@@ -128,7 +128,7 @@ ${partitionChecks}
   END IF;
 
   IF array_length(missing, 1) > 0 THEN
-    RAISE EXCEPTION 'DB side-effect verification failed — missing: %', array_to_string(missing, ', ');
+    RAISE EXCEPTION 'DB side-effect verification failed, missing: %', array_to_string(missing, ', ');
   END IF;
 
   RAISE NOTICE 'Side-effect verification passed.';
@@ -137,7 +137,7 @@ END $$;
 
   return {
     tag: 'verify_side_effects',
-    title: 'Verify — assert end state of all side-effect blocks',
+    title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
       `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${rlsTables.length} FORCE-RLS tables, ${grantTables.length} grants, ${unloggedTables.length} unlogged, 1 publication`,

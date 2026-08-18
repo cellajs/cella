@@ -21,7 +21,6 @@ export type LeaveChannelButtonProps = {
   callback?: (args: CallbackArgs) => void;
 };
 
-/** Renders the leave channel button. */
 export function LeaveChannelButton({
   channel,
   buttonProps,

@@ -31,9 +31,6 @@ interface WaitlistFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
-/**
- * Waitlist form to request access to application. Can be used in dialog or embedded in an (auth) page layout.
- */
 export function WaitlistForm({
   email,
   inputClassName,

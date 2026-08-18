@@ -67,7 +67,7 @@ async function poll(state: PollState, quiet: boolean) {
         `batch=${batchAvg}`,
     );
   } catch {
-    // Non-critical: CDC worker may not be running yet
+    // The CDC worker may not be running yet.
   }
 }
 
@@ -89,10 +89,7 @@ function printSummary(samples: PollState['samples']) {
 }
 
 /**
- * Polls the CDC worker's /health endpoint during a run to capture throughput
- * (ops/s), p95 latency, WAL lag, and event counts. Bench starts it automatically
- * in the background (`--quiet`), silent unless CDC processed events. Standalone for
- * live per-interval logging:
+ * Polls the CDC worker's /health endpoint during a run for throughput (ops/s), p95 latency, WAL lag, and event counts. Bench starts it in the background with `--quiet`, silent unless CDC processed events. Standalone for live per-interval logging:
  *
  *   tsx src/cdc-poller.ts [--interval 3] [--duration 120] [--quiet]
  */

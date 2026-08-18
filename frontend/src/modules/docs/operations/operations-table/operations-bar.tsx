@@ -22,10 +22,7 @@ interface OperationsTableBarProps {
   setSearch: (params: { q?: string; tag?: string }) => void;
   columns: ColumnOrColumnGroup<GenOperationSummary>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
-  /**
-   * Tag-kind filter values discovered in the dataset, e.g. `{ owner: ['cella','app'], entity:
-   * ['channel','product'] }`. Each entry becomes a group of options in the filter dropdown.
-   */
+  /** Tag-kind filter values found in the dataset, e.g. `{ owner: ['cella','app'] }`, one dropdown group each. */
   tagFilters: Record<string, string[]>;
 }
 
@@ -39,7 +36,6 @@ const labelFor = (kind: string, value: string): string => {
   return cap;
 };
 
-/** Renders the action and filter toolbar for the operations table. */
 export function OperationsTableBar({
   total,
   searchVars,

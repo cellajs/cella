@@ -12,7 +12,6 @@ function setModeClass(mode: Mode) {
 function setBrandColor(passedTheme: Theme) {
   const color = passedTheme === 'none' ? null : appConfig.theme.colors[passedTheme];
 
-  // Check if exist <style> tag for brand color override
   let brandStyleTag = document.getElementById('brand-style');
   if (!brandStyleTag) {
     brandStyleTag = document.createElement('style');
@@ -20,13 +19,10 @@ function setBrandColor(passedTheme: Theme) {
     document.head.appendChild(brandStyleTag);
   }
 
-  // Set --brand CSS var to the selected theme color (or clear it to use CSS default)
+  // An empty tag falls back to the CSS default for --brand
   brandStyleTag.innerHTML = color ? `:root { --brand: ${color}; }` : '';
 }
 
-/**
- * Service component to set theme and mode classes on root element
- */
 export const Themer = () => {
   useEffect(() => {
     uiStore.subscribe(({ mode }) => {
@@ -37,7 +33,6 @@ export const Themer = () => {
     });
   }, []);
 
-  // Set initial theme and mode
   setModeClass(uiStore.getState().mode);
   setBrandColor(uiStore.getState().theme);
 

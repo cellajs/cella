@@ -16,10 +16,9 @@ export interface CdcBatchRow {
 }
 
 /**
- * CDC-to-backend wire payload mirrored by `cdcMessageSchema`.
- * Batch rows carry individual permission data and sequence values because group ranges need
- * not be contiguous and visibility may differ. `movedFrom` carries the prior permission
- * projection so dispatch can notify subscribers that lost access after a move.
+ * CDC-to-backend wire payload mirrored by `cdcMessageSchema`. Batch rows carry their own permission
+ * data and seq because group ranges need not be contiguous and visibility may differ. `movedFrom`
+ * carries the prior permission projection so dispatch can notify subscribers that lost access.
  * @see backend/src/lib/cdc-websocket.ts
  */
 export interface CdcOutboundMessage {
@@ -31,36 +30,29 @@ export interface CdcOutboundMessage {
 }
 
 /**
- * Converts an LSN to a deterministic fixed-width activity ID.
- * Padding preserves commit order under lexical cursor comparisons and makes replay idempotent.
+ * Fixed-width activity id: padding preserves commit order under lexical cursor comparisons and makes
+ * replay idempotent.
  * @param lsn PostgreSQL WAL position.
  * @returns Zero-padded, dash-joined LSN.
  */
 export function generateActivityId(lsn: string): string {
   const [hi, lo] = lsn.split('/');
-  if (lo === undefined) return lsn; // not in LSN format, return unchanged
+  if (lo === undefined) return lsn; // Not in LSN format.
   return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
 }
 
-/**
- * Build activity payload for WebSocket transmission.
- */
 function buildActivityPayload(
   baseActivity: InsertActivityModel & { id?: string },
   rowData: CdcRowData,
   traceContext: TraceContext,
   seq?: number,
 ): CdcOutboundMessage {
-  // Channel entity IDs are already populated on the activity by createActivity;
-  // rowData is already compacted by the handlers (compactRowData).
+  // createActivity already populated the channel entity ids; handlers already compacted rowData.
   const activity = { ...baseActivity, seq };
 
   return { activity, rowData, _trace: traceContext };
 }
 
-/**
- * Send CDC message (activity + row data) to API server via WebSocket.
- */
 export function sendMessageToApi(
   activity: InsertActivityModel,
   rowData: CdcRowData,
@@ -83,10 +75,7 @@ export interface BatchEvent {
   movedFrom?: CdcRowData | null;
 }
 
-/**
- * Group batch audiences by computed product path, deepest channel, or organization.
- * One path-and-type group lets clients route by prefix; resources group by organization.
- */
+/** One path-and-type group lets clients route by prefix; resources group by organization. */
 function batchPathKey({ activity, rowData }: BatchEvent): string {
   if (activity.entityType && isProduct(activity.entityType)) {
     const path = hierarchy.computeProductPath(activity.entityType, rowData);
@@ -96,12 +85,9 @@ function batchPathKey({ activity, rowData }: BatchEvent): string {
 }
 
 /**
- * Send batch CDC message(s) to the API server.
- *
- * Messages are split per (path, entityType) group so each describes one audience and one
- * entity type. Seq values come from the shared org sequence: a group's `seq..batchUntilSeq`
- * range may interleave with other groups' values, so `count` (and per-row seqs in
- * `batchRows`) carry the exact contents: range arithmetic is not row count.
+ * Splits into one message per (path, entityType) group so each describes a single audience. Seqs come
+ * from the shared org sequence, so a group's `seq..batchUntilSeq` range may interleave with other
+ * groups: `count` and the per-row seqs in `batchRows` are authoritative, range arithmetic is not.
  */
 export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceContext): void {
   if (events.length === 0) return;
@@ -123,9 +109,7 @@ export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceC
 function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): void {
   const first = events[0];
 
-  // Collect seqs for min/max range (create/update batches). Under the org sequence the
-  // range brackets this group's rows but may contain other groups' values in between;
-  // `count` is authoritative for size.
+  // The min/max range brackets this group's rows but may contain other groups' values in between.
   const seqs = events.map((e) => e.seq).filter((s): s is number => s !== undefined);
   const batchUntilSeq = seqs.length > 0 ? Math.max(...seqs) : undefined;
   const minSeq = seqs.length > 0 ? Math.min(...seqs) : undefined;
@@ -133,16 +117,14 @@ function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): 
   const base = buildActivityPayload(first.activity, first.rowData, traceContext, minSeq);
   const activity = { ...base.activity, batchUntilSeq, count: events.length };
 
-  // Per-row permission fields: dispatch decides per subscriber across ALL rows of the
-  // batch (the representative first row alone would mis-dispatch mixed-visibility batches)
+  // Per-row permission fields: the representative first row alone would mis-dispatch mixed-visibility batches.
   const batchRows: CdcBatchRow[] = events.map((event) => ({
     seq: event.seq,
     rowData: pickPermissionRowData(event.rowData) as CdcRowData,
     ...(event.movedFrom ? { movedFrom: event.movedFrom } : {}),
   }));
 
-  // The backend invalidates each row's detail-cache entry from batchRows, so a later detail
-  // fetch re-enriches (see cdc-websocket handleMessage).
+  // The backend invalidates each row's detail-cache entry from batchRows (see cdc-websocket handleMessage).
   const payload: CdcOutboundMessage = { ...base, activity, batchRows };
 
   if (!wsClient.send(payload)) {

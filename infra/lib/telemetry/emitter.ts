@@ -57,18 +57,13 @@ export interface Telemetry {
   ): void;
   /** Every buffered log record, JSONL-encoded: the black-box sink's exact payload. */
   eventsJsonl(): string;
-  /** Attach/replace the OTLP export target after creation (the boot runner only
-   *  learns its ingest key after secret hydration; earlier records still export). */
+  /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void;
   /** Export buffered spans + events over OTLP/HTTP. Swallows failures; safe to call repeatedly. */
   flush(): Promise<void>;
 }
 
-/**
- * A tiny buffered OTel emitter over the OTLP/JSON builders. One instance per
- * process (a deploy run, a VM boot); volume is dozens of records, so flushing
- * whole buffers at the end of phases is enough.
- */
+/** A buffered OTel emitter over the OTLP/JSON builders, one instance per process. Volume is dozens of records, so flushing whole buffers at phase ends is enough. */
 export function createTelemetry(opts: TelemetryOptions): Telemetry {
   const now = opts.now ?? Date.now;
   const fetchImpl = resolveFetch(opts.fetchImpl);
@@ -166,9 +161,7 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   };
 }
 
-/** OTLP endpoint + headers from the environment: explicit OTLP vars win, an
- *  app-configured sink ingest key (config/telemetry.config.ts) implies that
- *  sink's endpoint. */
+/** OTLP endpoint and headers from the environment: explicit OTLP vars win, and an app-configured sink ingest key implies that sink's endpoint. */
 export function otlpConfigFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): { endpoint: string; headers: Record<string, string> } | undefined {

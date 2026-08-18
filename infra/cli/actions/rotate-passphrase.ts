@@ -38,7 +38,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   const versionOutput = spawnSync('pulumi', ['version'], { encoding: 'utf8' }).stdout?.trim() ?? '';
   if (!supportsStdinPassphraseRotation(versionOutput)) {
     console.error(
-      `${crossMark} pulumi ${versionOutput} cannot rotate a passphrase non-interactively — v3.44.0 or newer is required. Upgrade: brew upgrade pulumi`,
+      `${crossMark} pulumi ${versionOutput} cannot rotate a passphrase non-interactively: v3.44.0 or newer is required. Upgrade: brew upgrade pulumi`,
     );
     process.exit(1);
   }
@@ -65,8 +65,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   });
   pulumiLoginAndSelect(infraDir, env, context.appConfig, targetStack);
 
-  // Hold the stack lock across the re-encryption: a CI deploy reading state
-  // mid-rotation would decrypt against the wrong passphrase.
+  // Hold the stack lock across the re-encryption: a CI deploy reading state mid-rotation would decrypt against the wrong passphrase.
   const stackLock = await acquireStackLockOrExit({
     appConfig: context.appConfig,
     accessKey,
@@ -75,9 +74,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     operation: 'rotate-passphrase',
   });
 
-  // Shown and stored BEFORE the rotation runs: if this process dies right
-  // after `change-secrets-provider`, the state must never be encrypted with a
-  // passphrase nobody has seen.
+  // Shown and stored BEFORE the rotation runs, so a crash right after `change-secrets-provider` cannot leave state encrypted with a passphrase nobody has seen.
   const newPassphrase = generatePassphrase();
   await confirmPassphraseStored(
     newPassphrase,
@@ -100,7 +97,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   if (rotate.status !== 0) {
     await stackLock.release();
     console.error(
-      `\n${crossMark} change-secrets-provider exited ${rotate.status}. The stack most likely still uses the OLD passphrase — verify before changing GitHub or your password manager.`,
+      `\n${crossMark} change-secrets-provider exited ${rotate.status}. The stack most likely still uses the OLD passphrase: verify before changing GitHub or your password manager.`,
     );
     process.exit(rotate.status ?? 1);
   }
@@ -126,7 +123,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     process.exit(1);
   }
   console.info(
-    `${checkMark} Stack re-encrypted — ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`,
+    `${checkMark} Stack re-encrypted: ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`,
   );
 
   const synced = await syncGithubEnvironment({
@@ -142,7 +139,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   console.info(
     synced
       ? `  2. GitHub Environment secret ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} updated.`
-      : `  2. ${warningMark} GitHub sync skipped — update ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} in the ${context.environment} GitHub Environment before the next deploy.`,
+      : `  2. ${warningMark} GitHub sync skipped: update ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} in the ${context.environment} GitHub Environment before the next deploy.`,
   );
   console.info(
     `  ${pc.dim('A CI deploy started before this rotation may fail once; re-run it after updating the secret.')}`,

@@ -62,17 +62,17 @@ function PrivacyText() {
         <p>We do not rent or sell personal information. We may share data only in these circumstances:</p>
         <ul className="my-2">
           <li>
-            <strong>Within your organization</strong> — content you contribute is visible to other members of your
+            <strong>Within your organization</strong>: content you contribute is visible to other members of your
             organization.
           </li>
           <li>
-            <strong>Subprocessors</strong> — third-party services that process data on our behalf (listed below).
+            <strong>Subprocessors</strong>: third-party services that process data on our behalf (listed below).
           </li>
           <li>
-            <strong>Legal requirements</strong> — when required by law, subpoena or to protect rights and safety.
+            <strong>Legal requirements</strong>: when required by law, subpoena or to protect rights and safety.
           </li>
           <li>
-            <strong>Business transfers</strong> — in connection with a merger, acquisition or asset sale.
+            <strong>Business transfers</strong>: in connection with a merger, acquisition or asset sale.
           </li>
         </ul>
       </LegalSection>

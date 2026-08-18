@@ -23,7 +23,6 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
-/** Renders the action and filter toolbar for the requests table. */
 export function RequestsTableBar({
   selected,
   queryKey,
@@ -49,7 +48,6 @@ export function RequestsTableBar({
 
   const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
 
-  // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
@@ -114,7 +112,6 @@ export function RequestsTableBar({
 
   return (
     <TableBarContainer searchVars={searchVars} offsetTop={48}>
-      {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           <TableCount count={total} label="c:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
@@ -127,10 +124,8 @@ export function RequestsTableBar({
         </FilterBarSearch>
       </TableFilterBar>
 
-      {/* Columns view */}
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-      {/* Export */}
       <Export
         className="max-lg:hidden"
         filename={`${appConfig.slug}-requests`}
@@ -138,10 +133,8 @@ export function RequestsTableBar({
         fetchRows={fetchExport}
       />
 
-      {/* Focus view */}
       <FocusView iconOnly />
 
-      {/* Floating actions for the current selection */}
       <SelectionActionBar count={selected.length} onClear={clearSelection}>
         {selectedToWaitlist.length > 0 && (
           <TableBarButton

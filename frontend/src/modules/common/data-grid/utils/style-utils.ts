@@ -5,12 +5,10 @@ import { resolveWrapTextLines } from './wrap-text-utils';
 
 export { cn } from '~/utils/cn';
 
-/** Returns the row style. */
 export function getRowStyle(rowIdx: number): CSSProperties {
   return { '--rdg-grid-row-start': rowIdx };
 }
 
-/** Returns the header cell style. */
 export function getHeaderCellStyle<R, SR>(
   column: CalculatedColumnOrColumnGroup<R, SR>,
   rowIdx: number,
@@ -36,7 +34,6 @@ export function getHeaderCellStyle<R, SR>(
   };
 }
 
-/** Returns the cell style. */
 export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1): React.CSSProperties {
   const index = column.idx + 1;
   const wrapLines = resolveWrapTextLines(column.wrapText);
@@ -48,15 +45,12 @@ export function getCellStyle<R, SR>(column: CalculatedColumn<R, SR>, colSpan = 1
   };
 }
 
-/** Returns the cell classname. */
 export function getCellClassname<R, SR>(
   column: CalculatedColumn<R, SR>,
   ...extraClasses: Parameters<typeof cn>
 ): string {
   const wrapLines = resolveWrapTextLines(column.wrapText);
-  // Hosts with merged slots scope the line-clamp to the main-content wrapper:
-  // clamping direct children would set display:-webkit-box on the slot/layout
-  // wrappers and break their flex layout.
+  // Hosts with merged slots clamp only the main-content wrapper: display:-webkit-box on a slot wrapper breaks its flex layout.
   const hasMergedSlots = column.mergedSlots != null;
   const textOverflow =
     wrapLines > 0

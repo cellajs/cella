@@ -16,9 +16,6 @@ interface Props {
   dialog?: boolean;
 }
 
-/**
- * Invite members by searching for users which are already in the system
- */
 export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   const { t } = useTranslation();
 

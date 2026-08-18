@@ -4,7 +4,6 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { SuccessCheckmark } from '~/modules/common/success-checkmark';
 import { Button } from '~/modules/ui/button';
 
-/** Renders the magic link sent step component. */
 export function MagicLinkSentStep() {
   const { t } = useTranslation();
   const { email, resetSteps, magicLinkMode } = useAuthStore();

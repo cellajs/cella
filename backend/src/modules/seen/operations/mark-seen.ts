@@ -14,20 +14,17 @@ type OrgScopedEntityTable = AnyPgTable & {
   createdAt: PgColumn;
 };
 
-/** Product entity types tracked for seen/unseen, configured in appConfig.seenTrackedProductTypes. */
 export const trackedProductTypes = appConfig.seenTrackedProductTypes;
 const trackedProductTypeSet = new Set<string>(trackedProductTypes);
 
-/** 90-day rolling window; older entities are ignored for seen/unseen tracking. Single source in
- * `shared` so client-side unseen tracking uses the same window. */
+/** 90-day rolling window shared with the client; older entities are ignored. */
 export { seenWindowMs };
 
-/** Type guard: narrows a product entity type to a seen-tracked entity type */
 export function isTrackedProductType(productType: string): productType is SeenTrackedProductType {
   return trackedProductTypeSet.has(productType);
 }
 
-/** Context types that group unseen counts: every context a tracked row can have as its effective home */
+/** Context types that group unseen counts: every possible home channel of a tracked row. */
 export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
 
 export async function markSeenOp(ctx: AuthContext, entityIds: string[], productType: ProductEntityType) {
@@ -38,22 +35,17 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
     `markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`,
   );
 
-  // Only configured tracked entity types are accepted
   if (!isTrackedProductType(productType)) {
     log.debug(`markSeen: skipping non-tracked type "${productType}"`);
     return { newCount: 0 };
   }
 
-  // After narrowing, productType is SeenTrackedProductType and a valid key of entityTables.
   const entityTable = getEntityTable(productType);
 
-  // Narrow to org-scoped table shape (all org-scoped product tables have these columns)
   const orgTable = entityTable as OrgScopedEntityTable;
   const columns = getColumns(entityTable);
 
-  // Derive the row's home context id: deepest non-null ancestor (e.g. task → projectId; a
-  // variable-depth row with a null parent column falls through to the next ancestor). Must
-  // match the notification channelId (build-message) or unseen badges land under the wrong key.
+  // Home context id: deepest non-null ancestor. Must match the notification channelId or unseen badges land under the wrong key.
   const ancestorColumns = hierarchy
     .getOrderedAncestors(productType)
     .map((ancestor) => (columns as Record<string, PgColumn | undefined>)[appConfig.entityIdColumnKeys[ancestor]])
@@ -62,7 +54,6 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
     ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
     : orgTable.organizationId;
 
-  // Filter to only entities that exist, belong to this org, and are within 90-day window
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 
   // Use tenantContext to set RLS session vars; entity tables have FORCE ROW LEVEL SECURITY.
@@ -88,9 +79,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
 
     log.debug(`markSeen: ${vIds.length}/${entityIds.length} valid entities`);
 
-    // Insert unseen rows, increment counters only for inserted candidates, and return their count.
-    // Partitioning prevents a unique user/product arbiter, so concurrent duplicates are tolerated
-    // by EXISTS-based reads and corrected by counter recalculation.
+    // Partitioning prevents a unique user/product arbiter, so concurrent duplicates are tolerated by EXISTS reads and corrected by counter recalculation.
     const values = sql.join(
       vIds.map(
         (entityId) =>

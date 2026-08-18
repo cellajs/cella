@@ -17,14 +17,12 @@ interface PasteCallbackArgs<R, SR> extends CopyPasteCallbackArgs<R, SR> {
   pastedValue: string;
 }
 
-/** Args passed to onCopyRange callback */
 interface CopyRangeArgs<R, SR> {
   range: CellRange;
   cells: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }>;
   textValue: string;
 }
 
-/** Args passed to onPasteRange callback */
 interface PasteRangeArgs<R, SR> {
   startPosition: Position;
   values: string[][];
@@ -32,13 +30,9 @@ interface PasteRangeArgs<R, SR> {
 }
 
 interface CopyPasteOptions<R, SR> {
-  /** Current selected cell position */
   selectedPosition: Position;
-  /** Current cell range selection (for multi-cell operations) */
   selectedCellRange?: CellRange | null;
-  /** Grid rows */
   rows: readonly R[];
-  /** Grid columns */
   columns: readonly CalculatedColumn<R, SR>[];
   /** Callback when single cell is copied - return false to prevent default copy behavior */
   onCopy?: (args: CopyCallbackArgs<R, SR>) => boolean | undefined;
@@ -48,27 +42,18 @@ interface CopyPasteOptions<R, SR> {
   onCopyRange?: (args: CopyRangeArgs<R, SR>) => boolean | undefined;
   /** Callback when content is pasted into range - return updated rows or undefined to prevent */
   onPasteRange?: (args: PasteRangeArgs<R, SR>) => R[] | undefined;
-  /** Function to update a single row */
   onRowChange?: (rowIdx: number, row: R) => void;
-  /** Function to update multiple rows in batch */
   onRowsChange?: (updates: Array<{ rowIdx: number; row: R }>) => void;
 }
 
 interface CopyPasteResult {
-  /** Handle copy event on the grid */
   handleCopy: (event: React.ClipboardEvent) => void;
-  /** Handle paste event on the grid */
   handlePaste: (event: React.ClipboardEvent) => void;
-  /** Programmatically copy selected cells to clipboard */
   copyToClipboard: () => Promise<void>;
-  /** Programmatically paste from clipboard to selected cells */
   pasteFromClipboard: () => Promise<void>;
 }
 
-/**
- * Hook to handle copy/paste operations in the data grid.
- * Supports single cell and multi-cell range operations with TSV format.
- */
+/** Copy and paste for a single cell or a cell range, serialized as TSV. */
 export function useCopyPaste<R, SR>({
   selectedPosition,
   selectedCellRange,
@@ -95,7 +80,6 @@ export function useCopyPaste<R, SR>({
 
   const handleCopy = useCallback(
     (event: React.ClipboardEvent) => {
-      // Check for range selection first
       if (selectedCellRange) {
         const normalized = normalizeCellRange(selectedCellRange);
         const cells = getCellsInRange(normalized, rows, columns);
@@ -105,18 +89,15 @@ export function useCopyPaste<R, SR>({
         const textValue = serializeCellsToTSV(normalized, rows, columns);
         const htmlValue = serializeCellsToHTML(normalized, rows, columns);
 
-        // Call user callback
         const shouldPreventDefault = onCopyRange?.({ range: normalized, cells, textValue });
         if (shouldPreventDefault === false) return;
 
-        // Write both formats to clipboard
         event.clipboardData.setData('text/plain', textValue);
         event.clipboardData.setData('text/html', htmlValue);
         event.preventDefault();
         return;
       }
 
-      // Single cell copy
       const cell = getSelectedCell();
       if (!cell) return;
 
@@ -138,15 +119,12 @@ export function useCopyPaste<R, SR>({
       const pastedText = event.clipboardData.getData('text/plain');
       const parsedCells = parseTSVToCells(pastedText);
 
-      // Determine if this is a multi-cell paste
       const isMultiCellPaste = parsedCells.length > 1 || (parsedCells.length === 1 && parsedCells[0].length > 1);
 
       if (isMultiCellPaste && onPasteRange) {
-        // Multi-cell paste
         const { idx, rowIdx } = selectedPosition;
         if (rowIdx < 0 || idx < 0) return;
 
-        // Build affected cells list
         const affectedCells: Array<{
           row: R;
           column: CalculatedColumn<R, SR>;
@@ -190,7 +168,6 @@ export function useCopyPaste<R, SR>({
         return;
       }
 
-      // Single cell paste
       const cell = getSelectedCell();
       if (!cell || !onRowChange) return;
 
@@ -206,7 +183,6 @@ export function useCopyPaste<R, SR>({
   );
 
   const copyToClipboard = useCallback(async () => {
-    // Check for range selection first
     if (selectedCellRange) {
       const normalized = normalizeCellRange(selectedCellRange);
       const cells = getCellsInRange(normalized, rows, columns);
@@ -225,7 +201,6 @@ export function useCopyPaste<R, SR>({
       return;
     }
 
-    // Single cell copy
     const cell = getSelectedCell();
     if (!cell) return;
 

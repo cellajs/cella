@@ -1,17 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockDocContext, mockWebSocket, storageMock } from './helpers';
 
-// Mock storage to avoid DB calls in unit tests
 vi.mock('../data/storage', () => storageMock());
 
-// Mock the durable-record write; its return value controls cleanup.
+// The mocked durable-record write: its return value drives cleanup.
 vi.mock('../sync/materialize', () => ({
   materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),
   stateToBlocksJson: vi.fn(() => '[]'),
 }));
 
-// Import real session-manager (not mocked)
 const { getCollab, joinCollab, leaveCollab, broadcastToCollab } = await import('../sync/session-manager');
 const { deleteState, loadState, saveState } = await import('../data/storage');
 const { materializeState } = await import('../sync/materialize');
@@ -25,7 +23,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Each test uses a unique entityId to avoid cross-test state pollution from the module-level Map
+// A unique entityId per test keeps the module-level session Map from leaking across tests.
 let testCounter = 0;
 function uniqueCtx(overrides?: Partial<ReturnType<typeof mockDocContext>>) {
   return mockDocContext({ entityId: `entity-${++testCounter}`, ...overrides });
@@ -105,7 +103,6 @@ describe('joinCollab / leaveCollab', () => {
 
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-    // Pending state is flushed, persisted to the entity, and then deleted.
     expect(saveState).toHaveBeenCalled();
     expect(materializeState).toHaveBeenCalledWith(collab, new Uint8Array([1, 2, 3]));
     expect(deleteState).toHaveBeenCalledWith(ctx);
@@ -136,12 +133,11 @@ describe('joinCollab / leaveCollab', () => {
 
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-    // Durable record hasn't absorbed the session: row and session must survive
+    // The durable record has not absorbed the session, so row and session survive.
     expect(deleteState).not.toHaveBeenCalled();
     expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
 
-    // Backend recovers: rescheduled cleanup converges and deletes.
-    // The flushed state was consumed; the retry loads it back from storage.
+    // The flushed state was consumed, so the rescheduled cleanup loads it back from storage.
     vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array([1]));
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(deleteState).toHaveBeenCalledWith(ctx);
@@ -197,7 +193,6 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as any);
 
-    // Simulate an in-flight save that takes 100ms
     let saveResolved = false;
     collab.savingPromise = new Promise<void>((resolve) => {
       setTimeout(() => {
@@ -208,10 +203,8 @@ describe('joinCollab / leaveCollab', () => {
 
     leaveCollab(ctx.entityType, ctx.entityId, ws as any);
 
-    // Advance past grace period but not past the save
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-    // Save should have been awaited (timer advanced past 100ms too)
     expect(saveResolved).toBe(true);
     expect(deleteState).toHaveBeenCalledWith(ctx);
   });
@@ -221,18 +214,16 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as any);
 
-    // Simulate a failing in-flight save
     const failingPromise = new Promise<void>((_, reject) => {
       setTimeout(() => reject(new Error('save failed')), 50);
     });
-    // Prevent unhandled rejection while letting production code handle it via try/catch
+    // Swallow the unhandled rejection here; the production try/catch still sees it.
     failingPromise.catch(() => {});
     collab.savingPromise = failingPromise;
 
     leaveCollab(ctx.entityType, ctx.entityId, ws as any);
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-    // Should still clean up despite the failed save
     expect(deleteState).toHaveBeenCalledWith(ctx);
     expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
   });

@@ -16,9 +16,6 @@ import { getHashUrl } from '../hash-url';
 import { getMethodColor } from '../helpers/get-method-color';
 import { tagDetailsQueryOptions } from '../query';
 
-/**
- * Opens a sheet with operation detail view.
- */
 export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
@@ -49,10 +46,6 @@ interface OperationDetailProps {
   className?: string;
 }
 
-/**
- * Single operation detail with collapsible request and responses sections.
- * Displays method, path, description, request parameters, and responses.
- */
 export function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
   const { t } = useTranslation();
   const detail = useResolvedDetail(operation, detailProp);
@@ -88,12 +81,10 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
           )}
         </div>
 
-        {/* Request (path params, query params, body) */}
         <Suspense fallback={<Spinner />}>
           <OperationRequest detail={detail} />
         </Suspense>
 
-        {/* Responses */}
         <OperationResponses detail={detail} />
       </CardContent>
     </Card>
@@ -106,11 +97,9 @@ interface TagOperationsListProps {
 
 /** Fetches tag details once (not per-child) and registers all operation hashes with the scroll spy. */
 export function TagOperationsList({ operations }: TagOperationsListProps) {
-  // Register all operation hashes for this tag section
   const sectionIds = operations.map((op) => op.hash);
   useScrollSpy(sectionIds);
 
-  // Fetch tag details once and build a lookup map
   const tagName = operations.length > 0 ? operations[0].tags[0] : '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const detailsMap = new Map(tagDetails.map((d) => [d.operationId, d]));

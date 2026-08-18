@@ -6,7 +6,6 @@ interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> 
   thumb?: React.ReactElement<{ className?: string }>;
 }
 
-/** Renders the styled switch primitive. */
 export function Switch({ className, thumb, ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
@@ -27,7 +26,6 @@ export function Switch({ className, thumb, ...props }: SwitchProps) {
           })}
         />
       ) : (
-        // fallback default thumb
         <SwitchPrimitive.Thumb
           data-slot="switch-thumb"
           className={cn(

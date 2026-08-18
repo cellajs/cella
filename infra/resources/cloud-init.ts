@@ -26,18 +26,9 @@ export interface CloudInitParams {
   composeContent: string;
   /** Registry endpoint (`<host>/<namespace>`); login uses the host part. */
   registry: string;
-  /**
-   * Boot runner image repository name the digest below resolved under; the
-   * digest is only pullable from that repository, so the ref must use it.
-   * Defaults to the current name.
-   */
+  /** Repository name the digest below resolved under. The digest is pullable only from that repository, so the ref must use it. */
   bootImageName?: string;
-  /**
-   * Manifest digest (`sha256:…`) the boot runner tag resolved to at plan time.
-   * When set, the launcher runs the boot image by digest, so a later registry
-   * push cannot swap the root-equivalent (socket-mounted) boot runner under a
-   * reboot. Absent only when resolution failed during a dry run.
-   */
+  /** Manifest digest the boot runner tag resolved to at plan time. When set the launcher runs by digest, so a later registry push cannot swap the socket-mounted boot runner under a reboot. */
   bootImageDigest?: string;
   /** Scaleway secret key: registry password + Secret Manager access token. */
   secretKey: string;
@@ -93,15 +84,12 @@ const installBootReplayService =
   (): string => `${writeHeredoc('/etc/systemd/system/infra-boot-replay.service', 'REPLAY_UNIT_EOF', bootReplayUnit)}
 systemctl enable infra-boot-replay.service 2>&1 | tail -1`;
 
-// -E (ERE) so `|` alternates; in a BRE the unescaped `|` is literal and the
-// scrub silently matches nothing.
+// -E (ERE) so `|` alternates: in a BRE the unescaped `|` is literal and the scrub matches nothing.
 const scrubCloudInitLogs =
   (): string => `sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init-output.log 2>/dev/null || true
 sed -E -i '/SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/Id' /var/log/cloud-init.log 2>/dev/null || true`;
 
-// `satisfies BootPlan` + the boot runner's own schema constants keep producer
-// and consumer in lockstep: a contract change on either side fails the
-// typecheck (or the manifest validation) during planning, before VM boot.
+// `satisfies BootPlan` plus the boot runner's schema constants fail the typecheck at planning time when either side changes the contract, before VM boot.
 function bootPlan(p: CloudInitParams): string {
   const paths = bootPaths(p.slug);
   return JSON.stringify(
@@ -155,14 +143,7 @@ const bootImageRef = (p: CloudInitParams): string => {
   return p.bootImageDigest ? `${p.registry}/${image}@${p.bootImageDigest}` : `${p.registry}/${image}:${p.releaseSha}`;
 };
 
-/**
- * Launcher: log the host daemon into the registry (to pull the boot runner
- * image), then run the boot runner container. It drives the host Docker daemon
- * through the mounted socket and probes/reaches the private network via
- * `--network host`. /opt/app + /etc/runtime-secrets are mounted so the boot
- * runner writes compose.yml, .env, .env.runtime and the manifest to the same
- * host paths the daemon mounts.
- */
+/** Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts. */
 const bootLauncher = (p: CloudInitParams): string => {
   const registryHost = p.registry.split('/')[0];
   const paths = bootPaths(p.slug);
@@ -178,8 +159,7 @@ exec docker run --rm --network host \\
   boot --plan ${paths.plan}`;
 };
 
-// The systemd unit runs on first boot and each reboot. Re-running is intentional:
-// the idempotent boot runner re-hydrates /opt/app/.env.runtime from Secret Manager.
+// The unit runs on first boot and each reboot: the idempotent boot runner re-hydrates /opt/app/.env.runtime from Secret Manager.
 const bootUnit = (launcherPath: string): string => `[Unit]
 Description=Boot runner (first boot + every reboot)
 After=docker.service network-online.target
@@ -203,8 +183,7 @@ ${writeHeredoc(paths.launcher, 'RUN_BOOT_EOF', bootLauncher(p))}
 chmod 700 ${paths.launcher}`;
 };
 
-// `enable` wires the unit into multi-user.target so it re-runs on every reboot
-// (re-hydrating runtime secrets); `start` runs it now on this first boot.
+// `enable` binds the unit to multi-user.target so it re-runs on every reboot; `start` runs it on this first boot.
 const startBootRunner = (
   p: CloudInitParams,
 ): string => `${writeHeredoc('/etc/systemd/system/infra-boot.service', 'INFRA_BOOT_UNIT_EOF', bootUnit(bootPaths(p.slug).launcher))}

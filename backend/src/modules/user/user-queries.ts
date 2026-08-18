@@ -16,7 +16,6 @@ interface FindUsersPaginatedOpts {
   offset: number;
 }
 
-/** Find a paginated user list with role data and its exact total. */
 export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginatedOpts) => {
   const { db } = ctx.var;
   const { filters, sort, order, limit, offset } = opts;
@@ -60,7 +59,7 @@ interface FindUserByEmailOpts {
   email: string;
 }
 
-/** Find a user by email (via emailsTable join) with full userSelect. */
+/** Resolves through emailsTable, since a user can have multiple emails. */
 export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
   const { db } = ctx.var;
   const [user] = await db
@@ -76,7 +75,6 @@ interface FindUserByIdOpts {
   id: string;
 }
 
-/** Find a user by ID with full userSelect. */
 export const findUserById = async (ctx: DbContext, { id }: FindUserByIdOpts) => {
   const { db } = ctx.var;
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, id)).limit(1);
@@ -87,7 +85,6 @@ interface FindUserByFiltersOpts {
   filters: SQL[];
 }
 
-/** Find a single user by filters (ID or slug) with memberSelect. */
 export const findUserByFilters = async (ctx: DbContext, { filters }: FindUserByFiltersOpts) => {
   const { db } = ctx.var;
   const [user] = await db

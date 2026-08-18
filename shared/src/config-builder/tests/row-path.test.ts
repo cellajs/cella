@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { deepHierarchy } from '../../testing/deep-fixture.ts';
 import { pathHomeId, pathSegments, pathStartsWith } from '../row-path.ts';
 
-/**
- * The path rule must stay equivalent to the deepest-non-null-ancestor rule
- * (last segment = effective home), proven on the shared deep fixture.
- */
+/** The path rule stays equivalent to deepest-non-null-ancestor: the last segment is the home. */
 describe('row-path (materialized id-path rule)', () => {
   const h = deepHierarchy;
 

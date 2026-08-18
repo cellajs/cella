@@ -23,7 +23,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 } {
   const { formOptions, formContainerId } = opt || {};
 
-  // Draft store hooks
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
   const resetDraftForm = useDraftStore((state) => state.resetForm);
@@ -42,7 +41,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const formIdRef = useRef(formId);
   formIdRef.current = formId;
 
-  // Add or remove `.unsaved-changes` class on container
   const toggleUnsavedBadge = (show: boolean) => {
     const el = document.getElementById(formContainerId || formId);
     if (!el) return;
@@ -62,7 +60,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
           const cleaned = Object.fromEntries(Object.entries(values).filter(([_, v]) => v !== undefined));
           if (Object.keys(cleaned).length > 0) setDraftForm(id, cleaned);
         } else {
-          // User reverted to defaults, so clear saved draft.
           resetDraftForm(id);
         }
       }, 1000);
@@ -80,13 +77,11 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     };
   }, [form, setDraftForm, resetDraftForm]);
 
-  // Sync dirty state to UI badge and store (only fires on isDirty toggle)
   useEffect(() => {
     toggleUnsavedBadge(isDirty);
     setFormDirty(formId, isDirty);
   }, [isDirty]);
 
-  // Restore draft on mount
   useEffect(() => {
     const draftData = getDraftForm<TFieldValues>(formId);
 
@@ -103,9 +98,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     unsavedChanges: isDirty,
     isDirty,
     loading,
-    // Override `handleSubmit` to always process `onInvalid` through a fallback handler
+    // Always route `onInvalid` through a fallback handler
     handleSubmit: (onValid, onInvalid = defaultOnInvalid) => form.handleSubmit(onValid, onInvalid),
-    // Override `reset` to also clear the draft + UI state
+    // Reset also clears the draft and the badge
     reset: (values, keepStateOptions) => {
       isResetting.current = true;
       clearTimeout(draftTimeoutRef.current);

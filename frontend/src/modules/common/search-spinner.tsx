@@ -3,8 +3,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Spinner } from '~/modules/common/spinner';
 
 /**
- * Toggles between a spinner and search icon based on search state.
- *
  * @param appearDelay - Seconds to wait before fading in the spinner (default: 0.3 to avoid flicker on fast responses). Pass 0 to show it immediately.
  */
 interface SearchSpinnerProps {
@@ -13,7 +11,6 @@ interface SearchSpinnerProps {
   appearDelay?: number;
 }
 
-/** Renders the search spinner component. */
 export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchSpinnerProps) {
   return (
     <AnimatePresence mode="wait" initial={false}>

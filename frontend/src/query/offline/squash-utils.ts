@@ -18,9 +18,7 @@ function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TO
   return merged;
 }
 
-/** Result of coalescing an update: the merged ops and an stx whose field timestamps preserve each
- * inherited field's original intent time while carrying the incoming edit's timestamps for the
- * fields it actually changed. */
+/** Merged ops plus an stx whose field timestamps keep each inherited field's original intent time and carry the incoming edit's timestamps for the fields it changed. */
 export type SquashedUpdate<TOps extends object> = { ops: TOps; stx: StxBase };
 
 /** Merge queued offline entity updates while preserving inherited LWW timestamps and AWSet intent. */
@@ -64,11 +62,7 @@ export function squashPendingMutation<TOps extends object>(
   return { ops, stx };
 }
 
-/**
- * Cancels queued offline creates for rows deleted before reaching the server.
- * Matching batch/top-level creates are removed and returned so deletion stays cache-only.
- * Online deletes remain serialized after their possibly delivered create.
- */
+/** Cancels queued offline creates for rows deleted before reaching the server, so the deletion stays cache-only. Online deletes stay serialized after their possibly delivered create. */
 export function removePausedCreates(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],
@@ -108,11 +102,7 @@ export function removePausedCreates(
   return cancelled;
 }
 
-/**
- * Folds scalar updates into a matching queued offline create and reports success.
- * Online updates remain serialized separately; relative array deltas cannot merge into a create's
- * full-array representation.
- */
+/** Folds scalar updates into a matching queued offline create. Online updates stay serialized, and relative array deltas cannot merge into a create's full-array representation. */
 export function squashIntoPendingCreate<TOps extends object>(
   queryClient: QueryClient,
   createMutationKey: readonly unknown[],

@@ -6,7 +6,6 @@ interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;
 }
 
-/** Find attachments by their STX mutation ID (idempotency check). */
 export const findAttachmentsByStxMutationId = async (
   ctx: AuthContext,
   { mutationId }: FindAttachmentsByStxMutationIdOpts,
@@ -23,7 +22,6 @@ export const findAttachmentsByStxMutationId = async (
     );
 };
 
-/** Insert attachments and return the created rows. Silently skips duplicates (PK conflict). */
 export const insertAttachments = async (
   ctx: DbContext,
   { attachments }: { attachments: (typeof attachmentsTable.$inferInsert)[] },
@@ -37,7 +35,6 @@ interface UpdateAttachmentOpts {
   values: Partial<typeof attachmentsTable.$inferInsert>;
 }
 
-/** Update an attachment by ID and return the updated row. */
 export const updateAttachment = async (ctx: AuthContext, { id, values }: UpdateAttachmentOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
@@ -54,7 +51,6 @@ interface DeleteAttachmentsByIdsOpts {
   deletedAt: string;
 }
 
-/** Soft-delete attachments by IDs. */
 export const deleteAttachmentsByIds = async (
   ctx: AuthContext,
   { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
@@ -76,10 +72,7 @@ interface FindAttachmentsByIdsOpts {
   ids: string[];
 }
 
-/**
- * Find live (non-deleted) attachments by id. Tenant-scoped via RLS from `tenantRead`:
- * unknown, deleted, and cross-tenant ids are simply absent from the result.
- */
+/** Tenant-scoped via RLS from `tenantRead`: unknown, deleted and cross-tenant ids are absent. */
 export const findAttachmentsByIds = async (ctx: DbContext, { ids }: FindAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
   return db

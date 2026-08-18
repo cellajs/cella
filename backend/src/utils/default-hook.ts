@@ -4,21 +4,15 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 
 /**
- * Default validation hook for zod-openapi routes.
- * Extracts custom error types from Zod refinements via params.type for proper i18n support.
- *
- * A failed request validation is a malformed request, not a permission verdict, so it
- * surfaces as 400. Status 403 is reserved for genuine authorization denials. Debugging a
- * schema mismatch (e.g. a hand-built stx envelope missing a per-field HLC) must not
- * read as "insufficient permissions".
+ * Custom error types come from Zod refinements via `params.type`, so i18n keys resolve. A failed validation
+ * is a malformed request, not a permission verdict, so it answers 400; 403 is reserved for authorization.
  */
 export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
   if (!result.success && result.error instanceof ZodError) {
     const issue = result.error.issues[0];
     const { message, code } = issue;
 
-    // Extract custom type from params if available (for superRefine with refineWithType)
-    // Otherwise fall back to generic form.{code} type
+    // superRefine with refineWithType carries a custom type; otherwise fall back to `form.{code}`.
     let type: ErrorKey;
     if (code === 'custom' && 'params' in issue && issue.params?.type) {
       type = issue.params.type as ErrorKey;

@@ -11,13 +11,8 @@ import * as Tabs from '~/modules/ui/tabs';
 import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 
-/**
- * Maps BlockNote elements to the application UI components. Since @blocknote/shadcn 0.53
- * both sides speak Base UI: triggers receive `render` props and popup content receives a
- * `container` (editor.portalElement) that our components forward to their portals.
- */
-// Cast: our kit deliberately narrows some Base UI prop types (string-only className,
-// single-value Select) and uses different cva variant unions than BlockNote's defaults.
+// Both sides speak Base UI: triggers take `render` props and popup content takes a `container` (editor.portalElement).
+// The cast is needed because this kit narrows some Base UI prop types and uses different cva variant unions.
 export const shadCNComponents = {
   Button,
   DropdownMenu,

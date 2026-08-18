@@ -16,7 +16,6 @@ import { schemasQueryOptions } from '../query';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
-/** Resolve response schema, looking up by name from prefetched schemas for error responses */
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
@@ -35,9 +34,6 @@ interface ResponsesAccordionProps {
   typesIndex: DefinitionIndex;
 }
 
-/**
- * Accordion component to display operation responses.
- */
 function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIndex }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
@@ -89,10 +85,6 @@ interface OperationResponsesProps {
   detail?: GenOperationDetail;
 }
 
-/**
- * Operation responses component that uses useSuspenseQuery for Suspense integration.
- * Wrap the parent component in a Suspense boundary for optimal batching.
- */
 export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
 

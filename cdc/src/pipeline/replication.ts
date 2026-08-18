@@ -15,11 +15,8 @@ const { reconnection, slotTakeover } = RESOURCE_LIMITS;
 // Replication service setup
 
 /**
- * Build the replication connection URL from the CDC database URL.
- *
- * Strips the `sslmode=require&uselibpqcompat=true` params so the explicit,
- * CA-verified `ssl` config (see {@link createReplicationService}) is used and
- * prevents pg's unverified libpq-compat downgrade.
+ * Strips the `sslmode=require&uselibpqcompat=true` params so the explicit, CA-verified `ssl` config
+ * of {@link createReplicationService} applies and pg cannot downgrade to unverified libpq-compat.
  */
 function buildReplicationUrl(): URL {
   const replicationUrl = new URL(stripSslParams(env.DATABASE_CDC_URL));
@@ -29,17 +26,13 @@ function buildReplicationUrl(): URL {
   return replicationUrl;
 }
 
-/**
- * Create and configure the logical replication service.
- */
 export function createReplicationService(): LogicalReplicationService {
   const connectionUrl = buildReplicationUrl();
   const service = new LogicalReplicationService(
     {
       connectionString: connectionUrl.toString(),
       application_name: `${appConfig.slug}-cdc-worker`,
-      // Match the query connection's verified TLS for full-row replication data.
-      // Certificate identity is pinned to the dialed host in production.
+      // Verified TLS, matching the query connection; certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
     },
     {
@@ -68,9 +61,6 @@ export function createReplicationService(): LogicalReplicationService {
 
 // Slot management
 
-/**
- * Ensure the replication slot exists, creating it if necessary.
- */
 export async function ensureReplicationSlot(): Promise<void> {
   try {
     const slotCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
@@ -84,17 +74,13 @@ export async function ensureReplicationSlot(): Promise<void> {
   }
 }
 
-/**
- * Limits stale-slot recovery to one attempt per worker lifetime.
- * This prevents the retry loop from repeatedly discarding WAL; restarting arms another attempt.
- */
+/** One stale-slot recovery per worker lifetime, so the retry loop cannot repeatedly discard WAL. */
 let slotRecreationAttempted = false;
 
 /**
- * Recreates a slot whose WAL start predates its publication, after terminating its sender.
- * The sync sequence recovers skipped WAL. This runs once per worker and only after confirming
- * the publication exists, distinguishing a stale slot from a missing publication.
- * Failures are logged for the normal retry loop.
+ * Recreates a slot whose WAL start predates its publication, after terminating its sender; the sync
+ * sequence recovers the skipped WAL. Runs once per worker and only once the publication is confirmed
+ * to exist, which distinguishes a stale slot from a missing publication.
  */
 async function recreateReplicationSlot(): Promise<void> {
   if (slotRecreationAttempted) {
@@ -132,10 +118,7 @@ async function recreateReplicationSlot(): Promise<void> {
 /** Postgres `object_in_use`: subscribe() lost the race for an actively held slot. */
 const PG_OBJECT_IN_USE = '55006';
 
-/**
- * Describes the worker connection holding the replication slot for actionable diagnostics.
- * Returns null when free or unavailable so diagnostic lookup never breaks retries.
- */
+/** @returns null when the slot is free or the lookup fails, so diagnostics never break retries. */
 async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   try {
     const result = await cdcDb.execute(sql`
@@ -150,12 +133,7 @@ async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   }
 }
 
-// Backpressure
-
-/**
- * Wire up WebSocket callbacks for replication backpressure.
- * Pauses acknowledgment when WebSocket is disconnected.
- */
+/** Backpressure: replication acknowledgment pauses while the WebSocket is disconnected. */
 export function setupBackpressure(): void {
   wsClient.setCallbacks({
     onConnect: () => {
@@ -178,21 +156,16 @@ export function setupBackpressure(): void {
 
 // Subscription loop
 
-/**
- * Subscribe to the replication slot with automatic reconnection.
- */
 export async function subscribeWithReconnect(
   service: LogicalReplicationService,
   plugin: PgoutputPlugin,
 ): Promise<never> {
-  // Retry quickly during a rolling-deploy slot handoff, then use the normal cadence.
-  // This keeps takeover fast without hammering Postgres during sustained contention.
+  // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
   while (true) {
     try {
-      // Ensure on every attempt because dropping a database removes its slots, and a worker
-      // cannot create a slot while the database is unreachable. This costs one catalog SELECT
-      // per subscription attempt and is a no-op when another worker already holds the slot.
+      // Every attempt: dropping a database removes its slots, and no slot can be created while it is
+      // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
       await ensureReplicationSlot();
 
       log.info('Subscribing to replication slot...');
@@ -211,7 +184,6 @@ export async function subscribeWithReconnect(
       });
       replicationState.markStopped();
       // Reposition a slot whose start predates its publication so decoding can proceed.
-      // The distinct stale-publication error keeps this out of normal slot handoff.
       if (isStalePublicationError(error)) {
         log.warn(`Slot '${CDC_SLOT_NAME}' predates publication '${CDC_PUBLICATION_NAME}', recreating to self-heal`);
         await recreateReplicationSlot();

@@ -1,7 +1,6 @@
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled label primitive. */
 export function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: generic Label primitive; consumers supply htmlFor/control via {...props}.

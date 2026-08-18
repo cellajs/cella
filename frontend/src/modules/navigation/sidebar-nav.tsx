@@ -26,18 +26,15 @@ const DebugDropdown =
     ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
     : () => null;
 
-// Sidebar dimensions from config
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
   appConfig.theme.navigation;
 
-// Cached base nav items
 let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {
   if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
   return baseNavItems;
 }
 
-// Cached footer nav items
 let footerNavItems: NavItem[] | null = null;
 function getFooterNavItems() {
   if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => (type as string) === 'footer');
@@ -48,10 +45,7 @@ interface SidebarNavProps {
   triggerNavItem: TriggerNavItemFn;
 }
 
-/**
- * Sidebar navigation: icon bar + sheet panel. Widths are set as CSS custom properties;
- * data attributes drive the rest (opacity, position, pointer-events).
- */
+/** Widths are set as CSS custom properties; data attributes drive opacity, position and pointer-events. */
 export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpointAbove('2xl');
@@ -59,18 +53,16 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
-  // Check if nav-sheet is open via useSheeter
   const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));
 
   useBodyClass({ 'keep-nav-open': keepNavOpen });
   useBodyClass({ 'nav-sheet-open': navSheetExists });
 
-  // State
   const isCollapsed = !!navSheetOpen;
   const isExpanded = hasSidebarTextLabels && isDesktop && !isCollapsed;
   const isOverlay = !isDesktop || !keepNavOpen;
 
-  // Compute widths - spacer includes sheet width when not overlay and nav-sheet is open
+  // The spacer includes the sheet width when the sheet is open and not overlaying.
   const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const sidebarWidth = iconBarWidth;
   const spacerWidth = isOverlay
@@ -81,7 +73,6 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
       : iconBarWidth;
 
-  // CSS custom properties for widths
   const cssVars = {
     '--icon-bar-w': iconBarWidth,
     '--sidebar-w': sidebarWidth,
@@ -90,13 +81,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
 
   return (
     <div className="contents" style={cssVars}>
-      {/* Spacer to push content - no animation on initial mount */}
+      {/* Pushes content; data-started keeps the width transition off on initial mount. */}
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
         className="relative w-(--spacer-w) bg-transparent group-[.focus-view]/body:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
       />
-      {/* Fixed sidebar */}
       <Sidebar
         id="sidebar-nav"
         collapsible="none"
@@ -107,7 +97,6 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full flex-row">
-          {/* Icon bar */}
           <div className="linear flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
@@ -140,7 +129,6 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                   />
                 ))}
               </SidebarMenu>
-              {/* Keyboard-only skip link to jump into the open sheet panel */}
               <FocusBridge direction="to-sheet" className="focus:relative focus:m-2" />
             </SidebarFooter>
           </div>

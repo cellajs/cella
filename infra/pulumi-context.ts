@@ -70,7 +70,7 @@ function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value)
     throw new Error(
-      `${name} is not set — run deploys via CI or the infra CLI, which inject it from the single source of truth.`,
+      `${name} is not set: run deploys via CI or the infra CLI, which inject it from the single source of truth.`,
     );
   return value;
 }

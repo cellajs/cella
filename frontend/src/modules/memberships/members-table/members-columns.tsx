@@ -8,13 +8,11 @@ import type { Member } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-/** Builds the column definitions for the enclosing table. */
 export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
   const { t } = useTranslation();
 
   const columns = () => {
     const cols: ColumnOrColumnGroup<Member>[] = [
-      // For admins add checkbox column
       ...(isAdmin ? [CheckboxColumn] : []),
       {
         key: 'name',

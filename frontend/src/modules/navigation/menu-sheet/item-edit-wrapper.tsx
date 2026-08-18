@@ -25,7 +25,6 @@ interface MenuItemEditWrapperProps {
   toggleSubmenuVisibility: (id: string) => void;
 }
 
-/** Renders the menu item edit wrapper component. */
 export function MenuItemEditWrapper({
   item,
   unarchiveItems,

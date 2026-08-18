@@ -17,9 +17,6 @@ type BlockNoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<
   containerClassName?: string;
 };
 
-/**
- * A form field component that integrates the BlockNote editor with react-hook-form.
- */
 function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   control,
   label,
@@ -51,8 +48,7 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
                 {required && <span className="ml-1 opacity-50">*</span>}
               </FormLabel>
             )}
-            {/* Explicit branch: the editor's filePanel/baseFilePanelProps union cannot be
-                satisfied through a conditional spread (TS widens it to an optional prop). */}
+            {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
             {baseFilePanelProps ? (
               <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} />
             ) : (

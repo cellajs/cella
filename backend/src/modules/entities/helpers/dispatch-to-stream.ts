@@ -11,10 +11,7 @@ import { sendNotificationToSubscriber } from '../stream/send-to-subscriber';
 import { streamSubscriberManager } from '../stream/subscriber-manager';
 import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
 
-/**
- * App stream subscriber (authenticated).
- * Receives all events (memberships, product entities, org) via org channels.
- */
+/** An authenticated subscriber; receives membership, product and org events via org channels. */
 export interface AppStreamSubscriber extends CursoredSubscriber {
   userId: string;
   organizationIds: Set<string>;
@@ -22,18 +19,10 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   memberships: MembershipBaseModel[];
 }
 
-/**
- * The membership + admin state a dispatch decision needs (test-friendly subset).
- * Structurally an `Access`, so subscribers feed `checkAccessFanout` directly.
- */
+/** Structurally an `Access`, so subscribers feed `checkAccessFanout` directly. */
 export type SubscriberAccess = Pick<AppStreamSubscriber, 'userId' | 'isSystemAdmin' | 'memberships'>;
 
-/**
- * The permission subject of one event row, subscriber-independent. Returns `null` when the
- * row is vetoed for everyone, fail-closed: an unpublished draft (`publishedAt` null, see
- * `shared/src/published-rows.ts`; defense-in-depth behind the publication row filter, the
- * author included), or a malformed ancestor scope.
- */
+/** Returns `null`, fail-closed, on an unpublished draft or a malformed ancestor scope. */
 const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | null => {
   const row = (event.rowData ?? undefined) as Record<string, unknown> | undefined;
 
@@ -54,11 +43,7 @@ const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | nu
   }
 };
 
-/**
- * Mirrors API row visibility for SSE using one fan-out permission check.
- * Access classes share policy walks, while invalid rows fail closed and invalid memberships
- * deny only their subscriber. Product-cache reads recheck the same permission decision.
- */
+/** Mirrors API row visibility in one fan-out check; an invalid membership denies only its own subscriber. */
 export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event: AppStreamProductEvent): boolean[] {
   const subject = rowReadSubject(event);
   if (!subject) return subscribers.map(() => false);
@@ -76,21 +61,12 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
   }
 }
 
-/**
- * Single-subscriber read visibility for one row-scoped event: a batch of one, so the
- * fan-out path and this predicate cannot drift.
- *
- * Exported so the parity property test can assert: SQL predicate ≍ checkAccess ≍ this.
- */
+/** A batch of one, so the fan-out path and this predicate cannot drift. */
 export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean {
   return rowReadDecisions([subscriber], event)[0];
 }
 
-/**
- * Rebase a product event onto one of its batch rows: subjectId and every CONTEXT id
- * column come from the row itself. Rows are self-describing, which also makes
- * re-parenting evaluate correctly.
- */
+/** subjectId and every context id column come from the row, so re-parenting evaluates correctly. */
 export const rowScopedEvent = (
   event: AppStreamProductEvent,
   rowData: Record<string, unknown>,
@@ -108,11 +84,7 @@ export const rowScopedEvent = (
 const eventRows = (event: AppStreamProductEvent): ActivityBatchRow[] =>
   event.batchRows?.length ? event.batchRows : [{ rowData: event.rowData as Record<string, unknown> }];
 
-/**
- * Routes membership events through the affected user's channel and product events through
- * organization channels. Product batches notify a subscriber after the first row they may read,
- * matching API visibility.
- */
+/** Membership events route through the user's channel, product events through org channels. */
 export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, AppStreamEvent>({
   getChannel: (event) => {
     if (isMembershipEvent(event)) {
@@ -122,7 +94,7 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
     return `org:${event.organizationId}`;
   },
   selectEligible: (subscribers, event) => {
-    // Membership events: the user channel already targets the subject; keep the check as a net.
+    // The user channel already targets the subject; this check is the safety net.
     if (isMembershipEvent(event)) {
       const membership = getEventData(event, 'membership');
       return membership?.userId ? subscribers.filter((s) => s.userId === membership.userId) : [];
@@ -160,10 +132,7 @@ const movedRows = (
   return [];
 };
 
-/**
- * Sends `moveOut` with the old path to subscribers who lost read access after a move.
- * Subscribers who retain access receive only the normal update, avoiding remove/reinsert races.
- */
+/** Only subscribers who lost read access get it; the rest receive the normal update. */
 export async function dispatchMoveOuts(event: AppStreamProductEvent): Promise<void> {
   const moves = movedRows(event);
   if (moves.length === 0) return;

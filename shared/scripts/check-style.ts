@@ -1,7 +1,7 @@
 /**
- * Runs the terminology, documentation, and comment checks as a single blocking pass.
- * Clean sub-checks collapse into one `[style]` line; findings print their detail.
- * Exits non-zero on any finding: `pnpm check`, `pnpm lint`, and CI's style step all run this same pass, so they cannot diverge.
+ * Runs the terminology, documentation and comment checks as one blocking pass. Clean sub-checks
+ * collapse into a single `[style]` line; findings print their detail. Exits non-zero on any
+ * finding. `pnpm check`, `pnpm lint` and CI's style step all run this same pass.
  */
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';

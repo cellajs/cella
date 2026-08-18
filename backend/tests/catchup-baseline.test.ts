@@ -21,7 +21,6 @@ describe('Catchup (view-driven, sequence)', async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
 
-    // Seed channel_counters with sequence, frontier and count values for the org
     const counts = {
       sequence: 50,
       membership: 3,
@@ -173,9 +172,7 @@ describe('Catchup (view-driven, sequence)', async () => {
 
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
-    // The other org's exact non-'ok' status is app-dependent: 'forbidden' with no public read
-    // route, 'opaque' when a publicRead() grant means a readable row can exist there. The
-    // guarantee both apps share is what this test asserts: not 'ok', and no numbers leaked.
+    // The exact non-'ok' status is app-dependent; the shared guarantee is: not 'ok', no numbers.
     expect(views!.map((v) => v.key)).toEqual(['other:attachment', `${orgId}:attachment`]);
     expect(views![0].status).not.toBe('ok');
     expect(views![1].status).toBe('ok');

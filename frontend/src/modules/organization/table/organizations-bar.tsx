@@ -25,7 +25,6 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams>;
 
-/** Renders the action and filter toolbar for the organizations table. */
 export function OrganizationsTableBar({
   selected,
   queryKey,
@@ -48,7 +47,6 @@ export function OrganizationsTableBar({
   const { q, order, sort } = searchVars;
 
   const isFiltered = !!q;
-  // Drop selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setSearch({ q: searchString });
@@ -92,7 +90,6 @@ export function OrganizationsTableBar({
 
   return (
     <TableBarContainer searchVars={searchVars} offsetTop={48}>
-      {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {!isFiltered && (
@@ -122,10 +119,8 @@ export function OrganizationsTableBar({
         </FilterBarSearch>
       </TableFilterBar>
 
-      {/* Columns view */}
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-      {/* Export */}
       <Export
         className="max-lg:hidden"
         filename={`${appConfig.slug}-organizations`}
@@ -134,10 +129,8 @@ export function OrganizationsTableBar({
         fetchRows={fetchExport}
       />
 
-      {/* Focus view */}
       <FocusView iconOnly />
 
-      {/* Floating actions for the current selection */}
       <SelectionActionBar count={selected.length} onClear={clearSelection}>
         <TableBarButton
           ref={newsletterButtonRef}

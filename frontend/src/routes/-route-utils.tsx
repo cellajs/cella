@@ -3,7 +3,6 @@ import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notic
 import { Spinner } from '~/modules/common/spinner';
 import type { BoundaryType } from '~/routes/types';
 
-/** Wrap a component in Suspense with an optional fallback */
 export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => {
   const Wrapped = () => (
     <Suspense fallback={fallback}>
@@ -14,11 +13,9 @@ export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => 
   return Wrapped;
 };
 
-/** Wrap a component in Suspense with a centered spinner fallback */
 export const withSuspenseSpinner = (Component: ComponentType) =>
   withSuspense(Component, <Spinner className="mt-[45vh] h-10 w-10" />);
 
-/** Create an error boundary component for a given boundary */
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
   const ErrorComp = ({ error, reset }: { error: unknown; reset: () => void }) => (
     <ErrorNotice error={error as ErrorNoticeError} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
@@ -27,7 +24,6 @@ export const createErrorComponent = (boundary: BoundaryType, homePath?: string) 
   return ErrorComp;
 };
 
-/** Create a not-found component for a given boundary */
 export const createNotFoundComponent = (boundary: BoundaryType, homePath?: string) => {
   const NotFoundComp = () => (
     <ErrorNotice boundary={boundary} error={new Error('Page not found')} homePath={homePath} />
@@ -38,12 +34,10 @@ export const createNotFoundComponent = (boundary: BoundaryType, homePath?: strin
 
 // === Static route components ===
 
-/** Renders an error notice as a full-page route fallback. */
 export function ErrorNoticePageComponent() {
   return <ErrorNotice boundary="public" />;
 }
 
-/** Renders the spinner page. */
 export function SpinnerPage() {
   return <Spinner className="mt-[45vh] h-10 w-10" />;
 }

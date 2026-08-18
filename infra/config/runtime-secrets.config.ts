@@ -1,13 +1,8 @@
 import { defineRuntimeSecrets } from '../lib/runtime-secrets';
 
 /**
- * App-owned mapping from runtime secrets to their consuming services.
- * Per-service manifests restrict each VM to the values it needs; `runtime-secrets.ts`
- * provisions containers and validates the registry. The file is pinned so apps can
- * customize distribution without upstream sync conflicts.
- *
- * Database DSN/CA secrets are declared by the primary store
- * (config/stores.config.ts `secretConsumers`) and merge ahead of these entries.
+ * App-owned mapping from runtime secrets to their consuming services; per-service manifests restrict each VM to the values it needs.
+ * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
   cookieSecret: {
@@ -127,8 +122,4 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
-  // The S3 credential pair (s3AccessKeyId / s3AccessKeySecret) is retired
-  // (REQ-20): under IAM model v2 the boot runner exports
-  // S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET from the backend's own per-deploy
-  // service key (services registry `s3Access`), so no standing S3 key exists.
 });

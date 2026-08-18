@@ -12,11 +12,9 @@ function NoChatSupport() {
   return null;
 }
 
-/** Renders the root component. */
 export function Root() {
   const isOnline = useOnlineManager();
 
-  // Lazy load
   const GleapSupport = useLazyComponent(
     () =>
       appConfig.has.chatSupport && isOnline

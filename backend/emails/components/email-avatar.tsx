@@ -7,9 +7,6 @@ const getRandomColor = () => {
   return color;
 };
 
-/**
- * EmailAvatar component to display user or organization initials.
- */
 export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; type?: 'user' | 'organization' }) => {
   let initials = 'U';
   if (name) {
@@ -41,5 +38,4 @@ export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; typ
   );
 };
 
-// Template export
 export const Template = EmailAvatar;

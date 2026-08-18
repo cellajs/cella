@@ -6,7 +6,6 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
-/** Renders the dialoger dialog component. */
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const {
     id,
@@ -24,23 +23,20 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   } = dialog;
   const isMobile = useBreakpointBelow('sm', false);
 
-  // When a container is provided, the dialog is rendered inside the container and scroll should stay enabled
+  // A container renders the dialog inline and keeps page scroll enabled
   const modal = !container;
   const containerElement = container?.ref?.current ?? undefined;
 
-  // onClose trigger handles by remove method
   const closeDialog = () => useDialoger.getState().remove(dialog.id);
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
-    // Dont close if interact outside is caused by dropdown, and also when modal is false
+    // An outside press landing on a dropdown must not close the dialog
     if (!nextOpen && eventDetails.reason === 'outside-press') {
       const dropdown = useDropdowner.getState().dropdown;
       if (dropdown || !modal) return;
     }
 
-    // Externally-owned dialogs (e.g. URL-driven) must remove immediately so onClose clears that
-    // state in the same tick. Without this, the 200ms animation gap leaves the URL "open" while the
-    // dialog is closing, flashing it back. This matches the direct removeDialog() path.
+    // URL-driven dialogs remove in the same tick, so the 200ms exit gap cannot reopen them
     if (!nextOpen && dialog.instantClose) {
       closeDialog();
       return;
@@ -48,12 +44,10 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
 
     useDialoger.getState().update(dialog.id, { open: nextOpen });
     if (!nextOpen) {
-      // Delay removal to allow exit animation to complete
       setTimeout(closeDialog, 200);
     }
   };
 
-  // Create a ref for finalFocus to return focus to trigger on close
   const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
@@ -85,8 +79,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
         initialFocus={isMobile ? false : undefined}
         finalFocus={triggerRef?.current ? finalFocusRef : undefined}
       >
-        {/* Only render the visible header when there is a title or description to show.
-            This avoids an empty header overlapping content (e.g. fullscreen attachment dialog). */}
+        {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
         {(title || description) && (
           <DialogHeader
             sticky
@@ -103,7 +96,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
           </DialogHeader>
         )}
 
-        {/* Accessibility: guarantee the dialog always has an accessible name even without a visible header */}
+        {/* Guarantee an accessible name without a visible header */}
         {!title && !description && <DialogTitle className="hidden" />}
         {content}
       </DialogContent>

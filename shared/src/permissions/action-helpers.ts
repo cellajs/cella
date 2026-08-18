@@ -3,29 +3,24 @@ import { appConfig } from '../config-builder/app-config.ts';
 import { recordFromKeys } from '../config-builder/utils.ts';
 import type { CanState } from './types.ts';
 
-/**
- * Creates a typed record mapping each entity action to a value.
- * Hides the type assertion in one place for clean call sites.
- */
 export function createActionRecord<T>(valueFn: (action: EntityActionType) => T): Record<EntityActionType, T> {
   return recordFromKeys(appConfig.entityActions, valueFn);
 }
 
-/** Frozen record with all actions set to false (denied). Use as base for secure-by-default permission building. */
+/** The secure-by-default base for building a permission record. */
 export const allActionsDenied = Object.freeze(createActionRecord(() => false as const)) as Readonly<
   Record<EntityActionType, false>
 >;
 
-/** Frozen record with all actions set to true (allowed). Use for system admin or full-access scenarios. */
+/** For system admin and other full-access cases. */
 export const allActionsAllowed = Object.freeze(createActionRecord(() => true as const)) as Readonly<
   Record<EntityActionType, true>
 >;
 
 /**
- * Resolves a three-state permission (`true | false | condition name`) to a boolean. `'own'`
- * compares the actor's `userId` against `entity.createdBy`. The switch is exhaustive over the
- * closed {@link CanState} name union, so adding a row condition is a compile error
- * here: the frontend can never silently deny a new condition.
+ * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor's `userId`
+ * against `entity.createdBy`. The switch is exhaustive over {@link CanState}, so adding a row
+ * condition breaks the build here; the frontend never denies a new condition unnoticed.
  */
 export const resolveCan = (
   permission: CanState | undefined,
@@ -37,14 +32,11 @@ export const resolveCan = (
     case 'own':
       return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
     case 'public':
-      // Public read is membership-independent and resolved server-side; it never appears in the
-      // frontend can-map. Denied here (secure default). This arm exists only for exhaustiveness.
+      // Public read is membership-independent and resolved server-side, so it never reaches the
+      // frontend can-map. This arm exists for exhaustiveness and denies by default.
       return false;
   }
 };
 
-/**
- * Returns true only for unconditional permission.
- * Channel-wide features use this secure default; row affordances should call `resolveCan`.
- */
+/** True only for an unconditional grant. Row affordances call `resolveCan`. */
 export const isUnconditionalCan = (permission: CanState | undefined): boolean => permission === true;

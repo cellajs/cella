@@ -18,11 +18,8 @@ for (const embedding of appConfig.productEmbeddings) {
 }
 
 /**
- * Build propagation hints for each org's change summary. Sequence-driven: an embedded
- * product changed for a client when the org's `e:f:{embeddedProduct}` rollup exceeds the
- * client's org-view cursor (from the declared views); the changed product ids come
- * from an org-wide `seq > cursor` delta-id read, including soft-delete tombstones
- * (returned as removal hints).
+ * An embedded product changed when the org's `e:f:{embeddedProduct}` rollup exceeds the client's
+ * org-view cursor; ids come from an org-wide delta read and tombstones return as removal hints.
  */
 export async function buildPropagationHints(
   changes: AppCatchupResponse['changes'],
@@ -32,7 +29,7 @@ export async function buildPropagationHints(
   const embeddedProducts = Object.keys(hostsByEmbeddedProduct) as ProductEntityType[];
   if (embeddedProducts.length === 0 || !views?.length) return;
 
-  // Org-view cursors per (org, embeddedProduct) from the declared views.
+  // Org-view cursors per (org, embeddedProduct).
   const cursorFor = new Map<string, number>();
   for (const view of views) {
     for (const entityType of view.entityTypes) {
@@ -50,7 +47,7 @@ export async function buildPropagationHints(
       if (!hosts?.length) continue;
 
       const clientCursor = cursorFor.get(`${organizationId}:${embeddedProduct}`);
-      // No declared view (embedded product not synced by this client) or no baseline yet.
+      // No declared view for this embedded product, or no baseline yet.
       if (clientCursor === undefined || clientCursor === 0) continue;
 
       const frontier = frontiers[embeddedProduct] ?? 0;

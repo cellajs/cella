@@ -9,17 +9,10 @@ export type { Tx };
 // Production requires the provisioned RDB CA to prevent a silent TLS downgrade.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
-/**
- * Relay database client, built by the backend's side-effect-free connection factory.
- * The pool opens lazily on first query, so unconditional construction is safe under NODB.
- */
+/** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
 export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MAX, sslCa, logger: env.DEBUG });
 
-/**
- * Run `fn` in a transaction with tenant/user RLS context, mirroring the backend's
- * tenant-context helpers: `set_config(..., true)` scopes the vars to the transaction,
- * so pooled connections never leak context between sessions.
- */
+/** Runs `fn` in a transaction with tenant/user RLS context: `set_config(..., true)` scopes the vars to the transaction, so pooled connections never leak context. */
 export async function withRlsTx<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(

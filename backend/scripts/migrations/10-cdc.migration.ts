@@ -65,7 +65,7 @@ BEGIN
       CREATE PUBLICATION ${CDC_PUBLICATION_NAME} FOR TABLE ${tableList};
       RAISE NOTICE 'Created publication ${CDC_PUBLICATION_NAME}';
     ELSE
-      -- Publication exists — replace with current table list
+      -- Publication exists: replace with current table list
       RAISE NOTICE 'Publication ${CDC_PUBLICATION_NAME} already exists, syncing tables...';
       ALTER PUBLICATION ${CDC_PUBLICATION_NAME} SET TABLE ${tableList};
       RAISE NOTICE 'Publication tables synced';
@@ -93,7 +93,7 @@ END $$;
 
   return {
     tag: 'cdc_setup',
-    title: 'CDC — publication, replica identity, replication slot',
+    title: 'CDC, publication, replica identity, replication slot',
     sql: migrationSql,
     notes: [
       `Tracked tables (${trackedTableNames.length}): ${trackedTableNames.join(', ')}`,

@@ -1,8 +1,6 @@
 import { appConfig } from '../config-builder/app-config.ts';
 
-/**
- * Validate if a URL is a CDN URL. Its valid if it starts with the public CDN or private CDN URL.
- */
+/** True when the URL starts with the public or private CDN URL. */
 export const isCDNUrl = (url?: string) => {
   if (!url) return false;
   if (url.startsWith(appConfig.s3.publicCDNUrl)) return true;

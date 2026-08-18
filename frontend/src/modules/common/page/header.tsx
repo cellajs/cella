@@ -26,13 +26,12 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
 };
 
 /**
- * Renders the page header. Role visibility belongs to the panel's role-labeled
- * membership button.
+ * Page header. Role visibility belongs to the panel's role-labeled membership button.
  */
 export function PageHeader({ entity, panel, parents, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
 
-  // Crumb chain (root first); the deprecated single `parent` folds in for one release
+  // Crumb chain, root first; the deprecated single `parent` folds in
   const crumbs = parents ?? (parent ? [parent] : []);
 
   return (
@@ -53,11 +52,9 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
         />
 
         <div className="flex flex-col truncate py-1.5 pl-1">
-          {/* Page title */}
           <h1 className="mb-1 truncate font-semibold leading-6 md:text-xl">{entity.name}</h1>
 
           <div className="flex items-center gap-2 text-sm">
-            {/* Breadcrumb: ancestor chain, then the entity type as a translated label */}
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
                 {crumbs.map((crumb) => {

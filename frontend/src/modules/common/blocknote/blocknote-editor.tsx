@@ -44,11 +44,7 @@ import type {
 import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 
-/**
- * Bundle for collaborative mode: Yjs connection (provider, fragment, cursor user) + entity identity for SSE
- * suppression while editing. Presence of this bundle switches the editor into collaborative mode;
- * the relay persists session state to the entity row.
- */
+/** Yjs connection plus entity identity for SSE suppression; passing this bundle switches the editor into collaborative mode. */
 export interface CollaborationBundle {
   provider: WebsocketProvider;
   fragment: XmlFragment;
@@ -61,9 +57,9 @@ export interface CollaborationBundle {
 export interface BlockNoteContentApi {
   /** The live document serialized to the stored blocks string (JSON.stringify(editor.document)). */
   getContent: () => string;
-  /** Focus and place the cursor at the end of the summary block (first non-checklist text block). */
+  /** Focus and place the cursor at the end of the summary block: the first non-checklist text block. */
   focusSummaryEnd: () => void;
-  /** Focus and place the text cursor at viewport coordinates (relies on layout parity with the static view). */
+  /** Place the text cursor at viewport coordinates; relies on layout parity with the static view. */
   placeCursorAtPoint: (clientX: number, clientY: number) => void;
   /** Toggle a checklist item's `checked` prop by its checkboxId. Returns false if not found. */
   toggleChecklist: (checkboxId: string) => boolean;
@@ -75,9 +71,8 @@ type BlockNoteProps = CommonBlockNoteProps & {
   /** When true, fire `updateData` on every change (form-binding mode). Default: only on blur/Escape/Cmd+Enter. */
   commitOnEveryChange?: boolean;
   collaboration?: CollaborationBundle;
-  /** Exposes the imperative API for a parent that warms/promotes this editor. */
   contentApiRef?: RefObject<BlockNoteContentApi | null>;
-  /** Fires once after the editor is created and mounted, flushing any queued warm-editor actions. */
+  /** Fires once after the editor is created and mounted. */
   onEditorReady?: () => void;
 };
 
@@ -86,7 +81,7 @@ function BlockNote({
   className = '',
   defaultValue = '', // stringified blocks
   trailingBlock = true,
-  clickOpensPreview = false, // click on media opens preview; while editing, only direct media hits
+  clickOpensPreview = false,
   dense = false,
   // Editor functional
   headingLevels = [1, 2, 3],
@@ -120,7 +115,7 @@ function BlockNote({
   const isMobile = useBreakpointBelow('sm');
   // Forced-title mode: `true` pins block 0 at level 1; `{ level }` overrides for nested surfaces
   const titleLevel = forcedTitle ? (typeof forcedTitle === 'object' ? forcedTitle.level : 1) : undefined;
-  // Present only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
+  // Set only when an ancestor hoists the upload dialog outside this (possibly remounting) editor.
   const uploadHost = useUploadHost();
 
   const collaborative = !!collaboration;
@@ -142,8 +137,7 @@ function BlockNote({
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
-    // Caller extensions first: BlockNote keeps the first extension per key and drops later
-    // duplicates, so a caller-provided checkedExtension (e.g. persisted: true) must win over the default.
+    // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
     extensions: [
       ...(extensions ?? []),
       ...(titleLevel ? [forcedTitleExtension({ level: titleLevel })] : []),
@@ -166,16 +160,13 @@ function BlockNote({
       : baseOptions,
   );
 
-  // Expose an imperative API so a parent can warm this editor, promote it, place the cursor at a click,
-  // and toggle checklist items. Works in collaborative and standalone mode alike.
   useImperativeHandle(
     contentApiRef,
     () => ({
       getContent: () => JSON.stringify(editor.document),
       focusSummaryEnd: () => {
         editor.focus();
-        // Match the collapsed summary source (see deriveDescriptionProps): the first non-checklist
-        // block with text content, else the first block. Land the cursor at the end of what's shown.
+        // Must match the collapsed summary source in deriveDescriptionProps.
         const doc = editor.document as CustomBlock[];
         const summaryBlock =
           doc.find(
@@ -208,15 +199,12 @@ function BlockNote({
     [editor],
   );
 
-  // Signal readiness once mounted so a parent can flush actions queued before this editor existed.
   useEffect(() => {
     onEditorReady?.();
   }, [onEditorReady]);
 
-  // Re-subscribe Yjs UndoManager after TipTap mount cycles so CMD+Z keeps working.
   useYjsUndoManagerFix(editor, collaborative);
 
-  // Shield Yjs-owned fields from SSE while this editor is active.
   useYjsSseSuppression(
     collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
   );
@@ -252,8 +240,7 @@ function BlockNote({
     editor,
     containerRef: blockNoteRef,
     onBlur: () => {
-      // In `commitOnEveryChange` mode, every change is already pushed via onChange.
-      // Guarded with `!editor.isEmpty` to avoid writing empty content before Yjs sync.
+      // The isEmpty guard avoids writing empty content before Yjs has synced.
       if (!commitOnEveryChange && !editor.isEmpty) handleUpdateData(editor);
     },
   });
@@ -261,14 +248,11 @@ function BlockNote({
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview) return;
 
-    // While editing, only a direct hit on the media element opens the carousel; file blocks,
-    // captions, resize handles and empty gutter keep their normal editing behavior. When read-only,
-    // wrapped file blocks without a preview also open.
+    // While editing only a direct hit on the media element opens the carousel; read-only also opens wrapped file blocks.
     const media = findClickedMedia(event.target as HTMLElement, { includeWrapped: !editable });
     if (!media) return;
 
     event.preventDefault();
-    // The clicked media's src starts the carousel at that item
     openAttachment(editor, blockNoteRef, media.src);
   };
 
@@ -311,12 +295,10 @@ function BlockNote({
         />
       )}
 
-      {/* Hide formatting toolbar on mobile */}
       {!isMobile && formattingToolbar && (
         <CustomFormattingToolbar headingLevels={headingLevels} titleLevel={titleLevel} />
       )}
 
-      {/* By default hides on mobile */}
       {sideMenu && (
         <CustomSideMenu
           editor={editor}
@@ -329,11 +311,10 @@ function BlockNote({
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}
 
-      {/* Changes the Emoji Picker to only have 8 columns & min length of 0. */}
       {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
 
       {baseFilePanelProps && appConfig.has.uploadEnabled ? (
-        // A host hoists the dialog out of this subtree; the bridge only relays panel state to it.
+        // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
         uploadHost ? (
           <FilePanelBridge host={uploadHost} />
         ) : (

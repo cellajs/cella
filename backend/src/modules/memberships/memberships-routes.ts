@@ -32,9 +32,6 @@ import {
 } from './memberships-mocks';
 
 const membershipRoutes = {
-  /**
-   * Create memberships
-   */
   createMemberships: createXRoute({
     operationId: 'membershipInvite',
     method: 'post',
@@ -66,9 +63,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete memberships
-   */
   deleteMemberships: createXRoute({
     operationId: 'deleteMemberships',
     method: 'delete',
@@ -99,9 +93,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Update membership
-   */
   updateMembership: createXRoute({
     operationId: 'updateMembership',
     method: 'put',
@@ -125,9 +116,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Respond to membership invitation
-   */
   handleMembershipInvitation: createXRoute({
     operationId: 'handleMembershipInvitation',
     method: 'post',
@@ -148,9 +136,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get list of members
-   */
   getMembers: createXRoute({
     operationId: 'getMembers',
     method: 'get',
@@ -176,9 +161,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get list of pending memberships
-   */
   getPendingMemberships: createXRoute({
     operationId: 'getPendingMemberships',
     method: 'get',
@@ -205,9 +187,6 @@ const membershipRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Resend a pending membership invitation
-   */
   resendPendingInvitation: createXRoute({
     operationId: 'resendPendingInvitation',
     method: 'post',

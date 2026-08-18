@@ -1,6 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
 
-// Broad selector to find candidate focusable elements
 const candidateSelector = 'a[href], button, textarea, input, select, [tabindex], [contenteditable="true"]';
 
 const guardStyle: React.CSSProperties = {
@@ -15,7 +14,7 @@ const guardStyle: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-/** Get all focusable elements within a container using the DOM tabIndex property as ground truth */
+/** Focusable elements in a container, using the DOM tabIndex property as ground truth. */
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const candidates = container.querySelectorAll<HTMLElement>(candidateSelector);
   return Array.from(candidates).filter(
@@ -33,7 +32,6 @@ function FocusGuard({ onFocus }: { onFocus: (e: React.FocusEvent) => void }) {
   return <span tabIndex={0} onFocus={onFocus} aria-hidden data-focus-guard="" style={guardStyle} />;
 }
 
-/** Renders the focus trap component. */
 export function FocusTrap({
   children,
   mainElementId,
@@ -61,13 +59,11 @@ export function FocusTrap({
 
   const getContainer = () => internalRef.current;
 
-  // Initial focus + return focus
   useEffect(() => {
     if (!active) return;
     const trap = getContainer();
     if (!trap) return;
 
-    // Capture before we move focus
     if (returnFocus && document.activeElement instanceof HTMLElement) {
       previousFocusRef.current = document.activeElement;
     }
@@ -75,8 +71,7 @@ export function FocusTrap({
     if (initialFocus) {
       queueMicrotask(() => {
         if (trap.contains(document.activeElement) && document.activeElement !== trap) return;
-        // preventScroll: portaled content (e.g. dropdown popups) may still sit at (0,0)
-        // when this runs, so a scrolling focus would jump the page to the top.
+        // preventScroll: portaled content may still sit at (0,0), so focus would jump the page to the top
         if (typeof initialFocus === 'object' && initialFocus.current) {
           initialFocus.current.focus({ preventScroll: true });
           return;
@@ -94,7 +89,6 @@ export function FocusTrap({
     };
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Focus containment (click / programmatic escape)
   useEffect(() => {
     if (!active || !containFocus) return;
     const trap = getContainer();
@@ -105,8 +99,7 @@ export function FocusTrap({
       if (!trap || !target || trap.contains(target)) return;
       if (target.hasAttribute('data-focus-guard')) return;
       const focusable = getFocusableElements(trap);
-      // preventScroll: this redirect pulls focus back involuntarily, so it must not
-      // scroll the page (which would jump when the trapped content is off-screen).
+      // preventScroll: the redirect is involuntary and must not scroll off-screen content into view
       (focusable[0] ?? trap).focus({ preventScroll: true });
     }
 
@@ -131,7 +124,7 @@ export function FocusTrap({
     return () => trap.removeEventListener('keydown', onKeyDown);
   }, [active, mainElementId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Empty-trap protection (prevent Tab from escaping when there are no focusable elements)
+  // Prevent Tab from escaping a trap with no focusable elements
   useEffect(() => {
     if (!active) return;
     const trap = getContainer();

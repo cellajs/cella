@@ -28,7 +28,6 @@ interface MenuSheetSectionProps {
   options: MenuSectionOptions;
 }
 
-/** Renders the menu sheet section. */
 export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);

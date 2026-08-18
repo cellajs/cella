@@ -7,7 +7,6 @@ type TextEffectProps = {
   className?: string;
 };
 
-/** Renders the text effect component. */
 export function TextEffect({ text, className = '' }: TextEffectProps) {
   const variants = {
     hidden: { opacity: 0 },

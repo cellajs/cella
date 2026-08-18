@@ -13,16 +13,14 @@ import { mockFetchRequest, setTestConfig } from './test-utils';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
- * Counter recalculation (the drift/incident repair tool; its output IS the contract) must
- * agree with CDC's incremental sequence writes: `sequence` = max stamped seq across the
- * org's product tables, `e:f:{type}` = max seq per (node, type), `e:c:{type}` = live published.
+ * Recalculation must agree with CDC's incremental writes: `sequence` = max stamped seq across
+ * the org's product tables, `e:f:{type}` = max seq per (node, type), `e:c:{type}` = live published.
  */
 describe('recalculateCounters (sequence + frontier)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
 
-  // Derive the seeded product's effective home from app hierarchy.
-  // Shared generated ancestor IDs make all rows roll into one assertable self-counter node.
+  // Shared ancestor ids make all rows roll into one assertable self-counter node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
   const deeperAncestorIds = Object.fromEntries(
@@ -45,8 +43,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     tenant = await createTestTenant(call, 'recalc-sequence');
 
     const base = (key: string, seq: number, extra: Record<string, unknown> = {}) =>
-      // Insert-ready mock row bound to the test tenant and the product's ancestor columns; audit
-      // users nulled (mock ids have no users rows and the columns are nullable FKs).
+      // Audit users are nulled: mock ids have no users rows and the columns are nullable FKs.
       buildInsertableProduct(
         PRODUCT,
         {
@@ -101,8 +98,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     // Subtree live count excludes the soft-deleted row.
     expect(orgCounts[`e:c:${PRODUCT}`]).toBe(2);
 
-    // Self family lands at the home node (deepest ancestor): the org itself when org-homed, or a
-    // deeper channel otherwise. When home == org these keys sit on the same org row read above.
+    // Self-family keys land at the home node, the deepest ancestor.
     const homeCounts = (await readCounts(homeChannelId())).counts as Record<string, number>;
     expect(homeCounts[`e:f:h:${PRODUCT}`]).toBe(47);
     expect(homeCounts[`e:c:h:${PRODUCT}`]).toBe(2);

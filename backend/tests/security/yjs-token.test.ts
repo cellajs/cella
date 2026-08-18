@@ -24,8 +24,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     await clearSecurityTestData();
   });
 
-  // Token signing (getYjsToken)
-
   describe('Token signing', () => {
     it('should return a non-empty token for authenticated user with permission', async () => {
       const { data } = await call(getYjsToken, {

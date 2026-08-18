@@ -25,9 +25,9 @@ function focusItem(items: HTMLElement[], idx: number) {
 }
 
 /**
- * Adds WAI-ARIA menu keyboard nav to a container of `[role="menuitem"]` elements: roving tabindex (only one
- * item tabbable, so Tab leaves the menu), Arrow/Home/End movement, and printable-char typeahead. Items keep
- * their own click/Enter/Space activation. Safe to call unconditionally; it is a no-op without menuitems.
+ * WAI-ARIA menu keyboard nav for a container of `[role="menuitem"]` elements: roving tabindex,
+ * Arrow/Home/End movement, and printable-char typeahead. Items keep their own click/Enter/Space
+ * activation. A no-op when the container holds no menuitems.
  */
 export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
   const typeaheadRef = useRef({ buffer: '', timer: 0 });
@@ -39,8 +39,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     const initialItems = getMenuItems(container);
     if (initialItems.length === 0) return; // not a menu, leave focus handling to FocusTrap
 
-    // Set up roving tabindex so Tab moves out of the menu and FocusTrap.initialFocus
-    // lands on the first item and does not skip every -1 element.
+    // Roving tabindex up front so FocusTrap.initialFocus lands on the first item
     applyRovingTabindex(initialItems, 0);
 
     // Focus the first item after competing focus managers settle so arrow navigation has a target.
@@ -55,9 +54,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
       if (event.defaultPrevented) return;
       if (event.altKey || event.ctrlKey || event.metaKey) return;
 
-      // Skip typing contexts. Only one dropdowner menu can be open at a time,
-      // so we don't need to gate by focus location; if a text field is the
-      // target the user is typing into it, not navigating the menu.
+      // A text field as target means the user is typing, not navigating the menu
       const target = event.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
@@ -127,9 +124,7 @@ export function useMenuKeyNav(containerRef: RefObject<HTMLElement | null>) {
     };
 
     container.addEventListener('focusin', onFocusIn);
-    // Document-level keydown in CAPTURE phase so neither the Base UI popup nor
-    // FocusTrap can stopPropagation on us before we see the key. Only one
-    // dropdowner menu is open at a time, so this is safe.
+    // Capture phase: the Base UI popup and FocusTrap would otherwise stopPropagation first
     document.addEventListener('keydown', onKeyDown, true);
     return () => {
       window.clearTimeout(focusTimer);

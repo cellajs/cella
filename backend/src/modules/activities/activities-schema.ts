@@ -6,25 +6,20 @@ import { entityTypeSchema, paginationQuerySchema } from '#/schemas';
 import { nullableStxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { mockActivityResponse } from './activities-mocks';
 
-/** Schema for activity actions enum - uses literal types from activityActions */
 export const activityActionSchema = z.enum(activityActions);
 
-/** Schema for resource types enum - uses literal types from appConfig */
 const resourceTypeSchema = z.enum(appConfig.resourceTypes);
 
-/** Schema for activity event types enum - uses literal types from trackedEventTypes */
 const activityEventTypeSchema = z.enum(trackedEventTypes);
 
-/** Full activity schema derived from table, with proper stx and changedFields typing */
 export const activitySchema = z
   .object({
     ...createSelectSchema(activitiesTable).shape,
-    // Override enum columns with explicit schemas to preserve literal types for OpenAPI/Drizzle compatibility
+    // Explicit enum and jsonb schemas keep literal types in OpenAPI
     entityType: entityTypeSchema.nullable(),
     resourceType: resourceTypeSchema.nullable(),
     action: activityActionSchema,
     type: activityEventTypeSchema,
-    // Override jsonb columns with properly typed schemas to avoid generic types in OpenAPI
     changedFields: z.array(z.string()).nullable(),
     stx: nullableStxBaseSchema,
   })
@@ -33,7 +28,6 @@ export const activitySchema = z
     example: mockActivityResponse(),
   });
 
-/** Query schema for filtering and paginating activities */
 export const activityListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt', 'type', 'tableName']).default('createdAt'),
   userId: activitySchema.shape.userId.optional(),

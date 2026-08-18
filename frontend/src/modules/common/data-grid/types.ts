@@ -4,7 +4,6 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export type Maybe<T> = T | undefined | null;
 
-/** Supported breakpoint keys for responsive features */
 export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 /** Placement of a merged column relative to the host cell content (Base UI positioning vocabulary) */
@@ -13,18 +12,12 @@ export type TileSide = 'top' | 'right' | 'bottom' | 'left';
 /** Column display modes; mobile overrides compact properties when both are active. */
 export type GridMode = 'compact' | 'mobile';
 
-/** Which display modes are currently active */
 export type ActiveModes = Readonly<Record<GridMode, boolean>>;
 
-/**
- * Merge this column into another column's cell while a mode is active.
- * The column stops being a grid column (no track, no header, no cell focus)
- * and renders its `renderCell` output inside the host cell.
- */
+/** Merge this column into another column's cell while a mode is active: it leaves the grid (no track, header or focus) and renders inside the host cell. */
 export interface ColumnMergeRule {
   /** Key of the host column to merge into. Must resolve to a non-merged, currently visible column. */
   readonly into: string;
-  /** Placement relative to the host cell content */
   readonly side: TileSide;
   /** Ordering among columns merged to the same side (lower first; ties keep column order) */
   readonly order?: Maybe<number>;
@@ -34,45 +27,32 @@ export interface ColumnMergeRule {
 
 /** Per-column overrides applied while the given display mode is active */
 export interface ColumnModeOverrides {
-  /** Width override while this mode is active */
   readonly width?: Maybe<number | string>;
-  /** Minimum width override while this mode is active */
   readonly minWidth?: Maybe<number>;
-  /** Maximum width override while this mode is active */
   readonly maxWidth?: Maybe<number>;
-  /** Merge this column into a host cell while this mode is active */
   readonly merge?: Maybe<ColumnMergeRule>;
 }
 
-/** A column merged into a host cell, plus its slot wrapper class */
 export interface MergedSlot<TRow, TSummaryRow = unknown> {
   readonly column: CalculatedColumn<TRow, TSummaryRow>;
   readonly className?: Maybe<string>;
 }
 
-/** Columns merged into a host cell, grouped by placement side */
 export type MergedSlots<TRow, TSummaryRow = unknown> = Readonly<
   Record<TileSide, readonly MergedSlot<TRow, TSummaryRow>[]>
 >;
 
-/** Cell position in the grid */
 export interface Position {
   readonly idx: number;
   readonly rowIdx: number;
 }
 
-/**
- * A range of selected cells defined by start and end positions.
- * The range is inclusive and normalized (start <= end).
- */
+/** Inclusive, normalized range of selected cells (start <= end). */
 export interface CellRange {
   readonly start: Position;
   readonly end: Position;
 }
 
-/**
- * Args passed to onSelectedCellRangeChange callback
- */
 export interface SelectedCellRangeChangeArgs<R, SR> {
   range: CellRange | null;
   cells?: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }>;
@@ -103,32 +83,23 @@ export interface Column<TRow, TSummaryRow = unknown> {
   readonly minWidth?: Maybe<number>;
   /** Maximum column width in pixels */
   readonly maxWidth?: Maybe<number>;
-  /** Class name(s) for cells */
   readonly cellClass?: Maybe<string | ((row: TRow) => Maybe<string>)>;
-  /** Class name(s) for the header cell */
   readonly headerCellClass?: Maybe<string>;
 
-  /** Render function to render the content of cells */
   readonly renderCell?: Maybe<(props: RenderCellProps<TRow, TSummaryRow>) => ReactNode>;
-  /** Render function to render the content of the header cell */
   readonly renderHeaderCell?: Maybe<(props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode>;
 
-  /** Render function to render the content of edit cells. When set, the column is automatically set to be editable */
+  /** Renders edit-cell content. Setting it makes the column editable. */
   readonly renderEditCell?: Maybe<(props: RenderEditCellProps<TRow, TSummaryRow>) => ReactNode>;
-  /** Enables cell editing. If set and no editor property specified, then a textinput will be used as the cell editor */
+  /** Enables cell editing; without `renderEditCell` a text input is used. */
   readonly editable?: Maybe<boolean | ((row: TRow) => boolean)>;
   readonly colSpan?: Maybe<(args: ColSpanArgs<TRow, TSummaryRow>) => Maybe<number>>;
-  /** Determines whether column is frozen */
   readonly frozen?: Maybe<boolean>;
-  /** Enable resizing of the column */
   readonly resizable?: Maybe<boolean>;
-  /** Enable sorting of the column */
   readonly sortable?: Maybe<boolean>;
-  /** Enable dragging of the column */
   readonly draggable?: Maybe<boolean>;
   /** Mark cells as row drag sources; drop targets remain active on every column. */
   readonly rowDragHandle?: Maybe<boolean>;
-  /** Sets descending as the column's initial sort order. */
   readonly sortDescendingFirst?: Maybe<boolean>;
   /**
    * Muted-text placeholder shown only when `renderCell` returns null/undefined.
@@ -151,18 +122,10 @@ export interface Column<TRow, TSummaryRow = unknown> {
 
   /** Wrap to a numeric line cap or effectively unlimited lines, expanding beyond base row height. */
   readonly wrapText?: Maybe<number | boolean>;
-  /**
-   * Overrides the default newline-counting heuristic for variable row height.
-   * Receives the column's rendered pixel width so estimates can track resizing
-   * and viewport size (see {@link estimateWrappedLines}).
-   */
+  /** Overrides the newline-counting heuristic for row height; receives the rendered pixel width (see {@link estimateWrappedLines}). */
   readonly estimateLines?: (row: TRow, ctx: EstimateLinesContext) => number;
-  /**
-   * Override widths or merge into a host per display mode; mobile properties win over compact.
-   * Missing hosts disable their merge and restore normal visibility.
-   */
+  /** Per-mode width and merge overrides; mobile wins over compact, and a missing host disables its merge. */
   readonly modes?: Maybe<Partial<Record<GridMode, ColumnModeOverrides>>>;
-  /** Options for cell editing */
   readonly editorOptions?: Maybe<{
     /** Select a text or picker cursor for the cell editor affordance. */
     readonly editorType?: Maybe<'text' | 'select'>;
@@ -198,15 +161,12 @@ export interface CalculatedColumn<TRow, TSummaryRow = unknown> extends Column<TR
   readonly focusable: boolean;
   readonly renderCell: (props: RenderCellProps<TRow, TSummaryRow>) => ReactNode;
   readonly renderHeaderCell: (props: RenderHeaderCellProps<TRow, TSummaryRow>) => ReactNode;
-  /**
-   * Columns merged into this column's cells via an active mode merge rule (§`modes`).
-   * Only set on host columns; merged columns themselves are excluded from the grid's columns.
-   */
+  /** Columns merged in by an active `modes` rule. Set only on host columns; merged columns leave the grid's columns. */
   readonly mergedSlots?: Maybe<MergedSlots<TRow, TSummaryRow>>;
 }
 
 export interface ColumnGroup<R, SR = unknown> {
-  /** The name of the column group, it will be displayed in the header cell */
+  /** Displayed in the group header cell. */
   readonly name: string | ReactElement;
   readonly headerCellClass?: Maybe<string>;
   readonly children: readonly ColumnOrColumnGroup<R, SR>[];
@@ -258,11 +218,7 @@ interface BaseCellRendererProps<TRow, TSummaryRow = unknown> extends Omit<React.
   onCellContextMenu?: CellMouseEventHandler<TRow, TSummaryRow>;
   rowIdx: number;
   selectCell: (position: Position, options?: SelectCellOptions) => void;
-  /**
-   * Enables cell selection + the cell-level roving tab index. When false, the
-   * gridcell wrapper drops out of the tab order and interactive children
-   * (buttons, links) fall back to natural DOM tab order.
-   */
+  /** Enables the cell-level roving tab index. When false the gridcell leaves the tab order and children follow DOM order. */
   isCellSelectionEnabled: boolean;
 }
 
@@ -272,7 +228,6 @@ export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererPr
   colSpan: number | undefined;
   isDraggedOver: boolean;
   isCellSelected: boolean;
-  /** Whether this cell is part of a selected range */
   isInSelectedRange?: boolean;
   /** Range boundary info for styling (only set when isInSelectedRange is true) */
   rangeBoundary?: { isTop: boolean; isBottom: boolean; isLeft: boolean; isRight: boolean };
@@ -339,19 +294,13 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
-  /**
-   * Row-box mode: render the row as a real subgrid box (not display:contents) and
-   * animate order changes via motion layout. Derived by DataGrid for draggable,
-   * non-virtualized, keyed tables without frozen columns.
-   */
+  /** Renders the row as a real subgrid box, not display:contents, and animates order changes with motion layout. */
   animateReorder?: boolean;
   lastFrozenColumnIndex: number;
   selectedCellEditor: ReactElement<RenderEditCellProps<TRow>> | undefined;
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
   rowClass: Maybe<(row: TRow, rowIdx: number) => Maybe<string>>;
-  /** Render function for individual cells */
   renderCell: (key: Key, props: CellRendererProps<TRow, TSummaryRow>) => ReactNode;
-  /** Current cell range for range selection styling */
   selectedCellRange?: CellRange | null;
 }
 
@@ -382,7 +331,6 @@ export interface CellCopyArgs<TRow, TSummaryRow = unknown> extends CellCopyPaste
 }
 
 export interface CellPasteArgs<TRow, TSummaryRow = unknown> extends CellCopyPasteArgs<TRow, TSummaryRow> {
-  /** The pasted text value */
   pastedValue: string;
 }
 

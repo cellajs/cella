@@ -1,10 +1,7 @@
 import { appConfig } from 'shared';
 import type { CdcRowData } from '../types';
 
-/**
- * Permission-only row fields carried for per-subscriber SSE visibility checks.
- * App-specific permission inputs must be added here; content never belongs in batch metadata.
- */
+/** Fields carried for per-subscriber SSE visibility checks; content never belongs in batch metadata. */
 const permissionRowKeys: Set<string> = (() => {
   const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);
   for (const channelType of appConfig.channelEntityTypes) {
@@ -13,7 +10,7 @@ const permissionRowKeys: Set<string> = (() => {
   return keys;
 })();
 
-/** Pick the permission-relevant subset of a row (null-safe passthrough). */
+/** Null-safe passthrough. */
 export function pickPermissionRowData(rowData: CdcRowData | null | undefined): CdcRowData | null {
   if (!rowData) return null;
   const slim: Record<string, unknown> = {};

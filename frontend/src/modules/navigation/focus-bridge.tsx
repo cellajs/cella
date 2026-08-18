@@ -4,28 +4,19 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-/**
- * Stable element IDs used by the focus bridge system.
- * Defined here so both FocusBridge (source) and FocusTarget (destination) reference the same values.
- */
+/** Shared by FocusBridge (source) and FocusTarget (destination). */
 export const focusTargets = {
   sheet: 'focus-target-sheet',
   content: 'focus-target-content',
   sidebar: 'focus-target-sidebar',
 } as const;
 
-/**
- * Invisible focus landing zone. Place this inside the container you want
- * a FocusBridge to jump to. Receives programmatic focus via `focusById`.
- */
+/** Invisible landing zone: place it inside the container a FocusBridge should jump to. */
 export function FocusTarget({ target }: { target: keyof typeof focusTargets }) {
   return <div id={focusTargets[target]} tabIndex={-1} className="sr-only" />;
 }
 
-/**
- * Focus a specific element by ID. Adds `tabindex=-1` when needed, which is more
- * reliable than querySelector chains for portaled content.
- */
+/** Adds `tabindex=-1` when needed, so portaled content can take focus. */
 function focusById(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -38,7 +29,6 @@ interface FocusBridgeProps {
   className?: string;
 }
 
-/** Keyboard skip link between sidebar and sheet, using stable IDs across portals and focus managers. */
 export function FocusBridge({ direction, className }: FocusBridgeProps) {
   const { t } = useTranslation();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
@@ -60,7 +50,7 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
   const handleClick = () => {
     if (direction !== 'to-sheet' && !useNavigationStore.getState().keepNavOpen) {
       useSheeter.getState().remove('nav-sheet');
-      // Re-focus after @base-ui's finalFocus restoration completes
+      // Waits for @base-ui's finalFocus restoration to complete.
       requestAnimationFrame(() => focusById(targets[direction]));
       return;
     }

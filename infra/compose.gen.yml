@@ -1,4 +1,4 @@
-# DO NOT EDIT — generated from infra/compose/ by `pnpm --filter infra compose:synth`.
+# DO NOT EDIT: generated from infra/compose/ by `pnpm --filter infra compose:generate`.
 # Edit services.config.ts (the app-owned service registry) and re-run synth.
 # Deploy machinery and rationale live in infrastructure.ts.
 

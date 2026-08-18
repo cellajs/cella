@@ -9,9 +9,6 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 const pwaEnabled = appConfig.has.pwa;
 
-/**
- * Preferences content: appearance toggles and offline settings.
- */
 export function PreferencesContent() {
   const { t } = useTranslation();
 
@@ -26,7 +23,6 @@ export function PreferencesContent() {
 
   return (
     <>
-      {/* Appearance */}
       <div className="mb-6 flex flex-col gap-4 pt-3">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:appearance')}</h3>
 
@@ -68,7 +64,6 @@ export function PreferencesContent() {
         )}
       </div>
 
-      {/* Offline */}
       {pwaEnabled && (
         <div className="flex flex-col gap-4 pb-8">
           <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:offline')}</h3>

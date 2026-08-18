@@ -25,10 +25,7 @@ import type { MutationData } from '~/query/types';
 type TenantFilters = Omit<NonNullable<GetTenantsData['query']>, 'limit' | 'offset'>;
 type TenantsListParams = TenantFilters & { limit?: number };
 
-/**
- * Query keys for tenant operations.
- * Tenants are resources (not entities), so we define keys manually.
- */
+/** Tenants are resources, not entities, so their query keys are defined manually. */
 const tenantQueryKeys = {
   list: {
     base: ['tenant', 'list'] as const,
@@ -38,9 +35,6 @@ const tenantQueryKeys = {
   update: ['tenant', 'update'] as const,
 };
 
-/**
- * Infinite query options for fetching a paginated list of tenants.
- */
 export const tenantsListQueryOptions = (params: TenantsListParams) => {
   const defaults = tenantsSearchDefaults;
   const {
@@ -64,10 +58,7 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
   });
 };
 
-/**
- * Mutation hook for self-serve tenant creation (each new organization mints its own tenant).
- * Invalidates the tenant list so the new workspace appears, matching the other tenant mutations.
- */
+/** Self-serve tenant creation: every new organization mints its own tenant. */
 export const useSelfCreateTenantMutation = () => {
   const queryClient = useQueryClient();
 
@@ -80,9 +71,6 @@ export const useSelfCreateTenantMutation = () => {
   });
 };
 
-/**
- * Mutation hook for updating a tenant.
- */
 export const useTenantUpdateMutation = () => {
   const queryClient = useQueryClient();
 
@@ -95,9 +83,6 @@ export const useTenantUpdateMutation = () => {
   });
 };
 
-/**
- * Query keys for domain operations.
- */
 const domainQueryKeys = {
   list: (tenantId: string) => ['domain', 'list', tenantId] as const,
   detail: (tenantId: string, id: string) => ['domain', 'detail', tenantId, id] as const,
@@ -106,27 +91,18 @@ const domainQueryKeys = {
   verify: ['domain', 'verify'] as const,
 };
 
-/**
- * Query options for fetching domains of a tenant.
- */
 export const domainsQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: domainQueryKeys.list(tenantId),
     queryFn: () => getDomains({ path: { tenantId } }),
   });
 
-/**
- * Query options for fetching a single domain with its verification token.
- */
 export const domainDetailQueryOptions = (tenantId: string, id: string) =>
   queryOptions({
     queryKey: domainQueryKeys.detail(tenantId, id),
     queryFn: () => getDomain({ path: { tenantId, id } }),
   });
 
-/**
- * Mutation hook for adding a domain to a tenant.
- */
 export const useDomainCreateMutation = () => {
   const queryClient = useQueryClient();
 
@@ -140,9 +116,6 @@ export const useDomainCreateMutation = () => {
   });
 };
 
-/**
- * Mutation hook for removing a domain from a tenant.
- */
 export const useDomainDeleteMutation = () => {
   const queryClient = useQueryClient();
 
@@ -156,9 +129,6 @@ export const useDomainDeleteMutation = () => {
   });
 };
 
-/**
- * Mutation hook for verifying a domain via DNS TXT record lookup.
- */
 export const useDomainVerifyMutation = () => {
   const queryClient = useQueryClient();
 

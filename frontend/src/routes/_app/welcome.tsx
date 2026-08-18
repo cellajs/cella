@@ -6,9 +6,6 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const WelcomePage = lazyNamed(() => import('~/modules/home/welcome-page'), 'WelcomePage');
 
-/**
- * Welcome page shown to new users during onboarding.
- */
 export const Route = createFileRoute('/_app/welcome')({
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Welcome') }] }),

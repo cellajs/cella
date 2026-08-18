@@ -32,8 +32,7 @@ describe('publicationRowFilter', () => {
   });
 
   it('the publication filter and the API read predicate express the SAME condition', () => {
-    // The replication boundary and the read boundary must never drift apart: compile the
-    // drizzle predicate and compare it (normalized) with the publication WHERE constant.
+    // The replication boundary and the read boundary must not drift: compare the compiled predicate with the constant.
     const predicate = publishedRowsPredicate(draftProduct);
     expect(predicate).toBeDefined();
     const compiled = new PgDialect().sqlToQuery(predicate as ReturnType<typeof sql.raw>).sql;

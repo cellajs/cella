@@ -11,7 +11,6 @@ import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 
 const LIMIT = appConfig.requestLimits.users;
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
 function rowKeyGetter(row: BaseUser) {
   return row.id;
 }
@@ -19,7 +18,6 @@ function rowKeyGetter(row: BaseUser) {
 function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
-  // Table state
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
@@ -40,7 +38,6 @@ function UsersTable() {
     select: ({ pages }) => pages.flatMap(({ items }) => items),
   });
 
-  // isFetching already includes next page fetch scenario
   const fetchMore = async () => {
     if (!hasNextPage || isLoading || isFetching) return;
     await fetchNextPage();

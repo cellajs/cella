@@ -7,8 +7,7 @@ interface Match {
   parent: Parents;
 }
 
-// `raw` is an unofficial HAST node used by rehype to pass through HTML verbatim.
-// Model it locally to avoid `any` casts while keeping the rest of the tree typed.
+// `raw` is an unofficial HAST node rehype uses to pass HTML through verbatim.
 interface Raw extends Literal {
   type: 'raw';
   value: string;
@@ -18,11 +17,7 @@ interface ParentWithRaw {
   children: (Content | Raw)[];
 }
 
-/**
- * Returns a rehype plugin that replaces `<jsx-email-cond>` elements (from the
- * Conditional component) with conditional comment wrappers, based on the
- * `data-mso` and `data-expression` attributes.
- */
+/** Replaces `<jsx-email-cond>` elements with conditional comment wrappers, per `data-mso` / `data-expression`. */
 export const getConditionalPlugin = async () => {
   return function conditionalPlugin() {
     return function transform(tree: Root) {
@@ -59,13 +54,12 @@ export const getConditionalPlugin = async () => {
           const expression = exprAttr || (msoAttr === true ? 'mso' : void 0);
           if (expression) {
             openRaw = `<!--[if ${expression}]>`;
-            // Older Outlook/Word parsers prefer the self-closing `<![endif]/-->`
-            // terminator, which avoids comment spillover when comments are adjacent.
+            // Older Outlook/Word parsers need the self-closing `<![endif]/-->` terminator:
+            // adjacent comments otherwise spill over.
             closeRaw = '<![endif]/-->';
           }
         }
 
-        // If no directive attributes present, leave the element in place.
         // eslint-disable-next-line no-continue
         if (!openRaw || !closeRaw) continue;
 
@@ -75,16 +69,12 @@ export const getConditionalPlugin = async () => {
 
         if (toHead && headEl) {
           if (parent === headEl) {
-            // Replace in place: open raw, original children, close raw.
             (parent as ParentWithRaw).children.splice(index, 1, before, ...children, after);
           } else {
-            // Remove wrapper from current location
             (parent as ParentWithRaw).children.splice(index, 1);
-            // Append the conditional to the <head>
             (headEl as unknown as ParentWithRaw).children.push(before, ...children, after);
           }
         } else {
-          // Replace in place: open raw, original children, close raw.
           (parent as ParentWithRaw).children.splice(index, 1, before, ...children, after);
         }
       }

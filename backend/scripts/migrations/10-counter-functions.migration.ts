@@ -44,7 +44,7 @@ $$;
 
   return {
     tag: 'counter_functions',
-    title: 'Counter functions — apply_count_deltas',
+    title: 'Counter functions, apply_count_deltas',
     sql: migrationSql,
     notes: ['Function: apply_count_deltas(existing jsonb, deltas jsonb) → jsonb'],
   };

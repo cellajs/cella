@@ -92,8 +92,7 @@ const EntityTile = ({ Icon, label, delay = 0 }: Entity & { delay?: number }) => 
   );
 };
 
-// Dashed primary border, echoing the flowing dashes in the sync diagram. Measured in real
-// pixels so the rounded rect tracks the card at any breakpoint. `animated` makes the dashes flow.
+// Measured in real pixels so the rounded rect tracks the card at any breakpoint.
 const DashedBorder = ({ animated = false }: { animated?: boolean }) => {
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -179,14 +178,9 @@ const Bucket = ({
   );
 };
 
-/**
- * Conceptual two-bucket illustration of selective sync, wrapped in an open-top container.
- * A toggle swaps between example app configs to show the split holds for different setups.
- */
 export const EntityBuckets = () => {
   const { t } = useTranslation();
   const [config, setConfig] = useState<ConfigKey>('todo');
-  // "Try me" hint nudges the user to interact; hidden as soon as they switch config.
   const [hint, setHint] = useState(true);
   const active = configs[config];
 
@@ -237,7 +231,6 @@ export const EntityBuckets = () => {
             staggerOffset={1}
           />
         </div>
-        {/* Foundation caption sits on the floor of the U: covers everything above it */}
         <p className="mt-5 text-center font-medium text-xs sm:mt-8 sm:text-sm">
           {t('about:entity_buckets.foundation')}
         </p>

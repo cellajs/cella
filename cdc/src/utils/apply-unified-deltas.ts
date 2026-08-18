@@ -10,11 +10,9 @@ import { isMaxMergeKey } from './update-counts';
 // ── Counter upsert ───────────────────────────────────────────────────────────
 
 /**
- * UPSERT a single channel_counters row using the apply_count_deltas PG function.
- * The function merges JSONB deltas with GREATEST(0, existing + delta) per key
- * (max-merge for `e:li:`/`e:lu:`/`e:f:` keys).
- *
- * Fixed SQL shape enables PostgreSQL plan caching across repeated executions.
+ * UPSERTs one channel_counters row through apply_count_deltas, which merges JSONB deltas as
+ * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
+ * fixed so PostgreSQL can cache the plan.
  */
 async function mergedUpsert(
   channelKey: string,
@@ -56,10 +54,8 @@ async function mergedUpsert(
 // ── Batch execution ──────────────────────────────────────────────────────────
 
 /**
- * Add each source delta into `target` in place, summing on key collision.
- * Max-merge keys (`e:li:`/`e:lu:` stamps, `e:f:` frontiers) keep the max
- * (summing two timestamps or frontiers would corrupt them, since
- * apply_count_deltas only moves those keys forward). Exported for tests.
+ * Adds `source` into `target` in place, summing on key collision. Max-merge keys keep the max, since
+ * apply_count_deltas only ever moves stamps and frontiers forward.
  */
 export function sumInto(
   target: Record<string, number>,
@@ -74,9 +70,9 @@ export function sumInto(
 }
 
 /**
- * Applies a batch delta plan and stamps each eligible event with organization sequence.
- * The first phase reserves WAL-ordered sequence ranges; the second writes ancestor frontiers,
- * remaining counts, and row sequence values.
+ * Applies a batch delta plan and stamps eligible events with an organization sequence. Phase 1
+ * reserves WAL-ordered sequence ranges; phase 2 writes ancestor frontiers, remaining counts, and the
+ * row seq values.
  */
 export async function applyBatchUnifiedDeltas(
   plan: BatchUnifiedDeltaPlan,
@@ -86,12 +82,12 @@ export async function applyBatchUnifiedDeltas(
 
   const handledChannelKeys = new Set<string>();
   const allProductStamps: Array<{ tableName: string; id: string; seq: number }> = [];
-  /** e:f: (and org-row leftovers) accumulated for phase 2, keyed by channel node. */
+  /** `e:f:` deltas and org-row leftovers for phase 2, keyed by channel node. */
   const phase2Deltas = new Map<string, Record<string, number>>();
 
   // Phase 1: one sequential RETURNING UPSERT per organization sequence.
   for (const group of orgSequenceGroups) {
-    // Merge the sequence reservation with any count deltas for the org row itself.
+    // The sequence reservation merges with any count deltas for the org row itself.
     const mergedDeltas = sumInto({ sequence: group.count }, countDeltasByChannelKey.get(group.orgKey));
     handledChannelKeys.add(group.orgKey);
 
@@ -105,16 +101,13 @@ export async function applyBatchUnifiedDeltas(
       rowData.seq = seq;
       allProductStamps.push({ tableName: getTableName(tableMeta.table), id: rowData.id, seq });
 
-      // Roll each delta-fetchable stamped event into organization and populated-ancestor frontiers.
-      // Drafts are filtered, while unpublishes use unstamped delete invalidation.
+      // Frontiers roll up to the organization and every populated ancestor.
       const nodes = frontierNodeKeys(tableMeta.type, rowData, activity.organizationId ?? group.orgKey, h);
       const frontierKey = `e:f:${tableMeta.type}`;
       for (const node of nodes) {
         mergeDelta(phase2Deltas, node, { [frontierKey]: seq });
       }
-      // Self: e:f:h:{type} at the HOME node only (deepest non-null ancestor, org fallback).
-      // Answers self views (rows homed at the node), mirroring the e:li:h:/e:lu:h: placement rule.
-      // frontierNodeKeys order is [org, mostSpecific, …, nearRoot], so home is nodes[1] ?? org.
+      // Self frontier at the home node only; frontierNodeKeys returns [org, mostSpecific, ...], so home is nodes[1].
       const home = nodes[1] ?? nodes[0] ?? group.orgKey;
       mergeDelta(phase2Deltas, home, { [`e:f:h:${tableMeta.type}`]: seq });
     }
@@ -138,7 +131,7 @@ export async function applyBatchUnifiedDeltas(
     phase2.push(mergedUpsert(channelKey, deltas));
   }
 
-  // Bulk entity seq stamp: one UPDATE ... FROM VALUES per table
+  // Bulk seq stamp: one UPDATE ... FROM VALUES per table.
   if (allProductStamps.length > 0) {
     const byTable = new Map<string, Array<{ id: string; seq: number }>>();
     for (const stamp of allProductStamps) {

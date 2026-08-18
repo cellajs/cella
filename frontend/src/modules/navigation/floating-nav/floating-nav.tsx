@@ -6,23 +6,19 @@ import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/fl
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 interface FloatingNavProps {
-  /** Items to render as floating buttons */
   items: FloatingNavItem[];
-  /** Ref to scroll container for visibility tracking (defaults to window) */
+  /** Defaults to window. */
   scrollContainerRef?: RefObject<HTMLElement | null>;
-  /** Custom body class to add when floating nav is active */
   bodyClass?: string;
-  /** When this value changes, visibility is reset to visible */
+  /** Any change to this value resets visibility to visible: pass a page key, sidebar state, etc. */
   resetTrigger?: unknown;
 }
 
-/** Renders the floating nav component. */
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);
   const setFloatingNavActive = useNavigationStore((state) => state.setFloatingNavActive);
 
-  // Reset visibility when resetTrigger changes (e.g., page change, sidebar toggle)
   useEffect(() => {
     if (resetTrigger !== undefined) reset();
   }, [resetTrigger, reset]);

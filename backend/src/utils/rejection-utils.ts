@@ -1,16 +1,13 @@
-/** Rejection state passed through the pipeline */
 export type RejectionState = {
   rejectedIds: string[];
   rejectionReasons: Record<string, string[]>;
 };
 
-/** Create empty rejection state */
 export const createRejectionState = (): RejectionState => ({
   rejectedIds: [],
   rejectionReasons: {},
 });
 
-/** Add a single rejection (immutable) */
 export const reject = (rejectionState: RejectionState, id: string, reason: string): RejectionState => ({
   rejectedIds: [...rejectionState.rejectedIds, id],
   rejectionReasons: {
@@ -19,7 +16,6 @@ export const reject = (rejectionState: RejectionState, id: string, reason: strin
   },
 });
 
-/** Add multiple rejections with same reason (immutable) */
 export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => ({
   rejectedIds: [...rejectionState.rejectedIds, ...ids],
   rejectionReasons: {
@@ -28,7 +24,6 @@ export const rejectMany = (rejectionState: RejectionState, ids: string[], reason
   },
 });
 
-/** Merge two rejection states */
 export const mergeRejections = (a: RejectionState, b: RejectionState): RejectionState => {
   const merged = { ...a.rejectionReasons };
   for (const [reason, ids] of Object.entries(b.rejectionReasons)) {
@@ -40,7 +35,6 @@ export const mergeRejections = (a: RejectionState, b: RejectionState): Rejection
   };
 };
 
-/** Filter items, rejecting those that fail the predicate */
 export const filterWithRejection = <T extends { id: string }>(
   items: T[],
   predicate: (item: T) => boolean,
@@ -58,7 +52,6 @@ export const filterWithRejection = <T extends { id: string }>(
   return { items: passed, rejectionState: newState };
 };
 
-/** Take up to restriction count of items, reject the rest */
 export const takeWithRestriction = <T extends { id: string }>(
   items: T[],
   restriction: number,

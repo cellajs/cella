@@ -8,8 +8,6 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
-// Sign out user and clear all stores and query cache
-/** Renders the sign out component. */
 export function SignOut() {
   const { t } = useTranslation();
 
@@ -31,7 +29,7 @@ export function SignOut() {
         console.error('Sign out error:', error);
         toaster.warning(t('c:already_signed_out'));
       }
-      // Force full page reload to ensure clean state
+      // Full page reload so every store and cache is rebuilt
       window.location.href = appConfig.aboutUrl;
     };
 

@@ -3,7 +3,6 @@ import { MinusIcon } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-/** Renders the styled one-time-password input primitive. */
 export function InputOTP({
   className,
   containerClassName,
@@ -21,12 +20,10 @@ export function InputOTP({
   );
 }
 
-/** Groups one-time-password input slots. */
 export function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="input-otp-group" className={cn('flex items-center', className)} {...props} />;
 }
 
-/** Renders one styled one-time-password input slot. */
 export function InputOTPSlot({
   index,
   className,
@@ -56,7 +53,6 @@ export function InputOTPSlot({
   );
 }
 
-/** Separates groups of one-time-password input slots. */
 export function InputOTPSeparator({ ...props }: React.ComponentProps<'div'>) {
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: required for layout

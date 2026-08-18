@@ -3,24 +3,17 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { type ChannelRouteEntry, channelRouteConfig } from '~/routes-config';
 
-/**
- * Nav hint for entity-page links: lands forward navigation on the header (`id="pt"`) via
- * `scrollIntoView`; on back/forward the router restores cached scroll and ignores it.
- */
+/** Nav hint for entity links: lands forward navigation on the header (`id="pt"`); back/forward keeps cached scroll. */
 export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {
   hash: 'pt',
   hashScrollIntoView: { block: 'start', behavior: 'instant' },
 };
 
-/**
- * Resolve an entity to its route via `channelRouteConfig`. On cache miss, `beforeLoad` +
- * `rewriteUrlToSlug` redirect to the slug URL after load.
- */
+/** Resolves an entity to its route via `channelRouteConfig`; on a cache miss `beforeLoad` rewrites the id URL. */
 export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): EntityRoute => {
   const { entityType, slug, tenantId, ancestorSlugs = {} } = item;
 
-  // Narrow config keeps `path` a literal route type (for `to`); the widened view exposes the
-  // optional `subitemOf`, not a common member when `config` is a union in a deep-hierarchy app.
+  // Narrow `config` keeps `path` a literal route type; the widened `entry` exposes the optional `subitemOf`.
   const config = channelRouteConfig[entityType];
   const entry: ChannelRouteEntry = config;
 

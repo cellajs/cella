@@ -106,7 +106,6 @@ describe('Invitation response', async () => {
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(0);
 
-    // Check that inactive membership is marked as rejected
     const rejectedInactive = await db
       .select()
       .from(inactiveMembershipsTable)
@@ -151,7 +150,6 @@ describe('Invitation response', async () => {
 
     expect(res.status).toBe(404);
 
-    // Attacker gains no membership and the invitation stays pending.
     const attackerMemberships = await db
       .select()
       .from(membershipsTable)

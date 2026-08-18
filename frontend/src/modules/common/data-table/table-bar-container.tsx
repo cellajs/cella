@@ -12,7 +12,6 @@ interface TableBarContainerProps {
   searchVars?: Record<string, unknown>;
 }
 
-/** Renders the table bar container component. */
 export function TableBarContainer({
   children,
   className,
@@ -26,7 +25,6 @@ export function TableBarContainer({
   const isInitialRender = useRef(true);
   const serialized = searchVars ? JSON.stringify(searchVars) : undefined;
 
-  // Scroll table area into view when search/filter params change
   useEffect(() => {
     if (isInitialRender.current) {
       isInitialRender.current = false;

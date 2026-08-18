@@ -22,7 +22,6 @@ export const MarketingNav = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useBreakpointBelow('sm');
 
-  // Track scroll position for scroll-to-top button visibility (mobile floating nav)
   const { scrollTop } = useScrollVisibility(isMobile);
   const showScrollTop = scrollTop > 300;
 
@@ -73,7 +72,6 @@ export const MarketingNav = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Floating nav items for mobile
   const floatingNavItems: FloatingNavItem[] = [
     {
       id: 'marketing-menu',

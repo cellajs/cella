@@ -3,13 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { describeMcpTools, getMcpTools } from '#/modules/mcp/tool-source';
 
 /**
- * Minimal Model Context Protocol (MCP) server over JSON-RPC 2.0.
- *
- * Implements the core methods MCP clients rely on (`initialize`, `tools/list`,
- * `tools/call`, `ping`) and exposes Cella's server tool registry. Tools are the
- * same ones the in-app model runner uses, so an app declares a capability once
- * in `buildTools` and it is available to both surfaces.
- *
+ * Minimal Model Context Protocol server over JSON-RPC 2.0: `initialize`, `tools/list`, `tools/call`, `ping`.
  * @see https://modelcontextprotocol.io
  */
 const PROTOCOL_VERSION = '2025-06-18';
@@ -30,10 +24,7 @@ export interface JsonRpcResponse {
 
 const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersion };
 
-/**
- * Handle a single JSON-RPC message. Returns the response, or `null` for
- * notifications (messages without an `id`), which must not produce a reply.
- */
+/** Returns `null` for notifications (messages without an `id`), which must not get a reply. */
 export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;
@@ -71,8 +62,7 @@ export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       try {
-        // `tools/call` returns one result and carries no event stream, so custom events are
-        // dropped. The callback must still be present: tools may invoke it unconditionally.
+        // `tools/call` has no event stream, so custom events are dropped; the callback must exist because tools may call it.
         const output = await tool.execute?.(args, {
           toolCallId: String(id),
           emitCustomEvent: () => undefined,

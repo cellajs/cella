@@ -9,7 +9,6 @@ import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
-/** Opens update sheet. */
 export function openUpdateSheet(tenant: Tenant, buttonRef: RefObject<HTMLButtonElement | null>) {
   useSheeter.getState().create(
     <div className="container w-full">
@@ -43,7 +42,6 @@ interface Props {
   tabIndex: number;
 }
 
-/** Renders the update table row. */
 export function UpdateRow({ tenant, tabIndex }: Props) {
   const buttonRef = useRef(null);
 

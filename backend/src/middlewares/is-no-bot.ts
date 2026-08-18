@@ -4,10 +4,7 @@ import { isbot } from 'isbot';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/**
- * Middleware to block bot requests based on the User-Agent header.
- * If the request comes from a bot, a 400 error is returned. Otherwise, the request proceeds.
- */
+/** Rejects requests whose User-Agent identifies a bot with a 400. */
 export const isNoBot: MiddlewareHandler<Env> = createMiddleware<Env>(async (ctx, next) => {
   const userAgent = ctx.req.header('user-agent');
 

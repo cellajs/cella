@@ -19,16 +19,12 @@ interface Props {
   isSheet?: boolean;
 }
 
-/**
- * Profile page for a user
- */
 export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const { t } = useTranslation();
   const { user: currentUser } = useUserStore();
 
   const isSelf = !!currentUser && currentUser.id === user.id;
 
-  // Pick correct mutation hook
   const updateSelf = useUpdateSelfMutation();
   const updateUser = useUserUpdateMutation();
 

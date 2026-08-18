@@ -3,8 +3,7 @@ import { isBootstrapOwned } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
-/** Set one stack config key, exiting on failure. `secret` encrypts the value;
- *  `configFile` targets an alternate stack config file (the exposure overlay). */
+/** Set one stack config key, exiting on failure. `secret` encrypts the value; `configFile` targets an alternate stack config file. */
 export function pulumiConfigSet(
   env: NodeJS.ProcessEnv,
   stack: string,
@@ -33,7 +32,7 @@ export function pulumiConfigSet(
 export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
   if (result.status !== 0)
-    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?) — continuing.`);
+    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?): continuing.`);
 }
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
@@ -45,9 +44,7 @@ export type PermissionHint =
   | { kind: 'ci-grantable'; resource: string }
   | undefined;
 
-/** Scans pulumi-up stderr for a Scaleway "insufficient permissions: write <resource>"
- *  diagnostic and classifies the resource as bootstrap-owned vs CI-grantable.
- *  Returns undefined when no such error is present. Pure. */
+/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as bootstrap-owned or CI-grantable. */
 export function classifyPermissionError(stderr: string): PermissionHint {
   const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i);
   if (!m?.[1]) return undefined;
@@ -55,22 +52,14 @@ export function classifyPermissionError(stderr: string): PermissionHint {
   return isBootstrapOwned(resource) ? { kind: 'bootstrap-owned', resource } : { kind: 'ci-grantable', resource };
 }
 
-/**
- * Detects a Scaleway "secret ... already exists" conflict: a secret container
- * live in Scaleway but missing from Pulumi state (e.g. after a state restore),
- * so `up` fails trying to recreate it. Returns the secret name when the error
- * text carries one. Pure.
- */
+/** Detect a "secret ... already exists" conflict: the container is live in Scaleway but missing from Pulumi state, so `up` fails recreating it. Returns the secret name when the error text carries one. */
 export function classifyDuplicateSecretError(output: string): { name?: string } | undefined {
   const m = output.match(/secret[^\n]*already exists/i);
   if (!m) return undefined;
   return { name: m[0].match(/['"]([A-Za-z0-9][\w./-]*)['"]/)?.[1] };
 }
 
-/**
- * Extracts delete URNs whose provider returned not-found, making state pruning safe.
- * Update/read failures remain excluded because those resources should still exist.
- */
+/** Delete URNs whose provider returned not-found, so pruning them from state is safe. Update and read failures are excluded: those resources still exist. */
 export function parseOrphanedDeletes(output: string): string[] {
   const urns = new Set<string>();
   const lines = output.split('\n');
@@ -85,9 +74,7 @@ export function parseOrphanedDeletes(output: string): string[] {
   return [...urns];
 }
 
-/** `pulumi state delete --yes` each URN. Returns true when all succeeded; a
- *  refusal (e.g. a dependent still references the entry) is reported and the
- *  entry left in place. */
+/** `pulumi state delete --yes` each URN. A refusal (a dependent still references the entry) is reported and the entry left in place. */
 export function pruneOrphanedDeletes(urns: string[], stack: string, cwd: string, env: NodeJS.ProcessEnv): boolean {
   let ok = true;
   for (const urn of urns) {
@@ -112,10 +99,7 @@ export interface PulumiUpResult {
   output: string;
 }
 
-/** Runs `pulumi up --stack <s> --yes --non-interactive` in `cwd` with `env`.
- *  `configFile` swaps the stack config for an alternate file (`--config-file`),
- *  used by the DB-exposure overlay. On non-zero exit, prints a permission hint
- *  when stderr indicates one. */
+/** Run `pulumi up --yes --non-interactive` in `cwd`. `configFile` swaps the stack config for the DB-exposure overlay; a non-zero exit prints a permission hint when stderr indicates one. */
 export async function runPulumiUpWithHint(
   stack: string,
   cwd: string,
@@ -126,9 +110,7 @@ export async function runPulumiUpWithHint(
   console.info(
     `\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${configFileArgs.map((a) => ` ${a}`).join('')}`,
   );
-  // stdout is teed, not inherited, so the Diagnostics section reaches
-  // parseOrphanedDeletes; with --non-interactive pulumi already uses the plain
-  // (non-TTY) display, so piping does not change what the operator sees.
+  // stdout is teed, not inherited, so the Diagnostics section reaches parseOrphanedDeletes; --non-interactive already forces the plain display, so piping changes nothing for the operator.
   const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...configFileArgs], {
     cwd,
     env,

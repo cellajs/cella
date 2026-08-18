@@ -1,14 +1,11 @@
 import { queryClient } from '~/query/query-client';
 
-/**
- * Fetches data via React Query (for retries/error handling) and caches it under id.
- * Uses a unique throwaway query key with gcTime: 0 so no stale slug-based entries remain.
- */
+/** Fetches through React Query for its retry and error handling, then caches under the id. The throwaway key with gcTime 0 leaves no stale slug-based entry. */
 export async function fetchSlugCacheId<T extends { id: string }>(
   fetcher: () => Promise<T>,
   cacheKey: (id: string) => readonly unknown[],
 ): Promise<T> {
-  // Generate unique key to prevent cache collisions between different entity fetches
+  // Unique per call, so concurrent entity fetches cannot collide.
   const uniqueKey = `slug-fetch-${Date.now()}-${Math.random()}`;
   const data = await queryClient.fetchQuery({
     queryKey: [uniqueKey],

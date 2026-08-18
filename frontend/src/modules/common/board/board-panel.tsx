@@ -9,7 +9,6 @@ interface BoardPanelHeaderProps {
   className?: string;
 }
 
-/** Renders the board panel header. */
 export function BoardPanelHeader({ leading, title, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
     <div
@@ -33,7 +32,7 @@ export function BoardPanelHeader({ leading, title, actions, isCollapsed, classNa
 interface BoardPanelBodyProps {
   children: ReactNode;
   hasSelection?: boolean;
-  /** When true, panel grows with content (no fixed viewport height) */
+  /** Panel grows with its content, with no fixed viewport height. */
   windowScroll?: boolean;
   className?: string;
   panelRef?: React.Ref<HTMLDivElement>;
@@ -43,7 +42,6 @@ interface BoardPanelBodyProps {
   onFocusCapture?: () => void;
 }
 
-/** Renders the board panel body component. */
 export function BoardPanelBody({
   children,
   hasSelection,
@@ -59,7 +57,7 @@ export function BoardPanelBody({
     <div
       className={cn(
         'group/panel relative flex max-w-full flex-1 shrink-0 snap-center flex-col rounded-b-none bg-transparent opacity-100 sm:border',
-        // Highlight border when an ancestor wrapper is marked as a drop-target hover (see board-panel.tsx)
+        // Highlight the border when an ancestor wrapper is a hovered drop target
         'group-data-[highlighted=true]/paneldrop:border-primary',
         !windowScroll && 'sm:h-[calc(100dvh-var(--board-panel-offset))]',
         hasSelection && 'is-selected',
@@ -91,7 +89,6 @@ interface CollapsedPanelViewProps {
 
 const EMPTY_SECTIONS: CollapsedSection[] = [];
 
-/** Renders the collapsed panel view component. */
 export function CollapsedPanelView({ mainCount, sections = EMPTY_SECTIONS, className }: CollapsedPanelViewProps) {
   const topSections = sections.filter((s) => s.position === 'top');
   const bottomSections = sections.filter((s) => s.position === 'bottom');
@@ -100,7 +97,6 @@ export function CollapsedPanelView({ mainCount, sections = EMPTY_SECTIONS, class
     <div
       className={cn(
         'relative flex flex-1 snap-center flex-col bg-transparent sm:border',
-        // Highlight border when an ancestor wrapper is marked as a drop-target hover (see board-panel.tsx)
         'group-data-[highlighted=true]/paneldrop:border-primary',
         className,
       )}

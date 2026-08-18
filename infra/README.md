@@ -53,7 +53,7 @@ verify SHAs, publish frontend entry files, smoke checks
 one final stack update reaps every displaced generation
 (CI defers it: the deploy runs with --defer-reap and a follow-up
  `pnpm --filter infra run reap` job destroys the displaced VMs
- off the critical path — they are already detached from every LB pool)
+ off the critical path; they are already detached from every LB pool)
 ```
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: instead of the wizard it opens an operator menu for day-2 work. From there you re-sync config and GitHub Environment secrets (Resume), rotate the CI deploy key or the Pulumi passphrase, run a privileged `pulumi up` for protected infra (database, VPC, private network), preview drift, manage runtime secrets in Secret Manager (list, set, rotate, delete), run database actions (reset, seed, temporary public exposure), and clear a stale stack lock. See [cella/DEPLOYMENT.md](../cella/DEPLOYMENT.md#advanced-operations) for the step-by-steps.
@@ -64,13 +64,13 @@ Three design rules carry the model:
 
 1. **Create-then-replace.** A release never mutates a running server. Each deploy provisions a new immutable **generation** per service, moves load-balancer traffic once the new generation provably serves the expected version, then destroys the displaced one. Rollback is a revert commit through the same forward path.
 2. **Content-addressed identity.** A generation's id is a hash of the release SHA plus its static config, so re-running a deploy is a no-op and a manual `pulumi up` can never create a divergent generation identity. Rollout state lives in one S3 **control object** that both the deploy command and the Pulumi program read.
-3. **Least-privilege credentials, per mode.** All principals are per app×mode (`<slug>-<mode>-…`), collected in one IAM group. The load-bearing boundary: **the CI key can never write IAM** — a single IAM-write action self-escalates to full admin (OWASP CICD-SEC-6 / NIST AC-6 territory), so identity administration stays a transient human action. The tiers:
-   - **bootstrap key** — human-pasted, IAMManager-grade, used once per wizard/migration run and revoked at the end. Never standing.
-   - **admin app** — the standing human principal: Object Storage `s3:*` (via bucket policies) + read-only on every infra surface, so `pulumi preview --refresh` and teardown work. No IAM write. Its key lives in Secret Manager (`admin-key`), never in git or GitHub.
-   - **CI deploy app** — project-scoped writes for routine deploys; no IAM writes except one *conditioned* `IAMApplicationManager` rule (`resource.id in [service app ids]`) that lets it rotate service keys every deploy and provably nothing else.
-   - **per-service VM apps + boot app** — each service VM signs with its own per-deploy key, path-conditioned to its own + shared secret folders (`resource.name.startsWith`). Cloud-init carries only the **boot key** (registry pull, boot-diag write, handoff read); the real service key arrives via a **single-access** Secret Manager bundle — a consumed bundle on first boot is an interception signal and halts the VM. Reboots reuse the on-disk cached pair.
+3. **Least-privilege credentials, per mode.** All principals are per app×mode (`<slug>-<mode>-…`), collected in one IAM group. The load-bearing boundary: **the CI key can never write IAM**, because a single IAM-write action self-escalates to full admin (OWASP CICD-SEC-6 / NIST AC-6 territory), so identity administration stays a transient human action. The tiers:
+   - **bootstrap key**: human-pasted, IAMManager-grade, used once per wizard/migration run and revoked at the end. Never standing.
+   - **admin app** is the standing human principal: Object Storage `s3:*` (via bucket policies) + read-only on every infra surface, so `pulumi preview --refresh` and teardown work. No IAM write. Its key lives in Secret Manager (`admin-key`), never in git or GitHub.
+   - **CI deploy app**: project-scoped writes for routine deploys; no IAM writes except one *conditioned* `IAMApplicationManager` rule (`resource.id in [service app ids]`) that lets it rotate service keys every deploy and provably nothing else.
+   - **per-service VM apps + boot app**: each service VM signs with its own per-deploy key, path-conditioned to its own + shared secret folders (`resource.name.startsWith`). Cloud-init carries only the **boot key** (registry pull, boot-diag write, handoff read); the real service key arrives via a **single-access** Secret Manager bundle; a consumed bundle on first boot is an interception signal and halts the VM. Reboots reuse the on-disk cached pair.
 
-   Bucket policies are deny-by-default for everyone not listed (including org admins — the org Owner can always edit/delete a bucket policy, that right is inherent). Uploads buckets are versioned and the CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user-data versions. Secret folders are the security boundary: `/<slug>-<mode>/<service>/`, `/shared/`, `/handoff/`, `/engine/` (engine credentials are unreadable from VMs).
+   Bucket policies are deny-by-default for everyone not listed (including org admins; the org Owner can always edit/delete a bucket policy, that right is inherent). Uploads buckets are versioned and the CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user-data versions. Secret folders are the security boundary: `/<slug>-<mode>/<service>/`, `/shared/`, `/handoff/`, `/engine/` (engine credentials are unreadable from VMs).
 
 ## Observability
 
@@ -108,7 +108,7 @@ Check `id`s are stable identifiers (`tooling.pulumi`, `config.stackState`, `iden
 
 ## Credentials files
 
-Operator credentials load in a fixed order (implemented once in `lib/utils/env-files.ts`, shared by the CLI and the standalone status task): `backend/.env`, then the repo-root `.env` (existing environment variables keep precedence over both), then the mode-scoped override **`infra/.env.<mode>`** — which OVERRIDES the ambient env, so a staging run cannot silently inherit production values. The mode file carries a live secret key and the Pulumi passphrase; the CLI tightens its permissions to `0600` on sight. It is a standing convenience for day-2 operator work only: one-off privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete any temporary env file afterwards.
+Operator credentials load in a fixed order (implemented once in `lib/utils/env-files.ts`, shared by the CLI and the standalone status task): `backend/.env`, then the repo-root `.env` (existing environment variables keep precedence over both), then the mode-scoped override **`infra/.env.<mode>`**, which OVERRIDES the ambient env, so a staging run cannot silently inherit production values. The mode file carries a live secret key and the Pulumi passphrase; the CLI tightens its permissions to `0600` on sight. It is a standing convenience for day-2 operator work only: one-off privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete any temporary env file afterwards.
 
 ## Teardown
 

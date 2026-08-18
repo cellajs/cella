@@ -1,3 +1,2 @@
-// Public barrel for the tracing module (see ./tracing/).
-// Kept as a flat file so `shared/tracing` resolves via the `./*` -> `./src/*.ts` export.
+// Flat re-export of ./tracing/, matching the `./*` -> `./src/*.ts` export map.
 export * from './tracing/tracing.ts';

@@ -7,7 +7,7 @@ import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 type LeaveOrgButtonProps = LeaveChannelButtonProps & {
-  /** Membership role shown on the trigger ("✓ Admin"); the button is the page's role display. */
+  /** Membership role shown on the trigger ("✓ Admin"). */
   role?: MembershipBase['role'] | null;
 };
 

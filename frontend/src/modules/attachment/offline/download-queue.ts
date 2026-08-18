@@ -3,17 +3,10 @@ import { appConfig } from 'shared';
 import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './attachments-db';
 import { attachmentStorage } from './storage-service';
 
-/**
- * Skip reason for a row queued before its cloud keys arrived. Shared with the download service:
- * it writes this reason, `enqueue` matches on it to re-queue once `originalKey` shows up.
- */
+/** Skip reason the download service writes for a row queued before its cloud keys arrived; `enqueue` matches on it to re-queue. */
 export const SKIP_REASON_NO_ORIGINAL_KEY = 'No originalKey';
 
-/**
- * Valid transitions for the download service's own state machine. `failed` is terminal *to the
- * service*. It must not resurrect a row mid-run. Reviving is an out-of-band `enqueue` decision
- * (see `shouldRevive`), so it writes the row directly without going through `transition`.
- */
+/** Valid transitions for the download service; `failed` is terminal here, and reviving is an `enqueue` decision that writes the row directly. */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   pending: ['downloading', 'skipped'],
   downloading: ['downloaded', 'failed'],
@@ -22,10 +15,6 @@ const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   downloaded: [],
 };
 
-/**
- * Transition a queue entry to a new status.
- * Validates the transition and increments attempts when a download starts.
- */
 async function transition(id: string, to: DownloadStatus, skipReason?: string): Promise<void> {
   try {
     const entry = await attachmentsDb.downloadQueue.get(id);
@@ -40,7 +29,6 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
     const updates: Partial<DownloadQueueEntry> = { status: to };
     if (skipReason) updates.skipReason = skipReason;
 
-    // Count attempts on the start of each download.
     if (entry.status === 'pending' && to === 'downloading') {
       updates.attempts = entry.attempts + 1;
     }
@@ -51,11 +39,7 @@ async function transition(id: string, to: DownloadStatus, skipReason?: string): 
   }
 }
 
-/**
- * Enqueues attachments once for background download, preserving active and completed entries.
- * It revives skipped rows when metadata gains an original key and failed rows with retries left;
- * locally processed variants remain skipped.
- */
+/** Enqueues attachments once, keeping active and completed entries; revives skipped rows that gained an original key and failed rows with retries left. */
 async function enqueue(attachments: Attachment[], organizationId: string): Promise<void> {
   if (!attachments.length) return;
 
@@ -80,7 +64,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
         continue;
       }
 
-      // Skip if the blob is already stored locally with a processed variant.
+      // Already stored locally as a processed variant.
       const storedVariants = (await attachmentStorage.getStoredVariants(attachment.id)) ?? [];
       if (storedVariants.some((v) => v !== 'raw')) continue;
 
@@ -110,10 +94,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
   }
 }
 
-/**
- * Whether an existing entry should go back to `pending`. Rows are otherwise left alone so the
- * table can act as the dedupe registry.
- */
+/** Whether an existing entry goes back to `pending`; other rows stay untouched so the table acts as the dedupe registry. */
 function shouldRevive(
   entry: DownloadQueueEntry,
   attachment: Attachment,
@@ -124,8 +105,7 @@ function shouldRevive(
     return true;
   }
 
-  // Retry transient fetch failures (offline, 5xx, timeout) while attempts remain, so one bad
-  // fetch doesn't exclude an attachment from offline availability until sign-out.
+  // Retry transient fetch failures (offline, 5xx, timeout) while attempts remain.
   if (entry.status === 'failed' && entry.attempts < config.downloadRetryAttempts) return true;
 
   return false;
@@ -141,7 +121,6 @@ async function remove(ids: string[]): Promise<void> {
   }
 }
 
-/** Check if attachment should be skipped based on config filters. */
 function shouldSkipDownload(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
   if (!config) return 'Config not available';
 
@@ -177,7 +156,7 @@ function matchesMimePattern(mimeType: string, pattern: string): boolean {
   return mimeType === pattern;
 }
 
-/** Calculate download priority (lower = higher priority). */
+/** Download priority; lower runs first. */
 function calculatePriority(attachment: Attachment): number {
   const type = attachment.contentType || '';
   if (type.startsWith('image/')) return 1;

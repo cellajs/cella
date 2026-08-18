@@ -1,9 +1,7 @@
 import type { ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 
-// Deep synthetic hierarchy: `item` attaches at any depth via nullableAncestors, so home
-// resolution (deepest non-null ancestor) diverges from a naive parent-then-org lookup.
-// The deep-path fixture import stays unmocked, so traversal logic is the real builder.
+// Deep synthetic hierarchy: `item` attaches at any depth via nullableAncestors, so its home is the deepest non-null ancestor.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const { deepHierarchy } = await import('shared/testing/deep-fixture');

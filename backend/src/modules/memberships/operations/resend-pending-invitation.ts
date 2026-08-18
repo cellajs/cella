@@ -7,10 +7,8 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**
- * Resend the invitation email for a pending membership. Authorization mirrors invite creation:
- * the caller needs `update` on the invited channel. Token resolution is scoped to the pending
- * row's own invitation token, never by email (an address can hold newer tokens from other
- * contexts).
+ * Resends the invitation email for a pending membership; the caller needs `update` on the invited channel.
+ * The token comes from the pending row itself, never from the email address, which can hold newer tokens from other contexts.
  */
 export async function resendPendingInvitationOp(ctx: AuthContext, id: string) {
   const inactiveMembership = await findInactiveMembershipById(ctx, { id });

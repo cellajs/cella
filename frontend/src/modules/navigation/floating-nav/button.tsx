@@ -7,9 +7,9 @@ export interface FloatingNavItem {
   icon: IconComponent;
   onClick: () => void;
   ariaLabel?: string;
-  /** Whether this item should be visible (defaults to true) */
+  /** Defaults to true. */
   visible?: boolean;
-  /** Button position - defaults to 'right', first visible item defaults to 'left' when multiple items */
+  /** Defaults to 'right'; with several items the first visible one defaults to 'left'. */
   direction?: 'left' | 'right';
 }
 
@@ -22,9 +22,6 @@ interface FloatingNavButtonProps {
   direction?: 'left' | 'right';
 }
 
-/**
- * Floating navigation button - a circular FAB-style button.
- */
 export function FloatingNavButton({
   id,
   icon: Icon,

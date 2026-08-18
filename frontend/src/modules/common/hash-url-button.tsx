@@ -8,10 +8,7 @@ interface HashUrlButtonProps {
   className?: string;
 }
 
-/**
- * A ghost button with a hash icon that copies a URL to the clipboard.
- * Invisible by default, becomes visible when parent (with group class) is hovered.
- */
+/** Copies a URL to the clipboard. Invisible until the parent carrying `group` is hovered. */
 export function HashUrlButton({ url, className }: HashUrlButtonProps) {
   const { copyToClipboard, copied } = useCopyToClipboard();
 

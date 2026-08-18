@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defineManagedKeys, managedKeyById, managedKeys } from '../../lib/managed-keys';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 
-// The config module and lib/managed-keys form an import cycle (config imports the
-// define helper, lib derives the registry from config), so the cycle must be entered
-// from the lib side. A static import sorts alphabetically ahead of the lib imports.
+// The config module and lib/managed-keys form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib imports.
 const { managedKeysConfig } = await import('../../config/managed-keys.config');
 
 describe('managed key registry', () => {
@@ -53,7 +51,7 @@ describe('managed key registry', () => {
 
   it('wires the AI key to a single bearer secret; the s3 key is retired (REQ-20)', () => {
     expect(managedKeyById('ai')?.assign).toEqual({ secretKey: 'scwAiApiKey' });
-    // The backend signs S3 requests with its own per-deploy service key now.
+    // The backend signs S3 requests with its own per-deploy service key.
     expect(managedKeyById('s3')).toBeUndefined();
   });
 

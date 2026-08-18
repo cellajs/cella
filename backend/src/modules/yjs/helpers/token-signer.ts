@@ -9,12 +9,7 @@ export interface YjsTokenPayload extends Omit<SharedYjsTokenPayload, 'entityType
   entityType: ProductEntityType;
 }
 
-/**
- * Sign a context-scoped Yjs auth token.
- * Uses the shared HMAC-SHA256 signing scheme the Yjs relay verifies. The token
- * embeds the channel entity and product entity type the user may edit, so the
- * relay can verify access locally without calling back to the backend.
- */
+/** HMAC-SHA256 token embedding the channel entity and product entity type the user may edit, so the relay verifies access without a backend call. */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>): string {
   return signToken(params, env.YJS_SECRET, TOKEN_TTL_MS);
 }

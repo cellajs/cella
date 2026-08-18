@@ -1,6 +1,5 @@
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
-/** Moves focus to editor. */
 export const focusEditor = (editor: CustomBlockNoteEditor, blockId?: string) => {
   const lastBlock = editor.document[editor.document.length - 1];
   try {

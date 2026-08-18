@@ -1,8 +1,6 @@
 /**
- * 1 tenant = 1 organization. The unique constraint on organizations.tenant_id is the hard
- * backstop for the create-organizations guard; this pins it at the DB level.
- *
- * Requires: PostgreSQL (core mode or higher)
+ * 1 tenant = 1 organization: the unique constraint on organizations.tenant_id is the DB-level
+ * backstop for the create-organizations guard. Requires PostgreSQL (core mode or higher).
  */
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -16,7 +14,6 @@ afterEach(async () => await clearDatabase());
 
 describe('one organization per tenant', () => {
   it('rejects a second organization in the same tenant', async () => {
-    // createTestOrganization provisions a fresh tenant with exactly one organization.
     const org = await createTestOrganization();
 
     // A second org pinned to the same tenant must violate organizations_tenant_id_key.
@@ -27,7 +24,6 @@ describe('one organization per tenant', () => {
   it('allows one organization per distinct tenant', async () => {
     const a = await createTestOrganization();
     const b = await createTestOrganization();
-    // Two organizations in two tenants do not conflict.
     expect(a.tenantId).not.toBe(b.tenantId);
     expect(a.id).not.toBe(b.id);
   });

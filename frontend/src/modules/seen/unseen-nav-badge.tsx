@@ -1,7 +1,6 @@
 import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { cn } from '~/utils/cn';
 
-/** Total unseen counter over a nav button; hidden while the button is active or the count is zero. */
 export function UnseenNavBadge({ isActive, className }: { isActive: boolean; className?: string }) {
   const totalUnseenCount = useTotalUnseenCount();
 

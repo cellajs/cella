@@ -5,11 +5,9 @@ import { yUpdateToBlocks } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 
 /**
- * `ok`: persisted (or content unchanged).
- * `permanent`: backend rejected (4xx: entity deleted, permission revoked, unknown type).
- *              Do NOT retry the same content; cleanup may proceed.
- * `retry`: backend/network unavailable (5xx / fetch error). Retry later; cleanup
- *          must keep the session row so the durable record can still absorb it.
+ * `ok`: persisted, or content unchanged.
+ * `permanent`: backend rejected it (4xx). Do not retry the same content; cleanup may proceed.
+ * `retry`: backend unavailable (5xx or fetch error). Cleanup must keep the session row.
  */
 export type MaterializeResult = 'ok' | 'permanent' | 'retry';
 
@@ -60,15 +58,10 @@ export function stateToBlocksJson(state: Uint8Array): string | null {
   }
 }
 
-/**
- * Materialize a session's current state into the entity's durable record.
- * Compares blocks JSON with `lastMaterializedJson`, so caret-only save windows and
- * seed-only (never-edited) sessions cost nothing. On `retry`, the stored JSON stays
- * unchanged so the next save window or gated cleanup tries again.
- */
+/** Compares blocks JSON with `lastMaterializedJson` to skip unchanged save windows; on `retry` the stored JSON is left unchanged so the next window tries again. */
 export async function materializeState(collab: MaterializableSession, state: Uint8Array): Promise<MaterializeResult> {
   const json = stateToBlocksJson(state);
-  // Unparseable state can never converge: treat as permanent so cleanup isn't wedged
+  // Unparseable state can never converge, so cleanup is not blocked on it.
   if (json === null) return 'permanent';
 
   if (json === collab.lastMaterializedJson) return 'ok';

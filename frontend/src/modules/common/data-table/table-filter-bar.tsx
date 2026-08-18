@@ -17,8 +17,6 @@ interface FilterBarChildProps {
   className?: string;
 }
 
-// Create a Context with default values
-/** Shares table filter-bar state with descendant components. */
 export const TableFilterBarContext = createContext<{
   isFilterActive: boolean;
   setFilterActive: (isActive: boolean) => void;
@@ -27,9 +25,7 @@ export const TableFilterBarContext = createContext<{
   setFilterActive: () => {},
 });
 
-/**
- * Actions section that fades out and slides left on mobile when filter is active.
- */
+/** Actions section that fades out and slides left on mobile while the filter is active. */
 export function FilterBarActions({ children, className = '' }: FilterBarChildProps) {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
@@ -54,7 +50,6 @@ export function FilterBarSearch({ children, className = '' }: FilterBarChildProp
 
   return (
     <>
-      {/* Mobile: absolutely positioned, fills left side */}
       <AnimatePresence>
         {isFilterActive && (
           <motion.div
@@ -68,7 +63,6 @@ export function FilterBarSearch({ children, className = '' }: FilterBarChildProp
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Desktop: always visible */}
       <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
@@ -80,7 +74,6 @@ export function FilterBarFilters({ children, className = '' }: FilterBarChildPro
 
   return (
     <>
-      {/* Mobile: absolutely positioned on right, slides in */}
       <AnimatePresence>
         {isFilterActive && (
           <motion.div
@@ -94,23 +87,18 @@ export function FilterBarFilters({ children, className = '' }: FilterBarChildPro
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Desktop: always visible */}
       <div className={cn('hidden items-center gap-2 sm:flex', className)}>{children}</div>
     </>
   );
 }
 
-/**
- * Filter bar container with toggle button for mobile.
- * Uses absolute positioning pattern for smooth mobile animations.
- */
+/** Filter bar container; children are absolutely positioned so the mobile toggle can animate them. */
 export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('md');
 
   const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 
-  // On desktop, filter toggle state is always inactive
   const effectiveFilterActive = isDesktop ? false : isFilterActive;
 
   const toggleFilter = () => {
@@ -128,7 +116,6 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
         {children}
       </TableFilterBarContext.Provider>
 
-      {/* Mobile toggle button - always on right, icon animates between search and X */}
       <Button
         variant="secondary"
         size="icon"

@@ -4,11 +4,7 @@ import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { entityTables } from '#/tables';
 
-/**
- * Every product entity table must carry a composite `(organization_id, seq)` index so
- * seq-range delta reads are index range scans.
- * Apps add product tables in their own modules; this guard fails if the index is missing.
- */
+/** Every product entity table needs a composite `(organization_id, seq)` index so seq-range delta reads scan it. */
 describe('every product entity table has the (organization_id, seq) delta index', () => {
   const productTables = Object.entries(entityTables).filter(([type]) =>
     (appConfig.productEntityTypes as readonly string[]).includes(type),

@@ -15,10 +15,7 @@ const MAX_BACKOFF_MS = 30_000;
 // Stop repeated token failures after the WebSocket backoff safety threshold and notify the user.
 const MAX_TOKEN_FAILURES = 5;
 
-/**
- * Application-specific WebSocket close codes sent by the Yjs relay.
- * Codes in the 4000-4999 range are reserved for application use.
- */
+/** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
 const YJS_CLOSE = {
   TOKEN_INVALID: 4001,
   ACCESS_DENIED: 4003,
@@ -44,7 +41,6 @@ interface YjsSyncState {
   synced: Record<string, boolean>;
 }
 
-/** Reactive store for sync status so React components can subscribe. */
 const useYjsSyncStore = create<YjsSyncState>(() => ({
   synced: {},
 }));
@@ -74,14 +70,12 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   });
   const fragment = yDoc.getXmlFragment('document-store');
 
-  // Pause/resume WebSocket when online state changes
   const unsubOnline = onlineManager.subscribe((isOnline) => {
     if (isOnline) provider.connect();
     else provider.disconnect();
   });
 
-  // Keep provider params in sync with the latest token from the store.
-  // Reconnects after sleep/background use a fresh token.
+  // Keep provider params on the latest token so a reconnect after sleep uses a fresh one.
   const unsubToken = useUserStore.subscribe((state) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken && provider.params) {
@@ -89,7 +83,6 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     }
   });
 
-  // Safety-net circuit breaker for token failures.
   let tokenFailures = 0;
 
   provider.on('status', ({ status }: { status: string }) => {
@@ -99,9 +92,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   const handleConnectionClose = (event: CloseEvent | null) => {
     if (!event || event.code === 1000) return;
 
-    // TOKEN_INVALID is recoverable: y-websocket's exponential backoff
-    // gives the token refresher time to push a fresh token via the store
-    // subscription. Only give up after MAX_TOKEN_FAILURES consecutive hits.
+    // TOKEN_INVALID is recoverable: backoff gives the refresher time to push a fresh token, so give up only after MAX_TOKEN_FAILURES.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
       tokenFailures++;
       if (tokenFailures < MAX_TOKEN_FAILURES) return;
@@ -112,7 +103,6 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     provider.off('connection-close', handleConnectionClose);
     provider.disconnect();
 
-    // Show user-facing feedback based on close code
     switch (event.code) {
       case YJS_CLOSE.TOKEN_INVALID:
         toaster.warning(i18n.t('error:sync_token_expired.text'));
@@ -127,7 +117,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
         toaster.warning(i18n.t('error:sync_failed.text'));
     }
 
-    // Clear token for this entity type so collaborative mode is disabled until refresh
+    // Clearing the token disables collaborative mode until the next refresh.
     useUserStore.getState().setYjsToken(tokenKey, null);
   };
   provider.on('connection-close', handleConnectionClose);
@@ -170,13 +160,9 @@ function releaseConnection(editSessionId: string) {
   }
 }
 
-/**
- * Ref-counted Yjs connection (Y.Doc + WebsocketProvider): survives a 30 s grace period after the last
- * consumer unmounts, enabling instant remounts without reconnecting or re-seeding. `undefined` disables it.
- */
+/** Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it; `undefined` disables it. */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
-    // Check for a cached connection (instant remounts within grace period)
     return editSessionId ? (connections.get(editSessionId) ?? null) : null;
   });
 

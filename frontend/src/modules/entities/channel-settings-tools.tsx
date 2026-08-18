@@ -10,12 +10,9 @@ import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
 /**
- * The general form tool base: first section, locked, held to the update grant. The bases in this
- * file are pure data for the standard settings tool set: a module spreads one into its `tools`
- * array and attaches the `slot`, app conditions (`visibleTo` audiences, adjusted `requires`), and
- * a `render` returning the full card. Deviating from the standard set means declaring a different
- * tool. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
- * to 50.
+ * A module spreads a tool base into its `tools` array and adds the `slot`, app conditions, and a
+ * `render`. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
+ * to 50. Bases without `locked` are hideable and reorderable per channel.
  */
 export const generalToolBase = {
   id: 'general',
@@ -25,17 +22,12 @@ export const generalToolBase = {
   requires: 'update',
 } satisfies PlacementDescriptor;
 
-/** The details form tool: hideable and reorderable per channel. */
 export const detailsToolBase = {
   id: 'details',
   label: 'c:details',
   order: 20,
 } satisfies PlacementDescriptor;
 
-/**
- * The tabs-management admin card (`TabsArrangementCard` wired to the channel's update mutation
- * and its tabbed surface): drag-reorder and visibility toggles for the channel's page tabs.
- */
 export const tabsToolBase = {
   id: 'tabs',
   label: 'c:tabs',
@@ -44,7 +36,6 @@ export const tabsToolBase = {
   requires: 'update',
 } satisfies PlacementDescriptor;
 
-/** The danger-zone tool for one channel type: last section, locked, held to the delete grant. */
 export function dangerToolBase(channelType: ChannelEntityType, resource: TKey): PlacementDescriptor {
   return {
     id: `delete-${channelType}`,
@@ -63,11 +54,9 @@ interface DeleteToolCardProps {
   resource: TKey;
   /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
   dialogId: string;
-  /** Renders the per-entity delete confirmation content inside the dialog. */
   renderDialog: () => ReactNode;
 }
 
-/** The standard danger-zone tool card: a free-form ToolCard body with the confirm-dialog delete button. */
 export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
   const { t } = useTranslation();
   const deleteButtonRef = useRef(null);

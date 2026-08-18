@@ -30,7 +30,6 @@ interface Props {
   channel: ChannelBase & { organizationId?: string };
 }
 
-/** Renders the user combobox component. */
 export function UserCombobox({ value, onValueChange, channel }: Props) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
@@ -51,7 +50,6 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
   const items = data?.pages.flatMap((p) => p.items) ?? [];
   const userIds = items.map((u) => u.id).join(',');
 
-  // Fetch membership status only for users in search results
   const { data: membersData } = useInfiniteQuery({
     ...membersListQueryOptions({
       entityId: channel.id,

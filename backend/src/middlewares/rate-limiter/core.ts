@@ -12,12 +12,11 @@ import type {
 import { toRateLimitIp } from '#/utils/ip-subnet';
 import { log } from '#/utils/logger';
 
-// Default options
 export const defaultOptions = {
-  tableName: 'rate_limits', // Name of table in database
-  points: 10, // 10 requests
+  tableName: 'rate_limits',
+  points: 10,
   duration: 60 * 60, // within 1 hour
-  blockDuration: 60 * 30, // Block for 30 minutes
+  blockDuration: 60 * 30,
   successStatusCodes: [200, 201],
   failStatusCodes: [401, 403, 404],
   ignoredStatusCodes: [429],
@@ -25,22 +24,19 @@ export const defaultOptions = {
 
 // Slow brute force options
 export const slowOptions = {
-  tableName: defaultOptions.tableName, // Name of table in database
-  points: 100, // 100 requests
-  duration: 60 * 60 * 24, // within 24 hour
-  blockDuration: 60 * 60 * 3, // Block for 3 hours
+  tableName: defaultOptions.tableName,
+  points: 100,
+  duration: 60 * 60 * 24, // within 24 hours
+  blockDuration: 60 * 60 * 3,
 };
 
 /**
- * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` consume
- * matching results, and `failseries` resets after success. Failure modes also consume a
- * 24-hour bucket to detect slow brute-force attempts.
- *
+ * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
+ * resets after a success. Failure modes also consume a 24-hour bucket that catches slow brute-force attempts.
  * @param mode - Result mode that controls point consumption.
  * @param key - Rate-limit namespace.
  * @param identifiers - Key parts or fallback chains composing the subject identifier.
  * @param opts - Limits and middleware metadata.
- * @returns Route middleware enforcing the configured limits.
  */
 export const rateLimiter = (
   mode: RateLimitMode,
@@ -58,11 +54,9 @@ export const rateLimiter = (
   const handler = xMiddleware(
     { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
     async (ctx, next) => {
-      // Extract every identifier any key part (or chain member) can use
       const extractedIdentifiers = await extractIdentifiers(ctx, identifiers.flat());
 
-      // Each key part contributes one segment; fallback chains use their first available identity.
-      // User/IP chains avoid shared-office throttling while still covering anonymous traffic.
+      // Each key part contributes one segment; fallback chains use their first available identity
       let rateLimitKey = '';
 
       for (const part of identifiers) {
@@ -70,8 +64,7 @@ export const rateLimiter = (
         const identifier = chain.find((id) => extractedIdentifiers[id]);
 
         if (!identifier) {
-          // Chains and bare ip/email must resolve. Bare userId/tenantId keep their
-          // silent skip: pointsLimiter budgets fall back when tenant context is absent.
+          // Chains and bare ip/email must resolve; bare userId/tenantId are skipped so pointsLimiter can fall back
           if (Array.isArray(part) || part === 'ip' || part === 'email') {
             throw new AppError(400, 'invalid_request', 'warn');
           }
@@ -79,17 +72,14 @@ export const rateLimiter = (
         }
 
         const value = extractedIdentifiers[identifier] as string;
-        // Normalize IPs so IPv6 clients cannot rotate addresses within their
-        // allocated /64 to evade auth rate limits.
+        // Normalize IPs so IPv6 clients cannot rotate within their /64 to evade auth rate limits
         rateLimitKey += `${identifier}:${identifier === 'ip' ? toRateLimitIp(value) : value}`;
       }
 
-      // An empty key would silently share one bucket across all traffic (e.g. a
-      // userId-keyed limiter on a public route). Treat it as a misconfiguration.
+      // An empty key would share one bucket across all traffic (a userId-keyed limiter on a public route): misconfiguration
       if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
-      // Resolve request cost and clamp tenant budgets without mutating the shared prefix limiter.
-      // A zero tenant budget uses the global ceiling.
+      // Clamp tenant budgets without mutating the shared prefix limiter; a zero tenant budget uses the global ceiling
       const consumePoints = mode === 'limit' && getConsumePoints ? await getConsumePoints(ctx) : 1;
       const tenantBudget = mode === 'limit' && getPointsBudget ? getPointsBudget(ctx) : null;
       const effectiveBudget =
@@ -97,8 +87,7 @@ export const rateLimiter = (
           ? config.points
           : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
 
-      // ── Fast path for `limit` mode (pointsLimiter) ──
-      // Uses an in-process LRU counter to skip DB when the key is well under budget.
+      // Fast path: an in-process LRU counter skips the DB while the key is well under budget.
       // Auth limiters (failseries, success, fail) always take the DB path for accuracy.
       if (mode === 'limit' && getPointsBudget) {
         const decision = tryFastConsume(rateLimitKey, consumePoints, effectiveBudget);
@@ -111,7 +100,6 @@ export const rateLimiter = (
 
       const limitState = await limiter.get(rateLimitKey);
 
-      // If already rate limited, return 429
       if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
         try {
           onBlock?.(rateLimitKey, ctx);
@@ -121,7 +109,6 @@ export const rateLimiter = (
         return rateLimitError(ctx, limitState, rateLimitKey);
       }
 
-      // If slow brute forcing, return 429
       if (slowLimiter) {
         const slowLimitState = await slowLimiter.get(rateLimitKey);
         if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
@@ -134,19 +121,14 @@ export const rateLimiter = (
         }
       }
 
-      // If the rate limit mode is 'limit', consume points without blocking unless the limit is reached
       if (mode === 'limit') {
-        // Settle unflushed fast-path consumes together with this request's cost, so the
-        // DB count is authoritative. Without this the fast path undercounts the DB and
-        // `syncFromDb` resets the local counter to that undercount, disabling the budget.
+        // Settle unflushed fast-path consumes with this request's cost, or `syncFromDb` resets the counter to an undercount
         const debt = getPointsBudget ? takeDebt(rateLimitKey) : 0;
 
         try {
           const consumeResult = await limiter.consume(rateLimitKey, consumePoints + debt);
-          // Sync the LRU cache with the authoritative DB count
           if (getPointsBudget) syncFromDb(rateLimitKey, consumeResult.consumedPoints);
-          // The library only rejects at the static ceiling; the (possibly smaller)
-          // per-tenant budget is enforced here.
+          // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
             return rateLimitError(ctx, consumeResult, rateLimitKey);
           }
@@ -161,7 +143,6 @@ export const rateLimiter = (
         }
       }
 
-      // Continue with request itself
       await next();
 
       const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
@@ -169,20 +150,17 @@ export const rateLimiter = (
       const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
 
       if (isSuccess && !isIgnored) {
-        // If the mode is 'success', consume points on successful requests
         if (mode === 'success') {
           try {
             await limiter.consume(rateLimitKey);
           } catch (err) {
             log.warn('Rate limit consume failed', { rateLimitKey, err });
           }
-          // If the mode is 'failseries', delete the rate limit on successful request
         } else if (mode === 'failseries') {
           await limiter.delete(rateLimitKey);
         }
       } else if (isFail && !isIgnored && slowLimiter) {
-        // Consume the same normalized IP key used by the slow-bucket lookup.
-        // Key drift here would prevent the 24-hour brute-force bucket from ever blocking.
+        // Must use the same normalized key as the slow-bucket lookup, or the 24-hour bucket never blocks
         try {
           await slowLimiter.consume(rateLimitKey);
         } catch (rlRejected) {
@@ -190,7 +168,6 @@ export const rateLimiter = (
           throw rlRejected;
         }
 
-        // Consume points for the specific rate limit
         try {
           await limiter.consume(rateLimitKey);
         } catch (err) {

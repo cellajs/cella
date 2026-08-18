@@ -9,9 +9,7 @@ import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
 /**
- * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may perform
- * `action`.
- *
+ * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may `action`.
  * @param entityType - The type of entity (channel or product, not user).
  * @throws {AppError} 403 if no entities are allowed.
  */
@@ -21,21 +19,18 @@ export const splitByPermission = async (
   entityType: ChannelEntityType | ProductEntityType,
   ids: string[],
 ) => {
-  // Resolve entities (includes createdBy for implicit owner relation)
-  // Auto-wrap in tenantRead when called outside an RLS context (bare baseDb)
+  // Resolve entities (createdBy included for the owner relation); auto-wrap in tenantRead outside an RLS context.
   const entities =
     ctx.var.db === baseDb
       ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }))
       : await resolveEntities(ctx, { entityType, ids });
 
-  // Check permissions for all entities in a single batch operation. Each entity doubles as
-  // `row`, so row conditions and public read grants evaluate from real row data.
+  // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.
   const subjects = entities.map((entity) =>
     buildSubjectFromEntity(entityType, entity as { id: string; createdBy?: string | null } & Partial<ChannelIdColumns>),
   );
   const { results } = checkAccessBatch(accessFrom(ctx), action, subjects);
 
-  // Partition into allowed and disallowed
   const allowedIds: string[] = [];
   const rejectedIds: string[] = [];
 
@@ -48,7 +43,6 @@ export const splitByPermission = async (
     }
   }
 
-  // Throw if user has no permission for any of the requested entities
   if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
 
   return { allowedIds, rejectedIds };

@@ -12,7 +12,6 @@ export type RoutableItemData = ItemData & { entityType: string; organizationId?:
 /** An org-scoped entity that can be inserted into a canonical home list. */
 export type OrgRoutableItemData = RoutableItemData & { organizationId: string };
 
-/** Entity data with optional context columns */
 export type ItemDataWithChannel = ItemData & Partial<ChannelIdColumns>;
 
 export type EntityIdAndType = { id: string; entityType: EntityType };

@@ -1,17 +1,14 @@
 /**
- * What `normalizeOps` does with ops fields that are neither canonical nor a
- * live expand-window alias after lens mapping (per LiveStore's
- * `unknownEventHandling`): `ignore` passes them through (Zod validation decides),
- * `strip` removes them, `fail` throws. Detection requires the caller to pass
- * `canonicalKeys`; unknown fields are always reported in the result either way.
+ * What `normalizeOps` does with ops fields that are neither canonical nor a live expand-window
+ * alias after lens mapping: `ignore` passes them through for Zod to judge, `strip` removes them,
+ * `fail` throws. Detection needs the caller to pass `canonicalKeys`, but unknown fields are
+ * reported in the result either way.
  */
 export type UnknownFieldHandling = 'ignore' | 'strip' | 'fail';
 
 /**
- * Schema-evolution lifecycle policy: centralizes the timing knobs that gate
- * expand-to-contract transitions and force stale bundles to update.
- * Conservative defaults; apps may tune them. Pure constants, safe to import
- * anywhere (no runtime deps).
+ * Timing that gates expand-to-contract transitions and forces stale bundles to update. Apps may
+ * tune the defaults. Pure constants with no runtime dependencies.
  */
 export const schemaEvolutionPolicy: {
   /** Minimum days an expand-window lens must live before it may be contracted. */

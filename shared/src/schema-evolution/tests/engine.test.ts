@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProductEntityType } from '../../../types.ts';
 import { defineLens } from '../define.ts';
 
-// Synthetic second entity; lenses are injected via the mock below
 const DOC = 'doc' as ProductEntityType;
 
 // Inject synthetic lenses so the engine can be exercised without shipping a real

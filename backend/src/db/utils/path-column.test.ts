@@ -4,16 +4,10 @@ import { deepHierarchy as deepH } from 'shared/testing/deep-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
 
-/**
- * The path SQL rule (stored as a generated column on channel tables) and the JS rule
- * (computed for product rows) must produce identical values for every row shape. CDC
- * routing, move-out detection, and client view routing all assume the two rules agree.
- * Deep-chain shapes use the shared deep fixture.
- */
+/** The generated-column SQL rule and the JS rule must produce identical paths for every row shape. */
 const roles = createRoleRegistry(['admin', 'member'] as const);
 
-// Synthetic org-homed product, configuration-independent: mirrors cella's default attachment hierarchy
-// without binding to the real config (apps that re-home the product would break the assertion).
+// Synthetic org-homed product: binding to the real config would break the assertion in apps that re-home it.
 const orgHomedH = createEntityHierarchy(roles)
   .user()
   .channel('organization', { parent: null, roles: roles.all })

@@ -7,10 +7,7 @@ import { useCurrentUser } from '~/modules/user/user-store';
 
 const slot = 'account.settings';
 
-/**
- * Account settings consumer: hosts the `account.settings` slot. Sections come from the tool
- * registry, arranged by app overrides; this consumer passes no grants or context-role pairs.
- */
+/** Hosts the `account.settings` slot: sections come from the tool registry, with no grants or context-role pairs. */
 function UserAccountPage() {
   const user = useCurrentUser();
 

@@ -9,14 +9,12 @@ const { isSeenTracked, seenKeys } = await import('./helpers');
 const { seenStore } = await import('./seen-store');
 const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
 
-// Derive tracked type and effective home from config so the fixture works across app hierarchies.
-// Rows include the chosen deepest ancestor and all required parents like real sync payloads.
+// Tracked type and effective home come from config, so the fixture works across app hierarchies.
 const TRACKED = appConfig.seenTrackedProductTypes[0];
 const ANCESTORS = hierarchy.getOrderedAncestors(TRACKED); // deepest → root
 const ancestorId = Object.fromEntries(ANCESTORS.map((type) => [type, `ch-${type}`]));
 const CHANNEL = ancestorId[ANCESTORS[0]]; // deepest ancestor id (the home channel)
 const ORG = ancestorId[ANCESTORS[ANCESTORS.length - 1]]; // root ancestor (organization) id
-// A product type that is not seen-tracked, for the negative control below.
 const UNTRACKED = appConfig.productEntityTypes.find((type) => !isSeenTracked(type));
 
 const now = () => new Date().toISOString();
@@ -36,9 +34,7 @@ const counts = () => (queryClient.getQueryData(seenKeys.unseenCounts) as Record<
 const settle = () => vi.advanceTimersByTimeAsync(5_100);
 
 describe('unseen count deltas from synced rows', () => {
-  // Positive control: ingestSyncedRows/applyUnfetchableRemovalUnseen early-return for any product
-  // type isSeenTracked doesn't cover. If the tracked type ever stops being tracked, every "count
-  // did not change" assertion below would pass vacuously. This guard fails loudly first.
+  // If TRACKED ever stops being seen-tracked, every "count did not change" assertion below passes vacuously.
   beforeAll(() => {
     expect(isSeenTracked(TRACKED)).toBe(true);
   });
@@ -86,12 +82,10 @@ describe('unseen count deltas from synced rows', () => {
   });
 
   it('decrements for a tombstoned baseline row, and nets zero for a row it counted itself', async () => {
-    // Baseline row soft-deleted → −1 (5 → 4)
     ingestSyncedRows(TRACKED, CHANNEL, [row('base-1', { createdAt: daysAgo(1), deletedAt: now() })]);
     await settle();
     expect(counts()[CHANNEL][TRACKED]).toBe(4);
 
-    // Live row: +1 then tombstone −1 → net zero
     vi.advanceTimersByTime(10);
     ingestSyncedRows(TRACKED, CHANNEL, [row('live-1')]);
     await settle();
@@ -139,16 +133,14 @@ describe('unseen count deltas from synced rows', () => {
 
   it('publish lights the badge: recency keys on publishedAt, not the old createdAt', async () => {
     vi.advanceTimersByTime(10);
-    // The draft's createdAt is outside the window and before the reconcile anchor; its recent
-    // publishedAt makes it count as new. The client recency rule (`publishedAt ?? createdAt`) is
-    // generic, so a synced row carrying publishedAt exercises it regardless of the app's feeds.
+    // createdAt is outside the window and before the reconcile anchor; the recent publishedAt still counts it as new.
     ingestSyncedRows(TRACKED, CHANNEL, [row('pub-1', { createdAt: daysAgo(100), publishedAt: now() })]);
     await settle();
 
     expect(counts()[CHANNEL][TRACKED]).toBe(6);
   });
 
-  it('never counts an unpublished draft (defense in depth — drafts do not sync at all)', async () => {
+  it('never counts an unpublished draft (defense in depth: drafts do not sync at all)', async () => {
     vi.advanceTimersByTime(10);
     ingestSyncedRows(TRACKED, CHANNEL, [row('draft-1', { publishedAt: null })]);
     await settle();

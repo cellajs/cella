@@ -1,16 +1,7 @@
 import i18n from 'i18next';
 import type { StepItem } from '~/modules/common/stepper/types';
 
-/**
- * Ordered onboarding steps shown by the welcome stepper. All steps are optional
- * so users can skip ahead at any point.
- *
- * Built lazily (a function, not a module-scope const) because the labels call
- * `i18n.t(...)`: evaluating those at module load (before i18next has
- * initialized its namespaces) returns `undefined`, and
- * `i18n.t('c:organization').toLowerCase()` then throws and white-screens the
- * app. Call this at render time, when i18next is ready.
- */
+/** Call at render time: the labels use `i18n.t`, which returns undefined until i18next has loaded its namespaces. */
 export function getOnboardingSteps(): StepItem[] {
   return [
     { id: 'profile', label: i18n.t('c:tune_profile'), optional: true },

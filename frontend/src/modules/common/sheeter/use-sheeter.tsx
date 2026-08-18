@@ -52,21 +52,17 @@ interface SheetStoreState {
   getTriggerRef: (id: string) => TriggerRef | null;
 }
 
-/**
- * A hook to manage one or multiple sheets (on mobile it renders drawers.)
- */
+// Manages one or multiple sheets; on mobile they render as drawers.
 export const useSheeter = create<SheetStoreState>()((set, get) => ({
   sheets: [],
   triggerRefs: {},
 
   create: (content, data) => {
-    // Capture and blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
     if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) {
       fallbackContentRef.current = document.activeElement;
       document.activeElement.blur();
     }
 
-    // Add defaults and a key for reactivity
     const defaults = {
       drawerOnMobile: true,
       open: true,
@@ -101,15 +97,12 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     set((state) => {
       let removeSheets = state.sheets;
 
-      // Remove by id or remove all
       if (id) removeSheets = state.sheets.filter((sheet) => sheet.id === id);
 
-      // If no sheets to remove, return
       if (!removeSheets.length) return { sheets: state.sheets };
 
       for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
 
-      // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
 
       return { sheets };
@@ -123,7 +116,6 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
       for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
 
-      // Filter them out
       const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
 
       return { sheets };
@@ -143,5 +135,5 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   },
 }));
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+// Non-hook alias for use outside React components, e.g. sheeter.getState()
 export { useSheeter as sheeter };

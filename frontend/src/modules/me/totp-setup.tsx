@@ -12,9 +12,6 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 
-/**
- * A component that sets up TOTP for the user, including displaying a QR code, manual setup key fallback, and handling TOTP verification.
- */
 export function SetupTotp() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -28,7 +25,6 @@ export function SetupTotp() {
     return () => clearTimeout(timer);
   }, [formVersion]);
 
-  // Mutation to validate and activate TOTP with provided code
   const { mutate, isPending } = useMutation<
     CreateTotpResponses[201],
     ApiError | Error,
@@ -44,7 +40,7 @@ export function SetupTotp() {
       toaster.success(t('c:success.totp_added'));
     },
     onError: () => {
-      // Reset form component to force re-entry of TOTP verify code
+      // Remount the form so the code must be entered again
       setFormVersion((v) => v + 1);
     },
   });
@@ -61,7 +57,6 @@ export function SetupTotp() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Fetch TOTP registration data (URI and manual key)
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
     queryFn: async () => await generateTotpKey(),
@@ -117,9 +112,6 @@ export function SetupTotp() {
   );
 }
 
-/**
- * A component that displays the manual TOTP setup key in a dialog.
- */
 function TotpManualKey({ manualKey }: { manualKey: string }) {
   const { t } = useTranslation();
   const { copyToClipboard, copied } = useCopyToClipboard();

@@ -778,7 +778,7 @@
           },
           "batchUntilSeq": {
             "type": ["integer", "null"],
-            "description": "Last sequence position for a batched notification — client should fetch range"
+            "description": "Last sequence position for a batched notification: client should fetch range"
           },
           "count": {
             "type": ["integer", "null"],
@@ -5029,7 +5029,7 @@
                         "depth": {
                           "type": "string",
                           "enum": ["self", "subtree"],
-                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships."
+                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships."
                         },
                         "cursor": {
                           "type": "integer",

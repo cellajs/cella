@@ -6,9 +6,7 @@ export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 } },
 });
 
-// --- Mock entity query registry ---
-
-/** Query keys matching the StandardEntityKeys shape for test entity types */
+/** Matches the StandardEntityKeys shape. */
 function createMockEntityKeys(entityType: string) {
   return {
     all: [entityType],
@@ -28,7 +26,6 @@ function createMockEntityKeys(entityType: string) {
 
 const mockEntityQueryRegistry = new Map<string, ReturnType<typeof createMockEntityKeys>>();
 
-// Register the test channel entity types
 mockEntityQueryRegistry.set('organization', createMockEntityKeys('organization'));
 mockEntityQueryRegistry.set('workspace', createMockEntityKeys('workspace'));
 mockEntityQueryRegistry.set('project', createMockEntityKeys('project'));
@@ -53,8 +50,6 @@ export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType
   mockEntityQueryRegistry.set(entityType, keys);
 }
 
-// --- Shared test helpers ---
-
 interface TestMembership {
   organizationId: string;
   channelType: string;
@@ -66,7 +61,6 @@ interface TestMembership {
   [key: string]: unknown;
 }
 
-/** Builds membership. */
 export function makeMembership(entityId: string, overrides?: Partial<TestMembership>): TestMembership {
   return {
     organizationId: entityId,
@@ -80,18 +74,13 @@ export function makeMembership(entityId: string, overrides?: Partial<TestMembers
   };
 }
 
-/** Builds infinite data. */
 export function makeInfiniteData(items: { id: string; membership?: TestMembership | null }[]) {
   return { pages: [{ items }], pageParams: [undefined] };
 }
 
-// Real builder instance from the shared wide fixture (org with workspace/project siblings).
-// The deep-path import stays unmocked when tests vi.mock('shared'), so traversal logic is
-// the real class, never a hand-rolled twin.
-/** Provides mock hierarchy for frontend query tests. */
+/** Real builder from the shared wide fixture: the deep-path import stays unmocked when tests vi.mock('shared'), so traversal runs the real class. */
 export const mockHierarchy = wideHierarchy;
 
-/** Configures mock app. */
 export const mockAppConfig = {
   channelEntityTypes: [...wideHierarchy.channelTypes] as string[],
   entityIdColumnKeys: wideHierarchy.idColumnKeys as Record<string, string>,
@@ -112,5 +101,4 @@ export function mockComputeCan(channelType: string): Record<string, Record<strin
   return map;
 }
 
-/** Stub access policies (empty) */
 export const mockPolicyMatrix = {};

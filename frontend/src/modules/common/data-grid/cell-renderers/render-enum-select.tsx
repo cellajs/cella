@@ -5,9 +5,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import type { RenderEditCellProps } from '../types';
 
-/**
- * Enum-editor defaults avoid double commits from its portaled popover and keep cell content visible.
- */
+/** Enum-editor defaults: no double commit from the portaled popover, and cell content stays visible. */
 export const enumSelectEditorOptions = {
   editorType: 'select',
   commitOnOutsideClick: false,
@@ -35,10 +33,7 @@ type Props<TRow, TValue extends string> = Pick<RenderEditCellProps<TRow>, 'onRow
   setValue?: (row: TRow, value: TValue) => TRow;
 };
 
-/**
- * Responsive enum editor supporting flat fields and custom nested value accessors.
- * `EditCell` owns its Base UI lifecycle; pair the column with `enumSelectEditorOptions`.
- */
+/** `EditCell` owns the Base UI lifecycle; pair the column with `enumSelectEditorOptions`. */
 export function RenderEnumSelect<TRow extends { id: string }, TValue extends string>({
   row,
   options,
@@ -51,8 +46,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
   setValue,
 }: Props<TRow, TValue>) {
   const probeRef = useRef<HTMLSpanElement>(null);
-  // Resolved on mount; we re-render once we have the anchor so base-ui
-  // positions correctly (it accepts `null` then re-positions when set).
+  // Resolved on mount: base-ui accepts a `null` anchor and repositions once it is set.
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const isMobile = useBreakpointBelow('sm');
 
@@ -70,8 +64,7 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
     return setValue(row, value);
   };
 
-  // EditCell handles flushSync + focus restoration to the cell on commit,
-  // same path as text and toggle editors.
+  // EditCell handles flushSync and focus restoration to the cell on commit.
   const handleSelect = (value: TValue) => {
     onRowChange(buildNextRow(value), true);
   };
@@ -138,8 +131,7 @@ function EnumSelectMenu<TValue extends string>({
     typeof opt === 'string' ? { value: opt as TValue, label: renderOption?.(opt as TValue) ?? opt } : opt,
   );
 
-  // The surrounding Popover/Drawer doesn't auto-focus a child, so we focus
-  // the listbox explicitly to receive arrow/typeahead keys.
+  // The Popover/Drawer does not auto-focus a child, so the listbox is focused for arrow and typeahead keys.
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     listRef.current?.focus({ preventScroll: true });

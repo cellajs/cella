@@ -18,10 +18,9 @@ interface SelectionActionBarProps {
 }
 
 /**
- * Floating action bar for the current row/card selection, fixed at the bottom of the viewport.
- * Shows caller-provided bulk actions and a built-in clear button. Portaled to body so sticky or
- * transformed ancestors cannot trap it. While visible it sets the `selection-active` body class
- * so FABs and the mobile bottom nav animate out of its way.
+ * Floating action bar for the current selection, fixed at the bottom of the viewport. Portaled to
+ * body so sticky or transformed ancestors cannot trap it. While visible it sets the
+ * `selection-active` body class, which moves FABs and the mobile bottom nav out of its way.
  */
 export function SelectionActionBar({ count, onClear, children }: SelectionActionBarProps) {
   const { t } = useTranslation();

@@ -2,21 +2,19 @@ import confetti from 'canvas-confetti';
 import { useEffect, useRef } from 'react';
 
 interface ConfettiProps {
-  fire?: boolean; // If true, triggers a confetti burst
-  options?: confetti.Options; // Options for customizing confetti
+  fire?: boolean; // Triggers a confetti burst on change to true
+  options?: confetti.Options;
 }
 
-/** Renders the confetti component. */
 export function Confetti({ fire, options }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const confettiInstance = useRef<confetti.CreateTypes | null>(null);
 
   useEffect(() => {
     if (canvasRef.current) {
-      // Create a confetti instance tied to the canvas
       confettiInstance.current = confetti.create(canvasRef.current, {
-        resize: true, // Adjusts to canvas size
-        useWorker: true, // Improves performance
+        resize: true,
+        useWorker: true,
       });
     }
 

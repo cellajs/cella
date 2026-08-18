@@ -11,8 +11,5 @@ export const useScrollSpy = (sectionIds?: string[]) => {
   }, [sectionIds]);
 };
 
-/**
- * Subscribe to the current scroll-spy section.
- * Updates after scrolling settles (150ms idle) or immediately on explicit actions.
- */
+/** Current scroll-spy section; updates once scrolling settles or immediately on an explicit action. */
 export const useCurrentSection = () => useSyncExternalStore(subscribeSection, getSection);

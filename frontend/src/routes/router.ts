@@ -23,36 +23,27 @@ const router = createRouter({
   defaultPreload: false,
   context: {},
   defaultPendingMinMs: 0,
-  // Fallback for not-found errors scoped to an intermediate route (e.g. an unmatched path under
-  // /_public/auth). Without this, TanStack renders its generic `<p>Not Found</p>` since the root
-  // route's notFoundComponent only handles not-founds attached to the root match.
+  // Covers not-founds scoped to an intermediate route; the root notFoundComponent only handles the root match.
   defaultNotFoundComponent: createNotFoundComponent('public'),
 });
 
-// Publish the instance here for consumers that need it outside React. Registration at the
-// render site makes ownership explicit: the code that creates the router also publishes it.
 setRouter(router);
 
-/** Get the deepest boundary from a route match array (e.g. 'app' or 'public') */
 const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
   matches?.findLast((m) => m.staticData.boundary)?.staticData.boundary;
 
-/** Clean up sheets and streams when crossing layout boundaries (e.g. app <-> public) */
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;
   useSheeter.getState().remove(undefined, { isCleanup: true });
   useNavigationStore.getState().setNavSheetOpen(null);
   if (pending === 'public') {
-    // Leaving the app: tear down the stream and release leadership so a follower tab is promoted
-    // and keeps the SSE alive. Retaining it here would starve every other tab.
+    // Release leadership so a follower tab is promoted and keeps the SSE alive.
     appStreamManager.disconnect();
     releaseTabLeadership();
   }
 };
 
-/**
- * Router lifecycle subscriptions
- */
+// Router lifecycle subscriptions
 // Track the latest history action: PUSH/REPLACE = forward/new, BACK/FORWARD/GO = history traversal.
 let lastHistoryAction = 'PUSH';
 router.history.subscribe(({ action }) => {
@@ -62,15 +53,12 @@ router.history.subscribe(({ action }) => {
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   if (!pathChanged) return;
 
-  // Clear focus view on route change to prevent stuck focus state
   if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
 
-  // Boundary based cleanup
   const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
   cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
 
-  // Skip the page-enter mask when moving between two pages of the same leaf route (e.g. org -> org)
-  // via a forward navigation; there is no scroll delta to mask in that case.
+  // A forward navigation staying on the same leaf route has no scroll delta to mask.
   const fromLeafId = router.state.matches.at(-1)?.routeId;
   const toLeafId = pendingMatches.at(-1)?.routeId;
   const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
@@ -83,8 +71,7 @@ router.subscribe('onLoad', () => {
   useNavigationStore.getState().setNavLoading(false);
 });
 
-// Register the router instance for type inference
-// This must be in the same file that creates the router
+// Type registration must live in the file that creates the router.
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;

@@ -9,10 +9,7 @@ export type RecipientProps<TRecipient extends EmailRecipient> = {
   [K in Exclude<keyof TRecipient, keyof EmailRecipient>]: string;
 };
 
-/**
- * Sample data to render a template in previews and tests, co-located with the
- * template so it stays type-checked against the template's own props.
- */
+/** Sample render data, co-located with the template so it stays type-checked against its props. */
 export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = EmailRecipient> {
   /** Props shared across all recipients (passed to `translate`). */
   statics: TStatic;
@@ -21,9 +18,8 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
 }
 
 /**
- * Email template definition consumed as the mailer's runtime contract.
- * `TStatic`: props shared across recipients (e.g. senderName, entityName);
- * `TRecipient` extends `EmailRecipient` with per-recipient props.
+ * The mailer's runtime contract. `TStatic`: props shared across recipients (senderName,
+ * entityName); `TRecipient` extends `EmailRecipient` with per-recipient props.
  */
 export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient extends EmailRecipient = EmailRecipient> {
   /** Pre-compute all translated strings (+ pass-through statics the component needs). Must include `subject`. */
@@ -36,11 +32,7 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
   _recipientType?: TRecipient;
 }
 
-/**
- * Creates an email template whose translated props must match its component props.
- * The curried calls bind caller-specified static and recipient types before TypeScript
- * infers the translated shape.
- */
+/** The curried calls bind the static and recipient types before TS infers the translated shape. */
 export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient = EmailRecipient>() {
   return <TTranslated extends { subject: string }>(def: {
     translate(lng: string, statics: TStatic): TTranslated;

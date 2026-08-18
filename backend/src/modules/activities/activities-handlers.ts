@@ -14,21 +14,13 @@ app.openapi(activityRoutes.getActivities, async (ctx) => {
     ctx.req.valid('query');
 
   const filters = [
-    // Filter by userId if provided
     ...(userId ? [eq(activitiesTable.userId, userId)] : []),
-    // Filter by entityType if provided
     ...(entityType ? [eq(activitiesTable.entityType, entityType)] : []),
-    // Filter by resourceType if provided
     ...(resourceType ? [eq(activitiesTable.resourceType, resourceType)] : []),
-    // Filter by action if provided
     ...(action ? [eq(activitiesTable.action, action)] : []),
-    // Filter by tableName if provided
     ...(tableName ? [eq(activitiesTable.tableName, tableName)] : []),
-    // Filter by type if provided
     ...(type ? [eq(activitiesTable.type, type)] : []),
-    // Filter by subjectId if provided
     ...(subjectId ? [eq(activitiesTable.subjectId, subjectId)] : []),
-    // Filter by search query if provided (searches type and tableName)
     ...(q ? [ilike(activitiesTable.type, prepareStringForILikeFilter(q))] : []),
   ];
 

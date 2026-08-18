@@ -5,9 +5,6 @@ import { errorResponseRefs, paginationSchema } from '#/schemas';
 import { mockPaginatedActivitiesResponse } from './activities-mocks';
 
 const activityRoutes = {
-  /**
-   * Get list of activities
-   */
   getActivities: createXRoute({
     operationId: 'getActivities',
     method: 'get',

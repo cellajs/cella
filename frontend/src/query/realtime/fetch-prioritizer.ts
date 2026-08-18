@@ -100,9 +100,7 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
     : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
 
-  // Anchor at caught-up+1: heals missed-notification gaps (fromSeq above the watermark) and
-  // trims already-ingested overlap (fromSeq below it, e.g. a range catchup partly covered).
-  // Without a baseline (caughtUp 0) trust the notification's own range.
+  // Anchoring at caught-up+1 heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
   const anchoredFrom = caughtUp > 0 ? caughtUp + 1 : fromSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
@@ -140,10 +138,7 @@ export function flushAllNow(): Promise<void> {
   return flushDue();
 }
 
-/**
- * Flush one foreground catchup view before mutation replay while centralizing range fetches.
- * A single failed attempt invalidates and advances.
- */
+/** Flush one foreground catchup view before mutation replay; a single failed attempt invalidates and advances. */
 export async function flushChannelViewNow(
   entityType: ProductEntityType,
   organizationId: string,
@@ -185,8 +180,7 @@ async function flushDue(): Promise<void> {
     dirty.delete(key); // in-flight ranges leave the map; overlapping re-notifications re-enqueue
     due.push(entry);
   }
-  // Covering fetch: every due channel of one (entityType, org) shares ONE bounded fetch;
-  // rows route to their home lists during patching, so N dirty channels never cost N fetches.
+  // Covering fetch: all due channels of one (entityType, org) share one bounded fetch, and rows route to their home lists during patching.
   const groups = new Map<string, DirtyEntry[]>();
   for (const entry of due) {
     const groupKey = `${entry.entityType}:${entry.organizationId}`;
@@ -198,10 +192,7 @@ async function flushDue(): Promise<void> {
   armTimer();
 }
 
-/**
- * Find the common channel covering due views for one narrowed delta fetch.
- * Organization, unresolved, or root-divergent paths widen to the whole organization.
- */
+/** Common channel covering due views for one narrowed delta fetch; org-level, unresolved, or root-divergent paths widen to the whole organization. */
 function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   const ids = new Set<string>();
   for (const entry of entries) {
@@ -222,14 +213,11 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
     while (i < common.length && i < segments.length && common[i] === segments[i]) i++;
     common = common.slice(0, i);
   }
-  // A single root segment is the org id: no narrowing. Otherwise the deepest common segment is
-  // the covering channel id.
+  // A single root segment is the org id, so no narrowing; otherwise the deepest common segment is the covering channel id.
   return common.length > 1 ? common[common.length - 1] : undefined;
 }
 
-// A promised seq (notification batch-end / catchup frontier) that never came back: drop to
-// basic-fetch mode (staleTime fallback) until a clean catchup reconciles. Logs once per entry;
-// the warn reaches Maple via the browser SDK, never the user.
+// A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles. Logs once per entry.
 function enterBasicFetchMode(context: Record<string, unknown>): void {
   if (!isSyncDeliveryTrusted()) return;
   setSyncDeliveryTrusted(false);
@@ -267,21 +255,17 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
 
   if (result.status === 'ok') {
     if (result.reachedSeq < untilSeq) {
-      // Short delivery: keep the cursor honest (do not advance) so catchup re-checks the gap,
-      // heal the visible view once, and degrade sync trust.
+      // Short delivery: do not advance the cursor, so catchup re-checks the gap; heal the visible view once and degrade sync trust.
       cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
       enterBasicFetchMode({ entityType, organizationId, promisedSeq: untilSeq, reachedSeq: result.reachedSeq });
     } else {
-      // Per-view advance accounting: the fetch covered [fromSeq, untilSeq] for every channel
-      // under the covering prefix, so each due channel advances to the shared upper bound.
+      // The fetch covered [fromSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
       for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     }
-    // Unseen sync: exact badge deltas from the fetched rows (each row resolves its own home
-    // channel; the org id is only the fallback for rows without ancestor ids).
+    // Badge deltas from the fetched rows; each row resolves its own home channel, the org id is the fallback for rows without ancestor ids.
     ingestSyncedRows(entityType, organizationId, result.items as { id: string }[]);
   } else {
-    // Overflow/unsupported/exhausted retries: hand the channel views to react-query and advance
-    // the watermark to prevent a fetch loop. The list refetch owns recovery.
+    // Overflow, unsupported, or exhausted retries: the list refetch owns recovery, and the watermark advances to prevent a fetch loop.
     const anyViewing = entries.some((entry) => isViewingChannel(organizationId, entry.channelId));
     cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
@@ -344,15 +328,12 @@ function installListeners(): void {
   // Back online: retry what accumulated while offline.
   window.addEventListener('online', () => armTimer());
 
-  // A mounting view can put a pending scope on the live tier (its list query gains an observer):
-  // same catch-up-on-open as the route subscription below, but it also covers panels opened
-  // without navigation and a notification that landed moments before the view mounted.
+  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications landing just before mount.
   queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
 
-  // Navigation flushes pending scopes immediately. Route context promotes org-level scopes.
-  // Import lazily to keep the route tree out of the fetch prioritizer's importer graphs.
+  // Navigation flushes pending scopes and route context promotes org-level scopes; the lazy import keeps the route tree out of this module's importer graph.
   void import('~/routes/router').then(({ router }) => {
     router.subscribe('onLoad', () => promoteLiveChannels());
   });

@@ -2,14 +2,7 @@ import { faker } from '@faker-js/faker';
 import { mockNanoid, mockUuid, withFakerSeed } from '#/mocks';
 import { mockStxBase } from './sync-transaction-mocks';
 
-/**
- * Generates a mock StreamNotification example for product entity events.
- *
- * For product entities (e.g. attachment):
- * - entityType is set, resourceType is null
- * - Includes stx, seq for sync engine
- * - channelType is null (not a channel entity event)
- */
+/** Product-entity shape: productType set, resourceType and channelType null, stx and seq present. */
 export const mockStreamNotification = (key = 'stream-notification:default') =>
   withFakerSeed(key, () => ({
     kind: 'product' as const,

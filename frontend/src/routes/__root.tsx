@@ -7,8 +7,7 @@ import { meQueryOptions } from '~/modules/me/query';
 import { useUserStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 
-// Root boundary components are defined locally (not imported) so their bindings are never read
-// cross-module at route-definition eval time, which can TDZ during HMR re-evaluation.
+// Root boundary components stay local: a cross-module binding read at route-definition eval time can TDZ during HMR.
 function RootErrorComponent({ error }: { error: unknown }) {
   return <ErrorNotice boundary="root" error={error as ErrorNoticeError} />;
 }
@@ -28,7 +27,6 @@ function RootNotFoundComponent() {
   );
 }
 
-/** Defines the root application route. */
 export const Route = createRootRouteWithContext()({
   staticData: { isAuth: false, boundary: 'root' },
   component: Root,

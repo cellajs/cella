@@ -1,10 +1,7 @@
 import { env as dotenv } from '@dotenv-run/core';
 import { z } from 'zod';
 
-/**
- * Load the backend's .env: the single env file shared across the monorepo.
- * The relative root resolves from the worker's own CWD (cdc/ or yjs/).
- */
+/** The one env file for the monorepo. The relative root resolves from the worker's own CWD. */
 export function loadBackendDotenv(): void {
   dotenv({
     root: '../backend',
@@ -12,10 +9,10 @@ export function loadBackendDotenv(): void {
   });
 }
 
-/** Env vars every worker (cdc, yjs) shares. Extend with service-specific fields. */
+/** Shared by cdc and yjs. Extend with service-specific fields. */
 export const workerEnvBase = z.object({
-  // PEM CA cert (Scaleway RDB instance) to verify the PostgreSQL TLS connection.
-  // Auto-provisioned by `pulumi up`; required in production.
+  // PEM CA cert for the Scaleway RDB instance, verifying the PostgreSQL TLS connection.
+  // Provisioned by `pulumi up` and required in production.
   DATABASE_SSL_CA: z.string().optional(),
   MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 

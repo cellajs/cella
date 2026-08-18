@@ -11,9 +11,7 @@ interface UseAttachmentUrlResult {
   error: Error | null;
 }
 
-/**
- * Resolves an attachment URL local-first: checks the local blob store, falls back to a cloud URL.
- */
+/** Resolves an attachment URL local-first, falling back to a cloud URL. */
 export function useAttachmentUrl(
   attachment: Pick<Attachment, 'id' | 'keys' | 'publicBucket' | 'tenantId' | 'organizationId'> | null | undefined,
   { preferredVariant }: ResolveOptions = {},
@@ -36,7 +34,6 @@ export function useAttachmentUrl(
 
     let cancelled = false;
 
-    // Cleanup previous blob URL
     if (blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;

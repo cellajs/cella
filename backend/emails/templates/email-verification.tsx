@@ -20,9 +20,6 @@ interface EmailVerificationStatic {
   name: string;
 }
 
-/**
- * Email template for users to verify ownership of this email address.
- */
 export const emailVerificationEmail = defineEmailTemplate<
   EmailVerificationStatic,
   EmailRecipient & { email: string }

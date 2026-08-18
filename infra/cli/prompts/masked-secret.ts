@@ -1,10 +1,8 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
 
 /**
- * Render a value with its first/last `revealEnds` characters visible and the
- * middle masked, so a *pasted* secret can be eyeballed for a wrong-clipboard
- * mistake without exposing the whole value. Anything too short to keep at least
- * as many characters hidden as revealed is fully masked.
+ * Render a value with its first/last `revealEnds` characters visible and the middle masked, so a pasted secret can be checked for a wrong-clipboard mistake.
+ * A value too short to hide at least as many characters as it reveals is fully masked.
  */
 export function maskSecret(value: string, revealEnds: number): string {
   if (value.length === 0) return '';
@@ -21,13 +19,9 @@ interface MaskedSecretConfig {
 }
 
 /**
- * A password-style prompt that reveals only the ends of the typically pasted value
- * and shows its length, catching a wrong paste
- * before it is stored. Drop-in replacement for `@inquirer/prompts`' `password`:
- * same `{ message, validate? }` config and `Promise<string>` result.
- *
- * The raw value lives only in readline; we render our own masked view, so the
- * full secret is never echoed to the terminal or left in scrollback.
+ * A password-style prompt that reveals only the ends of a pasted value and shows its length, catching a wrong paste before it is stored.
+ * Drop-in replacement for `@inquirer/prompts`' `password`: same `{ message, validate? }` config and `Promise<string>` result.
+ * The raw value lives only in readline and the masked view is rendered here, so the full secret never reaches the terminal or scrollback.
  */
 export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, done) => {
   const { validate = () => true, revealEnds = 3 } = config;
@@ -47,8 +41,7 @@ export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, do
         setStatus('done');
         done(value);
       } else {
-        // Restore the line so the operator can fix the value in place after the
-        // line event clears it.
+        // Restore the line so the operator can fix the value in place after the line event clears it.
         rl.write(value);
         setError(typeof isValid === 'string' ? isValid : 'You must provide a valid value');
         setStatus('idle');

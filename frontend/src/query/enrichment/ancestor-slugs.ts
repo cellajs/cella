@@ -7,7 +7,6 @@ import { getField } from '~/utils/get-field';
 /** entityType -> entityId -> slug */
 export type SlugIndex = Map<string, Map<string, string>>;
 
-/** Check if ancestor slugs maps differ */
 function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | null): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
@@ -16,10 +15,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
   return aKeys.some((k) => a[k] !== b[k]);
 }
 
-/**
- * Enrich an item with ancestor slugs via a pre-built index. Falls back to ancestor ID when a slug
- * isn't indexed (rewriteUrlToSlug fixes the URL later). Returns the original reference if unchanged.
- */
+/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. Returns the original reference if unchanged. */
 export function enrichWithAncestorSlugs(
   item: EnrichableChannel,
   ancestors: readonly ChannelEntityType[],

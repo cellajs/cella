@@ -4,9 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { getEntityTable } from '#/tables';
 import { buildInsertableProduct, productMocksByType } from './product-mock-registry';
 
-// Every product entity type must have a registered mock so the config-driven insert suites (RLS,
-// CDC, sequence) can seed it without a hand-written fixture. `satisfies` already makes a missing
-// key a compile error; this guard also catches runtime insert-readiness regressions.
+// `satisfies` already makes a missing key a compile error; this guard catches runtime insert-readiness regressions.
 describe('product mock registry', () => {
   const productTypes = appConfig.productEntityTypes;
 

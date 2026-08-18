@@ -1,25 +1,16 @@
 import type React from 'react';
 
-/** Style for avatar row above email headers */
 export const avatarRowStyle: React.CSSProperties = { margin: '1.5rem 0 1rem' };
 
-/** Style for "Hi name," greeting paragraph */
 export const greetingStyle: React.CSSProperties = { marginBottom: '4px' };
 
-/** Base small text style (0.75rem) */
 export const smallTextStyle: React.CSSProperties = { fontSize: '0.75rem', lineHeight: '1.125rem' };
 
-/** Centered small text for fine print / notes */
 export const finePrintStyle: React.CSSProperties = { ...smallTextStyle, textAlign: 'center' };
 
-/** Centered small text with top margin for invite expiry notes */
 export const noteStyle: React.CSSProperties = { ...finePrintStyle, margin: '0.5rem 0 0 0' };
 
-/**
- * CSS for newsletter content rendered by BlockNote's blocksToHTMLLossy().
- * Mirrors key styles from frontend/src/modules/common/blocknote/styles.css
- * so newsletters closely match the editor appearance.
- */
+/** Mirrors frontend/src/modules/common/blocknote/styles.css so newsletters match the editor. */
 export const newsletterContentStyles = `
   .bn-email-content {
     font-family: "Open Sans", ui-sans-serif, system-ui, sans-serif;

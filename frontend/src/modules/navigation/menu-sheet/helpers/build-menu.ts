@@ -1,7 +1,6 @@
 import { appConfig, type ChannelEntityType, type MenuSection } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 
-// Build initial menu state based on the provided menu structure.
 function buildInitialMenu<const T extends readonly { entityType: ChannelEntityType }[]>(
   structure: T,
 ): { [K in T[number]['entityType']]: UserMenuItem[] } {
@@ -11,7 +10,6 @@ function buildInitialMenu<const T extends readonly { entityType: ChannelEntityTy
   return acc;
 }
 
-// Base menu
 const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
 /** Builds a user menu from a map of channel entity types to their items; `opts` enables detailed submenus. */
@@ -24,8 +22,7 @@ export function buildMenu(
   for (const section of menuStructure) {
     const items = byType.get(section.entityType) ?? [];
 
-    // Always attach sub-items so data (e.g., unseen badge aggregation) is available
-    // regardless of detailedMenu. Rendering of sub-items is controlled separately.
+    // Sub-items are always attached, so unseen badge aggregation has its data whatever detailedMenu renders.
     if (!section.subentityType) {
       menu[section.entityType] = items.map((e) => ({ ...e, submenu: [] }));
       continue;

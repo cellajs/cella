@@ -35,20 +35,16 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 
   const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
 
-  // Determine which MFA strategy user is using
   const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
   try {
-    // --- Passkey verification ---
     if (passkeyData)
       await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
 
-    // --- TOTP verification ---
     if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
   } catch (error) {
     if (error instanceof AppError) throw error;
 
-    // Wrap unexpected errors in AppError for consistent error handling
     throw new AppError(500, 'invalid_credentials', 'error', {
       ...(error instanceof Error ? { originalError: error } : {}),
     });
@@ -65,14 +61,12 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
-    // Establish a new session after MFA verification
     await setUserSession(ctx, user, strategy, 'mfa');
   }
 
-  // Notify user about MFA status change
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
-  // Re-select with userSelect to include activity timestamps (subqueries from user_counters table)
+  // Re-select to include the user_counters subqueries
   const userWithActivity = await findCurrentUser(ctx);
 
   return ctx.json(userWithActivity, 200);
@@ -99,7 +93,6 @@ app.openapi(meRoutes.deleteMySessions, async (ctx) => {
   const { session: currentSession } = await validateSession(sessionToken);
 
   try {
-    // Clear auth cookie if user deletes their current session
     if (currentSession && sessionIds.includes(currentSession.id)) deleteAuthCookie(ctx, 'session');
 
     const deleted = await deleteSessionsByIds(ctx, { sessionIds });
@@ -123,7 +116,6 @@ app.openapi(meRoutes.updateMe, async (ctx) => {
 app.openapi(meRoutes.deleteMe, async (ctx) => {
   const user = ctx.var.user;
 
-  // Check if user exists
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.

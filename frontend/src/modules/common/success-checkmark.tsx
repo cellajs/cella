@@ -6,7 +6,6 @@ interface SuccessCheckmarkProps {
   size?: number;
 }
 
-/** Renders the success checkmark component. */
 export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps) {
   return (
     <div

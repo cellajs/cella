@@ -21,7 +21,6 @@ const emailEnabled = enabledStrategies.includes('passkey');
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
-/** Renders the check email step component. */
 export function CheckEmailStep() {
   const { t } = useTranslation();
 
@@ -39,7 +38,6 @@ export function CheckEmailStep() {
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => setStep('signIn', form.getValues('email')),
     onError: (error: ApiError) => {
-      // Rate limited - switch to restricted mode
       if (error.status === 429) {
         setRestrictedMode(true);
         return setStep('signIn', form.getValues('email'));
@@ -47,9 +45,7 @@ export function CheckEmailStep() {
 
       let nextStep: AuthStep = 'inviteOnly';
 
-      // If registration is enabled or user has a token, proceed to sign up
       if (appConfig.has.selfRegistration) nextStep = 'signUp';
-      // If registration is disabled and user has no token, proceed to waitlist
       else if (appConfig.has.waitlist) nextStep = 'waitlist';
 
       if (error.status === 404) return setStep(nextStep, form.getValues('email'));

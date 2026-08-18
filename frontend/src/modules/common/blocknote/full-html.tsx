@@ -16,10 +16,7 @@ import {
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-// DOMPurify's default URI policy strips `blob:` URLs, but the read-only render resolves locally
-// cached images to same-origin `blob:` object URLs (the live editor keeps them because it renders
-// DOM without sanitizing). Extend the default scheme allow-list with `blob` so those images are not
-// dropped; `blob:` is same-origin and safe as a media source. All other schemes keep the default.
+// DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
 const ALLOWED_URI_REGEXP =
   /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
@@ -36,9 +33,6 @@ interface BlockNoteFullHtmlProps {
   onReady?: () => void;
 }
 
-/**
- * Walk the block tree, resolve file URLs, collect media items, and patch checkbox state.
- */
 async function processBlocks(
   blocks: CustomBlock[],
   resolveUrl: (key: string) => Promise<string>,
@@ -92,7 +86,6 @@ function BlockNoteFullHtml({
     mediaItems: [],
   });
 
-  // Signal readiness once, on the first non-empty paint, so a caller can defer swapping to this view.
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
   const readyFiredRef = useRef(false);
@@ -103,9 +96,7 @@ function BlockNoteFullHtml({
     }
   }, [renderState.html]);
 
-  // blocksToFullHTML internally calls flushSync, which cannot run during render
-  // or during React's commit phase (useLayoutEffect). We use useEffect + queueMicrotask
-  // to ensure it runs fully outside React's lifecycle.
+  // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
   useEffect(() => {
     const blocks = getParsedContent(defaultValue);
     if (!blocks) {
@@ -115,14 +106,12 @@ function BlockNoteFullHtml({
 
     let cancelled = false;
 
-    // Produce initial HTML via microtask to escape React's commit phase
     queueMicrotask(() => {
       if (cancelled) return;
       const html = getHeadlessEditor().blocksToFullHTML(blocks);
       setRenderState({ html, mediaItems: [] });
     });
 
-    // Then resolve file URLs asynchronously for the final render
     async function resolveUrls(blocks: CustomBlock[]) {
       const resolveUrl = (ref: string): Promise<string> =>
         resolveBlockNoteFileRef(ref, { tenantId: propTenantId, organizationId: propOrganizationId });
@@ -158,8 +147,7 @@ function BlockNoteFullHtml({
     });
   };
 
-  // Mirror live editor styling without using `.bn-editor`; BlockNote's side-menu plugin
-  // scans `.bn-editor` nodes and expects editor-only children such as `.bn-block-group`.
+  // Not `.bn-editor`: BlockNote's side-menu plugin scans those nodes and expects editor-only children such as `.bn-block-group`.
   return (
     <div
       id={id}
@@ -170,8 +158,7 @@ function BlockNoteFullHtml({
       onClick={handleClick}
     >
       <div
-        // select-text opts static read-only content into text selection; it sits inside a focusable,
-        // click-to-expand task Card, so without this the user can't highlight/copy the text.
+        // select-text opts this content back into text selection inside the focusable, click-to-expand Card.
         className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP }) }}

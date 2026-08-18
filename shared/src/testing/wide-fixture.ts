@@ -44,13 +44,13 @@ export const wideEntityTypes: readonly WideEntityType[] = [
   'attachment',
 ];
 
-/** Wide hierarchy override; actions retain their hierarchy-independent app defaults. */
+/** Actions keep their hierarchy-independent app defaults. */
 export const wideOverrides: HierarchyOverrides = { hierarchy: wideHierarchy };
 
 type WidePerms = Partial<Record<EntityActionType, PolicyCellInput>>;
 type WideChannelBuilder = Record<WideRole, (perms: WidePerms) => void>;
 
-/** Wide-typed callback config surfaced to `configureWidePermissions`. */
+/** Passed to `configureWidePermissions`. */
 export interface WidePolicyConfiguration {
   entityType: WideEntityType;
   channels: Record<WideChannelType, WideChannelBuilder>;
@@ -59,7 +59,7 @@ export interface WidePolicyConfiguration {
 
 export type WidePolicyCallback = (config: WidePolicyConfiguration) => void;
 
-/** Configure permissions with the wide vocabulary while containing app-config casts here. */
+/** Keeps the app-config casts in this file. */
 export const configureWidePermissions = (callback: WidePolicyCallback): PermissionsConfigResult =>
   configurePermissions(
     wideEntityTypes as unknown as readonly EntityType[],
@@ -67,11 +67,9 @@ export const configureWidePermissions = (callback: WidePolicyCallback): Permissi
     wideOverrides,
   );
 
-/** Build a membership over a wide channel. */
 export const wideMembership = (channelType: WideChannelType, channelId: string, role: WideRole): AccessMembership =>
   ({ channelType, channelId, role }) as unknown as AccessMembership;
 
-/** Build a subject over a wide entity. */
 export const wideSubject = (input: {
   entityType: WideEntityType;
   id?: string;
@@ -80,14 +78,13 @@ export const wideSubject = (input: {
   row?: Record<string, unknown>;
 }): SubjectForPermission => ({ ...input }) as unknown as SubjectForPermission;
 
-/** Wrap a wide-keyed public-read grant map for the engine's `publicGrants` option. */
+/** For the engine's `publicGrants` option. */
 export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants =>
   grants as PublicReadGrants;
 
-/** `computeCan`'s result keyed by the wide vocabulary, so tests read `.task` etc. cast-free. */
+/** Keyed by the wide vocabulary, so tests read `.task` cast-free. */
 export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, CanState>>>;
 
-/** Drive `computeCan` over the wide hierarchy while containing app-config casts here. */
 export const computeWideCan = (
   channelType: WideChannelType,
   membership: AccessMembership | undefined | null,

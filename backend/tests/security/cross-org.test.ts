@@ -21,9 +21,8 @@ const attachmentBody = (id: string) => ({
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
-// Verifies isolation between users in different organizations. Under 1 tenant = 1 organization,
-// each org lives in its own tenant, so the "other org" is reached at its own tenantId and access is
-// rejected at the tenant boundary (tenantGuard), preserving the isolation guarantee.
+// One tenant = one organization, so the other org is reached at its own tenantId and tenantGuard
+// rejects the access at the tenant boundary.
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -33,10 +32,8 @@ describe('Cross-organization API isolation', async () => {
   beforeAll(async () => {
     mockFetchRequest();
 
-    // Create tenant with org A and admin user A
     tenant = await createTestTenant(call, 'org-isolation');
 
-    // Create a second, independent org (its own tenant, per 1:1), with its own user
     const secondOrg = await createSecondOrg();
     orgB = { id: secondOrg.id, slug: secondOrg.slug, tenantId: secondOrg.tenantId };
     userB = await createOrgUser(call, secondOrg.tenantId, orgB.id, 'org-b');

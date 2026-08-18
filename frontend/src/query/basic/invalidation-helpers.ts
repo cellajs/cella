@@ -3,10 +3,7 @@ import type { ChannelEntityType } from 'shared';
 import { isQueued } from '~/query/offline/mutation-queue';
 import { getEntityQueryKeys } from './entity-query-registry';
 
-/**
- * Remove parked updates before deletion so they cannot replay afterward.
- * Retain active updates in the scope queue so the delete remains serialized behind them.
- */
+/** Removes parked updates before deletion so they cannot replay afterward; active updates stay queued so the delete remains serialized behind them. */
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
   const mutationCache = queryClient.getMutationCache();
@@ -20,12 +17,11 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
 }
 
 /**
- * Returns whether sibling mutations should defer invalidation until the last settlement.
+ * Whether sibling mutations should defer invalidation until the last settlement.
  * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
  */
 function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
-  // onSettled still counts the current mutation as "mutating": >1 means siblings are pending and
-  // will handle invalidation; ===1 means this is the last one.
+  // onSettled still counts the current mutation as mutating, so >1 means siblings are pending and will invalidate.
   return queryClient.isMutating({ mutationKey }) > 1;
 }
 
@@ -47,7 +43,6 @@ export function invalidateOnMembershipChange(
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType: 'active' });
   queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
 
-  // If entity belongs to a different parent org, invalidate that too
   if (organizationId && organizationId !== entityId) {
     const orgKeys = getEntityQueryKeys('organization');
     queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId), refetchType: 'active' });

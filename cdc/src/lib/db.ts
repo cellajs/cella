@@ -9,12 +9,8 @@ export const stripSslParams = stripPostgresSslParams;
 export const buildVerifiedSsl = (connectionString: string) => verifiedPostgresSsl(connectionString, sslCa);
 
 /**
- * CDC database client.
- *
- * Connects via DATABASE_CDC_URL, which uses admin_role: Scaleway only grants the
- * REPLICATION attribute (required to open a logical replication slot) to admin
- * users, so the worker cannot run under a lesser role. Append-only behaviour on
- * the activities table is enforced by the immutability triggers, not by role
- * privileges.
+ * DATABASE_CDC_URL uses admin_role because Scaleway grants the REPLICATION attribute, required to
+ * open a logical replication slot, to admin users only. Append-only behaviour on the activities table
+ * comes from the immutability triggers, not from role privileges.
  */
 export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, { max: 20, sslCa, logger: env.DEBUG });

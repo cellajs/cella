@@ -128,10 +128,7 @@ const SCOPE_KINDS: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[
   api: ['operation', 'schema'],
 };
 
-/**
- * Build a search client over the given corpus. `addOperations`/`addSchemas` support late arrival
- * of the API corpus (offline with a cold query cache).
- */
+/** `addOperations`/`addSchemas` accept the API corpus late, as when offline with a cold query cache. */
 export function createEngine(
   pages: EnginePage[],
   operations: GenOperationSummary[] | null,
@@ -189,8 +186,7 @@ export function createEngine(
         ...(scope !== 'all' && { where: { kind: { in: SCOPE_KINDS[scope] } } }),
       });
 
-      // Group hits by page, preserving global score order for both group order
-      // (a group ranks by its best hit) and the child rows inside each group.
+      // Group hits by page, preserving global score order; a group ranks by its best hit
       const groupOrder: string[] = [];
       const grouped = new Map<string, SearchDoc[]>();
       for (const hit of found.hits) {
@@ -211,8 +207,7 @@ export function createEngine(
           rows.push(...docs.map((doc) => toRow(doc, terms)));
           continue;
         }
-        // Page groups: parent page row first (even when only sections matched),
-        // then the matching heading/text rows hanging under it.
+        // Page groups: parent page row first, even when only sections matched, then its heading/text rows
         const pageDoc = docsById.get(`page:${pageId}`);
         if (pageDoc) rows.push(toRow(pageDoc, terms));
         rows.push(

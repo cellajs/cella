@@ -22,20 +22,16 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
   const user = ctx.var.user;
 
-  // Prevent generating a new key if user already has TOTP configured
   const existingTotp = await findExistingTotp({ var: { ...ctx.var, db: baseDb } }, { userId: user.id });
   if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
 
   // Generate a 20-byte random secret and encode it as Base32
   const secretBytes = crypto.getRandomValues(new Uint8Array(20));
 
-  // Base32 → for authenticator app (manual entry or QR code)
   const manualKey = encodeBase32UpperCase(secretBytes);
 
-  // Save the secret in a short-lived cookie (5 minutes)
   await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
 
-  // otpauth:// URI for QR scanner apps
   const totpUri = createTOTPKeyURI(
     appConfig.slug,
     user.email,
@@ -52,15 +48,12 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 
   const { code } = ctx.req.valid('json');
 
-  // Prevent duplicate TOTP registration
   const existingTotp = await findExistingTotp(ctx, { userId: user.id });
   if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
 
-  // Retrieve the encoded totp secret from cookie
   const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
   if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
-  // Verify TOTP code
   try {
     const isValid = signInWithTotp(code, encodedSecret);
     if (!isValid) throw new AppError(403, 'invalid_token', 'warn');
@@ -72,7 +65,6 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
     });
   }
 
-  // Save encoded secret key in database
   await insertTotp(ctx, { userId: user.id, secret: encodedSecret });
 
   // Clean up the challenge cookie to prevent reuse
@@ -90,7 +82,6 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   await baseDb.transaction(async (tx) => {
     await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    // Check if the user still has any passkeys or TOTP entries registered
     const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
 
     // MFA requires both passkeys and TOTP as backup.
@@ -109,15 +100,12 @@ app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
 
   const strategy = 'totp';
 
-  // Verify if strategy allowed
   if (!appConfig.enabledAuthStrategies.includes(strategy)) {
     throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
   }
 
-  // Define strategy and session type for metadata/logging purposes
   const meta = { strategy, sessionType: 'mfa' } as const;
 
-  // Validate MFA token and retrieve user
   const user = await validateConfirmMfaToken(ctx);
 
   try {
@@ -134,7 +122,6 @@ app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   // Revoke single use token by deleting cookie
   deleteAuthCookie(ctx, 'confirm-mfa');
 
-  // Set user session after successful verification
   await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
   return ctx.body(null, 204);

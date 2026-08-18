@@ -1,6 +1,5 @@
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
 
-/** Validate the generated OpenAPI document before exposing or caching the spec. */
 const validateOpenApiDocument = (doc: Record<string, unknown>) => {
   validateSchemaTags(doc);
 };
@@ -10,11 +9,7 @@ const normalizeOpenApiDocument = (doc: Record<string, unknown>) => {
   stripRegexFlagsFromPatterns(doc);
 };
 
-/**
- * Validate that every `x-tags` entry on a component schema refers to a tag
- * registered in the tag registry. Throws on the first violation so misconfig
- * surfaces at boot before it can silently produce miscategorized docs.
- */
+/** Every `x-tags` entry must name a registered tag. Throws at boot on the first violation. */
 const validateSchemaTags = (doc: Record<string, unknown>) => {
   const known = new Set(getRegisteredTags().map((t) => t.tag));
   const components = (doc.components as Record<string, unknown> | undefined) ?? {};
@@ -34,11 +29,7 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
   }
 };
 
-/**
- * Walk the spec and strip a trailing `/<flags>` suffix from any `pattern`
- * string. zod-openapi serializes RegExp via `String(re)` which yields
- * `^foo$/u`; JSON Schema patterns are ECMA-262 source-only.
- */
+/** zod-openapi serializes RegExp via `String(re)`, yielding `^foo$/u`; JSON Schema patterns are source-only. */
 const FLAG_SUFFIX = /\/[gimsuy]+$/;
 const stripRegexFlagsFromPatterns = (node: unknown): void => {
   if (Array.isArray(node)) {

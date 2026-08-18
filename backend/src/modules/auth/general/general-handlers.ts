@@ -41,7 +41,6 @@ app.openapi(authGeneralRoutes.health, async (ctx) => {
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   const { email } = ctx.req.valid('json');
 
-  // Check if IP is rate-limited for email enumeration (restricted mode)
   const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
 
   // In restricted mode, always return 204 to prevent email enumeration
@@ -49,7 +48,6 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
 
   const normalizedEmail = email.toLowerCase().trim();
 
-  // User not found, go to sign up if registration is enabled
   const user = await findUserByEmail(ctx, { email: normalizedEmail });
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
@@ -61,28 +59,21 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
 
   try {
-    // Check if token exists and create a new single use token session
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
 
-    // getValidToken returns a RAW singleUseToken only when it freshly minted one (won the CAS). On a
-    // tolerated re-click / concurrent re-submit it returns null here, meaning the caller's existing
-    // The five-minute cookie may still be valid, so only reset it after a fresh mint.
+    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the 5-minute cookie stays valid.
     if (tokenRecord.singleUseToken) {
-      // Set cookie using token type as name. Content is single use token. Expires in 5 minutes or until used.
+      // Cookie named by token type, holding the single use token, expiring in 5 minutes or on use.
       await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
     }
 
-    // If verification email, we process it immediately and redirect to app
     if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
-    // If magic link, authenticate user and redirect to app
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
 
-    // If oauth verification, we redirect to oauth /verify route to complete verification though oauth provider
     if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
 
-    // Only invitation remains (the param schema is limited to invokable types): redirect to auth
-    // page with tokenId param
+    // Only invitation remains: the param schema is limited to invokable types.
     const redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
 
     log.info('Token invoked, redirecting with single use token in cookie', {
@@ -105,10 +96,8 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-  // Check if token session is valid
   const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
 
-  // Check if tokenId matches the one being requested
   if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
   const tokenResponse = {
@@ -117,10 +106,9 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
     inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
   };
 
-  // If its NOT an membership invitation, return base data
   if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
 
-  // If it is a membership invitation, check if a new user has been created since invitation was sent (without verifying email)
+  // Membership invitation: a user may have been created since the invite was sent, without verifying email
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
   if (!tokenRecord.userId && existingUser) {
     await linkTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
@@ -178,7 +166,6 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
   else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
   else throw new AppError(400, 'invalid_request', 'error');
 
-  // Retrieve token
   const oldToken = await findInvitationToken(ctx, { filters });
 
   if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
@@ -192,7 +179,6 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
 
   if (confirmMfa) {
-    // Delete mfa cookie
     deleteAuthCookie(ctx, 'confirm-mfa');
 
     log.info('User mfa canceled');
@@ -200,7 +186,6 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
     return ctx.body(null, 204);
   }
 
-  // Find session & invalidate
   const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
   const { session: currentSession } = await validateSession(sessionToken);
 

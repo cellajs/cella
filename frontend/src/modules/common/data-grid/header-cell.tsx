@@ -43,7 +43,6 @@ interface HeaderCellProps<R, SR> {
   isCellSelected: boolean;
 }
 
-/** Renders the header table cell. */
 export function HeaderCell<R, SR>({
   column,
   colSpan,
@@ -65,8 +64,7 @@ export function HeaderCell<R, SR>({
   const rowSpan = getHeaderCellRowSpan(column, rowIdx);
   // set the tabIndex to 0 when there is no selected cell so grid can receive focus
   const roving = useRovingTabIndex(shouldFocusGrid || isCellSelected);
-  // When cell selection is disabled, every header cell stays in the natural tab order
-  // so sortable headers remain reachable by keyboard.
+  // Without cell selection every header cell keeps its natural tab order, so sortable headers stay keyboard reachable.
   const tabIndex = isCellSelectionEnabled ? roving.tabIndex : 0;
   const childTabIndex = isCellSelectionEnabled ? roving.childTabIndex : 0;
   const onFocus = isCellSelectionEnabled ? roving.onFocus : undefined;
@@ -87,13 +85,11 @@ export function HeaderCell<R, SR>({
       'opacity-40': isDragging,
       'z-3': column.frozen,
     },
-    // When cell selection is disabled, header cells stay in the natural tab order;
-    // render the focus affordance via :focus-visible since aria-selected is never true.
+    // aria-selected is never true without cell selection, so the focus outline comes from :focus-visible.
     !isCellSelectionEnabled &&
       'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
   );
 
-  // Pragmatic DnD for column reordering
   useEffect(() => {
     const el = cellRef.current;
     if (!el || !draggable || !onColumnsReorder) return;
@@ -140,7 +136,6 @@ export function HeaderCell<R, SR>({
     if (onSortColumnsChange == null) return;
     const { sortDescendingFirst } = column;
     if (sortColumn === undefined) {
-      // not currently sorted
       const nextSort: SortColumn = {
         columnKey: column.key,
         direction: sortDescendingFirst ? 'DESC' : 'ASC',
@@ -160,10 +155,8 @@ export function HeaderCell<R, SR>({
       if (ctrlClick) {
         const nextSortColumns = [...sortColumns!];
         if (nextSortColumn) {
-          // swap direction
           nextSortColumns[sortIndex!] = nextSortColumn;
         } else {
-          // remove sort
           nextSortColumns.splice(sortIndex!, 1);
         }
         onSortColumnsChange(nextSortColumns);
@@ -176,7 +169,6 @@ export function HeaderCell<R, SR>({
   function handleFocus(event: React.FocusEvent<HTMLDivElement>) {
     onFocus?.(event);
     if (shouldFocusGrid) {
-      // Select the first header cell if there is no selected cell
       selectCell({ idx: 0, rowIdx });
     }
   }
@@ -307,8 +299,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
       onClick={stopPropagation}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      // we are not using pointerup because it does not fire in some cases
-      // pointer down -> alt+tab -> pointer up over another window -> pointerup event not fired
+      // pointerup does not fire after pointer down -> alt+tab -> pointer up over another window.
       onLostPointerCapture={onLostPointerCapture}
       onDoubleClick={onDoubleClick}
     />

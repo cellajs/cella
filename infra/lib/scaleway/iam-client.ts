@@ -2,19 +2,10 @@ import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { scwFetch, scwSend } from './scw-fetch';
 
-/**
- * Shared IAM read/key client (app resolution, policy/rule collection, api-key CRUD)
- * used by assert-vm-grants, mint-generation-keys, and the CLI's drift check. Bootstrap
- * provisioning (scaleway-iam.ts) keeps its own helpers: its error handling and pagination needs differ per ritual step.
- */
-
 export const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
 const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
-/**
- * Auth shape every function here shares with scwFetch, so callers that inject a
- * fetch for tests and callers that mock the scw-fetch module both keep working.
- */
+/** Auth shape shared with scwFetch, so callers injecting a fetch and callers mocking the scw-fetch module both work. */
 export interface IamAuth {
   secretKey: string;
   fetchImpl?: FetchLike;
@@ -64,12 +55,7 @@ interface IamPolicy {
   group_id?: string;
 }
 
-/**
- * Every policy in the organization, paging past `page_size`. The list endpoint's
- * `application_id` filter is unreliable (Scaleway returns all policies regardless),
- * so callers filter by principal client-side against the `application_id` /
- * `group_id` each list item carries.
- */
+/** Every policy in the organization, paged. The list endpoint's `application_id` filter is unreliable, so callers filter by principal client-side. */
 async function listOrganizationPolicies(auth: IamAuth, organizationId: string): Promise<IamPolicy[]> {
   const pageSize = 100;
   const all: IamPolicy[] = [];
@@ -133,12 +119,7 @@ export async function fetchGrantedRules(
   return collected;
 }
 
-/**
- * Every rule granted to an application resolved by name. Returns null when the
- * application does not exist. Convenience wrapper (resolve org → resolve app
- * id → collect rules) for callers that only have the deterministic
- * `<slug>-<suffix>` name (the CLI's per-rule CI-policy drift check).
- */
+/** Every rule granted to an application resolved by its `<slug>-<suffix>` name. Returns null when the application does not exist. */
 export async function fetchAppRulesByName(opts: {
   secretKey: string;
   projectId: string;
@@ -175,7 +156,6 @@ export async function createApiKey(
   });
 }
 
-/** Delete one api key by access key. */
 export async function deleteApiKey(auth: IamAuth, accessKey: string): Promise<void> {
   await scwSend(auth, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`);
 }

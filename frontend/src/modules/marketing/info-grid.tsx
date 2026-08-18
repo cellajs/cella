@@ -61,7 +61,6 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
 }
 
 interface InfoGridProps<C extends string> {
-  /** Items to render, each optionally tagged with a category and stack layers. */
   items: InfoGridItem<C>[];
   /** Translation namespace, e.g. `about:<namespace>.<id>`. */
   namespace?: string;
@@ -71,7 +70,7 @@ interface InfoGridProps<C extends string> {
   hideCategoryHeader?: boolean;
   /** Render an SVG image icon per tile (from `/static/marketing/features/<id>.svg`). */
   image?: boolean;
-  /** Background/surface classes for each tile. Defaults to `bg-card`. */
+  /** Background classes for each tile. Defaults to `bg-card`. */
   tileClassName?: string;
   /** Wrap a flat (ungrouped) grid in an expandable list. Ignored when grouping by category. */
   expandable?: boolean;
@@ -106,7 +105,6 @@ export function InfoGrid<C extends string>({
     />
   );
 
-  // Grouped layout: one section per category with an icon + title header.
   if (categoryIcons) {
     const categories = items.reduce<C[]>((acc, item) => {
       if (item.category && !acc.includes(item.category)) acc.push(item.category);
@@ -135,7 +133,6 @@ export function InfoGrid<C extends string>({
     );
   }
 
-  // Flat layout, optionally expandable.
   return (
     <div className={`mx-auto grid max-w-5xl justify-center gap-4 ${className}`}>
       {expandable ? (

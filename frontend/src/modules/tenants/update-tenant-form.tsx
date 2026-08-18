@@ -27,7 +27,6 @@ interface Props {
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
 
-/** Renders the form for updating tenant. */
 export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();

@@ -151,22 +151,19 @@ describe('Draft context invite deferral', async () => {
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
-    // Reminders apply to invitees with a known email (existing users). Truly-new token
-    // invitees re-enter the new-user path, where duplicate invites are already
-    // conflict-suppressed without email.
+    // Reminders apply only to invitees with a known email; new-user invites are conflict-suppressed.
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], 'member', sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     expect(initial.remindedAt).toBeNull(); // initial invite email is not a reminder
 
-    // Re-invite immediately: pending invite was dispatched at creation → reminder suppressed
+    // The pending invite was dispatched at creation, so an immediate re-invite sends no reminder.
     await invite(organization, [invitee.email], 'member', sessionCookie);
     const [afterEarlyReinvite] = await getInactiveRows(organization.id);
     expect(afterEarlyReinvite.remindedAt).toBeNull();
 
-    // Age the invite past the throttle window (remindedAt takes precedence over the
-    // immutable createdAt in the throttle check) → re-invite sends and re-stamps
+    // The throttle check reads remindedAt, not the immutable createdAt.
     const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
     await db
       .update(inactiveMembershipsTable)

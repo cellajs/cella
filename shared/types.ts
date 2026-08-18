@@ -1,67 +1,52 @@
 import type { hierarchy, roles } from './config/config.default.ts';
 import { appConfig } from './src/config-builder/app-config.ts';
 
-// Entity types
-
-/** All entities in this app */
 export type EntityType = (typeof appConfig.entityTypes)[number];
 
-/** Channel entities (entities with memberships only) */
 export type ChannelEntityType = (typeof appConfig.channelEntityTypes)[number];
 
-/** Product entities: user-generated content (no memberships assigned) */
+/** User-generated content; no memberships are assigned on these. */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
-/** Relatable channel entities - channel entities that appear as parents of product entities. Used for activities table columns and CDC channel extraction. */
+/** Channel entities appearing as product parents; drives activities columns and CDC channel extraction. */
 export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes)[number];
 
-/** Resource types that are not entities but have activities logged */
+/** Not entities, but activities are logged for them. */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
 
-/** Product entity types tracked for seen/unseen counts */
 export type SeenTrackedProductType = (typeof appConfig.seenTrackedProductTypes)[number];
 
 // App configuration types
 
-/** Menu sections in the menu structure */
 export type MenuSection = {
   entityType: (typeof appConfig.menuStructure)[number]['entityType'];
   subentityType: (typeof appConfig.menuStructure)[number]['subentityType'] | null;
 };
 
-/** OAuth providers enabled in this app */
 export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
 
-/** Upload template IDs */
 export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 
-/** Language options */
 export type Language = (typeof appConfig.languages)[number];
 
-/** User flags */
 export type UserFlags = typeof appConfig.defaultUserFlags;
 
-/** Organization flags (per-org feature toggles; keys declared in app config) */
+/** Per-organization feature toggles; keys are declared in the app config. */
 export type OrganizationFlags = typeof appConfig.defaultOrganizationFlags;
 
-/** Organization setup config (app-configured defaults, layered under each org's stored jsonb) */
 export type OrganizationSetupConfig = typeof appConfig.defaultSetupConfig;
 
-/** Theme options */
 export type Theme = keyof typeof appConfig.theme.colors | 'none';
 
-/** Pino log severity levels */
 export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
-/** Activity actions aligned with HTTP methods (excluding 'read'). Shared between backend and CDC. */
+/** Aligned with HTTP methods, minus 'read'. Shared between backend and CDC. */
 export const activityActions = ['create', 'update', 'delete'] as const;
 export type ActivityAction = (typeof activityActions)[number];
 
-/** Past-tense verbs for activity event types, aligned with activityActions. */
 export const activityVerbs = ['created', 'updated', 'deleted'] as const;
 export type ActivityVerb = (typeof activityVerbs)[number];
 
-/** Mapping from action to verb for event type construction. */
 const actionVerbMap = {
   create: 'created',
   update: 'updated',
@@ -70,21 +55,15 @@ const actionVerbMap = {
 
 export const actionToVerb = (action: ActivityAction): ActivityVerb => actionVerbMap[action];
 
-/** All tracked types (entities + resources) for activity events. */
 type TrackedType = EntityType | ResourceType;
 
 /**
- * Event name for any tracked-type change, e.g. 'user.created', 'membership.updated'. Covers
- * entities AND resources (TrackedType), so it names the one namespace shared by the activity/CDC
- * stream and the synchronous mutation bus.
+ * Event name for any tracked-type change ('user.created', 'membership.updated'). One namespace
+ * shared by the activity/CDC stream and the synchronous mutation bus.
  */
 export type TrackedEventType = `${TrackedType}.${ActivityVerb}`;
 
-/**
- * Runtime tuple of all valid tracked event types for schema enum constraints.
- * Zod enums require a non-empty tuple, so a config that declares no entity or resource type
- * fails here, at the point that names the cause.
- */
+/** Zod enums need a non-empty tuple, so a config declaring no entity or resource type throws here. */
 export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEventType[]] => {
   const types = [...appConfig.entityTypes, ...appConfig.resourceTypes].flatMap((type) =>
     activityVerbs.map((verb): TrackedEventType => `${type}.${verb}`),
@@ -96,52 +75,38 @@ export const trackedEventTypes = ((): readonly [TrackedEventType, ...TrackedEven
   return [first, ...rest];
 })();
 
-/** Set of valid event types for runtime validation. */
 const validEventTypes = new Set<string>(trackedEventTypes);
 
-/** Type predicate to check if a string is a valid TrackedEventType. */
 export function isValidEventType(type: string): type is TrackedEventType {
   return validEventTypes.has(type);
 }
 
-/** All token types used in the app */
 export type TokenType = (typeof appConfig.tokenTypes)[number];
 
-/** System roles available in the app */
 export type SystemRole = (typeof appConfig.systemRoles)[number] | null;
 
 // Entity hierarchy helpers
 
-/** Entity roles type - union of all roles from the role registry. */
 export type EntityRole = (typeof roles.all)[number];
 
-/** Entity ID column keys mapping (e.g., { organization: 'organizationId' }) */
+/** For example `{ organization: 'organizationId' }`. */
 export type EntityIdColumnKeys = typeof appConfig.entityIdColumnKeys;
 
-/** Entity ID column key for a specific entity type */
 export type EntityIdColumnKey<T extends EntityType> = EntityIdColumnKeys[T];
 
 /**
- * Maps a set of entity types `TS` to their id-column keys (via {@link EntityIdColumnKey}), each
- * carrying value type `V`. The single generic behind every "channel id columns" shape: pass the
- * entity-type subset and the column value; a drizzle uuid builder, `string`, `string | null`, a
- * zod field, etc.
+ * Entity types `TS` mapped to their id-column keys, each carrying value type `V`. The one generic
+ * behind every "channel id columns" shape: `V` may be a drizzle uuid builder, `string`,
+ * `string | null`, a zod field.
  */
 export type EntityIdColumns<TS extends EntityType, V> = { [T in TS as EntityIdColumnKey<T>]: V };
 
-// Channel relation types derived from the hierarchy's phantom parent/related maps. They
-// generate channel-entity id columns on product/channel tables in a configuration-independent way.
-
-/** Type-level map of each entity to its strict parent (null = root). */
+// Channel relation types read from the hierarchy's phantom parent/related maps. They generate
+// channel-entity id columns on product and channel tables without naming any specific config.
 type HierarchyParentMap = typeof hierarchy._parentMap;
-
-/** Type-level map of each entity to the union of its related (non-ancestor) channels. */
 type HierarchyRelatedMap = typeof hierarchy._relatedMap;
 
-/**
- * Strict ancestor channel chain for an entity, resolved recursively via the parent map.
- * Example: `AncestorChannelType<'task'>` → `'project' | 'organization'`.
- */
+/** Strict ancestor chain: `AncestorChannelType<'task'>` gives `'project' | 'organization'`. */
 export type AncestorChannelType<E extends string> = E extends keyof HierarchyParentMap
   ? HierarchyParentMap[E] extends infer P
     ? P extends string
@@ -151,40 +116,28 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
   : never;
 
 /**
- * The root channel entity type: the parentless channel (no ancestors), e.g. `'organization'`.
- * Derived from the hierarchy so apps that rename/restructure the root don't need code changes.
- * Root channel identifiers use `EntityIdColumnKey<RootChannelType>`.
+ * The parentless channel, `'organization'` here. Derived from the hierarchy, so an app that
+ * renames the root needs no code change. Its id key is `EntityIdColumnKey<RootChannelType>`.
  */
 export type RootChannelType = {
   [K in ChannelEntityType]: [AncestorChannelType<K>] extends [never] ? K : never;
 }[ChannelEntityType];
 
-/**
- * Related (non-ancestor) channel types declared for an entity via `relatedChannels`.
- * Example (Raak): `RelatedChannelType<'chat'>` → `'workspace' | 'project'`.
- */
+/** Non-ancestor channels declared via `relatedChannels`. */
 export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 
-/** Type-level map of each product to its nullable-ancestor union. */
 type HierarchyNullableMap = typeof hierarchy._nullableMap;
 
-/**
- * Ancestors declared nullable for a product via `nullableAncestors` (variable-depth rows).
- * Example (ProjectCampus): `NullableAncestorType<'item'>` → `'project' | 'courseSection'`.
- */
+/** Variable-depth rows: `NullableAncestorType<'item'>` gives `'project' | 'courseSection'`. */
 export type NullableAncestorType<E extends string> = E extends keyof HierarchyNullableMap
   ? HierarchyNullableMap[E]
   : never;
 
-/** Entity actions that can be performed (CRUD + search) */
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 
-// Embedding propagation types
-
-/** Single product embedding relationship derived from config */
 type ProductEmbedding = (typeof appConfig.productEmbeddings)[number];
 
-/** Hint describing which host products need cache updates when an embedded product changes */
+/** Which host products need cache updates when an embedded product changes. */
 export type PropagationHint = {
   embeddedProduct: ProductEmbedding['embeddedProduct'];
   hostProduct: ProductEmbedding['hostProduct'];

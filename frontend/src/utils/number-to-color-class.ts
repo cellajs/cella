@@ -1,8 +1,5 @@
 import { appConfig } from 'shared';
 
-/**
- * Generates a number from a string for color selection.
- */
 function generateNumber(id: string) {
   if (!id) return null;
 
@@ -18,9 +15,7 @@ function generateNumber(id: string) {
   return null;
 }
 
-/**
- * Returns a color class based on a string identifier.
- */
+/** Deterministic placeholder color class for an id; gray when the id is empty or has no alphanumeric character. */
 export const numberToColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
   const index = generateNumber(id) || 0;

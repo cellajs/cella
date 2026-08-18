@@ -54,7 +54,6 @@ describe('createSpanStore', () => {
     const callback = vi.fn();
     store.subscribe(callback);
 
-    // subscribe fires immediately with current spans
     expect(callback).toHaveBeenCalledWith([]);
 
     const span = makeSpan();

@@ -4,11 +4,7 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
   return value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 }
 
-/**
- * Filter out primitive fields where the incoming value is identical to the current entity value.
- * Non-primitive fields (arrays, objects) are kept without deep equality checks.
- * Returns a new object with only the effectively changed fields.
- */
+/** Drops primitive fields equal to the stored value; arrays and objects pass through without deep comparison. */
 export function filterNoOpFields<T extends Record<string, unknown>>(
   entityData: Record<string, unknown>,
   incomingFields: T,
@@ -21,15 +17,7 @@ export function filterNoOpFields<T extends Record<string, unknown>>(
   return result as T;
 }
 
-/**
- * Resolve field-level conflicts using HLC timestamps.
- * For each scalar field, accept when incoming HLC > stored HLC; otherwise drop.
- * Returns accepted fields as a partial object preserving the input type.
- *
- * @param incomingFields - Scalar field values from the request
- * @param incomingTimestamps - Per-field HLC timestamps from the request
- * @param storedTimestamps - Per-field HLC timestamps from the entity's stx
- */
+/** Per-field LWW: accept a scalar when its incoming HLC is greater than the HLC stored in the entity's stx. */
 export function resolveFieldConflicts<T extends Record<string, unknown>>(
   incomingFields: T,
   incomingTimestamps: Record<string, string>,

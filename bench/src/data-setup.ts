@@ -10,17 +10,13 @@ import { DB_URL } from './config';
 import { type BenchSeed, getBenchSeedName, getBenchSeeds } from './registry';
 import { cleanupBenchSeed, insertSeedRows } from './seed-utils';
 
-// Set mock context so any mockNanoid() calls use 'lt-' prefix
+// Mock context so mockNanoid() calls use the 'lt-' prefix.
 setMockContext('loadtest');
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const SEEDS_DIR = resolve(__dirname, 'seeds');
 
-/**
- * Auto-import every `*.bench.ts` under seeds/ so each self-registers its seed
- * target: an app adds a load-test table by dropping in one file, no barrel or
- * data-setup edit.
- */
+/** Imports every `*.bench.ts` under seeds/ so each self-registers, with no barrel or data-setup edit. */
 async function loadBenchEntities(): Promise<void> {
   for (const file of readdirSync(SEEDS_DIR)
     .filter((f) => f.endsWith('.bench.ts'))
@@ -79,18 +75,15 @@ async function runBenchSeed(pool: pg.Pool, seed: BenchSeed, now: string): Promis
   succeedSpinner(`${rows.length} ${seed.table} inserted`);
 }
 
-// ── Clean existing loadtest data ────────────────────────────────────────────
-
 async function cleanLoadtestData(pool: pg.Pool) {
   startSpinner('cleaning existing bench data...');
 
-  // Drop the CDC replication slot if it exists: an unconsumed slot blocks DELETEs on published tables
+  // An unconsumed CDC replication slot blocks DELETEs on published tables.
   await pool
     .query(`SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = 'cdc_slot'`)
     .catch(() => {});
 
-  // Disable FK trigger checks for this session: avoids expensive SET NULL cascades
-  // across 19 FK constraints when deleting loadtest users (full-table scans on each)
+  // FK trigger checks off for this session: deleting bench users otherwise runs a SET NULL cascade and full-table scan per FK constraint.
   const client = await pool.connect();
   try {
     await client.query(`SET session_replication_role = 'replica'`);
@@ -106,12 +99,7 @@ async function cleanLoadtestData(pool: pg.Pool) {
   succeedSpinner('existing bench data cleaned');
 }
 
-// ── Seed ───────────────────────────────────────────────────────────────────
-
-/**
- * Seeds deterministic bench data via backend/mocks generators (type-safe rows).
- * Idempotent: cleans existing bench data before re-seeding. Run with `pnpm db:seed`.
- */
+/** Seeds deterministic bench data through backend/mocks generators. Idempotent: existing bench data is cleaned before re-seeding. Run with `pnpm db:seed`. */
 async function seed() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
 
@@ -138,8 +126,6 @@ async function seed() {
     await pool.end();
   }
 }
-
-// ── Teardown ───────────────────────────────────────────────────────────────
 
 /** Deletes all bench data without reseeding. Run with `pnpm db:teardown`. */
 async function teardown() {

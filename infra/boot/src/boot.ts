@@ -44,8 +44,7 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
   const deadline = Date.now() + opts.timeoutSeconds * 1000;
 
   while (Date.now() <= deadline) {
-    // Two-step probe: a private-network route must exist, and an IPv4 address
-    // in the 10.0.0.0/8 range must be assigned.
+    // Two-step probe: a private-network route must exist, and an IPv4 address in the 10.0.0.0/8 range must be assigned.
     const route = await opts.exec('ip', ['route', 'get', '10.0.0.1']);
     if (route.code === 0) {
       const addresses = await opts.exec('ip', ['-4', 'addr', 'show']);
@@ -97,10 +96,8 @@ async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
 }
 
 /**
- * Start the app (and any collocated containers) and wait for the compose
- * healthchecks. `--wait` blocks until every started container is healthy.
- * Explicitly naming a service activates its profile, so collocated containers
- * outside the host profile start too.
+ * Start the app and any collocated containers, with `--wait` blocking until every started container passes its compose healthcheck.
+ * Naming a service explicitly activates its profile, so collocated containers outside the host profile start too.
  */
 async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
   await mustExec(
@@ -121,9 +118,7 @@ async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
   );
 }
 
-/** Best-effort tail of the app container's own stdout/stderr for diagnostics,
- *  secret-scrubbed at capture so every downstream sink (telemetry event body,
- *  boot-diag upload) only ever sees the scrubbed form. */
+/** Best-effort tail of the app container's stdout/stderr, secret-scrubbed at capture so the telemetry body and boot-diag upload only ever see the scrubbed form. */
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
   const res = await exec(
     'docker',
@@ -147,8 +142,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha });
   const accessKey = await readCredential(plan.credentials.scwAccessKeyFile);
   const secretKey = await readCredential(plan.credentials.scwSecretKeyFile);
-  // Build-only until secret hydration delivers an ingest key; every record
-  // lands in the black-box JSONL either way, joined to the deploy trace.
+  // Build-only until secret hydration delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
   const telemetry: Telemetry = createTelemetry({
     resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
     traceparent: plan.traceparent,
@@ -184,9 +178,8 @@ export async function boot(opts: BootOptions): Promise<void> {
     );
     await phase('write-app-files', () => writeAppFiles(plan));
     await phase('docker-login', () => dockerLogin(plan, secretKey, exec));
-    // v2: swap the baked boot key for the real service key via the
-    // single-access handoff bundle (cache-first on reboots; a consumed bundle
-    // on first boot = interception → this phase throws and the boot halts).
+    // Swap the baked boot key for the real service key via the single-access handoff bundle, cache-first on reboots.
+    // A consumed bundle on first boot means interception, so this phase throws and the boot halts.
     let serviceKey = { accessKey, secretKey };
     if (plan.serviceKeyHandoff) {
       await phase('fetch-service-key', async () => {
@@ -209,8 +202,7 @@ export async function boot(opts: BootOptions): Promise<void> {
           : [],
       }),
     );
-    // Export only where the plan declares a sink (config/telemetry.config.ts
-    // on the engine side); no vendor endpoint is baked into the boot runner.
+    // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
     const sink = plan.telemetry;
     const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
     if (sink && sinkKey)
@@ -227,8 +219,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   } catch (err) {
     bootRc = 1;
     logger.log('error', 'boot-failed', { message: errorMessage(err) });
-    // The boot runner runs containerized without the host boot log mounted, so capture
-    // the crashed container's own output here to ship it with the diagnostics.
+    // The boot runner runs containerized without the host boot log mounted, so the crashed container's own output is captured here for the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined);
     bootSpan.end('error', { message: errorMessage(err) });
     const failureBody = [

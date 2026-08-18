@@ -9,17 +9,16 @@ interface HealthAppOptions {
 }
 
 /**
- * Health endpoint shared by backend, cdc and yjs, implementing the contract the load
- * balancer and infra deploy verification (`wait-for-version`) consume: shallow
- * `GET /health` → 204, `?depth=full` → JSON diagnostics with the callback's status,
- * both carrying `X-App-Version` and short-lived caching. Workers serve the returned
- * app directly; the backend mounts it into its route tree.
+ * Shared by backend, cdc and yjs. The load balancer and `wait-for-version` rely on this
+ * contract: `GET /health` returns 204, `?depth=full` returns JSON diagnostics with the
+ * callback's status, both carrying `X-App-Version` and short-lived caching. Workers serve the
+ * returned app directly; the backend mounts it into its route tree.
  */
 export const createHealthApp = ({ version, full }: HealthAppOptions): Hono => {
   const app = new Hono();
 
-  // Scoped to the health path so mounting into a larger app (backend) leaves its
-  // global secure-headers configuration untouched on every other route.
+  // Scoped to the health path so mounting into the backend leaves its global secure-headers
+  // configuration untouched on every other route.
   app.use(
     '/health',
     secureHeaders({

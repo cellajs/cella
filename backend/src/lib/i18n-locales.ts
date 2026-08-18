@@ -5,9 +5,7 @@ import nlBackend from '../../../locales/nl/backend.json';
 import nlCommon from '../../../locales/nl/common.json';
 import nlError from '../../../locales/nl/error.json';
 
-/**
- * Configure the locales you need in backend.
- */
+/** Configure the locales you need in backend. */
 const locales = {
   en: { backend: enBackend, c: enCommon, error: enError },
   nl: { backend: nlBackend, c: nlCommon, error: nlError },

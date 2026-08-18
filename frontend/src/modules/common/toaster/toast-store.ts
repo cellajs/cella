@@ -14,7 +14,6 @@ interface ToastStore {
   clearToast: () => void;
 }
 
-/** Provides access to shared toast notification state. */
 export const useToastStore = create<ToastStore>()(
   persist(
     (set) => ({

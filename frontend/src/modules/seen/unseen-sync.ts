@@ -4,23 +4,17 @@ import { isSeenLocally } from '~/modules/seen/seen-store';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { queryClient } from '~/query/query-client';
 
-// Track each newly synced row once between exact unseen recounts.
-// Rows older than the last recount are already represented by the server count.
+// Each synced row counts once between exact recounts; older rows are already in the server count.
 const countedIds = new Set<string>();
-// Session start doubles as the first recount point: a persisted counts cache may restore before the first refetch.
+// Session start is the first anchor: a persisted counts cache can restore before the first refetch.
 let lastReconcileAt = Date.now();
 
-/** An exact server recount replaced the cached counts: restart delta tracking from now. */
 export function noteUnseenReconciled(): void {
   countedIds.clear();
   lastReconcileAt = Date.now();
 }
 
-/**
- * Apply badge deltas for the rows a synced seq range delivered: new-and-unseen rows +1,
- * tombstoned-and-unseen rows −1. Applies the same row filters as the server's
- * `findUnseenCountsByUser`; apps add theirs in `matchesUnseenFilters` (helpers.ts).
- */
+/** Badge deltas for a synced seq range: new-and-unseen rows +1, tombstoned-and-unseen rows -1, under the server's `findUnseenCountsByUser` filters. */
 export function ingestSyncedRows(
   productType: ProductEntityType,
   fallbackChannelId: string,
@@ -30,9 +24,7 @@ export function ingestSyncedRows(
   const cutoff = Date.now() - seenWindowMs;
 
   for (const row of rows) {
-    // Draft-lifecycle rows use publish time for recency (publishedAt ?? createdAt), matching
-    // the server's unseen window key in `findUnseenCountsByUser`. Publishing an old draft
-    // still counts as new.
+    // Recency is `publishedAt ?? createdAt`, matching the server's unseen window key: publishing an old draft counts as new.
     const recencySource =
       (typeof row.publishedAt === 'string' ? row.publishedAt : undefined) ??
       (typeof row.createdAt === 'string' ? row.createdAt : undefined);
@@ -44,8 +36,7 @@ export function ingestSyncedRows(
     const seen = isSeenLocally(row.id);
 
     if (typeof row.deletedAt === 'string' && row.deletedAt.length > 0) {
-      // Decrement only rows the current count can include: counted here, or in the server
-      // baseline (recency before the last recount).
+      // Decrement only rows the current count can include: counted here, or in the server baseline.
       if (!seen && (countedIds.has(row.id) || recencyAt <= lastReconcileAt))
         applyUnseenDelta(channelId, productType, -1);
       countedIds.delete(row.id);

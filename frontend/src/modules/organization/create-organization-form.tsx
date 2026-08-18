@@ -24,13 +24,11 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-// 1 tenant = 1 organization, so every org lives in its own tenant (workspace). Creating an org
-// always mints a fresh tenant; there is no "add an org to an existing tenant" case to select for.
+// 1 tenant = 1 organization: creating an org always mints a fresh tenant to hold it.
 const formSchema = zCreateOrganizationsBody.element.omit({ id: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
-/** Renders the form for creating an organization (and its tenant/workspace). */
 export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
@@ -57,7 +55,6 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   };
 
   const onSubmit = async (values: FormValues) => {
-    // Each org gets its own tenant. Mint it first, then create the org inside it.
     let tenantId: string;
     try {
       const tenant = await selfCreateTenantMutation.mutateAsync({ name: `${values.name} workspace` });

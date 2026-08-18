@@ -149,7 +149,7 @@ const TestPanel = () => {
     const next = () => {
       if (i >= tabs.length) {
         cycleRef.current = false;
-        addLog(`✓ Cycle done — section=${getSection()} hash=${location.hash}`);
+        addLog(`✓ Cycle done: section=${getSection()} hash=${location.hash}`);
         return;
       }
       const { id } = tabs[i];
@@ -317,7 +317,7 @@ const meta = {
     docs: {
       description: {
         component: [
-          'Scroll spy test bed — each story runs in its own Storybook iframe.',
+          'Scroll spy test bed: each story runs in its own Storybook iframe.',
           '',
           '**What to test:**',
           '- Manual scroll → hash updates without jank',

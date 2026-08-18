@@ -4,7 +4,7 @@ import type { StepProps } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { VerticalStep } from '~/modules/common/stepper/vertical-step';
 
-// Props which shouldn't be passed to to the Step component from the user
+// Internal props, never passed by the caller
 interface StepInternalConfig {
   index: number;
   isCompletedStep?: boolean;
@@ -14,7 +14,6 @@ interface StepInternalConfig {
 
 interface FullStepProps extends StepProps, StepInternalConfig {}
 
-/** Renders the step component. */
 export const Step = React.forwardRef<HTMLLIElement, StepProps>(
   // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
   function Step(props, ref: React.Ref<any>) {

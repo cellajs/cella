@@ -7,16 +7,12 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import type { UserModel } from '#/modules/user/user-db';
 
-/**
- * Create a membership invitation token for a user to join an organization
- */
 export async function createMembershipInvitationToken(
   user: UserModel,
   organizationId: string,
   role: EntityRole,
   tenantId: string,
 ) {
-  // Create inactive membership first
   const inactiveMembership = {
     id: generateId(),
     userId: user.id,
@@ -32,7 +28,6 @@ export async function createMembershipInvitationToken(
 
   const [insertedInactiveMembership] = await db.insert(inactiveMembershipsTable).values(inactiveMembership).returning();
 
-  // Create token linked to inactive membership
   const tokenRecord = {
     id: generateId(),
     secret: nanoid(),

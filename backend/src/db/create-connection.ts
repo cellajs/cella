@@ -2,8 +2,7 @@ import type { DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 
-// Side-effect-free connection factory: no `#/env` import and no pool opened at module
-// load, so the cdc and yjs workers can import it without dragging in backend state.
+// No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
 
 export type PgDB = NodePgDatabase & { $client: NodePgClient };
 export type DB = PgDB;
@@ -21,7 +20,6 @@ interface CreatePgConnectionOptions {
   connectionTimeoutMillis?: number;
 }
 
-/** Build a drizzle node-postgres client with verified TLS pinned to the dialed host. */
 export const createPgConnection = (
   url: string,
   { max, sslCa, logger = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions,

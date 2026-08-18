@@ -7,9 +7,6 @@ interface InlinePrimitiveValueProps {
   searchText: string;
 }
 
-/**
- * Renders a primitive value inline for single-line arrays.
- */
 export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimitiveValueProps) {
   const lowerSearch = searchText?.toLowerCase() || '';
 
@@ -78,9 +75,6 @@ interface PrimitiveValueProps {
   openapiMode?: 'spec' | 'schema';
 }
 
-/**
- * Renders a primitive value with full formatting, search highlighting, and truncation.
- */
 export function PrimitiveValue({
   value,
   type,
@@ -96,9 +90,8 @@ export function PrimitiveValue({
     case 'string': {
       const str = String(value);
 
-      // In schema mode, render JSON Schema type keywords without quotes and in type color
+      // Schema-mode type keywords render unquoted and in their type color.
       if (openapiMode === 'schema' && JSON_SCHEMA_TYPES.has(str)) {
-        // Use appropriate color based on the type keyword
         const typeClass =
           str === 'string'
             ? theme.string

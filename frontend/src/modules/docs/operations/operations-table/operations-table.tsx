@@ -36,7 +36,6 @@ function OperationsTable() {
 
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
 
-  // Derive distinct tag kinds from operations data
   const tagKinds = useMemo(() => {
     const kinds = new Set<string>();
     for (const op of operations) {
@@ -45,8 +44,7 @@ function OperationsTable() {
     return Array.from(kinds);
   }, [operations]);
 
-  // Derive available tag-kind filter options (kind -> distinct values present).
-  // Excludes 'module' (driven by the sidebar) and 'schema' (not applicable here).
+  // kind -> distinct values present; 'module' is driven by the sidebar and 'schema' does not apply here
   const tagFilters = useMemo(() => {
     const map: Record<string, Set<string>> = {};
     for (const op of operations) {

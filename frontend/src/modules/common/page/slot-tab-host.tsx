@@ -14,10 +14,9 @@ interface SlotTabHostProps<S extends Slot> {
 }
 
 /**
- * Renders the active registry tab tool for a `$tool` host route: looks up the slot's tool by the
- * route's `$tool` param and renders it with the surface's context. The tool's content lazy-loads
- * behind Suspense; an unmatched id renders `fallback`. This is the render half of a tabbed surface
- * (the tab bar comes from {@link resolveNavTabs}), so one host route serves every registry tab.
+ * Renders the registry tab tool named by a `$tool` host route's param, with the surface's context.
+ * The tool's content lazy-loads behind Suspense; an unmatched id renders `fallback`. The matching
+ * tab bar comes from {@link resolveNavTabs}.
  */
 export function SlotTabHost<S extends Slot>({ slot, toolId, context, fallback = null }: SlotTabHostProps<S>) {
   const tool = getTools(slot).find((candidate) => candidate.id === toolId);

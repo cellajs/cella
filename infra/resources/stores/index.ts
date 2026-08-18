@@ -7,9 +7,7 @@ import { isProduction, naming, region, zone } from '../../pulumi-context';
 import { configuredOrRandomSecret } from '../configured-secret';
 import { privateNetworkId } from '../network';
 
-// The engine facilities handed to every store's provision(). Store modules are
-// pure at import time; this module is the single place that binds them to the
-// live Pulumi program.
+// The engine facilities handed to every store's provision(). Store modules are pure at import time; this module is the only place that binds them to the live Pulumi program.
 const provisionContext: ProvisionContext = {
   pulumi,
   scaleway,
@@ -22,9 +20,7 @@ const provisionContext: ProvisionContext = {
   configuredOrRandomSecret,
 };
 
-// Provision every registered store exactly once (importing this module triggers
-// it). Registry order is stable; the first store is primary. This is the single
-// seam between the app's store registry and the rest of the Pulumi program.
+// Importing this module provisions every registered store exactly once. Registry order is stable and the first store is primary.
 const results = Object.entries(appStores).map(([id, store]) => {
   store.validate?.();
   return [id, store.provision(provisionContext)] as const;
@@ -33,22 +29,12 @@ const results = Object.entries(appStores).map(([id, store]) => {
 /** The primary store's outputs (empty only if no store is registered). */
 export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
 
-/**
- * Every store's outputs, keyed by store id (S11 generic namespacing: the
- * stack exports these as one `storeOutputs` object, `<storeId>.<key>`). The
- * db-exposure/seed CLI reads the primary store's keys from here; the flat
- * db* aliases were retired in the 2026-08 planned break.
- */
+/** Every store's outputs, keyed by store id; the stack exports these as one `storeOutputs` object addressed `<storeId>.<key>`. */
 export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(
   results.map(([id, provisioned]) => [id, provisioned.outputs]),
 );
 
-/**
- * Runtime-secret values merged across all stores, keyed by runtime-secret id.
- * `secrets.ts` looks these up by the ids the registry (store contributions +
- * `runtime-secrets.config.ts`) declares. A collision means two stores bind the
- * same secret, an app misconfiguration.
- */
+/** Runtime-secret values merged across stores, keyed by runtime-secret id. A collision means two stores bind the same secret, which is an app misconfiguration. */
 export const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = (() => {
   const merged: Record<string, pulumi.Input<string>> = {};
   for (const [id, provisioned] of results) {

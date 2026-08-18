@@ -6,7 +6,6 @@ interface LegalSectionProps {
   children: ReactNode;
 }
 
-/** Renders the legal section. */
 export function LegalSection({ id, label, children }: LegalSectionProps) {
   const isOverview = label === null;
 

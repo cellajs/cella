@@ -17,10 +17,8 @@ type PropagationHintInput = {
 };
 
 /**
- * Patch stale embedded-product references across every host column this app's
- * productEmbeddings config declares for the changed product. The hint's own host fields are
- * advisory: local config is the authority on where this client caches embedded copies.
- * Used by live SSE handlers, catchup after delta fetches, and optimistic mutation hooks.
+ * Patch stale embedded-product references across every host column productEmbeddings declares for the changed product.
+ * The hint's host fields are advisory: local config is the authority on where this client caches embedded copies.
  */
 export function propagateEmbeddings(hint: PropagationHintInput): void {
   const { embeddedProduct, update, remove } = hint;
@@ -29,7 +27,7 @@ export function propagateEmbeddings(hint: PropagationHintInput): void {
   const updateSet = new Set(update);
   const removeSet = new Set(remove);
 
-  // Read fresh embedded-product data for updates. The caller ensures it is cached.
+  // The caller guarantees the fresh embedded data is already cached.
   const freshEmbedded = new Map<string, ItemData>();
   for (const id of update) {
     const data = findInCache<ItemData>(embeddedProduct, id);
@@ -54,7 +52,6 @@ function patchHostCaches(
 
   const keys = getEntityQueryKeys(hostProduct);
 
-  // Scan all cached list queries for the host product
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
     if (!queryData) continue;
 
@@ -80,7 +77,6 @@ function patchHostCaches(
     }
   }
 
-  // Patch detail caches (e.g., open task detail views)
   for (const [queryKey, host] of queryClient.getQueriesData({ queryKey: keys.detail.base })) {
     if (!host) continue;
     const patched = patchSingleHost(host as ItemData, hostColumn, updateSet, removeSet, freshEmbedded);
@@ -90,11 +86,7 @@ function patchHostCaches(
   }
 }
 
-/**
- * Hint-builder for mutation hooks: optimistic propagation of an embedded product's change,
- * so the actor's own cache updates immediately without waiting on the stream.
- * For updates, the fresh embedded copy must already be in cache when this runs.
- */
+/** Optimistic propagation for mutation hooks, so the actor's cache updates without waiting on the stream. For updates the fresh embedded copy must already be cached. */
 export function propagateEmbeddedProduct(
   embeddedProduct: ProductEntityType,
   ids: string[],
@@ -107,11 +99,7 @@ export function propagateEmbeddedProduct(
   });
 }
 
-/**
- * Invalidate list caches of every host product embedding the given product. Rollback path
- * for optimistic removals: propagation can patch or strip an embedded copy but cannot
- * re-insert one, so a failed delete recovers host data through a refetch.
- */
+/** Rollback path for optimistic removals: propagation can strip an embedded copy but cannot re-insert one, so a failed delete recovers host data through a refetch. */
 export function invalidateEmbeddingHosts(embeddedProduct: ProductEntityType, organizationId: string): void {
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.embeddedProduct !== embeddedProduct) continue;
@@ -156,7 +144,7 @@ function patchSingleHost(
     return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) } as ItemData;
   }
 
-  // Array column of embedded objects (e.g., task.labels)
+  // Array column of embedded objects.
   if (Array.isArray(embedded)) {
     const needsPatch = embedded.some(
       (item: { id?: string }) => item.id && (updateSet.has(item.id) || removeSet.has(item.id)),
@@ -169,18 +157,17 @@ function patchSingleHost(
         if (!item.id || !updateSet.has(item.id)) return item;
         const fresh = freshEmbedded.get(item.id);
         if (!fresh) return item;
-        // Use updatedAt guard to avoid replacing newer data with older
         const freshRecord = asRecord(fresh);
         if (item.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > item.updatedAt) return fresh;
         if (!item.updatedAt) return fresh;
-        // fresh is same age or older, keep cached version (concurrent edit edge case).
+        // Same age or older: keep the cached copy so a concurrent edit is not undone.
         return item;
       });
 
     return { ...host, [hostColumn]: patched } as ItemData;
   }
 
-  // Single object column (e.g., hypothetical task.category)
+  // Single object column.
   if (embedded && typeof embedded === 'object' && 'id' in embedded) {
     const obj = embedded as { id: string; updatedAt?: string };
     if (removeSet.has(obj.id)) {

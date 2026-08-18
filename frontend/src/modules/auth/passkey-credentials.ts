@@ -15,16 +15,10 @@ import { getCurrentUser } from '~/modules/user/user-store';
 
 const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
 
-/**
- * Check if the browser supports conditional mediation (passkey autofill).
- * Returns true if the browser can show passkey suggestions in autofill UI.
- */
+/** True when the browser can show passkey suggestions in its autofill UI (conditional mediation). */
 export const isConditionalMediationAvailable = (): Promise<boolean> => browserSupportsWebAuthnAutofill();
 
-/**
- * Start cancellable passkey autofill for the given abort signal.
- * An email selects explicit credential IDs; omission uses discoverable credentials.
- */
+/** Cancellable passkey autofill: an email selects explicit credential IDs, omission uses discoverable credentials. */
 export const startConditionalMediation = async (
   onCredential: (data: ConditionalMediationResult) => void,
   signal: AbortSignal,
@@ -33,7 +27,6 @@ export const startConditionalMediation = async (
   const challengeQuery = email ? { type: 'authentication' as const, email } : { type: 'authentication' as const };
   const { challenge, credentialIds } = await getChallenge(challengeQuery);
 
-  // If email provided, use specific credential IDs; otherwise use discoverable credentials
   const optionsJSON: PublicKeyCredentialRequestOptionsJSON = {
     challenge,
     rpId: relyingPartyId,
@@ -58,15 +51,10 @@ export type ConditionalMediationResult = {
   type: 'authentication';
 };
 
-/**
- * Initiates the WebAuthn registration flow to create a new passkey credential. It fetches a
- * challenge from the backend, generates a unique user handle, and prompts the user to create a
- * passkey. Returns the registration response (base64url JSON) for submission to the backend.
- */
+/** Runs WebAuthn registration and returns the attestation as base64url JSON for the backend. */
 export const getPasskeyRegistrationCredential = async () => {
   const { challenge } = await getChallenge({ type: 'registration' });
 
-  // Generate a unique user handle for this credential
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
 
   const isDevelopment = appConfig.mode === 'development';
@@ -113,7 +101,6 @@ export const getPasskeyVerifyCredential = async (
 ) => {
   const { challenge, credentialIds } = await getChallenge(query);
 
-  // Prompt user to authenticate with a passkey
   const assertion = await startAuthentication({
     optionsJSON: {
       challenge,

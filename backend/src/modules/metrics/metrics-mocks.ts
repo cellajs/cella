@@ -1,8 +1,3 @@
-/**
- * Mock generators for metrics schemas.
- * Used for OpenAPI examples.
- */
-
 import { faker } from '@faker-js/faker';
 import { appConfig, type EntityType } from 'shared';
 import { withFakerSeed } from '#/mocks';

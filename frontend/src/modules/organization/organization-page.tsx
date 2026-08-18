@@ -20,9 +20,6 @@ interface Props {
   tenantId: string;
 }
 
-/**
- * Organization page with header, tab navigation and nested routes.
- */
 function OrganizationPage({ organizationId, tenantId }: Props) {
   const { t } = useTranslation();
 

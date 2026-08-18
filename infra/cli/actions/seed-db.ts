@@ -17,9 +17,8 @@ import {
 import { runPrivilegedConverge } from './privileged-converge';
 
 /**
- * One guarded flow for demo data on a non-production environment: temporarily
- * expose the database to THIS machine's IP, run the backend seeds against it,
- * and close the endpoint again (also on failure). Refuses production.
+ * Demo data on a non-production environment: expose the database to THIS machine's IP, run the backend seeds, and close the endpoint again, including on failure.
+ * Refuses production.
  */
 export async function runSeedDatabase(context: InfraContext): Promise<void> {
   if (context.environment === 'production') {
@@ -44,8 +43,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   const { env, stack, completed } = await runPrivilegedConverge(context, {
     operation: 'seed-db',
     prepare: (e, s) => {
-      // Exposure keys go into the gitignored overlay, never the committed stack
-      // config; see db-exposure.ts.
+      // Exposure keys go into the gitignored overlay, never the committed stack config; see db-exposure.ts.
       const overlay = writeExposureOverlay(context.stackPath, context.environment);
       pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
       pulumiConfigSet(e, s, DB_ACL_KEY, `${detected}/32`, { secret: true, configFile: overlay });
@@ -59,15 +57,12 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
 
   try {
     const dsn = readPublicDsn(env, stack);
-    if (!dsn) throw new Error('public DSN output empty; the endpoint may still be provisioning — re-run to seed.');
-    // Pin the instance CA so the seed's admin-role connection verifies the
-    // server (backend's verifiedPostgresSsl upgrades to verify-full + hostname
-    // pinning when DATABASE_SSL_CA is present).
+    if (!dsn) throw new Error('public DSN output empty; the endpoint may still be provisioning: re-run to seed.');
+    // Pin the instance CA so the seed's admin-role connection verifies the server; backend's verifiedPostgresSsl upgrades to verify-full with hostname pinning when DATABASE_SSL_CA is set.
     const dbCa = readDbCa(env, stack);
     if (!dbCa) console.warn(`${warningMark} DB CA output unavailable; seeding over encrypt-only TLS.`);
     console.info(pc.dim('\n-> Running backend seeds against the temporary endpoint...\n'));
-    // Dev-mode env from backend/.env stays authoritative for everything except
-    // the database target; seeded rows are environment-agnostic data.
+    // Dev-mode env from backend/.env stays authoritative for everything except the database target.
     const result = spawnSync('pnpm', ['--filter', 'backend', 'seed'], {
       cwd: resolve(infraDir, '..'),
       stdio: 'inherit',
@@ -80,8 +75,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     const closed = await runPrivilegedConverge(context, {
       operation: 'unseed-db',
       prepare: (e, s) => {
-        // Compat cleanup for stacks that predate the overlay; converging the
-        // committed (key-free) config is what closes the endpoint.
+        // Compat cleanup for stacks predating the overlay; converging the committed key-free config is what closes the endpoint.
         if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY);
         if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(e, s, DB_ACL_KEY);
         return undefined;

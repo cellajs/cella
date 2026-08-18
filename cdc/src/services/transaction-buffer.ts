@@ -7,7 +7,7 @@ import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 
-/** Reverse lookup: hostProduct → embedded products that embed into it (from productEmbeddings) */
+/** Reverse lookup: hostProduct to the products embedded into it. */
 const embeddedByHostProduct = new Map<string, Set<string>>();
 for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
   const embedded = embeddedByHostProduct.get(hostProduct) ?? new Set<string>();
@@ -18,9 +18,9 @@ for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
 
 /**
- * Buffers transaction-aware CDC events while suppressing cascaded deletes as they arrive.
- * Tracking deleted channel IDs bounds memory to surviving events regardless of cascade size;
- * single-event transactions pass through directly.
+ * Buffers CDC events per transaction and suppresses cascaded deletes as they arrive. Tracking
+ * deleted channel ids bounds memory to surviving events regardless of cascade size; events outside
+ * a transaction pass through directly.
  */
 export class TransactionBuffer {
   private activeXid: number | null = null;
@@ -33,18 +33,14 @@ export class TransactionBuffer {
   /** Count of events suppressed in the current transaction. */
   private suppressedCount = 0;
 
-  /** Callback for surviving events after cascade analysis. */
   private onSurvivingEvents: (events: PendingEvent[]) => Promise<void>;
 
   constructor(onSurvivingEvents: (events: PendingEvent[]) => Promise<void>) {
     this.onSurvivingEvents = onSurvivingEvents;
   }
 
-  /**
-   * Handle a BEGIN message: start accumulating events for this transaction.
-   */
   onBegin(msg: Pgoutput.MessageBegin): void {
-    // If there's already an active transaction (shouldn't happen), flush it
+    // An active transaction here means a lost COMMIT: flush it before starting the new one.
     if (this.activeXid !== null) {
       log.warn('BEGIN received while transaction active, flushing previous', {
         prevXid: this.activeXid,
@@ -61,13 +57,8 @@ export class TransactionBuffer {
     this.startTimeout();
   }
 
-  /**
-   * Buffer a processed DML event. If no transaction is active, process immediately.
-   * Cascaded child deletes are dropped inline via streaming suppression when the
-   * parent channel entity delete has already been seen.
-   */
+  /** Drops cascaded child deletes inline once the parent channel entity delete has been seen. */
   async onEvent(lsn: string, result: ParseMessageResult): Promise<void> {
-    // No active transaction: emit immediately (passthrough)
     if (this.activeXid === null) {
       await this.onSurvivingEvents([{ lsn, result }]);
       return;
@@ -75,12 +66,10 @@ export class TransactionBuffer {
 
     const { activity } = result;
 
-    // Track channel entity deletes for streaming suppression
     if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
     }
 
-    // Drop cascaded child deletes inline, never buffer them
     if (this.deletedChannelIds.size > 0 && this.isCascadedDelete(result)) {
       this.suppressedCount++;
       return;
@@ -89,11 +78,7 @@ export class TransactionBuffer {
     this.pendingEvents.push({ lsn, result });
   }
 
-  /**
-   * Handle a COMMIT message: process surviving buffered events.
-   * Most cascade suppression happens inline in onEvent(). A second pass catches
-   * any child deletes that arrived before their parent channel entity delete.
-   */
+  /** Emits the surviving buffered events; a second pass catches child deletes that preceded their parent. */
   async onCommit(): Promise<void> {
     this.clearTimeout();
 
@@ -106,8 +91,7 @@ export class TransactionBuffer {
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
 
-    // Catch children that preceded their parent delete in WAL order.
-    // Inline suppression already removed the common parent-first case.
+    // Children that preceded their parent delete in WAL order; the parent-first case is already gone.
     if (deletedChannelIds && events.length > 1) {
       const deletedChannelSet = new Set(deletedChannelIds);
       const filtered: PendingEvent[] = [];
@@ -131,7 +115,6 @@ export class TransactionBuffer {
 
     if (events.length === 0) return;
 
-    // Single-event transaction: no further analysis needed
     if (events.length === 1) {
       await this.onSurvivingEvents(events);
       return;
@@ -139,15 +122,12 @@ export class TransactionBuffer {
 
     let surviving = events;
 
-    // Soft cascade suppression: if tx contains DELETEs of embedded product A and UPDATEs of host
-    // product B, and A→B is a known embedding relationship (productEmbeddings), suppress the B updates.
+    // Deletes of embedded product A plus updates of its host B: the B updates are cascade noise.
     if (surviving.length > 1 && embeddedByHostProduct.size > 0) {
       surviving = this.suppressSoftCascades(surviving);
     }
 
-    // Emit surviving events to the flush buffer for cross-transaction batching
     if (surviving.length > 0) {
-      // Mixed type validation: warn about cross-type non-delete mutations
       if (surviving.length > 1) {
         const nonDeleteTypes = new Set(
           surviving.filter((e) => e.result.activity.action !== 'delete').map((e) => e.result.tableMeta.type),
@@ -168,26 +148,18 @@ export class TransactionBuffer {
     return this.activeXid !== null;
   }
 
-  /**
-   * Check if an event is a cascaded delete (inline check using instance state).
-   * Used in onEvent() for streaming suppression.
-   */
   private isCascadedDelete(result: ParseMessageResult): boolean {
     return this.isCascadedDeleteByIds(result, this.deletedChannelIds);
   }
 
-  /**
-   * Check if an event is a cascaded delete from a deleted channel entity, matched via the
-   * activity's channel entity ID columns.
-   */
+  /** Matches on the activity's channel entity id columns. */
   private isCascadedDeleteByIds(result: ParseMessageResult, deletedChannelIds: Set<string>): boolean {
     const { activity } = result;
     if (activity.action !== 'delete') return false;
 
-    // Don't suppress the channel entity delete itself
+    // Never suppress the channel entity delete itself.
     if (activity.entityType && isChannel(activity.entityType)) return false;
 
-    // Check all channel entity ID columns on this activity
     for (const idColumn of channelIdColumnKeys) {
       const value = (activity as Partial<ChannelIdColumns>)[idColumn];
       if (typeof value === 'string' && deletedChannelIds.has(value)) {
@@ -199,10 +171,8 @@ export class TransactionBuffer {
   }
 
   /**
-   * Suppress embedding-propagation updates triggered by deletes in the same transaction.
-   * Handles cases where a host product array is updated synchronously alongside
-   * an embedded-product delete (the client handles this via propagateEmbeddings); acts
-   * as a generic safeguard against soft cascade duplication.
+   * Suppresses host-product updates that only propagate an embedded-product delete from the same
+   * transaction; the client already applies these through propagateEmbeddings.
    */
   private suppressSoftCascades(events: PendingEvent[]): PendingEvent[] {
     const deleteTypes = new Set<string>();
@@ -240,9 +210,7 @@ export class TransactionBuffer {
     return kept;
   }
 
-  /**
-   * Flush all pending events without filtering (safety fallback).
-   */
+  /** Fallback: emits every pending event without cascade filtering. */
   private async flushAll(): Promise<void> {
     this.clearTimeout();
     const events = this.pendingEvents;

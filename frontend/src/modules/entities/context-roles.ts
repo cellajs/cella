@@ -3,11 +3,7 @@ import { appConfig, type ChannelEntityType } from 'shared';
 import type { ContextRole } from 'shared/tools-config';
 import type { EnrichedChannel } from '~/modules/entities/types';
 
-/**
- * Context-role pairs the actor holds for a channel entity: their membership role on the entity
- * itself plus roles on any ancestor channel, as `'channelType.role'` pairs. Pure lookup over the
- * ancestor chain (no role projection); used for placement `visibleTo` matching.
- */
+/** `'channelType.role'` pairs the actor holds on the entity and its ancestors, for `visibleTo` matching. */
 export function heldContextRoles(entity: EnrichedChannel, memberships: MembershipBase[]): ContextRole[] {
   const record: Record<string, unknown> = entity;
   const idsByType: Partial<Record<ChannelEntityType, string>> = { [entity.entityType]: entity.id };

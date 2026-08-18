@@ -155,7 +155,7 @@ describe('waitForBackupReady', () => {
     );
   });
 
-  it('throws once the deadline passes — the delete must not proceed on a stuck backup', async () => {
+  it('throws once the deadline passes: the delete must not proceed on a stuck backup', async () => {
     let clock = 0;
     const client = stub(Array(50).fill('creating'));
 

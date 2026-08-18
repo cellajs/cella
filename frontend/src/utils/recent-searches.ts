@@ -3,17 +3,13 @@ const MAX_RECENT_SEARCHES = 5;
 /** Comparison form: lowercased, whitespace and special characters stripped. */
 const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
-/**
- * Add a normalized recent query, keeping the most detailed containment variant first.
- * Return the original array reference when nothing changes.
- */
+/** Adds a query, keeping the most detailed containment variant first. Returns the original array if unchanged. */
 export function addRecentSearch(searches: string[], value: string): string[] {
   const trimmed = value.trim();
   const normalized = normalize(trimmed);
   if (normalized.length < 3) return searches;
 
-  // The survivor for this normalized family: the most detailed variant wins,
-  // ties keep the fresh input (latest casing/phrasing).
+  // Survivor for this normalized family: the most detailed variant wins, ties keep the fresh input.
   let keep = trimmed;
   const rest: string[] = [];
   for (const entry of searches) {

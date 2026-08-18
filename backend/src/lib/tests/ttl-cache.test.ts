@@ -55,8 +55,7 @@ describe('TTLCache', () => {
     });
 
     it('should evict soonest-expiring when at capacity (TTL-based, not LRU)', () => {
-      // With TTL-based eviction, the soonest-expiring entry is evicted
-      // Since all entries have the same TTL in this test, the oldest (first added) is evicted
+      // All entries share a TTL here, so the oldest expires soonest and is the one evicted
       cache.set('key1', 'value1');
       cache.set('key2', 'value2');
       cache.set('key3', 'value3');
@@ -64,10 +63,8 @@ describe('TTLCache', () => {
       // Access key1 - unlike LRU, this does NOT refresh its position
       cache.get('key1');
 
-      // Add new key - evicts soonest-expiring (key1, added first)
       cache.set('key4', 'value4');
 
-      // TTL-based cache evicts by expiration time, so key1 (added first) is evicted
       expect(cache.get('key1')).toBeUndefined();
       expect(cache.get('key2')).toBe('value2');
     });
@@ -98,7 +95,6 @@ describe('TTLCache', () => {
       shortTtlCache.set('key1', 'value1');
       expect(shortTtlCache.get('key1')).toBe('value1');
 
-      // Wait for expiration
       await new Promise((resolve) => setTimeout(resolve, 60));
 
       expect(shortTtlCache.get('key1')).toBeUndefined();

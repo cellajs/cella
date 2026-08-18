@@ -5,13 +5,11 @@ import { describe, expect, it } from 'vitest';
 const computeSource = readFileSync(resolve(__dirname, '../../resources/compute.ts'), 'utf-8');
 const composeEnvSource = readFileSync(resolve(__dirname, '../../resources/compose-env.ts'), 'utf-8');
 const generationsSource = readFileSync(resolve(__dirname, '../../resources/generations.ts'), 'utf-8');
-// Most checks cover the compute stack as a whole, independent of which
-// of the three files a pattern lives in.
+// Most checks cover the compute stack as a whole, independent of which of the three files a pattern lives in.
 const envSuppliersSource = readFileSync(resolve(__dirname, '../../config/env-suppliers.config.ts'), 'utf-8');
 const source = computeSource + composeEnvSource + generationsSource;
 
-// Static checks pin structural compute contracts without rendering Pulumi.
-// Scope: closed ingress, VM reader credentials, immutable generations, registry wiring.
+// Static checks pin structural compute contracts without rendering Pulumi: closed ingress, VM reader credentials, immutable generations, registry-driven resources.
 describe('compute module source contracts', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
     expect(source).toMatch(/inboundDefaultPolicy:\s*['"]drop['"]/);
@@ -54,9 +52,7 @@ describe('compute module source contracts', () => {
   });
 
   it('cloud-init render is delegated to the cloud-init module', () => {
-    // The boot-script text lives in resources/cloud-init.ts and is verified
-    // against its rendered output in resources/cloud-init.test.ts. compute.ts
-    // must keep wiring buildCloudInit through renderCloudInit.
+    // The boot-script text lives in resources/cloud-init.ts, verified against its rendered output in resources/cloud-init.test.ts; compute.ts must keep passing buildCloudInit through renderCloudInit.
     expect(source).toMatch(/renderCloudInit\(/);
   });
 
@@ -77,43 +73,35 @@ describe('compute module source contracts', () => {
   });
 
   it('derives the VM service list from the canonical registry (deployedServices)', () => {
-    // compute filters the canonical registry by feature flag (and folds
-    // co-hosted workers into the host under singleVM) without re-declaring
-    // the service set, so LB / image-wait / compose wiring can't drift.
+    // compute filters the canonical registry by feature flag, folding co-hosted workers into the host under singleVM, without re-declaring the service set, so LB, image-wait, and compose cannot drift.
     expect(source).toMatch(/deployedServices\(appConfig\.services, appConfig\.singleVM\)/);
   });
 
   it('binds compose env from the registry placeholder scan + bindings + app env suppliers (no per-service env maps)', () => {
     // Derive each service's compose environment from placeholders, resolving bindings before the shared pool.
-    // New services need compute changes only for genuinely new Pulumi values.
+    // New services need compute changes only for new Pulumi values.
     expect(source).toMatch(/appEnvSuppliers/);
     expect(source).toMatch(/composePlaceholders\(/);
     expect(source).toMatch(/block\.profiles\.includes\(/);
-    // Registry bindings resolve first (unioned with folded co-hosted bindings
-    // on the singleVM host), the shared app env suppliers second.
+    // Registry bindings resolve first, unioned with folded co-hosted bindings on the singleVM host, and the shared app env suppliers second.
     expect(source).toMatch(/effectiveBindings\(/);
     expect(source).toMatch(/resolveBinding\(/);
-    // Unknown placeholders must fail before a broken VM can boot.
-    // Except placeholders folded in from an inactive co-hosted worker, which
-    // nothing in-process reads.
+    // Unknown placeholders must fail before a broken VM can boot, except those folded in from an inactive co-hosted worker that nothing in-process reads.
     expect(source).toMatch(/defines a value for it/);
     expect(source).toMatch(/inactiveCoHostedVars\(/);
     // The registry remains the sole source for per-service bindings.
     expect(source).not.toMatch(/composeEnvFor/);
   });
 
-  it('contains no inter-service env wiring — service topology lives in registry bindings', () => {
-    // CDC and MCP endpoint bindings belong to the service registry; compute provides only resolution.
-    // The backend supplies the stable target, but service environment wiring must not be hard-coded here.
+  it('contains no inter-service env wiring: service topology lives in registry bindings', () => {
+    // CDC and MCP endpoint bindings belong to the service registry and compute only resolves them; no service environment may be hard-coded here.
     for (const banned of ['API_WS_URL', 'MCP_API_URL', 'mcpUrl']) {
       expect(source, `inter-service env token ${banned} must not appear in compute.ts`).not.toContain(banned);
     }
   });
 
   it('materialises a VM per active generation with its own per-generation IPs', () => {
-    // The immutable-node model names VMs `vm-<svc>-<genId>` (content-addressed)
-    // and gives each generation its own public + private IP; the LB targets the
-    // set of active generation IPs. There is no lifelong per-service reserved IP map.
+    // VMs are named `vm-<svc>-<genId>` and each generation owns its public and private IP, with the LB targeting the active generation IPs. There is no per-service reserved IP map.
     expect(source).toMatch(/activeGenerations\(/);
     expect(source).toMatch(/vm-\$\{svc\.slug\}-\$\{generation\.id\}/);
     expect(source).toMatch(/ipam-\$\{svc\.slug\}-\$\{generation\.id\}/);
@@ -129,9 +117,7 @@ describe('compute module source contracts', () => {
   });
 
   it('resolves cdc\u2019s @{backend.privateIp} binding to the current backend generation IP', () => {
-    // cdc binds to the live backend generation's private IP, baked at deploy
-    // time. Backend rolls before cdc, so cdc always bakes the freshly promoted
-    // generation \u2014 no moving stable IP, no NIC mutation.
+    // cdc binds to the live backend generation's private IP at deploy time, and the backend rolls before cdc, so cdc always bakes the freshly promoted generation.
     expect(source).toMatch(/currentGenBindingIp\(/);
     expect(source).toMatch(/generationsByService\.get\(slug\)\?\.\[0\]/);
     // The stable-IP machinery must not come back.
@@ -145,8 +131,7 @@ describe('compute module source contracts', () => {
   });
 
   it('app env suppliers do not bind backend secrets as compose env values', () => {
-    // The .env file is still mounted via env_file: .env, but secrets travel via
-    // the runtime-secrets manifest, never as shared compose env supplier values.
+    // The .env file is mounted via env_file: .env, but secrets travel through the runtime-secrets manifest, never as shared compose env supplier values.
     const poolBlock = envSuppliersSource.match(/defineEnvSuppliers\(\{[\s\S]*?\}\)/);
     expect(poolBlock, 'could not locate appEnvSuppliers').not.toBeNull();
     const body = poolBlock?.[0] ?? '';
@@ -163,9 +148,7 @@ describe('compute module source contracts', () => {
   });
 
   it('bakes the runtime secret manifest inline into cloud-init, not as an out-of-band S3 object', () => {
-    // Under immutable releases every change replaces the VM anyway, so the
-    // manifest (metadata only) is baked into the new generation's cloud-init
-    // and are not published as deploy-bucket objects for the VM to fetch.
+    // Every change replaces the VM, so the metadata-only manifest is baked into the new generation's cloud-init and never published as a deploy-bucket object.
     expect(source).toMatch(/buildRuntimeSecretsManifest\(service\.secretConsumers\)/);
     expect(source).not.toMatch(/new scaleway\.object\.Item\(`runtime-manifest-/);
     expect(source).not.toMatch(/runtimeSecretsManifestKey/);

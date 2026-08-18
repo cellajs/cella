@@ -18,10 +18,7 @@ export const setMockContext = (context: MockContext) => {
   currentMockContext = context;
 };
 
-/**
- * Executes a function with a specific mock context, restoring the original context after.
- * Useful for running seed scripts or tests without permanently changing the context.
- */
+/** Restores the previous context afterwards. */
 export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
   const previousContext = currentMockContext;
   currentMockContext = context;
@@ -43,9 +40,6 @@ const getIdPrefix = (): string => {
   }
 };
 
-/**
- * Mock nanoid with context-aware prefixing.
- */
 export const mockNanoid = (length = 24) => {
   const prefix = getIdPrefix();
   const prefixLength = prefix.length;
@@ -56,9 +50,6 @@ export const mockNanoid = (length = 24) => {
 export const SCRIPT_UUID_PREFIX = '00000000';
 export const LOADTEST_UUID_PREFIX = '00000001';
 
-/**
- * Mock UUID entity ID with context-aware prefixing.
- */
 export const mockUuid = () => {
   const uuid = faker.string.uuid();
   switch (currentMockContext) {
@@ -71,7 +62,5 @@ export const mockUuid = () => {
   }
 };
 
-/**
- * Generates a mock tenant ID (6 lowercase alphanumeric chars).
- */
+/** 6 lowercase alphanumeric characters. */
 export const mockTenantId = () => mockNanoid(6);

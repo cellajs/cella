@@ -8,7 +8,6 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 
 const systemToolApi = getRouteApi('/_app/system/$tool');
 
-/** Renders the system page. */
 export function SystemPage() {
   const { t } = useTranslation();
 

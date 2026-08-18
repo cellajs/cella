@@ -35,14 +35,11 @@ interface Props {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-/** Renders the form for updating organization details. */
 export function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
-  // Inline media become real org-scoped attachment rows (persistAttachments), so the file
-  // panel follows `can.attachment.create` like the attachments table's upload button.
-  // Reaching this form via an organization UPDATE grant does not imply attachment CREATE.
+  // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which an organization UPDATE grant does not imply.
   const canUploadAttachments = organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
@@ -55,7 +52,6 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   const formContainerId = 'update-organization-details';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
 
-  // Prevent data loss
   useBeforeUnload(form.isDirty);
 
   const onSubmit = (body: FormValues) => {
@@ -93,14 +89,12 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
               trailingBlock: false,
               className:
                 'min-h-20 max-h-[50vh] overflow-auto bg-background pl-10 pr-6 p-3 border-input ring-offset-background focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 w-full rounded-md border text-sm focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-offset-2',
-              // Omitted without attachment-create permission: the editor renders no file panel.
               baseFilePanelProps: canUploadAttachments
                 ? {
                     mediaMode: 'private-attachment',
                     tenantId: organization.tenantId,
                     organizationId: organization.id,
-                    // Persist inline media as private, org-scoped attachments so the
-                    // id the block references resolves via presigned + permission check.
+                    // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
                     onComplete: (attachments) =>
                       persistAttachments(attachments, {
                         tenantId: organization.tenantId,

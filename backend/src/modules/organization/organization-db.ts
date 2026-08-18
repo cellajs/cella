@@ -5,10 +5,7 @@ import { maxLength } from '#/db/utils/constraints';
 
 const languagesEnum = appConfig.languages;
 
-/**
- * Organizations table is a primary channel entity table.
- * Each organization belongs to exactly one tenant (RLS isolation boundary).
- */
+/** Primary channel entity table. Each organization belongs to exactly one tenant (RLS isolation boundary). */
 export const organizationsTable = snakeCase.table(
   'organizations',
   {
@@ -24,23 +21,18 @@ export const organizationsTable = snakeCase.table(
     websiteUrl: varchar({ length: maxLength.url }),
     welcomeText: varchar({ length: maxLength.html }),
     chatSupport: boolean().notNull().default(false),
-    // Per-org feature flags; keys + defaults are declared in `appConfig.defaultOrganizationFlags`.
-    // Stored sparse: reads merge config defaults under the stored bag (see helpers/select), so a
-    // flag added to the config later needs no backfill.
+    // Per-org feature flags declared in `appConfig.defaultOrganizationFlags`, stored sparse: reads merge the defaults, so a new flag needs no backfill.
     organizationFlags: jsonb()
       .$type<OrganizationFlags>()
       .notNull()
       .default({} as OrganizationFlags),
-    // Per-org setup config; app-configured defaults declared in `appConfig.defaultSetupConfig`.
-    // Stored sparse like organizationFlags: reads merge config defaults under the stored bag.
+    // Per-org setup config declared in `appConfig.defaultSetupConfig`, stored sparse like organizationFlags.
     setupConfig: jsonb().$type<Partial<OrganizationSetupConfig>>().notNull().default({}),
   },
   (table) => [
     index('organizations_name_index').on(table.name.desc()),
     index('organizations_created_at_index').on(table.createdAt.desc()),
-    // 1 tenant = 1 organization: a tenant holds at most one org. This unique constraint is the
-    // hard backstop for the guard in create-organizations; it also serves tenant_id lookups (so the
-    // former non-unique organizations_tenant_id_index is dropped as redundant).
+    // 1 tenant = 1 organization: the hard backstop for the guard in create-organizations, and it serves tenant_id lookups.
     unique('organizations_tenant_id_key').on(table.tenantId),
     index('organizations_created_by_index').on(table.createdBy),
     index('organizations_updated_by_index').on(table.updatedBy),

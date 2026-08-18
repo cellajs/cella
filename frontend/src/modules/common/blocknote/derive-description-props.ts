@@ -40,10 +40,7 @@ const countBlocks = (blocks: CustomBlock[]): DerivedDescriptionCounts => {
   return { expandable: blocks.length > 1, checkboxCount, checkedCount, attachmentCount };
 };
 
-/**
- * Parse description blocks once and extract all count-based derived properties.
- * Synchronous and safe for optimistic updates in onMutate.
- */
+/** Synchronous, so it is safe for optimistic updates in onMutate. */
 export const deriveDescriptionCounts = (description: string): DerivedDescriptionCounts => {
   try {
     return countBlocks(JSON.parse(description) as CustomBlock[]);
@@ -52,10 +49,7 @@ export const deriveDescriptionCounts = (description: string): DerivedDescription
   }
 };
 
-/**
- * Derive all description properties including summary (async due to HTML conversion).
- * Uses a single parse and walk for summary and count derivation.
- */
+/** Async because the summary needs HTML conversion. */
 export const deriveDescriptionProps = async (description: string): Promise<DerivedDescriptionProps> => {
   const blocks = JSON.parse(description) as CustomBlock[];
   const counts = countBlocks(blocks);

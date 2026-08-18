@@ -12,27 +12,24 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 type CountsType = z.infer<typeof publicCountsSchema>;
 
-// Store public counts in memory with a 1-minute cache
 const publicCountsCache = new Map<string, { data: CountsType; expiresAt: number }>();
 
 app.openapi(metricRoutes.getPublicCounts, async (ctx) => {
   const cacheKey = 'publicCounts';
   const cached = publicCountsCache.get(cacheKey);
 
-  // Use cache if valid
   if (cached) {
     const isExpired = cached.expiresAt <= Date.now();
     if (!isExpired) return ctx.json(cached.data, 200);
   }
 
-  // Query counts for all entity types
   const countEntries = await Promise.all(
     appConfig.entityTypes.map(async (entityType) => {
       try {
         const total = await countEntityRows(ctx, { entityType });
         return [entityType, total];
       } catch (err) {
-        // Fallback: 0 (avoids breaking all counts)
+        // A failed count reports 0 so the other counts still return
         return [entityType, 0];
       }
     }),
@@ -40,7 +37,6 @@ app.openapi(metricRoutes.getPublicCounts, async (ctx) => {
 
   const data = Object.fromEntries(countEntries) as CountsType;
 
-  // Cache result for 1 minute
   const expiresAt = Date.now() + new TimeSpan(1, 'm').milliseconds();
   publicCountsCache.set(cacheKey, { data, expiresAt });
 

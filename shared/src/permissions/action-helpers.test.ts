@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { isUnconditionalCan, resolveCan } from './action-helpers.ts';
 
 describe('resolveCan', () => {
-  // --- Pass cases: permission should be granted ---
-
   it('returns true for unconditional true permission', () => {
     expect(resolveCan(true, 'user-a', 'user-b')).toBe(true);
   });
@@ -17,8 +15,6 @@ describe('resolveCan', () => {
   it('returns true for own permission when user is the creator', () => {
     expect(resolveCan('own', 'user-123', 'user-123')).toBe(true);
   });
-
-  // --- Fail cases: permission should be denied ---
 
   it('returns false for unconditional false permission', () => {
     expect(resolveCan(false, 'user-a', 'user-a')).toBe(false);
@@ -45,8 +41,6 @@ describe('resolveCan', () => {
     expect(resolveCan(undefined, 'user-a', 'user-a')).toBe(false);
   });
 
-  // --- Edge cases ---
-
   it('returns false for own permission with empty string userId', () => {
     expect(resolveCan('own', 'user-creator', '')).toBe(false);
   });
@@ -55,7 +49,7 @@ describe('resolveCan', () => {
     expect(resolveCan('own', '', 'user-123')).toBe(false);
   });
 
-  it('does not coerce types — string comparison is exact', () => {
+  it('does not coerce types: string comparison is exact', () => {
     // IDs must be exact string matches, no loose comparison
     expect(resolveCan('own', '123', '123')).toBe(true);
     expect(resolveCan('own', ' 123', '123')).toBe(false);
@@ -68,7 +62,7 @@ describe('isUnconditionalCan', () => {
     expect(isUnconditionalCan(true)).toBe(true);
   });
 
-  it('is false for a row-conditional grant — it depends on the row, which this cannot see', () => {
+  it('is false for a row-conditional grant: it depends on the row, which this cannot see', () => {
     // The whole point: channel-wide features (e.g. collab editing) enable on this, and `'own'`
     // must NOT enable them, because ownership is per-row and unknown here.
     expect(isUnconditionalCan('own')).toBe(false);

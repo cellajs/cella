@@ -10,10 +10,7 @@ interface UseFetchMoreOnDemandOptions {
   fetchMore?: () => Promise<unknown>;
 }
 
-/**
- * Fulfill level-triggered load demand whenever the query can accept it.
- * Re-evaluation after background fetches prevents infinite-scroll demand from being lost.
- */
+/** Fulfills level-triggered load demand whenever the query can accept it, re-evaluating after background fetches. */
 export function useFetchMoreOnDemand({
   demand,
   hasNextPage,

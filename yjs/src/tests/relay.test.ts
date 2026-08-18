@@ -10,16 +10,13 @@ import {
   storageMock,
 } from './helpers';
 
-// Mock dependencies
 vi.mock('../data/storage', () => storageMock());
 
-// No entity description by default: individual tests override to exercise seeding.
-// (Also keeps the pg pool in data/db from being instantiated by the import chain.)
+// No entity description by default: individual tests override to exercise seeding, and the pg pool in data/db stays uninstantiated.
 vi.mock('../data/entity-content', () => ({
   loadEntityDescription: vi.fn().mockResolvedValue(null),
 }));
 
-// Mock the durable-record write; call arguments verify the save-window integration.
 vi.mock('../sync/materialize', () => ({
   materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),
@@ -39,7 +36,6 @@ vi.mock('../sync/session-manager', () => {
       return collabs.get(key);
     }),
     leaveCollab: vi.fn(),
-    // Expose for test manipulation
     _collabs: collabs,
   };
 });
@@ -64,12 +60,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('handleMessage — pre-verification buffering', () => {
+describe('handleMessage: pre-verification buffering', () => {
   it('sync step 1 is buffered when unverified', async () => {
     const ws = mockWebSocket();
     await handleMessage(unverifiedCtx, ws as any, buildSyncStep1(new Uint8Array([])));
 
-    // No response yet: message is buffered
     expect(ws.sent).toHaveLength(0);
     expect(loadState).not.toHaveBeenCalled();
   });
@@ -82,7 +77,6 @@ describe('handleMessage — pre-verification buffering', () => {
     doc.getMap('test').set('key', 'value');
     await handleMessage(unverifiedCtx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
 
-    // Update not applied: no broadcast, no pending state
     expect(broadcastToCollab).not.toHaveBeenCalled();
   });
 
@@ -96,8 +90,8 @@ describe('handleMessage — pre-verification buffering', () => {
   });
 });
 
-describe('handleMessage — sync step 1', () => {
-  it('2.1.1 first connection without entity content — creates empty doc', async () => {
+describe('handleMessage: sync step 1', () => {
+  it('2.1.1 first connection without entity content: creates empty doc', async () => {
     vi.mocked(loadState).mockResolvedValue(null);
     const ws = mockWebSocket();
 
@@ -105,14 +99,12 @@ describe('handleMessage — sync step 1', () => {
 
     expect(createDoc).toHaveBeenCalledWith(ctx, null);
     expect(ws.sent).toHaveLength(1);
-    // Should be a valid sync-step-2 with empty doc state
     const update = decodeSyncStep2(ws.sent[0]);
     expect(update.length).toBeGreaterThan(0);
   });
 
-  it('2.1.1c first connection with entity content — seeds the doc server-side', async () => {
-    // Simulate real storage for the fresh-doc path: createDoc persists, loadState reads back.
-    // Once-queued mocks only: persistent overrides would leak past clearAllMocks.
+  it('2.1.1c first connection with entity content: seeds the doc server-side', async () => {
+    // Once-queued mocks only: persistent overrides leak past clearAllMocks.
     let stored: Uint8Array | null = null;
     vi.mocked(createDoc).mockImplementationOnce(async (_ctx, initialState?: Uint8Array | null) => {
       stored = initialState ?? new Uint8Array(0);
@@ -137,12 +129,11 @@ describe('handleMessage — sync step 1', () => {
   });
 
   it('2.1.1d concurrent seeders converge on the canonical row', async () => {
-    // Second connector's insert loses (ON CONFLICT DO NOTHING): it must adopt the winner's seed
+    // The second connector's insert loses on ON CONFLICT DO NOTHING and must adopt the winner's seed.
     const winner = new TextEncoder().encode('winner-seed-state');
     vi.mocked(loadState)
       .mockResolvedValueOnce(null) // storedState: no row yet
       .mockResolvedValueOnce(winner as Uint8Array); // re-load after createDoc: winner's row
-    // createDoc keeps its factory default (resolves undefined): exactly the conflict no-op
     vi.mocked(loadEntityDescription).mockResolvedValueOnce(
       JSON.stringify([{ id: 'b1', type: 'paragraph', props: {}, content: [], children: [] }]),
     );
@@ -150,12 +141,11 @@ describe('handleMessage — sync step 1', () => {
 
     await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
 
-    // The client receives the canonical (winner's) state, not this connector's own seed
     expect(ws.sent).toHaveLength(1);
     expect(decodeSyncStep2(ws.sent[0])).toEqual(winner);
   });
 
-  it('2.1.1b existing row with empty state — skips createDoc', async () => {
+  it('2.1.1b existing row with empty state: skips createDoc', async () => {
     vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array(0));
     const ws = mockWebSocket();
 
@@ -165,31 +155,25 @@ describe('handleMessage — sync step 1', () => {
     expect(ws.sent).toHaveLength(1);
   });
 
-  it('2.1.2 existing state — sends diff', async () => {
+  it('2.1.2 existing state: sends diff', async () => {
     const doc = new Y.Doc();
     doc.getMap('test').set('key', 'value');
     const storedState = Y.encodeStateAsUpdate(doc);
     vi.mocked(loadState).mockResolvedValueOnce(storedState);
     const ws = mockWebSocket();
 
-    // Client has empty state vector
     const emptyVector = Y.encodeStateVector(new Y.Doc());
     await handleMessage(ctx, ws as any, buildSyncStep1(emptyVector));
 
     expect(ws.sent).toHaveLength(1);
-    // Verify the response can be applied to a new doc
     const clientDoc = new Y.Doc();
     const responseUpdate = decodeSyncStep2(ws.sent[0]);
     Y.applyUpdate(clientDoc, responseUpdate);
     expect(clientDoc.getMap('test').get('key')).toBe('value');
   });
 
-  it('2.1.2b existing row — seeds the materialize baseline from the durable description, not the Y.Doc', async () => {
-    // Regression: the Y.Doc row and the durable description are separate stores that can diverge
-    // (e.g. an image url saved to the Y.Doc but not yet materialized). The baseline must anchor on
-    // the description so a later materialize of the diverged Y.Doc is not falsely skipped and drops
-    // the url. Before the fix, existing rows seeded the baseline from the Y.Doc and never read the
-    // description here.
+  it('2.1.2b existing row: seeds the materialize baseline from the durable description, not the Y.Doc', async () => {
+    // The Y.Doc row and the durable description can diverge, so the baseline anchors on the description and a later materialize of the diverged Y.Doc is not skipped.
     const doc = new Y.Doc();
     doc.getMap('test').set('key', 'value');
     vi.mocked(loadState).mockResolvedValueOnce(Y.encodeStateAsUpdate(doc));
@@ -205,19 +189,17 @@ describe('handleMessage — sync step 1', () => {
     expect(collab.lastMaterializedJson).toBeDefined();
   });
 
-  it('2.1.3 corrupted state — falls back to full state', async () => {
+  it('2.1.3 corrupted state: falls back to full state', async () => {
     const doc = new Y.Doc();
     doc.getMap('test').set('key', 'value');
     const storedState = Y.encodeStateAsUpdate(doc);
     vi.mocked(loadState).mockResolvedValueOnce(storedState);
     const ws = mockWebSocket();
 
-    // Send garbage as state vector to make diffUpdate fail
     const garbageVector = new Uint8Array([255, 255, 255, 255]);
     await handleMessage(ctx, ws as any, buildSyncStep1(garbageVector));
 
     expect(ws.sent).toHaveLength(1);
-    // Should still be usable (full state fallback)
     const clientDoc = new Y.Doc();
     const responseUpdate = decodeSyncStep2(ws.sent[0]);
     Y.applyUpdate(clientDoc, responseUpdate);
@@ -225,11 +207,10 @@ describe('handleMessage — sync step 1', () => {
   });
 });
 
-describe('handleMessage — sync update', () => {
-  it('2.1.4 first update, no DB state — pendingState is raw update', async () => {
+describe('handleMessage: sync update', () => {
+  it('2.1.4 first update, no DB state: pendingState is raw update', async () => {
     vi.mocked(loadState).mockResolvedValueOnce(null);
     const ws = mockWebSocket();
-    // Need a collab session to exist
     joinCollab(ctx);
 
     const doc = new Y.Doc();
@@ -243,7 +224,7 @@ describe('handleMessage — sync update', () => {
     expect(collab.pendingState.length).toBeGreaterThan(0);
   });
 
-  it('2.1.5 first update with DB state — merges', async () => {
+  it('2.1.5 first update with DB state: merges', async () => {
     const existingDoc = new Y.Doc();
     existingDoc.getMap('test').set('existing', true);
     vi.mocked(loadState).mockResolvedValueOnce(Y.encodeStateAsUpdate(existingDoc));
@@ -257,14 +238,13 @@ describe('handleMessage — sync update', () => {
     await handleMessage(ctx, ws as any, buildSyncUpdate(update));
 
     const collab = getCollab(ctx.entityType, ctx.entityId);
-    // Verify merged state contains both keys
     const verifyDoc = new Y.Doc();
     Y.applyUpdate(verifyDoc, collab.pendingState);
     expect(verifyDoc.getMap('test').get('existing')).toBe(true);
     expect(verifyDoc.getMap('test').get('new')).toBe(true);
   });
 
-  it('2.1.6 subsequent update — merges with pending', async () => {
+  it('2.1.6 subsequent update: merges with pending', async () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx);
 
@@ -284,8 +264,7 @@ describe('handleMessage — sync update', () => {
     expect(verifyDoc.getMap('test').get('second')).toBe(true);
   });
 
-  it('2.1.8 merge failure with DB state — falls back to raw update', async () => {
-    // Provide corrupted DB state that will cause mergeUpdates to fail
+  it('2.1.8 merge failure with DB state: falls back to raw update', async () => {
     vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array([255, 255, 255]));
     const ws = mockWebSocket();
     joinCollab(ctx);
@@ -297,7 +276,6 @@ describe('handleMessage — sync update', () => {
     await handleMessage(ctx, ws as any, buildSyncUpdate(update));
 
     const collab = getCollab(ctx.entityType, ctx.entityId);
-    // Should have fallen back to raw update
     expect(collab.pendingState).toBeDefined();
     const verifyDoc = new Y.Doc();
     Y.applyUpdate(verifyDoc, collab.pendingState);
@@ -319,7 +297,7 @@ describe('handleMessage — sync update', () => {
   });
 });
 
-describe('handleMessage — input validation', () => {
+describe('handleMessage: input validation', () => {
   it('2.1.9 messages < 2 bytes are silently dropped', async () => {
     const ws = mockWebSocket();
     await handleMessage(ctx, ws as any, new Uint8Array([0]));
@@ -330,7 +308,6 @@ describe('handleMessage — input validation', () => {
 
   it('2.1.10 unknown message type is silently dropped', async () => {
     const ws = mockWebSocket();
-    // Message type 99
     const data = new Uint8Array([99, 0, 0]);
     await handleMessage(ctx, ws as any, data);
     expect(ws.sent).toHaveLength(0);
@@ -338,7 +315,7 @@ describe('handleMessage — input validation', () => {
   });
 });
 
-describe('handleMessage — awareness', () => {
+describe('handleMessage: awareness', () => {
   it('3.1.4 awareness is broadcast to peers', async () => {
     const ws = mockWebSocket();
     const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
@@ -352,12 +329,10 @@ describe('handleMessage — awareness', () => {
     const ws = mockWebSocket();
     const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
 
-    // Send 20 messages rapidly (within 1 second)
     for (let i = 0; i < 20; i++) {
       await handleMessage(ctx, ws as any, awarenessData);
     }
 
-    // Only the first should pass (all sent at same fake time)
     expect(broadcastToCollab).toHaveBeenCalledTimes(1);
   });
 
@@ -411,7 +386,7 @@ describe('debounced save', () => {
     expect(saveState).toHaveBeenCalledWith(ctx, update, ctx.userId);
   });
 
-  it('2.2.2 rapid updates reset debounce — single save', async () => {
+  it('2.2.2 rapid updates reset debounce: single save', async () => {
     vi.mocked(loadState).mockResolvedValue(null);
     const ws = mockWebSocket();
     joinCollab(ctx);
@@ -423,7 +398,6 @@ describe('debounced save', () => {
       await vi.advanceTimersByTimeAsync(500); // within 3000ms debounce
     }
 
-    // Timer hasn't fully elapsed yet from the last update
     expect(saveState).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(3000);
@@ -444,7 +418,6 @@ describe('debounced save', () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(saveState).toHaveBeenCalledTimes(1);
-    // Pending state should be restored for retry
     const collab = getCollab(ctx.entityType, ctx.entityId);
     expect(collab.pendingState).toBeDefined();
   });
@@ -481,21 +454,18 @@ describe('debounced save', () => {
     expect(collab.savingPromise).toBeUndefined();
   });
 
-  it('2.2.6 DB state is cached within debounce window — single loadState call', async () => {
+  it('2.2.6 DB state is cached within debounce window: single loadState call', async () => {
     vi.mocked(loadState).mockResolvedValue(null);
     const ws = mockWebSocket();
     joinCollab(ctx);
 
-    // Send 3 updates rapidly, all within the debounce window, no pendingState yet each time.
-    // First update sets pendingState, subsequent updates merge into it,
-    // so loadState should only be called once (on the first update).
+    // Three updates inside one debounce window: the first sets pendingState, the rest merge into it, so loadState runs once.
     const doc = new Y.Doc();
     doc.getMap('test').set('key', 'value');
     await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
 
     expect(loadState).toHaveBeenCalledTimes(1);
 
-    // Second and third updates merge into pendingState: no loadState needed
     doc.getMap('test').set('key2', 'value2');
     await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
     doc.getMap('test').set('key3', 'value3');
@@ -514,11 +484,9 @@ describe('debounced save', () => {
     doc.getMap('test').set('key', 'value');
     await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
 
-    // Flush the debounced save
     await vi.advanceTimersByTimeAsync(3000);
     expect(saveState).toHaveBeenCalledTimes(1);
 
-    // Cache should be cleared: next update re-queries DB
     const collab = getCollab(ctx.entityType, ctx.entityId);
     expect(collab.cachedDbState).toBeUndefined();
   });

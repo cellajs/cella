@@ -5,15 +5,10 @@ import { productCache } from './app-product-cache';
 
 let isRegistered = false;
 
-/**
- * Handle activity event for cache management.
- * Only handles delete events for private product entities.
- * Create/update reservations are done in cdc-websocket.ts.
- */
+/** Handles delete events for product entities only; cdc-websocket.ts invalidates on create and update. */
 function handleActivityEvent(event: ActivityEvent): void {
   const { action, entityType, subjectId } = event;
 
-  // Only handle delete for product entities with valid entityType and entityId
   if (action !== 'delete' || !entityType || !subjectId || !isProduct(entityType)) {
     return;
   }
@@ -29,9 +24,7 @@ function handleActivityEvent(event: ActivityEvent): void {
   }
 }
 
-/**
- * Registers the product-cache invalidation hook once during server startup.
- */
+/** Registers the product-cache invalidation hook once during server startup. */
 export function registerCacheInvalidation(): void {
   if (isRegistered) {
     log.warn('Cache hook already registered');
@@ -44,10 +37,6 @@ export function registerCacheInvalidation(): void {
   log.info('Entity cache hook registered');
 }
 
-/**
- * Unregister cache hook.
- * Useful for testing or cleanup.
- */
 export function unregisterCacheInvalidation(): void {
   if (!isRegistered) return;
 

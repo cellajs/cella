@@ -5,15 +5,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 const exitHold = 100;
 const exitDuration = 450;
 
-/**
- * Lifecycle of the indicator: dormant, actively refreshing, or animating away.
- */
 type Phase = 'idle' | 'refreshing' | 'exiting';
 
-/**
- * Find the nearest scrollable ancestor of a given element.
- * Returns the element whose scrollTop > 0 would indicate the user has scrolled down.
- */
 function getScrollParent(el: Element | null): Element | null {
   let current = el;
   while (current && current !== document.documentElement) {
@@ -36,7 +29,6 @@ type Props = {
   isDisabled?: boolean;
 };
 
-/** Renders the pull to refresh component. */
 export function PullToRefresh({
   onRefresh,
   isFetching = false,
@@ -65,8 +57,7 @@ export function PullToRefresh({
     (e: TouchEvent) => {
       if (isDisabled) return;
 
-      // Check if user is at the top: look at the nearest scrollable ancestor
-      // of the touch target, or fall back to window.scrollY
+      // Only start at the top of the touch target's scroll parent, or of the window
       const target = e.target as Element | null;
       const scrollParent = getScrollParent(target);
       const scrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
@@ -96,7 +87,6 @@ export function PullToRefresh({
 
       const rawDelta = touch.screenY - pullStartRef.current;
 
-      // Require a minimum swipe distance before activating
       if (rawDelta < activationThreshold) {
         setPullPosition(0);
         return;
@@ -113,14 +103,13 @@ export function PullToRefresh({
   const endPull = useCallback(() => {
     if (isDisabled || !isDraggingRef.current) return;
 
-    // Account for the empty circle phase (30px) before progress counting starts
+    // Discount the empty-circle phase before comparing against the threshold
     const pulledEnough = pullPosition - 30 >= refreshThreshold;
 
     pullStartRef.current = null;
     isDraggingRef.current = false;
 
     if (!pulledEnough) {
-      // Not enough pull: animate back to 0.
       setPullPosition(0);
       return;
     }
@@ -136,12 +125,10 @@ export function PullToRefresh({
         window.location.reload();
         return;
       }
-      // Otherwise glide the indicator away (CSS handles the hold + exit timing).
       setPhase('exiting');
     });
   }, [isDisabled, pullPosition, refreshThreshold, onRefresh]);
 
-  // Remember if any fetch actually ran during this refresh cycle.
   useEffect(() => {
     if (isRefreshing && isFetching) sawFetchRef.current = true;
   }, [isRefreshing, isFetching]);
@@ -149,7 +136,8 @@ export function PullToRefresh({
   useEffect(() => {
     if (isDisabled) return;
 
-    const options = { passive: false }; // important!
+    // Non-passive so onPull can preventDefault; otherwise the browser's own pull-to-refresh wins
+    const options = { passive: false };
 
     window.addEventListener('touchstart', startPull, options);
     window.addEventListener('touchmove', onPull, options);
@@ -178,8 +166,7 @@ export function PullToRefresh({
   const clamped = Math.min(progressPull, refreshThreshold);
   const progress = clamped / refreshThreshold;
 
-  // Rings thicken inward (outer edge fixed at radius 20) as the user drags, and
-  // thicken further once refreshing. backgroundStroke drives the shared radius.
+  // Rings thicken inward from a fixed outer edge at radius 20 as the pull grows
   const stroke = isActive ? 6 : 3 + progress * 1.5;
   // Background extends 2px beyond the foreground on each side for padding.
   const backgroundStroke = stroke + 4;

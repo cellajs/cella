@@ -1,8 +1,6 @@
 /**
- * Deterministic 5-char hash of a sourceId for HLC tie-breaking.
- * Uses djb2 hashing → base-36 encoding → fixed-width 5-char output.
- *
- * Shared between backend, frontend, and bench to ensure consistent HLC generation.
+ * Deterministic 5-character hash of a sourceId for HLC tie-breaking: djb2, base-36, fixed width.
+ * Backend, frontend and bench share it so HLC generation matches.
  */
 export function hashSourceId(sourceId: string): string {
   let hash = 0;

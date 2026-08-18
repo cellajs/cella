@@ -25,7 +25,6 @@ interface DomainTileProps {
   tenantId: string;
 }
 
-/** Renders the domain tile component. */
 export function DomainTile({ domain, tenantId }: DomainTileProps) {
   const { t } = useTranslation();
   const deleteMutation = useDomainDeleteMutation();
@@ -104,7 +103,6 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
           </div>
         </div>
 
-        {/* DNS instructions for unverified domains */}
         {!domain.verified && (
           <Collapsible>
             <CollapsibleTrigger
@@ -144,7 +142,6 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
           </Collapsible>
         )}
 
-        {/* Verification result feedback */}
         {verifyResult && !verifyResult.success && (
           <div className="rounded-md bg-destructive/10 p-2 text-destructive text-xs">
             <p>{t('c:dns_not_found')}</p>

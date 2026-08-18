@@ -76,7 +76,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
   const instance = await plan.findInstance(plan.instanceName);
   if (!instance) throw new Error(`No managed database instance named '${plan.instanceName}' in this region/project.`);
   if (instance.status !== 'ready') {
-    throw new Error(`Instance '${plan.instanceName}' is '${instance.status}', not 'ready' — refusing to reset.`);
+    throw new Error(`Instance '${plan.instanceName}' is '${instance.status}', not 'ready': refusing to reset.`);
   }
 
   const databases = await plan.listDatabases(instance.id);
@@ -156,10 +156,10 @@ export function serialConsoleSteps(databaseName: string): string {
   return [
     `${warningMark} ${pc.bold('Two steps remain, on the Scaleway serial console')} ${pc.dim(`(${databaseName} is empty until they run)`)}:`,
     '',
-    `  ${pc.dim('# 1. schema — self-verifying since the 99-verify block; a bad migrate aborts loudly')}`,
+    `  ${pc.dim('# 1. schema: self-verifying since the 99-verify block; a bad migrate aborts loudly')}`,
     '  cd /opt/app && docker compose --profile backend run --rm backend-release',
     '',
-    `  ${pc.dim('# 2. first admin — signs in by magic link')}`,
+    `  ${pc.dim('# 2. first admin: signs in by magic link')}`,
     '  cd /opt/app && docker compose --profile backend run --rm \\',
     '    -e ADMIN_EMAIL=you@example.com backend-release node dist/seeds-bundle.js init',
     '',
@@ -177,7 +177,7 @@ export function restoreHint(error: ResetIrrecoverableError, region: string): str
     `  scw rdb backup restore ${error.backupId} instance-id=${error.instanceId} \\`,
     `    database-name=${error.databaseName} region=${region}`,
     '',
-    `  ${pc.dim('Then re-grant both roles — a restore does not bring privileges back:')}`,
+    `  ${pc.dim('Then re-grant both roles, a restore does not bring privileges back:')}`,
     `  scw rdb privilege set instance-id=${error.instanceId} region=${region} \\`,
     `    database-name=${error.databaseName} user-name=admin_role permission=all`,
     `  scw rdb privilege set instance-id=${error.instanceId} region=${region} \\`,

@@ -17,7 +17,7 @@ describe('getSignedUrlFromKey', () => {
     const parsed = new URL(url);
     expect(parsed.pathname).toContain('org/attachments/original/a.jpg');
     expect(parsed.searchParams.get('X-Amz-Signature')).toBeTruthy();
-    // Pin the default: a silent regression to an enormous expiry must fail here.
+    // Pin the default so a regression to an enormous expiry fails here.
     expect(parsed.searchParams.get('X-Amz-Expires')).toBe('86400');
   });
 

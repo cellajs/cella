@@ -2,14 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { baseDb } from './db';
 
-// Tenant context helpers, set session vars for RLS policies
-
-/**
- * Apply tenant/session variables for RLS policies within a transaction.
- *
- * Convention: keep the callback focused on DB queries. Return raw data;
- * hydration, response formatting, and ctx.json() belong outside.
- */
+/** Sets the session variables the RLS policies read: tenant id, user id, include_deleted. */
 async function setTenantSessionVars(
   tx: Parameters<typeof baseDb.transaction>[0] extends (tx: infer T) => unknown ? T : never,
   ctx: AuthContext,
@@ -34,7 +27,6 @@ export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext)
   );
 }
 
-/** Read-only tenant RLS transaction that hides tombstones by default. */
 export async function tenantReadIncludingDeleted<T>(
   ctx: AuthContext,
   fn: (readCtx: AuthContext) => Promise<T>,
@@ -48,10 +40,7 @@ export async function tenantReadIncludingDeleted<T>(
   );
 }
 
-/**
- * Read-write RLS context for mutation handlers.
- * Sets session vars so RLS SELECT policies pass (e.g. resolveEntity, RETURNING).
- */
+/** Read-write RLS transaction for mutation handlers; session vars let RLS SELECT policies pass on RETURNING. */
 export async function tenantContext<T>(ctx: AuthContext, fn: (txCtx: AuthContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(async (tx) => {
     await setTenantSessionVars(tx, ctx, false);
@@ -59,7 +48,6 @@ export async function tenantContext<T>(ctx: AuthContext, fn: (txCtx: AuthContext
   });
 }
 
-/** Read-write tenant transaction that can see tombstoned rows during soft-delete updates. */
 export async function tenantContextIncludingDeleted<T>(
   ctx: AuthContext,
   fn: (txCtx: AuthContext) => Promise<T>,

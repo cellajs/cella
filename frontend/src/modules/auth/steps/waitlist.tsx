@@ -5,7 +5,6 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 
-/** Waitlist request step: email greeting with reset, waitlist-specific legal notice, and the request form. */
 export function WaitlistStep() {
   const { t } = useTranslation();
 

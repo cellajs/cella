@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * Clipboard copy hook: exposes `copied`/`error` and `copyToClipboard(text)`.
- * `copied` resets after `timeoutDuration` ms (default 3000).
- */
+/** Clipboard copy hook; `copied` resets after `timeoutDuration` ms (default 3000). */
 export const useCopyToClipboard = (timeoutDuration = 3000) => {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<Error | null>(null);

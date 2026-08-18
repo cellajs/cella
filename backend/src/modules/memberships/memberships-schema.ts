@@ -15,7 +15,6 @@ import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
-/** Schema for entity roles enum - uses literal types from appConfig */
 const entityRoleSchema = z.enum(roles.all);
 
 export const membershipSchema = z
@@ -34,7 +33,6 @@ export const membershipSchema = z
 export const inactiveMembershipSchema = z
   .object({
     ...createSelectSchema(inactiveMembershipsTable).shape,
-    // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
     createdBy: nullableUserMinimalBaseSchema,

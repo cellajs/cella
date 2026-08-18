@@ -5,7 +5,6 @@ import type { HmrContext, ModuleNode, Plugin, ViteDevServer } from 'vite';
 /** Custom HMR event name sent to the client when locale files change */
 const CUSTOM_EVENT = 'i18next-hmr:update' as const;
 
-/** Configuration options for the locales plugin */
 interface LocalesPluginOptions {
   /** Source directory containing locale files (default: ../locales) */
   srcDir?: string;

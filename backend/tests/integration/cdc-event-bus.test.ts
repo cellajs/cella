@@ -9,7 +9,6 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Create a mock ActivityEvent from a mock activity. */
 const mockEventWithData = (key: string): ActivityEvent =>
   ({
     ...mockActivity(key),
@@ -30,18 +29,15 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockUser } from '#/modules/user/user-mocks';
 import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
-// Covers local ActivityBus events and full DB change to CDC worker to WebSocket
-// to ActivityBus delivery.
+// Covers local ActivityBus events and the full DB change to CDC worker to WebSocket path.
 describe('EventBus Integration', () => {
   beforeAll(async () => {
-    // Migrations are handled by global-setup.ts
     await clearDatabase();
   });
 
   describe('EventBus basics', () => {
     it('should receive locally emitted events', async () => {
       const handler = vi.fn();
-      // Use mockActivity for entity-agnostic event generation
       const mockEvent = mockEventWithData('test:emit-basic');
 
       activityBus.on(mockEvent.type, handler);
@@ -61,26 +57,19 @@ describe('EventBus Integration', () => {
       activityBus.emit(mockEvent);
       activityBus.emit(mockEvent);
 
-      // Should only be called once
       expect(handler).toHaveBeenCalledTimes(1);
     });
   });
 });
 
-// Skip CDC setup verification when not in full test mode
 describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () => {
-  // Migrations are handled by global-setup.ts
-
   it('should have CDC publication configured', async () => {
     const { publicationExists } = await ensureCdcSetup();
     expect(publicationExists).toBe(true);
   });
 });
 
-/**
- * Starts the CDC worker pipeline in-process so the suite runs in `pnpm test`
- * without depending on a separately running worker.
- */
+/** Runs the CDC worker pipeline in-process, so `pnpm test` needs no separate worker. */
 describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let testOrg: { id: string; slug: string; tenantId: string };
@@ -90,17 +79,15 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     cdcHarness = await startInProcessCdcWorker();
     await clearDatabase();
 
-    // Create tenant first (orgs require tenant FK)
+    // Orgs require the tenant FK.
     const [tenant] = await db.insert(tenantsTable).values({ name: 'Test Tenant' }).returning({ id: tenantsTable.id });
 
-    // Create test organization with tenant reference
     const orgData = mockOrganization();
     [testOrg] = await db
       .insert(organizationsTable)
       .values({ ...orgData, tenantId: tenant.id })
       .returning({ id: organizationsTable.id, slug: organizationsTable.slug, tenantId: organizationsTable.tenantId });
 
-    // Create test user
     const userData = mockUser();
     [testUser] = await db.insert(usersTable).values(userData).returning({ id: usersTable.id, email: usersTable.email });
     await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
@@ -114,11 +101,9 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   it('should emit membership.created when membership is inserted', async () => {
     const eventPromise = waitForEvent('membership.created', 15000);
 
-    // Use entity-agnostic mock that handles dynamic channel entity columns
     const membershipData = mockChannelMembership('organization', testOrg, testUser);
     await db.insert(membershipsTable).values(membershipData);
 
-    // Wait for: INSERT → CDC → activities INSERT → trigger → NOTIFY → activityBus
     const event = await eventPromise;
 
     expect(event.type).toBe('membership.created');
@@ -148,8 +133,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     await db.insert(attachmentsTable).values(attachment as never);
 
     const counterKey = sql`${testOrg.id}::varchar`;
-    // f:attachment is the attachment frontier (MAX org-sequence position of the type in the
-    // org subtree); it advances by 1 with every stamp and equals the just-stamped row's seq.
+    // f:attachment is the attachment frontier: it advances by 1 per stamp and equals that row's seq.
     const readCounter = async () => {
       const [row] = await db
         .select({ s: sql<number>`(${channelCountersTable.counts}->>'e:f:attachment')::int` })
@@ -179,7 +163,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const beforeCounter = await readCounter();
     const beforeSeq = inserted!.seq;
 
-    // Backend-style UPDATE: bump summary AND set stx.changedFields so CDC processes it
+    // CDC only processes an update that sets stx.changedFields.
     await db.execute(sql`
       UPDATE attachments
       SET name = 'cdc-seq-test-updated',
@@ -187,7 +171,6 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       WHERE id = ${attachmentId}
     `);
 
-    // Poll for CDC to stamp the row (counter UPSERT + entity stamp)
     let stamped: Awaited<ReturnType<typeof readAttachment>> | undefined;
     await waitFor(
       async () => {
@@ -205,7 +188,6 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(afterCounter, 'organization f:attachment frontier should advance').toBe(beforeCounter + 1);
     expect(stamped!.seq, 'attachment.seq should equal new f:attachment frontier').toBe(afterCounter);
 
-    // changedFields should be stripped from stx as part of the stamp
     const stx = stamped!.stx as { changedFields?: unknown } | null;
     expect(stx?.changedFields, 'stx.changedFields should be removed').toBeUndefined();
   });

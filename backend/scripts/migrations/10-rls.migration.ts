@@ -103,7 +103,7 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
     RAISE NOTICE 'RLS setup complete.';
   EXCEPTION WHEN OTHERS THEN
     -- Fail LOUDLY: swallowing this rolled back ownership, FORCE RLS and every grant in
-    -- one silent NOTICE — the app then boots with no table grants (every request 403s)
+    -- one silent NOTICE: the app then boots with no table grants (every request 403s)
     -- or, worse, without enforced RLS.
     RAISE EXCEPTION 'RLS setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
@@ -112,7 +112,7 @@ END $$;
 
   return {
     tag: 'rls_setup',
-    title: 'RLS — ownership, FORCE RLS, grants',
+    title: 'RLS, ownership, FORCE RLS, grants',
     sql: migrationSql,
     notes: [`RLS tables: ${rlsTables.join(', ')}`],
   };

@@ -64,8 +64,7 @@ describe('attachmentStorage.updateUploadStatus failure bookkeeping', () => {
   it('bumps attempts and schedules the retry slot even WITHOUT an error message', async () => {
     await attachmentsDb.blobs.add(makeBlob({ id: 'att-2:original', uploadStatus: 'uploading', uploadAttempts: 0 }));
 
-    // The service's catch-path historically called this without an error argument; the
-    // bookkeeping the retry selector reads must still be written.
+    // The catch path may call this without an error argument, and the retry selector's bookkeeping must still be written.
     await attachmentStorage.updateUploadStatus('att-2:original', 'failed');
 
     const blob = await attachmentsDb.blobs.get('att-2:original');

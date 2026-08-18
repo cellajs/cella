@@ -11,10 +11,7 @@ interface RequestInfoStatic {
   subject: string;
 }
 
-/**
- * Email template for responses to sysadmin after users requests such as waitlist signups, newsletter subscriptions, or
- * contact form submissions.
- */
+/** Notifies sysadmin of a waitlist signup, newsletter subscription, or contact form submission. */
 export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
   translate(lng, { type, email, message, subject }) {
     return {

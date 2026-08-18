@@ -1,11 +1,8 @@
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { ApiError as ApiErrorPayload } from 'sdk';
 
-/** Configures the generated API client used by the frontend. */
 export const clientConfig = {
-  // hey-api passes a Request object as the sole argument to fetch.
-  // OTel FetchInstrumentation drops the second arg when the first is a Request,
-  // so credentials must be on the Request itself, not as an init override.
+  // OTel FetchInstrumentation drops the init argument when the input is a Request, so credentials go on the Request.
   fetch: (input: RequestInfo | URL, init?: RequestInit) => {
     if (input instanceof Request) {
       return fetch(new Request(input, { ...init, credentials: 'include' }));
@@ -19,7 +16,6 @@ export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & {
   status: ClientErrorStatusCode | ServerErrorStatusCode;
 };
 
-/** Custom error class to handle API errors */
 export class ApiError extends Error implements ApiErrorInit {
   name: string;
   status: ApiErrorInit['status'];

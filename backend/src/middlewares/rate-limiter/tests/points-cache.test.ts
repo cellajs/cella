@@ -16,8 +16,7 @@ describe('points-cache', () => {
     });
 
     it('should send an oversized first request to the DB instead of allowing it blind', () => {
-      // A single bulk request costing more than the whole budget must not pass just
-      // because the key is new.
+      // A bulk request costing more than the whole budget must not pass just because the key is new
       expect(tryFastConsume('tenant:user1', 5000, 1000)).toBe('check-db');
     });
 
@@ -29,7 +28,6 @@ describe('points-cache', () => {
     });
 
     it('should return check-db when approaching budget threshold', () => {
-      // Consume 799 points (under 80% of 1000)
       for (let i = 0; i < 799; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }
@@ -42,7 +40,6 @@ describe('points-cache', () => {
       for (let i = 0; i < 7; i++) {
         expect(tryFastConsume('tenant:user1', 10, 100)).toBe('allow');
       }
-      // 70 consumed, next adds 10 → 80 >= 80 threshold → check-db
       expect(tryFastConsume('tenant:user1', 10, 100)).toBe('check-db');
     });
 
@@ -51,16 +48,13 @@ describe('points-cache', () => {
       for (let i = 0; i < 799; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }
-      // user1 should be near limit
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
-      // user2 should still be allowed
       expect(tryFastConsume('tenant:user2', 1, 1000)).toBe('allow');
     });
 
     it('should reset counter when window expires', () => {
       vi.useFakeTimers();
 
-      // Consume up to threshold
       for (let i = 0; i < 800; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }
@@ -69,7 +63,6 @@ describe('points-cache', () => {
       // Advance past the 1-hour window
       vi.advanceTimersByTime(60 * 60 * 1000 + 1);
 
-      // Should start fresh
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('allow');
 
       vi.useRealTimers();
@@ -119,15 +112,13 @@ describe('points-cache', () => {
       // DB path settled everything: count now includes our debt (and other processes).
       syncFromDb('tenant:user1', 900);
 
-      // Nothing remains to flush because the DB already has it all.
       expect(takeDebt('tenant:user1')).toBe(0);
-      // And the local counter now reflects the DB: next request is over threshold.
+      // The local counter now reflects the DB, so the next request is over threshold
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
     });
 
     it('should never lose local consumes to a DB undercount', () => {
-      // Fast-path debt must reach the database before local state syncs from it.
-      // Otherwise an undercounted database trip could reopen the fast path indefinitely.
+      // Fast-path debt must reach the database before local state syncs from it, or an undercount reopens the fast path
       for (let i = 0; i < 799; i++) {
         tryFastConsume('tenant:user1', 1, 1000);
       }
@@ -137,7 +128,6 @@ describe('points-cache', () => {
       // The DB trip consumes cost + debt, so the count it reports includes everything.
       syncFromDb('tenant:user1', debt + 1);
 
-      // At the threshold, the budget keeps being checked against the DB.
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
     });
 

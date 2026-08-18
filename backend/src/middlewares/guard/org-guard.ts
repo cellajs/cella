@@ -5,11 +5,7 @@ import { withOrganizationDefaults } from '#/modules/organization/helpers/select'
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { getOrgCache, setOrgCache } from './org-cache';
 
-/**
- * Middleware to ensure the user has access to an organization-scoped route.
- * Must run after tenantGuard to use tenant-scoped transaction with RLS.
- * Valid access for users that is a member of the organization or is a system admin.
- */
+/** Grants org-scoped routes to org members and system admins. Must run after tenantGuard for the RLS transaction. */
 export const orgGuard = xMiddleware(
   {
     functionName: 'orgGuard',
@@ -27,17 +23,14 @@ export const orgGuard = xMiddleware(
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 
-    // Guard: tenantGuard must run before orgGuard to provide tenant-scoped db
     if (!db) {
       throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires tenantGuard middleware' });
     }
 
-    // Guard: isAuthenticated must run before orgGuard to populate memberships
     if (memberships === undefined) {
       throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires isAuthenticated middleware' });
     }
 
-    // Check org cache before hitting DB
     const cached = getOrgCache(tenantId, organizationId);
     const orgRow =
       cached ??
@@ -54,12 +47,11 @@ export const orgGuard = xMiddleware(
     // Rows store organizationFlags sparse; merge config defaults under the stored bag
     const organization = withOrganizationDefaults(orgRow);
 
-    // Sanity check apart from RLS: Verify organization belongs to current tenant
+    // Second check beside RLS: the organization must belong to the current tenant
     if (organization.tenantId !== tenantId) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
 
-    // Check if user has access to organization (or is a system admin)
     const orgMembership =
       memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
     if (!isSystemAdmin && !orgMembership) {
@@ -67,7 +59,7 @@ export const orgGuard = xMiddleware(
     }
     const orgWithMembership = { ...organization, membership: orgMembership };
 
-    // Set organization with membership (can be null for system admins!) in context
+    // membership is null for system admins
     ctx.set('organization', orgWithMembership);
     ctx.set('organizationId', orgWithMembership.id);
 

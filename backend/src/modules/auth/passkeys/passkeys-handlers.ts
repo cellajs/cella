@@ -56,7 +56,6 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
     browser: device.browser,
   };
 
-  // Save public key in database
   const newPasskey = await insertPasskey(ctx, { values: passkeyValue });
 
   sendAccountSecurityEmail(user, 'passkey-added');
@@ -73,7 +72,6 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
   await baseDb.transaction(async (tx) => {
     await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
 
-    // Check if the user still has any passkeys or TOTP entries registered
     const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
 
     // MFA requires both passkeys and TOTP as backup.
@@ -98,26 +96,21 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
   // Generate a 32-byte random challenge and encode it as base64url (the WebAuthn JSON encoding)
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
 
-  // Save the challenge in a short-lived cookie (5 minutes)
   await setAuthCookie(ctx, 'passkey-challenge', challenge, new TimeSpan(5, 'm'));
 
   let user: UserModel | null = null;
 
-  // Find user by email if provided
   if (email && type === 'authentication') {
     const normalizedEmail = email.toLowerCase().trim();
     user = await findUserByEmail(ctx, { email: normalizedEmail });
   }
-  // If this is a multifactor request, retrieve user from pending MFA token
   if (type === 'mfa') {
     const userFromToken = await validateConfirmMfaToken(ctx);
     user = userFromToken;
   }
 
-  // If we still have no email, return challenge with empty credential list
   if (!user) return ctx.json({ challenge, credentialIds: [] }, 200);
 
-  // Fetch all passkey credentials for this user
   const credentials = await findCredentialIdsByUser(ctx, { userId: user.id });
 
   const credentialIds = credentials.map((c) => c.credentialId);
@@ -127,7 +120,6 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
 
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   const { email, type, assertion } = ctx.req.valid('json');
-  // Define strategy and session type for metadata/logging purposes
   const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
 
   if (type === 'authentication' && !appConfig.enabledAuthStrategies.includes(meta.strategy)) {
@@ -136,13 +128,11 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
 
   let user: UserModel | null = null;
 
-  // Find user by email if provided
   if (email) {
     const normalizedEmail = email.toLowerCase().trim();
     user = await findUserByEmail(ctx, { email: normalizedEmail });
   }
 
-  // Override user if this is a multifactor authentication
   if (type === 'mfa') {
     const userFromToken = await validateConfirmMfaToken(ctx);
     user = userFromToken;
@@ -157,7 +147,6 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
     }
   }
 
-  // Fail early if user not found
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta });
 
   try {
@@ -174,7 +163,6 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   // Revoke single use token by deleting cookie
   deleteAuthCookie(ctx, 'confirm-mfa');
 
-  // Set user session after successful verification
   await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
   return ctx.body(null, 204);

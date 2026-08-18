@@ -11,7 +11,6 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-/** Renders TOTP verification during authentication. */
 export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

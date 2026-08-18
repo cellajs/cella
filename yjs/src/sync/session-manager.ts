@@ -10,7 +10,6 @@ interface CollabSession {
   clients: Set<WebSocket>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   saveTimer?: ReturnType<typeof setTimeout>;
-  /** Pending state to save */
   pendingState?: Uint8Array;
   /** Tracks an in-flight saveState call so cleanup can await it before deleting. */
   savingPromise?: Promise<void>;
@@ -28,23 +27,14 @@ function collabKey(entityType: string, entityId: string): string {
   return `${entityType}:${entityId}`;
 }
 
-/**
- * Get the active collab session for a document, if it exists. Used for broadcasting updates to peers.
- */
 export function getCollab(entityType: string, entityId: string): CollabSession | undefined {
   return collabSessions.get(collabKey(entityType, entityId));
 }
 
-/**
- * Number of active collaborative editing sessions.
- */
 export function getActiveDocumentCount(): number {
   return collabSessions.size;
 }
 
-/**
- * Total WebSocket clients across all sessions.
- */
 export function getActiveClientCount(): number {
   let count = 0;
   for (const session of collabSessions.values()) {
@@ -53,9 +43,7 @@ export function getActiveClientCount(): number {
   return count;
 }
 
-/**
- * Registers a WebSocket client for a document. Cancels pending cleanup if reconnecting.
- */
+/** Registers a client for a document and cancels pending cleanup when reconnecting. */
 export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
   const key = collabKey(ctx.entityType, ctx.entityId);
   let collab = collabSessions.get(key);
@@ -74,9 +62,7 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
   return collab;
 }
 
-/**
- * Removes a client. When the last client leaves, starts a grace period before deleting stored state.
- */
+/** When the last client leaves, a grace period runs before the stored state is deleted. */
 export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
   const key = collabKey(entityType, entityId);
   const collab = collabSessions.get(key);
@@ -89,7 +75,6 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       if (collab.clients.size > 0) return;
       if (collab.saveTimer) clearTimeout(collab.saveTimer);
 
-      // Wait for any in-flight save to complete before continuing
       if (collab.savingPromise) {
         try {
           await collab.savingPromise;
@@ -115,12 +100,11 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         }
       }
 
-      // Delete after final blocks persist, or after a permanent failure that cannot converge.
-      // Retry transient backend failures while retaining the session row.
+      // Deletion waits for the final blocks to persist; a transient backend failure keeps the session row and retries.
       if (finalState && finalState.length > 0) {
         const result = await materializeState(collab, finalState);
         if (result === 'retry') {
-          log.warn(`Materialize unavailable for ${key} — keeping session row, retrying cleanup`);
+          log.warn(`Materialize unavailable for ${key}: keeping session row, retrying cleanup`);
           collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
           return;
         }
@@ -139,10 +123,6 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
   }
 }
 
-/**
- * Broadcast a message to all clients in the same collab session, excluding the sender if specified.
- * Used for forwarding document updates from one client to all others.
- */
 export function broadcastToCollab(
   entityType: string,
   entityId: string,

@@ -12,11 +12,7 @@ import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 
-/**
- * Reject the upgrade at the HTTP level: no WebSocket handshake is completed.
- * Completing the handshake before closing fires the client's `onopen`, resets its
- * backoff counter, and causes a rapid ~100ms retry loop with the same bad credentials.
- */
+/** Rejects at the HTTP level, without completing the handshake: a completed handshake fires the client `onopen`, resets its backoff, and starts a ~100ms retry loop. */
 function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   if (socket.destroyed) return;
   const body = JSON.stringify({ code, reason });
@@ -25,7 +21,6 @@ function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   );
 }
 
-/** Apply the result of entity verification: release buffered messages on success, discard and close on failure. */
 function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): void {
   if (allowed) {
     ctx.verified = true;
@@ -38,11 +33,7 @@ function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): vo
   }
 }
 
-/**
- * Verify entity access asynchronously after the WebSocket connection is established.
- * The authorization decision is computed locally by the shared permission engine, no backend
- * round-trip. If verification fails, the client is disconnected and queued writes are discarded.
- */
+/** Verifies entity access after the connection is established, locally through the shared permission engine; on failure the client is disconnected and queued writes are discarded. */
 async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> {
   try {
     const allowed = await canEditEntity(ctx);
@@ -64,17 +55,12 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
   }
 }
 
-/**
- * Handle the HTTP→WS upgrade: validate params, verify token, accept connection optimistically.
- * Entity-level access is verified asynchronously: all sync messages are buffered until verified.
- */
+/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync messages buffer. */
 export function setupUpgradeHandler(
   server: WebSocketServer,
 ): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return async (req, socket, head) => {
-    // Same-origin migration: accept both '/<entityId>' (direct LB or subdomain
-    // origin) and '/yjs/<entityId>' (path-routed app origin; the LB does not
-    // strip the prefix).
+    // Accepts both '/<entityId>' and '/yjs/<entityId>': the load balancer does not strip the prefix on the path-routed app origin.
     const url = new URL(stripYjsPrefix(req.url ?? '/'), `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
     const rawEntityType = url.searchParams.get('entityType');
@@ -88,9 +74,7 @@ export function setupUpgradeHandler(
 
     const result = verifyToken(token);
     if (!result.ok) {
-      // Expired is routine on a long-lived editor socket (30-minute token; the client
-      // reconnects with a fresh one), so it stays at debug. A bad signature or malformed
-      // token is a genuine anomaly (YJS_SECRET drift, truncation, tampering) and warns.
+      // Expiry is routine on a long-lived editor socket with a 30-minute token, so it logs at debug; a bad signature points at YJS_SECRET drift or tampering and warns.
       if (result.reason === 'expired') {
         log.debug('WS token expired', { entityType: rawEntityType });
       } else {
@@ -101,21 +85,18 @@ export function setupUpgradeHandler(
     }
     const payload = result.payload;
 
-    // Token must authorize editing this entity type
     if (payload.entityType !== rawEntityType) {
       log.warn('Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
       rejectUpgrade(socket, 4003, 'Token not valid for this entity type');
       return;
     }
 
-    // Token must be for the correct tenant
     if (payload.tenantId !== tenantId) {
       log.warn('Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
       rejectUpgrade(socket, 4003, 'Token not valid for this tenant');
       return;
     }
 
-    // Per-user connection rate limit
     const allowed = await checkConnectionRate(payload.userId);
     if (!allowed) {
       rejectUpgrade(socket, 4429, 'Too many connections');
@@ -131,7 +112,7 @@ export function setupUpgradeHandler(
 
     if (socket.destroyed) return;
 
-    // Accept the connection optimistically: all sync messages are buffered until entity access is verified
+    // Accepted optimistically: sync messages buffer until entity access is verified.
     const ctx: DocContext = {
       entityType: rawEntityType,
       entityId,
@@ -144,15 +125,11 @@ export function setupUpgradeHandler(
     log.info(`Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
       server.emit('connection', ws, ctx);
-      // Start async entity verification: all sync messages are buffered until this completes
       verifyEntityAsync(ws, ctx);
     });
   };
 }
 
-/**
- * Wire up connection event: join collab, handle messages, handle close/error.
- */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: DocContext) => {
     joinCollab(ctx, ws);

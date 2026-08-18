@@ -6,7 +6,7 @@ import { composeConfig } from './compose';
 import type { ComposeFile } from './types';
 
 const GENERATED_HEADER = [
-  '# DO NOT EDIT — generated from infra/compose/ by `pnpm --filter infra compose:synth`.',
+  '# DO NOT EDIT: generated from infra/compose/ by `pnpm --filter infra compose:generate`.',
   '# Edit services.config.ts (the app-owned service registry) and re-run synth.',
   '# Deploy machinery and rationale live in infrastructure.ts.',
 ].join('\n');
@@ -78,11 +78,11 @@ function main(): void {
     try {
       current = readFileSync(OUTPUT_PATH, 'utf-8');
     } catch {
-      console.error(`::error::${OUTPUT_PATH} is missing — run \`pnpm --filter infra compose:synth\`.`);
+      console.error(`::error::${OUTPUT_PATH} is missing: run \`pnpm --filter infra compose:generate\`.`);
       process.exit(1);
     }
     if (current !== yaml) {
-      console.error(`::error::${OUTPUT_PATH} is out of date — run \`pnpm --filter infra compose:synth\` and commit.`);
+      console.error(`::error::${OUTPUT_PATH} is out of date: run \`pnpm --filter infra compose:generate\` and commit.`);
       process.exit(1);
     }
     console.info('compose.gen.yml is up to date.');

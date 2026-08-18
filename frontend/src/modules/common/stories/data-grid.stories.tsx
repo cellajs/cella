@@ -912,7 +912,7 @@ export const RowDragDropAutoScroll: Story = {
     return (
       <div className="space-y-4">
         <div className="text-muted-foreground text-sm">
-          Drag a row near the top or bottom edge of the scroll area — the list auto-scrolls so you can drop on rows that
+          Drag a row near the top or bottom edge of the scroll area: the list auto-scrolls so you can drop on rows that
           started off-screen. The grid uses row virtualization, so off-screen rows mount on demand as scrolling reveals
           them.
         </div>

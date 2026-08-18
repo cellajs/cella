@@ -21,10 +21,8 @@ export interface PrivilegedConvergeOptions {
   /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
   operation: string;
   /**
-   * Config mutation applied after the lock is held and rollout config is
-   * reconciled, right before `pulumi up`. May return an alternate stack config
-   * file (`--config-file`, the DB-exposure overlay) for the `up` to run with;
-   * returning undefined converges the committed config.
+   * Config mutation applied after the lock is held and rollout config is reconciled, right before `pulumi up`.
+   * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config.
    */
   prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined;
 }
@@ -37,14 +35,10 @@ export interface PrivilegedConvergeResult {
 }
 
 /**
- * The privileged bootstrap-key converge shared by "Apply infra change", the
- * DB-exposure toggle, and seeding: resolve the passphrase, acquire a
- * freshly-supplied bootstrap key and the stack lock, reconcile rollout config
- * from live state (so a local `up` cannot revert compute to a stale
- * generation), apply the caller's config mutation, then run `pulumi up` with
- * an orphan-prune/retry loop. Returns the provider env and stack so the
- * caller can read outputs after the lock is released. Exits the process on
- * hard failures before the `up` loop.
+ * The privileged bootstrap-key converge shared by "Apply infra change", the DB-exposure toggle, and seeding, in order: resolve the passphrase,
+ * take a freshly-supplied bootstrap key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a
+ * stale generation, apply the caller's config mutation, then `pulumi up` with an orphan-prune/retry loop.
+ * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
 export async function runPrivilegedConverge(
   context: InfraContext,
@@ -68,8 +62,7 @@ export async function runPrivilegedConverge(
   );
   const stack = await promptStackName(context);
 
-  // The state-identity override applies to every state-bucket touch (login,
-  // lock, `up`), while the bootstrap key drives the resource mutations.
+  // The state-identity override applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
   const stateOverride = stateKeyOverrideFromEnv();
   const env = buildProviderEnv(infraDir, {
     accessKey: bootAccess,
@@ -80,10 +73,8 @@ export async function runPrivilegedConverge(
   });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
-  // Lock the stack through the control bucket to exclude concurrent operators
-  // and CI. Every exit path must release: process.exit skips finally blocks,
-  // so hard-failure paths release explicitly first; the guard keeps that from
-  // double-firing with the finally.
+  // Lock the stack through the control bucket to exclude concurrent operators and CI.
+  // Every exit path must release, and process.exit skips finally blocks, so hard-failure paths release explicitly and the guard stops a double release.
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateOverride.stateAccessKey ?? bootAccess,
@@ -100,17 +91,14 @@ export async function runPrivilegedConverge(
 
   let completed = false;
   try {
-    // Resolve the organization id for the program's IAM resources. Failure is
-    // non-fatal: the program can derive it at runtime.
+    // Resolve the organization id for the program's IAM resources; failure is non-fatal because the program can derive it at runtime.
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
     } catch (error) {
       console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
     }
 
-    // Reconcile gen/sha into local config from live state before `up`, so a
-    // stale committed Pulumi.<stack>.yaml cannot converge compute back to an
-    // old generation and destroy newer live VMs. A hard failure aborts.
+    // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
     console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
     const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], {
       cwd: infraDir,

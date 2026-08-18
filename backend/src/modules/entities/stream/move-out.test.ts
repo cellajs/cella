@@ -9,9 +9,8 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
 
 /**
- * Verifies that only subscribers losing read access receive `moveOut` with the old path.
- * The draft veto creates a configuration-independent visibility difference through the same permission
- * path used by deeper app topologies.
+ * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates
+ * a configuration-independent visibility difference through the same permission path.
  */
 const ORG = 'org-moveout-a';
 
@@ -93,9 +92,8 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
-    // New row is an unpublished draft (veto: unreadable for everyone); old row was published.
-    // The old row is authored by the reader so it stays readable under a read:'own' policy too,
-    // keeping the readability difference configuration-independent (read:1 reads it regardless).
+    // The new row is an unpublished draft, unreadable for everyone; the old row is published
+    // and authored by the reader, so it stays readable under a read:'own' policy too.
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { publishedAt: null }),
@@ -123,9 +121,8 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
-    // Positive control: both rows authored by the reader, so they are genuinely readable at
-    // both locations under a read:'own' policy as well. Without that authorship the assertion
-    // could pass vacuously (member reads neither location, so of course no moveOut fires).
+    // Positive control: both rows are authored by the reader, so both locations are readable
+    // under a read:'own' policy. Without that authorship the assertion could pass vacuously.
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { createdBy: 'member-user' }),
@@ -149,14 +146,13 @@ describe('dispatchMoveOuts', () => {
     const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
-    // Rows meant to be readable by member-user (the old side of att-2, both sides of att-3) are
-    // authored by them, so they stay readable under a read:'own' policy too (read:1 reads them
-    // regardless), keeping the readability differences configuration-independent.
+    // Rows meant to be readable by member-user are authored by them, so they stay readable
+    // under a read:'own' policy too, keeping the readability differences configuration-independent.
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1'),
         batchRows: [
-          // Moved AND unpublished → moveOut for the org member.
+          // Moved and unpublished: moveOut for the org member.
           {
             seq: 8,
             rowData: row('att-2', { publishedAt: null }),
@@ -165,7 +161,7 @@ describe('dispatchMoveOuts', () => {
               createdBy: 'member-user',
             }),
           },
-          // Moved but still readable → routed by the normal update, no moveOut.
+          // Moved but still readable: routed by the normal update, no moveOut.
           {
             seq: 9,
             rowData: row('att-3', { createdBy: 'member-user' }),

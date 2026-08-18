@@ -1,8 +1,5 @@
 import { Button, Section } from './primitives';
 
-/**
- * Email button component for call-to-action links with consistent styling.
- */
 export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
   <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
     <Button
@@ -26,5 +23,4 @@ export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: st
   </Section>
 );
 
-// Template export
 export const Template = EmailButton;

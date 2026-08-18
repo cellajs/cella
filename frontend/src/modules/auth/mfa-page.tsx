@@ -10,9 +10,6 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore } from '~/modules/user/user-store';
 
-/**
- * Handles multifactor authentication in the authentication flows.
- */
 export function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -34,10 +31,8 @@ export function MfaPage() {
     }
   };
 
-  // Show spinner after successful MFA to prevent UI flash during route transition
   if (signedIn) return <Spinner className="h-10 w-10" />;
 
-  // If somehow undefined return to authenticate
   if (!lastUser?.email) {
     navigate({ to: '/auth/authenticate', replace: true });
     return null;

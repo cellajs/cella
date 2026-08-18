@@ -25,7 +25,6 @@ let stopDbMaintenance: (() => void) | undefined;
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
-// Register OpenAPI docs
 await registerOpenApiDocs(app);
 
 const main = async () => {
@@ -53,11 +52,10 @@ const main = async () => {
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
 
-    // The migration-owning instance also owns periodic DB maintenance (expired session/token purge,
-    // pg_partman partition drops). Gating to a single instance avoids redundant runs.
+    // The migration-owning instance also owns periodic DB maintenance, so only one instance runs it.
     stopDbMaintenance = scheduleDbMaintenance();
   } else {
-    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false — skipping migrations (run as MODE=migrate)`);
+    console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
 
   registerCacheInvalidation();
@@ -70,7 +68,6 @@ const main = async () => {
       serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 },
     },
     async () => {
-      // Tune HTTP server for high-throughput scenarios
       if (server && 'headersTimeout' in server) {
         server.headersTimeout = 60_000;
         server.requestTimeout = 30_000;
@@ -78,16 +75,13 @@ const main = async () => {
 
       cdcWebSocketServer.attachToServer(server!);
 
-      // Single-VM: this API process also runs every enabled service in-process.
-      // Reuses each subsystem's own start() (which self-checks its enabled flag
-      // and registers its own graceful shutdown). cdc keeps its slot + WS hop.
+      // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
       if (appConfig.singleVM) {
         if (appConfig.services.cdc.enabled) {
           console.warn(
-            `${timestamp()} [startup] singleVM + cdc: API holds the replication slot — deploy must be exclusive (no blue-green)`,
+            `${timestamp()} [startup] singleVM + cdc: API holds the replication slot, deploy must be exclusive (no blue-green)`,
           );
-          // The replication loop never resolves, so detach it without blocking other workers.
-          // Log failures explicitly to prevent unhandled rejections.
+          // The replication loop never resolves, so detach it and log failures to prevent unhandled rejections.
           void (await import('cdc-worker')).runCdcWorker().catch((error) => {
             console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);
           });

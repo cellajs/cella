@@ -6,7 +6,6 @@ import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-/** Renders the sheeter drawer component. */
 export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
   // Drawers on mobile are always modal (overlay + outside click to close)
   const {
@@ -24,10 +23,8 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
 
   const updateSheet = sheeter.getState().update;
 
-  // Check if dropdown is open, then disable dismissible
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  // onClose trigger handles by remove method
   const closeSheet = () => sheeter.getState().remove(sheet.id);
 
   const onOpenChange = (open: boolean) => {

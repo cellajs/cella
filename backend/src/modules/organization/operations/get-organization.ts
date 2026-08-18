@@ -24,7 +24,6 @@ export async function getOrganizationOp(
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
   }
 
-  // Determine what to include (default: nothing)
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
 

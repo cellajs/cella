@@ -101,7 +101,6 @@ export function formatDocStyleViolation(violation: DocStyleViolation): string {
   return `${location} replace "${violation.term}" with a precise ${alternatives}`;
 }
 
-/** Format one agent-vocabulary diagnostic. */
 export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): string {
   const location = `${finding.file}:${finding.line}:${finding.column}`;
   return `${location} [${finding.rule}] "${finding.term}": ${finding.message}`;

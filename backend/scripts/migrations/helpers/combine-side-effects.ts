@@ -39,7 +39,7 @@ export async function generateSideEffects(producers: SideEffectProducer[]): Prom
     }
 
     if (!block.sql.trim()) {
-      console.info(`${label} ${pc.dim('(no SQL — skipped)')}`);
+      console.info(`${label} ${pc.dim('(no SQL: skipped)')}`);
       continue;
     }
     // Duplicate tags would silently merge unrelated blocks, so fail loudly.

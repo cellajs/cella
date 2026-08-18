@@ -25,9 +25,6 @@ const isMagicLinkEnabled = enabledStrategies.includes('magic');
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
-/**
- * Handles user sign-up, including standard registration and invitation token flow.
- */
 export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
@@ -36,13 +33,11 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   const isMobile = window.innerWidth < 640;
 
-  // Create form; sign-up is handled by OAuth/passkey providers rendered below.
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { email },
   });
 
-  // Send magic link for email-based sign-up
   const { mutate: sendMagic, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email, redirect } }),
     onSuccess: () => {
@@ -54,7 +49,6 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   const onSubmit = () => sendMagic();
 
-  // Get title based on context
   const getTitle = () => {
     if (restrictedMode) return t('c:sign_up');
     if (tokenData?.inactiveMembershipId) return t('c:invite_accept_proceed');

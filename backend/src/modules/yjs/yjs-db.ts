@@ -11,11 +11,7 @@ const bytea = customType<{ data: Buffer }>({
   },
 });
 
-/**
- * Ephemeral Y.Doc binary storage, one row per document.
- * Created on first WS connect, deleted after last disconnect + grace period.
- * The entity's own table (e.g. tasks in an app) is the single source of truth for description.
- */
+/** Ephemeral Y.Doc storage, one row per document: created on first WS connect, deleted after last disconnect plus a grace period. The entity's own table owns description. */
 export const yjsDocumentsTable = snakeCase.table(
   'yjs_documents',
   {
@@ -26,10 +22,7 @@ export const yjsDocumentsTable = snakeCase.table(
       .references(() => tenantsTable.id),
     organizationId: uuid(),
     state: bytea().notNull(),
-    /**
-     * Last user whose update the relay saved and credits when persisting.
-     * Null for seed-only documents.
-     */
+    /** Last user whose update the relay saved and credits when persisting. Null for seed-only documents. */
     lastEditedBy: uuid(),
     updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
   },

@@ -46,7 +46,7 @@ describe('contractBackend', () => {
   });
 });
 
-describe('sequenceCutover — start-first', () => {
+describe('sequenceCutover: start-first', () => {
   it('expands [old,new] before contracting to [new]', async () => {
     const lb = recordingSetServers();
     const res = await sequenceCutover(lbPlan({ setServers: lb.fn }));
@@ -54,7 +54,7 @@ describe('sequenceCutover — start-first', () => {
     expect(lb.calls).toEqual([['10.0.0.4', '10.0.0.9'], ['10.0.0.9']]);
   });
 
-  it('health-gates before any LB mutation — an unhealthy new gen aborts with zero LB calls', async () => {
+  it('health-gates before any LB mutation: an unhealthy new gen aborts with zero LB calls', async () => {
     const lb = recordingSetServers();
     const res = await sequenceCutover(lbPlan({ healthGate: async () => false, setServers: lb.fn }));
     expect(res.ok).toBe(false);
@@ -169,7 +169,7 @@ describe('sequenceCutover — start-first', () => {
   });
 });
 
-describe('sequenceCutover — exclusive (cdc)', () => {
+describe('sequenceCutover: exclusive (cdc)', () => {
   it('never touches an LB backend and succeeds once the new generation is healthy', async () => {
     const lb = recordingSetServers();
     const order: string[] = [];
@@ -208,7 +208,7 @@ describe('sequenceCutover — exclusive (cdc)', () => {
   });
 });
 
-describe('createLbSetServers — live REST shape', () => {
+describe('createLbSetServers: live REST shape', () => {
   it('PUTs the full server list as { server_ip } to the zoned backend servers endpoint', async () => {
     let captured: { url: string; method?: string; headers?: Record<string, string>; body?: string } | undefined;
     const setServers = createLbSetServers({
@@ -253,7 +253,7 @@ describe('createLbSetServers — live REST shape', () => {
   });
 });
 
-describe('createLbGetServers — live REST shape', () => {
+describe('createLbGetServers: live REST shape', () => {
   it('GETs the backend and parses the server list from flexible Scaleway response shapes', async () => {
     let capturedUrl = '';
     const getServers = createLbGetServers({

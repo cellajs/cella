@@ -29,11 +29,10 @@ import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { addRecentSearch } from '~/utils/recent-searches';
 
-// Define searchable entity types
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
 function SearchResultsSkeleton() {
-  // Stay hidden for a short while, then fade in slowly to avoid flashing on fast responses.
+  // Stays hidden briefly, so a fast response never flashes the skeleton.
   const { hasStarted } = useMountedState();
 
   return (
@@ -54,16 +53,13 @@ function SearchResultsSkeleton() {
 type HistoryEntry = { kind: 'history'; value: string };
 type SearchSelection = EnrichedChannel | UserBase | HistoryEntry;
 
-/**
- * Application search component.
- */
 export function AppSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   const [searchValue, setSearchValue] = useState('');
-  // Debounce the value that drives queries so we don't fire a request on every keystroke.
+  // Debounced so a request does not fire on every keystroke.
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
 
   const { recentSearches } = useNavigationStore();
@@ -82,7 +78,7 @@ export function AppSearch() {
 
   const updateRecentSearches = (value: string) => {
     useNavigationStore.setState((state) => {
-      // Most recent on top, normalized/containment dedupe (shared with docs search).
+      // Most recent on top, with normalized containment dedupe (shared with docs search).
       const searches = addRecentSearch(state.recentSearches, value);
       return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
     });
@@ -93,7 +89,6 @@ export function AppSearch() {
     enabled: debouncedSearchValue.length > 0,
   });
 
-  // Get channel entity queries from offline config
   const channelResults = Object.fromEntries(
     Object.entries(channelListQueriesByType).map(([entityType, queryOptions]) => [
       entityType,
@@ -116,9 +111,9 @@ export function AppSearch() {
 
   const data: Record<string, (EnrichedChannel | UserBase)[]> = { user: users, ...channelData };
   const notFound = users.length === 0 && Object.values(channelData).every((items) => items.length === 0);
-  // Treat the debounce gap (typed value not yet applied) as loading so we show the skeleton, not the empty state.
+  // The debounce gap counts as loading, so the skeleton shows in place of the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
-  // Include the debounce gap so the search-input spinner stays visible while typing, not just during the request.
+  // The gap is included here too, keeping the input spinner visible while typing.
   const isFetching = isDebouncePending || userQ.isFetching || Object.values(channelResults).some((q) => q.isFetching);
   const isLoading =
     searchValue.length > 0 &&
@@ -127,7 +122,6 @@ export function AppSearch() {
   const onSelectItem = (item: EnrichedChannel | UserBase) => {
     updateRecentSearches(searchValue);
 
-    // For users, open sheet
     if (item.entityType === 'user') {
       navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
     } else {
@@ -172,8 +166,7 @@ export function AppSearch() {
           wrapClassName="h-12 text-lg"
           placeholder={t('c:placeholder.search')}
         />
-        {/* Height + scrolling live on the ScrollArea viewport (styled scrollbar);
-            the list's own max-h/overflow are neutralized so it never scrolls natively. */}
+        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. */}
         <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh]">
           <ComboboxList className="h-full max-h-none overflow-visible">
             {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (

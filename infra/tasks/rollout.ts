@@ -16,17 +16,9 @@ export interface RolloutServicePlan {
   repointBackendKeys?: string[];
 }
 
-/**
- * Every effect the waved rollout performs, injected so wave sequencing is fully
- * unit-testable. The real implementation (rollout-runtime.ts) wires Pulumi, the
- * S3 control object, the Scaleway LB API, and public health polling.
- */
+/** Every effect the waved rollout performs, injected so wave sequencing is unit-testable. rollout-runtime.ts holds the Pulumi, control-object, LB, and health-polling implementation. */
 export interface RolloutRuntime {
-  /**
-   * Provision pending generations and reap displaced ones: ONE full-stack
-   * update converging on the control object's current pointers, whatever the
-   * service list says (the list names the services a wave touches).
-   */
+  /** Provision pending generations and reap displaced ones: ONE full-stack update converging on the control object's current pointers. The list only names the services a wave touches. */
   update(services: string[]): Promise<void>;
   /** The `computeGenerationMetadata` stack output. */
   readGenerations(): Promise<GenerationMetadata[]>;
@@ -46,10 +38,10 @@ export interface RolloutRuntime {
   info(msg: string): void;
 }
 
-/** Resolve the generation just provisioned for `sha`. When a redeploy keeps the
- *  same sha but changes config, two generations share the sha; the pending one is
- *  the id that differs from the current active. A same-config redeploy collapses
- *  to the active id (a single candidate). */
+/**
+ * Resolve the generation just provisioned for `sha`. Two generations share a sha when a redeploy keeps the sha but changes config, and the pending one is the id differing from the active.
+ * A same-config redeploy collapses to the active id.
+ */
 export function resolvePendingGen(
   generations: GenerationMetadata[],
   service: string,
@@ -62,11 +54,7 @@ export function resolvePendingGen(
   return pending;
 }
 
-/**
- * Health-gate and cut over one provisioned service generation, then promote it.
- * Assumes the stack update that provisions the generation already ran; reads the
- * pre-promotion active generation to build the LB overlap.
- */
+/** Health-gate and cut over one provisioned service generation, then promote it. Requires the provisioning stack update to have run, and reads the pre-promotion active generation to build the LB overlap. */
 export async function activateService(
   plan: RolloutServicePlan,
   sha: string,
@@ -79,9 +67,7 @@ export async function activateService(
   const target = resolvePendingGen(generations, service, sha, current?.active?.id);
 
   if (plan.strategy === 'stop-first') {
-    // cdc: no LB, no overlap. The stack update provisioned only the new
-    // generation (the old one is replaced/destroyed in the same update); the new
-    // worker reports healthy once it acquires the slot the old one releases.
+    // cdc has no LB and no overlap: the same stack update destroys the old generation, and the new worker reports healthy once it acquires the released slot.
     rt.info(`[deploy ${service}] exclusive replacement -> gen ${target.genId} (${sha})`);
     await rt.promote(service, { id: target.genId, sha });
     return;
@@ -91,8 +77,7 @@ export async function activateService(
   const backendId = backendIds[service];
   if (!backendId) throw new Error(`Could not resolve LB backend id for ${service}`);
 
-  // Serving generation before this deploy (the active one). Empty on a first deploy:
-  // reconciler then drives the LB straight to [new] once it is healthy.
+  // Serving generation before this deploy; empty on a first deploy, where the reconciler drives the LB straight to [new] once it is healthy.
   const activeRef = current?.active;
   const oldGen = activeRef
     ? generations.find((item) => item.service === service && item.genId === activeRef.id)
@@ -119,9 +104,7 @@ export async function activateService(
   });
   if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`);
 
-  // Repoint the LB pools that follow this service's VM (co-hosted workers'
-  // pools, the service's own internal pool). Pulumi ignores their live server
-  // lists, so cutover must remove reaped-generation IPs.
+  // Repoint the LB pools following this service's VM (co-hosted workers' pools, its own internal pool). Pulumi ignores their live server lists, so cutover must remove reaped-generation IPs.
   for (const key of plan.repointBackendKeys ?? []) {
     const followerBackendId = backendIds[key];
     if (!followerBackendId) {
@@ -143,29 +126,22 @@ export interface WavedRolloutPlan {
   /** Rolled together in wave 2: one provisioning update, concurrent cutovers. */
   rest: RolloutServicePlan[];
   /**
-   * Skip the final reap update and leave displaced generations running after
-   * promotion. The displaced VMs are already detached from every LB pool, so a
-   * separate `reap` run (CI's follow-up job) destroys them off the deploy's
-   * critical path; any later stack update also converges them.
+   * Skip the final reap update and leave displaced generations running after promotion; they are already detached from every LB pool.
+   * A separate `reap` run destroys them off the deploy's critical path, and any later stack update also converges them.
    */
   skipFinalReap?: boolean;
 }
 
 /**
- * Two-wave rollout. Wave 1 deploys the primary service alone (consumers bake its
- * promoted generation's address at plan time, so it must promote first). Wave 2
- * records pending intent for every remaining service, provisions all their
- * generations in ONE stack update (which also reaps the primary's displaced
- * generation), then health-gates and cuts each service over concurrently.
- * A final update reaps every remaining displaced generation (deferred to a
- * separate reap run with `skipFinalReap`). Any cutover failure skips that
- * reap: a displaced generation may still be serving.
+ * Two-wave rollout. Wave 1 deploys the primary service alone, which must promote first because consumers bake its promoted generation's address at plan time.
+ * Wave 2 records pending intent for every remaining service, provisions all their generations in ONE stack update that also reaps the primary's displaced
+ * generation, then health-gates and cuts each service over concurrently. A final update reaps every remaining displaced generation, or `skipFinalReap` defers
+ * that to a separate reap run. Any cutover failure skips the reap because a displaced generation may still be serving.
  */
 export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime): Promise<void> {
   const { sha } = plan;
 
-  // LB backend ids are only defined (and only needed) when a wave contains an
-  // start-first service; stop-first-only waves skip the stack-output read.
+  // LB backend ids are only needed when a wave contains a start-first service; stop-first-only waves skip the stack-output read.
   const backendIdsFor = async (wave: RolloutServicePlan[]): Promise<Record<string, string>> =>
     wave.some((item) => item.strategy !== 'stop-first' || (item.repointBackendKeys?.length ?? 0) > 0)
       ? rt.readLbBackendIds()
@@ -195,8 +171,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
         : [],
     );
     if (failures.length > 0) {
-      // Promoted services keep serving the new release; failed ones keep their
-      // old generation behind the LB. No reap: re-running resumes idempotently.
+      // Promoted services keep serving the new release and failed ones keep their old generation behind the LB. Nothing is reaped, so re-running resumes idempotently.
       throw new Error(`Rollout failed for ${failures.length} service(s): ${failures.join('; ')}`);
     }
   }

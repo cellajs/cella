@@ -45,7 +45,7 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
     sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
   );
   if (existing.rows[0]?.active) {
-    throw new Error(`Replication slot '${CDC_SLOT_NAME}' is already active — another worker is using the test DB`);
+    throw new Error(`Replication slot '${CDC_SLOT_NAME}' is already active: another worker is using the test DB`);
   }
   if (existing.rows.length) {
     await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);

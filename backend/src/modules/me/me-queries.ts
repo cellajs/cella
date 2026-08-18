@@ -36,7 +36,7 @@ interface UpdateUserMfaOpts {
   mfaRequired: boolean;
 }
 
-/** Update MFA flag and delete regular sessions if enabling MFA. Returns updated user. */
+/** Deletes regular sessions when enabling MFA. */
 export const updateUserMfa = async (ctx: AuthContext, { mfaRequired }: UpdateUserMfaOpts) => {
   const { db, userId } = ctx.var;
   const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, userId)).returning();
@@ -54,7 +54,6 @@ interface DeleteSessionsByIdsOpts {
   sessionIds: string[];
 }
 
-/** Delete sessions by IDs for the current user. */
 export const deleteSessionsByIds = async (ctx: AuthContext, { sessionIds }: DeleteSessionsByIdsOpts) => {
   const { db, userId } = ctx.var;
   return db
@@ -82,7 +81,6 @@ export const updateMe = async (ctx: AuthContext, { values }: UpdateMeOpts) => {
   return db.update(usersTable).set(updateData).where(eq(usersTable.id, userId));
 };
 
-/** Delete the current user by ID. */
 export const deleteUser = async (ctx: AuthContext) => {
   const { db, userId } = ctx.var;
   return db.delete(usersTable).where(eq(usersTable.id, userId));
@@ -92,7 +90,6 @@ interface DeleteMyMembershipOpts {
   channelId: string;
 }
 
-/** Delete the current user's membership by channelId. */
 export const deleteMyMembership = async (ctx: AuthContext, { channelId }: DeleteMyMembershipOpts) => {
   const { db, userId } = ctx.var;
   return db
@@ -104,7 +101,6 @@ interface FindUserByUnsubscribeTokenOpts {
   token: string;
 }
 
-/** Find a user by unsubscribe token. */
 export const findUserByUnsubscribeToken = async (ctx: DbContext, { token }: FindUserByUnsubscribeTokenOpts) => {
   const { db } = ctx.var;
   const [user] = await db
@@ -120,7 +116,6 @@ interface FindPendingInvitationsOpts {
   userId: string;
 }
 
-/** Find pending invitations for a user across all channel entity types. */
 export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPendingInvitationsOpts) => {
   const { db } = ctx.var;
   const results = await Promise.all(
@@ -142,8 +137,7 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
             eq(inactiveMembershipsTable.channelType, entityType),
             eq(inactiveMembershipsTable.userId, userId),
             isNull(inactiveMembershipsTable.rejectedAt),
-            // Invites against an unpublished (draft) context are deferred: hidden from the
-            // invitee until the context is published and the invite is dispatched.
+            // Invites in an unpublished context stay hidden until the context is published.
             isNotNull(cols.publishedAt),
           ),
         );
@@ -158,7 +152,7 @@ interface UpdateNewsletterOpts {
   newsletter: boolean;
 }
 
-/** Update a user's newsletter preference. Used in unauthenticated unsubscribe flow. */
+/** Used in the unauthenticated unsubscribe flow. */
 export const updateNewsletter = async (ctx: DbContext, { userId, newsletter }: UpdateNewsletterOpts) => {
   const { db } = ctx.var;
   return db.update(usersTable).set({ newsletter }).where(eq(usersTable.id, userId));

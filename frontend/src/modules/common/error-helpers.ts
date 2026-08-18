@@ -7,15 +7,11 @@ import { contactFormHandler } from '~/modules/common/contact-form/contact-form-h
 
 export type ErrorNoticeError = ApiError | Error | null;
 
-/** Handles ask for help. */
 export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   if (!window.Gleap) return contactFormHandler(ref);
   window.Gleap.openConversations();
 };
 
-/**
- * Returns a locale key string based on the error type or query.
- */
 function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): string {
   if (errorFromQuery) return errorFromQuery;
   if (!error) return 'error';
@@ -28,9 +24,6 @@ function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): s
   return error.name;
 }
 
-/**
- * Returns localized error info (title and message) for a given error.
- */
 export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeError; errorFromQuery?: string }) => {
   const localeKey = getErrorLocaleKey(error, errorFromQuery);
 
@@ -44,10 +37,8 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const defaultTitle = error?.name || i18n.t('error:error');
   const defaultMessage = error?.message || '';
 
-  // Title translation
   const title = i18n.t(localeKey as TKey, { ...translationOptions, defaultValue: defaultTitle });
 
-  // Message translation with severity check (type-safe)
   const message =
     error && 'severity' in error && error.severity === 'info'
       ? error.message

@@ -27,14 +27,12 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
   const redirectPath = isValidRedirectPath(redirect) || null;
 
-  // Check strategy enabled
   if (!appConfig.enabledAuthStrategies.includes(strategy)) {
     throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
   }
 
   const normalizedEmail = email.toLowerCase().trim();
 
-  // Look up user by email
   const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
 
   let user: { id: string; name: string; language: string };
@@ -59,10 +57,8 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     user = existingUser;
   }
 
-  // Delete previous magic tokens for this user
   await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'magic')));
 
-  // Generate token
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
 
@@ -80,11 +76,8 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     })
     .returning();
 
-  // Build magic link URL. Concatenate onto backendAuthUrl (which already ends in /auth) so the
-  // /api base path is preserved; new URL(absolutePath, backendUrl) would drop it.
   const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
 
-  // Send email
   const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name, isNewUser: !existingUser };
   const recipients = [{ email: normalizedEmail, lng: user.language }];
 

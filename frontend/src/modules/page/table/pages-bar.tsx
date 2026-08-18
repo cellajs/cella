@@ -17,7 +17,6 @@ interface PagesTableBarProps {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<PageTreeRow>[]>>;
 }
 
-/** Toolbar for the read-only pages table: search, count and column visibility. */
 export function PagesTableBar({ total, searchVars, setSearch, columns, setColumns }: PagesTableBarProps) {
   const { q } = searchVars;
 

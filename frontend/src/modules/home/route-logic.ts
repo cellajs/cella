@@ -7,17 +7,13 @@ const navigate = (to: '/home' | '/welcome', replace = true) => {
   });
 };
 
-/**
- * Route onEnter helpers for onboarding redirects between home and welcome.
- * onEnter runs after the user store is populated; beforeLoad may run too early.
- */
+/** onEnter, not beforeLoad: these run after the user store is populated. */
 export const redirectToWelcomeIfOnboarding = () => {
   const { user } = useUserStore.getState();
   if (!user) return;
   if (!user.userFlags.finishedOnboarding) navigate('/welcome');
 };
 
-/** Redirects to home if onboarded when required. */
 export const redirectToHomeIfOnboarded = () => {
   const { user } = useUserStore.getState();
   if (!user) return;

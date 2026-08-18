@@ -7,8 +7,6 @@ interface NoRowsProps {
   isFetching?: boolean;
   customComponent?: React.ReactNode;
 }
-// When there are no rows, this component is displayed
-/** Renders the no rows component. */
 export function NoRows({ isFiltered, isFetching, customComponent }: NoRowsProps) {
   const { t } = useTranslation();
 

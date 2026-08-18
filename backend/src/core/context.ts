@@ -5,11 +5,7 @@ import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 
-/**
- * Set node server bindings.
- *
- * @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis
- */
+/** @link https://hono.dev/docs/getting-started/nodejs#access-the-raw-node-js-apis */
 type Bindings = HttpBindings & {
   /* ... */
 };
@@ -24,9 +20,6 @@ export type AuthContext = {
   var: Omit<Env['Variables'], 'requestId'>;
 };
 
-/**
- * Define the context environment.
- */
 export type Env = {
   Variables: {
     user: UserModel;

@@ -8,7 +8,6 @@ import { pick } from '#/utils/pick';
 
 export type UserMinimalBase = z.infer<typeof userMinimalBaseSchema>;
 
-// Aliases for audit user joins (createdBy / updatedBy)
 export const createdByUser = alias(usersTable, 'created_by_user');
 export const updatedByUser = alias(usersTable, 'updated_by_user');
 
@@ -18,18 +17,12 @@ const selectKeys = (Object.keys(userMinimalBaseSchema.shape) as (keyof typeof us
   (key): key is AuditUserColumnKey => key !== 'entityType',
 );
 
-/**
- * Build minimal user select columns from an aliased users table.
- * entityType is a SQL literal 'user' to preserve the literal type.
- */
+/** entityType is a SQL literal 'user' to preserve the literal type. */
 const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof updatedByUser) => ({
   ...pick(getColumns(aliasedTable), selectKeys),
   entityType: sql<'user'>`'user'`,
 });
 
-/**
- * Pre-built audit user select shapes for LEFT JOINs.
- */
 export const auditUserSelect = {
   createdBy: buildAuditUserSelect(createdByUser),
   updatedBy: buildAuditUserSelect(updatedByUser),
@@ -53,10 +46,6 @@ export function coalesceAuditUsers<T extends RawAuditRow>(rows: T[]): WithAuditU
   }));
 }
 
-/**
- * Extract minimal user fields from a full user object.
- * Useful for CUD responses where the current user is known.
- */
 export const toUserMinimalBase = (
   user: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
 ): UserMinimalBase => ({
@@ -68,9 +57,7 @@ type KnownUsersInput =
   | Map<string, UserMinimalBase>
   | { id: string; name: string; slug: string; thumbnailUrl: string | null };
 
-/**
- * Populate createdBy/updatedBy string IDs with UserMinimalBase objects.
- */
+/** Populates createdBy/updatedBy string IDs with UserMinimalBase objects. */
 export async function withAuditUsers<T extends { createdBy: string | null; updatedBy?: string | null }>(
   { var: { db } }: { var: { db: DbOrTx } },
   entities: T[],
@@ -82,14 +69,12 @@ export async function withAuditUsers<T extends { createdBy: string | null; updat
       ? knownUsersInput
       : new Map([[knownUsersInput.id, toUserMinimalBase(knownUsersInput)]]);
 
-  // Collect all unique user IDs that need resolving
   const unknownIds = new Set<string>();
   for (const entity of entities) {
     if (entity.createdBy && !knownUsers.has(entity.createdBy)) unknownIds.add(entity.createdBy);
     if (entity.updatedBy && !knownUsers.has(entity.updatedBy)) unknownIds.add(entity.updatedBy);
   }
 
-  // Fetch unknown users in one query
   if (unknownIds.size > 0) {
     // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm union-table inference fails with DbOrTx (issue #4367).
     const users = await (db as any)
@@ -109,9 +94,7 @@ export async function withAuditUsers<T extends { createdBy: string | null; updat
   }));
 }
 
-/**
- * Single-entity convenience wrapper around withAuditUsers.
- */
+/** Single-entity wrapper around withAuditUsers. */
 export async function withAuditUser<T extends { createdBy: string | null; updatedBy?: string | null }>(
   ctx: { var: { db: DbOrTx } },
   entity: T,
@@ -121,12 +104,7 @@ export async function withAuditUser<T extends { createdBy: string | null; update
   return result;
 }
 
-/**
- * Lightweight audit-user hydration that skips DB queries entirely.
- * Uses the current user for updatedBy, stubs createdBy as null.
- * For use when the caller (e.g. frontend) already has the full cached entity
- * and only needs scalar fields + updatedBy from the response.
- */
+/** Audit-user hydration without DB queries: the current user becomes updatedBy and createdBy is stubbed null. */
 export function withAuditUserLite<T extends { createdBy: string | null; updatedBy?: string | null }>(
   entity: T,
   currentUser: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,

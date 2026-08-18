@@ -11,10 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DATABASE_URL = testDatabaseUrl;
 
-/**
- * Run Vitest global setup: check Postgres availability and run migrations.
- * If Postgres is not available, exit gracefully with a message.
- */
+/** Exits with a message when Postgres is unreachable. */
 export default async function globalSetup() {
   if (!DATABASE_URL) {
     console.error(`\n${crossMark}  Backend tests require a database: DATABASE_URL not set`);
@@ -54,8 +51,7 @@ export default async function globalSetup() {
   // Reapply source-defined immutability triggers after migrations create `runtime_role`.
   await pool.query(immutabilityTriggersSQL);
 
-  // Create RLS roles before test-module gates inspect them on a fresh database.
-  // Individual suites still apply grants and ownership in their setup.
+  // RLS roles must exist before test-module gates inspect them on a fresh database.
   await pool.query(`
     DO $$
     BEGIN

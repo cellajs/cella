@@ -4,10 +4,7 @@ import { dnsZone } from '../pulumi-context';
 
 const appConfig = engineConfig();
 
-// CAA records: restrict which CAs may issue certs for this zone. Compatible with
-// the LB's Let's Encrypt managed certificates. Zone-wide policy, so exactly ONE
-// stack per zone owns them: the one serving `www.<zone>` (same rule as the apex
-// resources in loadbalancer.ts). A staging stack on the shared zone skips them.
+// CAA records restrict which CAs may issue certs for this zone, and admit the LB's Let's Encrypt certificates. Zone-wide policy, so only the stack serving `www.<zone>` owns them.
 const managesZonePolicy = new URL(appConfig.frontendUrl).hostname === `www.${dnsZone}`;
 
 if (managesZonePolicy) {

@@ -50,8 +50,7 @@ export const getSignature = (paramsString: string) => {
     throw new Error('transloadit_secret_not_found');
   }
 
-  // Transloadit request signing requires HMAC-SHA384.
-  // This is message authentication, not password storage.
+  // Transloadit request signing requires HMAC-SHA384; this is message authentication, not password storage
   const digest = crypto.createHmac('sha384', hmacKey).update(paramsString, 'utf8').digest('hex');
 
   return `sha384:${digest}`;

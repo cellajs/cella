@@ -16,14 +16,9 @@ const SECRET_PERMISSION_SETS = new Set([
 ]);
 
 /**
- * Whether an EXTRA (unexpected) permission set on the VM key is benign. A
- * read-only set is drift worth surfacing but not a deploy-blocker. The VM
- * policy is bootstrap-owned (CI can't reconcile it; see vm-iam.ts
- * `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until
- * a manual bootstrap Apply, without reducing any real risk. Any NON-read-only
- * extra set (a write/broad grant) is a genuine escalation on the VM key and
- * stays fatal: an operator must strip it (bootstrap Apply / remove a
- * manually-attached policy).
+ * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the VM policy is bootstrap-owned
+ * (vm-iam.ts `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until a manual bootstrap Apply.
+ * Any non-read-only extra set is an escalation on the VM key and stays fatal until an operator strips it.
  */
 const isBenignExtraSet = (set: string): boolean => set.endsWith('ReadOnly');
 
@@ -38,10 +33,8 @@ export interface AssertVmGrantsOptions {
   /** Permission sets the VM must hold (the caller derives the per-principal set). */
   required: readonly string[];
   /**
-   * Exact CEL condition every secret-granting rule must carry (REQ-9, built
-   * by serviceKeyCondition / bootKeyCondition). IAM conditions only narrow an allow, so a
-   * single unconditioned secret rule on this app silently un-scopes the
-   * conditioned one. That is a FAILURE here, not a warning.
+   * Exact CEL condition every secret-granting rule must carry (REQ-9, built by serviceKeyCondition / bootKeyCondition).
+   * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned one. That is a FAILURE here, not a warning.
    */
   requiredSecretCondition?: string;
   /** Injected for tests; defaults to global fetch. */
@@ -61,12 +54,9 @@ export interface AssertVmGrantsResult {
 }
 
 /**
- * Collect the union of permission set names granted to an application across all
- * its IAM policies and their rules, then verify it EQUALS the required set:
- * missing sets break secret hydration, extra sets are privilege drift beyond the
- * minimal VM profile (a write grant on this key widens every VM's blast radius).
- * With `requiredSecretCondition`, additionally verify every secret-granting rule
- * carries EXACTLY that condition (string equality against the shared builder).
+ * Collect the union of permission set names granted to an application across all its IAM policies and rules, then verify it EQUALS the required set:
+ * missing sets break secret hydration, and extra sets are privilege drift beyond the minimal VM profile.
+ * With `requiredSecretCondition`, every secret-granting rule must additionally carry EXACTLY that condition, compared as a string.
  */
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
   const auth: IamAuth = { secretKey: opts.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
@@ -103,12 +93,10 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     }
   }
 
-  // Missing sets break hydration; a NON-read-only extra set is an escalation;
-  // an un-scoped secret rule leaks secrets. All three are fatal. Extra
-  // READ-ONLY sets are surfaced as a warning but do not block (see isBenignExtraSet).
+  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets. Extra read-only sets only warn (see isBenignExtraSet).
   const ok = missing.length === 0 && extraFatal.length === 0 && unconditionedSecretRules.length === 0;
-  if (missing.length > 0) log(`✗ VM grant INCOMPLETE — missing: ${missing.join(', ')}`);
-  if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD — extra write/broad grant(s): ${extraFatal.join(', ')}`);
+  if (missing.length > 0) log(`✗ VM grant INCOMPLETE, missing: ${missing.join(', ')}`);
+  if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD, extra write/broad grant(s): ${extraFatal.join(', ')}`);
   for (const entry of unconditionedSecretRules)
     log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
   if (extraBenign.length > 0)
@@ -117,7 +105,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     );
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
-    log(`✓ VM grant verified — required permission sets present, no escalation${conditionNote}`);
+    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}`);
   }
   return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules };
 }
@@ -151,9 +139,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     required,
   });
   if (!result.ok) {
-    // Only fatal problems reach here (ok is false): missing sets, a write/broad
-    // escalation, or an un-scoped secret rule. Benign read-only extras were
-    // warned about but never set ok=false.
+    // Only fatal problems reach here: missing sets, a write or broad escalation, or an un-scoped secret rule. Benign read-only extras warn without setting ok=false.
     const problems = [
       result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',
       result.extra.filter((set) => !set.endsWith('ReadOnly')).length > 0

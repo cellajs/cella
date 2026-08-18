@@ -14,18 +14,13 @@ const PAGE_PADDING = 20; // Breathing room around each page (px)
 
 type PageSize = { width: number; height: number };
 
-/**
- * `fitMode`: `width` (default) fits each page to container width and scrolls vertically (reading
- * multi-page docs); `contain` fits each page fully within the container like a lightbox (single
- * page at a glance, any orientation).
- */
+/** `fitMode`: `width` fits each page to container width and scrolls vertically; `contain` fits a whole page inside the container. */
 interface RenderPDFProps {
   file: string;
   className?: string;
   fitMode?: 'width' | 'contain';
 }
 
-/** Renders a PDF attachment with the configured document controls. */
 export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps) {
   const [pageSizes, setPageSizes] = useState<PageSize[]>([]);
   const [container, setContainer] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -38,7 +33,6 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
 
     const update = (width: number, height: number) => setContainer({ width, height });
 
-    // Set initial size immediately
     update(node.clientWidth, node.clientHeight);
 
     const resizeObserver = new ResizeObserver(([entry]) => {
@@ -50,8 +44,7 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Read each page's dimensions so non-Letter and landscape pages render correctly.
-  // This is what makes landscape, A4, legal and mixed-orientation PDFs render naturally.
+  // Read each page's dimensions so landscape, A4, legal and mixed-orientation pages render correctly.
   const onDocumentLoad = async (pdf: PDFDocumentProxy) => {
     const sizes = await Promise.all(
       Array.from({ length: pdf.numPages }, async (_, i) => {

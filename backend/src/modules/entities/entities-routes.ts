@@ -7,9 +7,6 @@ import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
 import { appCatchupResponseSchema, errorResponseRefs, streamCatchupBodySchema, tenantOnlyParamSchema } from '#/schemas';
 
 const entityRoutes = {
-  /**
-   * Check slug availability
-   */
   checkSlug: createXRoute({
     operationId: 'checkSlug',
     method: 'post',
@@ -35,9 +32,6 @@ const entityRoutes = {
     },
   }),
 
-  /**
-   * App SSE stream (live updates, authenticated)
-   */
   appStream: createXRoute({
     operationId: 'getAppStream',
     method: 'get',
@@ -59,9 +53,6 @@ const entityRoutes = {
     },
   }),
 
-  /**
-   * App catchup (POST with body)
-   */
   appCatchup: createXRoute({
     operationId: 'postAppCatchup',
     method: 'post',

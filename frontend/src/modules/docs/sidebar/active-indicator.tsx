@@ -15,10 +15,7 @@ type ActiveIndicatorProps = {
   isMobile: boolean;
 };
 
-/**
- * Vertical highlight bar that animates to the active row in a tightly stacked list.
- * Assumes parent is `relative`, items are stacked with no gap, and each item is `h-8`.
- */
+/** Assumes a `relative` parent, items stacked with no gap, and each item `h-8`. */
 export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndicatorProps) {
   if (activeIndex < 0) return null;
   const style = {

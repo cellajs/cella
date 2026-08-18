@@ -32,9 +32,6 @@ import {
 } from './attachment-mocks';
 
 const attachmentRoutes = {
-  /**
-   * Get list of attachments for an organization
-   */
   getAttachments: createXRoute({
     operationId: 'getAttachments',
     method: 'get',
@@ -62,9 +59,6 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Create one or more attachments
-   */
   createAttachments: createXRoute({
     operationId: 'createAttachments',
     method: 'post',
@@ -98,9 +92,6 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get single attachment by ID
-   */
   getAttachment: createXRoute({
     operationId: 'getAttachment',
     method: 'get',
@@ -121,9 +112,6 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Update an attachment
-   */
   updateAttachment: createXRoute({
     operationId: 'updateAttachment',
     method: 'put',
@@ -149,9 +137,6 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Delete one or more attachments
-   */
   deleteAttachments: createXRoute({
     operationId: 'deleteAttachments',
     method: 'delete',
@@ -180,9 +165,6 @@ const attachmentRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get presigned URLs for private attachments
-   */
   getPresignedUrls: createXRoute({
     operationId: 'getPresignedUrls',
     method: 'post',

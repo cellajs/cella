@@ -4,20 +4,19 @@ type CircuitState = 'closed' | 'open' | 'half_open';
 
 interface CircuitEntry {
   state: CircuitState;
-  /** Consecutive failure count (resets on success) */
+  /** Consecutive failures; resets on success. */
   failureCount: number;
-  /** Total events skipped while circuit is open */
+  /** Events skipped while the circuit was open. */
   skippedCount: number;
-  /** When the circuit was opened */
+  /** Epoch ms, null while closed. */
   openedAt: number | null;
-  /** When the last failure occurred */
   lastFailureAt: number | null;
 }
 
-/** Consecutive failures before the circuit opens */
+/** Consecutive failures before the circuit opens. */
 const FAILURE_THRESHOLD = 3;
 
-/** How long the circuit stays open before testing recovery (ms) */
+/** How long the circuit stays open before testing recovery. */
 const COOLDOWN_MS = 60_000;
 
 /**
@@ -37,46 +36,39 @@ class CircuitBreaker {
     return entry;
   }
 
-  /**
-   * Check whether an event for this table should be processed.
-   * Returns true if processing should proceed, false if the event should be skipped.
-   */
+  /** @returns false while the circuit is open and still in cooldown. */
   shouldProcess(tableName: string): boolean {
     const entry = this.getOrCreate(tableName);
 
     if (entry.state === 'closed') return true;
     if (entry.state === 'half_open') return true;
 
-    // State is 'open': check if cooldown has elapsed
+    // State is 'open': has cooldown elapsed?
     const now = Date.now();
     if (entry.openedAt && now - entry.openedAt >= COOLDOWN_MS) {
       entry.state = 'half_open';
-      log.warn(`Circuit HALF_OPEN for table '${tableName}' — testing recovery`, {
+      log.warn(`Circuit HALF_OPEN for table '${tableName}': testing recovery`, {
         skippedCount: entry.skippedCount,
         openDurationMs: now - entry.openedAt,
       });
       return true;
     }
 
-    // Still in cooldown: skip
     entry.skippedCount++;
     return false;
   }
 
-  /**
-   * Record a processing failure for a table.
-   * If consecutive failures hit the threshold, opens the circuit.
-   */
+  /** Opens the circuit once consecutive failures reach FAILURE_THRESHOLD. */
   recordFailure(tableName: string): void {
     const entry = this.getOrCreate(tableName);
     entry.failureCount++;
     entry.lastFailureAt = Date.now();
 
     if (entry.state === 'half_open') {
-      // Recovery test failed: reopen
+      // Recovery test failed.
       entry.state = 'open';
       entry.openedAt = Date.now();
-      log.warn(`Circuit re-OPENED for table '${tableName}' — recovery test failed`, {
+      log.warn(`Circuit re-OPENED for table '${tableName}': recovery test failed`, {
         failureCount: entry.failureCount,
         skippedCount: entry.skippedCount,
       });
@@ -87,16 +79,13 @@ class CircuitBreaker {
       entry.state = 'open';
       entry.openedAt = Date.now();
       entry.skippedCount = 0;
-      log.warn(`Circuit OPEN for table '${tableName}' — ${FAILURE_THRESHOLD} consecutive failures`, {
+      log.warn(`Circuit OPEN for table '${tableName}': ${FAILURE_THRESHOLD} consecutive failures`, {
         failureCount: entry.failureCount,
       });
     }
   }
 
-  /**
-   * Record a processing success for a table.
-   * Resets the circuit to closed.
-   */
+  /** Closes the circuit and clears its counters. */
   recordSuccess(tableName: string): void {
     const entry = this.circuits.get(tableName);
     if (!entry || (entry.state === 'closed' && entry.failureCount === 0)) return;
@@ -110,15 +99,13 @@ class CircuitBreaker {
     entry.openedAt = null;
 
     if (wasOpen) {
-      log.info(`Circuit CLOSED for table '${tableName}' — recovered`, {
+      log.info(`Circuit CLOSED for table '${tableName}': recovered`, {
         skippedCount: skipped,
       });
     }
   }
 
-  /**
-   * Get status of all circuits for health reporting.
-   */
+  /** Health reporting: only circuits that are open or have failures. */
   getStatus(): Record<string, { state: CircuitState; failureCount: number; skippedCount: number }> {
     const status: Record<string, { state: CircuitState; failureCount: number; skippedCount: number }> = {};
     for (const [table, entry] of this.circuits) {

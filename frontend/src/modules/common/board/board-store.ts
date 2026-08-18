@@ -5,16 +5,14 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface BoardUIState {
-  // Panel collapse state
   panelCollapseState: Record<string, boolean>;
   togglePanelCollapsedState: (panelId: string, newState: boolean) => void;
 
-  // Active board context
   activeBoardId: string | null;
   activeBoardType: string | null;
   setActiveBoard: (boardId: string, boardType: string) => void;
 
-  // Active panel, set by hover/focus on desktop or tab on mobile. Only one can be active.
+  // Set by hover/focus on desktop or tab on mobile; only one panel can be active
   activePanelId: string | null;
   setActivePanel: (panelId: string | null) => void;
 
@@ -22,9 +20,8 @@ interface BoardUIState {
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
-  // Local displayOrder for panels whose order isn't server-owned (e.g. explainer, ai-chat).
-  // Uses the same fractional-indexing convention as membership.displayOrder so a single
-  // comparator can sort server-owned and local-only panels together.
+  // Local displayOrder for panels the server does not own, in the same fractional-indexing
+  // convention as membership.displayOrder so one comparator sorts both kinds together.
   boardPanelOrders: Record<string, Record<string, number>>;
   setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
   prunePanelOrders: (boardId: string, knownPanelIds: string[]) => void;
@@ -32,7 +29,6 @@ interface BoardUIState {
   reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
 
-// Default state values
 const initStore: Pick<
   BoardUIState,
   'panelCollapseState' | 'activeBoardId' | 'activeBoardType' | 'activePanelId' | 'boardLayouts' | 'boardPanelOrders'
@@ -45,7 +41,6 @@ const initStore: Pick<
   boardPanelOrders: {},
 };
 
-/** Provides access to shared board layout state. */
 export const useBoardStore = create<BoardUIState>()(
   devtools(
     persist(

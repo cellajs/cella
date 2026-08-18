@@ -6,9 +6,6 @@ import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth
 import { errorResponseRefs, locationSchema } from '#/schemas';
 
 const authOAuthRoutes = {
-  /**
-   * Authenticate with GitHub
-   */
   github: createXRoute({
     operationId: 'github',
     method: 'get',
@@ -27,9 +24,6 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Callback for GitHub
-   */
   githubCallback: createXRoute({
     operationId: 'githubCallback',
     method: 'get',
@@ -54,9 +48,6 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Authenticate with Google
-   */
   google: createXRoute({
     operationId: 'google',
     method: 'get',
@@ -75,9 +66,6 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Callback for Google
-   */
   googleCallback: createXRoute({
     operationId: 'googleCallback',
     method: 'get',
@@ -96,9 +84,6 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Authenticate with Microsoft
-   */
   microsoft: createXRoute({
     operationId: 'microsoft',
     method: 'get',
@@ -117,9 +102,6 @@ const authOAuthRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Callback for Microsoft
-   */
   microsoftCallback: createXRoute({
     operationId: 'microsoftCallback',
     method: 'get',

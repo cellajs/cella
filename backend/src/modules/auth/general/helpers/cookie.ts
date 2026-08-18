@@ -8,12 +8,10 @@ import { env } from '../../../../env';
 
 const isProduction = appConfig.mode === 'production';
 
-// Development runs over plain http://localhost, where Secure (and therefore
-// __Host-) cookies are rejected by some browsers; every other mode is https.
+// Development runs plain http://localhost, where Secure (and so __Host-) cookies are rejected; every other mode is https.
 const secure = appConfig.mode !== 'development';
 
-// `__Host-` locks cookies to the app host with Secure, root path, and no Domain attribute.
-// Same-origin service paths make this isolation possible.
+// `__Host-` locks cookies to the app host: Secure, root path, no Domain attribute.
 const prefix = secure ? ('host' as const) : undefined;
 
 type CookieName =
@@ -25,18 +23,13 @@ type CookieName =
   | `oauth-state-${string}`;
 
 /**
- * Keeps cookies required during cross-site OAuth and invitation redirects at SameSite Lax.
- * All other cookies, including sessions, are restricted to same-origin requests.
+ * Cookies needed during cross-site OAuth and invitation redirects stay SameSite Lax; all others, sessions included, are same-origin only.
  * @see initiation.ts
  */
 const isLaxCookie = (name: CookieName) =>
   name === 'invitation' || name === 'oauth-verification' || name.startsWith('oauth-state-');
 
-/**
- * Effective wire name of an auth cookie: hono prepends `__Host-` when the
- * prefix option is active. For consumers that name the cookie outside this
- * helper (OpenAPI security scheme, tests).
- */
+/** Effective wire name: hono prepends `__Host-` when the prefix option is active. For consumers naming the cookie outside this helper. */
 export const authCookieName = (name: CookieName) =>
   `${prefix === 'host' ? '__Host-' : ''}${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
@@ -66,11 +59,9 @@ export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
   return content;
 };
 
-/** Deletes an auth cookie. */
 export const deleteAuthCookie = (ctx: Context<Env>, name: CookieName) => {
   const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
 
-  // Must mirror the set attributes (prefix implies Path=/, Secure, no Domain),
-  // or the browser treats it as a different cookie and keeps the original.
+  // Must mirror the set attributes (prefix implies Path=/, Secure, no Domain), or the browser keeps the original cookie.
   return deleteCookie(ctx, versionedName, { path: '/', secure, prefix });
 };

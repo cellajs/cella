@@ -8,14 +8,10 @@ import { endpoints, mode } from '../pulumi-context';
 import { internalLbPort, lbInternalAddress } from './lb-internal';
 import { registryEndpoint } from './registry';
 
-// The `${VAR}` placeholder suppliers for shared, app-wide values are app-owned
-// (config/env-suppliers.config.ts). Service-specific wiring is declared as
-// `bindings` on the registry entry and resolved generically below.
+// Suppliers for shared, app-wide `${VAR}` values are app-owned in config/env-suppliers.config.ts; service-specific values are declared as registry `bindings` and resolved generically below.
 const envSuppliers: Record<string, EnvSupplier> = appEnvSuppliers;
 
-// Vars satisfied outside the pool:
-//  - REGISTRY / APP_MODE: universal, injected into every VM's .env;
-//  - *_TAG: the baked image tag, injected per service below.
+// Satisfied outside the pool: REGISTRY and APP_MODE go into every VM's .env, and `*_TAG` is the baked image tag injected per service below.
 const INJECTED_VARS = new Set(['REGISTRY', 'APP_MODE']);
 const PLACEHOLDER_RE = /\$\{([A-Z][A-Z0-9_]*)(?::-[^}]*)?\}/g;
 
@@ -43,23 +39,15 @@ function tagVar(slug: string): string {
   return `${slug.toUpperCase()}_TAG`;
 }
 
-/** Co-hosting context for the singleVM env fold (see publishCoHostedEnv in
- *  compose/infrastructure.ts): the host VM must also resolve the folded
- *  workers' registry `bindings`, with the host's own privateIp collapsed to
- *  loopback. Injected by compute.ts (which owns the generation state) so this
- *  module stays import-cycle-free and unit-testable. */
+/** Co-hosting context for the singleVM env fold: the host VM also resolves the folded workers' registry `bindings`, with its own privateIp collapsed to loopback. Injected by compute.ts so this module has no import cycle. */
 export interface CoHostingContext {
   hostSlug: ServiceName | undefined;
   coHosted: readonly ServiceDefinition[];
-  /** `placement: 'host'` containers started on the host VM; the host's .env
-   *  must satisfy their compose placeholders, bindings, and image tags. */
+  /** `placement: 'host'` containers started on the host VM; the host's .env must satisfy their compose placeholders, bindings, and image tags. */
   collocated: readonly ServiceDefinition[];
 }
 
-/**
- * Build the per-service compose-env builder from registry placeholders,
- * registry `bindings`, and the shared env pool.
- */
+/** Build the per-service compose-env builder from registry placeholders, registry `bindings`, and the shared env pool. */
 export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp, coHosting?: CoHostingContext) {
   function bindingPart(
     selfSlug: ServiceName,
@@ -73,36 +61,31 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
       throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`);
     switch (prop) {
       case 'privateIp':
-        // A folded worker dialing its own host resolves to loopback: worker and
-        // host share one process, and the VM's private NIC may not be attached
-        // yet when the in-process worker starts dialing at boot.
+        // A folded worker dialing its own host resolves to loopback: they share one process, and the VM's private NIC may not be attached when the worker starts dialing at boot.
         if (slug === loopbackSlug) return '127.0.0.1';
         return currentGenBindingIp(slug);
       case 'port':
         return String(definition.healthPort);
-      // Stable service address through the LB's ACL-guarded internal frontend:
-      // survives every cutover, so consumers never bake a generation IP. The
-      // folded-worker loopback shortcut collapses host+port together to the
-      // in-process app (no LB hop inside one VM).
+      // Stable address through the LB's ACL-guarded internal frontend, so consumers never bake a generation IP; the folded-worker loopback shortcut collapses host and port to the in-process app.
       case 'internalHost':
         if (slug === loopbackSlug) return '127.0.0.1';
         if (!definition.internalRoute)
           throw new Error(
-            `compute: binding @{${target}.internalHost} on '${selfSlug}' — service '${slug}' has no internalRoute.`,
+            `compute: binding @{${target}.internalHost} on '${selfSlug}': service '${slug}' has no internalRoute.`,
           );
         return lbInternalAddress;
       case 'internalPort':
         if (slug === loopbackSlug) return String(definition.healthPort);
         if (!definition.internalRoute)
           throw new Error(
-            `compute: binding @{${target}.internalPort} on '${selfSlug}' — service '${slug}' has no internalRoute.`,
+            `compute: binding @{${target}.internalPort} on '${selfSlug}': service '${slug}' has no internalRoute.`,
           );
         return String(internalLbPort(definition.healthPort));
       case 'url': {
         const endpoint = endpointBySlug.get(slug);
         if (!endpoint)
           throw new Error(
-            `compute: binding @{${target}.url} on '${selfSlug}' — service '${slug}' has no public endpoint.`,
+            `compute: binding @{${target}.url} on '${selfSlug}': service '${slug}' has no public endpoint.`,
           );
         return endpoint.url;
       }
@@ -124,18 +107,14 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     return pulumi.all(parts).apply((vals) => vals.join(''));
   }
 
-  /** A binding owned by the service itself or folded in from a co-hosted worker.
-   *  `self` in a folded template still means the WORKER (e.g. mcp's
-   *  `@{self.url}`), and `loopback` collapses the host's privateIp to 127.0.0.1. */
+  /** A binding owned by the service or folded in from a co-hosted worker. `self` in a folded template still means the worker, and `loopback` collapses the host's privateIp to 127.0.0.1. */
   interface EffectiveBinding {
     template: string;
     owner: ServiceName;
     loopbackSlug?: ServiceName;
   }
 
-  /** The service's own bindings, unioned. On the singleVM host. With every
-   *  folded worker's bindings (their env now lives on the host block, see
-   *  publishCoHostedEnv). Conflicting templates for one var fail loudly. */
+  /** The service's own bindings, unioned on the singleVM host with every folded worker's bindings. Conflicting templates for one var throw. */
   function effectiveBindings(svc: ServiceDefinition): Record<string, EffectiveBinding> {
     const bindings: Record<string, EffectiveBinding> = {};
     for (const [name, template] of Object.entries(svc.bindings ?? {})) {
@@ -147,20 +126,19 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
         const existing = bindings[name];
         if (existing && existing.template !== template) {
           throw new Error(
-            `compute: co-hosted binding '${name}' on '${worker.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}) — folded workers must not overload a host binding.`,
+            `compute: co-hosted binding '${name}' on '${worker.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}): folded workers must not overload a host binding.`,
           );
         }
         bindings[name] = { template, owner: worker.slug, loopbackSlug: svc.slug };
       }
     }
-    // Collocated containers run beside the host container, not inside its
-    // process: their bindings resolve with real values (no loopback collapse).
+    // Collocated containers run beside the host container, not inside its process, so their bindings resolve with real values and no loopback collapse.
     for (const container of coHosting.collocated) {
       for (const [name, template] of Object.entries(container.bindings ?? {})) {
         const existing = bindings[name];
         if (existing && existing.template !== template) {
           throw new Error(
-            `compute: collocated binding '${name}' on '${container.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}) — collocated containers must not overload a host binding.`,
+            `compute: collocated binding '${name}' on '${container.slug}' (${template}) conflicts with '${existing.owner}' (${existing.template}): collocated containers must not overload a host binding.`,
           );
         }
         bindings[name] = { template, owner: container.slug };
@@ -169,12 +147,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     return bindings;
   }
 
-  /** Placeholder names sourced from registry services that are coHosted-flagged
-   *  but NOT active in this deploy (e.g. a disabled mcp). publishCoHostedEnv
-   *  folds co-hosted env into the host block unconditionally (the compose file
-   *  is shared across deploy modes), so the host's placeholder scan sees their
-   *  `${VAR}`s: but no in-process worker will ever read them, so one that is
-   *  otherwise unresolvable is skipped because no in-process worker reads it. */
+  /** Placeholders from coHosted-flagged services not active in this deploy. The compose file folds co-hosted env into the host block unconditionally, so the scan sees their `${VAR}`s; no in-process worker reads them, so unresolvable ones are skipped. */
   function inactiveCoHostedVars(): Set<string> {
     const active = new Set((coHosting?.coHosted ?? []).map((s) => s.slug));
     const vars = new Set<string>();
@@ -186,7 +159,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     return vars;
   }
 
-  /** Compose env for one service: universal vars + the baked image tag + binding/pool values. */
+  /** Compose env for one service: universal vars, the baked image tag, and binding or pool values. */
   return function buildComposeEnv(
     svc: ServiceDefinition,
     releaseSha: string,
@@ -197,7 +170,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
     const env: Record<string, () => pulumi.Input<string>> = {
       REGISTRY: () => registryEndpoint,
       APP_MODE: () => mode,
-      // The generation's pinned image tag: the VM pulls exactly this SHA at boot.
+      // The generation's pinned image tag; the VM pulls exactly this SHA at boot.
       [tagVar(slug)]: () => releaseSha,
     };
     // Collocated containers ship at the same release SHA as the host.
@@ -216,7 +189,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
       if (!supply) {
         if (skippable.has(name)) continue;
         throw new Error(
-          `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or env supplier defines a value for it — add a binding in config/services.config.ts or a supplier in config/env-suppliers.config.ts.`,
+          `compute: service '${slug}' references \${${name}} in its compose blocks but no binding or env supplier defines a value for it: add a binding in config/services.config.ts or a supplier in config/env-suppliers.config.ts.`,
         );
       }
       env[name] = supply;

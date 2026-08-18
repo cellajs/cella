@@ -5,10 +5,6 @@ interface CopyButtonProps {
   value: unknown;
 }
 
-/**
- * Copy-to-clipboard button that appears on hover.
- * Shows a checkmark briefly after successful copy.
- */
 export function CopyButton({ value }: CopyButtonProps) {
   const { copied, copyToClipboard } = useCopyToClipboard(2000);
 

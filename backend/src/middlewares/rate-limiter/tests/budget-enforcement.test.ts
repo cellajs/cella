@@ -4,9 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 
-// Undo setup.ts mock: these tests exercise the real middleware against a real
-// RateLimiterMemory, end to end. The budget-bypass, ceiling-bypass, zero-budget-lockout
-// and shared-instance-mutation bugs were all invisible to mocked-limiter tests.
+// Undo the setup.ts mock: these tests drive the real middleware against a real RateLimiterMemory, end to end
 vi.unmock('#/middlewares/rate-limiter/core');
 
 // Real in-memory limiter instances, memoized by keyPrefix exactly like production.
@@ -71,9 +69,6 @@ describe('points budget enforcement (end to end)', () => {
   });
 
   it('enforces the tenant budget exactly, including requests served by the fast path', async () => {
-    // Pre-fix, the fast path never settled its consumes into the DB and syncFromDb
-    // overwrote the local count with the DB undercount: 5000/5000 were allowed on a
-    // budget of 1000.
     const app = buildApp('budget', 't1', 5000, () => 1000);
 
     const { allowed, blocked } = await hammer(app, 1200);
@@ -92,8 +87,6 @@ describe('points budget enforcement (end to end)', () => {
   });
 
   it('clamps tenant budgets to the static ceiling', async () => {
-    // Pre-fix, `limiter.points = budget` replaced the documented hard ceiling with
-    // whatever the tenant configured: 6000/6000 allowed with a budget of 1,000,000.
     const app = buildApp('clamp', 't1', 100, () => 1_000_000);
 
     const { allowed } = await hammer(app, 150);
@@ -102,8 +95,7 @@ describe('points budget enforcement (end to end)', () => {
   });
 
   it('treats budget 0 as "no tenant limit" bounded by the ceiling, not as lockout', async () => {
-    // Pre-fix, budget 0 passed straight into the limiter and blocked every request,
-    // the exact opposite of the documented "0 = unlimited".
+    // Budget 0 documents "no tenant limit", so the ceiling is the only bound
     const app = buildApp('zero', 't1', 50, () => 0);
 
     const { allowed, blocked } = await hammer(app, 60);
@@ -113,9 +105,7 @@ describe('points budget enforcement (end to end)', () => {
   });
 
   it('never mutates the shared limiter instance across tenants', async () => {
-    // Same limiter key + mode → same memoized instance for ALL tenants. Pre-fix, each
-    // request assigned its tenant's budget to `instance.points`, so a small tenant could
-    // be judged against a big tenant's budget (and vice versa) depending on request order.
+    // The same limiter key and mode share one memoized instance across every tenant
     const CEILING = 5000;
     let budget = 10;
     const small = buildApp('shared', 'small', CEILING, () => budget);
@@ -135,9 +125,7 @@ describe('points budget enforcement (end to end)', () => {
     const res = await small.request('http://localhost/t', { method: 'POST' });
     expect(res.status).toBe(429);
 
-    // And a budget change for the small tenant applies to the small tenant only.
-    // 11 points already consumed (the 11th request consumed before being rejected),
-    // so 9 remain of the new budget of 20.
+    // 11 points are already consumed (the 11th consumed before being rejected), so 9 remain of the new budget of 20
     budget = 20;
     const { allowed: smallAllowedAfterRaise } = await hammer(small, 20);
     expect(smallAllowedAfterRaise).toBe(9);
@@ -147,7 +135,6 @@ describe('points budget enforcement (end to end)', () => {
     const app = buildApp('retry', 't1', 5, () => 5);
     const { lastBlockedResponse } = await hammer(app, 10);
 
-    // 10 requests against a budget of 5 must block at least once
     const retryAfter = Number(lastBlockedResponse!.headers.get('Retry-After'));
     expect(retryAfter).toBeGreaterThanOrEqual(1);
   });

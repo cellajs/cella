@@ -12,12 +12,8 @@ const OrganizationsTable = lazyNamed(
   'OrganizationsTable',
 );
 
-/**
- * System organizations table for managing all organizations.
- */
 export const Route = createFileRoute('/_app/system/organizations')({
   validateSearch: organizationsRouteSearchParamsSchema,
-  // Absence means default: params equal to the default view are stripped from the URL
   search: { middlewares: [stripSearchParams(organizationsSearchDefaults)] },
   staticData: { isAuth: true, navTab: { id: 'organizations', label: 'c:organization_other' } },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),

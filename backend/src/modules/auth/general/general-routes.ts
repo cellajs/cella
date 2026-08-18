@@ -8,9 +8,6 @@ import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/mod
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 
 const authGeneralRoutes = {
-  /**
-   * Auth health check with rate limit status
-   */
   health: createXRoute({
     operationId: 'getAuthHealth',
     method: 'get',
@@ -35,9 +32,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Start impersonating
-   */
   startImpersonation: createXRoute({
     operationId: 'startImpersonation',
     method: 'post',
@@ -58,9 +52,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Stop impersonating
-   */
   stopImpersonation: createXRoute({
     operationId: 'stopImpersonation',
     method: 'post',
@@ -74,9 +65,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Check if email exists
-   */
   checkEmail: createXRoute({
     operationId: 'checkEmail',
     method: 'post',
@@ -98,9 +86,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Invoke token session
-   */
   invokeToken: createXRoute({
     operationId: 'invokeToken',
     method: 'get',
@@ -123,9 +108,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Get token data
-   */
   getTokenData: createXRoute({
     operationId: 'getTokenData',
     method: 'get',
@@ -148,9 +130,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Resend invitation
-   */
   resendInvitationWithToken: createXRoute({
     operationId: 'resendInvitationWithToken',
     method: 'post',
@@ -170,9 +149,6 @@ const authGeneralRoutes = {
       ...errorResponseRefs,
     },
   }),
-  /**
-   * Sign out
-   */
   signOut: createXRoute({
     operationId: 'signOut',
     method: 'post',

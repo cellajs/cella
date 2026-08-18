@@ -4,27 +4,21 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { entityTables } from '#/tables';
 
-// Derived table sets
-
 /** Product entities with a parent org (tasks, labels, attachments) have RLS and composite FK. */
 const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
-/** Channel entity tables (organizations, workspaces, projects) */
 const channelTables = appConfig.channelEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
-/** All product entity tables */
 const allProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
 /** Tables that should have FORCE RLS (org-scoped product entities + yjs_documents) */
 const rlsTableNames = [...orgScopedProductTables, 'yjs_documents'];
-
-// Helper: query system catalogs
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
   if (Array.isArray(result)) return result;
@@ -34,8 +28,6 @@ function getRows<T = Record<string, unknown>>(result: any): T[] {
 
 // Verifies entity-table security infrastructure from PostgreSQL system catalogs.
 describe('Schema verification', () => {
-  // Immutability triggers
-
   describe('Immutability triggers', () => {
     const allImutableTables = [...allProductTables, ...channelTables];
 
@@ -76,8 +68,7 @@ describe('Schema verification', () => {
     });
   });
 
-  // These require the RLS migration to have been run. The beforeAll ensures
-  // admin_role/runtime_role exist and FORCE RLS is set (mirrors 10-rls.migration.ts).
+  // Requires the RLS migration; the beforeAll re-applies roles and FORCE RLS.
 
   describe('RLS runtime configuration', () => {
     let rlsConfigured = false;
@@ -99,7 +90,6 @@ describe('Schema verification', () => {
           END $$;
         `);
 
-        // Apply FORCE RLS + ownership for all RLS tables
         for (const tableName of rlsTableNames) {
           await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} OWNER TO admin_role`));
           await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} FORCE ROW LEVEL SECURITY`));
@@ -108,7 +98,7 @@ describe('Schema verification', () => {
 
         rlsConfigured = true;
       } catch {
-        console.warn('Could not configure RLS roles — skipping RLS runtime tests');
+        console.warn('Could not configure RLS roles: skipping RLS runtime tests');
       }
     });
 

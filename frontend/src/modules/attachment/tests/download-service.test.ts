@@ -86,7 +86,7 @@ import { makeAttachment, makeQueueEntry } from './test-setup';
 // Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
 bindLocalUserDb('test-user');
 
-describe('downloadService.processQueue — failed download retry', () => {
+describe('downloadService.processQueue: failed download retry', () => {
   beforeEach(async () => {
     await attachmentsDb.downloadQueue.clear();
     await attachmentsDb.blobs.clear();
@@ -145,7 +145,7 @@ describe('downloadService.processQueue — failed download retry', () => {
   });
 });
 
-describe('downloadService.queueForDownload — optimistic filtering', () => {
+describe('downloadService.queueForDownload: optimistic filtering', () => {
   beforeEach(async () => {
     await attachmentsDb.downloadQueue.clear();
     vi.clearAllMocks();
@@ -176,7 +176,7 @@ describe('downloadService.queueForDownload — optimistic filtering', () => {
   });
 });
 
-describe('downloadService — cache lookup before claim', () => {
+describe('downloadService: cache lookup before claim', () => {
   beforeEach(async () => {
     await attachmentsDb.downloadQueue.clear();
     vi.clearAllMocks();
@@ -206,7 +206,7 @@ describe('downloadService — cache lookup before claim', () => {
   });
 });
 
-describe('downloadService — auth fail-fast (401/403)', () => {
+describe('downloadService: auth fail-fast (401/403)', () => {
   beforeEach(async () => {
     await attachmentsDb.downloadQueue.clear();
     vi.clearAllMocks();

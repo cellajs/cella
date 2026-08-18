@@ -1,9 +1,6 @@
 import { z } from '@hono/zod-openapi';
 
-/**
- * Build a bounded schema for AWSet delta operations.
- * Used for set-type fields such as labels and assignedTo in update ops.
- */
+/** Bounded AWSet delta schema for set-type update ops such as labels and assignedTo. */
 export const arrayDeltaSchema = <T extends z.ZodType<string>>(itemSchema: T, maxItems = 50) => {
   const itemsSchema = z
     .array(itemSchema)
@@ -33,10 +30,7 @@ export function isArrayDelta(value: unknown): value is ArrayDelta {
   return value != null && typeof value === 'object' && 'add' in value;
 }
 
-/**
- * Apply an AWSet delta to a current array.
- * Removes first, then appends. Order is preserved and repeated applications are idempotent.
- */
+/** Removes first, then appends. Order is preserved and repeated applications are idempotent. */
 export function applyArrayDelta(current: string[], delta: ArrayDelta): string[] {
   const removeSet = new Set(delta.remove);
   const filtered = current.filter((id) => !removeSet.has(id));

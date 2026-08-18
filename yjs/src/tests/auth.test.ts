@@ -26,7 +26,7 @@ describe('verifyToken', () => {
   it('1.1.4 tampered payload reports bad_signature', () => {
     const token = createSignedToken('user-1');
     const parts = token.split('.');
-    // Modify payload but keep original signature
+    // Modified payload, original signature.
     const otherPayload = Buffer.from(JSON.stringify({ userId: 'hacker', exp: Date.now() + 60000 })).toString(
       'base64url',
     );
@@ -48,17 +48,13 @@ describe('verifyToken', () => {
 
   it('1.1.8 valid base64 but invalid JSON reports bad_signature', () => {
     const notJson = Buffer.from('this is not json').toString('base64url');
-    // Sign it properly so it passes HMAC check
     const token = createSignedToken('user-1');
     const sig = token.split('.')[1];
-    // This will fail because the signature won't match the new payload
     expect(verifyToken(`${notJson}.${sig}`)).toEqual({ ok: false, reason: 'bad_signature' });
   });
 
   it('1.1.9 missing userId field reports malformed', () => {
-    // Manually construct a token with only exp (no userId)
     const payload = Buffer.from(JSON.stringify({ exp: Date.now() + 60000 })).toString('base64url');
-    // We need to sign it with the test secret to pass HMAC
     const { createHmac } = require('node:crypto');
     const sig = createHmac('sha256', 'test-yjs-secret-for-unit-tests').update(payload).digest('hex').slice(0, 16);
     expect(verifyToken(`${payload}.${sig}`)).toEqual({ ok: false, reason: 'malformed' });
@@ -74,9 +70,7 @@ describe('verifyToken', () => {
   it('1.1.11 wrong signature length reports bad_signature early', () => {
     const token = createSignedToken('user-1');
     const parts = token.split('.');
-    // Signature too short
     expect(verifyToken(`${parts[0]}.abc`)).toEqual({ ok: false, reason: 'bad_signature' });
-    // Signature too long
     expect(verifyToken(`${parts[0]}.${'a'.repeat(32)}`)).toEqual({ ok: false, reason: 'bad_signature' });
   });
 });

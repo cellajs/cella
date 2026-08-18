@@ -4,12 +4,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/**
- * Email unsubscribe tokens. Multiple per user allowed, old tokens remain valid.
- *
- * PARTITIONING: Partitioned by createdAt via pg_partman (monthly, 90-day retention).
- * Drizzle sees a regular table; PostgreSQL manages partitions transparently.
- */
+/** Email unsubscribe tokens, multiple per user, old ones stay valid. Partitioned by createdAt via pg_partman (monthly, 90-day retention). */
 export const unsubscribeTokensTable = snakeCase.table(
   'unsubscribe_tokens',
   {

@@ -22,9 +22,6 @@ interface OAuthVerificationStatic {
   providerName: string;
 }
 
-/**
- * Email template for users to verify ownership of their email address that have been added via OAuth provider.
- */
 export const oauthVerificationEmail = defineEmailTemplate<
   OAuthVerificationStatic,
   EmailRecipient & { email: string }

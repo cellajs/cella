@@ -4,10 +4,7 @@ import { createFieldTimestamps, sourceId } from './hlc';
 
 export { sourceId };
 
-/**
- * Create sync transaction metadata for a create mutation.
- * Creates have no field timestamps (server assigns initial values).
- */
+/** Creates carry no field timestamps: the server assigns the initial values. */
 export function createStxForCreate(): StxBase {
   return {
     mutationId: uuidv7(),
@@ -16,10 +13,7 @@ export function createStxForCreate(): StxBase {
   };
 }
 
-/**
- * Sync transaction metadata for an update: HLC timestamps per changed scalar field.
- * AWSet fields (labels, assignedTo) need no timestamps (commutative).
- */
+/** HLC timestamps per changed scalar field. AWSet fields are commutative and need none. */
 export function createStxForUpdate(scalarFieldNames: string[] = []): StxBase {
   return {
     mutationId: uuidv7(),
@@ -28,10 +22,7 @@ export function createStxForUpdate(scalarFieldNames: string[] = []): StxBase {
   };
 }
 
-/**
- * Create sync transaction metadata for a delete mutation.
- * Deletes have no field timestamps.
- */
+/** Deletes carry no field timestamps. */
 export function createStxForDelete(): StxBase {
   return {
     mutationId: uuidv7(),

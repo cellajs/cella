@@ -10,8 +10,7 @@ export type JsxEmailComponent<TProps extends BaseProps<any>> = React.FC<Readonly
 
 export type PlainTextOptions = HtmlToTextOptions;
 
-// Only `plainText` affects rendering; the remaining options preserve jsx-email API parity.
-// Components control default styling through their own `disableDefaultStyle` prop.
+// Only `plainText` affects rendering; the rest preserve jsx-email API parity.
 export interface RenderOptions {
   disableDefaultStyle?: boolean;
   inlineCss?: boolean;

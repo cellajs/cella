@@ -1,24 +1,17 @@
 import type { ApiError } from '~/lib/api';
 
-/**
- * Shared meta shape for both queries and mutations.
- * Pass via `meta: { ... }` on `useQuery` / `useMutation` / `queryOptions`.
- */
+/** Shared by queries and mutations; passed as `meta: { ... }` on `useQuery`, `useMutation`, or `queryOptions`. */
 export type QueryMeta = {
   /** Skip dehydrating this query into the persisted IDB cache. Default: true. */
   persist?: boolean;
-  /**
-   * Skip the global error toast when a local `onError` shows a more specific message.
-   * Pass a predicate to suppress only certain errors (e.g. only 403s).
-   */
+  /** Skips the global error toast; a predicate suppresses only the errors it matches. */
   suppressGlobalErrorToast?: boolean | ((err: ApiError) => boolean);
   /** Org/tenant context used by SSE handlers + setQueryDefaults to resolve fetch params. */
   organizationId?: string;
   tenantId?: string;
 };
 
-// Make ApiError the default error type for all TanStack Query hooks, and type
-// `meta` so consumers get autocomplete + safety on the suppression flag.
+// Makes ApiError the default error type for every TanStack Query hook and types `meta` for the suppression flag.
 declare module '@tanstack/react-query' {
   interface Register {
     defaultError: ApiError;

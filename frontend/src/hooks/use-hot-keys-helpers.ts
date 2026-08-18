@@ -12,7 +12,6 @@ type Hotkey = KeyboardModifiers & {
 
 type CheckHotkeyMatch = (event: KeyboardEvent) => boolean;
 
-// Parses a hotkey string into a Hotkey object with modifiers and a key
 function parseHotkey(hotkey: string): Hotkey {
   const keys =
     hotkey === '+'
@@ -30,10 +29,8 @@ function parseHotkey(hotkey: string): Hotkey {
     shift: keys.includes('shift'),
   };
 
-  // Keys that are reserved for modifiers
   const reservedKeys = ['alt', 'ctrl', 'meta', 'shift', 'mod'];
 
-  // Find the non-modifier key
   const freeKey = keys.find((key) => !reservedKeys.includes(key));
 
   return {
@@ -42,7 +39,6 @@ function parseHotkey(hotkey: string): Hotkey {
   };
 }
 
-// Checks if the given KeyboardEvent matches the specified hotkey
 function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   const { alt, ctrl, meta, mod, shift, key } = hotkey;
   const { altKey, ctrlKey, metaKey, shiftKey, key: pressedKey } = event;
@@ -62,8 +58,6 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   return false;
 }
 
-// check if a KeyboardEvent matches the specified hotkey string
-/** Builds a matcher for a configured keyboard shortcut. */
 export function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
   return (event) => isExactHotkey(parseHotkey(hotkey), event);
 }
@@ -74,8 +68,6 @@ interface HotkeyItemOptions {
 
 type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOptions?];
 
-// Determines whether the event should trigger the hotkey handler based on the target element and settings
-/** Checks whether a hotkey handler should process an event. */
 export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
   if (event.target instanceof HTMLElement) {
     if (triggerOnContentEditable) {

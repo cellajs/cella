@@ -6,9 +6,6 @@ import { memberQueryKeys } from '~/modules/memberships/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Invalidate all channel entity detail queries (fallback when channelType unknown)
- */
 function invalidateAllChannelDetails(): void {
   for (const channelType of appConfig.channelEntityTypes) {
     queryClient.invalidateQueries({
@@ -21,14 +18,13 @@ function invalidateAllChannelDetails(): void {
 /** Invalidate the channel entity list for `channelType`; falls back to invalidating all context details when null/unknown. */
 export function invalidateChannelList(channelType: ChannelEntityType | null): void {
   if (channelType && hasEntityQueryKeys(channelType)) {
-    // Invalidate by the `list` prefix key; covers all filtered list variants for this context type.
+    // The `list` prefix covers every filtered list variant for this channel type.
     queryClient.invalidateQueries({ queryKey: getEntityQueryKeys(channelType).list.base, refetchType: 'active' });
   } else {
     invalidateAllChannelDetails();
   }
 }
 
-/** Invalidate member queries for an org (null invalidates all member queries). */
 export function invalidateMemberQueries(organizationId: string | null): void {
   if (organizationId) {
     queryClient.invalidateQueries({
@@ -37,7 +33,7 @@ export function invalidateMemberQueries(organizationId: string | null): void {
       refetchType: 'active',
     });
   } else {
-    // Fallback for catchup: invalidate all member queries
+    // Catchup fallback: every member query.
     queryClient.invalidateQueries({
       queryKey: memberQueryKeys.list.base,
       refetchType: 'active',
@@ -45,19 +41,12 @@ export function invalidateMemberQueries(organizationId: string | null): void {
   }
 }
 
-/**
- * Invalidate memberships cache so the enrichment subscriber
- * re-enriches entity lists and useMenu reactively rebuilds.
- */
+/** The enrichment subscriber re-enriches entity lists from this, and useMenu rebuilds. */
 export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }
 
-/**
- * Fetch memberships via fetchQuery, ensuring fresh data while deduplicating
- * with any in-flight getMyMemberships request (e.g., from getMenuData's ensureQueryData).
- * Preferred over invalidateQueries during catchup to avoid redundant fetches on app init.
- */
+/** fetchQuery deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
   return queryClient.fetchQuery({
     queryKey: meKeys.memberships,
@@ -65,10 +54,7 @@ export function fetchMemberships(): Promise<unknown> {
   });
 }
 
-/**
- * Refresh current user data.
- * Called after membership updates in case role changed (affects permissions).
- */
+/** Called after membership updates, since a role change alters permissions. */
 export function refreshMe(): void {
   getAndSetMe();
 }

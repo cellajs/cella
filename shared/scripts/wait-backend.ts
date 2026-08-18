@@ -1,8 +1,4 @@
-/**
- * Waits for the backend health endpoint before proceeding.
- *
- * @see README.md
- */
+/** Waits for the backend health endpoint before proceeding. @see README.md */
 import { waitForBackend } from '../src/utils/wait-for-backend.ts';
 
 const args = process.argv.slice(2);

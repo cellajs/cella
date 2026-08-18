@@ -2,18 +2,12 @@ import { type Client, createClient, createConfig } from 'sdk/client';
 
 type AppLike = { fetch: (req: Request) => Response | Promise<Response> };
 
-/**
- * Return type for SDK calls in tests (with throwOnError: false, responseStyle: 'fields').
- * Gives access to data, error, and the raw Response for status/header checks.
- */
+/** SDK call result under throwOnError: false and responseStyle: 'fields'. */
 export type TestResult<TData = unknown, TError = unknown> =
   | { data: TData; error: undefined; request: Request; response: Response }
   | { data: undefined; error: TError; request: Request; response: Response };
 
-/**
- * Creates an SDK client wired to Hono's in-process app.fetch().
- * Uses no HTTP server.
- */
+/** SDK client wired to Hono's in-process app.fetch(); no HTTP server. */
 export function createTestClient(app: AppLike): Client {
   return createClient(
     createConfig({
@@ -23,10 +17,7 @@ export function createTestClient(app: AppLike): Client {
   );
 }
 
-/**
- * Injects the test client, disables throwOnError, and sets responseStyle to 'fields'; input
- * options are type-checked against the SDK function's signature.
- */
+/** Injects the test client with throwOnError: false and responseStyle: 'fields'. */
 export function sdk(client: Client) {
   return async <F extends (opts: any) => Promise<any>>(
     fn: F,
@@ -36,10 +27,7 @@ export function sdk(client: Client) {
   };
 }
 
-/**
- * Create an SDK test client from the app routes.
- * Defers the import so mocks are set up first.
- */
+/** The route import is deferred so mocks are set up first. */
 export async function createAppClient() {
   const { baseApp: app } = await import('#/routes');
   return sdk(createTestClient(app));

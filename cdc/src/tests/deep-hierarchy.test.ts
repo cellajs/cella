@@ -7,8 +7,7 @@ import type { EntityTableMeta } from '../types';
 import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
 
-// `course` stays non-nullable so the missing-ancestor warning suite below can prove
-// that a null non-nullable ancestor still warns.
+// `course` stays non-nullable so the warning suite below can prove a null non-nullable ancestor warns.
 const h = makeDeepHierarchy(['project', 'courseSection']);
 
 const itemMeta = (): EntityTableMeta =>
@@ -17,7 +16,6 @@ const itemMeta = (): EntityTableMeta =>
 const itemActivity = (action: string, organizationId: string | null = 'o1'): InsertActivityModel =>
   ({ action, entityType: 'item', organizationId }) as unknown as InsertActivityModel;
 
-/** Item attached at full depth: lives in a project. */
 const fullDepthRow = {
   id: 'i1',
   projectId: 'p1',
@@ -50,9 +48,8 @@ beforeEach(() => {
   vi.mocked(log.warn).mockClear();
 });
 
-// Deepest-non-null-ancestor attribution on a synthetic 4-level hierarchy (organization >
-// course > courseSection > project) where an `item` product attaches at any depth. raak/cella
-// hierarchies use NOT NULL ancestor columns, so this degrades to the declared parent there.
+// Deepest-non-null-ancestor attribution on a synthetic 4-level hierarchy (organization > course >
+// courseSection > project) where an `item` product attaches at any depth.
 
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
@@ -149,7 +146,6 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
     const createdAt = '2026-07-01T10:00:00.000Z';
     const deltas = getCountDeltas(itemMeta(), itemActivity('create'), { ...fullDepthRow, createdAt }, null, h);
     expect(deltas).toContainEqual({ channelKey: 'p1', deltas: { 'e:li:h:item': Date.parse(createdAt) } });
-    // No stamp anywhere else
     const stamped = deltas.filter((d) => 'e:li:h:item' in d.deltas);
     expect(stamped).toHaveLength(1);
   });
@@ -161,7 +157,6 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
         { channelKey: 'o1', deltas: { 'e:c:item': -1 } },
         { channelKey: 's1', deltas: { 'e:c:item': -1 } },
         { channelKey: 'c1', deltas: { 'e:c:item': -1 } },
-        // Self count leaves the old home.
         { channelKey: 's1', deltas: { 'e:c:h:item': -1 } },
       ]),
     );
@@ -173,7 +168,7 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
       [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
       h,
     );
-    // Activity stamps land at each row's home context only; org and section stay stamp-free
+    // Activity stamps land at each row's home context only.
     expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:item': 2 });
     expect(plan.countDeltasByChannelKey.get('c1')).toEqual({
       'e:c:item': 2,
@@ -202,7 +197,6 @@ describe('reparent updates re-credit the ancestor diff', () => {
       expect.arrayContaining([
         { channelKey: 'p2', deltas: { 'e:c:item': 1 } },
         { channelKey: 'p1', deltas: { 'e:c:item': -1 } },
-        // Self count moves between homes.
         { channelKey: 'p1', deltas: { 'e:c:h:item': -1 } },
         { channelKey: 'p2', deltas: { 'e:c:h:item': 1 } },
         { channelKey: 'p2', deltas: { 'e:lu:h:item': expect.any(Number) } },
@@ -215,7 +209,6 @@ describe('reparent updates re-credit the ancestor diff', () => {
     const deltas = getCountDeltas(itemMeta(), itemActivity('update'), fullDepthRow, sectionRow, h);
     expect(deltas).toEqual([
       { channelKey: 'p1', deltas: { 'e:c:item': 1 } },
-      // Home moved section → project: self count follows.
       { channelKey: 's1', deltas: { 'e:c:h:item': -1 } },
       { channelKey: 'p1', deltas: { 'e:c:h:item': 1 } },
       { channelKey: 'p1', deltas: { 'e:lu:h:item': expect.any(Number) } },

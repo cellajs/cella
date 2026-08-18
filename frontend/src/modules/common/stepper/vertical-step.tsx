@@ -168,5 +168,4 @@ function VerticalStepBase(props: VerticalStepProps, ref: React.ForwardedRef<HTML
   );
 }
 
-/** Renders one step in a vertical stepper. */
 export const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(VerticalStepBase);

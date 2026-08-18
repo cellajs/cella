@@ -16,9 +16,7 @@ import { mode, naming, organizationId, projectId, tags } from '../pulumi-context
 
 const names = principalNames(appConfig.slug, mode);
 
-// The engine's IAM principals, resolved from IAM by name and owned here because IAM is this
-// module's concern (storage bucket policies and compute import them). Per-mode names
-// (`<slug>-<mode>-…`) are canonical. Required principals throw on a resolution failure; optional ones (e.g. the admin app) only warn and drop their statements, so a missing admin app never blocks a production release (the 0.7.0 incident).
+// The engine's IAM principals, resolved by their canonical per-mode names. A required principal throws on a resolution failure; an optional one warns and drops its statements, so a missing admin app never blocks a release.
 
 /** Resolve an application id by name, or undefined when the app is absent. */
 function findApplicationId(name: string): pulumi.Output<string | undefined> {
@@ -27,10 +25,7 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
       .getApplication({ name, organizationId })
       .then((app) => app.applicationId || undefined)
       .catch((error: unknown) => {
-        // Only a genuine not-found means "absent" (optional statements drop,
-        // required principals fail with guidance). A transient IAM outage must
-        // not silently demote a required principal to "not found" or drop
-        // admin statements: rethrow anything else.
+        // Only a real not-found counts as absent: a transient IAM outage must not demote a required principal or drop admin statements, so rethrow anything else.
         const message = error instanceof Error ? error.message : String(error);
         if (/not.?found|404|does not exist/i.test(message)) return undefined;
         throw error;
@@ -41,7 +36,7 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
 /** Require a principal: missing means the stack cannot function, so fail with guidance. */
 function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
   return resolved.apply((id) => {
-    if (!id) throw new Error(`IAM application for ${label} not found — run the infra CLI bootstrap first.`);
+    if (!id) throw new Error(`IAM application for ${label} not found: run the infra CLI bootstrap first.`);
     return id;
   });
 }
@@ -52,24 +47,19 @@ export const ciDeployApplicationId = requirePrincipalId(
   `CI deploy ('${names.ciDeploy}')`,
 );
 
-/**
- * Admin application id: the standing human principal (bucket access + infra
- * reads). OPTIONAL: when absent its bucket-policy statements are dropped with
- * a warning, never a deploy failure. Falls back to the SCW_ADMIN_APPLICATION_ID
- * env var (local ups load backend/.env; CI does not carry it).
- */
+/** Admin application id, the standing human principal. Optional: when absent its bucket-policy statements are dropped with a warning. Falls back to SCW_ADMIN_APPLICATION_ID. */
 export const adminApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.admin).apply((id) => {
   const fromEnv = process.env.SCW_ADMIN_APPLICATION_ID?.trim() || undefined;
   if (id) return id;
   if (fromEnv) return fromEnv;
   pulumi.log.warn(
-    `Admin IAM application '${names.admin}' not found — admin bucket-policy statements are dropped this update. ` +
+    `Admin IAM application '${names.admin}' not found: admin bucket-policy statements are dropped this update. ` +
       'Run the infra CLI ("Rotate keys") to create it; until then bucket access is CI-only.',
   );
   return undefined;
 });
 
-// VM-side principals: one application per deployed service + the boot fetcher.
+// VM-side principals: one application per deployed service plus the boot fetcher.
 
 const vmServices = deployedServices(appConfig.services, appConfig.singleVM ?? false);
 
@@ -88,25 +78,9 @@ export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(
 );
 
 /**
- * Pulumi-managed IAM policies for the VM-side principals, reconciled on every
- * `pulumi up`. Bootstrap-owned: IAM policy write is forbidden to the CI key
- * (permission escalation), so a bootstrap-key up creates these before compute
- * exists. Compute VMs depend on them so a fresh bootstrap attaches grants
- * before the first runtime-secret hydration.
- *
- * One policy per service app (secret read conditioned to its own + shared
- * folders; backend additionally granular S3 object sets) and one for the boot
- * app (registry pull + diag write + handoff-only secret read). Conditions only
- * narrow: `assert-vm-grants` verifies no other policy un-scopes these (union
- * semantics).
- *
- * The `ignoreChanges: ['rules', 'description']` opts keep CI ups from
- * attempting IAM writes they would 403 on: rules are provisioned by a
- * privileged bootstrap `up`, and the deploy's assert-vm-grants independently
- * verifies the live grant (failing loudly on real drift). Also sidesteps the
- * provider's condition empty-vs-unset diff asymmetry that would otherwise show
- * a phantom ~rules.
- *
+ * Pulumi-managed IAM policies for the VM-side principals. Bootstrap-owned: IAM policy write is forbidden to the CI key, so a bootstrap-key up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
+ * One policy per service app (secret read conditioned to its own and shared folders) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
+ * `ignoreChanges: ['rules', 'description']` keeps CI ups from attempting IAM writes they would 403 on, and sidesteps the provider's condition empty-vs-unset diff asymmetry that shows a phantom ~rules.
  * @see resources/compute.ts
  */
 export const vmIamPolicies: scaleway.iam.Policy[] = [];
@@ -172,6 +146,6 @@ vmIamPolicies.push(
   ),
 );
 
-/** Backend service app id when the backend service is deployed (REQ-20 bucket statements); undefined otherwise. */
+/** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
 export const backendServiceApplicationId: pulumi.Output<string | undefined> =
   serviceApplicationIds.backend ?? pulumi.output(undefined);

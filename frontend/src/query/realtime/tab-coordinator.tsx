@@ -7,12 +7,10 @@ import type { AppStreamNotification } from './types';
 const channelName = 'tab-sync';
 const leaderLockName = 'tab-leader';
 
-/** Message types for BroadcastChannel communication */
 type BroadcastMessage =
   | { type: 'stream-notification'; notification: AppStreamNotification; organizationId: string }
   | { type: 'schema-version'; version: number };
 
-/** Tab coordinator state */
 interface TabCoordinatorState {
   isLeader: boolean;
   isReady: boolean;
@@ -22,7 +20,6 @@ interface TabCoordinatorState {
   setIsActive: (isActive: boolean) => void;
 }
 
-/** Vanilla Zustand store for tab coordination state. */
 export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
   isLeader: false,
   isReady: false,
@@ -32,52 +29,35 @@ export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
   setIsActive: (isActive) => set({ isActive }),
 }));
 
-// Module-level state for channel and lock
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
 const notificationHandlers: Set<(notification: AppStreamNotification, organizationId: string) => void> = new Set();
 let initPromise: Promise<void> | null = null;
 
-/**
- * Check if Web Locks API is available.
- */
 const isWebLocksAvailable = (): boolean => {
   return typeof navigator !== 'undefined' && 'locks' in navigator;
 };
 
-/**
- * Resolve when `signal` aborts. A lock callback awaits this to hold the lock releasably: the
- * callback returns once the signal fires, which frees the lock for a waiting follower without
- * requiring the tab to close.
- */
+/** Resolves when `signal` aborts. A lock callback awaits this to hold the lock releasably, freeing it for a waiting follower without closing the tab. */
 const untilAborted = (signal: AbortSignal): Promise<void> =>
   new Promise<void>((resolve) => {
     if (signal.aborted) return resolve();
     signal.addEventListener('abort', () => resolve(), { once: true });
   });
 
-/**
- * Check if BroadcastChannel is available.
- */
 const isBroadcastChannelAvailable = (): boolean => {
   return typeof BroadcastChannel !== 'undefined';
 };
 
-/**
- * Initialize the tab coordinator (BroadcastChannel + leader election via Web Locks). Resolves once
- * leader status is known. Initialization is idempotent across repeated calls.
- */
+/** Idempotent: resolves once leader status is known, reusing the in-flight promise on repeat calls. */
 export const initTabCoordinator = async (): Promise<void> => {
-  // Return existing promise if already initializing/initialized
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
     const store = tabCoordinatorStore.getState();
 
-    // Mark coordinator as active
     store.setIsActive(true);
 
-    // Set up BroadcastChannel if available (only once)
     if (isBroadcastChannelAvailable() && !broadcastChannel) {
       broadcastChannel = new BroadcastChannel(channelName);
       broadcastChannel.onmessage = handleBroadcastMessage;
@@ -89,11 +69,9 @@ export const initTabCoordinator = async (): Promise<void> => {
       } satisfies BroadcastMessage);
     }
 
-    // Attempt leader election via Web Locks
     if (isWebLocksAvailable()) {
       await attemptLeaderElection();
     } else {
-      // Fallback: become leader if Web Locks not available
       console.debug('[TabCoordinator] Web Locks not available, assuming leader role');
       store.setIsLeader(true);
       store.setIsReady(true);
@@ -104,13 +82,8 @@ export const initTabCoordinator = async (): Promise<void> => {
 };
 
 /**
- * Release this tab's leadership so a waiting follower is promoted. Call when the tab leaves the
- * authenticated app: leadership gates who maintains the SSE stream, so a tab that holds it while no
- * longer streaming starves every follower. A full tab close frees the lock via realm destruction.
- *
- * Clearing `initPromise` lets a later return to the app run the election again and take whichever
- * role is open: follower while another tab leads, leader when none does. That re-run also restores
- * the pending promotion request, so a sole tab picks the stream back up when it returns.
+ * Release leadership so a waiting follower is promoted. Call when the tab leaves the authenticated app: a tab holding leadership while not streaming starves every follower.
+ * Clearing `initPromise` lets a later return re-run the election and restore the pending promotion request.
  */
 export const releaseTabLeadership = (): void => {
   const store = tabCoordinatorStore.getState();
@@ -127,13 +100,11 @@ export const releaseTabLeadership = (): void => {
 /** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
 const attemptLeaderElection = (): Promise<void> => {
   const store = tabCoordinatorStore.getState();
-  // One controller per election: aborting it releases whichever lock this tab currently holds or
-  // awaits. `ifAvailable` cannot be combined with a signal, so the callback checks it by hand.
+  // One controller per election: aborting releases the lock this tab holds or awaits. `ifAvailable` cannot take a signal, so the callback checks it by hand.
   lockController = new AbortController();
   const { signal } = lockController;
 
   return new Promise<void>((resolveElection) => {
-    // Debug: Query existing locks first
     if (navigator.locks.query) {
       navigator.locks.query().then((state) => {
         const heldLocks = state.held?.filter((l) => l.name === leaderLockName) ?? [];
@@ -146,38 +117,35 @@ const attemptLeaderElection = (): Promise<void> => {
       });
     }
 
-    // Try to acquire the lock with ifAvailable: true first to quickly determine status
+    // `ifAvailable` resolves leader status immediately; a plain request would block until the held lock frees.
     navigator.locks
       .request(leaderLockName, { ifAvailable: true }, async (lock) => {
         console.debug('[TabCoordinator] Lock request callback, lock acquired:', !!lock);
 
         if (lock) {
-          // We got the lock - we're the leader
           console.debug('[TabCoordinator] Acquired leader lock');
           store.setIsLeader(true);
           store.setIsReady(true);
           resolveElection();
 
-          // Hold the lock until leadership is released (or the tab closes), then return to free it
+          // Returning frees the lock, so hold it until leadership is released or the tab closes.
           await untilAborted(signal);
           return;
         }
 
-        // Lock not available - we're a follower
         console.debug('[TabCoordinator] Another tab is leader, becoming follower');
         store.setIsLeader(false);
         store.setIsReady(true);
         resolveElection();
 
-        // Now wait for leadership in case current leader closes or leaves the app
-        // This runs in background and doesn't block initialization
+        // Runs in the background; does not block initialization.
         waitForLeadership(signal);
 
         return undefined;
       })
       .catch((error) => {
         console.debug('[TabCoordinator] Leader election error:', error);
-        // Fallback: become leader on error
+        // No election result means no other tab can be assumed to stream: take the role.
         store.setIsLeader(true);
         store.setIsReady(true);
         resolveElection();
@@ -185,10 +153,7 @@ const attemptLeaderElection = (): Promise<void> => {
   });
 };
 
-/**
- * Wait in background for leadership to become available.
- * Called by follower tabs to eventually become leader when current leader closes.
- */
+/** Follower tabs queue here and take over when the current leader closes or releases. */
 const waitForLeadership = (signal: AbortSignal): void => {
   const store = tabCoordinatorStore.getState();
 
@@ -197,7 +162,7 @@ const waitForLeadership = (signal: AbortSignal): void => {
       console.debug('[TabCoordinator] Promoted to leader');
       store.setIsLeader(true);
 
-      // Hold the lock until leadership is released, then return to free it
+      // Returning frees the lock, so hold it until leadership is released.
       await untilAborted(signal);
     })
     .catch((error) => {
@@ -209,9 +174,6 @@ const waitForLeadership = (signal: AbortSignal): void => {
     });
 };
 
-/**
- * Handle incoming BroadcastChannel messages.
- */
 const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => {
   const store = tabCoordinatorStore.getState();
   const message = event.data;
@@ -231,17 +193,14 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
   }
 
   if (message.type === 'stream-notification' && !store.isLeader) {
-    // Only process if we're a follower (leader already processed via SSE)
+    // The leader already processed this from its own SSE connection.
     for (const handler of notificationHandlers) {
       handler(message.notification, message.organizationId);
     }
   }
 };
 
-/**
- * Broadcast a stream notification to follower tabs.
- * Called by the leader when receiving SSE notifications.
- */
+/** Called by the leader for each SSE notification it receives. */
 export const broadcastNotification = (notification: AppStreamNotification, organizationId: string): void => {
   if (broadcastChannel) {
     broadcastChannel.postMessage({
@@ -252,10 +211,7 @@ export const broadcastNotification = (notification: AppStreamNotification, organ
   }
 };
 
-/**
- * Register a handler for stream notifications.
- * Used by followers to receive updates from the leader.
- */
+/** Followers register here to receive the leader's notifications. */
 export const onNotification = (
   handler: (notification: AppStreamNotification, organizationId: string) => void,
 ): (() => void) => {
@@ -265,9 +221,6 @@ export const onNotification = (
   };
 };
 
-/**
- * Check if this tab is currently the leader.
- */
 export const isLeader = (): boolean => {
   return tabCoordinatorStore.getState().isLeader;
 };

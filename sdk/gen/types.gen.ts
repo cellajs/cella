@@ -148,7 +148,7 @@ export type StreamNotification = {
   channelId: string | null;
   stx: StxBase | null;
   /**
-   * Last sequence position for a batched notification — client should fetch range
+   * Last sequence position for a batched notification: client should fetch range
    */
   batchUntilSeq: number | null;
   /**
@@ -2337,7 +2337,7 @@ export type PostAppCatchupData = {
       prefixes: Array<string>;
       entityTypes: Array<'attachment'>;
       /**
-       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement — a channel wall). Self views are answerable by direct home-scoped memberships.
+       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.
        */
       depth?: 'self' | 'subtree';
       /**

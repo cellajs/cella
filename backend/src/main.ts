@@ -1,7 +1,6 @@
 import { env } from './env';
 
-// Load exactly one runtime entry. Workers skip API initialization and wait for the API
-// to complete migrations; migrate mode performs role setup and exits.
+// Load exactly one runtime entry. Workers skip API initialization and wait for the API to complete migrations.
 if (env.MODE === 'migrate') {
   await import('./main.migrate');
 } else if (env.MODE === 'mcp') {

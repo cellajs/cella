@@ -1,18 +1,13 @@
 import * as scaleway from '@pulumiverse/scaleway';
 import { naming, region, tags } from '../pulumi-context';
 
-// VPC
-
 const vpc = new scaleway.network.Vpc('main-vpc', {
   name: naming.resource('vpc'),
   region,
   tags,
 });
 
-// Private Network
-
-/** IPv4 subnet of the private network; also the source allow-list for the
- *  ACL-guarded internal LB frontends (resources/loadbalancer.ts). */
+/** IPv4 subnet of the private network, and the source allow-list for the ACL-guarded internal LB frontends. */
 export const privateNetworkSubnet = '10.0.0.0/24';
 
 const privateNetwork = new scaleway.network.PrivateNetwork('main-private-network', {
@@ -25,10 +20,6 @@ const privateNetwork = new scaleway.network.PrivateNetwork('main-private-network
   },
 });
 
-// Exports
-
-/** VPC ID */
 export const vpcId = vpc.id;
 
-/** Private Network ID used by database and containers. */
 export const privateNetworkId = privateNetwork.id;

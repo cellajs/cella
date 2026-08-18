@@ -9,10 +9,7 @@ import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 
 const TOKEN_REFETCH_MS = 25 * 60 * 1000; // Refetch at 25min (TTL is 30min)
 
-/**
- * Fetches and maintains a context-scoped Yjs auth token in the user store; render per context (project/org
- * layout) so the token is ready before an editor opens.
- */
+/** Maintains a context-scoped Yjs auth token in the user store; render per context so the token is ready before an editor opens. */
 export function YjsTokenFetcher({
   entityType,
   tenantId,
@@ -38,20 +35,17 @@ export function YjsTokenFetcher({
     staleTime: TOKEN_REFETCH_MS,
     refetchInterval: TOKEN_REFETCH_MS,
     refetchIntervalInBackground: true,
-    // Override the app-wide `false`: browsers throttle or pause timers in backgrounded tabs, so on tab
-    // wake / resume the interval may not have fired. This refetches on visibility only when stale (>25min).
+    // Overrides the app-wide `false`: backgrounded tabs throttle the interval, so refetch on focus when stale.
     refetchOnWindowFocus: true,
     retry: (count, error) => {
       if (error instanceof ApiError && error.status === 403) return false;
       return count < 3;
     },
-    // Silently suppress global error toast; collaborative mode stays disabled on failure.
+    // Suppress the global error toast; collaborative mode stays disabled on failure.
     meta: { suppressGlobalErrorToast: true },
   });
 
-  // Sync query state into the user store, where the non-React Yjs connection layer reads it
-  // (including cached returns). A 403 wins over stale cached data: access denied must disable
-  // collaborative mode even when an old token is still in the query cache.
+  // The non-React Yjs connection layer reads the store; a 403 wins over a cached token so access denial disables collaborative mode.
   useEffect(() => {
     if (error instanceof ApiError && error.status === 403) setYjsToken(tokenKey, null);
     else if (token) setYjsToken(tokenKey, token);

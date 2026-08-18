@@ -17,10 +17,8 @@ import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
 import type { GenComponentSchema, GenOperationSummary, GenResponseSummary, GenSchema } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
-/** Resolve response schema, looking up by name from prefetched schemas for error responses */
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
-  // For error responses (no embedded schema), look up by name in schemas.gen.json
   if (response.name) {
     const schemaEntry = schemas.find((s) => s.name === response.name);
     return schemaEntry?.schema;
@@ -36,21 +34,16 @@ interface ExamplesAccordionProps {
   typesIndex: DefinitionIndex;
 }
 
-/**
- * Accordion component to display operation response examples.
- * Only shows responses that have examples, with example view preselected.
- */
+/** Lists only responses that carry an example, with the example view preselected. */
 function ExamplesAccordion({ responses, schemas, operationId, zodIndex, typesIndex }: ExamplesAccordionProps) {
   const { t } = useTranslation();
 
-  // Filter to only responses with examples
   const responsesWithExamples = responses.filter((r) => r.example !== undefined);
 
   if (responsesWithExamples.length === 0) {
     return <div className="py-2 text-muted-foreground text-sm">{t('c:docs.no_examples_defined')}</div>;
   }
 
-  // Default to first response with example expanded
   const defaultValue = [String(responsesWithExamples[0].status)];
 
   return (
@@ -101,9 +94,6 @@ interface OperationExamplesProps {
   tagName: string;
 }
 
-/**
- * Opens a sheet with operation examples view (success responses with examples).
- */
 export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
   useSheeter.getState().create(
     <Suspense fallback={<Spinner className="mt-[40vh]" />}>
@@ -121,10 +111,7 @@ export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLB
   );
 }
 
-/**
- * Operation examples component that shows responses with examples.
- * Wrap the parent component in a Suspense boundary for optimal batching.
- */
+/** Wrap the parent component in a Suspense boundary for optimal batching. */
 export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
   const { t } = useTranslation();
 
@@ -136,7 +123,6 @@ export function OperationExamples({ operationId, tagName }: OperationExamplesPro
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
-  // Filter to only success responses (2xx) with examples
   const successResponsesWithExamples = responses.filter(
     (r) => r.status >= 200 && r.status < 300 && r.example !== undefined,
   );

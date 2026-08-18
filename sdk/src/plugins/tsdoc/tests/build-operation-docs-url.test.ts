@@ -5,9 +5,7 @@ import { config } from '../../../../../shared/config/config.default';
 import { generateOperationHash } from '../../openapi-parser/file-generators';
 import { buildOperationDocsUrl } from '../plugin';
 
-// Docs URL format must match the frontend operations route: reads `operationTag`
-// and resolves the anchor via generateOperationHash. Guards against emitting
-// unresolvable api.cellajs.com/docs#... links.
+// The docs URL format must match the frontend operations route, which reads `operationTag` and resolves the anchor through generateOperationHash.
 describe('buildOperationDocsUrl', () => {
   it('builds a frontend docs link with the operationTag param and hash anchor', () => {
     const url = buildOperationDocsUrl('post', '/auth/check-email', 'auth');

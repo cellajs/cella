@@ -3,7 +3,6 @@ interface Props {
   title: string;
 }
 
-/** Renders the pop confirm component. */
 export function PopConfirm({ children, title }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:w-max sm:max-w-72 sm:p-3">

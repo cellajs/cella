@@ -18,7 +18,6 @@ interface SchemasSidebarProps {
   activeTag?: string;
 }
 
-/** Sidebar listing schema tags with their schemas. */
 export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
   const [layoutId] = useState(() => nanoid());
   const { prerender } = usePrerenderTrigger('schemas');

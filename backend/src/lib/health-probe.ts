@@ -1,11 +1,7 @@
 import { appConfig } from 'shared';
 import type { ProbeResult } from '#/lib/health-helpers';
 
-/**
- * Probes sibling workers through their real network path to include routing and config faults.
- * Short caching keeps backend health checks cheap, and a timeout prevents stalled workers from
- * blocking the endpoint.
- */
+/** Probes siblings over their real network path; short caching keeps it cheap and the timeout bounds a stall. */
 const PROBE_TIMEOUT_MS = 2_000;
 const PROBE_CACHE_TTL_MS = 10_000;
 
@@ -25,9 +21,7 @@ async function runProbe(baseUrl: string): Promise<ProbeResult> {
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   const startedAt = Date.now();
   try {
-    // WebSocket workers advertise ws(s):// public URLs (e.g. yjs), but their
-    // The /health endpoint speaks plain HTTP on the same host, and fetch() rejects
-    // the ws scheme outright. Normalize the scheme so healthy services remain reachable.
+    // WebSocket workers advertise ws(s):// URLs, but /health speaks plain HTTP and fetch() rejects the ws scheme
     const httpBase = baseUrl.replace(/^ws(s?):/, 'http$1:');
     const res = await fetch(`${httpBase}/health?depth=full`, {
       signal: controller.signal,

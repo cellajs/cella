@@ -6,9 +6,6 @@ import { errorResponseRefs } from '#/schemas';
 import { mockPublicCountsResponse } from './metrics-mocks';
 
 const metricRouteConfig = {
-  /**
-   * Get public counts
-   */
   getPublicCounts: createXRoute({
     operationId: 'getPublicCounts',
     method: 'get',

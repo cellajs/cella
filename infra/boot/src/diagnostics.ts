@@ -18,15 +18,10 @@ export interface UploadBootDiagnosticsOptions {
   fetchImpl?: FetchLike;
 }
 
-// Mirrors the cloud-init log scrub (resources/cloud-init.ts scrubCloudInitLogs)
-// so both diagnostic channels drop the same secret-bearing lines.
+// Mirrors the cloud-init log scrub (resources/cloud-init.ts scrubCloudInitLogs) so both diagnostic channels drop the same secret-bearing lines.
 const secretLinePattern = /SECRET|PASSWORD|API_KEY|DATABASE_URL|docker login/i;
 
-/**
- * Replace secret-bearing lines before a log leaves the VM: an app that prints
- * a DSN or key on crash must not have it amplified into the boot-diag bucket
- * and telemetry bodies.
- */
+/** Replace secret-bearing lines before a log leaves the VM, so a DSN or key printed on crash never reaches the boot-diag bucket or telemetry bodies. */
 export function scrubSecretLines(text: string): string {
   return text
     .split('\n')
@@ -100,8 +95,7 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
     '',
     scrubSecretLines(log),
   ];
-  // The boot runner runs containerized without the host boot log mounted, so the file
-  // read above is usually empty; the captured app logs carry the crash reason.
+  // The boot runner runs containerized without the host boot log mounted, so the file read above is usually empty and the captured app logs carry the crash reason.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = parts.join('\n');
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`];

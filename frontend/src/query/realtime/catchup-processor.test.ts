@@ -2,8 +2,7 @@ import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 
-// Real builder instance and real resolvers over a synthetic sub-org hierarchy; only the
-// app-bound config and hierarchy singletons are replaced.
+// Real builder and resolvers over a synthetic sub-org hierarchy; only the app-bound config and hierarchy singletons are replaced.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const roles = actual.createRoleRegistry(['member'] as const);
@@ -46,12 +45,12 @@ vi.mock('./membership-ops', () => ({
 
 vi.mock('./sync-priority', () => ({
   getTenantIdForOrg: vi.fn(() => null),
-  // Viewing tier by default: catchup flushes inline through the fetch prioritizer (gap 4a fold).
+  // Viewing tier by default, so catchup flushes inline through the fetch prioritizer.
   getSyncTier: vi.fn(() => ({ min: 0, max: 0 })),
   isViewingChannel: () => true,
 }));
 
-// The REAL fetch prioritizer runs (it is the consolidated fetch path); mock its outward boundaries.
+// The real fetch prioritizer runs as the single fetch path; only its outward boundaries are mocked.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
 vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: vi.fn() }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
@@ -78,7 +77,7 @@ const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 const { processAppCatchup } = await import('./catchup-processor');
 
-// The real fetch prioritizer holds module state (dirty map, timer); clear it between tests.
+// The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
 
 /** Views-contract response with one org view answer for attachment. */
@@ -189,7 +188,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processAppCatchup(okViewResponse(9));
 
-    // Fetched the window, but reachedSeq (0) < frontier (9): never advance silently.
+    // Fetched the window, but reachedSeq (0) < frontier (9): the cursor must not advance.
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
@@ -221,8 +220,7 @@ describe('catchup processor (view-driven)', () => {
   });
 
   it('a caught-up view (frontier <= cursor) neither fetches nor invalidates the cached list', async () => {
-    // Reload contract: a cursor at the frontier confirms the warm cache without refetching.
-    // A fresh organization avoids count-drift comparison in the module-level tracker.
+    // Reload contract: a cursor at the frontier confirms the warm cache without refetching. A fresh org avoids count-drift comparison in the module-level tracker.
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, deltaFetch);

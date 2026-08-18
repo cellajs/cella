@@ -21,9 +21,6 @@ import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
 type RequestsListParams = RequestFilters & { limit?: number };
 
-/**
- * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
- */
 export const requestsKeys = {
   table: {
     base: ['requests', 'table'] as const,
@@ -34,7 +31,6 @@ export const requestsKeys = {
   delete: ['requests', 'delete'] as const,
 };
 
-/** Infinite query options for a paginated list of requests. */
 export const requestsListQueryOptions = (params: RequestsListParams) => {
   const defaults = requestsSearchDefaults;
   const {
@@ -57,11 +53,6 @@ export const requestsListQueryOptions = (params: RequestsListParams) => {
   });
 };
 
-/**
- * Mutation hook to create a new request.
- *
- * @returns Mutation hook for creating a new request.
- */
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create,
@@ -69,11 +60,7 @@ export const useCreateRequestMutation = () => {
   });
 };
 
-/**
- * Mutation hook for approving user access requests by sending invites.
- *
- * @returns A mutation that sends an invitation email to a user who has requested access.
- */
+/** Approving a request sends the user an invitation email. */
 export const useSendApprovalInviteMutation = () => {
   return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
     mutationKey: requestsKeys.approve,
@@ -83,11 +70,6 @@ export const useSendApprovalInviteMutation = () => {
   });
 };
 
-/**
- * Mutation hook to delete requests.
- *
- * @returns Mutation hook for deleting requests.
- */
 export const useDeleteRequestMutation = () => {
   return useMutation<boolean, ApiError, Request[]>({
     mutationKey: requestsKeys.delete,

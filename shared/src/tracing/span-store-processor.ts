@@ -44,9 +44,8 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
 }
 
 /**
- * Bridges OTel spans into the SpanStore: converts each ReadableSpan to SpanData and pushes
- * it into a SpanStore and/or fires a callback, so devtools UI (frontend) and debug logging
- * (CDC) can consume OTel spans transparently.
+ * Converts each ReadableSpan to SpanData, pushing it into a SpanStore and firing the callback,
+ * so the frontend devtools UI and CDC debug logging both read OTel spans.
  */
 export function createSpanStoreProcessor(options: SpanStoreProcessorOptions): SpanProcessor {
   const { store, onSpanEnd } = options;

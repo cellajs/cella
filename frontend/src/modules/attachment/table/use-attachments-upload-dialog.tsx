@@ -9,7 +9,6 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-/** Provides attachments upload dialog state and actions. */
 export const useAttachmentsUploadDialog = (tenantId: string, organizationId: string) => {
   const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
 
@@ -25,8 +24,7 @@ export const useAttachmentsUploadDialog = (tenantId: string, organizationId: str
         return;
       }
 
-      // Use the mutation for optimistic cache insertion, SSE-safe upsert, and offline replay.
-      // Direct requests could upload bytes without creating the attachment row.
+      // The mutation gives optimistic insertion, SSE-safe upsert and offline replay; a direct request could upload bytes without creating the row.
       createAttachments.mutate(attachments);
     };
 

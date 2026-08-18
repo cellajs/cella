@@ -9,13 +9,8 @@ import { mockUserBase, mockUserMinimalBase } from '#/schemas/entity-base-mocks';
 /** MembershipBase type defined here to avoid circular dependency with memberships-schema */
 type MembershipBase = Omit<MembershipModel, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
 
-// Tracks the current order offset for memberships per context (e.g., organization)
 const membershipOrderMap: Map<string, number> = new Map();
 
-/**
- * Returns a unique order offset for a given context (e.g., organization ID).
- * Ensures incremental order values for memberships within the same context.
- */
 export const getMembershipOrderOffset = (channelId: string): number => {
   if (!membershipOrderMap.has(channelId)) {
     membershipOrderMap.set(channelId, membershipOrderMap.size + 1);
@@ -35,9 +30,8 @@ const rootChannelType = hierarchy.channelTypes.find(
 ) as ChannelEntityType;
 
 /**
- * Membership location columns for wire/response mocks: all contexts start null, ancestors get
- * invented UUIDs, and the target column is always identical to the denormalized `channelId`.
- * Never use for rows that are inserted into the database: invented ancestor IDs violate FKs.
+ * Membership location columns for wire mocks: contexts start null, ancestors get invented UUIDs, and the target column
+ * always equals the denormalized `channelId`. Never use for database rows: invented ancestor IDs violate FKs.
  */
 const generateMockMembershipChannelIdColumns = (
   channelType: ChannelEntityType,
@@ -57,10 +51,8 @@ const generateMockMembershipChannelIdColumns = (
 };
 
 /**
- * Membership location columns for a real channel entity row: all contexts start null, ancestors are
- * read off the row itself (nullable ancestors stay null), `overrides` win over derived values, and
- * the target column is always identical to the denormalized `channelId`. Safe for database inserts:
- * ancestor IDs are never invented, so FK constraints hold.
+ * Membership location columns for a real channel entity row: ancestors are read off the row (nullable ones stay null),
+ * `overrides` win, and the target column equals the denormalized `channelId`. Safe for inserts: no ancestor ID is invented.
  */
 const deriveMembershipChannelIdColumns = (
   channelType: ChannelEntityType,
@@ -108,9 +100,8 @@ const generateMembershipBase = (options: MockMembershipBaseOptions = {}): Member
 };
 
 /**
- * Mock membership linking a user to a channel entity (any type). Ancestor ID columns are derived
- * from the channel entity row itself (with `overrideIds` winning), never invented, so the result is
- * safe to insert against FK constraints; ordering via `getMembershipOrderOffset`.
+ * Mock membership linking a user to a channel entity. Ancestor ID columns are derived from the channel row
+ * (`overrideIds` win) and never invented, so the result is safe against FK constraints.
  */
 export const mockChannelMembership = <T extends ChannelEntityType>(
   channelType: T,

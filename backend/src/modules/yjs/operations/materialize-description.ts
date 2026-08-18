@@ -21,13 +21,8 @@ export interface MaterializeDescriptionInput {
 }
 
 /**
- * Persist a Yjs collab session's description to the entity's durable record,
- * on behalf of the last editing user. Called by the Yjs relay (secret-gated route).
- *
- * Synthesizes an AuthContext for the editing user and dispatches to the entity's
- * registered materializer, which runs the standard update pipeline: permission
- * re-check (defense in depth, the relay already verified, but access may have been
- * revoked mid-session), server-HLC stamping, derived-field computation, CDC/SSE.
+ * Persists a Yjs collab description on behalf of the last editing user; called by the Yjs relay.
+ * Dispatches to the entity's materializer, which re-checks permission because access may be revoked mid-session.
  */
 export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<{ sanitized: boolean }> {
   if (!isProduct(input.entityType)) {
@@ -48,8 +43,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
 
   const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-  // Build only the worker context consumed by the update pipeline.
-  // Persist as the last editor without a system-administrator bypass, matching relay authorization.
+  // Worker context only: persist as the last editor with no system-administrator bypass, matching relay authorization.
   const ctx = {
     var: {
       user,
@@ -71,8 +65,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     });
   }
 
-  // The relay owns the server-origin envelope: empty fieldTimestamps lets the pipeline stamp a
-  // fresh server HLC; the module only names which update op runs.
+  // Empty fieldTimestamps lets the pipeline stamp a fresh server HLC.
   await materializer(
     ctx,
     input.entityId,

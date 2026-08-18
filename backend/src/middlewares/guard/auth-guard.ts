@@ -11,9 +11,8 @@ import { updateLastSeenAt } from '../update-last-seen';
 import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
 
 /**
- * Authenticates the session and populates the user, memberships, and base database context.
- * Session and membership lookups use short TTL caches. The RLS lookup transaction ends before
- * `next()` so long-lived requests do not retain it; handlers open their own scoped reads.
+ * Authenticates the session and sets user, memberships, and base db context from short TTL caches. The RLS lookup
+ * transaction ends before `next()`, so handlers open their own scoped reads.
  */
 export const authGuard = xMiddleware(
   {
@@ -27,7 +26,6 @@ export const authGuard = xMiddleware(
       // Parse session cookie (lightweight, no DB)
       const { sessionToken, sessionId } = await getParsedSessionCookie(ctx);
 
-      // Check session cache by session row ID
       const cachedSession = getSessionCache(sessionId);
       if (cachedSession) {
         ctx.set('user', cachedSession.user);
@@ -47,7 +45,6 @@ export const authGuard = xMiddleware(
         }
         ctx.set('memberships', memberships);
 
-        // Update last seen with the in-memory throttle.
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
         }
@@ -57,12 +54,10 @@ export const authGuard = xMiddleware(
 
       const { session, user } = await validateSession(sessionToken);
 
-      // Update user last seen date (throttled to 5 min intervals)
       if (ctx.req.method === 'GET') {
         updateLastSeenAt(user.id);
       }
 
-      // Set user in context
       ctx.set('user', user);
       ctx.set('userId', user.id);
       ctx.set('sessionToken', sessionToken);
@@ -90,18 +85,15 @@ export const authGuard = xMiddleware(
         };
       });
 
-      // Store values in context for downstream use
       ctx.set('memberships', memberships);
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 
-      // Populate caches for subsequent requests
       setSessionCache(session.id, user.id, { user, isSystemAdmin });
       setMembershipCache(user.id, memberships);
 
       await next();
     } catch (err) {
-      // If session validation fails, remove cookie
       if (err instanceof AppError) deleteAuthCookie(ctx, 'session');
       throw err;
     }

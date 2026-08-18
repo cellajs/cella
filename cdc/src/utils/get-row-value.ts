@@ -1,9 +1,7 @@
 import type { RowData } from './convert-row-keys';
 import { snakeToCamel } from './snake-to-camel';
 
-/**
- * Get a value from row data, checking both camelCase and snake_case.
- */
+/** Checks both camelCase and snake_case keys. */
 export function getRowValue(row: RowData, columnName: string | null): string | null {
   if (!columnName) return null;
 

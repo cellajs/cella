@@ -26,7 +26,6 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     throw new Error('organizationId required for local storage');
   }
 
-  // Build upload context for sync worker
   const uploadContext: UploadContext = {
     templateId: tokenQuery.templateId,
     publicBucket: tokenQuery.publicBucket,
@@ -37,12 +36,10 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
   }
 
-  // Prepare files for a manual 'complete' event (successfully uploaded files)
   const localFiles = Object.values(files).map((el) => {
     const basename = el.meta.name?.replace(`.${el.extension}`, '');
     const type = el.type?.split('/')[0] || 'file';
 
-    // Convert all meta values to strings
     const user_meta = Object.fromEntries(Object.entries(el.meta || {}).map(([key, value]) => [key, String(value)]));
 
     return {

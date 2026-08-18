@@ -24,17 +24,14 @@ export async function sendNewsletterOp(ctx: AuthContext, input: SendNewsletterIn
   // Preview sends are addressed only to the initiating admin and need no organization scope.
   const recipientsRecords = toSelf ? [] : await findNewsletterRecipients(ctx, { organizationIds, roles });
 
-  // Stop if no recipients
   if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');
 
-  // Add unsubscribe link to each recipient
   let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
     ...recipient,
     lng: user.language,
     unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
   }));
 
-  // If toSelf is true, send the email only to self
   if (toSelf)
     recipients = [
       {
@@ -46,10 +43,8 @@ export async function sendNewsletterOp(ctx: AuthContext, input: SendNewsletterIn
       },
     ];
 
-  // Replace all src attributes in content
   const newContent = await replaceSignedSrcs(content);
 
-  // Prepare emails and send them
   const staticProps = { content: newContent, subject, testEmail: toSelf };
   await mailer.prepareEmails(newsletterEmail, staticProps, recipients, user.email);
 

@@ -27,9 +27,8 @@ let runtimeDb: NodePgDatabase;
 // so a missing trigger fails the suite.
 const guardSuiteReady = await (async () => {
   try {
-    // Open the GRANT layer wide, exactly as a `permission=all` reconcile would. Without this the
-    // grant would reject the write first and the trigger would never be exercised. The tests
-    // would pass while proving nothing.
+    // Open the GRANT layer wide, as a `permission=all` reconcile would; otherwise the grant
+    // rejects the write first and the trigger is never exercised.
     await adminDb.execute(sql`GRANT USAGE ON SCHEMA public TO runtime_role`);
     await adminDb.execute(sql`GRANT SELECT, INSERT, UPDATE, DELETE ON system_roles TO runtime_role`);
     await adminDb.execute(sql`GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role`);
@@ -106,8 +105,8 @@ afterAll(async () => {
   });
 
   it('does not break the ON DELETE CASCADE from users', async () => {
-    // The cascade issues a DELETE on system_roles as the referencing table's owner, so the guard
-    // must not fire because that would break account deletion for every user holding a system role.
+    // The cascade deletes system_roles as the referencing table's owner; the guard must not fire
+    // or account deletion breaks for every user holding a system role.
     await expect(runtimeDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`)).resolves.toBeDefined();
 
     const orphaned = await adminDb.execute(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);

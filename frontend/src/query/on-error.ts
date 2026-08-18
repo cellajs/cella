@@ -20,32 +20,25 @@ const getFallbackMessage = (status: number): string | undefined => {
   return messages[status];
 };
 
-/**
- * Resolves the best error message for display.
- * Priority: resource-specific translation -> type translation -> raw message -> status fallback
- */
+/** Priority: resource-specific translation, then type translation, then the backend message, then a status fallback. */
 const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
-  // Priority 1: Resource-specific translation (e.g., resource_not_found with entity interpolation)
   if (entityType && type && i18n.exists(`error:resource_${type}`)) {
     return i18n.t(`error:resource_${type}` as TKey, { resource: i18n.t(entityType) });
   }
 
-  // Priority 2: Direct type translation (e.g., invalid_slug, invalid_cdn_url)
   if (type && i18n.exists(`error:${type}`)) {
     return i18n.t(`error:${type}` as TKey);
   }
 
-  // Priority 3: Use message from backend (contains Zod-translated message for form errors)
+  // The backend message carries the Zod-translated text for form errors.
   if (message) return message;
 
-  // Priority 4: Status-based fallback
   return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
 /** Global handler for API request errors: network errors, ApiErrors, and 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
-  // Handle network-level failures (no HTTP response received). isNetworkError excludes ApiError,
-  // so a server that responded (any status) falls through to the ApiError handling below.
+  // isNetworkError excludes ApiError, so a server that responded with any status falls through to the handling below.
   if (isNetworkError(error)) {
     checkConnectivity();
     return;
@@ -64,11 +57,10 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // Offline mode
     else if (statusCode === 504) return useAlertStore.getState().setDownAlert('offline');
 
-    // Hide error if casually trying /me or /me/menu. It should fail silently if no valid session.
+    // A /me or /me/menu probe without a valid session shows no error.
     if (isCasualSessionAttempt && statusCode === 401) return;
 
-    // Unexpected server errors: structured console.error is the Maple SDK's capture
-    // path, and logId ties the session timeline to the backend request log.
+    // The structured console.error is the Maple SDK's capture path, and logId ties the session timeline to the backend request log.
     if (statusCode >= 500) {
       console.error('[api]', error.type ?? 'server_error', {
         logId: error.logId,
@@ -82,17 +74,15 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     const skipToast = typeof suppress === 'function' ? suppress(error) : suppress === true;
 
     if (!skipToast) {
-      // Translate, try most specific first
       const errorMessage = getErrorMessage(error);
 
-      // For 429 errors, show remaining wait time as description
       let description: string | undefined;
       if (statusCode === 429 && error.meta?.retryAfter) {
         const seconds = Number(error.meta.retryAfter);
         const minutes = Math.ceil(seconds / 60);
         description = i18n.t('c:retry_in_minutes', { count: minutes });
       }
-      // Surface the correlation id on error toasts so users can quote it to support.
+      // Error toasts show the correlation id so users can quote it to support.
       else if (error.severity === 'error' && error.logId) {
         description = `Log ID: ${error.logId}`;
       }
@@ -101,23 +91,20 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       toaster[toastType](errorMessage, { description });
     }
 
-    // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
       const redirectOptions: { to: string; search?: { redirect: string } } = {
         to: '/auth/authenticate',
       };
 
-      // Save the current path as a redirect
       if (location.pathname) {
         const url = new URL(location.href);
         const redirectPath = url.pathname + url.search;
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // Close sensitive stores without wiping, then go to sign-in. Pass `false` so the localUserDb (unsynced offline
-      // work) stays on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
+      // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
       teardownUserState(false);
-      // Dynamic import breaks circular dep: query-client -> on-error -> router -> route tree -> query-client
+      // Dynamic import breaks the cycle query-client -> on-error -> router -> route tree -> query-client.
       import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));
     }
   }

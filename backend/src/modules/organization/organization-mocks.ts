@@ -15,12 +15,9 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertOrganizationModel, OrganizationModel } from '#/modules/organization/organization-db';
 
-// Enforces unique organization names
 const organizationName = new UniqueEnforcer();
 
-/**
- * Reset unique enforcers - call this when clearing the database in tests.
- */
+/** Call when clearing the database in tests. */
 export const resetOrganizationMockEnforcers = () => {
   organizationName.reset();
 };
@@ -58,20 +55,12 @@ const generateOrganizationBase = (id: string, tenantId: string, name: string, cr
   };
 };
 
-/**
- * Generates a mock organization row with all fields populated.
- * Used for DB seeding, tests, and as base for API response examples.
- * Enforces unique organization names.
- */
 export const mockOrganization = (): InsertOrganizationModel => {
   const name = organizationName.enforce(() => faker.company.name());
   return generateOrganizationBase(mockUuid(), mockTenantId(), name, mockPastIsoDate());
 };
 
-/**
- * Generates a mock organization API response with deterministic seeding.
- * Adds API-only fields (included.membership, included.counts) to the base mock.
- */
+/** Adds API-only fields (included.membership, included.counts) to the base mock. */
 export const mockOrganizationResponse = (
   key = 'organization:default',
 ): OrganizationModel & {
@@ -85,10 +74,8 @@ export const mockOrganizationResponse = (
     const organizationId = mockUuid();
     const tenantId = mockTenantId();
 
-    // Generate base organization fields
     const base = generateOrganizationBase(organizationId, tenantId, faker.company.name(), createdAt);
 
-    // Generate membership base with the organization ID
     const membership = mockMembershipBase(`${key}:membership`, {
       channelType: 'organization',
       channelId: organizationId,

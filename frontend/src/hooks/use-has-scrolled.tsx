@@ -7,13 +7,9 @@ interface UseHasScrolledOptions {
   immediate?: boolean;
 }
 
-// Keys that typically trigger scrolling
 const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
 
-/**
- * True once the user initiates a scroll (via wheel/touch/keyboard, so it works with any scroll
- * container), and stays true. Waits 2s before activating to avoid false positives on page load.
- */
+/** True once the user scrolls with wheel, touch or keyboard, and stays true. Waits `delay` before listening. */
 export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScrolledOptions = {}) => {
   const [hasScrolled, setHasScrolled] = useState(false);
 

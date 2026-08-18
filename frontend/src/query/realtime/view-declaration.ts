@@ -4,32 +4,21 @@ import { queryClient } from '~/query/query-client';
 import { deriveGrantBoundaryViews } from '~/query/realtime/views';
 import { syncStore } from './sync-store';
 
-/**
- * Resolve cached sub-organization channel paths through an app registration.
- * Unknown paths skip precise grant views while organization baselines retain coverage.
- */
+/** Apps register a resolver for cached sub-organization channel paths. An unknown path skips its precise grant view, and the organization baseline still covers it. */
 let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
 
-/** Registers channel path resolver. */
 export function registerChannelPathResolver(
   resolver: (channelType: string | null, channelId: string) => string | null,
 ): void {
   channelPathResolver = resolver;
 }
 
-/**
- * Resolve a channel's canonical path via the registered resolver. `channelType` is null when
- * the caller only knows the id (the fetch prioritizer's covering-prefix computation); app resolvers
- * then search their cached channel types.
- */
+/** `channelType` is null when the caller knows only the id, as in the fetch prioritizer's covering-prefix computation; resolvers then search their cached channel types. */
 export function resolveChannelPath(channelType: string | null, channelId: string): string | null {
   return channelPathResolver(channelType, channelId);
 }
 
-/**
- * Rebuilds grant-boundary views from current membership cache before each catchup request.
- * Built-in organization views absorb equivalent derived views; disappeared grants remove theirs.
- */
+/** Rebuilt from the membership cache before each catchup request: built-in org views absorb equivalent derived views, and a disappeared grant removes its own. */
 export function declareViewsFromMemberships(): void {
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
   const memberships = data?.items ?? [];

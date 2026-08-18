@@ -14,10 +14,6 @@ interface LinksSectionProps {
 
 const rowClass = 'w-full justify-start px-3 font-medium lowercase';
 
-/**
- * Sidebar section with plain link/action rows: status page, contact dialog, sign in,
- * the OpenAPI spec viewer and the llms.txt page (mirrors the menu-sheet info section).
- */
 export function LinksSection({ label, onClose }: LinksSectionProps) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement | null>(null);
@@ -31,7 +27,6 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
         <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
       </div>
       <SidebarGroupContent>
-        {/* Inner SidebarGroup mirrors the other sections' wrappers for alignment */}
         <SidebarGroup className="flex flex-col gap-1 p-1 pt-0">
           {hasStatusPage && (
             <Button

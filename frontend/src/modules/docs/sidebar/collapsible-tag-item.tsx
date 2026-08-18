@@ -54,8 +54,7 @@ function CollapsibleTagItemBase<T>({
   itemKey,
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
-  // Match the sheet-mode threshold used across the docs sidebar (below `md`); a tag group has
-  // deeper nesting, so in sheet mode expanding it must keep the sheet open, not close it.
+  // Sheet-mode threshold (below `md`): expanding a nested tag group must keep the sheet open
   const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
@@ -126,7 +125,6 @@ function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: Coll
 }
 
 // memo doesn't preserve generics, so we cast
-/** Renders a collapsible tag branch in the documentation sidebar. */
 export const CollapsibleTagItem = memo(
   CollapsibleTagItemBase,
   collapsibleTagItemEqual,

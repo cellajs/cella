@@ -10,11 +10,7 @@ import {
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAuditUsers } from '#/schemas/entity-base-mocks';
 
-/**
- * Generates a mock attachment with all fields populated.
- * Uses deterministic seeding - same key produces same data.
- * Channel entity ID columns are generated dynamically from the attachment's hierarchy ancestors.
- */
+/** Deterministic: the same key produces the same data. */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
   withFakerSeed(key, () => {
     const filename = faker.system.fileName();

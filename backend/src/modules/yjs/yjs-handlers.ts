@@ -25,11 +25,7 @@ const materializeBodySchema = z.object({
   editedBy: z.uuid(),
 });
 
-/**
- * Internal relay → backend endpoint: persist a Yjs collab session's description.
- * Plain (non-OpenAPI) route, outside the public API contract. Secret-gated
- * with the same shared secret the relay uses for edit tokens (CDC-auth precedent).
- */
+/** Relay-to-backend route persisting a Yjs collab description. Non-OpenAPI, outside the public API, gated by the relay's shared secret. */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-secret');
   if (!secret || secret !== env.YJS_SECRET) {

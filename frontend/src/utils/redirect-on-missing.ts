@@ -3,10 +3,7 @@ import { redirect } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { useToastStore } from '~/modules/common/toaster/toast-store';
 
-/**
- * Asserts a required entity is present, else throws a redirect to /home (narrows to NonNullable).
- * Shows an offline cache-miss toast when offline.
- */
+/** Asserts an entity is present (narrowing to NonNullable) or redirects to /home, toasting an offline cache miss. */
 export function redirectOnMissing<T>(entity: T): asserts entity is NonNullable<T> {
   if (entity != null) return;
   if (!onlineManager.isOnline()) {

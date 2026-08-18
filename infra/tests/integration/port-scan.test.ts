@@ -33,8 +33,7 @@ describe.skipIf(!HOST)('port-closed scan against $STAGING_HOST', () => {
   for (const port of PORTS_THAT_MUST_BE_CLOSED) {
     it(`port ${port} is not publicly reachable`, async () => {
       const result = await probe(HOST!, port);
-      // 'timeout' from a stateful firewall is also acceptable (the firewall
-      // dropped the SYN). Only an explicit handshake fails the test.
+      // A 'timeout' from a stateful firewall that dropped the SYN is acceptable; only an explicit handshake fails the test.
       expect(result, `port ${port} unexpectedly reachable on ${HOST}`).not.toBe('open');
     });
   }

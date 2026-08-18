@@ -25,14 +25,11 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   prefix?: string;
 };
 
-/** Inner input that uses Field.Control for automatic label/aria association */
+/** Field.Control wrapper, for automatic label and aria association. */
 function SlugInput(props: React.ComponentProps<typeof InputGroupInput>) {
   return <Field.Control render={<InputGroupInput {...props} />} />;
 }
 
-/**
- * Form field for entering a URL slug with auto-generation from a name and availability checking.
- */
 export function SlugFormField<TFieldValues extends FieldValues>({
   control,
   label,
@@ -59,10 +56,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const form = useFormContext<{ slug: string }>();
 
-  // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: name });
 
-  // Check if slug is available
   const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
     mutationFn: async (body) => {
@@ -80,13 +75,11 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     },
   });
 
-  // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
     return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
   };
 
-  // Check on change
   useEffect(() => {
     if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug))
       return setSlugAvailable('blank');
@@ -100,13 +93,12 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);
 
-  // In create forms, auto-generate slug from name
+  // Create forms derive the slug from the name until the user edits it
   useEffect(() => {
     if (previousSlug || isDeviating) return;
     form.setValue(name, slugify(nameValue || '', { lower: true, strict: true }));
   }, [nameValue]);
 
-  // Revert to previous slug
   const revertSlug = () => {
     form.resetField(name);
   };

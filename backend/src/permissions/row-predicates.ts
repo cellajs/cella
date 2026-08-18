@@ -16,11 +16,7 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
   return column;
 };
 
-/**
- * Compile a single row condition (by name) to a predicate over `table`'s rows for the acting
- * user. The name-keyed switch is the SQL twin of the check-form's `matchesRowCondition`; the two
- * must agree, asserted by the parity test. Anonymous actors never match actor-bound forms.
- */
+/** SQL twin of the check-form `matchesRowCondition` (parity-tested); anonymous actors never match actor-bound forms. */
 export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: Actor): SQL => {
   switch (name) {
     case 'own': {
@@ -34,20 +30,15 @@ export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable
   }
 };
 
-/**
- * Assembled WHERE clause for a collection read. Discriminated so "no restriction" can
- * never be confused with "no rows". Returning a bare `undefined` where-clause for an
- * empty scope would leak the whole table.
- */
+/** WHERE clause for a collection read, discriminated so an empty scope cannot become a bare `undefined` that leaks the table. */
 export type CollectionReadWhere =
   | { kind: 'all' } // org-wide unconditional read: no scope restriction needed
   | { kind: 'none' } // no readable scope: op should return an empty list without querying
   | { kind: 'where'; where: SQL };
 
 /**
- * Builds the OR-combined SQL predicate for resolved collection scopes.
- * Intermediate grants use their own denormalized ancestor ID column, while home grants use
- * `homeChannelColumn`; row conditions compile against the actor.
+ * OR-combines the resolved collection scopes: intermediate grants filter by their own denormalized
+ * ancestor id column, home grants by `homeChannelColumn`.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
@@ -58,12 +49,7 @@ export const buildCollectionReadWhere = (
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
   if (filter.homeChannelIds === undefined) return { kind: 'all' };
 
-  /**
-   * The id column a scope entry filters by: its own level's column, or the home column.
-   * Column keys come from `appConfig.entityIdColumnKeys`; a synthetic hierarchy level
-   * (parity tests) is absent there and falls back to the `${channelType}Id` convention
-   * the config validator enforces for real entities.
-   */
+  /** The id column a scope entry filters by: `appConfig.entityIdColumnKeys`, falling back to the `${channelType}Id` convention. */
   const scopeColumn = (channelType: ChannelEntityType | undefined): PgColumn =>
     channelType
       ? resolveColumn(
@@ -84,8 +70,7 @@ export const buildCollectionReadWhere = (
     clauses.push(inArray(scopeColumn(channelType), channelIds));
   }
 
-  // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every
-  // more-specific ancestor column is NULL, which identifies rows homed at that level.
+  // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every deeper ancestor column is NULL.
   for (const { channelType, channelIds, deeperChannels } of filter.homeScopes ?? []) {
     if (channelIds.length === 0) continue;
     const scoped = and(

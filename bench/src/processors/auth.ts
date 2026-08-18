@@ -19,14 +19,7 @@ function buildCookie(userIndex: number): string {
   return cookie;
 }
 
-// ── Authenticate ───────────────────────────────────────────────────────────
-
-/**
- * Builds a VU's session cookie from pre-seeded deterministic tokens (`beforeScenario`
- * hook), skipping the HTTP sign-in for an instant VU start. Format
- * `{hashedToken}.{sessionId}.` where hashedToken is the SHA-256 hex of the token.
- * Must match what data-setup inserts.
- */
+/** Builds a VU session cookie from pre-seeded tokens so no HTTP sign-in is measured. Format `{hashedToken}.{sessionId}.`, hashedToken being the SHA-256 hex of the token, matching what data-setup inserts. */
 export async function authenticate(context: { vars: Record<string, unknown> }, _events: unknown) {
   const userIndex = userCounter++ % TOTAL_USERS;
   context.vars.cookie = buildCookie(userIndex);

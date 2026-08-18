@@ -7,7 +7,7 @@ import type { EntityTableMeta, PendingEvent, ResourceTableMeta } from '../types'
 const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
 const DEFAULT_TABLE = 'attachments';
 
-/** Activity with explicit test-friendly defaults. Uses backend mockActivity as base shape. */
+/** Activity with explicit test-friendly defaults, based on the backend mockActivity shape. */
 export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): InsertActivityModel {
   return mockActivity('cdc:default', {
     action: 'create',
@@ -24,7 +24,7 @@ export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): I
   }) as InsertActivityModel;
 }
 
-/** ParseMessageResult for transaction-buffer, apply-unified-deltas tests */
+/** ParseMessageResult fixture. */
 export function mockParseResult(
   overrides: {
     action?: InsertActivityModel['action'];
@@ -61,7 +61,7 @@ export function mockParseResult(
   };
 }
 
-/** Full PendingEvent for flush-buffer tests */
+/** PendingEvent fixture. */
 export function mockPendingEvent(overrides: {
   lsn: string;
   action?: InsertActivityModel['action'];
@@ -77,7 +77,7 @@ export function mockPendingEvent(overrides: {
   };
 }
 
-/** BatchEvent for activity-service tests */
+/** BatchEvent fixture. */
 export function mockBatchEvent(seq: number, subjectId = `entity-${seq}`): BatchEvent {
   const activity = mockCdcActivity({ subjectId });
   return {

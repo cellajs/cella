@@ -18,7 +18,6 @@ import {
 import type { AppStreamNotification, StreamState } from './types';
 import { declareViewsFromMemberships } from './view-declaration';
 
-// Circuit breaker & reconnect constants
 const MAX_FAILURES = 3;
 const CIRCUIT_COOLDOWN_MS = 60_000;
 const INITIAL_BACKOFF_MS = 5_000;
@@ -33,7 +32,6 @@ interface StreamConfig {
   endpoint: string;
   withCredentials: boolean;
   useTabCoordination: boolean;
-  /** Fetch catchup summary and process it. Returns the new cursor. */
   fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** Process a single live SSE notification. */
   processNotification: (notification: unknown) => void;
@@ -52,12 +50,8 @@ interface StreamStoreActions {
 
 type StreamStore = StreamStoreState & StreamStoreActions;
 
-/** Default state values. */
 const initStore: StreamStoreState = { state: 'disconnected', cursor: null };
 
-/**
- * Manages SSE connection lifecycle with robust reconnect logic and circuit breaker.
- */
 function createStreamStore(name: string) {
   return create<StreamStore>()(
     devtools(
@@ -72,10 +66,7 @@ function createStreamStore(name: string) {
   );
 }
 
-/**
- * Eager, page-lifetime gate resolved after the first stream catchup.
- * The query provider awaits it before replaying paused mutations against restored cache state.
- */
+/** Page-lifetime gate the query provider awaits before replaying paused mutations against restored cache state. */
 let initialCatchupResolve: (() => void) | null = null;
 const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
   initialCatchupResolve = resolve;
@@ -106,11 +97,7 @@ export class StreamManager {
   /** Resolves when the current connect cycle's catchup completes. Reset on each connect(). */
   private catchupResolve: (() => void) | null = null;
 
-  /**
-   * Live notifications received between SSE open and catchup completion (subscribe-then-snapshot).
-   * Drained through `processNotification` in arrival order once catchup resolves, so a change
-   * committed while catchup reads never falls between the snapshot and the stream registration.
-   */
+  /** Notifications arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
   private pendingNotifications: Array<{ notification: unknown; eventId: string | undefined }> = [];
   private buffering = false;
   private bufferOverflowed = false;
@@ -128,25 +115,21 @@ export class StreamManager {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
 
-  /**
-   * Subscribe before catchup, buffering live events until snapshot reconciliation completes.
-   * Changes in the registration window therefore land in either snapshot or buffer.
-   */
+  /** Subscribe before catchup and buffer live events, so a change in the registration window lands in either snapshot or buffer. */
   async connect() {
-    // Set up reconnect listeners (idempotent, cleaned up in disconnect)
+    // Idempotent, cleaned up in disconnect.
     this.startVisibilityReconnect();
     this.startLeaderReconnect();
 
     const { state } = this.useStore.getState();
     if (state === 'catching-up' || state === 'connecting' || state === 'live') return;
 
-    // Circuit breaker: stop if too many consecutive failures
     if (this.circuitOpen) {
       console.debug(`[${this.name}] Circuit breaker open, not attempting reconnect`);
       return;
     }
 
-    // Create a fresh resolve callback for this connect cycle (drives initialCatchupGate)
+    // Fresh resolve callback per connect cycle; drives initialCatchupGate.
     let resolveCatchup: () => void;
     new Promise<void>((r) => {
       resolveCatchup = r;
@@ -184,10 +167,7 @@ export class StreamManager {
     if (!signal.aborted) this.connectSSE(signal);
   }
 
-  /**
-   * Catch up while buffering, then drain in arrival order and go live.
-   * One overflow retries against newer frontiers; a second fails.
-   */
+  /** Catch up while buffering, then drain in arrival order and go live. One buffer overflow retries at the newer cursor; a second throws. */
   private async runCatchupCycle(signal: AbortSignal, eventSource: EventSource) {
     const { useTabCoordination } = this.config;
 
@@ -219,20 +199,18 @@ export class StreamManager {
         console.debug(`[${this.name}] Notification buffer overflowed, re-running catchup`);
       }
 
-      // Signal that catchup is done; paused mutations can now safely resume.
-      // Draining before the gate is unnecessary: drain is idempotent ingestion.
+      // Release paused mutations before draining; drain is idempotent ingestion.
       this.catchupResolve?.();
       this.catchupResolve = null;
       resolveInitialCatchupGate();
 
-      // Drain buffered notifications in arrival order, then go live. Drain is synchronous, so
-      // no new notification can interleave; arrivals after this point process directly.
+      // Drain is synchronous, so no notification interleaves; arrivals after this point process directly.
       this.buffering = false;
       const buffered = this.pendingNotifications;
       this.pendingNotifications = [];
       for (const { notification, eventId } of buffered) this.applyNotification(notification, eventId);
 
-      // Reset failure count; backoff resets only when connection stays up > MIN_UPTIME_MS (checked in onerror)
+      // Backoff itself resets only after MIN_UPTIME_MS of uptime, checked in onerror.
       this.consecutiveFailures = 0;
       this.connectedAt = Date.now();
       this.useStore.getState().setState('live');
@@ -280,14 +258,11 @@ export class StreamManager {
     this.config.processNotification(notification);
   }
 
-  /** Check if an error is permanent (no point retrying). */
   private isPermanentError(error: unknown): boolean {
     if (error && typeof error === 'object' && 'status' in error) {
       const status = (error as { status: number }).status;
-      // 401 Unauthorized, 403 Forbidden - auth/permission issues won't resolve with retry
       return status === 401 || status === 403;
     }
-    // Check error message for known permanent error patterns
     const message = error instanceof Error ? error.message : String(error);
     return message.includes('Access denied') || message.includes('Unauthorized');
   }
@@ -336,15 +311,13 @@ export class StreamManager {
 
     eventSource.addEventListener('offset', (e) => {
       console.debug(`[${this.name}] SSE offset received:`, e.data);
-      // The offset value itself is not stored: catchup runs next and its response cursor
-      // (read after this offset was emitted) supersedes it.
+      // The offset value is not stored: the catchup response cursor, read later, supersedes it.
       if (catchupStarted) return;
       catchupStarted = true;
       void this.runCatchupCycle(signal, eventSource);
     });
 
-    // Application-level error event from the server (typed payload). Distinct from the
-    // built-in transport `error` (handled by `onerror` below) which is a bare Event.
+    // Server-sent error event with a typed payload; the bare transport Event goes to `onerror`.
     eventSource.addEventListener('error', (e) => {
       if (!(e instanceof MessageEvent) || !e.data) return; // transport error -> falls through to onerror
       try {
@@ -369,7 +342,7 @@ export class StreamManager {
       this.consecutiveFailures++;
       console.debug(`[${this.name}] SSE error`);
 
-      // Reset backoff if connection was stable long enough (prevents rapid reconnect loops)
+      // Reset backoff only after stable uptime, so a flapping connection keeps backing off.
       if (this.connectedAt && Date.now() - this.connectedAt >= MIN_UPTIME_MS) {
         this.currentBackoff = INITIAL_BACKOFF_MS;
       }
@@ -395,7 +368,7 @@ export class StreamManager {
     this.circuitOpenedAt = Date.now();
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
 
-    // Cancel any pending reconnect timer so it won't fire after circuit opens
+    // Cancel the pending reconnect so it cannot fire while the circuit is open.
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -416,18 +389,13 @@ export class StreamManager {
     }, delay);
   }
 
-  /**
-   * Attempt reconnect with circuit breaker + health check gate.
-   * Visibility and leader handlers use this gated path; `reconnect()` remains the forced path.
-   */
+  /** Reconnect gated by circuit breaker and health check; visibility and leader handlers use this path, `reconnect()` forces. */
   private async attemptReconnect() {
-    // If circuit isn't open, just connect normally
     if (!this.circuitOpen) {
       this.connect();
       return;
     }
 
-    // Check if cooldown has elapsed
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
       console.debug(
@@ -438,7 +406,6 @@ export class StreamManager {
       return;
     }
 
-    // Prevent concurrent health checks
     if (this.healthCheckInProgress) return;
     this.healthCheckInProgress = true;
 
@@ -450,7 +417,6 @@ export class StreamManager {
         console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
       } else {
-        // Health check failed, reset cooldown timer.
         this.circuitOpenedAt = Date.now();
         console.debug(`[${this.name}] Health check failed, extending cooldown`);
       }
@@ -462,7 +428,6 @@ export class StreamManager {
     }
   }
 
-  /** Start listening for visibility changes to reconnect when tab becomes visible. */
   private startVisibilityReconnect() {
     if (this.visibilityHandler) return;
     this.visibilityHandler = () => {
@@ -482,7 +447,6 @@ export class StreamManager {
     }
   }
 
-  /** Subscribe to leader changes and reconnect when becoming leader. */
   private startLeaderReconnect() {
     if (!this.config.useTabCoordination || this.leaderUnsubscribe) return;
     let wasLeader = tabCoordinatorStore.getState().isLeader;
@@ -543,7 +507,7 @@ export class StreamManager {
     this.connect();
   }
 
-  /** Resolve any pending catchup promise (used on disconnect to prevent dangling waits). */
+  /** Resolve the pending catchup promise so disconnect leaves no waiter hanging. */
   private resolvePendingCatchup() {
     this.catchupResolve?.();
     this.catchupResolve = null;
@@ -560,12 +524,7 @@ type CatchupProductType = CatchupView['entityTypes'][number];
 const isCatchupProductType = (entityType: string): entityType is CatchupProductType =>
   (appConfig.productEntityTypes as readonly string[]).includes(entityType);
 
-/**
- * Narrow client-declared views to the product types the catchup endpoint accepts.
- * Views are built from runtime strings, and one unrecognized type would reject the whole
- * request, stalling catchup for every other view. Unknown types are dropped; a view left
- * without any type is omitted.
- */
+/** Drop runtime entity types the catchup endpoint rejects: one unrecognized type would fail the whole request and stall catchup for every view. */
 function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
   const accepted: CatchupView[] = [];
   for (const view of views) {
@@ -576,7 +535,6 @@ function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
   return accepted;
 }
 
-/** Coordinates the application event stream and catch-up lifecycle. */
 export const appStreamManager = new StreamManager('AppStream', {
   endpoint: `${appConfig.backendUrl}/entities/app/stream`,
   withCredentials: true,
@@ -597,14 +555,10 @@ export const appStreamManager = new StreamManager('AppStream', {
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
 });
 
-// Mirror stream health into the basic layer without introducing a circular dependency.
-// Catch-up reconciles every connection, so only errors enable time-based freshness.
+// Mirrors stream health into the basic layer without a circular import: catch-up reconciles every connection, so only errors enable time-based freshness.
 appStreamManager.useStore.subscribe((s) => setSyncStreamHealthy(s.state !== 'error'));
 
-/**
- * Wait for the first stream catchup after page load (resolves on catchup or failure).
- * Safe to call before any stream connects because the gate promise is already pending.
- */
+/** Resolves on the first catchup after page load, or on its failure. Safe to call before any stream connects. */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }

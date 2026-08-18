@@ -8,7 +8,7 @@ import { findExistingRequest, insertRequest } from '#/modules/requests/requests-
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { requestInfoEmail, requestResponseEmail } from '../../../../emails';
 
-// These requests are only allowed to be created if user has none yet
+// Types allowed only once per email
 const uniqueRequests: RequestModel['type'][] = ['waitlist', 'newsletter'];
 
 interface CreateRequestInput {
@@ -29,7 +29,6 @@ export async function createRequestOp(ctx: AuthContext, input: CreateRequestInpu
     if (existingUser) throw new AppError(400, 'request_email_is_user', 'info');
   }
 
-  // Check if not duplicate for unique requests
   if (uniqueRequests.includes(type)) {
     const existingRequest = await findExistingRequest(ctx, { email: normalizedEmail, type });
     if (existingRequest) throw new AppError(409, 'request_exists', 'info');
@@ -37,10 +36,9 @@ export async function createRequestOp(ctx: AuthContext, input: CreateRequestInpu
 
   const createdRequest = await insertRequest(ctx, { email: normalizedEmail, type, message });
 
-  // A duplicate that slipped past the check above (concurrent submit) is rejected by the unique index
+  // Concurrent duplicate submits are rejected by the unique index
   if (!createdRequest) throw new AppError(409, 'request_exists', 'info');
 
-  // Determine message content based on notification type
   let textMessage: string;
   let title: string;
 
@@ -62,10 +60,8 @@ export async function createRequestOp(ctx: AuthContext, input: CreateRequestInpu
       title = 'Request received';
   }
 
-  // Send message to Matrix
   const matrixResp = await sendMatrixMessage({ msgtype: 'm.notice', textMessage });
 
-  // Send email
   const lng = appConfig.defaultLanguage;
   const staticProps = { type, message };
   const recipients = [{ email: normalizedEmail, lng }];

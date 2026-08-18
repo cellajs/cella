@@ -203,7 +203,7 @@ describe('downloadQueue', () => {
     });
   });
 
-  describe('enqueue — reviving failed entries', () => {
+  describe('enqueue: reviving failed entries', () => {
     it('resets a failed entry to pending while attempts remain', async () => {
       await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 2 }));
 

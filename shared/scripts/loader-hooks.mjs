@@ -3,8 +3,6 @@ import { dirname, resolve as pathResolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import stripJsonComments from 'strip-json-comments';
 
-// --- Utilities ---
-
 function findPkgDir(dir) {
   let current = dir;
   while (current !== dirname(current)) {

@@ -1,7 +1,4 @@
-/**
- * Check if a string number is included in an array of numbers from 1 to arrayLen.
- * Used for validating query params that are expected to be numeric and within a certain range.
- */
+/** Whether `number` parses to an integer in the range 1 to `arrayLen`. */
 export const inNumbersArray = (arrayLen: number, number: string) => {
   const array = [...Array(arrayLen).keys()].map((i) => i + 1);
 

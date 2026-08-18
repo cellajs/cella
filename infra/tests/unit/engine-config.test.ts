@@ -21,8 +21,7 @@ function sources(dir: string): string[] {
   return out;
 }
 
-// Config flows ONLY through the engine-config seam; its lazy workspace
-// fallback is the single allowed reference to the shared package.
+// Config flows ONLY through engine-config, whose lazy workspace fallback is the single allowed reference to the shared package.
 describe('config inversion sweep', () => {
   it("no engine module references the shared package except engine-config's fallback", () => {
     const scanned = [
@@ -40,8 +39,7 @@ describe('config inversion sweep', () => {
     for (const file of scanned) {
       if (file.endsWith('config/engine-config.ts')) continue;
       const src = readFileSync(file, 'utf-8');
-      // The shared PACKAGE ('shared', 'shared/...') or a relative escape to the
-      // workspace's shared dir; cli/shared.ts (a local module) is unrelated.
+      // The shared PACKAGE ('shared', 'shared/...') or a relative escape to the workspace's shared dir; cli/shared.ts is a local module and unrelated.
       if (/from\s+'shared(?:'|\/)|from\s+'(?:\.\.\/){2,}shared'|import\('shared'\)/.test(src)) {
         offenders.push(file.replace(`${infraRoot}/`, ''));
       }

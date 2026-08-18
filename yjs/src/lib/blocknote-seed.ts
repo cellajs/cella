@@ -19,30 +19,21 @@ import { log } from './pino';
 /** Fragment name the client editor binds to: must match yjs-connections.ts in the frontend. */
 export const YJS_FRAGMENT_NAME = 'document-store';
 
-/**
- * Stub render for server-side specs. Block ↔ Y.Doc conversion never renders,
- * so this only exists to satisfy the spec factory signature.
- */
+/** Stub render satisfying the spec factory signature: block to Y.Doc conversion never renders. */
 const serverRender = () => {
   throw new Error('BlockNote render is not available in the Yjs relay');
 };
 
-/**
- * Server-side mirror of the frontend's custom schema, built from the same shared
- * configs (shared/blocknote-schema-configs) so the ProseMirror node specs are
- * identical: a doc seeded here must round-trip through the client editor.
- */
+/** Mirror of the frontend custom schema (blocknote-config.ts), from the same shared configs: the ProseMirror node specs must stay identical for round-tripping. */
 const serverSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
-    // Media blocks gain the attachment entity reference; keep in lockstep with the
-    // frontend's customSchema (blocknote-config.ts) for Y.Doc round-tripping.
     audio: withAttachmentRef(defaultBlockSpecs.audio),
     file: withAttachmentRef(defaultBlockSpecs.file),
     image: withAttachmentRef(defaultBlockSpecs.image),
     video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: createBlockSpec(checklistItemConfig, { render: serverRender })(),
     notify: createBlockSpec(notifyConfig, { render: serverRender })(),
-    // No highlighter server-side: only the node spec matters for seeding
+    // No highlighter server-side: only the node spec matters for seeding.
     codeBlock: createCodeBlockSpec(codeBlockConfig),
   },
   inlineContentSpecs: {
@@ -50,14 +41,10 @@ const serverSchema = BlockNoteSchema.create().extend({
   },
 });
 
-// Reuse a single editor instance: schema construction is expensive, conversions are stateless
+// One shared editor instance: schema construction is expensive and conversions are stateless.
 const editor = ServerBlockNoteEditor.create({ schema: serverSchema });
 
-/**
- * Convert a stored BlockNote description (JSON string of blocks) into a Y.Doc
- * update that seeds a fresh collaborative session. Returns null when there is
- * nothing to seed (empty/invalid description); the session then starts empty.
- */
+/** Converts a stored blocks JSON description into a seed update for a fresh session; null when the description is empty or invalid, and the session starts empty. */
 export function descriptionToYUpdate(description: string | null): Uint8Array | null {
   if (!description) return null;
   try {

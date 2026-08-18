@@ -21,7 +21,7 @@ app.openapi(mcpRoutes.handleMcp, async (ctx): Promise<any> => {
   }
 
   const response = await handleMcpMessage(ctx, body);
-  if (!response) return ctx.body(null, 202); // notification: accepted, no body
+  if (!response) return ctx.body(null, 202);
   return ctx.json(response, 200);
 });
 

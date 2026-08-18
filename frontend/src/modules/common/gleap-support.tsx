@@ -21,7 +21,7 @@ window.onoffline = () => {
   Gleap.destroy();
 };
 
-// Initialize Gleap if online (with button hidden)
+// Gleap initializes with its own button hidden; openGleapSupport() opens the widget
 if (navigator.onLine) {
   Gleap.initialize(appConfig.gleapToken);
   Gleap.showFeedbackButton(false);
@@ -43,7 +43,6 @@ function setGleapUser(user: User) {
   }
 }
 
-/** Open the Gleap support widget from a custom button */
 export function openGleapSupport() {
   if (window.Gleap) {
     Gleap.open();
@@ -59,16 +58,13 @@ export function GleapSupport() {
     if (isOnline) {
       window.Gleap = Gleap;
 
-      // Set Gleap user on mount
       if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
 
-      // Update Gleap user on user change
       const unsubscribe = useUserStore.subscribe((state) => {
         const user = state.user;
 
         if (user) return setGleapUser(user);
 
-        // Clear Gleap user on sign out
         window.Gleap?.clearIdentity();
       });
 

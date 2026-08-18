@@ -17,7 +17,6 @@ type SearchBlockProps = {
   hideSeparator?: boolean;
 };
 
-/** Renders the search result block component. */
 export function SearchResultBlock({ results, entityType, hideSeparator = false }: SearchBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);

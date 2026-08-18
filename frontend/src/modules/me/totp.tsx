@@ -10,7 +10,6 @@ import { Button } from '~/modules/ui/button';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-/** Renders TOTP setup and recovery controls. */
 export function Totp() {
   const { t } = useTranslation();
 

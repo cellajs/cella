@@ -25,15 +25,12 @@ function DocsLayout() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
 
-  // Resizable sidebar width (desktop only). The main content uses window scroll,
-  // offset by the same CSS variable, so window scroll restoration just works.
+  // Resizable sidebar width (desktop only); main content uses window scroll offset by the same CSS variable
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
 
-  // Track scroll position for scroll-to-top button visibility (mobile floating nav)
   const { scrollTop } = useScrollVisibility(!isDesktop);
   const showScrollTop = scrollTop > 300;
 
-  // Drag the sidebar edge to resize. Updates width during pointer move, ends on pointer up.
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const startX = e.clientX;
@@ -62,7 +59,6 @@ function DocsLayout() {
   const sidebarContent = <DocsSidebar tags={tags} />;
 
   useEffect(() => {
-    // Clean up sheet when switching to desktop
     if (isDesktop && sidebarOpen) {
       useSheeter.getState().remove('docs-sidebar');
     }
@@ -107,7 +103,6 @@ function DocsLayout() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Floating nav items for mobile
   const floatingNavItems: FloatingNavItem[] = [
     { id: 'docs-menu', icon: MenuIcon, onClick: toggleSidebar, ariaLabel: 'Toggle menu', direction: 'left' },
     {
@@ -120,7 +115,6 @@ function DocsLayout() {
     },
   ];
 
-  // Mobile layout with floating nav
   if (!isDesktop) {
     return (
       <div>
@@ -139,7 +133,6 @@ function DocsLayout() {
           '--docs-sidebar-width': `${resizedSidebarWidth}px`,
         } as CSSProperties);
 
-  // Desktop layout: fixed resizable sidebar + window-scrolled main content
   return (
     <div className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       {!focusView && (

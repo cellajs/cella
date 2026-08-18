@@ -6,9 +6,7 @@ const HEALTH_URL = `${appConfig.backendUrl}/health`;
 const FULL_HEALTH_URL = `${HEALTH_URL}?depth=full`;
 const CACHE_TTL_MS = 10_000;
 
-// Re-probe a few times before declaring offline. Mobile PWAs freeze the network
-// radio when backgrounded; the first fetches after resume fail until it reconnects.
-// Retrying briefly avoids a false "offline" flash for these transient failures.
+// Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects.
 const PROBE_RETRIES = 2;
 const PROBE_RETRY_DELAY_MS = 750;
 
@@ -16,26 +14,21 @@ let lastCheckAt = 0;
 let lastResult: boolean | null = null;
 let inFlight: Promise<boolean> | null = null;
 
-/**
- * Probe `/health` after network failures to detect false-positive browser online state.
- * Cache and deduplicate probes; failure pauses queries and mutations through `onlineManager`.
- */
+/** Probes `/health` after network failures to catch a false-positive browser online state; probes are cached and deduplicated, and a failure pauses queries and mutations through `onlineManager`. */
 export async function checkConnectivity(): Promise<boolean> {
   const now = Date.now();
 
-  // Return cached result if still fresh
   if (lastResult !== null && now - lastCheckAt < CACHE_TTL_MS) {
     return lastResult;
   }
 
-  // Deduplicate concurrent calls
   if (inFlight) return inFlight;
 
   inFlight = probeHealth();
   try {
     return await inFlight;
   } finally {
-    // Always clear inFlight to prevent stuck state if probeHealth throws unexpectedly.
+    // Cleared even when probeHealth throws, so no call is stuck waiting on a dead promise.
     inFlight = null;
   }
 }
@@ -48,9 +41,7 @@ async function fetchHealthOnce(): Promise<boolean> {
 
     const response = await fetch(HEALTH_URL, {
       method: 'HEAD',
-      // no-store bypasses browser cache so the request always hits the network/CDN.
-      // The CDN may still serve a cached 204 (max-age=5), which is fine; it proves
-      // the network path to the edge is working.
+      // no-store bypasses the browser cache so the request reaches the network; a CDN-cached 204 still proves the path to the edge works.
       cache: 'no-store',
       signal: controller.signal,
     });
@@ -63,7 +54,6 @@ async function fetchHealthOnce(): Promise<boolean> {
 }
 
 async function probeHealth(): Promise<boolean> {
-  // Retry briefly before concluding offline; see PROBE_RETRIES comment.
   let isReachable = false;
   for (let attempt = 0; attempt <= PROBE_RETRIES; attempt++) {
     isReachable = await fetchHealthOnce();
@@ -93,8 +83,7 @@ export async function revalidateConnectivity(): Promise<boolean> {
   return online;
 }
 
-/** User-initiated "force online": resets probe cache and tells the system to try going online.
- *  If still actually offline, the next failed fetch will re-trigger the probe and revert. */
+/** User-initiated force online. If the network is still down, the next failed fetch re-triggers the probe and reverts. */
 export function forceOnline() {
   resetConnectivityCache();
   onlineManager.setOnline(true);
@@ -105,10 +94,7 @@ type AwaitRecoveryOptions = {
   factor?: number;
 };
 
-/**
- * Poll /health?depth=full with exponential backoff until the backend is reachable.
- * Uses full depth to verify DB connectivity, not just network reachability.
- */
+/** Polls /health?depth=full with exponential backoff; full depth verifies DB connectivity, not only network reachability. */
 export async function awaitRecovery({ signal, factor = 1.5 }: AwaitRecoveryOptions): Promise<boolean> {
   let delay = 5000;
   const maxDelay = 600_000;
@@ -121,7 +107,7 @@ export async function awaitRecovery({ signal, factor = 1.5 }: AwaitRecoveryOptio
       const response = await fetch(FULL_HEALTH_URL);
       if (response.ok) return true;
     } catch {
-      // Backend still unreachable
+      // Backend still unreachable.
     }
 
     delay = Math.min(maxDelay, delay * factor);

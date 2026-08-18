@@ -66,11 +66,9 @@ describe('FlushBuffer', () => {
       const e1 = mockPendingEvent({ lsn: '0/1', action: 'create', entityType: 'attachment' });
       await buffer.enqueue([e1]);
 
-      // Not flushed yet
       expect(processedBatches).toHaveLength(0);
       expect(buffer.size).toBe(1);
 
-      // Advance timer
       await vi.advanceTimersByTimeAsync(10);
 
       expect(processedBatches).toHaveLength(1);
@@ -91,7 +89,7 @@ describe('FlushBuffer', () => {
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Both events in same group (same type:action:channelId)
+      // Both events share the type:action group.
       expect(processedBatches).toHaveLength(1);
       expect(processedBatches[0]).toHaveLength(2);
       expect(acknowledgedLsns).toEqual(['0/2']);
@@ -100,21 +98,18 @@ describe('FlushBuffer', () => {
     it('groups events by type and action', async () => {
       const buffer = new FlushBuffer(processEvents, acknowledgeLsn, 10);
 
-      // Two attachment creates
       const e1 = mockPendingEvent({ lsn: '0/1', action: 'create', entityType: 'attachment' });
       const e2 = mockPendingEvent({ lsn: '0/2', action: 'create', entityType: 'attachment' });
-      // One user create (different type)
       const e3 = mockPendingEvent({ lsn: '0/3', action: 'create', entityType: 'user' });
-      // One more attachment create (same type:action group)
       const e4 = mockPendingEvent({ lsn: '0/4', action: 'create', entityType: 'attachment' });
 
       await buffer.enqueue([e1, e2, e3, e4]);
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // 2 groups: attachment:create (3 events), user:create (1 event)
+      // attachment:create (3 events) + user:create (1 event).
       expect(processedBatches).toHaveLength(2);
-      // Only one ack for the highest LSN
+      // One ack, for the highest LSN.
       expect(acknowledgedLsns).toEqual(['0/4']);
     });
 
@@ -178,7 +173,6 @@ describe('FlushBuffer', () => {
       const buffer = new FlushBuffer(processEvents, acknowledgeLsn, 0);
       await buffer.enqueue([]);
 
-      // No events → flush is a no-op
       expect(processedBatches).toHaveLength(0);
       expect(acknowledgedLsns).toHaveLength(0);
     });
@@ -192,8 +186,7 @@ describe('FlushBuffer', () => {
 
       await vi.advanceTimersByTimeAsync(10);
 
-      // Should ack the last-enqueued LSN (0/3) since it's the highest seen
-      // (monotonic from WAL: events arrive in order)
+      // WAL order is monotonic, so the last-enqueued LSN is the highest seen.
       expect(acknowledgedLsns).toEqual(['0/3']);
     });
   });

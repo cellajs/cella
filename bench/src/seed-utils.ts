@@ -9,10 +9,7 @@ function camelToSnake(key: string): string {
   return key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
 
-/**
- * Value array for SQL insertion. Columns in `pgArrayColumns` stay native JS arrays
- * (pg driver converts them); other arrays/objects are JSON-stringified for json/jsonb.
- */
+/** Columns in `pgArrayColumns` stay native JS arrays for the pg driver; other arrays and objects are JSON-stringified for json/jsonb. */
 function recordToRow(record: Record<string, unknown>, columns: string[], pgArrayColumns?: Set<string>): unknown[] {
   return columns.map((col) => {
     const key = col.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
@@ -25,9 +22,7 @@ function recordToRow(record: Record<string, unknown>, columns: string[], pgArray
   });
 }
 
-/**
- * Insert rows in batches to avoid exceeding Postgres parameter limits.
- */
+/** Batched so inserts stay under the Postgres parameter limit. */
 async function batchInsert(pool: pg.Pool, table: string, columns: string[], rows: unknown[][]): Promise<void> {
   for (let offset = 0; offset < rows.length; offset += BATCH_SIZE) {
     const batch = rows.slice(offset, offset + BATCH_SIZE);
@@ -46,10 +41,7 @@ async function batchInsert(pool: pg.Pool, table: string, columns: string[], rows
   }
 }
 
-/**
- * STORED generated columns (present on mock/select shapes, rejected by INSERT with PG 428C9).
- * Drizzle inserts skip them automatically; this raw-SQL path must filter explicitly.
- */
+/** STORED generated columns, present on mock shapes but rejected by INSERT with PG 428C9; drizzle skips them, this raw-SQL path filters them explicitly. */
 const generatedColumns = new Set(['path']);
 
 export async function insertSeedRows(pool: pg.Pool, seed: TableBenchSeed, rows: Record<string, unknown>[]) {

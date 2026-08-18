@@ -20,11 +20,7 @@ type RateLimiterOptions = {
 // Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
 const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>();
 
-/**
- * Returns a prefix-memoized Drizzle limiter with no runtime table creation.
- * An in-memory insurance limiter covers database outages, while locally remembered blocks
- * prevent rejected keys from repeatedly hitting the database.
- */
+/** Prefix-memoized Drizzle limiter; an in-memory insurance limiter covers DB outages and blocks stay local. */
 export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
@@ -37,7 +33,6 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
 
   let instance: RateLimiterDrizzle | RateLimiterMemory;
 
-  // Use in-memory rate limiter when no database is configured
   if (env.NODB) {
     instance = new RateLimiterMemory(enforcedOptions);
   } else {
@@ -45,11 +40,9 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
       ...enforcedOptions,
       storeClient: db,
       schema: rateLimitsTable,
-      // Fail-open: when DB is unreachable, fall back to in-memory limiter
-      // Keep the request alive without returning a 500.
+      // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
       insuranceLimiter: new RateLimiterMemory(enforcedOptions),
-      // Block over-limit keys in-memory so repeat offenders don't hit the DB.
-      // When blockDuration=0 (e.g. pointsLimiter), uses remaining window time.
+      // Block over-limit keys in-memory so repeat offenders miss the DB; blockDuration=0 uses the remaining window
       inMemoryBlockOnConsumed: enforcedOptions.points,
     });
   }
@@ -58,24 +51,15 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
   return instance;
 };
 
-/**
- * Rate limit Error response
- */
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {
   const retryAfter = getRetryAfter(limitState.msBeforeNext);
   ctx.header('Retry-After', retryAfter);
   throw new AppError(429, 'too_many_requests', 'warn', { meta: { rateLimitKey, retryAfter: Number(retryAfter) } });
 };
 
-/**
- * Get Retry-After header value. Floored to 1s so sub-second waits never emit
- * `Retry-After: 0`, which well-behaved clients treat as "retry immediately".
- */
+/** Floored to 1s so sub-second waits never emit `Retry-After: 0`, which clients read as "retry immediately". */
 export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000)).toString();
 
-/**
- * Extract email from multiple sources: body, query, params, headers
- */
 export const extractIdentifiers = async (
   ctx: Context<Env>,
   identifiersToExtract: RateLimitIdentifier[],
@@ -90,8 +74,7 @@ export const extractIdentifiers = async (
   for (const identifier of identifiersToExtract) {
     switch (identifier) {
       case 'email': {
-        // Use Hono's cached body and normalize email exactly like validation so aliases share a bucket.
-        // This runs before Zod, so guard the input type.
+        // Normalize the email exactly like validation so aliases share a bucket; this runs before Zod, so guard the type
         if (ctx.req.header('content-type')?.includes('application/json')) {
           try {
             const body = (await ctx.req.json()) as { email?: unknown };
@@ -121,19 +104,12 @@ export const extractIdentifiers = async (
   return results;
 };
 
-/**
- * Check if an IP is currently rate-limited for a given limiter.
- * Shorthand for getIp + checkRateLimitStatus.
- */
 export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
   const ip = getIp(ctx);
   return checkRateLimitStatus(rateLimiterHandler, `ip:${toRateLimitIp(ip ?? '')}`);
 };
 
-/**
- * Check if a rate limit key is currently blocked without consuming points.
- * Used by /auth/health to detect restrictedMode for email enumeration protection.
- */
+/** Reports whether a key is blocked without consuming points. /auth/health uses it to detect restrictedMode. */
 export const checkRateLimitStatus = async (
   rateLimiterHandler: RateLimiterHandler,
   rateLimitKey: string,
@@ -144,12 +120,10 @@ export const checkRateLimitStatus = async (
 
   const [state, slowState] = await Promise.all([limiter.get(rateLimitKey), slowLimiter.get(rateLimitKey)]);
 
-  // Check main limiter
   if (state && state.consumedPoints > mainPoints) {
     return { isLimited: true, retryAfter: Math.round(state.msBeforeNext / 1000) };
   }
 
-  // Check slow brute force limiter
   if (slowState && slowState.consumedPoints > (slowOptions.points ?? 100)) {
     return { isLimited: true, retryAfter: Math.round(slowState.msBeforeNext / 1000) };
   }
@@ -157,11 +131,7 @@ export const checkRateLimitStatus = async (
   return { isLimited: false };
 };
 
-/**
- * Read the length of the bulk body array from the request.
- * Supports `{ ids: [...] }` shape (bulk delete) and top-level arrays (bulk create).
- * Returns 1 as fallback so every request costs at least 1 point.
- */
+/** Length of a `{ ids: [...] }` or top-level array body, falling back to 1 so every request costs a point. */
 export const bulkBodyLength = async (ctx: Context<Env>): Promise<number> => {
   try {
     const contentType = ctx.req.header('content-type');

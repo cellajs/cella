@@ -7,7 +7,6 @@ type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
 type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
 export type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
 
-/** Optional parameters for AppError constructor. */
 export type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;

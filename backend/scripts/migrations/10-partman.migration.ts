@@ -47,7 +47,7 @@ function generateTablePartitionSql(config: PartitionConfig): string {
     -- Already partitioned: refresh retention config only
 ${retentionSql}
     WHERE parent_table = 'public.${config.name}';
-    RAISE NOTICE '${config.name} already partitioned — config updated, skipping conversion';
+    RAISE NOTICE '${config.name} already partitioned: config updated, skipping conversion';
   ELSE
     -- 1a. Guard: PK must include the partition column
     SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
@@ -86,7 +86,7 @@ ${retentionSql}
 
     -- 3. Move the original aside and create the partitioned table directly under the
     --    final name, so partman child partitions get clean names (${config.name}_p...).
-    --    The original's indexes keep their (schema-wide) names — safe, because no index
+    --    The original's indexes keep their (schema-wide) names: safe, because no index
     --    is created on the new table until the old one is dropped in step 6.
     ALTER TABLE ${config.name} RENAME TO ${config.name}_old;
     EXECUTE 'CREATE TABLE ${config.name} (LIKE ${config.name}_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (${config.partitionColumn})';
@@ -144,7 +144,7 @@ ${partitionConfigs
 --
 -- Skips ONLY when the pg_partman extension cannot be installed (managed providers
 -- without it); the tables then grow unbounded with manual cleanup. Any failure
--- DURING conversion aborts the migration loudly — a swallowed error here previously
+-- DURING conversion aborts the migration loudly: a swallowed error here previously
 -- shipped databases where nothing was partitioned while everyone believed it was.
 -- run_maintenance() is scheduled in-process daily (see src/lib/db-maintenance.ts).
 -- =============================================================================
@@ -174,7 +174,7 @@ END $$;
 
   return {
     tag: 'partman_setup',
-    title: 'pg_partman — partitioned tables',
+    title: 'pg_partman, partitioned tables',
     sql: migrationSql,
     notes: partitionConfigs.map(
       (config) => `${config.name}: ${config.interval} partitions, ${config.retention ?? 'indefinite'} retention`,

@@ -206,12 +206,7 @@ describe('parseOpenApiSpec', () => {
   });
 });
 
-/**
- * A single hand-owned fixture that deliberately exercises the parser's
- * interesting branches: excluded (non-module) tags, schema-kind buckets with
- * an `x-default` fallback, dynamic `x-extensions`, `$ref` response resolution
- * with example lifting, description stripping, and schema sort order.
- */
+/** One hand-owned fixture covering excluded tags, schema-kind buckets with an `x-default` fallback, dynamic `x-extensions`, `$ref` response resolution, description stripping, and sort order. */
 const goldenSpec = {
   openapi: '3.1.0',
   info: {
@@ -245,7 +240,7 @@ const goldenSpec = {
   },
   components: {
     schemas: {
-      // No x-tags → default ('data') bucket; description lifted to card, stripped from nested schema.
+      // No x-tags: default ('data') bucket, description lifted to the card and stripped from the nested schema.
       Zebra: {
         type: 'object',
         description: 'A zebra',
@@ -253,7 +248,7 @@ const goldenSpec = {
         required: ['id'],
         example: { id: 'z1' },
       },
-      // Explicit x-tags matching a schema-kind tag → 'system' bucket.
+      // Explicit x-tags matching a schema-kind tag: 'system' bucket.
       Alpha: { type: 'object', 'x-tags': ['system'], properties: { name: { type: 'string' } } },
       // Referenced by getUsers' 200 response; carries an example the parser lifts.
       User: {

@@ -37,8 +37,7 @@ function Row<R, SR>({
 
   className = cn(
     'rdg-row group/row aria-selected:bg-accent aria-selected:hover:bg-accent',
-    // Row-box mode needs a real box for motion layout measurement; cells flow into the
-    // row's own subgrid so column tracks still resolve at the root grid.
+    // Row-box mode needs a real box for motion layout measurement; its subgrid keeps column tracks resolving at the root grid.
     animateReorder ? 'rdg-row-box col-span-full grid grid-cols-subgrid' : 'contents',
     `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
     {
@@ -60,7 +59,6 @@ function Row<R, SR>({
 
     const isCellSelected = selectedCellIdx === idx;
 
-    // Check if cell is in selected range
     const position = { idx, rowIdx };
     const isInSelectedRange = selectedCellRange ? isCellInRange(position, selectedCellRange) : false;
     const rangeBoundary =
@@ -106,13 +104,11 @@ function Row<R, SR>({
       <RowSelectionContext value={selectionValue}>
         <motion.div
           role="row"
-          // Position-only layout animation: rows keep their size on reorder, and
-          // animating scale would distort cell borders.
+          // Position-only layout animation: rows keep their size on reorder, and scaling would distort cell borders.
           layout={reducedMotion ? false : 'position'}
           className={className}
           style={rowStyle}
-          // React's DOM drag/animation handler types collide with motion's same-named
-          // props; the runtime props (aria attributes) are compatible.
+          // React's DOM drag and animation handler types collide with motion's same-named props; the runtime props are compatible.
           {...(props as unknown as HTMLMotionProps<'div'>)}
         >
           {cells}
@@ -131,7 +127,6 @@ function Row<R, SR>({
 }
 
 const RowComponent = memo(Row) as <R, SR>(props: RenderRowProps<R, SR>) => React.JSX.Element;
-/** Renders the default row. */
 export function defaultRenderRow<R, SR>(key: React.Key, props: RenderRowProps<R, SR>) {
   return <RowComponent key={key} {...props} />;
 }

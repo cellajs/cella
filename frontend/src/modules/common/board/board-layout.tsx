@@ -23,9 +23,9 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
-/** Defines the minimum width of an expanded board panel. */
+/** Minimum width of an expanded board panel, in px. */
 export const PANEL_MIN_WIDTH = 300;
-/** Defines the minimum width of a collapsed board panel. */
+/** Minimum width of a collapsed board panel, in px. */
 export const COLLAPSED_PANEL_MIN_WIDTH = 50;
 
 export interface BoardLayoutPanel {
@@ -33,7 +33,6 @@ export interface BoardLayoutPanel {
 }
 
 export interface BoardLayoutHandle {
-  /** Expand a collapsed panel and scroll it into view. */
   expandAndScrollToPanel: (panelId: string) => void;
 }
 
@@ -45,9 +44,7 @@ interface BoardLayoutProps {
   children: (panelId: string, index: number) => ReactNode;
   /** When true, panels grow with content without a viewport-height constraint. */
   autoHeight?: boolean;
-  /** When true, panels can be reordered via drag-and-drop */
   reorderable?: boolean;
-  /** Called after a panel is dragged to a new position */
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
   className?: string;
   groupClassName?: string;
@@ -56,7 +53,6 @@ interface BoardLayoutProps {
 }
 
 // Panel widths are pixel-based (not percentage); the wrapping ScrollArea adds auto-scroll during drag-and-drop.
-/** Renders the shared board layout. */
 export function BoardLayout({
   boardId,
   panels,
@@ -86,7 +82,7 @@ export function BoardLayout({
     expandAndScrollToPanel(panelId: string) {
       panelGroupApiRef.current?.expandPanel(panelId);
 
-      // Wait one frame for layout to settle after expand, then scroll
+      // Wait one frame for the expand to settle before scrolling
       requestAnimationFrame(() => {
         const el = document.querySelector(`[data-panel="${CSS.escape(panelId)}"]`);
         el?.scrollIntoView({ behavior: 'smooth', inline: 'nearest' });
@@ -94,8 +90,7 @@ export function BoardLayout({
     },
   }));
 
-  // Persisting is debounced at the storage layer (`idbKvStorage`), so a window resize firing
-  // onLayoutChanged ~per frame batches into a single write, so no extra throttling is needed here.
+  // `idbKvStorage` debounces writes, so per-frame onLayoutChanged calls need no throttling here
   const handleLayoutChanged = useCallback(
     (layout: Record<string, number>) => {
       onLayoutChanged?.(layout);
@@ -114,10 +109,8 @@ export function BoardLayout({
   const panelIdsRef = useRef<string[]>([]);
   panelIdsRef.current = panels.map((p) => p.panelId);
 
-  // Track which panel has a drop indicator and on which edge
   const [dropIndicator, setDropIndicator] = useState<{ panelId: string; edge: Edge } | null>(null);
 
-  // Monitor for panel reorder drops
   useEffect(() => {
     if (!reorderable) return;
     return monitorForElements({
@@ -197,8 +190,8 @@ export function BoardLayout({
     </ResizablePanelGroup>
   );
 
-  // Window-scroll mode clips horizontal overflow without creating a scroll container,
-  // allowing section bars and card headers to remain sticky to the window.
+  // Window-scroll mode clips horizontal overflow without creating a scroll container, so section
+  // bars and card headers stay sticky to the window.
   if (autoHeight) {
     return <div className={cn('overflow-x-clip transition', className)}>{panelGroup}</div>;
   }
@@ -306,9 +299,8 @@ function PanelDragWrapper({
           element: wrapper,
           dragHandle: handleEl,
           getInitialData: () => ({ dragItem: true, type: 'panelReorder' as const, panelId }),
-          // Draw the drag preview from the small header handle, not the full-height wrapper: in
-          // window-scroll (autoHeight) boards the wrapper grows to its content height, so the
-          // default native preview would snapshot the entire panel and read as dragging the page.
+          // Draw the drag preview from the header handle: in autoHeight boards the wrapper is as
+          // tall as its content, and the native preview would snapshot the entire panel.
           onGenerateDragPreview: ({ location, nativeSetDragImage }) => {
             const rect = handleEl.getBoundingClientRect();
             setCustomNativeDragPreview({
@@ -346,7 +338,6 @@ interface BoardPanelContentProps {
   children: ReactNode;
 }
 
-/** Board panel content wrapper that switches between collapsed and expanded views */
 export function BoardPanelContent({ isCollapsed, collapsedContent, children }: BoardPanelContentProps) {
   return <>{isCollapsed ? collapsedContent : children}</>;
 }

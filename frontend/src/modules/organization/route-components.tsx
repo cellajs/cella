@@ -20,7 +20,6 @@ const orgAttachmentsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organiz
 const orgSettingsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/settings');
 const orgToolApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/$tool');
 
-/** Renders the routed organization view. */
 export function OrganizationRouteComponent() {
   const { organization, tenantId } = orgRouteApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
@@ -31,7 +30,6 @@ export function OrganizationRouteComponent() {
   );
 }
 
-/** Renders the organization members route. */
 export function OrganizationMembersComponent() {
   const { organization, tenantId } = orgMembersApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
@@ -42,7 +40,6 @@ export function OrganizationMembersComponent() {
   );
 }
 
-/** Renders the organization attachments route. */
 export function OrganizationAttachmentsComponent() {
   const { organization, tenantId } = orgAttachmentsApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
@@ -53,7 +50,6 @@ export function OrganizationAttachmentsComponent() {
   );
 }
 
-/** Renders the organization settings route. */
 export function OrganizationSettingsComponent() {
   const { organization, tenantId } = orgSettingsApi.useRouteContext();
   const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
@@ -64,7 +60,6 @@ export function OrganizationSettingsComponent() {
   );
 }
 
-/** Renders a registry tab tool for the organization: the `organization.tabs` slot's `$tool` host. */
 export function OrganizationToolComponent() {
   const { organization, tenantId } = orgToolApi.useRouteContext();
   const { tool } = orgToolApi.useParams();

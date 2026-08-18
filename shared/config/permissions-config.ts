@@ -5,9 +5,10 @@ import { configurePermissions } from '../src/permissions/policy-matrix.ts';
 // product home rows, publicRead and row conditions are all explained in cella/PERMISSIONS.md.
 
 /**
- * Optional product grant scoping: roles NOT in this list see only rows homed at their own channel
- * level; listed roles keep full subtree scope. `undefined` keeps every grant subtree-scoped.
- * Read by the engine and the collection-scope SQL compiler alike.
+ * Roles whose grants cover every row physically below their channel, not only rows homed at that
+ * channel level. Static per role, never per-row. `undefined` keeps every grant subtree-scoped. Read
+ * by the engine check, the collection-scope SQL compiler and SSE dispatch, which must stay
+ * mirror-consistent.
  *
  * @see cella/PERMISSIONS.md
  */

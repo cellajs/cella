@@ -20,16 +20,12 @@ import { InviteSearchForm } from '~/modules/user/invite-search-form';
 const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
-/** Default invite role for a context: 'member' when the vocabulary has it, else the least-privileged role. */
 const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] => {
   const channelRoles = entityType ? hierarchy.getRoles(entityType) : [];
   if (!channelRoles.length || channelRoles.includes('member')) return 'member';
   return channelRoles[channelRoles.length - 1] as InviteFormValues['role'];
 };
 
-/**
- * Creates a draft-backed invite form for the given entity.
- */
 export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',
@@ -47,18 +43,14 @@ interface InviteUsersProps {
   children?: React.ReactNode;
 }
 
-// When no entity type, it's a system invite
-/** Renders the invitation flow for users. */
 export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(baseMode);
 
   const updateMode = (mode: ('search' | 'email' | 'bulk')[]) => {
-    // If mode is empty, go back to initial state
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    // Update dialog title
     useDialoger.getState().update('invite-users', {
       titleContent: (
         <div className="flex items-center gap-2">

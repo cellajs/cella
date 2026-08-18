@@ -24,7 +24,7 @@ import { isDefaultListView } from '~/query/basic/create-query-keys';
 
 const LIMIT = appConfig.requestLimits.attachments;
 
-/** Stable row key getter function - defined outside component to prevent re-renders */
+/** Defined outside the component so the getter identity stays stable. */
 function rowKeyGetter(row: Attachment) {
   return row.id;
 }
@@ -76,9 +76,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   };
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // Default view (no search, default sort) is served straight from the canonical org query:
-  // SyncService prefetches it and live sync splices creates into it. It does not fetch independently.
-  // Any deviating filter switches to the server-filtered infinite query.
+  // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
   const canonicalOptions = attachmentsCanonicalOptions({
@@ -112,7 +110,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
     if (column.key !== 'name') return;
 
-    // If name is changed, update the attachment
     for (const index of indexes) {
       const attachment = changedRows[index];
       updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });

@@ -4,9 +4,6 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { Member } from '~/modules/memberships/types';
 
-// The Mention inline content.
-// Schema config is shared with the Yjs relay's server-side seeder; see shared/blocknote-schema-configs.
-/** Renders the mention schema component. */
 export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
   render: (props) => {
     const { name } = props.inlineContent.props;
@@ -21,8 +18,6 @@ export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
   },
 });
 
-// Function which gets all users for the mentions menu.
-/** Returns the mention menu items. */
 export const getMentionMenuItems = (
   members: Member[],
   editor: CustomBlockNoteEditor,

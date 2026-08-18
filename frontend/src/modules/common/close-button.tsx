@@ -14,7 +14,6 @@ interface CloseButtonProps {
   className?: string;
 }
 
-/** Reusable close/dismiss button with X icon. */
 export function CloseButton({ onClick, size = 'md', className }: CloseButtonProps) {
   const { icon, button } = sizeConfig[size];
 

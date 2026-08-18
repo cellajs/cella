@@ -15,7 +15,6 @@ const port = Number(env.PORT ?? '4003');
 export async function startMcpWorker(): Promise<void> {
   const hasApiKey = !!env.SCW_AI_API_KEY;
 
-  // Stop if mcp is disabled via config
   if (appConfig.services.mcp.enabled === false) {
     baseLog.info('MCP server disabled by appConfig');
     return;
@@ -34,16 +33,10 @@ export async function startMcpWorker(): Promise<void> {
       await waitForBackend(2000, 60_000);
     }
 
-    // Mount MCP routes on the shared base app (middleware, health, error handling)
     baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
-    // Start pg-boss (creates queues)
     await getPgBoss();
     baseLog.info('pg-boss started, queues ready');
-
-    // Active job handlers will be registered here (deferred)
-    // boss.work('ai-yjs', { teamSize: 3, teamConcurrency: 3 }, yjsJobHandler);
-    // boss.work('chat-retry', { teamSize: 2 }, chatRetryHandler);
   }
 
   let server: ServerType | undefined;

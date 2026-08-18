@@ -7,9 +7,6 @@ import type { DraggableItemData } from '~/utils/get-draggable-item-data';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;
 
-/**
- * Type `base` for buttons in the main navigation bar, `floating` is for floating buttons
- */
 export type NavItemId = (typeof navItems)[number]['id'];
 
 export type TriggerNavItemOptions = {

@@ -5,9 +5,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 
-/**
- * Wait for react-query to hydrate cache so we can use fallback getQueryData in router loaders when offline.
- */
+/** Waits for the react-query cache to hydrate, so offline router loaders can read getQueryData. */
 export function AppRouter() {
   const isRestoring = useIsRestoring();
   const isOnline = onlineManager.isOnline();

@@ -9,7 +9,6 @@ import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { forceOnline } from '~/query/offline/connectivity';
 
-// Configuration for different down alerts
 const downAlertConfig = {
   offline: {
     icon: CloudOffIcon,
@@ -60,13 +59,12 @@ const downAlertConfig = {
   },
 } as const;
 
-/** Renders the down alert component. */
 export function DownAlert() {
   const isOnline = useOnlineManager();
   const { downAlert, setDownAlert } = useAlertStore();
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
 
-  // Derives the debounced UI offline state from the logic state (onlineManager).
+  // Derives the debounced UI offline state from onlineManager
   useUiOffline();
 
   const dismissAlert = () => {
@@ -75,7 +73,7 @@ export function DownAlert() {
     setDownAlert(null);
   };
 
-  // Allow the offline alert to surface again once connectivity returns.
+  // Returning connectivity re-arms the offline alert
   useEffect(() => {
     if (isOnline) setDismissedAlerts((prev) => ({ ...prev, offline: false }));
   }, [isOnline]);

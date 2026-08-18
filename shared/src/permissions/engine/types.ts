@@ -8,23 +8,20 @@ import type {
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { PublicReadGrants } from '../public-read.ts';
 
-/** Database-shaped channel ID columns, such as `organizationId`. */
 export type ChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 
 /** Ancestor channel IDs by type. `null` marks an intentionally unused level. */
 export type AncestorChannelIds = Partial<Record<ChannelEntityType, string | null>>;
 
-/** Channel IDs resolved during permission evaluation. */
 export type ResolvedChannelIds = Partial<Record<ChannelEntityType, string>>;
 
-/** Membership fields read by the permission engine. Tier models may include extra fields. */
+/** Tier models may carry extra fields; these are the ones the engine reads. */
 export interface AccessMembership {
   channelType: ChannelEntityType;
   channelId: string;
   role: EntityRole;
 }
 
-/** Entity evaluated by the permission engine. */
 export type SubjectForPermission = {
   entityType: ChannelEntityType | ProductEntityType;
   id?: string;
@@ -32,11 +29,9 @@ export type SubjectForPermission = {
   createdBy?: string | null;
   channelIds: AncestorChannelIds;
   /**
-   * Same-row fields used by row conditions and public read grants. Keeping rules row-local
-   * lets JavaScript checks, compiled SQL, and stream dispatch produce the same decision.
-   *
-   * @see row-conditions.ts
-   * @see public-read.ts
+   * Same-row fields read by row conditions and public read grants. Row-local rules let the
+   * JavaScript check, the compiled SQL and stream dispatch reach the same decision.
+   * @see row-conditions.ts @see public-read.ts
    */
   row?: Record<string, unknown>;
 };
@@ -64,24 +59,13 @@ export interface PermissionDecision<T extends AccessMembership = AccessMembershi
   membership: T | null;
 }
 
-/** Optional controls for permission evaluation. */
 export interface PermissionCheckOptions {
   isSystemAdmin?: boolean;
   /** Acting user ID. Required by `own` conditions. */
   userId?: string;
-  /**
-   * Public read grants. The `checkAccess*` wrappers inject configured grants; direct callers
-   * only pass these for synthetic policies.
-   *
-   * @see public-read.ts
-   */
+  /** The `checkAccess*` wrappers inject the configured grants. @see public-read.ts */
   publicGrants?: PublicReadGrants;
-  /**
-   * Roles with subtree-wide grants for product subjects. Other roles grant only at a row's
-   * home channel. `undefined` treats every role as subtree-wide.
-   *
-   * @see shared/config/permissions-config.ts
-   */
+  /** `undefined` treats every role as subtree-wide. @see shared/config/README.md */
   elevatedRoles?: readonly string[];
   /** Synthetic hierarchy override; defaults to the app singleton. */
   hierarchy?: EntityHierarchy;

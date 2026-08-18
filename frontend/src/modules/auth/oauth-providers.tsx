@@ -7,7 +7,6 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-/** Maps configured OAuth providers to authentication actions. */
 export const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
   { id: 'google', name: 'Google' },
@@ -37,8 +36,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
       const params = new URLSearchParams();
 
-      // Only send an explicit deep link; a default here would read as an explicit redirect
-      // server-side and skip the welcome page for new users.
+      // Only forward an explicit deep link: a default reads as explicit server-side and skips the welcome page for new users.
       if (redirect?.startsWith('/')) params.set('redirectAfter', redirect);
 
       if (tokenId) {

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import type { EnrichedChannel } from '~/modules/entities/types';
 
-// Test mocks: only the fields heldContextRoles reads
 const membership = (channelId: string, role: string) =>
   ({ channelType: 'organization', channelId, role }) as MembershipBase;
 const entity = { id: 'org1', entityType: 'organization' } as EnrichedChannel;

@@ -9,8 +9,7 @@ registerBenchSeed({
     await client.query('DELETE FROM tenants WHERE id = $1', [TENANT_ID]);
   },
   seed: async ({ now, pool }) => {
-    // attachment: 0 = unlimited: the seeded 500 attachments exceed the default org quota
-    // (100), which would 429 (`restrict_by_org`) every create in bench/test scenarios.
+    // attachment 0 means unlimited: the seeded 500 attachments exceed the default org quota of 100 and would 429 every create.
     const restrictions = JSON.stringify({ quotas: { attachment: 0 }, rateLimits: { apiPointsPerHour: 10_000_000 } });
     await pool.query(
       'INSERT INTO tenants (id, name, restrictions, created_at) VALUES ($1, $2, $3::jsonb, $4) ON CONFLICT (id) DO UPDATE SET restrictions = $3::jsonb',

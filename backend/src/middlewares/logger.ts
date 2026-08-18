@@ -8,14 +8,8 @@ import { scrubUrl } from '#/utils/scrub-url';
 // Instantiate requestId middleware once at module scope to reuse it across requests.
 const requestIdMiddleware = requestId();
 
-/**
- * Request logging middleware.
- * Logs incoming/outgoing requests with timing, status codes, and user IDs.
- * Uses Hono's built-in requestId middleware for correlation.
- * Formatting is handled by pino-pretty in development.
- */
+/** Logs requests with timing, status, and user id, correlated by Hono's requestId. pino-pretty formats in dev. */
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
-  // Use Hono's requestId middleware to generate/extract request ID
   await requestIdMiddleware(ctx, async () => {});
 
   const start = Date.now();
@@ -32,7 +26,6 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   // Suppress bench traffic logs in development (only log errors)
   if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
 
-  // Log structured data - pino-pretty handles formatting in development
   const logData = { requestId: reqId, method, url: cleanUrl, status, responseTime, userId };
 
   if (status >= 500) requestLogger.error(logData);

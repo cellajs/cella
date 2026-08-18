@@ -16,14 +16,12 @@ describe('generateMockChannelIdColumns', () => {
   it('returns correct column names for default config', () => {
     const columns = generateMockChannelIdColumns();
 
-    // Should have a key for each channel entity type
     for (const entityType of appConfig.channelEntityTypes) {
       const columnName = appConfig.entityIdColumnKeys[entityType];
       expect(columns).toHaveProperty(columnName);
       expect(typeof columns[columnName as keyof typeof columns]).toBe('string');
     }
 
-    // Column count should match channel entity types count
     expect(Object.keys(columns).length).toBe(appConfig.channelEntityTypes.length);
   });
 
@@ -33,7 +31,6 @@ describe('generateMockChannelIdColumns', () => {
     const columns1 = withFakerSeed(key, generateMockChannelIdColumns);
     const columns2 = withFakerSeed(key, generateMockChannelIdColumns);
 
-    // Same seed should produce same values
     expect(columns1).toEqual(columns2);
   });
 
@@ -41,7 +38,6 @@ describe('generateMockChannelIdColumns', () => {
     const columns1 = withFakerSeed('seed-a', generateMockChannelIdColumns);
     const columns2 = withFakerSeed('seed-b', generateMockChannelIdColumns);
 
-    // Different seeds should produce different values
     expect(columns1.organizationId).not.toBe(columns2.organizationId);
   });
 });
