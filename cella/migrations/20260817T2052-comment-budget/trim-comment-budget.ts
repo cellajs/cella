@@ -219,7 +219,7 @@ function typeIsNamed(typeText: string): boolean {
  * member it happens to sit above. Deleting one silently reflows the reader's map of the interface,
  * so leave banners for a human who can see the whole shape.
  */
-const BANNER_PATTERN = /^(?:[\w-]+)(?:[\s&]+(?:and\s+)?[\w-]+)*$/;
+const BANNER_PATTERN = /^[\w-]+(?:[\s&]+[\w-]+)*$/;
 
 /**
  * A default or a conditional contract survives at any length: those are exactly the facts a name
