@@ -2,15 +2,13 @@ import { appConfig } from '../config-builder/app-config.ts';
 import { sleep } from './sleep.ts';
 
 /**
- * Wait for the backend health endpoint to be available.
- * Used by workers (cdc, yjs) to delay startup until the backend is ready.
- *
- * In development/test, backendUrl points at the Vite dev server (same-origin proxy),
- * which may not be running when a worker boots. Probe the backend's own port directly.
+ * Delays cdc and yjs startup until the backend answers. In development and test, backendUrl
+ * points at the Vite dev server, which may not be up when a worker boots, so this probes the
+ * backend's own `devPorts` port.
  */
 export async function waitForBackend(interval = 2000, timeout = 60000): Promise<void> {
   const isLocal = appConfig.mode === 'development' || appConfig.mode === 'test';
-  const healthUrl = isLocal ? 'http://localhost:4000/health' : `${appConfig.backendUrl}/health`;
+  const healthUrl = isLocal ? `http://localhost:${appConfig.devPorts.api}/health` : `${appConfig.backendUrl}/health`;
   const start = Date.now();
 
   while (Date.now() - start < timeout) {
