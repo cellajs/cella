@@ -5,7 +5,11 @@ import { withOrganizationDefaults } from '#/modules/organization/helpers/select'
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { getOrgCache, setOrgCache } from './org-cache';
 
-/** Grants org-scoped routes to org members and system admins. Must run after tenantGuard for the RLS transaction. */
+/**
+ * Grants org-scoped routes to system admins and to anyone holding a membership inside the
+ * organization, at organization level or in any channel below it. Must run after tenantGuard for
+ * the RLS transaction.
+ */
 export const orgGuard = xMiddleware(
   {
     functionName: 'orgGuard',
@@ -52,14 +56,19 @@ export const orgGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
 
+    // Deeper channel rows carry organizationId as an ancestor column, so a sub-channel member is
+    // in the org. This guard only rejects callers with no foothold at all; the permission engine
+    // does the fine-grained work.
     const orgMembership =
       memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
-    if (!isSystemAdmin && !orgMembership) {
+    const isInOrganization = orgMembership !== null || memberships.some((m) => m.organizationId === organization.id);
+    if (!isSystemAdmin && !isInOrganization) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
     const orgWithMembership = { ...organization, membership: orgMembership };
 
-    // membership is null for system admins
+    // membership is the organization-level row: null for system admins, and for members who hold
+    // rows only in channels below the organization
     ctx.set('organization', orgWithMembership);
     ctx.set('organizationId', orgWithMembership.id);
 
