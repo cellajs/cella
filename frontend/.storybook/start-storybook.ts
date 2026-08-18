@@ -3,7 +3,7 @@ import net from 'node:net';
 import { appConfig } from '../../shared';
 
 // Derive Storybook's port from appConfig so each app gets a stable local port.
-const port = Number(new URL(appConfig.frontendUrl).port) + 3006;
+const port = (Number(new URL(appConfig.frontendUrl).port) || 3000) + 3006;
 
 /**
  * Install Playwright's pinned Storybook browser idempotently at test startup.
