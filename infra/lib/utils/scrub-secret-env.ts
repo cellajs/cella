@@ -4,11 +4,10 @@
  * The deploy job holds Scaleway keys, the Pulumi passphrase, and a GitHub token
  * in its process environment (injected as job env in deploy-pipeline.yml). Those
  * must never reach the frontend build, whose Vite plugin graph is a broad
- * third-party-code execution surface that runs at build time. Rather than trust
- * an allowlist of "safe" vars (which risks starving the build of PATH/HOME/etc.),
- * this strips by the naming *conventions* every deploy secret already follows, so
- * a newly introduced `SCW_`/`PULUMI_`/`AWS_` secret is scrubbed automatically
- * without touching this file.
+ * third-party-code execution surface that runs at build time. Matching removes
+ * keys by the naming conventions every deploy secret follows (`SCW_`/`PULUMI_`/
+ * `AWS_` prefixes and SECRET/PASSWORD/TOKEN/KEY tokens), so a newly named secret
+ * is scrubbed with no edit here while build essentials like PATH and HOME stay.
  */
 const SECRET_KEY_PATTERN = /(^SCW_|^PULUMI_|^AWS_|SECRET|PASSWORD|PASSPHRASE|TOKEN|_KEY$|_KEY_ID$)/i;
 

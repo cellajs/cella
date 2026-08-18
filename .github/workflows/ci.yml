@@ -85,8 +85,9 @@ jobs:
   # migrations in the Vitest global setup, so the job needs no service container.
   test:
     # Same-repo branch only: release-please pushes its branch into this repo, so a
-    # fork PR (whose branch name the author fully controls) cannot spoof the prefix
-    # to trigger the heavy suites. head_ref is set only for pull_request events.
+    # PR from another repository (whose branch name its author fully controls)
+    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
+    # pull_request events.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -122,8 +123,9 @@ jobs:
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
     # Same-repo branch only: release-please pushes its branch into this repo, so a
-    # fork PR (whose branch name the author fully controls) cannot spoof the prefix
-    # to trigger the heavy suites. head_ref is set only for pull_request events.
+    # PR from another repository (whose branch name its author fully controls)
+    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
+    # pull_request events.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
     timeout-minutes: 20

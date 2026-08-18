@@ -22,7 +22,8 @@ export interface GithubSyncOptions {
   /** The stack's Pulumi passphrase; written as `PULUMI_CONFIG_PASSPHRASE`. */
   passphrase?: string;
   /** Injected for testability. Returns the spawn exit status. `input`, when set,
-   *  is fed to the child's stdin (used to pass secret values off the argv). */
+   *  is fed to the child's stdin, which carries secret values so they never
+   *  appear as argv elements. */
   run?: (cmd: string, args: string[], opts: { cwd: string; input?: string }) => number;
 }
 

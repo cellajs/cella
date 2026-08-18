@@ -65,9 +65,9 @@ const bootPaths = (slug: string) => {
 
 const writeHeredoc = (path: string, marker: string, content: string): string => {
   // A body line equal to the quoted heredoc terminator would close the document
-  // early and splice the remainder into the root boot script. Every value here is
-  // config- or secret-derived (never attacker-controlled at runtime), but fail
-  // loudly at render time rather than emit a broken or injectable script.
+  // early and splice the remainder into the root boot script. Values here are
+  // config- or secret-derived, not attacker-controlled at runtime; a collision
+  // throws at render time so the deploy fails loudly at the source.
   if (content.split('\n').some((line) => line === marker)) {
     throw new Error(`cloud-init: heredoc content for ${path} contains its terminator '${marker}'`);
   }

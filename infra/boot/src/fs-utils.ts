@@ -9,7 +9,7 @@ import { dirname } from 'node:path';
  * The trailing chmod tightens an already-existing file (whose mode writeFile
  * leaves untouched) and neutralises umask, so the result is exactly `mode`
  * whether the path was new or pre-existing. Every boot-time secret/config
- * write goes through here so the invariant lives in one place.
+ * write goes through here so the permission guarantee holds in one place.
  */
 export async function writeFileMode(path: string, content: string, mode: number): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
