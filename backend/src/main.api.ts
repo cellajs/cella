@@ -99,8 +99,7 @@ const main = async () => {
       console.info(`${pc.bold(pc.greenBright(appConfig.name))} 
 Frontend: ${pc.bold(pc.cyanBright(appConfig.frontendUrl))} 
 Backend: ${pc.bold(pc.cyanBright(appConfig.backendUrl))} 
-Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}
-Storybook: ${pc.cyanBright(`http://localhost:${(Number(new URL(appConfig.frontendUrl).port) || 3000) + 3006}/`)}`);
+Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}`);
 
       console.info(' ');
     },
