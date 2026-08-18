@@ -8,9 +8,9 @@ interface Props {
 }
 
 export function UserProfileContent({ isSheet, user }: Props) {
-  // The page does not wrap this: content owns its container, so a replacement can span full width
+  // The page does not wrap this: content owns its container (so it can span full width) and its top padding
   return (
-    <div className="container">
+    <div className="container pt-4">
       <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
     </div>
   );
