@@ -1,21 +1,22 @@
 import { useTranslation } from 'react-i18next';
-import { appConfig, roles } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ResponsiveSelect } from '~/modules/ui/responsive-select';
 
 interface SelectRoleProps {
-  entity?: boolean;
+  /** Restrict options to this channel entity's role vocabulary; omit for system roles. */
+  entityType?: ChannelEntityType;
   onChange: (value?: string) => void;
   value?: string;
   className?: string;
 }
 
-/** Single-role select over entity and system roles. Renders a drawer on mobile. */
-export function SelectRole({ entity = false, onChange, value, className }: SelectRoleProps) {
+/** Single-role select. Renders a drawer on mobile. */
+export function SelectRole({ entityType, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  const roleOptions = entity ? roles.all : appConfig.systemRoles;
+  const roleOptions = entityType ? hierarchy.getRoles(entityType) : appConfig.systemRoles;
 
   const options = [
     { value: 'all', label: t('c:all') },

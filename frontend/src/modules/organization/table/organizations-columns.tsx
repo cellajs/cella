@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { hierarchy, isChannel, roles } from 'shared';
+import { hierarchy, isChannel } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
@@ -104,7 +104,7 @@ export const useColumns = () => {
       renderEditCell: (props) => (
         <RenderEnumSelect
           {...props}
-          options={roles.all}
+          options={hierarchy.getRoles('organization')}
           currentValue={props.row.membership?.role}
           setValue={(row, role) => ({
             ...row,
@@ -135,7 +135,7 @@ export const useColumns = () => {
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
     // Dynamic membership count columns from role config
-    ...roles.all.map((role) => ({
+    ...hierarchy.getRoles('organization').map((role) => ({
       key: `${role}Count`,
       name: t(`c:${role}`, { count: 2 }),
       minBreakpoint: 'md' as const,

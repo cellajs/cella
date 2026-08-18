@@ -31,7 +31,7 @@ export const Default: Story = {
 
 export const EntityRoles: Story = {
   args: {
-    entity: true,
+    entityType: 'organization',
     value: 'all',
     onChange: () => {},
   },
@@ -40,7 +40,7 @@ export const EntityRoles: Story = {
 
     return (
       <div className="w-80">
-        <SelectRole entity value={value} onChange={setValue} />
+        <SelectRole entityType="organization" value={value} onChange={setValue} />
       </div>
     );
   },
@@ -48,16 +48,16 @@ export const EntityRoles: Story = {
 
 export const Preselected: Story = {
   args: {
-    entity: true,
-    value: 'owner',
+    entityType: 'organization',
+    value: 'member',
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<string | undefined>('owner');
+    const [value, setValue] = useState<string | undefined>('member');
 
     return (
       <div className="w-80">
-        <SelectRole entity value={value} onChange={setValue} />
+        <SelectRole entityType="organization" value={value} onChange={setValue} />
       </div>
     );
   },

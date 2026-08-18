@@ -1,6 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { ArrowDownAZIcon, CalendarIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
@@ -38,6 +39,8 @@ const entityGridSortOptions: readonly EntityGridSortOption[] = [
 type Props = {
   queryKey: QueryKey;
   label: TKey;
+  /** Channel entity the grid lists; scopes the role filter to that entity's role vocabulary. */
+  entityType: ChannelEntityType;
   searchVars: EntityGridBarSearch;
   setSearch: (search: EntityGridBarSearch) => void;
   isSheet?: boolean;
@@ -51,6 +54,7 @@ type Props = {
 export function EntityGridBar({
   queryKey,
   label,
+  entityType,
   searchVars,
   setSearch,
   isSheet,
@@ -95,7 +99,7 @@ export function EntityGridBar({
             sortOptions={sortOptions}
           />
           <SelectRole
-            entity
+            entityType={entityType}
             value={role === undefined ? 'all' : role}
             onChange={onRoleChange}
             className="h-10 sm:min-w-32"

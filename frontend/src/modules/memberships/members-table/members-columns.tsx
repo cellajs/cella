@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { roles } from 'shared';
+import { type ChannelEntityType, hierarchy } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -9,7 +9,7 @@ import { Badge } from '~/modules/ui/badge';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
 
   const columns = () => {
@@ -60,7 +60,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
           renderEditCell: (props) => (
             <RenderEnumSelect
               {...props}
-              options={roles.all}
+              options={hierarchy.getRoles(entityType)}
               currentValue={props.row.membership?.role}
               setValue={(row, role) => ({ ...row, membership: { ...row.membership, role } })}
               renderOption={(role) => t(role)}
