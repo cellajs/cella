@@ -80,6 +80,11 @@ jobs:
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
+      # compose.gen.yml is a committed artifact read at deploy time
+      # (infra/resources/compute.ts), so a stale copy must fail the PR.
+      - name: Check compose model artifact is committed
+        run: pnpm --filter infra compose:check
+
   # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
   # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
   # migrations in the Vitest global setup, so the job needs no service container.
