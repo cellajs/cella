@@ -1,6 +1,7 @@
-import { chmod, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { type FetchLike, resolveFetch } from '../../lib/utils/fetch-like';
 import { parseJsonBody } from '../../lib/utils/json';
+import { writeFileMode } from './fs-utils';
 import type { ServiceKeyHandoff } from './plan';
 
 export interface ServiceKeyPair {
@@ -47,7 +48,6 @@ export async function fetchServiceKey(opts: FetchServiceKeyOptions): Promise<Ser
   const { data } = parseJsonBody<{ data?: string }>(body);
   const pair = parsePair(Buffer.from(data ?? '', 'base64').toString('utf-8'), 'handoff bundle');
 
-  await writeFile(opts.handoff.cacheFile, JSON.stringify(pair), 'utf-8');
-  await chmod(opts.handoff.cacheFile, 0o600);
+  await writeFileMode(opts.handoff.cacheFile, JSON.stringify(pair), 0o600);
   return pair;
 }

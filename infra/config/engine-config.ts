@@ -45,6 +45,22 @@ export function engineConfig(): EngineConfig {
   return injected;
 }
 
+/**
+ * The slug namespaces every Scaleway resource name, the VM's `/etc/<slug>` config
+ * dir, and the `::<slug>::` serial marker rendered into the root boot script
+ * (resources/cloud-init.ts). Pinning it to kebab-case at the single config
+ * boundary makes every downstream shell use of the slug safe by construction, so
+ * no call site needs its own quoting or escaping.
+ */
+const SLUG_RE = /^[a-z][a-z0-9-]*$/;
+function assertValidSlug(slug: string): void {
+  if (!SLUG_RE.test(slug)) {
+    throw new Error(
+      `engine-config: slug '${slug}' must be lowercase kebab-case (letters, digits, hyphens; leading letter). It namespaces VM paths and shell markers.`,
+    );
+  }
+}
+
 /** Structural check for configs arriving from an INFRA_CONFIG_MODULE import. */
 function isEngineConfig(value: unknown): value is EngineConfig {
   if (typeof value !== 'object' || value === null) return false;
@@ -70,10 +86,12 @@ export async function loadEngineConfig(): Promise<EngineConfig> {
         `engine-config: module '${configModule}' does not export an EngineConfig ('engineConfig' or default export).`,
       );
     }
+    assertValidSlug(candidate.slug);
     setEngineConfig(candidate);
     return candidate;
   }
   const { appConfig } = await import('shared');
+  assertValidSlug(appConfig.slug);
   setEngineConfig(appConfig);
   return appConfig;
 }
