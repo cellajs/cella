@@ -1,4 +1,5 @@
 import type { PostAppCatchupResponse } from 'sdk';
+import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 
@@ -20,6 +21,7 @@ vi.mock('shared', async (importOriginal) => {
       channelEntityTypes: hierarchy.channelTypes,
       entityIdColumnKeys: hierarchy.idColumnKeys,
       seenTrackedProductTypes: [],
+      productEmbeddings: [{ embeddedProduct: 'label', hostProduct: 'attachment', hostColumn: 'labels' }],
     },
     hierarchy,
     isChannel: hierarchy.isChannel,
@@ -69,6 +71,9 @@ vi.stubGlobal('localStorage', {
   key: vi.fn(() => null),
   length: 0,
 });
+
+// The synthetic 'label' product exists only in this file's shared mock, hence the cast.
+const LABEL = 'label' as EntityType;
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
@@ -259,6 +264,34 @@ describe('catchup processor (view-driven)', () => {
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     // Cursor untouched: opaque answers carry no frontier to advance to.
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
+  });
+
+  it('refetches embedded-product lists on the fallback branches that never ingest host rows', async () => {
+    // Usage aggregates are derived from host references; a branch that skips the rows cannot verify them.
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const labelKeys = createEntityKeys<Record<string, never>>(LABEL);
+    registerEntityQueryKeys(
+      'attachment',
+      keys,
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+    registerEntityQueryKeys(
+      LABEL,
+      labelKeys,
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+    queryClient.setQueryData(labelKeys.list.org('org-1'), { items: [], total: 0 });
+
+    await processAppCatchup({
+      cursor: 'cursor-1',
+      changes: {},
+      views: [{ key: 'org-1:attachment', status: 'opaque' }],
+    } as unknown as PostAppCatchupResponse);
+
+    expect(queryClient.getQueryState(labelKeys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
 
   it('invalidates org lists when a server count CHANGES between catchups (never vs cached totals)', async () => {

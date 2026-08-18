@@ -18,7 +18,14 @@ vi.mock('./sync-priority', () => ({
   isViewingChannel: () => false,
 }));
 const propagateEmbeddings = vi.fn();
-vi.mock('./propagation', () => ({ propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a) }));
+const invalidateEmbeddedUsage = vi.fn();
+const invalidateEmbeddedForHost = vi.fn();
+vi.mock('./propagation', () => ({
+  propagateEmbeddings: (...a: unknown[]) => propagateEmbeddings(...a),
+  invalidateEmbeddedUsage: (...a: unknown[]) => invalidateEmbeddedUsage(...a),
+  invalidateEmbeddedForHost: (...a: unknown[]) => invalidateEmbeddedForHost(...a),
+  collectEmbeddingTouches: () => {},
+}));
 const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
 const ingestSyncedRows = vi.fn();
@@ -234,6 +241,42 @@ describe('fetch-prioritizer', () => {
     await flushAllNow();
 
     expect(fetchRangeAndPatch.mock.calls[0][5]).toBeUndefined();
+  });
+
+  it('hands the ingest diff to embedded-usage invalidation on a clean delivery', async () => {
+    // Usage aggregates live on the embedded rows, so a moved reference refetches their lists.
+    const touches = new Map([['label', new Set(['l1'])]]);
+    fetchRangeAndPatch.mockResolvedValue({
+      status: 'ok',
+      items: [{ id: 'a1' }],
+      reachedSeq: 9,
+      embeddingTouches: touches,
+    });
+    enqueueRange({ ...base, fromSeq: 9, untilSeq: 9 });
+
+    await flushAllNow();
+
+    expect(invalidateEmbeddedUsage).toHaveBeenCalledWith(touches, 'org-1');
+    expect(invalidateEmbeddedForHost).not.toHaveBeenCalled();
+  });
+
+  it('falls back to host-wide embedded invalidation when no row reaches the diff', async () => {
+    fetchRangeAndPatch.mockResolvedValue({ status: 'overflow', items: [] });
+    enqueueRange({ ...base, fromSeq: 1, untilSeq: 900 });
+
+    await flushAllNow();
+
+    expect(invalidateEmbeddedForHost).toHaveBeenCalledWith('attachment', 'org-1');
+  });
+
+  it('falls back to host-wide embedded invalidation on a short delivery', async () => {
+    // Rows are missing from the range, so the diff cannot account for every reference change.
+    fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 0, embeddingTouches: new Map() });
+    enqueueRange({ ...base, fromSeq: 4, untilSeq: 7 });
+
+    await flushAllNow();
+
+    expect(invalidateEmbeddedForHost).toHaveBeenCalledWith('attachment', 'org-1');
   });
 
   it('short delivery: keeps the cursor honest, invalidates the view, and degrades sync trust', async () => {

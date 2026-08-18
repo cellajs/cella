@@ -13,7 +13,7 @@ import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import { enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
-import { propagateEmbeddings } from './propagation';
+import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /**
@@ -51,6 +51,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         if (!baselineOnly && hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
         }
+        if (!baselineOnly) invalidateEmbeddedForHost(entityType, organizationId);
         console.debug(`[CatchupProcessor] View ${answer.key}: opaque → staleness fallback`);
         continue;
       }
@@ -64,6 +65,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
           console.debug(`[CatchupProcessor] View ${answer.key}: first session → full refetch`);
         }
+        if (!baselineOnly) invalidateEmbeddedForHost(entityType, organizationId);
         syncState.setOrgSeq(organizationId, entityType, frontier);
         continue;
       }
@@ -75,6 +77,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
       // Nothing cached means nothing to patch and mount hydration fetches fresh, so advance to stop the window being re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {
+        // The host's own rows are not cached, but a cached embedded list can still hold their stale aggregates.
+        invalidateEmbeddedForHost(entityType, organizationId);
         syncState.setOrgSeq(organizationId, entityType, frontier);
         console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip delta`);
         continue;
@@ -193,6 +197,7 @@ function processRegisteredViewAnswer(
       if (hasAnyCachedList(keys, view.organizationId)) {
         cacheOps.invalidateEntityListForOrg(keys, view.organizationId, 'active');
       }
+      invalidateEmbeddedForHost(entityType, view.organizationId);
     }
   };
 
@@ -251,6 +256,7 @@ function verifyViewCounts(views: NonNullable<PostAppCatchupResponse['views']>): 
     if (!hasAnyCachedList(keys, organizationId)) continue;
 
     cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
+    invalidateEmbeddedForHost(entityType, organizationId);
     console.debug(
       `[CatchupProcessor] Integrity: ${entityType} in org ${organizationId} count changed from ${previous} → ${serverCount} → invalidated`,
     );

@@ -247,6 +247,8 @@ In a rich app, products are likely to embed other products. The server includes 
 
 Live propagation runs after the embedded-product range fetch; catchup propagation runs after all range fetches for the organization. A same-tab echo returns before propagation, so that mutation must also update host products or wait for later reconciliation. The template ships with no embedding relationships configured.
 
+Propagation also runs in reverse. A host row is the only writer of the reference, so aggregates an app derives per embedded row, such as a usage count, go stale while the embedded row keeps its own sequence and frontier: no delta fetch can return the new value. Ingesting a host range therefore diffs each fetched row's embedding columns against the cached row and refetches the lists holding the embedded rows whose references moved, narrowed to their home channels. Only the symmetric difference counts, so an edit that leaves the column alone costs nothing, and a host row the client never cached is taken to touch every reference it carries. The paths that invalidate a host list instead of ingesting its rows (opaque views, first session, nothing cached to patch, overflow, short delivery, exhausted retries, and removals with no fetchable tombstone) invalidate the embedded products' lists alongside it, because no row reached that diff. The authoritative number always returns through the list endpoint; the client never derives it.
+
 ## Writes
 
 Product mutations keep form code simple by owning optimistic updates and replay wiring in their query module:
