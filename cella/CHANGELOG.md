@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.4](https://github.com/cellajs/cella/compare/0.9.3...0.9.4) (2026-08-19)
+
+
+### 🐞 Bug fixes
+
+* **frontend:** floating-nav touch taps via touchend + shorter reset cooldown ([#1086](https://github.com/cellajs/cella/issues/1086)) ([3edf532](https://github.com/cellajs/cella/commit/3edf5323f19ad298731d66757ffbcb35a5b9a586))
+
+
+### 🔧 Small improvements
+
+* bundle the server runtimes, load 15 packages instead of 500 ([#1084](https://github.com/cellajs/cella/issues/1084)) ([3431973](https://github.com/cellajs/cella/commit/343197314f0a72712f6ba1cd079b5376a907dcc5))
+* install only what the services load, cutting the backend image by a third ([#1087](https://github.com/cellajs/cella/issues/1087)) ([a2d3c77](https://github.com/cellajs/cella/commit/a2d3c77443f0e0a2b0a8aa3187d391d4447d133a))
+* name the OTel instrumentations instead of installing all 41 ([#1083](https://github.com/cellajs/cella/issues/1083)) ([e2d4fa9](https://github.com/cellajs/cella/commit/e2d4fa90150ed52b904931dfa7a54700aa93cdd7))
+
 ## [0.9.3](https://github.com/cellajs/cella/compare/0.9.2...0.9.3) (2026-08-19)
 
 
