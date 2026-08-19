@@ -183,6 +183,9 @@ importers:
       isbot:
         specifier: ^5.2.1
         version: 5.2.1
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
       lru-cache:
         specifier: ^11.5.2
         version: 11.5.2
@@ -434,12 +437,18 @@ importers:
       hono:
         specifier: ^4.13.2
         version: 4.13.2
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
       pg-format:
         specifier: ^1.0.4
         version: 1.0.4
       pg-logical-replication:
         specifier: ^2.5.0
         version: 2.5.0
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
       pino-opentelemetry-transport:
         specifier: ^4.0.2
         version: 4.0.2(pino@10.3.1)
@@ -1145,12 +1154,18 @@ importers:
       hono:
         specifier: ^4.13.2
         version: 4.13.2
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
       lib0:
         specifier: ^0.2.117
         version: 0.2.117
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
       pino-opentelemetry-transport:
         specifier: ^4.0.2
         version: 4.0.2(pino@10.3.1)
