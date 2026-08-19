@@ -127,9 +127,9 @@ COPY --from=backend-builder --chown=app:app /app/backend/package.json ./backend/
 COPY --from=backend-deps --chown=app:app /app/node_modules ./node_modules
 COPY --from=backend-deps --chown=app:app /app/backend/node_modules ./backend/node_modules
 
-# Shared packages and data
-COPY --from=backend-builder --chown=app:app /app/shared ./shared
-COPY --from=backend-deps --chown=app:app /app/shared/node_modules ./shared/node_modules
+# Runtime data. The shared workspace is inlined into backend/dist by tsup, and a --prod install
+# leaves it out entirely now that it is a build dependency, so neither its source nor its
+# node_modules is copied here.
 COPY --from=backend-builder --chown=app:app /app/locales ./locales
 COPY --from=backend-builder --chown=app:app /app/json ./json
 

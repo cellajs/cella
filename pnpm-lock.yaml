@@ -81,45 +81,6 @@ importers:
 
   backend:
     dependencies:
-      '@ag-ui/core':
-        specifier: ^0.0.58
-        version: 0.0.58
-      '@asteasolutions/zod-to-openapi':
-        specifier: ^9.1.0
-        version: 9.1.0(zod@4.4.3)
-      '@aws-sdk/client-s3':
-        specifier: ^3.1112.0
-        version: 3.1112.0
-      '@aws-sdk/s3-request-presigner':
-        specifier: ^3.1112.0
-        version: 3.1112.0
-      '@blocknote/core':
-        specifier: ^0.54.0
-        version: 0.54.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
-      '@blocknote/server-util':
-        specifier: ^0.54.0
-        version: 0.54.0(@types/hast@3.0.5)(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))
-      '@dotenv-run/core':
-        specifier: ^1.3.8
-        version: 1.3.8
-      '@getbrevo/brevo':
-        specifier: ^6.0.3
-        version: 6.0.3
-      '@hono/node-server':
-        specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.2)
-      '@hono/otel':
-        specifier: ^1.1.1
-        version: 1.1.2(hono@4.13.2)
-      '@hono/zod-openapi':
-        specifier: ^1.6.0
-        version: 1.6.0(hono@4.13.2)(zod@4.4.3)
-      '@isaacs/ttlcache':
-        specifier: ^2.1.5
-        version: 2.1.5
-      '@napi-rs/canvas':
-        specifier: ^1.0.6
-        version: 1.0.6
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -156,6 +117,76 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.43.0
         version: 1.43.0
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
+      pg-format:
+        specifier: ^1.0.4
+        version: 1.0.4
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
+      pino-opentelemetry-transport:
+        specifier: ^4.0.2
+        version: 4.0.2(pino@10.3.1)
+      pino-pretty:
+        specifier: ^13.1.3
+        version: 13.1.3
+    devDependencies:
+      '@ag-ui/core':
+        specifier: ^0.0.58
+        version: 0.0.58
+      '@asteasolutions/zod-to-openapi':
+        specifier: ^9.1.0
+        version: 9.1.0(zod@4.4.3)
+      '@aws-sdk/client-s3':
+        specifier: ^3.1112.0
+        version: 3.1112.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.1112.0
+        version: 3.1112.0
+      '@blocknote/core':
+        specifier: ^0.54.0
+        version: 0.54.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
+      '@blocknote/server-util':
+        specifier: ^0.54.0
+        version: 0.54.0(@types/hast@3.0.5)(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))
+      '@commander-js/extra-typings':
+        specifier: ^15.0.0
+        version: 15.0.0(commander@15.0.0)
+      '@dotenv-run/core':
+        specifier: ^1.3.8
+        version: 1.3.8
+      '@faker-js/faker':
+        specifier: ^10.6.0
+        version: 10.6.0
+      '@getbrevo/brevo':
+        specifier: ^6.0.3
+        version: 6.0.3
+      '@hono/node-server':
+        specifier: ^2.1.1
+        version: 2.1.1(hono@4.13.2)
+      '@hono/otel':
+        specifier: ^1.1.1
+        version: 1.1.2(hono@4.13.2)
+      '@hono/vite-dev-server':
+        specifier: ^0.26.1
+        version: 0.26.1(hono@4.13.2)
+      '@hono/zod-openapi':
+        specifier: ^1.6.0
+        version: 1.6.0(hono@4.13.2)(zod@4.4.3)
+      '@isaacs/ttlcache':
+        specifier: ^2.1.5
+        version: 2.1.5
+      '@napi-rs/canvas':
+        specifier: ^1.0.6
+        version: 1.0.6
+      '@ngrok/ngrok':
+        specifier: ^1.7.0
+        version: 1.7.0
       '@oslojs/encoding':
         specifier: ^1.1.0
         version: 1.1.0
@@ -168,127 +199,6 @@ importers:
       '@tanstack/ai':
         specifier: ^0.44.1
         version: 0.44.1(@opentelemetry/api@1.9.1)(zod@4.4.3)
-      cdc-worker:
-        specifier: workspace:*
-        version: link:../cdc
-      drizzle-orm:
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
-      enforce-unique:
-        specifier: ^1.3.0
-        version: 1.3.0
-      hono:
-        specifier: ^4.13.2
-        version: 4.13.2
-      html-to-text:
-        specifier: ^10.0.0
-        version: 10.0.0
-      i18next:
-        specifier: ^26.3.6
-        version: 26.3.6(typescript@6.0.3)
-      isbot:
-        specifier: ^5.2.1
-        version: 5.2.1
-      jsdom:
-        specifier: ^29.1.1
-        version: 29.1.1
-      lru-cache:
-        specifier: ^11.5.2
-        version: 11.5.2
-      maxmind:
-        specifier: ^5.0.7
-        version: 5.0.7
-      nanoid:
-        specifier: ^6.0.1
-        version: 6.0.1
-      oauth4webapi:
-        specifier: ^3.8.7
-        version: 3.8.7
-      openai:
-        specifier: ^7.5.0
-        version: 7.5.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(ws@8.21.3)(zod@4.4.3)
-      ora:
-        specifier: ^9.4.1
-        version: 9.4.1
-      pg:
-        specifier: ^8.23.0
-        version: 8.23.0
-      pg-boss:
-        specifier: ^12.27.0
-        version: 12.27.0
-      pg-format:
-        specifier: ^1.0.4
-        version: 1.0.4
-      pg-logical-replication:
-        specifier: ^2.5.0
-        version: 2.5.0
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
-      pino-http:
-        specifier: ^11.0.0
-        version: 11.0.0
-      pino-opentelemetry-transport:
-        specifier: ^4.0.2
-        version: 4.0.2(pino@10.3.1)
-      rate-limiter-flexible:
-        specifier: ^11.2.0
-        version: 11.2.0
-      react:
-        specifier: ^19.2.8
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.8
-        version: 19.2.8(react@19.2.8)
-      rehype:
-        specifier: ^13.0.2
-        version: 13.0.2
-      rehype-stringify:
-        specifier: ^10.0.1
-        version: 10.0.1
-      sanitize-html:
-        specifier: ^2.17.7
-        version: 2.17.7
-      sdk:
-        specifier: workspace:*
-        version: link:../sdk
-      shared:
-        specifier: workspace:*
-        version: link:../shared
-      slugify:
-        specifier: ^1.6.9
-        version: 1.6.9
-      transloadit:
-        specifier: 4.11.1
-        version: 4.11.1(supports-color@8.1.1)
-      ua-parser-js:
-        specifier: ^2.0.10
-        version: 2.0.10
-      uuidv7:
-        specifier: ^1.2.1
-        version: 1.2.1
-      ws:
-        specifier: ^8.21.3
-        version: 8.21.3
-      yjs-worker:
-        specifier: workspace:*
-        version: link:../yjs
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@commander-js/extra-typings':
-        specifier: ^15.0.0
-        version: 15.0.0(commander@15.0.0)
-      '@faker-js/faker':
-        specifier: ^10.6.0
-        version: 10.6.0
-      '@hono/vite-dev-server':
-        specifier: ^0.26.1
-        version: 0.26.1(hono@4.13.2)
-      '@ngrok/ngrok':
-        specifier: ^1.7.0
-        version: 1.7.0
       '@types/hast':
         specifier: 3.0.5
         version: 3.0.5
@@ -319,6 +229,9 @@ importers:
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260707.2
         version: 7.0.0-dev.20260707.2
+      cdc-worker:
+        specifier: workspace:*
+        version: link:../cdc
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -331,12 +244,84 @@ importers:
       drizzle-kit:
         specifier: 1.0.0-rc.5-ab785fc
         version: 1.0.0-rc.5-ab785fc
+      drizzle-orm:
+        specifier: 1.0.0-rc.3
+        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
+      enforce-unique:
+        specifier: ^1.3.0
+        version: 1.3.0
+      hono:
+        specifier: ^4.13.2
+        version: 4.13.2
+      html-to-text:
+        specifier: ^10.0.0
+        version: 10.0.0
+      i18next:
+        specifier: ^26.3.6
+        version: 26.3.6(typescript@6.0.3)
+      isbot:
+        specifier: ^5.2.1
+        version: 5.2.1
+      lru-cache:
+        specifier: ^11.5.2
+        version: 11.5.2
+      maxmind:
+        specifier: ^5.0.7
+        version: 5.0.7
+      nanoid:
+        specifier: ^6.0.1
+        version: 6.0.1
+      oauth4webapi:
+        specifier: ^3.8.7
+        version: 3.8.7
+      openai:
+        specifier: ^7.5.0
+        version: 7.5.0(@aws-sdk/credential-provider-node@3.972.80)(@smithy/signature-v4@5.7.2)(ws@8.21.3)(zod@4.4.3)
+      ora:
+        specifier: ^9.4.1
+        version: 9.4.1
+      pg-boss:
+        specifier: ^12.27.0
+        version: 12.27.0
+      pg-logical-replication:
+        specifier: ^2.5.0
+        version: 2.5.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      pino-pretty:
-        specifier: ^13.1.3
-        version: 13.1.3
+      pino-http:
+        specifier: ^11.0.0
+        version: 11.0.0
+      rate-limiter-flexible:
+        specifier: ^11.2.0
+        version: 11.2.0
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
+      rehype:
+        specifier: ^13.0.2
+        version: 13.0.2
+      rehype-stringify:
+        specifier: ^10.0.1
+        version: 10.0.1
+      sanitize-html:
+        specifier: ^2.17.7
+        version: 2.17.7
+      sdk:
+        specifier: workspace:*
+        version: link:../sdk
+      shared:
+        specifier: workspace:*
+        version: link:../shared
+      slugify:
+        specifier: ^1.6.9
+        version: 1.6.9
+      transloadit:
+        specifier: 4.11.1
+        version: 4.11.1(supports-color@8.1.1)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(supports-color@8.1.1)(tsx@4.23.12)(typescript@6.0.3)(yaml@2.9.0)
@@ -346,12 +331,27 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      ua-parser-js:
+        specifier: ^2.0.10
+        version: 2.0.10
+      uuidv7:
+        specifier: ^1.2.1
+        version: 1.2.1
       vite:
         specifier: ^8.2.1
         version: 8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0)
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0))
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
+      yjs-worker:
+        specifier: workspace:*
+        version: link:../yjs
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   bench:
     dependencies:
@@ -404,9 +404,6 @@ importers:
 
   cdc:
     dependencies:
-      '@hono/node-server':
-        specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.2)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -443,12 +440,6 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.43.0
         version: 1.43.0
-      drizzle-orm:
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
-      hono:
-        specifier: ^4.13.2
-        version: 4.13.2
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -467,19 +458,10 @@ importers:
       pino-pretty:
         specifier: ^13.1.3
         version: 13.1.3
-      sdk:
-        specifier: workspace:*
-        version: link:../sdk
-      shared:
-        specifier: workspace:*
-        version: link:../shared
-      ws:
-        specifier: ^8.21.3
-        version: 8.21.3
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
+      '@hono/node-server':
+        specifier: ^2.1.1
+        version: 2.1.1(hono@4.13.2)
       '@types/node':
         specifier: 26.2.0
         version: 26.2.0
@@ -495,6 +477,18 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
+      drizzle-orm:
+        specifier: 1.0.0-rc.3
+        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
+      hono:
+        specifier: ^4.13.2
+        version: 4.13.2
+      sdk:
+        specifier: workspace:*
+        version: link:../sdk
+      shared:
+        specifier: workspace:*
+        version: link:../shared
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(supports-color@8.1.1)(tsx@4.23.12)(typescript@6.0.3)(yaml@2.9.0)
@@ -507,6 +501,12 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0))
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   frontend:
     dependencies:
@@ -1127,15 +1127,6 @@ importers:
 
   yjs:
     dependencies:
-      '@blocknote/core':
-        specifier: ^0.54.0
-        version: 0.54.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
-      '@blocknote/server-util':
-        specifier: ^0.54.0
-        version: 0.54.0(@types/hast@3.0.5)(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))
-      '@hono/node-server':
-        specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.2)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -1172,18 +1163,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ^1.43.0
         version: 1.43.0
-      drizzle-orm:
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
-      hono:
-        specifier: ^4.13.2
-        version: 4.13.2
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
-      lib0:
-        specifier: ^0.2.117
-        version: 0.2.117
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -1196,22 +1178,16 @@ importers:
       pino-pretty:
         specifier: ^13.1.3
         version: 13.1.3
-      rate-limiter-flexible:
-        specifier: ^11.2.0
-        version: 11.2.0
-      shared:
-        specifier: workspace:*
-        version: link:../shared
-      ws:
-        specifier: ^8.21.3
-        version: 8.21.3
-      yjs:
-        specifier: ^13.6.32
-        version: 13.6.32
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
+      '@blocknote/core':
+        specifier: ^0.54.0
+        version: 0.54.0(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
+      '@blocknote/server-util':
+        specifier: ^0.54.0
+        version: 0.54.0(@types/hast@3.0.5)(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.2)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))
+      '@hono/node-server':
+        specifier: ^2.1.1
+        version: 2.1.1(hono@4.13.2)
       '@types/node':
         specifier: 26.2.0
         version: 26.2.0
@@ -1227,6 +1203,21 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
+      drizzle-orm:
+        specifier: 1.0.0-rc.3
+        version: 1.0.0-rc.3(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(@upstash/redis@1.38.2)(pg@8.23.0)(zod@4.4.3)
+      hono:
+        specifier: ^4.13.2
+        version: 4.13.2
+      lib0:
+        specifier: ^0.2.117
+        version: 0.2.117
+      rate-limiter-flexible:
+        specifier: ^11.2.0
+        version: 11.2.0
+      shared:
+        specifier: workspace:*
+        version: link:../shared
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(supports-color@8.1.1)(tsx@4.23.12)(typescript@6.0.3)(yaml@2.9.0)
@@ -1239,6 +1230,15 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.12)(yaml@2.9.0))
+      ws:
+        specifier: ^8.21.3
+        version: 8.21.3
+      yjs:
+        specifier: ^13.6.32
+        version: 13.6.32
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
 packages:
 
