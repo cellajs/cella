@@ -57,13 +57,15 @@ describe('frontend Caddyfile', () => {
 
   it('long-caches content-hashed /assets/* only', () => {
     expect(caddyfile).toMatch(/@assets\s+path\s+\/assets\/\*\s*\n/);
-    expect(caddyfile).toMatch(/Cache-Control\s+"public,\s*max-age=31536000,\s*immutable"/);
+    // `>` sets the header with defer, which is what makes it replace the Cache-Control S3 returns;
+    // without it the response carries the field twice.
+    expect(caddyfile).toMatch(/header >Cache-Control\s+"public,\s*max-age=31536000,\s*immutable"/);
   });
 
   it('short-caches stable-named /static/* (docs.gen etc. change per release)', () => {
     // Marking /static/* immutable froze docs data in browser caches for a year.
     expect(caddyfile).toMatch(/@static\s+path\s+\/static\/\*/);
-    expect(caddyfile).toMatch(/@static\s+path[^{]*\{\s*\n\s*header Cache-Control "public, max-age=3600"/);
+    expect(caddyfile).toMatch(/@static\s+path[^{]*\{\s*\n\s*header >Cache-Control "public, max-age=3600"/);
   });
 
   it('reverse-proxies to the {$ORIGIN_HOST} env, not a hardcoded bucket', () => {

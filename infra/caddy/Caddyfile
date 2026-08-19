@@ -17,7 +17,6 @@
 # Configurable env (set in infra/config/services.config.ts `frontend` entry):
 #   RELEASE_SHA : bound to X-App-Version (defaulted to "dev" in Dockerfile)
 #   ORIGIN_HOST : S3 REST hostname for the frontend bucket
-
 {
 	admin off
 	auto_https off
@@ -56,9 +55,14 @@
 
 	# Long-cache versioned assets. The frontend build hashes filenames under
 	# /assets/, so a year cache is safe there.
+	#
+	# Every Cache-Control below carries the `>` prefix, which sets the field with `defer`. An
+	# unprefixed header runs before the reverse_proxy response arrives, so S3's own Cache-Control
+	# (written as object metadata by tasks/frontend-assets.ts and tasks/deploy-run.ts) lands after
+	# it and the response carries the field twice. Deferring makes these values replace it.
 	@assets path /assets/*
 	handle @assets {
-		header Cache-Control "public, max-age=31536000, immutable"
+		header >Cache-Control "public, max-age=31536000, immutable"
 		reverse_proxy https://{$ORIGIN_HOST} {
 			header_up Host {$ORIGIN_HOST}
 		}
@@ -69,7 +73,7 @@
 	# ?v=<sha> param the app appends to mutable fetches keeps them fresh.
 	@static path /static/*
 	handle @static {
-		header Cache-Control "public, max-age=3600"
+		header >Cache-Control "public, max-age=3600"
 		reverse_proxy https://{$ORIGIN_HOST} {
 			header_up Host {$ORIGIN_HOST}
 		}
@@ -80,7 +84,7 @@
 	# index.html directly for "/".
 	@root path /
 	handle @root {
-		header Cache-Control "no-cache"
+		header >Cache-Control "no-cache"
 		rewrite * /index.html
 		reverse_proxy https://{$ORIGIN_HOST} {
 			header_up Host {$ORIGIN_HOST}
@@ -90,7 +94,7 @@
 	# Default: proxy to S3; on a 404 from origin (deep link to a client-side
 	# route), rewrite to /index.html and re-proxy so the SPA can take over.
 	handle {
-		header Cache-Control "no-cache"
+		header >Cache-Control "no-cache"
 		reverse_proxy https://{$ORIGIN_HOST} {
 			header_up Host {$ORIGIN_HOST}
 			@notfound status 404
