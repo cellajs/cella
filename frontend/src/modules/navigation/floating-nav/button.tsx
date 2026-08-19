@@ -33,9 +33,9 @@ export function FloatingNavButton({
   className,
   direction = 'right',
 }: FloatingNavButtonProps) {
-  // A tap that interrupts a momentum scroll cancels the fling but the browser suppresses its click,
-  // so touch taps are handled on pointerup instead. Pointercancel (scroll takeover) and the slop
-  // check keep drags from triggering; suppressClick avoids double-firing when click does arrive.
+  // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
+  // so touch taps run on pointerup. Pointercancel (scroll takeover) and the slop check keep drags
+  // from triggering; suppressClick avoids double-firing when a click does arrive.
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
 
