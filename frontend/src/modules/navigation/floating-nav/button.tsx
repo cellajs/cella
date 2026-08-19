@@ -34,8 +34,8 @@ export function FloatingNavButton({
   direction = 'right',
 }: FloatingNavButtonProps) {
   // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
-  // so touch taps run on touchend. preventDefault there stops the synthesized click entirely — it
-  // would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and
+  // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
+  // it would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and
   // dismiss it. Touchcancel (scroll takeover) and the slop check keep drags from triggering.
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
