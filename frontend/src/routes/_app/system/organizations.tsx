@@ -15,7 +15,10 @@ const OrganizationsTable = lazyNamed(
 export const Route = createFileRoute('/_app/system/organizations')({
   validateSearch: organizationsRouteSearchParamsSchema,
   search: { middlewares: [stripSearchParams(organizationsSearchDefaults)] },
-  staticData: { isAuth: true, navTab: { id: 'organizations', label: 'c:organization_other' } },
+  staticData: {
+    isAuth: true,
+    navTab: { id: 'organizations', label: 'c:organization_other', description: 'c:tab_organizations.text' },
+  },
   head: () => ({ meta: [{ title: appTitle('Organizations') }] }),
   component: withSuspense(OrganizationsTable),
 });

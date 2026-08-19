@@ -9,7 +9,7 @@ const UsersTable = lazyNamed(() => import('~/modules/user/table/users-table'), '
 export const Route = createFileRoute('/_app/system/users')({
   validateSearch: usersRouteSearchParamsSchema,
   search: { middlewares: [stripSearchParams(usersSearchDefaults)] },
-  staticData: { isAuth: true, navTab: { id: 'users', label: 'c:user_other' } },
+  staticData: { isAuth: true, navTab: { id: 'users', label: 'c:user_other', description: 'c:tab_users.text' } },
   head: () => ({ meta: [{ title: appTitle('Users') }] }),
   component: withSuspense(UsersTable),
 });
