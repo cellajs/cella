@@ -1,0 +1,44 @@
+diff --git a/dist/lib/util/prepare-test-execution-plan.js b/dist/lib/util/prepare-test-execution-plan.js
+index 52236a66d6ecef4b25b1337252435e1f6be03658..4ac735b11f37eb29c8edccf7faa206e96cfb724b 100644
+--- a/dist/lib/util/prepare-test-execution-plan.js
++++ b/dist/lib/util/prepare-test-execution-plan.js
+@@ -109,7 +109,7 @@ async function readPayload(script) {
+     return script;
+ }
+ function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
+-    const esbuild = require('esbuild-wasm');
++    const esbuild = require('esbuild');
+     esbuild.buildSync({
+         entryPoints: [entryPoint],
+         outfile: outputPath,
+@@ -140,7 +140,7 @@ function replaceProcessorIfTypescript(script, scriptPath) {
+     const newProcessorPath = path.join(processorDir, `dist/${processorFileName}.js`);
+     //TODO: move require to top of file when Lambda bundle size issue is solved
+     //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
+-    const esbuild = require('esbuild-wasm');
++    const esbuild = require('esbuild');
+     try {
+         esbuild.buildSync({
+             entryPoints: [actualProcessorPath],
+diff --git a/lib/util/prepare-test-execution-plan.ts b/lib/util/prepare-test-execution-plan.ts
+index f8ea361d5a55c8f6ef46a2f19c6f283de35adc09..95a906eed30c15ddf5c7edf5ab95b706c64c96ab 100644
+--- a/lib/util/prepare-test-execution-plan.ts
++++ b/lib/util/prepare-test-execution-plan.ts
+@@ -175,7 +175,7 @@ function transpileTypeScript(
+   outputPath: string,
+   userExternalPackages: string[]
+ ) {
+-  const esbuild = require('esbuild-wasm');
++  const esbuild = require('esbuild');
+ 
+   esbuild.buildSync({
+     entryPoints: [entryPoint],
+@@ -223,7 +223,7 @@ function replaceProcessorIfTypescript(
+ 
+   //TODO: move require to top of file when Lambda bundle size issue is solved
+   //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
+-  const esbuild = require('esbuild-wasm');
++  const esbuild = require('esbuild');
+ 
+   try {
+     esbuild.buildSync({

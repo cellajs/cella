@@ -12,10 +12,9 @@ import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
-import { blocksToHTML } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
-import { BlockNoteContentFormField } from '~/modules/common/form-fields/blocknote';
+import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -24,6 +23,12 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
+import { lazyNamed } from '~/utils/lazy-named';
+
+const BlockNoteContentFormField = lazyNamed(
+  () => import('~/modules/common/form-fields/blocknote'),
+  'BlockNoteContentFormField',
+) as unknown as typeof BlockNoteContentFormFieldType;
 
 const formSchema = zSendNewsletterBody;
 
@@ -66,6 +71,9 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
   });
 
   const onSubmit = async (data: FormValues) => {
+    // Imported on submit: blocksToHTML builds a headless BlockNoteEditor, and importing it here keeps
+    // @blocknote/core off the boot path for everyone who never opens this form.
+    const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
     // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
     const body = {
       ...data,

@@ -8,6 +8,10 @@ const dirname =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  // vitest does not load vite.config.ts, so build-time literals are repeated here.
+  define: {
+    __DEV_TOOLS__: 'true',
+  },
   // Top-level alias so this config also works when invoked as a single project
   // from the root vitest config (which flattens nested `projects`).
   resolve: {

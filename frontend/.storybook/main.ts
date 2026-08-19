@@ -26,6 +26,7 @@ const config: StorybookConfig = {
       'process.env': {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
       },
+      __DEV_TOOLS__: 'true',
     };
     return config;
   },

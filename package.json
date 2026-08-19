@@ -68,6 +68,11 @@
     "offline": "cross-env pnpm -r --parallel --stream --filter backend --filter cdc-worker dev & pnpm --filter frontend offline",
     "story": "pnpm --filter frontend storybook",
     "bench": "pnpm -C bench bench",
+    "deps": "node shared/scripts/deps-report.ts",
+    "deps:bundle": "node shared/scripts/bundle-report.ts",
+    "deps:bundle:check": "node shared/scripts/bundle-report.ts --max-critical-kb 900 --assert-lazy",
+    "deps:bundle:analyze": "cross-env ANALYZE=true pnpm --filter frontend build && node shared/scripts/bundle-report.ts",
+    "deps:unused": "knip",
     "session": "bash session.sh"
   },
   "devDependencies": {

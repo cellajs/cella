@@ -1,19 +1,33 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreWorkspaces": ["backend"],
-  "ignore": ["shared/config/config.template.ts"],
+  "ignore": [
+    "shared/config/config.template.ts"
+  ],
   "workspaces": {
-    "backend": {},
+    "backend": {
+      "entry": [
+        "scripts/*.ts",
+        "emails/index.ts",
+        "emails/preview-route.ts",
+        "tests/**/*.ts"
+      ]
+    },
+    "bench": {
+      "ignoreDependencies": [
+        "artillery",
+        "artillery-plugin-ensure"
+      ]
+    },
+    "shared": {
+      "ignoreDependencies": [
+        "pino-opentelemetry-transport"
+      ]
+    },
     "infra": {
       "entry": [
         "index.ts",
-        "cli/infra-cli.ts",
-        "tasks/*.ts",
-        "compose/synth.ts",
-        "agent/src/entry.ts",
-        "agent/src/main.ts"
-      ],
-      "ignoreBinaries": ["pulumi", "gh"]
+        "tasks/*.ts"
+      ]
     }
   }
 }

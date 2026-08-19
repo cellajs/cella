@@ -535,7 +535,7 @@
   "tab_tenants.text": "Every tenant in the system, each an isolated boundary around its organizations.",
   "tab_users.text": "Every user account in the system, including system admins.",
   "tabs": "Tabs",
-  "tabs.text": "Choose which tabs show on this page and in what order. Visibility here is presentation only, never authorization.",
+  "tabs.text": "Choose which tabs show on this {{resource}} and in what order.",
   "tags": "Tags",
   "talk_to_us": "Talk to us",
   "tenant": "Tenant",

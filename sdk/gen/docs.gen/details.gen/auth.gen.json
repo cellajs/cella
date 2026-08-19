@@ -199,7 +199,7 @@
           },
           "contentType": "application/json"
         },
-        "example": { "email": "obie.becker-hickle@demo.local", "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c" }
+        "example": { "email": "nola.becker-hickle@demo.local", "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c" }
       },
       {
         "status": 400,

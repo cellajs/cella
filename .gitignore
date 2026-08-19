@@ -60,7 +60,7 @@ scripts/migration/
 session.sh
 .netlify
 .wrangler
-frontend/stats.html
+frontend/stats
 .junie
 .claude
 .custom

@@ -1,7 +1,6 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useEffect, useState } from 'react';
-import { scan } from 'react-scan';
 import { appConfig } from 'shared';
 import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
@@ -35,6 +34,12 @@ const debugOptions: DebugItem[] = [
   { id: 'sync-devtools', icon: '⚡' },
 ];
 
+/** Imported on demand so react-scan and its bundled Preact stay out of the eager chunk graph. */
+const runScan = async (enabled: boolean) => {
+  const { scan } = await import('react-scan');
+  scan({ showToolbar: enabled, enabled });
+};
+
 function DebugDropdown({ className }: DebugDropdownProps) {
   const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
 
@@ -50,7 +55,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
       const prev = localStorage.getItem('react-scan-enabled') === 'true';
       const enable = !prev;
       localStorage.setItem('react-scan-enabled', JSON.stringify(enable));
-      scan({ showToolbar: enable, enabled: enable });
+      void runScan(enable);
       return;
     }
 
@@ -68,7 +73,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
   useEffect(() => {
     const enabled = localStorage.getItem('react-scan-enabled') === 'true';
     if (enabled) {
-      scan({ showToolbar: true, enabled: true });
+      void runScan(true);
     }
   }, []);
 

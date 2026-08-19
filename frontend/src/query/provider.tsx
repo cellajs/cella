@@ -2,7 +2,6 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/offline/download-service';
-import { uploadService } from '~/modules/attachment/offline/upload-service';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
@@ -40,10 +39,15 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {
     downloadService.start();
-    uploadService.start();
+    // Loaded on mount: this provider evaluates before any route, so a module-scope import places
+    // @uppy/core and its dashboard on the boot path.
+    const started = import('~/modules/attachment/offline/upload-service').then((m) => {
+      m.uploadService.start();
+      return m.uploadService;
+    });
     return () => {
       downloadService.stop();
-      uploadService.stop();
+      started.then((service) => service.stop());
     };
   }, []);
 

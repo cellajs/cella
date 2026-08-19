@@ -364,8 +364,8 @@
         "description": "Minimal user data for references.",
         "example": {
           "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
-          "name": "Dwight Cummerata",
-          "slug": "dwight.cummerata91",
+          "name": "Durward Cummerata",
+          "slug": "durward.cummerata91",
           "thumbnailUrl": null,
           "entityType": "user"
         },
@@ -455,13 +455,13 @@
           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
           "createdAt": "2024-01-28T04:41:50.387Z",
           "updatedAt": "2024-05-12T18:44:59.999Z",
-          "name": "Rosalia Bayer",
+          "name": "Roslyn Bayer",
           "description": null,
           "entityType": "user",
-          "slug": "rosalia.bayer28",
+          "slug": "roslyn.bayer28",
           "thumbnailUrl": null,
           "bannerUrl": null,
-          "email": "rosalia_bayer@hotmail.com"
+          "email": "roslyn_bayer@hotmail.com"
         },
         "x-tags": ["base", "users", "cella"]
       },
@@ -589,15 +589,15 @@
           "keywords": "sint clementia corrigo",
           "createdBy": {
             "id": "8a080cc5-0da6-4562-89b0-d6aaa2323def",
-            "name": "Lenny Bartell",
-            "slug": "lenny.bartell",
+            "name": "Lue Bartell",
+            "slug": "lue.bartell",
             "thumbnailUrl": null,
             "entityType": "user"
           },
           "updatedBy": {
             "id": "6aa2c0f4-8d91-4fa2-85fe-48c3c317d826",
-            "name": "Emmitt Armstrong",
-            "slug": "emmitt.armstrong19",
+            "name": "Emiliano Armstrong",
+            "slug": "emiliano.armstrong19",
             "thumbnailUrl": null,
             "entityType": "user"
           },
@@ -1119,11 +1119,11 @@
           "user": {
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
             "entityType": "user",
-            "name": "Alicia Fritsch DVM",
-            "firstName": "Alicia",
+            "name": "Agnes Fritsch DVM",
+            "firstName": "Agnes",
             "lastName": "Fritsch",
-            "email": "alicia_fritsch@hotmail.com",
-            "slug": "aliciafritsch34",
+            "email": "agnes_fritsch@hotmail.com",
+            "slug": "agnesfritsch34",
             "description": null,
             "thumbnailUrl": null,
             "bannerUrl": null,
@@ -1251,11 +1251,11 @@
         "example": {
           "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
-          "name": "Jake Senger",
-          "firstName": "Jake",
+          "name": "Isai Senger",
+          "firstName": "Isai",
           "lastName": "Senger",
-          "email": "jake_senger@hotmail.com",
-          "slug": "jakesenger90",
+          "email": "isai_senger@hotmail.com",
+          "slug": "isaisenger90",
           "description": null,
           "thumbnailUrl": null,
           "bannerUrl": null,
@@ -1533,7 +1533,7 @@
           "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
           "channelType": "organization",
           "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
-          "email": "edna.ohara@gmail.com",
+          "email": "dixie.ohara@gmail.com",
           "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
           "tokenId": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
           "role": "admin",
@@ -1542,8 +1542,8 @@
           "createdAt": "2024-02-07T13:46:57.160Z",
           "createdBy": {
             "id": "ebefcdf1-3a71-453a-99a7-e765c6d86737",
-            "name": "Lynda Aufderhar",
-            "slug": "lynda_aufderhar85",
+            "name": "Lizzie Aufderhar",
+            "slug": "lizzie_aufderhar85",
             "thumbnailUrl": null,
             "entityType": "user"
           },
@@ -1750,7 +1750,7 @@
         "description": "A contact or waitlist submission from an unauthenticated user.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-          "email": "ahmed.braun57@gmail.com",
+          "email": "al.braun57@gmail.com",
           "type": "contact",
           "message": "Amitto sapiente antiquus temptatio verus mollitia.",
           "createdAt": "2024-03-17T12:06:02.574Z",
@@ -2232,15 +2232,15 @@
           "keywords": "dolores cetera aetas",
           "createdBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-            "name": "Freddie Littel",
-            "slug": "freddie_littel16",
+            "name": "Francesco Littel",
+            "slug": "francesco_littel16",
             "thumbnailUrl": null,
             "entityType": "user"
           },
           "updatedBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-            "name": "Freddie Littel",
-            "slug": "freddie_littel16",
+            "name": "Francesco Littel",
+            "slug": "francesco_littel16",
             "thumbnailUrl": null,
             "entityType": "user"
           },
@@ -2560,6 +2560,10 @@
             "description": "Token is valid",
             "content": {
               "application/json": {
+                "example": {
+                  "email": "nola.becker-hickle@demo.local",
+                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c"
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -2575,10 +2579,6 @@
                     }
                   },
                   "required": ["email"]
-                },
-                "example": {
-                  "email": "obie.becker-hickle@demo.local",
-                  "userId": "87bea3ff-aa0d-4211-b69b-2c5a11a8343c"
                 }
               }
             }
@@ -2891,6 +2891,10 @@
             "description": "Challenge created",
             "content": {
               "application/json": {
+                "example": {
+                  "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App",
+                  "manualKey": "EXAMPLE-BASE32-KEY"
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -2902,10 +2906,6 @@
                     }
                   },
                   "required": ["totpUri", "manualKey"]
-                },
-                "example": {
-                  "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App",
-                  "manualKey": "EXAMPLE-BASE32-KEY"
                 }
               }
             }
@@ -3170,6 +3170,16 @@
             "description": "Passkey created",
             "content": {
               "application/json": {
+                "example": {
+                  "id": "e80d32e1-5270-4425-bdfd-40a4e3fc9492",
+                  "userId": "f95b6005-cf61-43b8-9a92-03dd84c4ebd9",
+                  "deviceName": "iPhone",
+                  "deviceType": "mobile",
+                  "deviceOs": "iOS",
+                  "browser": "Safari",
+                  "nameOnDevice": "Safari on iPhone",
+                  "createdAt": "2024-06-08T07:07:34.910Z"
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -3215,16 +3225,6 @@
                     "nameOnDevice",
                     "createdAt"
                   ]
-                },
-                "example": {
-                  "id": "e80d32e1-5270-4425-bdfd-40a4e3fc9492",
-                  "userId": "f95b6005-cf61-43b8-9a92-03dd84c4ebd9",
-                  "deviceName": "iPhone",
-                  "deviceType": "mobile",
-                  "deviceOs": "iOS",
-                  "browser": "Safari",
-                  "nameOnDevice": "Safari on iPhone",
-                  "createdAt": "2024-06-08T07:07:34.910Z"
                 }
               }
             }
@@ -3338,6 +3338,10 @@
             "description": "Challenge generated",
             "content": {
               "application/json": {
+                "example": {
+                  "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
+                  "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -3352,10 +3356,6 @@
                     }
                   },
                   "required": ["challenge", "credentialIds"]
-                },
-                "example": {
-                  "challenge": "c5SiUKPbCCFqoXyIZHNC3ufdzv1sE6cuymwA9IMSiP6",
-                  "credentialIds": ["3EQAejE9eLT26kT6iIsM52HWd5x3aKpV"]
                 }
               }
             }
@@ -3902,18 +3902,15 @@
             "description": "User",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                },
                 "example": {
                   "user": {
                     "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
                     "entityType": "user",
-                    "name": "Alicia Fritsch DVM",
-                    "firstName": "Alicia",
+                    "name": "Agnes Fritsch DVM",
+                    "firstName": "Agnes",
                     "lastName": "Fritsch",
-                    "email": "alicia_fritsch@hotmail.com",
-                    "slug": "aliciafritsch34",
+                    "email": "agnes_fritsch@hotmail.com",
+                    "slug": "agnesfritsch34",
                     "description": null,
                     "thumbnailUrl": null,
                     "bannerUrl": null,
@@ -3931,6 +3928,9 @@
                     "lastSeenAt": "2024-05-02T20:53:18.498Z"
                   },
                   "isSystemAdmin": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
                 }
               }
             }
@@ -4030,17 +4030,14 @@
             "description": "User",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                },
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Jake Senger",
-                  "firstName": "Jake",
+                  "name": "Isai Senger",
+                  "firstName": "Isai",
                   "lastName": "Senger",
-                  "email": "jake_senger@hotmail.com",
-                  "slug": "jakesenger90",
+                  "email": "isai_senger@hotmail.com",
+                  "slug": "isaisenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
@@ -4056,6 +4053,9 @@
                   "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
@@ -4195,17 +4195,14 @@
             "description": "User",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                },
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Jake Senger",
-                  "firstName": "Jake",
+                  "name": "Isai Senger",
+                  "firstName": "Isai",
                   "lastName": "Senger",
-                  "email": "jake_senger@hotmail.com",
-                  "slug": "jakesenger90",
+                  "email": "isai_senger@hotmail.com",
+                  "slug": "isaisenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
@@ -4221,6 +4218,9 @@
                   "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
@@ -4265,9 +4265,6 @@
             "description": "User sign-up info",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MeAuthData"
-                },
                 "example": {
                   "enabledOAuth": ["github"],
                   "hasTotp": false,
@@ -4292,6 +4289,9 @@
                     }
                   ],
                   "passkeys": []
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/MeAuthData"
                 }
               }
             }
@@ -4336,30 +4336,6 @@
             "description": "Invitations pending",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "entity": {
-                            "$ref": "#/components/schemas/ChannelBase"
-                          },
-                          "inactiveMembership": {
-                            "$ref": "#/components/schemas/InactiveMembership"
-                          }
-                        },
-                        "required": ["entity", "inactiveMembership"]
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["items", "total"]
-                },
                 "example": {
                   "items": [
                     {
@@ -4378,7 +4354,7 @@
                         "id": "33bb76f4-56ce-4cd0-9331-f680165d54a9",
                         "channelType": "organization",
                         "channelId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
-                        "email": "christine5@yahoo.com",
+                        "email": "carolyn5@yahoo.com",
                         "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
                         "tokenId": "915e1951-a439-40dc-9303-6bdbd6aea838",
                         "role": "member",
@@ -4387,8 +4363,8 @@
                         "createdAt": "2024-11-13T15:29:06.546Z",
                         "createdBy": {
                           "id": "228db2dc-c869-402a-b1c2-b305fd00a860",
-                          "name": "Stacy Monahan",
-                          "slug": "stacy.monahan13",
+                          "name": "Sister Monahan",
+                          "slug": "sister.monahan13",
                           "thumbnailUrl": null,
                           "entityType": "user"
                         },
@@ -4412,7 +4388,7 @@
                         "id": "c2a25f30-823d-40d7-af0c-f6c90c7756a6",
                         "channelType": "organization",
                         "channelId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
-                        "email": "preston_king81@hotmail.com",
+                        "email": "orion_king81@hotmail.com",
                         "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
                         "tokenId": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                         "role": "admin",
@@ -4421,8 +4397,8 @@
                         "createdAt": "2024-04-11T17:15:50.993Z",
                         "createdBy": {
                           "id": "dcc8a336-19bf-450f-b2bc-92443279eeb9",
-                          "name": "Joshua Morar",
-                          "slug": "joshua.morar34",
+                          "name": "John Morar",
+                          "slug": "john.morar34",
                           "thumbnailUrl": null,
                           "entityType": "user"
                         },
@@ -4432,6 +4408,30 @@
                     }
                   ],
                   "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "entity": {
+                            "$ref": "#/components/schemas/ChannelBase"
+                          },
+                          "inactiveMembership": {
+                            "$ref": "#/components/schemas/InactiveMembership"
+                          }
+                        },
+                        "required": ["entity", "inactiveMembership"]
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
                 }
               }
             }
@@ -4654,9 +4654,6 @@
             "description": "Upload token with a scope for a user or organization",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadToken"
-                },
                 "example": {
                   "publicBucket": false,
                   "sub": "x1lsgegsw6imziogthaolhvy",
@@ -4668,6 +4665,9 @@
                       "expires": "2025-01-01T04:15:50.483Z"
                     }
                   }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/UploadToken"
                 }
               }
             }
@@ -5052,6 +5052,16 @@
             "description": "Catchup summary",
             "content": {
               "application/json": {
+                "example": {
+                  "changes": {
+                    "org-example-id": {
+                      "signals": {
+                        "membership": 1
+                      }
+                    }
+                  },
+                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -5147,16 +5157,6 @@
                     }
                   },
                   "required": ["changes", "cursor"]
-                },
-                "example": {
-                  "changes": {
-                    "org-example-id": {
-                      "signals": {
-                        "membership": 1
-                      }
-                    }
-                  },
-                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
                 }
               }
             }
@@ -5225,6 +5225,11 @@
             "description": "Invitations are sent",
             "content": {
               "application/json": {
+                "example": {
+                  "data": [],
+                  "rejectedIds": [],
+                  "invitesSentCount": 2
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -5254,11 +5259,6 @@
                     }
                   },
                   "required": ["data", "rejectedIds", "invitesSentCount"]
-                },
-                "example": {
-                  "data": [],
-                  "rejectedIds": [],
-                  "invitesSentCount": 2
                 }
               }
             }
@@ -5453,17 +5453,14 @@
             "description": "User",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                },
                 "example": {
                   "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
                   "entityType": "user",
-                  "name": "Jake Senger",
-                  "firstName": "Jake",
+                  "name": "Isai Senger",
+                  "firstName": "Isai",
                   "lastName": "Senger",
-                  "email": "jake_senger@hotmail.com",
-                  "slug": "jakesenger90",
+                  "email": "isai_senger@hotmail.com",
+                  "slug": "isaisenger90",
                   "description": null,
                   "thumbnailUrl": null,
                   "bannerUrl": null,
@@ -5479,6 +5476,9 @@
                   "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
@@ -6476,16 +6476,16 @@
             "description": "Requests",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Request"
-                },
                 "example": {
                   "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-                  "email": "ahmed.braun57@gmail.com",
+                  "email": "al.braun57@gmail.com",
                   "type": "contact",
                   "message": "Amitto sapiente antiquus temptatio verus mollitia.",
                   "createdAt": "2024-03-17T12:06:02.574Z",
                   "wasInvited": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Request"
                 }
               }
             }
@@ -6586,6 +6586,27 @@
             "description": "Requests",
             "content": {
               "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
+                      "email": "marielle_donnelly-bashirian18@gmail.com",
+                      "type": "contact",
+                      "message": "Canonicus capio aedificium consequuntur velum.",
+                      "createdAt": "2024-09-19T17:10:46.529Z",
+                      "wasInvited": false
+                    },
+                    {
+                      "id": "d772a771-fc15-4065-be63-546594859fc3",
+                      "email": "ollie_effertz@gmail.com",
+                      "type": "contact",
+                      "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
+                      "createdAt": "2024-03-06T02:06:40.920Z",
+                      "wasInvited": false
+                    }
+                  ],
+                  "total": 2
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -6600,27 +6621,6 @@
                     }
                   },
                   "required": ["items", "total"]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
-                      "email": "melinda_donnelly-bashirian18@gmail.com",
-                      "type": "contact",
-                      "message": "Canonicus capio aedificium consequuntur velum.",
-                      "createdAt": "2024-09-19T17:10:46.529Z",
-                      "wasInvited": false
-                    },
-                    {
-                      "id": "d772a771-fc15-4065-be63-546594859fc3",
-                      "email": "nash_effertz@gmail.com",
-                      "type": "contact",
-                      "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
-                      "createdAt": "2024-03-06T02:06:40.920Z",
-                      "wasInvited": false
-                    }
-                  ],
-                  "total": 2
                 }
               }
             }
@@ -6750,6 +6750,11 @@
             "description": "Public counts",
             "content": {
               "application/json": {
+                "example": {
+                  "user": 404,
+                  "organization": 303,
+                  "attachment": 387
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -6764,11 +6769,6 @@
                     }
                   },
                   "required": ["user", "organization", "attachment"]
-                },
-                "example": {
-                  "user": 404,
-                  "organization": 303,
-                  "attachment": 387
                 }
               }
             }
@@ -6880,62 +6880,16 @@
             "description": "Users",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "allOf": [
-                          {
-                            "$ref": "#/components/schemas/UserBase"
-                          },
-                          {
-                            "type": "object",
-                            "properties": {
-                              "lastSeenAt": {
-                                "type": ["string", "null"]
-                              },
-                              "role": {
-                                "type": ["string", "null"],
-                                "enum": ["admin", null]
-                              }
-                            },
-                            "required": ["lastSeenAt"]
-                          }
-                        ],
-                        "description": "Base user schema with essential fields for identification and display.",
-                        "example": {
-                          "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
-                          "createdAt": "2024-01-28T04:41:50.387Z",
-                          "updatedAt": "2024-05-12T18:44:59.999Z",
-                          "name": "Rosalia Bayer",
-                          "description": null,
-                          "entityType": "user",
-                          "slug": "rosalia.bayer28",
-                          "thumbnailUrl": null,
-                          "bannerUrl": null,
-                          "email": "rosalia_bayer@hotmail.com"
-                        },
-                        "x-tags": ["base", "users", "cella"]
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["items", "total"]
-                },
                 "example": {
                   "items": [
                     {
                       "id": "af54c332-26e9-48e2-9f9d-8ade4a445d7f",
                       "entityType": "user",
-                      "name": "Elmer Beahan",
-                      "firstName": "Elmer",
+                      "name": "Elton Beahan",
+                      "firstName": "Elton",
                       "lastName": "Beahan",
-                      "email": "elmer.beahan@gmail.com",
-                      "slug": "elmerbeahan78",
+                      "email": "elton.beahan@gmail.com",
+                      "slug": "eltonbeahan78",
                       "description": null,
                       "thumbnailUrl": null,
                       "bannerUrl": null,
@@ -6969,11 +6923,11 @@
                     {
                       "id": "c64d1a0d-9853-4aeb-8360-296b55c24f83",
                       "entityType": "user",
-                      "name": "Nina Adams",
-                      "firstName": "Nina",
+                      "name": "Moriah Adams",
+                      "firstName": "Moriah",
                       "lastName": "Adams",
-                      "email": "nina.adams@hotmail.com",
-                      "slug": "ninaadams",
+                      "email": "moriah.adams@hotmail.com",
+                      "slug": "moriahadams",
                       "description": null,
                       "thumbnailUrl": null,
                       "bannerUrl": null,
@@ -7006,6 +6960,52 @@
                     }
                   ],
                   "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/UserBase"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "lastSeenAt": {
+                                "type": ["string", "null"]
+                              },
+                              "role": {
+                                "type": ["string", "null"],
+                                "enum": ["admin", null]
+                              }
+                            },
+                            "required": ["lastSeenAt"]
+                          }
+                        ],
+                        "description": "Base user schema with essential fields for identification and display.",
+                        "example": {
+                          "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
+                          "createdAt": "2024-01-28T04:41:50.387Z",
+                          "updatedAt": "2024-05-12T18:44:59.999Z",
+                          "name": "Roslyn Bayer",
+                          "description": null,
+                          "entityType": "user",
+                          "slug": "roslyn.bayer28",
+                          "thumbnailUrl": null,
+                          "bannerUrl": null,
+                          "email": "roslyn_bayer@hotmail.com"
+                        },
+                        "x-tags": ["base", "users", "cella"]
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
                 }
               }
             }
@@ -7070,6 +7070,30 @@
             "description": "User",
             "content": {
               "application/json": {
+                "example": {
+                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
+                  "entityType": "user",
+                  "name": "Isai Senger",
+                  "firstName": "Isai",
+                  "lastName": "Senger",
+                  "email": "isai_senger@hotmail.com",
+                  "slug": "isaisenger90",
+                  "description": null,
+                  "thumbnailUrl": null,
+                  "bannerUrl": null,
+                  "language": "en",
+                  "newsletter": false,
+                  "mfaRequired": false,
+                  "userFlags": {
+                    "finishedOnboarding": false
+                  },
+                  "createdAt": "2024-06-15T02:53:22.776Z",
+                  "updatedAt": "2024-06-15T02:53:22.776Z",
+                  "updatedBy": null,
+                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
+                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
+                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
+                },
                 "schema": {
                   "allOf": [
                     {
@@ -7090,39 +7114,15 @@
                     "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                     "createdAt": "2024-01-28T04:41:50.387Z",
                     "updatedAt": "2024-05-12T18:44:59.999Z",
-                    "name": "Rosalia Bayer",
+                    "name": "Roslyn Bayer",
                     "description": null,
                     "entityType": "user",
-                    "slug": "rosalia.bayer28",
+                    "slug": "roslyn.bayer28",
                     "thumbnailUrl": null,
                     "bannerUrl": null,
-                    "email": "rosalia_bayer@hotmail.com"
+                    "email": "roslyn_bayer@hotmail.com"
                   },
                   "x-tags": ["base", "users", "cella"]
-                },
-                "example": {
-                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-                  "entityType": "user",
-                  "name": "Jake Senger",
-                  "firstName": "Jake",
-                  "lastName": "Senger",
-                  "email": "jake_senger@hotmail.com",
-                  "slug": "jakesenger90",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": false,
-                  "mfaRequired": false,
-                  "userFlags": {
-                    "finishedOnboarding": false
-                  },
-                  "createdAt": "2024-06-15T02:53:22.776Z",
-                  "updatedAt": "2024-06-15T02:53:22.776Z",
-                  "updatedBy": null,
-                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
-                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
-                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 }
               }
             }
@@ -7295,6 +7295,133 @@
             "description": "Organizations were created",
             "content": {
               "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "createdAt": "2024-04-18T21:12:59.543Z",
+                      "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "entityType": "organization",
+                      "tenantId": "fyc7n2",
+                      "name": "Conroy, Kerluke and Rowe",
+                      "updatedAt": "2024-04-18T21:12:59.543Z",
+                      "slug": "conroy-kerluke-and-rowe",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-04-18T21:12:59.543Z",
+                      "publicAt": null,
+                      "toolsConfig": {},
+                      "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                      "shortName": "Conroy,",
+                      "country": "Singapore",
+                      "timezone": "Asia/Kuala_Lumpur",
+                      "defaultLanguage": "en",
+                      "languages": ["en"],
+                      "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
+                      "color": "#dbcbc1",
+                      "logoUrl": null,
+                      "websiteUrl": "https://conroy-kerluke-and-rowe.example",
+                      "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
+                      "chatSupport": false,
+                      "organizationFlags": {},
+                      "setupConfig": {},
+                      "included": {
+                        "membership": {
+                          "id": "1f366272-953c-486d-81dc-ee61f43478a1",
+                          "tenantId": "fyc7n2",
+                          "channelType": "organization",
+                          "channelId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                          "userId": "d1a35ab5-c28e-46f5-852e-2e440d66f5ab",
+                          "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
+                          "role": "admin",
+                          "displayOrder": 45,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 43,
+                            "member": 58,
+                            "pending": 47,
+                            "total": 101
+                          },
+                          "entities": {
+                            "attachment": 294
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1734375421781,
+                              "updated": 1734852237831
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "createdAt": "2024-02-24T16:36:46.247Z",
+                      "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "entityType": "organization",
+                      "tenantId": "dwpxxb",
+                      "name": "Lemke, Bode and Reichel-Klocko",
+                      "updatedAt": "2024-02-24T16:36:46.247Z",
+                      "slug": "lemke-bode-and-reichel-klocko",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "createdBy": null,
+                      "updatedBy": null,
+                      "publishedAt": "2024-02-24T16:36:46.247Z",
+                      "publicAt": null,
+                      "toolsConfig": {},
+                      "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                      "shortName": "Lemke,",
+                      "country": "Pakistan",
+                      "timezone": "America/Aruba",
+                      "defaultLanguage": "en",
+                      "languages": ["en"],
+                      "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
+                      "color": "#2ad39a",
+                      "logoUrl": null,
+                      "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
+                      "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
+                      "chatSupport": false,
+                      "organizationFlags": {},
+                      "setupConfig": {},
+                      "included": {
+                        "membership": {
+                          "id": "cf273cfa-8287-4b04-b641-897816829f30",
+                          "tenantId": "dwpxxb",
+                          "channelType": "organization",
+                          "channelId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                          "userId": "1af0d0a2-2457-4cac-b90f-6f6a802cd0ef",
+                          "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
+                          "role": "admin",
+                          "displayOrder": 44,
+                          "muted": false,
+                          "archived": false
+                        },
+                        "counts": {
+                          "membership": {
+                            "admin": 22,
+                            "member": 122,
+                            "pending": 44,
+                            "total": 144
+                          },
+                          "entities": {
+                            "attachment": 321
+                          },
+                          "activity": {
+                            "attachment": {
+                              "created": 1733935270933,
+                              "updated": null
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "rejectedIds": []
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -7461,133 +7588,6 @@
                     }
                   },
                   "required": ["data", "rejectedIds"]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "createdAt": "2024-04-18T21:12:59.543Z",
-                      "id": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                      "entityType": "organization",
-                      "tenantId": "fyc7n2",
-                      "name": "Conroy, Kerluke and Rowe",
-                      "updatedAt": "2024-04-18T21:12:59.543Z",
-                      "slug": "conroy-kerluke-and-rowe",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "createdBy": null,
-                      "updatedBy": null,
-                      "publishedAt": "2024-04-18T21:12:59.543Z",
-                      "publicAt": null,
-                      "toolsConfig": {},
-                      "path": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                      "shortName": "Conroy,",
-                      "country": "Singapore",
-                      "timezone": "Asia/Kuala_Lumpur",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
-                      "notificationEmail": "notifications@conroy-kerluke-and-rowe.example",
-                      "color": "#dbcbc1",
-                      "logoUrl": null,
-                      "websiteUrl": "https://conroy-kerluke-and-rowe.example",
-                      "welcomeText": "Welcome to Conroy, Kerluke and Rowe!",
-                      "chatSupport": false,
-                      "organizationFlags": {},
-                      "setupConfig": {},
-                      "included": {
-                        "membership": {
-                          "id": "1f366272-953c-486d-81dc-ee61f43478a1",
-                          "tenantId": "fyc7n2",
-                          "channelType": "organization",
-                          "channelId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                          "userId": "d1a35ab5-c28e-46f5-852e-2e440d66f5ab",
-                          "organizationId": "9f9d2b57-55b6-48dd-9e9b-c4a075e7b480",
-                          "role": "admin",
-                          "displayOrder": 45,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 43,
-                            "member": 58,
-                            "pending": 47,
-                            "total": 101
-                          },
-                          "entities": {
-                            "attachment": 294
-                          },
-                          "activity": {
-                            "attachment": {
-                              "created": 1734375421781,
-                              "updated": 1734852237831
-                            }
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "createdAt": "2024-02-24T16:36:46.247Z",
-                      "id": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                      "entityType": "organization",
-                      "tenantId": "dwpxxb",
-                      "name": "Lemke, Bode and Reichel-Klocko",
-                      "updatedAt": "2024-02-24T16:36:46.247Z",
-                      "slug": "lemke-bode-and-reichel-klocko",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "createdBy": null,
-                      "updatedBy": null,
-                      "publishedAt": "2024-02-24T16:36:46.247Z",
-                      "publicAt": null,
-                      "toolsConfig": {},
-                      "path": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                      "shortName": "Lemke,",
-                      "country": "Pakistan",
-                      "timezone": "America/Aruba",
-                      "defaultLanguage": "en",
-                      "languages": ["en"],
-                      "notificationEmail": "notifications@lemke-bode-and-reichel-klocko.example",
-                      "color": "#2ad39a",
-                      "logoUrl": null,
-                      "websiteUrl": "https://lemke-bode-and-reichel-klocko.example",
-                      "welcomeText": "Welcome to Lemke, Bode and Reichel-Klocko!",
-                      "chatSupport": false,
-                      "organizationFlags": {},
-                      "setupConfig": {},
-                      "included": {
-                        "membership": {
-                          "id": "cf273cfa-8287-4b04-b641-897816829f30",
-                          "tenantId": "dwpxxb",
-                          "channelType": "organization",
-                          "channelId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                          "userId": "1af0d0a2-2457-4cac-b90f-6f6a802cd0ef",
-                          "organizationId": "b1c0f7ee-0443-416a-81c9-06c0e6329323",
-                          "role": "admin",
-                          "displayOrder": 44,
-                          "muted": false,
-                          "archived": false
-                        },
-                        "counts": {
-                          "membership": {
-                            "admin": 22,
-                            "member": 122,
-                            "pending": 44,
-                            "total": 144
-                          },
-                          "entities": {
-                            "attachment": 321
-                          },
-                          "activity": {
-                            "attachment": {
-                              "created": 1733935270933,
-                              "updated": null
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ],
-                  "rejectedIds": []
                 }
               }
             }
@@ -7825,21 +7825,6 @@
             "description": "Organizations",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Organization"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["items", "total"]
-                },
                 "example": {
                   "items": [
                     {
@@ -7966,6 +7951,21 @@
                     }
                   ],
                   "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Organization"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
                 }
               }
             }
@@ -8047,9 +8047,6 @@
             "description": "Organization",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organization"
-                },
                 "example": {
                   "createdAt": "2024-12-25T15:04:42.969Z",
                   "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
@@ -8110,6 +8107,9 @@
                       }
                     }
                   }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
                 }
               }
             }
@@ -8280,9 +8280,6 @@
             "description": "Organization was updated",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Organization"
-                },
                 "example": {
                   "createdAt": "2024-12-25T15:04:42.969Z",
                   "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
@@ -8343,6 +8340,9 @@
                       }
                     }
                   }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
                 }
               }
             }
@@ -8536,21 +8536,6 @@
             "description": "Attachments",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Attachment"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["items", "total"]
-                },
                 "example": {
                   "items": [
                     {
@@ -8569,15 +8554,15 @@
                       "keywords": "venia vulpes delego",
                       "createdBy": {
                         "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
-                        "name": "Adrain Kirlin",
-                        "slug": "adrain_kirlin",
+                        "name": "Agustin Kirlin",
+                        "slug": "agustin_kirlin",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
-                        "name": "Adrain Kirlin",
-                        "slug": "adrain_kirlin",
+                        "name": "Agustin Kirlin",
+                        "slug": "agustin_kirlin",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -8613,15 +8598,15 @@
                       "keywords": "depono terreo exercitationem",
                       "createdBy": {
                         "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
-                        "name": "Okey Nikolaus",
-                        "slug": "okey_nikolaus",
+                        "name": "Nya Nikolaus",
+                        "slug": "nya_nikolaus",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
-                        "name": "Okey Nikolaus",
-                        "slug": "okey_nikolaus",
+                        "name": "Nya Nikolaus",
+                        "slug": "nya_nikolaus",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -8643,6 +8628,21 @@
                     }
                   ],
                   "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
                 }
               }
             }
@@ -8782,35 +8782,6 @@
             "description": "Attachments already created (idempotent)",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Attachment"
-                      }
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": ["data", "rejectedIds"]
-                },
                 "example": {
                   "data": [
                     {
@@ -8829,15 +8800,15 @@
                       "keywords": "surculus quas sollers",
                       "createdBy": {
                         "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
-                        "name": "Breana Sawayn",
-                        "slug": "breana_sawayn",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
-                        "name": "Breana Sawayn",
-                        "slug": "breana_sawayn",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -8873,15 +8844,15 @@
                       "keywords": "volup quae chirographum",
                       "createdBy": {
                         "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
-                        "name": "Alvin Kutch",
-                        "slug": "alvin_kutch",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
-                        "name": "Alvin Kutch",
-                        "slug": "alvin_kutch",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -8903,6 +8874,35 @@
                     }
                   ],
                   "rejectedIds": []
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -8911,35 +8911,6 @@
             "description": "Attachments created",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Attachment"
-                      }
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": ["data", "rejectedIds"]
-                },
                 "example": {
                   "data": [
                     {
@@ -8958,15 +8929,15 @@
                       "keywords": "surculus quas sollers",
                       "createdBy": {
                         "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
-                        "name": "Breana Sawayn",
-                        "slug": "breana_sawayn",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
-                        "name": "Breana Sawayn",
-                        "slug": "breana_sawayn",
+                        "name": "Bethel Sawayn",
+                        "slug": "bethel_sawayn",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -9002,15 +8973,15 @@
                       "keywords": "volup quae chirographum",
                       "createdBy": {
                         "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
-                        "name": "Alvin Kutch",
-                        "slug": "alvin_kutch",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
                       "updatedBy": {
                         "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
-                        "name": "Alvin Kutch",
-                        "slug": "alvin_kutch",
+                        "name": "Americo Kutch",
+                        "slug": "americo_kutch",
                         "thumbnailUrl": null,
                         "entityType": "user"
                       },
@@ -9032,6 +9003,35 @@
                     }
                   ],
                   "rejectedIds": []
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attachment"
+                      }
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -9250,6 +9250,16 @@
             "description": "Presigned URLs",
             "content": {
               "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "attachmentId": "01890a5d-ac96-774b-b302-0f3e2ae14a2a",
+                      "variant": "thumbnail",
+                      "url": "https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…"
+                    }
+                  ],
+                  "rejectedIds": []
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -9292,16 +9302,6 @@
                     }
                   },
                   "required": ["data", "rejectedIds"]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "attachmentId": "01890a5d-ac96-774b-b302-0f3e2ae14a2a",
-                      "variant": "thumbnail",
-                      "url": "https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…"
-                    }
-                  ],
-                  "rejectedIds": []
                 }
               }
             }
@@ -9375,9 +9375,6 @@
             "description": "Attachment",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Attachment"
-                },
                 "example": {
                   "createdAt": "2024-05-01T22:40:37.374Z",
                   "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
@@ -9394,15 +9391,15 @@
                   "keywords": "dolores cetera aetas",
                   "createdBy": {
                     "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "name": "Freddie Littel",
-                    "slug": "freddie_littel16",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
                     "thumbnailUrl": null,
                     "entityType": "user"
                   },
                   "updatedBy": {
                     "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "name": "Freddie Littel",
-                    "slug": "freddie_littel16",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
                     "thumbnailUrl": null,
                     "entityType": "user"
                   },
@@ -9421,6 +9418,9 @@
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
                   "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
                 }
               }
             }
@@ -9526,9 +9526,6 @@
             "description": "Attachment was updated",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Attachment"
-                },
                 "example": {
                   "createdAt": "2024-05-01T22:40:37.374Z",
                   "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
@@ -9545,15 +9542,15 @@
                   "keywords": "dolores cetera aetas",
                   "createdBy": {
                     "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "name": "Freddie Littel",
-                    "slug": "freddie_littel16",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
                     "thumbnailUrl": null,
                     "entityType": "user"
                   },
                   "updatedBy": {
                     "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "name": "Freddie Littel",
-                    "slug": "freddie_littel16",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
                     "thumbnailUrl": null,
                     "entityType": "user"
                   },
@@ -9572,6 +9569,9 @@
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
                   "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
                 }
               }
             }
@@ -9682,6 +9682,24 @@
             "description": "Created memberships and invite count",
             "content": {
               "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "09ca1a84-3edb-4069-b434-4af619287b19",
+                      "tenantId": "x38fpc",
+                      "channelType": "organization",
+                      "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
+                      "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
+                      "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
+                      "role": "member",
+                      "displayOrder": 30,
+                      "muted": false,
+                      "archived": false
+                    }
+                  ],
+                  "rejectedIds": [],
+                  "invitesSentCount": 1
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -9713,24 +9731,6 @@
                     }
                   },
                   "required": ["data", "rejectedIds", "invitesSentCount"]
-                },
-                "example": {
-                  "data": [
-                    {
-                      "id": "09ca1a84-3edb-4069-b434-4af619287b19",
-                      "tenantId": "x38fpc",
-                      "channelType": "organization",
-                      "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-                      "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
-                      "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-                      "role": "member",
-                      "displayOrder": 30,
-                      "muted": false,
-                      "archived": false
-                    }
-                  ],
-                  "rejectedIds": [],
-                  "invitesSentCount": 1
                 }
               }
             }
@@ -9955,9 +9955,6 @@
             "description": "Membership updated",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Membership"
-                },
                 "example": {
                   "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
                   "tenantId": "k4z795",
@@ -9973,6 +9970,9 @@
                   "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
                   "updatedAt": "2024-10-28T10:38:59.996Z",
                   "updatedBy": null
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Membership"
                 }
               }
             }
@@ -10037,9 +10037,6 @@
             "description": "Invitation was accepted",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChannelBase"
-                },
                 "example": {
                   "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
                   "createdAt": "2024-11-30T08:11:29.841Z",
@@ -10050,6 +10047,9 @@
                   "slug": "hamill---price",
                   "thumbnailUrl": null,
                   "bannerUrl": null
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelBase"
                 }
               }
             }
@@ -10205,6 +10205,61 @@
             "description": "Members",
             "content": {
               "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                      "createdAt": "2024-09-01T15:27:58.824Z",
+                      "updatedAt": "2024-10-09T09:41:44.154Z",
+                      "name": "Elton Beahan",
+                      "description": null,
+                      "entityType": "user",
+                      "slug": "elton.beahan",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "email": "elton_beahan40@hotmail.com",
+                      "lastSeenAt": "2024-10-09T09:41:44.154Z",
+                      "membership": {
+                        "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
+                        "tenantId": "dbp099",
+                        "channelType": "organization",
+                        "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                        "userId": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
+                        "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
+                        "role": "admin",
+                        "displayOrder": 10,
+                        "muted": false,
+                        "archived": false
+                      }
+                    },
+                    {
+                      "id": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                      "createdAt": "2024-05-10T18:17:52.266Z",
+                      "updatedAt": "2024-11-05T16:38:04.981Z",
+                      "name": "Moriah Adams",
+                      "description": null,
+                      "entityType": "user",
+                      "slug": "moriah.adams",
+                      "thumbnailUrl": null,
+                      "bannerUrl": null,
+                      "email": "moriah.adams5@hotmail.com",
+                      "lastSeenAt": "2024-11-05T16:38:04.981Z",
+                      "membership": {
+                        "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
+                        "tenantId": "6xgvt4",
+                        "channelType": "organization",
+                        "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                        "userId": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
+                        "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
+                        "role": "admin",
+                        "displayOrder": 6,
+                        "muted": false,
+                        "archived": false
+                      }
+                    }
+                  ],
+                  "total": 2
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -10233,13 +10288,13 @@
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
                           "updatedAt": "2024-05-12T18:44:59.999Z",
-                          "name": "Rosalia Bayer",
+                          "name": "Roslyn Bayer",
                           "description": null,
                           "entityType": "user",
-                          "slug": "rosalia.bayer28",
+                          "slug": "roslyn.bayer28",
                           "thumbnailUrl": null,
                           "bannerUrl": null,
-                          "email": "rosalia_bayer@hotmail.com"
+                          "email": "roslyn_bayer@hotmail.com"
                         },
                         "x-tags": ["base", "users", "cella"]
                       }
@@ -10249,61 +10304,6 @@
                     }
                   },
                   "required": ["items", "total"]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
-                      "createdAt": "2024-09-01T15:27:58.824Z",
-                      "updatedAt": "2024-10-09T09:41:44.154Z",
-                      "name": "Elmer Beahan",
-                      "description": null,
-                      "entityType": "user",
-                      "slug": "elmer.beahan",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "email": "elmer_beahan40@hotmail.com",
-                      "lastSeenAt": "2024-10-09T09:41:44.154Z",
-                      "membership": {
-                        "id": "d33f6120-b967-4064-bbb8-8b24b6b50c11",
-                        "tenantId": "dbp099",
-                        "channelType": "organization",
-                        "channelId": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                        "userId": "407ebc2f-af54-4c33-9226-e98e2f9d8ade",
-                        "organizationId": "1008ac1a-ccec-476f-9baf-e65971876f04",
-                        "role": "admin",
-                        "displayOrder": 10,
-                        "muted": false,
-                        "archived": false
-                      }
-                    },
-                    {
-                      "id": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
-                      "createdAt": "2024-05-10T18:17:52.266Z",
-                      "updatedAt": "2024-11-05T16:38:04.981Z",
-                      "name": "Nina Adams",
-                      "description": null,
-                      "entityType": "user",
-                      "slug": "nina.adams",
-                      "thumbnailUrl": null,
-                      "bannerUrl": null,
-                      "email": "nina.adams5@hotmail.com",
-                      "lastSeenAt": "2024-11-05T16:38:04.981Z",
-                      "membership": {
-                        "id": "9e822f98-ecac-4acf-ab1f-e617c6f9a972",
-                        "tenantId": "6xgvt4",
-                        "channelType": "organization",
-                        "channelId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                        "userId": "74fc53a0-c64d-41a0-9d98-53aeb360296b",
-                        "organizationId": "0d125585-f24e-4042-ac17-1e8cdf2243e8",
-                        "role": "admin",
-                        "displayOrder": 6,
-                        "muted": false,
-                        "archived": false
-                      }
-                    }
-                  ],
-                  "total": 2
                 }
               }
             }
@@ -10442,6 +10442,53 @@
             "description": "Pending memberships",
             "content": {
               "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
+                      "channelType": "organization",
+                      "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "email": "doug_larkin@hotmail.com",
+                      "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
+                      "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
+                      "role": "member",
+                      "rejectedAt": null,
+                      "remindedAt": null,
+                      "createdAt": "2024-11-21T01:19:53.533Z",
+                      "createdBy": {
+                        "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
+                        "name": "Agustin Kirlin",
+                        "slug": "agustin_kirlin",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
+                      "tenantId": "yx645y"
+                    },
+                    {
+                      "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
+                      "channelType": "organization",
+                      "channelId": "772a771f-c150-465e-9635-46594859fc3d",
+                      "email": "santos.jacobi12@gmail.com",
+                      "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
+                      "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
+                      "role": "member",
+                      "rejectedAt": null,
+                      "remindedAt": null,
+                      "createdAt": "2024-10-29T04:35:17.725Z",
+                      "createdBy": {
+                        "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
+                        "name": "Nya Nikolaus",
+                        "slug": "nya_nikolaus",
+                        "thumbnailUrl": null,
+                        "entityType": "user"
+                      },
+                      "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
+                      "tenantId": "pa56tp"
+                    }
+                  ],
+                  "total": 2
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -10489,53 +10536,6 @@
                     }
                   },
                   "required": ["items", "total"]
-                },
-                "example": {
-                  "items": [
-                    {
-                      "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-                      "channelType": "organization",
-                      "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "email": "dustin_larkin@hotmail.com",
-                      "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
-                      "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
-                      "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
-                      "createdAt": "2024-11-21T01:19:53.533Z",
-                      "createdBy": {
-                        "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
-                        "name": "Adrain Kirlin",
-                        "slug": "adrain_kirlin",
-                        "thumbnailUrl": null,
-                        "entityType": "user"
-                      },
-                      "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "tenantId": "yx645y"
-                    },
-                    {
-                      "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-                      "channelType": "organization",
-                      "channelId": "772a771f-c150-465e-9635-46594859fc3d",
-                      "email": "ryann.jacobi12@gmail.com",
-                      "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
-                      "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
-                      "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
-                      "createdAt": "2024-10-29T04:35:17.725Z",
-                      "createdBy": {
-                        "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
-                        "name": "Okey Nikolaus",
-                        "slug": "okey_nikolaus",
-                        "thumbnailUrl": null,
-                        "entityType": "user"
-                      },
-                      "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-                      "tenantId": "pa56tp"
-                    }
-                  ],
-                  "total": 2
                 }
               }
             }
