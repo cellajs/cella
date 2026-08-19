@@ -37,7 +37,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
   const entities = data;
 
   return (
-    <div className="flex h-full flex-col gap-2 pt-4">
+    <div className="flex h-full flex-col gap-2">
       {!limitedView && (
         <EntityGridBar
           queryKey={queryOptions.queryKey}

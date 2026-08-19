@@ -68,7 +68,7 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   };
 
   return (
-    <div className="flex h-full flex-col gap-2 pt-4">
+    <div className="flex h-full flex-col gap-2">
       <PendingMembershipsTableBar queryKey={queryOptions.queryKey} />
       <DataTable<PendingMembership>
         {...{
