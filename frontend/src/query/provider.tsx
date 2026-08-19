@@ -11,6 +11,14 @@ import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/pe
 import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 
+/** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
+const IDLE_TIMEOUT_MS = 5000;
+const scheduleIdle =
+  typeof requestIdleCallback === 'function'
+    ? (cb: () => void) => requestIdleCallback(cb, { timeout: IDLE_TIMEOUT_MS })
+    : (cb: () => void) => setTimeout(cb, IDLE_TIMEOUT_MS) as unknown as number;
+const cancelIdle = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
+
 // Runs before cache restoration: stores the queryClient so entity modules self-register their mutationFn via addMutationRegistrar() on load.
 initMutationDefaults(queryClient);
 
@@ -39,15 +47,24 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {
     downloadService.start();
-    // Loaded on mount: this provider evaluates before any route, so a module-scope import places
-    // @uppy/core and its dashboard on the boot path.
-    const started = import('~/modules/attachment/offline/upload-service').then((m) => {
-      m.uploadService.start();
-      return m.uploadService;
+
+    // Waits for idle: nothing can be queued for upload during the first paint, and the import pulls
+    // @uppy/core with it, which on a slow link competes with the chunks the first render needs.
+    let service: { stop: () => void } | undefined;
+    let cancelled = false;
+    const idle = scheduleIdle(() => {
+      import('~/modules/attachment/offline/upload-service').then((m) => {
+        if (cancelled) return;
+        service = m.uploadService;
+        m.uploadService.start();
+      });
     });
+
     return () => {
+      cancelled = true;
+      cancelIdle(idle);
       downloadService.stop();
-      started.then((service) => service.stop());
+      service?.stop();
     };
   }, []);
 
