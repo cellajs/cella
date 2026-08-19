@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.5](https://github.com/cellajs/cella/compare/0.9.4...0.9.5) (2026-08-19)
+
+
+### 🐞 Bug fixes
+
+* **infra:** defer Caddy's Cache-Control so it replaces the origin's ([#1088](https://github.com/cellajs/cella/issues/1088)) ([7718aea](https://github.com/cellajs/cella/commit/7718aea70fb7a2a1afa34223aeabc13efa6583a5))
+
+
+### 🔧 Small improvements
+
+* **frontend:** keep the editor out of startup, defer the upload service ([#1089](https://github.com/cellajs/cella/issues/1089)) ([f3a68b6](https://github.com/cellajs/cella/commit/f3a68b635280198a9239a59d5249c401ad1d1531))
+
 ## [0.9.4](https://github.com/cellajs/cella/compare/0.9.3...0.9.4) (2026-08-19)
 
 
