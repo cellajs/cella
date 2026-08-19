@@ -3,7 +3,7 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 const SCROLL_THRESHOLD = 10; // Minimum scroll delta to toggle visibility
 const MAX_GESTURE_DELTA = 150; // Larger single-frame jumps are hash jumps/restorations, not finger scrolls
 const MIN_VISIBLE_MS = 800; // Grace period after showing before a down-scroll may hide again
-const RESET_COOLDOWN_MS = 3000; // Cooldown period after reset where scroll events are ignored
+const RESET_COOLDOWN_MS = 500; // Post-reset window that swallows layout-driven scroll jank (e.g. drawer close, docs page swap)
 const INITIAL_COOLDOWN_MS = 500; // Brief cooldown on mount to prevent hiding from restored scroll position
 
 /** Shows on scroll up, hides on scroll down; returns `{ isVisible, scrollTop, reset }`. */
