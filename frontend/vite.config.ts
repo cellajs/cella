@@ -48,7 +48,7 @@ const isDev = appConfig.mode === 'development';
  * is what puts it on the boot path. `pnpm deps:bundle:check` asserts the result.
  */
 const FEATURE_LIBS: [name: string, packages: RegExp][] = [
-  ['editor', /^(@blocknote|@tiptap|prosemirror-[\w-]+|yjs|y-protocols|y-prosemirror|lib0)/],
+  ['editor', /^(@blocknote|@tiptap|@handlewithcare|prosemirror-[\w-]+|yjs|y-protocols|y-prosemirror|lib0)/],
   ['pdf', /^(pdfjs-dist|react-pdf|jspdf[\w.-]*)$/],
   ['media', /^(media-chrome|player\.style)$/],
   ['gleap', /^gleap$/],
@@ -293,7 +293,9 @@ const viteConfig = {
               name: (id: string) => {
                 if (!ON_DEMAND_APP.test(id)) return null;
                 if (/[\\/]attachment[\\/]render[\\/]/.test(id)) return 'attachment-render';
-                if (/[\\/]attachment[\\/]offline[\\/]upload-service/.test(id)) return 'uploader';
+                // Kept apart from the uploader UI: the UI reaches the editor statically, so sharing
+                // a chunk made starting this background service load the editor too.
+                if (/[\\/]attachment[\\/]offline[\\/]upload-service/.test(id)) return 'upload-service';
                 if (/[\\/]common[\\/]uploader[\\/]/.test(id)) return 'uploader';
                 if (/[\\/]common[\\/]gleap-support/.test(id)) return 'gleap-support';
                 return 'editor-app';
