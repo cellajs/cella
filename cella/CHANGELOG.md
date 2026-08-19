@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.9.3](https://github.com/cellajs/cella/compare/0.9.2...0.9.3) (2026-08-19)
+
+
+### 🎉 New features
+
+* dependency and bundle-size tooling, halve the frontend boot path ([#1082](https://github.com/cellajs/cella/issues/1082)) ([fc6d2ca](https://github.com/cellajs/cella/commit/fc6d2ca7d46c9ed1e59ce43dd51006b4e4dd2405))
+* **frontend:** animate row reorder in data grid via row-box mode ([#1066](https://github.com/cellajs/cella/issues/1066)) ([8c8cb51](https://github.com/cellajs/cella/commit/8c8cb512e1c6c361235b555b7bc97a05937660f4))
+* **frontend:** inactive badge on last-seen, profile content owns its container ([#1074](https://github.com/cellajs/cella/issues/1074)) ([31aa328](https://github.com/cellajs/cella/commit/31aa3284b37a092f38f0dd9bee0998feedc41fb0))
+* **frontend:** show root package version on docs landing page ([#1061](https://github.com/cellajs/cella/issues/1061)) ([bebfea9](https://github.com/cellajs/cella/commit/bebfea99cdcedbbf41dde0291f685876d8a1eade))
+* **frontend:** show single healthy summary in info panel status section ([#1065](https://github.com/cellajs/cella/issues/1065)) ([0c32eb9](https://github.com/cellajs/cella/commit/0c32eb9083b54b8e5bc764a042a24bf19bf5fa28))
+* **frontend:** tab descriptions in the tabs arrangement card ([#1081](https://github.com/cellajs/cella/issues/1081)) ([4a2071e](https://github.com/cellajs/cella/commit/4a2071e4bf9622c3d4c51990d7f3aa35188a4173))
+* projectcampus upstream intake (proposals 1-15) ([#1069](https://github.com/cellajs/cella/issues/1069)) ([5194484](https://github.com/cellajs/cella/commit/51944844d7be28f916c2370f1ad5d811f6b9676c))
+* single devPorts knob for local dev service ports ([#1067](https://github.com/cellajs/cella/issues/1067)) ([4853e28](https://github.com/cellajs/cella/commit/4853e28fc2ab48ce8f2d9295433a66671857b5fa))
+
+
+### 🐞 Bug fixes
+
+* **backend:** accept any membership in the org in orgGuard ([#1073](https://github.com/cellajs/cella/issues/1073)) ([2c27a3f](https://github.com/cellajs/cella/commit/2c27a3f038884f08f40711883cb463579e0d4201))
+* fall back to port 3000 when deriving storybook port ([#1075](https://github.com/cellajs/cella/issues/1075)) ([0e96d34](https://github.com/cellajs/cella/commit/0e96d3422118be1a8c02607d1de0aefd6924e13f))
+* **frontend:** collapse docs sidebar branches only from the route they point at ([#1070](https://github.com/cellajs/cella/issues/1070)) ([73e2a9f](https://github.com/cellajs/cella/commit/73e2a9f68c61efacf31dea5dcb701dd282927877))
+* **frontend:** grids no longer set their own page padding ([#1080](https://github.com/cellajs/cella/issues/1080)) ([3d4475a](https://github.com/cellajs/cella/commit/3d4475a1446e9080c0533d800a4eabd1823253ed))
+* **frontend:** keep role visible in menu sheet item, append submenu count only in compact menu ([#1064](https://github.com/cellajs/cella/issues/1064)) ([663b048](https://github.com/cellajs/cella/commit/663b0487cefcccc14b3bf69f4bc759dbc2fb2d66))
+* **frontend:** probe session cookie before bouncing signed-in users to authenticate ([#1063](https://github.com/cellajs/cella/issues/1063)) ([8619309](https://github.com/cellajs/cella/commit/861930925ad35e519915bc3819553f4d473bf987))
+* **frontend:** scope role selectors to the channel's role vocabulary ([#1071](https://github.com/cellajs/cella/issues/1071)) ([18216c7](https://github.com/cellajs/cella/commit/18216c7ffee4612d8f4898da2e09e9bdba12146e))
+* **infra:** retire release SHA from shell + close CI/CD injection-class gaps ([#1078](https://github.com/cellajs/cella/issues/1078)) ([388e408](https://github.com/cellajs/cella/commit/388e408e6575c197dd086ec89ad329191048ef75))
+
+
+### 🧹 Chores
+
+* adopt projectcampus comment budget ([#1076](https://github.com/cellajs/cella/issues/1076)) ([aeb42a3](https://github.com/cellajs/cella/commit/aeb42a3d61328b2db85869071cc7c254932c1447))
+* **infra:** prune unreferenced package scripts, gate compose drift in CI ([#1077](https://github.com/cellajs/cella/issues/1077)) ([85181d0](https://github.com/cellajs/cella/commit/85181d0e983c19b4a0f54899de6642c191ec3082))
+
 ## [0.9.2](https://github.com/cellajs/cella/compare/0.9.1...0.9.2) (2026-08-15)
 
 
