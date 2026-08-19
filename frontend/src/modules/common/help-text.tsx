@@ -16,7 +16,7 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
 
   if (type === 'popover') {
     return (
-      <div className="mb-4 flex items-center gap-2">
+      <div className={cn('mb-4 flex items-center gap-2', className)}>
         {children}
         <Popover>
           <PopoverTrigger
@@ -30,7 +30,12 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
           >
             <CircleQuestionMarkIcon />
           </PopoverTrigger>
-          <PopoverContent className="w-80 text-muted-foreground text-sm" align="start" side="top">
+          <PopoverContent
+            className="w-80 max-w-full text-muted-foreground text-sm"
+            align="start"
+            side="top"
+            collisionPadding={8}
+          >
             {content}
           </PopoverContent>
         </Popover>

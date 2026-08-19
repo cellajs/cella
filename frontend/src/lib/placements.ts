@@ -16,6 +16,8 @@ export interface PlacementDescriptor {
   label: TKey;
   /** Optional resource i18n key interpolated into the label. */
   resource?: TKey;
+  /** Single-sentence explanation of the placement's content, shown where placements are arranged. */
+  description?: TKey;
   /** Sort position, lower first. Settings slots use 10/20 for built-ins, 90 for the danger zone, 50 by default. */
   order?: number;
   /** Grant name this placement needs to be shown; hidden unless the hosting consumer passes it. */

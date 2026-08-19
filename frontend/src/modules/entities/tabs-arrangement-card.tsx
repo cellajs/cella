@@ -2,10 +2,12 @@ import { GripVerticalIcon, LockIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { orderBySlotConfig } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -17,6 +19,8 @@ interface TabRow {
   resource?: TKey;
   /** Pre-translated label, resolved once per render so module-scope renderers can use it. */
   name: string;
+  /** Pre-translated single-sentence explanation of the tab's content, absent when the tab declares none. */
+  description?: string;
   order: number;
   locked?: boolean;
   visible: boolean;
@@ -46,6 +50,7 @@ interface TabsArrangementCardProps {
  */
 export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
+  const isMobile = useBreakpointBelow('sm');
 
   const slot = `${entity.entityType}.tabs`;
   const slotConfig = entity.toolsConfig?.[slot];
@@ -56,16 +61,20 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);
 
-  const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, order, locked }) => ({
+  const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, description, order, locked }) => ({
     id,
     label,
     resource,
+    description,
     order,
     locked,
   }));
   const rows = orderBySlotConfig(candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
     ...tab,
     name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
+    description: tab.description
+      ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' })
+      : undefined,
     visible: !hidden.has(tab.id),
   }));
 
@@ -100,7 +109,25 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'label',
       name: '',
       minWidth: 160,
-      renderCell: ({ row }) => <span className="truncate text-sm">{row.name}</span>,
+      renderCell: ({ row }) => {
+        if (!row.description) return <span className="truncate text-sm">{row.name}</span>;
+
+        // Fixed row height leaves no room for a second line on narrow screens, so the description moves into a popover
+        if (isMobile) {
+          return (
+            <HelpText type="popover" className="mb-0" content={row.description}>
+              <span className="truncate text-sm">{row.name}</span>
+            </HelpText>
+          );
+        }
+
+        return (
+          <div className="flex min-w-0 flex-col justify-center">
+            <span className="truncate text-sm leading-tight">{row.name}</span>
+            <span className="truncate text-muted-foreground text-xs leading-tight">{row.description}</span>
+          </div>
+        );
+      },
     },
     {
       key: 'visible',
@@ -122,6 +149,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       <DataTable
         rows={rows}
         rowKeyGetter={rowKeyGetter}
+        rowHeight={56}
         columns={columns}
         hasNextPage={false}
         readOnly
