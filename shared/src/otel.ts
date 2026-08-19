@@ -1,8 +1,10 @@
 import process from 'node:process';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
@@ -11,6 +13,19 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config.ts';
+
+/**
+ * The instrumentations this stack has something to instrument: node:http, fetch through undici, and
+ * postgres queries. `getNodeAutoInstrumentations()` covers these too, but installs 41 instrumentation
+ * packages to do it; the other 37 target databases and frameworks nothing here runs (mongodb, mysql,
+ * kafka, express, grpc and so on). Each one patches module loading when the SDK starts, so those 37
+ * add 146 packages that every service loads at boot and that produce no spans. Adding one back means
+ * a line here plus a dependency in each workspace whose bundle keeps @opentelemetry external.
+ *
+ * Pino is deliberately absent: `createLogger` in ./pino.ts already stamps trace_id and span_id onto
+ * every line through its `mixin`, which is what instrumentation-pino would add.
+ */
+const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation()];
 
 const MAPLE_INGEST_BASE = 'https://ingest.maple.dev/v1';
 const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set: skipping Maple.dev';
@@ -23,7 +38,7 @@ export interface OtelSDKOptions {
   metricIntervalMs?: number;
   /** Flush exporters on shutdown. Defaults false in development for fast hot restarts. */
   flushOnShutdown?: boolean;
-  /** Enable auto-instrumentations (default: true). Set false for workers without HTTP. */
+  /** Enable the instrumentations below (default: true). Set false for workers without HTTP. */
   autoInstrumentations?: boolean;
   /** Additional span processors (e.g. SpanStoreProcessor for devtools/debug logging). */
   spanProcessors?: SpanProcessor[];
@@ -122,7 +137,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
     // creates a second env-driven OTLP metrics reader that can block hot restarts.
     metricReaders: [],
-    instrumentations: autoInstrumentations ? [getNodeAutoInstrumentations()] : [],
+    instrumentations: autoInstrumentations ? instrumentations() : [],
     spanProcessors,
   });
 
