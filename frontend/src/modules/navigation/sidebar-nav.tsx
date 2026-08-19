@@ -21,10 +21,9 @@ import {
 import { navItems } from '~/nav-config';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const DebugDropdown =
-  appConfig.mode !== 'production'
-    ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
-    : () => null;
+const DebugDropdown = __DEV_TOOLS__
+  ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
+  : () => null;
 
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
   appConfig.theme.navigation;

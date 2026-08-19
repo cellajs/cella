@@ -13,7 +13,7 @@ import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
-// import { visualizer } from 'rollup-plugin-visualizer';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -37,7 +37,43 @@ const remarkStripRepoDocH1 =
   };
 
 const isStorybook = process.env.STORYBOOK === 'true';
+// `pnpm deps:bundle:analyze` sets this to emit a per-module treemap next to the build.
+const isAnalyze = process.env.ANALYZE === 'true';
 const isDev = appConfig.mode === 'development';
+
+/**
+ * Libraries only a dynamic import reaches, each with the chunk it is routed to. Chunk grouping reads
+ * this twice: the per-package backstop excludes them so it cannot claim one, and the groups after it
+ * claim them last. Adding a library here is all that is needed for both; naming it in only one place
+ * is what puts it on the boot path. `pnpm deps:bundle:check` asserts the result.
+ */
+const FEATURE_LIBS: [name: string, packages: RegExp][] = [
+  ['editor', /^(@blocknote|@tiptap|prosemirror-[\w-]+|yjs|y-protocols|y-prosemirror|lib0)/],
+  ['pdf', /^(pdfjs-dist|react-pdf|jspdf[\w.-]*)$/],
+  ['media', /^(media-chrome|player\.style)$/],
+  ['gleap', /^gleap$/],
+  ['react-scan', /^react-scan$/],
+  ['maps', /^(@vis\.gl|@googlemaps)/],
+  ['uppy', /^(@uppy|@transloadit)/],
+];
+
+/** The npm package a module id belongs to, or undefined outside node_modules. */
+const packageOf = (id: string) => {
+  if (!id.includes('node_modules')) return undefined;
+  const tail = id.split(/node_modules[\\/]/).pop() ?? '';
+  return tail.match(/^((?:@[^\\/]+[\\/])?[^\\/]+)/)?.[1]?.replace(/\\/g, '/');
+};
+
+/**
+ * App modules only a dynamic import reaches. Excluded from the boot-path groups that would otherwise
+ * match them by folder, and claimed by the on-demand group last, so each forms its own lazy chunk.
+ */
+const ON_DEMAND_APP =
+  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
+
+/** The Yjs field registry is a plain map of field names that boot-time cache code reads. */
+const YJS_REGISTRY = /[\\/]blocknote[\\/]yjs-editor/;
+
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 // Imported repository docs use relative links so they also work on GitHub and in editors. When a
@@ -111,7 +147,18 @@ const viteConfig = {
         codeSplitting: {
           minSize: 50 * 1024, // Minimum chunk size of 50 Kb
           groups: [
-            // One group per grammar/theme module: each language stays its own lazily
+            // Order is what decides chunking here. A group captures the dependencies of whatever it
+            // matches and puts them in its own chunk, and a later group's `test` does not protect a
+            // module from that, so the only defence is to claim a package before a heavier group can
+            // reach it. Three bands follow, and breaking the order puts a feature library on the
+            // boot path; `pnpm deps:bundle --assert-lazy` fails the build when that happens.
+            //   1. Boot-time third-party code.
+            //   2. A backstop claiming every remaining package, one chunk each.
+            //   3. Feature libraries last, so they can only capture what nothing else claimed.
+            // The app groups after them follow the same rule in the direction dependencies point:
+            // foundational first, on-demand last, because the editor imports the UI primitives.
+
+            // One chunk per grammar/theme module: each language stays its own lazily
             // loadable chunk, and the grammars- prefix keeps all of them out of the SW
             // precache (globIgnores). The name encodes the package variant so the
             // plain and precompiled builds of a language never merge into one chunk.
@@ -139,44 +186,89 @@ const viteConfig = {
             // and silently drops groups that accumulate less than it.
             { name: 'base-ui', test: /node_modules[\\/](@base-ui|@floating-ui)[\\/]/, minSize: 0 },
             { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
-            // Heavy or foundational libraries each get their own chunk. Group capture
-            // includes a captured module's unclaimed dependencies, so without these the
-            // app groups below would fold whole libraries into eagerly loaded chunks.
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
             { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
-            { name: 'motion', test: /node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/, minSize: 0 },
+            {
+              name: 'motion',
+              test: /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/,
+              minSize: 0,
+            },
             { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
+            // Tracing initialises during boot, so it is on the boot path by design.
+            { name: 'otel', test: /node_modules[\\/]@opentelemetry[\\/]/, minSize: 0 },
+            // Curated list of tiny ubiquitous libraries that belong in one shared chunk. Each is on
+            // the boot path already; grouping them costs no laziness and saves a request apiece,
+            // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
-              name: 'editor',
-              test: /node_modules[\\/](@blocknote|prosemirror-[\w-]+|@tiptap|yjs|y-protocols|y-prosemirror|lib0)[\\/]/,
-              minSize: 0,
-            },
-            { name: 'pdf', test: /node_modules[\\/](pdfjs-dist|react-pdf|jspdf[\w.-]*)[\\/]/, minSize: 0 },
-            { name: 'media', test: /node_modules[\\/](media-chrome|player\.style)[\\/]/, minSize: 0 },
-            { name: 'gleap', test: /node_modules[\\/]gleap[\\/]/, minSize: 0 },
-            { name: 'react-scan', test: /node_modules[\\/]react-scan[\\/]/, minSize: 0 },
-            { name: 'maps', test: /node_modules[\\/](@vis\.gl|@googlemaps)[\\/]/, minSize: 0 },
-            { name: 'uppy', test: /node_modules[\\/](@uppy|@transloadit)[\\/]/, minSize: 0 },
-            {
-              // Curated list of tiny ubiquitous libraries; a blanket node_modules match
-              // would fold heavy lazy libraries (blocknote, pdf) into an eager chunk
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|dayjs|nanoid|use-sync-external-store|use-debounce|react-error-boundary|react-intersection-observer|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|sonner|input-otp|qrcode\.react|canvas-confetti|onedollarstats|react-use-downloader|dexie-react-hooks|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|use-debounce|react-error-boundary|react-intersection-observer|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
-            // App-wide primitives loaded on any real screen
+            {
+              // Backstop for every package the groups above do not name, one chunk each, so each
+              // keeps the lifecycle of whatever imports it. It runs before the feature libraries so
+              // that a shared package cannot be captured into one of them: react-dom landed inside
+              // the editor chunk that way, and every module needing React then booted the editor.
+              // The feature packages are excluded so the groups below still claim them.
+              name: (id: string) => {
+                const pkg = packageOf(id);
+                return pkg ? `v-${pkg.replace(/[^\w-]/g, '-')}` : null;
+              },
+              test: (id: string) => {
+                const pkg = packageOf(id);
+                return Boolean(pkg) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
+              },
+              minSize: 0,
+            },
+            // Feature libraries, each reached only through a dynamic import. Last among the
+            // third-party groups: everything they share with boot-time code is already claimed, so
+            // capturing dependencies cannot drag anything else in with them.
+            ...FEATURE_LIBS.map(([name, packages]) => ({
+              name,
+              test: (id: string) => {
+                const pkg = packageOf(id);
+                return Boolean(pkg) && packages.test(pkg as string);
+              },
+              minSize: 0,
+            })),
+
+            // ── App layer, foundational first ────────────────────────────────────────────────────
+            // The shared workspace package holds appConfig and is imported from nearly every module.
+            // blocknote-schema-configs.ts is the one exception: it imports @blocknote/core, so it is
+            // left for the editor groups to capture.
+            {
+              name: 'shared-config',
+              test: (id: string) => /[\\/]shared[\\/]/.test(id) && !/blocknote-schema-configs/.test(id),
+              minSize: 0,
+            },
+            // The generated SDK client is read by the query registries during boot.
+            { name: 'sdk-gen', test: /[\\/]sdk[\\/]gen[\\/]/, minSize: 0 },
+            // App-wide primitives loaded on any real screen, plus the Yjs field registry that
+            // query/realtime reads. `shared/` is excluded because the path shape matches it too.
             {
               name: 'app-core',
-              test: /[\\/]src[\\/](hooks|utils|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/,
+              test: (id: string) =>
+                (/[\\/]src[\\/](hooks|utils|lib|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/.test(id) ||
+                  YJS_REGISTRY.test(id)) &&
+                !/[\\/]shared[\\/]/.test(id),
               minSize: 0,
             },
             {
-              // Shared app components. The blocknote wrappers stay out: they statically
-              // import the heavy editor, and group capture includes dependencies, which
-              // would pull it into this eagerly loaded chunk.
-              name: 'common',
+              // Attachment modules that boot-time code reads: the query registry, the offline
+              // download service, and the small helpers the layout and routes touch. upload-service
+              // is excluded because it imports @uppy/core and only a dynamic import reaches it.
+              name: 'attachment-core',
               test: (id: string) =>
-                /[\\/]src[\\/]modules[\\/]common[\\/]/.test(id) && !/[\\/]common[\\/]blocknote[\\/]/.test(id),
+                /[\\/]src[\\/]modules[\\/]attachment[\\/](query|file-placeholder|search-params-schemas)/.test(id) ||
+                (/[\\/]src[\\/]modules[\\/]attachment[\\/]offline[\\/]/.test(id) && !ON_DEMAND_APP.test(id)) ||
+                /[\\/]src[\\/]modules[\\/]attachment[\\/]helpers[\\/]persist-attachments/.test(id),
+              minSize: 0,
+            },
+            {
+              // Shared app components, minus the wrappers claimed by their own groups below: each
+              // statically imports a feature library that would follow them into this boot chunk.
+              name: 'common',
+              test: (id: string) => /[\\/]src[\\/]modules[\\/]common[\\/]/.test(id) && !ON_DEMAND_APP.test(id),
               minSize: 0,
             },
             // Route shims are thin glue; route components stay in their module chunks
@@ -184,8 +276,27 @@ const viteConfig = {
             {
               // One chunk per remaining feature module folder, keeping feature-level laziness
               name: (id: string) => {
+                // Left for the on-demand group below, so each forms its own lazy chunk; the
+                // `m-common` and `m-attachment` chunks are on the boot path.
+                if (ON_DEMAND_APP.test(id)) return null;
                 const m = id.match(/[\\/]src[\\/]modules[\\/]([\w-]+)[\\/]/);
                 return m ? `m-${m[1]}` : null;
+              },
+              minSize: 0,
+            },
+            {
+              // ── On-demand app code, last ──────────────────────────────────────────────────────
+              // The blocknote wrappers and the form field that renders them, the uploader, the chat
+              // widget, and the attachment renderers behind `lazyNamed`. Claimed after every group
+              // above, because they import the UI primitives, the query layer and the attachment
+              // helpers, and a group captures what it matches along with its dependencies.
+              name: (id: string) => {
+                if (!ON_DEMAND_APP.test(id)) return null;
+                if (/[\\/]attachment[\\/]render[\\/]/.test(id)) return 'attachment-render';
+                if (/[\\/]attachment[\\/]offline[\\/]upload-service/.test(id)) return 'uploader';
+                if (/[\\/]common[\\/]uploader[\\/]/.test(id)) return 'uploader';
+                if (/[\\/]common[\\/]gleap-support/.test(id)) return 'gleap-support';
+                return 'editor-app';
               },
               minSize: 0,
             },
@@ -312,7 +423,16 @@ const viteConfig = {
             },
           }) as Plugin,
         ]),
-    // visualizer({ open: true, gzipSize: true }),
+    ...(isAnalyze
+      ? [
+          visualizer({
+            filename: 'stats/bundle.html',
+            template: 'treemap',
+            gzipSize: true,
+            brotliSize: true,
+          }) as Plugin,
+        ]
+      : []),
   ],
   resolve: {
     // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,
@@ -339,6 +459,9 @@ const viteConfig = {
     __APP_VERSION__: JSON.stringify(gitSha),
     // Root release version, shown on the docs landing page
     __PKG_VERSION__: JSON.stringify(rootPkg.version),
+    // Devtools gate. A literal, so rolldown folds the branch away and the react-scan
+    // chunk leaves the production graph; `appConfig.mode` is a property read it cannot fold.
+    __DEV_TOOLS__: JSON.stringify(appConfig.mode !== 'production'),
   },
 } satisfies UserConfig;
 

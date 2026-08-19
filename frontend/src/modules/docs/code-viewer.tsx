@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { createHighlighter } from 'shiki';
+import { createHighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
+import { bundledLanguages } from 'shiki/langs';
+import { bundledThemes } from 'shiki/themes';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
@@ -8,12 +10,16 @@ interface CodeViewerProps {
   language: 'typescript' | 'zod';
 }
 
-/** Shiki's JavaScript regex engine: the default Oniguruma WASM engine is blocked by the app CSP. */
-let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
+/**
+ * Built from `shiki/core` with the themes and grammar named explicitly. The `shiki` entry bundles
+ * every engine, which places the Oniguruma WASM build on the boot path; the app CSP has no
+ * 'unsafe-eval', so the JavaScript regex engine is always the one used.
+ */
+let highlighterPromise: ReturnType<typeof createHighlighterCore> | null = null;
 const getHighlighter = () => {
-  highlighterPromise ??= createHighlighter({
-    themes: ['github-dark-default', 'github-light-default'],
-    langs: ['typescript'],
+  highlighterPromise ??= createHighlighterCore({
+    themes: [bundledThemes['github-dark-default'], bundledThemes['github-light-default']],
+    langs: [bundledLanguages.typescript],
     engine: createJavaScriptRegexEngine(),
   });
   return highlighterPromise;

@@ -118,7 +118,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   ];
 
   return (
-    <ToolCard label="c:tabs" description={t('c:tabs.text')}>
+    <ToolCard label="c:tabs" description={t('c:tabs.text', { resource: t(`c:${entity.entityType}`).toLowerCase() })}>
       <DataTable
         rows={rows}
         rowKeyGetter={rowKeyGetter}

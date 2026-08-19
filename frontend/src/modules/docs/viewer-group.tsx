@@ -1,11 +1,14 @@
 import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import { CodeViewer } from './code-viewer';
+import { lazyNamed } from '~/utils/lazy-named';
 import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
+
+// Lazy: shiki and its grammars load when the code view opens, not with the docs route.
+const CodeViewer = lazyNamed(() => import('./code-viewer'), 'CodeViewer');
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
@@ -113,8 +116,10 @@ export function ViewerGroup({
                 indentWidth={3}
               />
             )}
-            {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} language="zod" />}
-            {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} language="typescript" />}
+            <Suspense fallback={null}>
+              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} language="zod" />}
+              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} language="typescript" />}
+            </Suspense>
             {viewMode === 'example' && example !== undefined && (
               <JsonViewer value={example} rootName={false} defaultInspectDepth={defaultInspectDepth} indentWidth={3} />
             )}

@@ -21,9 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "26.2.0",
-    "@types/pg": "^8.21.0",
+    "@types/pg": "^8.23.1",
     "@types/pg-format": "^1.0.5",
-    "artillery": "^2.0.33",
+    "artillery": "^2.0.34",
     "artillery-plugin-ensure": "^1.27.0",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3"
