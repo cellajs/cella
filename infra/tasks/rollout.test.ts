@@ -261,6 +261,30 @@ describe('runWavedRollout update batching', () => {
   });
 });
 
+describe('activateService exclusive singleVM host', () => {
+  it('ignores the displaced generation and drives the LB straight to [new]', async () => {
+    // The provisioning update destroyed b-old in the same pass that created b-new; only b-new exists in the outputs.
+    const fake = makeFake({
+      generations: [gen('backend', 'b-new', SHA, '10.0.0.2')],
+      active: { backend: { id: 'b-old', sha: 'sha-old' } },
+      backendIds: { backend: 'b-bid', frontend: 'f-bid' },
+      initialLb: { 'b-bid': ['10.0.0.1'], 'f-bid': ['10.0.0.1'] },
+    });
+    const plan: RolloutServicePlan = {
+      ...backendPlan,
+      exclusive: true,
+      drainSeconds: 0,
+      repointBackendKeys: ['frontend'],
+    };
+    await activateService(plan, SHA, await fake.rt.readGenerations(), await fake.rt.readLbBackendIds(), fake.rt);
+
+    // One LB write per pool: no [dead, new] overlap step, and the follower pool moves too.
+    expect(fake.lbHistory.get('b-bid')).toEqual([['10.0.0.1'], ['10.0.0.2']]);
+    expect(fake.lbHistory.get('f-bid')?.at(-1)).toEqual(['10.0.0.2']);
+    expect(fake.ops).toContain('promote:backend:b-new');
+  });
+});
+
 describe('activateService co-hosted repoint', () => {
   it('repoints co-hosted worker LB backends to the new generation IP after cutover', async () => {
     const fake = makeFake({

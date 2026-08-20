@@ -63,6 +63,25 @@ export function collocatedServices(
   return collocated;
 }
 
+/** Resolve the VM replacement strategy. A singleVM host folding a stop-first worker must cut over stop-first too, so two replication-slot consumers never run at once. */
+export function effectiveStrategy(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+  svc: ServiceDefinition,
+): ServiceDefinition['replacementStrategy'] {
+  const host = deployedServices(serviceConfig, singleVM).find((s) => s.primaryRollout)?.slug;
+  if (
+    singleVM &&
+    svc.slug === host &&
+    [...coHostedServices(serviceConfig, singleVM), ...collocatedServices(serviceConfig, singleVM)].some(
+      (s) => s.replacementStrategy === 'stop-first',
+    )
+  ) {
+    return 'stop-first';
+  }
+  return svc.replacementStrategy;
+}
+
 /** Secret folders a service's VMs must read: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
 export function secretScopeSlugs(
   serviceConfig: Record<string, EngineServiceEndpoint>,

@@ -208,8 +208,11 @@ jobs:
         with:
           pulumi-version: 3.236.0
 
+      # Only the workspaces the deploy command touches (it builds the frontend
+      # in-process): fewer packages and lifecycle scripts in the one job that
+      # holds the deploy credentials.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared... --filter frontend...
 
       - name: Deploy ${{ needs.setup.outputs.image_tag }} to ${{ needs.setup.outputs.environment }}
         env:

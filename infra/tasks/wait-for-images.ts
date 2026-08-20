@@ -41,33 +41,52 @@ export function imageRef(registry: string, namespace: string, service: string, t
   return `${registry}/${namespace}/${service}:${tag}`;
 }
 
-/** Poll the registry until every image service's tag exists, or budgets run out. */
+/** Collapse concurrent callers onto one in-flight promise, so parallel pollers on the same tick share a single probe call. */
+function shareInflight<T>(fn: () => Promise<T>): () => Promise<T> {
+  let inflight: Promise<T> | undefined;
+  return () => {
+    inflight ??= fn().finally(() => {
+      inflight = undefined;
+    });
+    return inflight;
+  };
+}
+
+/** Poll the registry until every image service's tag exists, or budgets run out. Services poll concurrently: the slowest build gates the wait, not the sum of the builds. */
 export async function waitForImages(opts: WaitOptions): Promise<{ ok: boolean; missing: string[] }> {
   const attempts = opts.attempts ?? 80;
   const intervalMs = opts.intervalMs ?? 15000;
   const sleepFn = opts.sleep ?? sleep;
   const log = opts.log ?? ((msg: string) => console.info(msg));
+  const buildFailed = opts.buildFailed ? shareInflight(opts.buildFailed) : undefined;
 
-  const missing: string[] = [];
-  for (const service of opts.services ?? imageServiceNames) {
-    const ref = imageRef(opts.registry, opts.namespace, service, opts.tag);
-    log(`Waiting for ${service}:${opts.tag}`);
-    const ready = await pollUntil(
-      async (attempt) => {
-        if (opts.buildFailed && (await opts.buildFailed())) {
-          throw new Error(`build job for an image failed; not waiting out the registry budget (${ref})`);
-        }
-        if (!(await opts.inspect(ref))) return undefined;
-        log(`  ${service} ready after ${attempt} attempt(s)`);
-        return true;
-      },
-      { attempts, intervalMs, sleep: sleepFn },
-    );
-    if (!ready) {
+  const services = opts.services ?? imageServiceNames;
+  log(`Waiting for ${services.map((service) => `${service}:${opts.tag}`).join(', ')}`);
+  const outcomes = await Promise.allSettled(
+    services.map(async (service) => {
+      const ref = imageRef(opts.registry, opts.namespace, service, opts.tag);
+      const ready = await pollUntil(
+        async (attempt) => {
+          if (buildFailed && (await buildFailed())) {
+            throw new Error(`build job for an image failed; not waiting out the registry budget (${ref})`);
+          }
+          if (!(await opts.inspect(ref))) return undefined;
+          log(`  ${service} ready after ${attempt} attempt(s)`);
+          return true;
+        },
+        { attempts, intervalMs, sleep: sleepFn },
+      );
+      if (ready) return undefined;
       log(`::error::${ref} never appeared in registry`);
-      missing.push(ref);
-    }
-  }
+      return ref;
+    }),
+  );
+  // allSettled so a fail-fast abort in one poller never leaves a sibling's later rejection unhandled.
+  const aborted = outcomes.find((outcome) => outcome.status === 'rejected');
+  if (aborted?.status === 'rejected') throw aborted.reason;
+  const missing = outcomes.flatMap((outcome) =>
+    outcome.status === 'fulfilled' && outcome.value ? [outcome.value] : [],
+  );
 
   return { ok: missing.length === 0, missing };
 }

@@ -38,11 +38,11 @@ const STANDARD_ENV = {
   TZ: 'UTC',
 } as const;
 
-/** Uniform identity healthcheck injected into every app service. */
+/** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the deploy's health gate waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace VM image cannot guarantee. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
   return {
     test: ['CMD', 'wget', '-qO-', `http://127.0.0.1:${port}${healthContract.path}`],
-    interval: '30s',
+    interval: '5s',
     timeout: '5s',
     retries: 3,
     start_period: startPeriod,

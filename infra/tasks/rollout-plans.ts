@@ -1,7 +1,7 @@
 import type { ServiceName } from '../compose/compose';
 import { engineConfig } from '../config/engine-config';
 import { healthContract } from '../config/health.config';
-import { coHostedServices, collocatedServices, servicesByName } from '../lib/services';
+import { coHostedServices, collocatedServices, effectiveStrategy, servicesByName } from '../lib/services';
 import type { RolloutServicePlan } from './rollout';
 
 function normalizeHealthUrl(explicit?: string): string | undefined {
@@ -20,13 +20,19 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   if (!definition) throw new Error(`Unknown service '${serviceFlag}'`);
   const service = definition.slug;
 
+  // A singleVM host folding a stop-first worker replaces its VM within the provisioning update: the LB pool moves straight to [new] and there is no displaced generation left to drain.
+  const exclusive =
+    definition.replacementStrategy !== 'stop-first' &&
+    effectiveStrategy(appConfig.services, appConfig.singleVM, definition) === 'stop-first';
+
   const plan: RolloutServicePlan = {
     service,
     strategy: definition.replacementStrategy,
     drainPolicy: definition.drainPolicy,
-    drainSeconds: definition.drainSeconds ?? 10,
+    drainSeconds: exclusive ? 0 : (definition.drainSeconds ?? 10),
     healthUrl: normalizeHealthUrl(healthUrl),
   };
+  if (exclusive) plan.exclusive = true;
 
   if (definition.replacementStrategy !== 'stop-first') {
     if (!definition.lbRoute)

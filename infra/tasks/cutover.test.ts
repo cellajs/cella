@@ -151,6 +151,25 @@ describe('sequenceCutover: start-first', () => {
     expect(order.indexOf('contract')).toBeLessThan(order.indexOf('drain'));
   });
 
+  it('sets the LB straight to [new] and skips the drain when no old generation exists', async () => {
+    const lb = recordingSetServers();
+    let slept = false;
+    const res = await sequenceCutover(
+      lbPlan({
+        oldIps: [],
+        setServers: lb.fn,
+        sleep: async () => {
+          slept = true;
+        },
+      }),
+    );
+    expect(res.ok).toBe(true);
+    expect(lb.calls).toEqual([['10.0.0.9']]);
+    expect(res.steps).toContain('set LB to [new] (no old generation); was 10.0.0.4');
+    expect(res.steps.some((s) => s.includes('drain'))).toBe(false);
+    expect(slept).toBe(false);
+  });
+
   it('skips the drain sleep when drainSeconds is 0', async () => {
     let slept = false;
     await sequenceCutover(

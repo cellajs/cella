@@ -14,6 +14,8 @@ export interface RolloutServicePlan {
   healthUrl?: string;
   /** Co-hosted worker slugs (singleVM) whose LB backends follow this VM. */
   repointBackendKeys?: string[];
+  /** singleVM host whose effective strategy is stop-first: the provisioning update replaces the VM in place, so no old generation exists to overlap with or drain. */
+  exclusive?: boolean;
 }
 
 /** Every effect the waved rollout performs, injected so wave sequencing is unit-testable. rollout-runtime.ts holds the Pulumi, control-object, LB, and health-polling implementation. */
@@ -77,11 +79,12 @@ export async function activateService(
   const backendId = backendIds[service];
   if (!backendId) throw new Error(`Could not resolve LB backend id for ${service}`);
 
-  // Serving generation before this deploy; empty on a first deploy, where the reconciler drives the LB straight to [new] once it is healthy.
+  // Serving generation before this deploy; empty on a first deploy or an exclusive host (whose old VM the provisioning update already destroyed), where the reconciler drives the LB straight to [new] once it is healthy.
   const activeRef = current?.active;
-  const oldGen = activeRef
-    ? generations.find((item) => item.service === service && item.genId === activeRef.id)
-    : undefined;
+  const oldGen =
+    activeRef && !plan.exclusive
+      ? generations.find((item) => item.service === service && item.genId === activeRef.id)
+      : undefined;
   const oldIps = oldGen ? [oldGen.privateIp] : [];
 
   rt.info(

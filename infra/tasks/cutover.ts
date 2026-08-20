@@ -104,7 +104,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     if (sameIps(live, overlap)) {
       record('LB already expanded to [old, new]');
     } else {
-      record(`expand LB to [old, new] (${overlap.length} server(s)); was ${live.join(',') || '<empty>'}`);
+      record(
+        plan.oldIps.length === 0
+          ? `set LB to [new] (no old generation); was ${live.join(',') || '<empty>'}`
+          : `expand LB to [old, new] (${overlap.length} server(s)); was ${live.join(',') || '<empty>'}`,
+      );
       await setServers(overlap);
     }
     live = overlap;
@@ -124,8 +128,11 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     record('LB already serving [new]');
   }
 
-  record(`drain old generation for ${plan.drainSeconds}s (drainPolicy=${plan.drainPolicy ?? 'requests'})`);
-  if (plan.drainSeconds > 0) await sleep(plan.drainSeconds * 1000);
+  // Nothing drains when no old generation was behind the LB (first deploy, or an exclusive host whose old VM is already destroyed).
+  if (plan.oldIps.length > 0) {
+    record(`drain old generation for ${plan.drainSeconds}s (drainPolicy=${plan.drainPolicy ?? 'requests'})`);
+    if (plan.drainSeconds > 0) await sleep(plan.drainSeconds * 1000);
+  }
 
   return { ok: true, steps };
 }
