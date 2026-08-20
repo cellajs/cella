@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.6](https://github.com/cellajs/cella/compare/0.9.5...0.9.6) (2026-08-20)
+
+
+### 🔧 Small improvements
+
+* **infra:** Tier 1 deploy critical-path trims + honest singleVM cutover ([#1091](https://github.com/cellajs/cella/issues/1091)) ([8240177](https://github.com/cellajs/cella/commit/8240177c448144ec42a4ce3cf045c37aa676a28a))
+
 ## [0.9.5](https://github.com/cellajs/cella/compare/0.9.4...0.9.5) (2026-08-19)
 
 
