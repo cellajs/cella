@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.7](https://github.com/cellajs/cella/compare/0.9.6...0.9.7) (2026-08-20)
+
+
+### 🔧 Small improvements
+
+* **infra:** async exec so the registry wait really overlaps the frontend build ([#1093](https://github.com/cellajs/cella/issues/1093)) ([a000598](https://github.com/cellajs/cella/commit/a000598a770050f5895fdb3ae5ef4092d2ed6336))
+
 ## [0.9.6](https://github.com/cellajs/cella/compare/0.9.5...0.9.6) (2026-08-20)
 
 
