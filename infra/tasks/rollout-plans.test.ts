@@ -24,6 +24,18 @@ describe('planForService', () => {
     const plan = planForService('cdc');
     expect(plan.strategy).toBe('stop-first');
     expect(plan.healthUrl).toBeUndefined();
+    expect(plan.exclusive).toBeUndefined();
+  });
+
+  it('marks the singleVM host exclusive with nothing to drain (its stop-first worker folds in)', () => {
+    setEngineConfig(fakeConfig({ singleVM: true }));
+    try {
+      const plan = planForService('backend', 'https://www.cellajs.com/api');
+      expect(plan).toMatchObject({ strategy: 'start-first', exclusive: true, drainSeconds: 0 });
+      expect(plan.healthUrl).toBe('https://www.cellajs.com/api/health');
+    } finally {
+      setEngineConfig(fakeConfig());
+    }
   });
 
   it('requires a health URL for lb-overlap services', () => {

@@ -7,7 +7,13 @@ import { sizing } from '../config/sizing';
 import { deriveGenId } from '../lib/gen-id';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
 import { type Generation, selectGenerations } from '../lib/select-generations';
-import { coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
+import {
+  coHostedServices,
+  collocatedServices,
+  deployedServices,
+  effectiveStrategy as resolveEffectiveStrategy,
+  type ServiceDefinition,
+} from '../lib/services';
 import { controlState } from './control';
 
 // Each service gets a VM except workers co-hosted on the backend and containers collocated on the host under singleVM, which route through the host VM.
@@ -28,16 +34,9 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
   return [svc.slug as RuntimeSecretConsumer];
 }
 
-/** Resolve the VM replacement strategy. A singleVM host containing a stop-first worker must cut over stop-first too, so two replication-slot consumers never run at once. */
+/** The VM replacement strategy under this app config; the resolution rule lives in lib/services.ts so the rollout plan shares it. */
 export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
-  if (
-    appConfig.singleVM &&
-    svc.slug === hostSlug &&
-    [...coHosted, ...collocated].some((s) => s.replacementStrategy === 'stop-first')
-  ) {
-    return 'stop-first';
-  }
-  return svc.replacementStrategy;
+  return resolveEffectiveStrategy(appConfig.services, appConfig.singleVM, svc);
 }
 
 export type { Generation } from '../lib/select-generations';
