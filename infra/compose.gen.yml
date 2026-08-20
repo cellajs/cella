@@ -29,7 +29,7 @@ services:
       MCP_API_URL: ${MCP_API_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
-      interval: '30s'
+      interval: '5s'
       timeout: '5s'
       retries: 3
       start_period: '15s'
@@ -85,7 +85,7 @@ services:
       CDC_HEALTH_PORT: '4001'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4001/health']
-      interval: '30s'
+      interval: '5s'
       timeout: '5s'
       retries: 3
       start_period: '10s'
@@ -121,7 +121,7 @@ services:
       YJS_PORT: '4002'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
-      interval: '30s'
+      interval: '5s'
       timeout: '5s'
       retries: 3
       start_period: '10s'
@@ -162,7 +162,7 @@ services:
       MCP_API_URL: ${MCP_API_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
-      interval: '30s'
+      interval: '5s'
       timeout: '5s'
       retries: 3
       start_period: '15s'
@@ -194,7 +194,7 @@ services:
       ORIGIN_HOST: ${ORIGIN_HOST}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:80/health']
-      interval: '30s'
+      interval: '5s'
       timeout: '5s'
       retries: 3
       start_period: '10s'
