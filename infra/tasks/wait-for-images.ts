@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import type { ServiceName } from '../compose/compose';
 import { imageServiceNames } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
@@ -9,11 +9,13 @@ import { getFlag, getNumFlag, sleep } from './args';
 /** Inspect a single image ref; resolves true if it exists. Injectable for tests. */
 export type InspectFn = (imageRef: string) => Promise<boolean>;
 
-/** Default inspector: `docker buildx imagetools inspect <ref>` (no shell). */
-export const dockerInspect: InspectFn = async (imageRef) => {
-  const { status } = spawnSync('docker', ['buildx', 'imagetools', 'inspect', imageRef], { stdio: 'ignore' });
-  return status === 0;
-};
+/** Default inspector: `docker buildx imagetools inspect <ref>` (no shell). Async spawn so the per-service pollers genuinely overlap and never block the event loop. */
+export const dockerInspect: InspectFn = (imageRef) =>
+  new Promise((resolve) => {
+    const child = spawn('docker', ['buildx', 'imagetools', 'inspect', imageRef], { stdio: 'ignore' });
+    child.once('error', () => resolve(false));
+    child.once('close', (status) => resolve(status === 0));
+  });
 
 export interface WaitOptions {
   registry: string;

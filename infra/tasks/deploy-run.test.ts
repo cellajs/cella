@@ -62,7 +62,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
     },
-    exec: (cmd, args, execOpts) => {
+    exec: async (cmd, args, execOpts) => {
       ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
     },
     update: async (stack) => {
@@ -178,6 +178,22 @@ describe('runDeploy sequencing', () => {
     expect(ops).toContain('upload-assets');
     expect(ops).toContain('publish-entry');
     expect(ops).toContain('task:smoke');
+  });
+
+  it('the registry wait progresses while the frontend build runs (exec must not block it)', async () => {
+    const { fx, ops } = makeFake();
+    const fxConcurrent: DeployEffects = {
+      ...fx,
+      exec: async (cmd, args) => {
+        // The fake build finishes only after the concurrent images branch completed its registry wait; a build that blocks that branch deadlocks this test.
+        if (cmd === 'pnpm' && args[0] === '--filter') {
+          while (!ops.includes('task:wait-for-images')) await new Promise((tick) => setTimeout(tick, 1));
+        }
+        ops.push(`exec:${cmd}:${args[0]}`);
+      },
+    };
+    await runDeploy({ mode: 'production', sha: 'abc123' }, fxConcurrent, fakeDeployEnv);
+    expect(ops.indexOf('task:wait-for-images')).toBeLessThan(ops.indexOf('exec:pnpm:--filter'));
   });
 
   it('skips the frontend build (but still uploads) with a prebuilt dist dir', async () => {

@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
@@ -56,12 +56,12 @@ export interface DeployEffects {
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>;
-  /** Run an external binary in the infra dir; throws on non-zero exit unless allowFailure. */
+  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async so concurrent steps (registry wait, asset upload) keep progressing while a build runs. */
   exec(
     cmd: string,
     args: string[],
     opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string>; secretless?: boolean },
-  ): void;
+  ): Promise<void>;
   /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
   uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
   /** One full stack update through the configured Pulumi driver. */
@@ -185,15 +185,15 @@ export async function runDeploy(
     const distDir = opts.distDir ?? resolve(infraDir, '..', 'frontend', 'dist');
     const imagesReady = (async () => {
       if (opts.build) {
-        await step('Build images (buildx bake)', () => {
+        await step('Build images (buildx bake)', async () => {
           const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), {
             registry,
             namespace: env.registry_ns,
             tag: opts.sha,
             context: '..',
           });
-          fx.exec('pnpm', ['run', 'boot:build']);
-          fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) });
+          await fx.exec('pnpm', ['run', 'boot:build']);
+          await fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) });
         });
       }
       await step('Wait for image tags in registry', () =>
@@ -378,8 +378,11 @@ export async function runReap(
 
   let lockHeld = false;
   try {
-    fx.exec('pulumi', ['login', `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`]);
-    fx.exec('pulumi', ['stack', 'select', stack]);
+    await fx.exec('pulumi', [
+      'login',
+      `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`,
+    ]);
+    await fx.exec('pulumi', ['stack', 'select', stack]);
     await fx.task('stack-lock', ['acquire', '--stack', stack, '--operation', 'reap', '--ttl-min', '30']);
     lockHeld = true;
     await fx.task('install-pulumi-providers');
@@ -486,14 +489,24 @@ function createRealEffects(): DeployEffects {
       // opts.env on top, so an untrusted build (the frontend Vite plugin graph)
       // cannot read them. The default path is unchanged: full env inheritance.
       const baseEnv = opts.secretless ? scrubSecretEnv(process.env) : process.env;
-      const res = spawnSync(cmd, args, {
-        cwd: infraDir,
-        env: opts.env ? { ...baseEnv, ...opts.env } : baseEnv,
-        stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
-        input: opts.stdin,
+      // spawn, not spawnSync: a synchronous child blocks the event loop, which
+      // serialized the "concurrent" registry wait behind the frontend build.
+      return new Promise((done, fail) => {
+        const child = spawn(cmd, args, {
+          cwd: infraDir,
+          env: opts.env ? { ...baseEnv, ...opts.env } : baseEnv,
+          stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
+        });
+        if (opts.stdin !== undefined) child.stdin?.end(opts.stdin);
+        child.once('error', (err) => {
+          if (opts.allowFailure) done();
+          else fail(new Error(`${cmd} ${args[0] ?? ''} failed to start: ${errorMessage(err)}`));
+        });
+        child.once('close', (status) => {
+          if (status !== 0 && !opts.allowFailure) fail(new Error(`${cmd} ${args[0] ?? ''} failed with exit ${status}`));
+          else done();
+        });
       });
-      if (res.status !== 0 && !opts.allowFailure)
-        throw new Error(`${cmd} ${args[0] ?? ''} failed with exit ${res.status}`);
     },
     async uploadAssets(assetOpts) {
       const { uploadFrontendAssets } = await import('./frontend-assets');
