@@ -20,6 +20,8 @@ export const channelIncludedSchema = (entityType: ChannelEntityType) => {
   const countsSchema = z.object({
     membership: membershipCountSchema,
     entities: entityCountSchema,
+    // Home-only twin of `entities` (`e:c:h:` keys): rows homed directly at the channel.
+    entitiesSelf: entityCountSchema,
     activity: activitySchema,
   });
 

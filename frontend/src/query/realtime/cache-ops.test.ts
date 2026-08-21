@@ -1,4 +1,4 @@
-import type { EntityType } from 'shared';
+import type { EntityType, ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Synthetic sub-org hierarchy as a real builder instance: 'task' is a product homed at the
@@ -19,6 +19,7 @@ vi.mock('shared', async (importOriginal) => {
     appConfig: {
       channelEntityTypes: hierarchy.channelTypes,
       entityIdColumnKeys: hierarchy.idColumnKeys,
+      productEmbeddings: [{ embeddedProduct: 'label', hostProduct: 'attachment', hostColumn: 'labels' }],
     },
     hierarchy,
     isChannel: hierarchy.isChannel,
@@ -79,6 +80,25 @@ describe('realtime cache ops', () => {
     expect(status).toBe('ok');
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
     expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual({ items: [], total: 0 });
+  });
+
+  it('diffs the embedding column against the cached row before the fetched row overwrites it', async () => {
+    // The cached row is the only record of the previous references, so the read must precede the apply.
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys('attachment', keys, async () => ({
+      items: [{ id: 'attachment-1', organizationId: 'org-1', labels: ['keep', 'added'] }],
+      total: 1,
+    }));
+
+    queryClient.setQueryData(keys.list.home('org-1'), {
+      items: [{ id: 'attachment-1', organizationId: 'org-1', labels: ['keep', 'dropped'] }],
+      total: 1,
+    });
+
+    const { status, embeddingTouches } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '4,4', keys);
+
+    expect(status).toBe('ok');
+    expect([...(embeddingTouches.get('label' as ProductEntityType) ?? [])].sort()).toEqual(['added', 'dropped']);
   });
 
   it('inserts a brand-new row into the canonical home list and bumps total', async () => {

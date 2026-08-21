@@ -8,20 +8,19 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border-transparent bg-primary text-primary-foreground [--intent-color:var(--primary)] [a&]:hover:bg-primary/90',
-        brand: 'border-transparent bg-brand text-brand-foreground [--intent-color:var(--brand)] [a&]:hover:bg-brand/90',
-        success: 'border-transparent bg-success text-success-foreground [--intent-color:var(--success)]',
+        default: 'border-transparent [--intent-color:var(--primary)]',
+        brand: 'border-transparent [--intent-color:var(--brand)]',
+        success: 'border-transparent [--intent-color:var(--success)]',
         secondary:
           'border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] [a&]:hover:bg-secondary/90',
         plain: 'border border-primary/20 bg-primary/5 text-primary',
         destructive:
-          'border-transparent bg-destructive text-destructive-foreground [--intent-color:var(--destructive)] focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/90',
+          'border-transparent [--intent-color:var(--destructive)] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
         outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
-        warning: 'border-transparent bg-warning text-warning-foreground [--intent-color:var(--warning)]',
+        warning: 'border-transparent [--intent-color:var(--warning)]',
       },
       soft: {
-        true: 'soft-bg soft-border soft-text shadow-none',
+        true: '',
         false: '',
       },
       size: {
@@ -37,6 +36,24 @@ export const badgeVariants = cva(
         none: 'lowercase',
       },
     },
+    // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
+    compoundVariants: [
+      // Soft form limited to intent variants
+      {
+        variant: ['default', 'brand', 'success', 'destructive', 'warning'],
+        soft: true,
+        className: 'soft-bg soft-border soft-text shadow-none',
+      },
+      { variant: 'default', soft: false, className: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90' },
+      { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground [a&]:hover:bg-brand/90' },
+      { variant: 'success', soft: false, className: 'bg-success text-success-foreground' },
+      {
+        variant: 'destructive',
+        soft: false,
+        className: 'bg-destructive text-destructive-foreground dark:bg-destructive/60 [a&]:hover:bg-destructive/90',
+      },
+      { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground' },
+    ],
     defaultVariants: {
       variant: 'default',
       soft: false,

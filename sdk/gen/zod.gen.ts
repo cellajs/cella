@@ -411,6 +411,9 @@ export const zOrganization = z.object({
         entities: z.object({
           attachment: z.number(),
         }),
+        entitiesSelf: z.object({
+          attachment: z.number(),
+        }),
         activity: z.object({
           attachment: z.object({
             created: z.number().nullable(),
@@ -1343,6 +1346,9 @@ export const zCreateOrganizationsResponse = z.object({
                   total: z.number(),
                 }),
                 entities: z.object({
+                  attachment: z.number(),
+                }),
+                entitiesSelf: z.object({
                   attachment: z.number(),
                 }),
                 activity: z.object({

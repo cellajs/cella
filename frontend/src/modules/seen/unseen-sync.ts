@@ -3,6 +3,7 @@ import { isSeenTracked, matchesUnseenFilters, seenKeys } from '~/modules/seen/he
 import { isSeenLocally } from '~/modules/seen/seen-store';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { queryClient } from '~/query/query-client';
+import { onSyncedRows } from '~/query/realtime/sync-signals';
 
 // Each synced row counts once between exact recounts; older rows are already in the server count.
 const countedIds = new Set<string>();
@@ -45,6 +46,13 @@ export function ingestSyncedRows(
       applyUnseenDelta(channelId, productType, 1);
     }
   }
+}
+
+/** Feeds every delivered sequence range into {@link ingestSyncedRows}; a degraded range carries no rows and the exact recount owns it. */
+export function subscribeUnseenSync(): () => void {
+  return onSyncedRows(({ entityType, organizationId, rows, degraded }) => {
+    if (!degraded) ingestSyncedRows(entityType, organizationId, rows);
+  });
 }
 
 /** Removal without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */

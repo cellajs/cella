@@ -1149,6 +1149,13 @@
                     "attachment": { "type": "number", "required": true }
                   }
                 },
+                "entitiesSelf": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "attachment": { "type": "number", "required": true }
+                  }
+                },
                 "activity": {
                   "type": "object",
                   "required": true,
@@ -1257,6 +1264,7 @@
             "total": 93
           },
           "entities": { "attachment": 178 },
+          "entitiesSelf": { "attachment": 119 },
           "activity": {
             "attachment": { "created": 1734107615547, "updated": 1734969019663 }
           }

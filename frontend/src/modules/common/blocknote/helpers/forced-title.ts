@@ -29,6 +29,9 @@ const titleBlock = (name: string, level: TitleLevel) =>
 /** A stringified single empty title block, the sync seed for create forms. */
 export const emptyTitleDocument = (level: TitleLevel = 1) => JSON.stringify([titleBlock('', level)]);
 
+/** A stringified title document seeded with `name`, for forms that open pre-titled. */
+export const seededTitleDocument = (name: string, level: TitleLevel = 1) => JSON.stringify([titleBlock(name, level)]);
+
 /** Synchronous title read from stringified blocks. */
 export const titleFromBlocks = (strBlocks: string): string => {
   try {
@@ -46,26 +49,22 @@ export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: Lo
   return { name: blockText(first).trim(), body: rest };
 };
 
-/** Compose `[heading(name), ...body-from-HTML]`; the title block projects `name` and is never persisted in `description`. */
-export const composeTitleDocument = async (
-  name: string,
-  descriptionHtml: string | null,
-  level: TitleLevel = 1,
-): Promise<string> => {
-  const bodyBlocks: CustomBlock[] = [];
-  if (descriptionHtml) {
-    const { getHeadlessEditor } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
-    const parsed = await Promise.resolve(getHeadlessEditor().tryParseHTMLToBlocks(descriptionHtml));
-    bodyBlocks.push(...(parsed as CustomBlock[]));
-  }
-  return JSON.stringify([titleBlock(name, level), ...bodyBlocks]);
+/**
+ * Drops the trailing empty blocks the editor leaves behind before the document is stored. Block 0 is
+ * kept whatever its state: an entity without a title yet still needs its title block to edit into.
+ */
+export const trimTitleDocument = (strBlocks: string): string => {
+  const blocks = JSON.parse(strBlocks) as LooseBlock[];
+  const [first, ...rest] = blocks;
+  while (rest.length && isEmptyTextBlock(rest[rest.length - 1])) rest.pop();
+  return JSON.stringify([first, ...rest]);
 };
 
-/** Split a forced-title document back into `name` + `description` HTML (null when body is empty). */
-export const splitTitleDocument = async (strBlocks: string): Promise<{ name: string; description: string | null }> => {
-  const { name, body } = splitTitleBlocks(JSON.parse(strBlocks) as LooseBlock[]);
-  if (body.length === 0) return { name, description: null };
-  const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
-  const html = await blocksToHTML(JSON.stringify(body));
-  return { name, description: html || null };
+/** True when the document carries more than its title, so a create form can tell an empty body apart. */
+export const titleDocumentHasBody = (strBlocks: string): boolean => {
+  try {
+    return splitTitleBlocks(JSON.parse(strBlocks) as LooseBlock[]).body.length > 0;
+  } catch {
+    return false;
+  }
 };

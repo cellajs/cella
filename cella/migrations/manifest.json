@@ -405,7 +405,7 @@
     "pnpm check",
     "pnpm test"
    ],
-   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
+   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization — enforcement belongs to permissions/quotas."
   },
   {
    "id": "20260811T0905-ts-import-extensions",
@@ -534,6 +534,24 @@
     "pnpm check"
    ],
    "summary": "check-frontend-style.ts loses the export-description rule, which required a JSDoc on every exported function and const and so produced hundreds of docs paraphrasing their own identifier. cella/AGENTS.md gains a Comment budget (members, locals, JSX, no-repeats) governing which comments earn their place. trim-comment-budget.ts deletes the docs the old rule produced under two conservative rules, name-restating and boilerplate, protecting tool directives, @tag JSDoc, TODO/FIXME, fork: markers, .stories. files and generated trees. A third duplicate rule is report-only: it cannot tell a copied note from the same local pattern recurring. Comment-only, so an app may skip it, at the cost of comment-only conflicts in shared files on the next sync."
+  },
+  {
+   "id": "20260821T1532-app-table-classifications-and-jobs",
+   "version": "next",
+   "title": "App table classifications and scheduled jobs register from app-owned code",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/scripts/migrations",
+    "backend/tests"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "backend/src/tables.ts (pinned) gains appPartitionConfigs, appFullCrudTables and appReadOnlyTables; the partman and RLS migrations, the verify block and partman-parity.test.ts merge them after cella's entries. defineBackendModule gains a jobs slot ({ name, start }) that main.api.ts starts under the migration-owner guard and stops on shutdown; scheduleDbMaintenance is the first registrant. Apps move their partition/grant entries into tables.ts and their cron jobs onto the module, then drop the edits to the four cella-owned files."
   }
  ]
 }

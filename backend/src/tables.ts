@@ -46,3 +46,26 @@ export function getEntityTable<T extends keyof typeof entityTables>(entityType: 
 export const entityTableNames = Object.values(entityTables).map((t) => getTableName(t));
 export const resourceTableNames = Object.values(resourceTables).map((t) => getTableName(t));
 export const activityTableNames = [...entityTableNames, ...resourceTableNames];
+
+/** One pg_partman conversion, applied by the partman side-effect migration. */
+export interface PartitionConfig {
+  name: string;
+  /** Column to partition by; must be NOT NULL and part of the primary key. */
+  partitionColumn: string;
+  /** Partition interval (e.g., '1 week', '1 month') */
+  interval: string;
+  /** Retention period (e.g., '30 days', '90 days'). Null = no retention (keep indefinitely). */
+  retention: string | null;
+}
+
+/** App partition entry: the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
+export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };
+
+/** App tables to convert to pg_partman partitions; merged after cella's own entries in the partman migration. */
+export const appPartitionConfigs: AppPartitionConfig[] = [];
+
+/** App tables outside RLS that runtime_role may read and write (application-layer guards), merged into the RLS migration grants. */
+export const appFullCrudTables: string[] = [];
+
+/** App tables outside RLS that runtime_role may only read, merged into the RLS migration grants. */
+export const appReadOnlyTables: string[] = [];

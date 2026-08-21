@@ -1,25 +1,21 @@
+import { getTableName } from 'drizzle-orm';
+import { appPartitionConfigs, type PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
-
-// Partition configuration
-
-interface PartitionConfig {
-  name: string;
-  /** Column to partition by */
-  partitionColumn: string;
-  /** Partition interval (e.g., '1 week', '1 month') */
-  interval: string;
-  /** Retention period (e.g., '30 days', '90 days'). Null = no retention (keep indefinitely). */
-  retention: string | null;
-}
 
 // Catalog cloning avoids a duplicate schema definition. The parity test verifies each table,
 // partition-column PK, and required non-null control column against Drizzle metadata.
-export const partitionConfigs: PartitionConfig[] = [
+const cellaPartitionConfigs: PartitionConfig[] = [
   { name: 'sessions', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
   { name: 'tokens', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
   { name: 'unsubscribe_tokens', partitionColumn: 'created_at', interval: '1 month', retention: '90 days' },
   { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
   { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
+];
+
+/** Cella's entries followed by the app's (`appPartitionConfigs` in tables.ts); the verify block and parity test read this list. */
+export const partitionConfigs: PartitionConfig[] = [
+  ...cellaPartitionConfigs,
+  ...appPartitionConfigs.map(({ table, ...config }) => ({ name: getTableName(table), ...config })),
 ];
 
 /**

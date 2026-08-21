@@ -8,6 +8,8 @@ import { appTitle } from '~/utils/app-title';
 export const Route = createFileRoute('/_app/home')({
   validateSearch: z.object({
     skipWelcome: z.boolean().optional(),
+    // The user sheet can be opened from home surfaces
+    userSheetId: z.string().optional(),
   }),
   staticData: { isAuth: true },
   head: () => ({ meta: [{ title: appTitle('Home') }] }),

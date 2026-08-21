@@ -218,6 +218,8 @@ At flush time, every due channel of one organization and product type shares a s
 
 Each channel view records both the newest known position and the successfully ingested position. Fetches start after the ingested cursor, so small live gaps repair themselves. Repeated failures fall back to targeted invalidation and advance, preventing a range from looping forever.
 
+Two signals in `query/realtime/sync-signals.ts` are the supported way to derive per-user state from the sync pipeline. `onChangeEvent` fires from the stream handler for every readable notification before any tier decision, so it also covers muted and archived channels; it carries ids only. `onSyncedRows` fires from the fetch prioritizer once a range has settled and carries the fetched rows, or an empty `degraded` batch when the range could not be delivered and the subscriber must invalidate instead of derive. Unseen tracking subscribes to `onSyncedRows` from the seen module; app modules register their own subscribers the same way instead of importing their logic into the prioritizer.
+
 ### Freshness
 
 After SSE reaches live state, background fill loads product queries for the current organization. Other organizations are filled only when `offlineAccess` is enabled. If the stream fails, query-level mount behavior, reconnect refetching, and pull-to-refresh remain available.
@@ -246,6 +248,8 @@ The exact count endpoint is used for baselines and reconciliation after stalenes
 In a rich app, products are likely to embed other products. The server includes changed embedded-product IDs in live notifications and catchup responses so the client can patch cached host products without fetching every host row. The relationship is configured in `appConfig.productEmbeddings`, and an `updatedAt` guard prevents an older embedded product from replacing a newer embedded copy.
 
 Live propagation runs after the embedded-product range fetch; catchup propagation runs after all range fetches for the organization. A same-tab echo returns before propagation, so that mutation must also update host products or wait for later reconciliation. The template ships with no embedding relationships configured.
+
+Propagation also runs in reverse. A host row is the only writer of the reference, so aggregates an app derives per embedded row, such as a usage count, go stale while the embedded row keeps its own sequence and frontier: no delta fetch can return the new value. Ingesting a host range therefore diffs each fetched row's embedding columns against the cached row and refetches the lists holding the embedded rows whose references moved, narrowed to their home channels. Only the symmetric difference counts, so an edit that leaves the column alone costs nothing, and a host row the client never cached is taken to touch every reference it carries. The paths that invalidate a host list instead of ingesting its rows (opaque views, first session, nothing cached to patch, overflow, short delivery, exhausted retries, and removals with no fetchable tombstone) invalidate the embedded products' lists alongside it, because no row reached that diff. The authoritative number always returns through the list endpoint; the client never derives it.
 
 ## Writes
 
@@ -293,6 +297,8 @@ The server omits scalar values that lose HLC comparison and returns the authorit
 Array deltas remove first and then add missing values. Replaying the same delta is idempotent, but the operation is not a commutative CRDT. Opposite concurrent operations are order-sensitive, and the resolved array is written as a whole value.
 
 Merge resolution is not a SQL compare-and-set and does not lock the read row with `FOR UPDATE`. Overlapping updates can therefore race, especially whole-array writes and `stx` metadata.
+
+Server-driven writes (CDC fan-out, materialization, scheduled jobs) must strip the client's `changedFields` from the stored `stx`. The CDC worker reuses that set when present, so a stale client set would attribute the write to the wrong columns; with the key absent it falls back to the WAL diff. Use `stripChangedFields` in `backend/src/db/utils/strip-changed-fields.ts` (or `stripChangedFieldsStx` in the CDC worker) for the `stx` assignment.
 
 ### Paused writes
 
@@ -378,6 +384,8 @@ interface CatchupChangeSummary {
 ```
 
 `seqCursor=51,150` means the inclusive bounded range; it is the only form. Delta fetches may also carry `pathPrefix` to narrow the read to one channel subtree.
+
+In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived read scope; `buildSubtreeCoverWhere` in `backend/src/db/utils/subtree-cover.ts` builds it. Never fold the covering id into the permission scope itself: an intermediate grant would then widen the read past the requested subtree.
 
 
 ### Influences

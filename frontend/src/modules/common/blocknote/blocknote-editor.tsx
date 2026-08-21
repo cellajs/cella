@@ -134,6 +134,8 @@ function BlockNote({
   const baseOptions = {
     schema: customSchema,
     initialContent,
+    // BlockNoteView's autoFocus prop only stamps a data attribute; focusing on mount is this creation option.
+    autofocus: autoFocus,
     heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),

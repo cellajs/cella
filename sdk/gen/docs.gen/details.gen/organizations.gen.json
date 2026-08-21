@@ -196,6 +196,13 @@
                               "attachment": { "type": "number", "required": true }
                             }
                           },
+                          "entitiesSelf": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true }
+                            }
+                          },
                           "activity": {
                             "type": "object",
                             "required": true,
@@ -316,6 +323,7 @@
                     "total": 101
                   },
                   "entities": { "attachment": 294 },
+                  "entitiesSelf": { "attachment": 209 },
                   "activity": {
                     "attachment": { "created": 1734375421781, "updated": 1734852237831 }
                   }
@@ -372,6 +380,7 @@
                     "total": 144
                   },
                   "entities": { "attachment": 321 },
+                  "entitiesSelf": { "attachment": 207 },
                   "activity": {
                     "attachment": { "created": 1733935270933, "updated": null }
                   }
@@ -750,6 +759,13 @@
                               "attachment": { "type": "number", "required": true }
                             }
                           },
+                          "entitiesSelf": {
+                            "type": "object",
+                            "required": true,
+                            "properties": {
+                              "attachment": { "type": "number", "required": true }
+                            }
+                          },
                           "activity": {
                             "type": "object",
                             "required": true,
@@ -859,6 +875,7 @@
                     "total": 50
                   },
                   "entities": { "attachment": 188 },
+                  "entitiesSelf": { "attachment": 82 },
                   "activity": {
                     "attachment": { "created": 1733370282291, "updated": 1735128143248 }
                   }
@@ -915,6 +932,7 @@
                     "total": 157
                   },
                   "entities": { "attachment": 1 },
+                  "entitiesSelf": { "attachment": 0 },
                   "activity": {
                     "attachment": { "created": 1733726254960, "updated": null }
                   }
@@ -1193,6 +1211,13 @@
                         "attachment": { "type": "number", "required": true }
                       }
                     },
+                    "entitiesSelf": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true }
+                      }
+                    },
                     "activity": {
                       "type": "object",
                       "required": true,
@@ -1296,6 +1321,7 @@
                 "total": 93
               },
               "entities": { "attachment": 178 },
+              "entitiesSelf": { "attachment": 119 },
               "activity": {
                 "attachment": { "created": 1734107615547, "updated": 1734969019663 }
               }
@@ -1565,6 +1591,13 @@
                         "attachment": { "type": "number", "required": true }
                       }
                     },
+                    "entitiesSelf": {
+                      "type": "object",
+                      "required": true,
+                      "properties": {
+                        "attachment": { "type": "number", "required": true }
+                      }
+                    },
                     "activity": {
                       "type": "object",
                       "required": true,
@@ -1668,6 +1701,7 @@
                 "total": 93
               },
               "entities": { "attachment": 178 },
+              "entitiesSelf": { "attachment": 119 },
               "activity": {
                 "attachment": { "created": 1734107615547, "updated": 1734969019663 }
               }

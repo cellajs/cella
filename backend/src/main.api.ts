@@ -10,7 +10,8 @@ import { migrateConfig, migrationDb } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
-import { scheduleDbMaintenance } from '#/lib/db-maintenance';
+import '#/lib/db-maintenance'; // registers the DB maintenance job before jobs start
+import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
@@ -21,7 +22,7 @@ otel.start();
 otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
-let stopDbMaintenance: (() => void) | undefined;
+const stopJobs: (() => void)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
@@ -52,8 +53,10 @@ const main = async () => {
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
 
-    // The migration-owning instance also owns periodic DB maintenance, so only one instance runs it.
-    stopDbMaintenance = scheduleDbMaintenance();
+    // The migration-owning instance also owns every scheduled job, so only one instance runs each.
+    const jobs = getBackendJobs();
+    for (const job of jobs) stopJobs.push(job.start());
+    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
@@ -109,7 +112,7 @@ Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}`);
 setupGracefulShutdown({
   name: 'api',
   cleanup: async () => {
-    stopDbMaintenance?.();
+    for (const stop of stopJobs) stop();
     if (server) {
       server.close();
     }

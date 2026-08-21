@@ -31,9 +31,22 @@ export const generateMockChannelCounts = (channelType: ChannelEntityType, key: s
       ) as Partial<Record<ProductEntityType, { created: number | null; updated: number | null }>>,
   );
 
+  // Home-only twin capped by the subtree count, so mocks stay internally consistent.
+  const entitiesSelf = withFakerSeed(
+    `${key}:entitiesSelf`,
+    () =>
+      Object.fromEntries(
+        Object.entries(entities).map(([entityType, total]) => [
+          entityType,
+          faker.number.int({ min: 0, max: total ?? 0 }),
+        ]),
+      ) as Partial<Record<EntityType, number>>,
+  );
+
   return {
     membership: generateMockMembershipCounts(`${key}:membership`),
     entities,
+    entitiesSelf,
     activity,
   };
 };

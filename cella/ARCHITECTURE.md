@@ -101,7 +101,7 @@ Read [Permissions](./PERMISSIONS.md) for contextual roles and row conditions. Re
 
 Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas consumed by the frontend. The contract also powers API documentation and deterministic examples, while shared mocks serve documentation, seeds, tests, and load tests.
 
-Operational concerns follow the same modular shape. Node services share OpenTelemetry setup for traces, metrics, and logs. PostgreSQL CDC and Yjs collaboration are independent workers with health and shutdown contracts. Pulumi deploys the services to Scaleway, with GitHub Actions providing the delivery path. See [Observability](./OTEL.md) and the [infrastructure guide](../infra/README.md) for those deeper views.
+Operational concerns follow the same modular shape. A backend module declares its capabilities once in `defineBackendModule` (mutation handlers, Yjs materializers, scheduled jobs), and app-owned table classifications for partitioning and grants live in the pinned `backend/src/tables.ts`, so the side-effect migrations and the API entrypoint stay cella-owned. Node services share OpenTelemetry setup for traces, metrics, and logs. PostgreSQL CDC and Yjs collaboration are independent workers with health and shutdown contracts. Pulumi deploys the services to Scaleway, with GitHub Actions providing the delivery path. See [Observability](./OTEL.md) and the [infrastructure guide](../infra/README.md) for those deeper views.
 
 The test suite covers ordinary feature behavior and the cross-system behavior that protects this
 architecture: generated contracts, permission parity, cross-scope access, database constraints,
