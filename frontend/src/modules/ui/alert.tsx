@@ -9,24 +9,29 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
-        brand: 'bg-brand text-brand-foreground [--intent-color:var(--brand)]',
-        destructive: 'bg-destructive text-destructive-foreground [--intent-color:var(--destructive)]',
-        success: 'bg-success text-success-foreground [--intent-color:var(--success)]',
+        brand: '[--intent-color:var(--brand)]',
+        destructive: '[--intent-color:var(--destructive)]',
+        success: '[--intent-color:var(--success)]',
         plain: 'border-primary/20 bg-background/80 text-primary',
         secondary: 'bg-secondary text-secondary-foreground',
-        warning: 'bg-warning text-warning-foreground [--intent-color:var(--warning)]',
+        warning: '[--intent-color:var(--warning)]',
       },
       soft: {
         true: '',
         false: '',
       },
     },
+    // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
     compoundVariants: [
       {
         variant: ['brand', 'destructive', 'success', 'warning'],
         soft: true,
         className: 'soft-bg soft-border soft-text',
       },
+      { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground' },
+      { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground' },
+      { variant: 'success', soft: false, className: 'bg-success text-success-foreground' },
+      { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground' },
     ],
     defaultVariants: {
       variant: 'default',
