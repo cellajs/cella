@@ -1,6 +1,6 @@
 import { getTableName } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { entityTables } from '#/tables';
+import { appFullCrudTables, appReadOnlyTables, entityTables } from '#/tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
@@ -57,8 +57,9 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'product_counters',
     'domains',
     'tenants',
+    ...appFullCrudTables,
   ];
-  const readOnlyTables = ['system_roles', 'activities'];
+  const readOnlyTables = ['system_roles', 'activities', ...appReadOnlyTables];
 
   return { rlsTables, fullCrudTables, readOnlyTables };
 }

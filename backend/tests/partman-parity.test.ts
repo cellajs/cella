@@ -1,3 +1,4 @@
+import { getTableName } from 'drizzle-orm';
 import { getTableConfig, type PgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import { activitiesTable } from '#/modules/activities/activities-db';
@@ -5,14 +6,17 @@ import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { appPartitionConfigs } from '#/tables';
 import { partitionConfigs } from '../scripts/migrations/10-partman.migration';
 
+// App entries carry their Drizzle table, so the map extends itself from tables.ts.
 const drizzleTables: Record<string, PgTable> = {
   sessions: sessionsTable,
   tokens: tokensTable,
   unsubscribe_tokens: unsubscribeTokensTable,
   activities: activitiesTable,
   seen_by: seenByTable,
+  ...Object.fromEntries(appPartitionConfigs.map(({ table }) => [getTableName(table), table])),
 };
 
 // Keep each Drizzle schema compatible with the structural requirements enforced when
