@@ -7,7 +7,10 @@ vi.stubGlobal('navigator', { onLine: true });
 const { queryClient } = await import('~/query/query-client');
 const { isSeenTracked, seenKeys } = await import('./helpers');
 const { seenStore } = await import('./seen-store');
-const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled } = await import('./unseen-sync');
+const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled, subscribeUnseenSync } = await import(
+  './unseen-sync'
+);
+const { publishSyncedRows } = await import('~/query/realtime/sync-signals');
 
 // Tracked type and effective home come from config, so the fixture works across app hierarchies.
 const TRACKED = appConfig.seenTrackedProductTypes[0];
@@ -153,5 +156,15 @@ describe('unseen count deltas from synced rows', () => {
     ingestSyncedRows(UNTRACKED, CHANNEL, [row('p1')]);
     await settle();
     expect(counts()[CHANNEL][TRACKED]).toBe(5);
+  });
+
+  it('ingests delivered rows from the synced-rows signal and skips degraded ranges', async () => {
+    const off = subscribeUnseenSync();
+    vi.advanceTimersByTime(10);
+    publishSyncedRows({ entityType: TRACKED, organizationId: ORG, rows: [row('s1')], degraded: false });
+    publishSyncedRows({ entityType: TRACKED, organizationId: ORG, rows: [row('s2')], degraded: true });
+    off();
+    await settle();
+    expect(counts()[CHANNEL][TRACKED]).toBe(6);
   });
 });

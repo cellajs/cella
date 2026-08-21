@@ -54,7 +54,6 @@ vi.mock('./sync-priority', () => ({
 
 // The real fetch prioritizer runs as the single fetch path; only its outward boundaries are mocked.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
-vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: vi.fn() }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 

@@ -28,8 +28,6 @@ vi.mock('./propagation', () => ({
 }));
 const invalidateUnseenCounts = vi.fn();
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[]) => invalidateUnseenCounts(...a) }));
-const ingestSyncedRows = vi.fn();
-vi.mock('~/modules/seen/unseen-sync', () => ({ ingestSyncedRows: (...a: unknown[]) => ingestSyncedRows(...a) }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
@@ -45,6 +43,7 @@ vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
+const { onSyncedRows } = await import('./sync-signals');
 
 const BACKGROUND = { min: 2_000, max: 30_000 };
 const VIEWING = { min: 0, max: 0 };
@@ -152,26 +151,43 @@ describe('fetch-prioritizer', () => {
     expect(invalidateEntityListForOrg).toHaveBeenCalledTimes(1);
   });
 
-  it('feeds fetched rows to unseen-sync once per merged flush (no endpoint recount)', async () => {
+  it('publishes fetched rows once per merged flush (no endpoint recount)', async () => {
+    const syncedRows = vi.fn();
+    const off = onSyncedRows(syncedRows);
     const items = [{ id: 'a1' }, { id: 'a2' }];
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
     enqueueRange({ ...base, fromSeq: 5, untilSeq: 6, isCreate: true });
     enqueueRange({ ...base, fromSeq: 7, untilSeq: 9, isCreate: true });
 
     await flushAllNow();
+    off();
 
-    expect(ingestSyncedRows).toHaveBeenCalledTimes(1);
-    expect(ingestSyncedRows).toHaveBeenCalledWith('attachment', 'org-1', items);
+    expect(syncedRows).toHaveBeenCalledTimes(1);
+    expect(syncedRows).toHaveBeenCalledWith({
+      entityType: 'attachment',
+      organizationId: 'org-1',
+      rows: items,
+      degraded: false,
+    });
     expect(invalidateUnseenCounts).not.toHaveBeenCalled();
   });
 
-  it('falls back to an exact unseen recount when the flush cannot deliver rows', async () => {
+  it('falls back to an exact unseen recount and a degraded signal when the flush cannot deliver rows', async () => {
+    const syncedRows = vi.fn();
+    const off = onSyncedRows(syncedRows);
     fetchRangeAndPatch.mockResolvedValue({ status: 'overflow', items: [] });
     enqueueRange({ ...base, fromSeq: 1, untilSeq: 900, isCreate: true });
 
     await flushAllNow();
+    off();
 
-    expect(ingestSyncedRows).not.toHaveBeenCalled();
+    expect(syncedRows).toHaveBeenCalledTimes(1);
+    expect(syncedRows).toHaveBeenCalledWith({
+      entityType: 'attachment',
+      organizationId: 'org-1',
+      rows: [],
+      degraded: true,
+    });
     expect(invalidateUnseenCounts).toHaveBeenCalledTimes(1);
   });
 

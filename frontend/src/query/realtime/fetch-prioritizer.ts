@@ -1,6 +1,5 @@
 import type { ProductEntityType } from 'shared';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
-import { ingestSyncedRows } from '~/modules/seen/unseen-sync';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { sourceId } from '~/query/offline/stx-utils';
@@ -8,6 +7,7 @@ import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
 import { invalidateEmbeddedForHost, invalidateEmbeddedUsage, propagateEmbeddings } from './propagation';
 import { getSyncTier, isViewingChannel } from './sync-priority';
+import { publishSyncedRows } from './sync-signals';
 import { syncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
 import { resolveChannelPath } from './view-declaration';
@@ -263,8 +263,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
       // The fetch covered [fromSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
       for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     }
-    // Badge deltas from the fetched rows; each row resolves its own home channel, the org id is the fallback for rows without ancestor ids.
-    ingestSyncedRows(entityType, organizationId, result.items as { id: string }[]);
+    // Row contents for subscribers that derive state from them; the org id is the fallback home for rows without ancestor ids.
+    publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
     // Usage aggregates on embedded rows are server-derived, so a moved reference refetches their lists.
     invalidateEmbeddedUsage(result.embeddingTouches, organizationId);
   } else {
@@ -275,6 +275,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     invalidateEmbeddedForHost(entityType, organizationId);
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
+    // Activity happened but no rows were delivered, so subscribers must fall back to invalidation.
+    publishSyncedRows({ entityType, organizationId, rows: [], degraded: true });
   }
 
   // Propagate after source data settled (fresh rows on ok, invalidated list otherwise).

@@ -10,6 +10,7 @@ import { enqueueRange } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
+import { publishChangeEvent } from './sync-signals';
 import type { AppStreamNotification } from './types';
 
 /** Notifications omit entity data, so each handler either invalidates or fetches a seq range. */
@@ -26,6 +27,16 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       if (organizationId && tenantId) {
         syncStore.getState().setOrgTenantId(organizationId, tenantId);
       }
+
+      // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
+      publishChangeEvent({
+        kind: notification.kind,
+        action,
+        entityType: notification.productType ?? notification.resourceType ?? null,
+        organizationId,
+        channelId: notification.channelId ?? null,
+        subjectId,
+      });
 
       // Membership changes use targeted query invalidation, not the seq sync path.
       if (notification.kind === 'membership') {
