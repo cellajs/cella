@@ -18,6 +18,7 @@ import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
@@ -379,6 +380,8 @@ const viteConfig = {
     // Dev-only write-back endpoint so the pages table can edit frontmatter and
     // reparent pages by rewriting/moving the md/mdx files (apply: 'serve').
     docsEditor(),
+    // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react().
+    svgr({ include: '**/*.svg?react' }),
     react(),
     babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
     tailwindcss(),

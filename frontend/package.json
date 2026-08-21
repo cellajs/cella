@@ -159,6 +159,7 @@
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-pwa": "^1.3.0",
     "vite-plugin-static-copy": "^4.1.1",
+    "vite-plugin-svgr": "^5.2.0",
     "vitest": "^4.1.10",
     "workbox-build": "^7.4.1",
     "yaml": "^2.9.0"

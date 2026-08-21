@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { OrganizationLayout } from '~/modules/organization/organization-layout';
 import { organizationLayoutBeforeLoad } from '~/modules/organization/route-logic';
 import { noDirectAccess } from '~/utils/no-direct-access';
 
@@ -9,5 +10,5 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug')({
 
     return await organizationLayoutBeforeLoad({ params, cause });
   },
-  component: Outlet,
+  component: OrganizationLayout,
 });
