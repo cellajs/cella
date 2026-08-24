@@ -11,7 +11,7 @@ import { getYjsMaterializer, type YjsMaterializer } from '#/modules/yjs/yjs-mate
  * guards the registration round-trip: the relay is entity-agnostic, the registry is not.
  */
 describe('Yjs materializers', () => {
-  // Forks may ship a materializer on any product type, so probe for one that has none.
+  // Apps may ship a materializer on any product type, so probe for one that has none.
   const unregisteredType = appConfig.productEntityTypes.find((type) => getYjsMaterializer(type) === undefined);
 
   it.skipIf(!unregisteredType)('returns undefined for a product type without a registered materializer', () => {
