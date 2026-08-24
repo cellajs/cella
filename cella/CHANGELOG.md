@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.8](https://github.com/cellajs/cella/compare/0.9.7...0.9.8) (2026-08-24)
+
+
+### 🎉 New features
+
+* joined button hover-swap X with dropdowner leave popconfirm ([#1097](https://github.com/cellajs/cella/issues/1097)) ([6fafcf1](https://github.com/cellajs/cella/commit/6fafcf1d41b330a8579324c62b7d012ab9edf619))
+* retire common fork drift via registry seam, counts seam and docs glob ([#1100](https://github.com/cellajs/cella/issues/1100)) ([e5fd19b](https://github.com/cellajs/cella/commit/e5fd19b3c2ea4381f462953f16dd9a89536ba0af))
+
+
+### 🐞 Bug fixes
+
+* **ci:** exempt release changelog from app-vocabulary gate ([#1101](https://github.com/cellajs/cella/issues/1101)) ([0a06c49](https://github.com/cellajs/cella/commit/0a06c4973836f2d55328100f23866c68392ad637))
+* **test:** pick a materializer-free product type in yjs-materializers test ([#1099](https://github.com/cellajs/cella/issues/1099)) ([9af8689](https://github.com/cellajs/cella/commit/9af8689e982ee2dbd9bd22f71131757b28a2b06f))
+
 ## [0.9.7](https://github.com/cellajs/cella/compare/0.9.6...0.9.7) (2026-08-24)
 
 
