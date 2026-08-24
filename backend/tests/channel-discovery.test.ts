@@ -16,10 +16,9 @@ import {
 /**
  * Aggregate channel lists return readable non-membered "discovery" rows next to membered rows.
  * Cella's default config has no sub-organization channel type, so the list shape is exercised on
- * scratch tables against the shared deep fixture (org > course > courseSection > project), with the
- * membership join wired exactly as a consuming list query must wire it (see `buildChannelListReadWhere`).
+ * scratch tables against the shared deep fixture, with the membership join wired exactly as a
+ * consuming list query must wire it (see `buildChannelListReadWhere`).
  */
-
 const ORG_ID = 'org-1';
 const CHANNEL_TYPE = 'project' as Exclude<ChannelEntityType, 'organization'>;
 

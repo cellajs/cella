@@ -2,21 +2,11 @@ import type { ProductEntityType } from 'shared';
 import type { AppStreamNotification } from './types';
 
 /**
- * Two signals from the sync pipeline, for state that is derived from synced entities and has no
- * fetch schedule of its own.
+ * A change the stream announced. Mirrors the stream envelope; no row data is available yet.
  *
- * They fire at different moments and are not interchangeable:
- *
- * - {@link onChangeEvent} fires when the stream announces a change. Dispatch is permission-filtered
- *   but not tier-filtered, so this covers every readable change including muted and archived
- *   channels, whose rows are only fetched when opened. It carries ids, never row data.
- * - {@link onSyncedRows} fires once rows have actually been fetched, so it carries their contents.
- *   It never fires for scopes the prioritizer defers to open-time.
- *
- * Use the first to trigger work, the second to derive state from row contents.
+ * Dispatch is permission-filtered but not tier-filtered, so this covers every readable change
+ * including muted and archived channels, whose rows are only fetched when opened.
  */
-
-/** A change the stream announced. Mirrors the stream envelope; no row data is available yet. */
 export interface ChangeEventSignal {
   kind: AppStreamNotification['kind'];
   action: AppStreamNotification['action'];
@@ -69,10 +59,16 @@ function createSignal<T>(name: string) {
 const changeEvent = createSignal<ChangeEventSignal>('ChangeEventSignal');
 const syncedRows = createSignal<SyncedRowsSignal>('SyncedRowsSignal');
 
-/** Subscribe to announced changes. Called by the app stream handler for every notification. */
+/**
+ * Subscribe to announced changes; use it to trigger work. Published by the app stream handler for
+ * every notification, before any tier decision, carrying ids only.
+ */
 export const onChangeEvent = changeEvent.subscribe;
 export const publishChangeEvent = changeEvent.publish;
 
-/** Subscribe to fetched rows. Called by the fetch prioritizer once a range settles. */
+/**
+ * Subscribe to fetched rows; use it to derive state from row contents. Published by the fetch
+ * prioritizer once a range settles, never for scopes it defers to open-time.
+ */
 export const onSyncedRows = syncedRows.subscribe;
 export const publishSyncedRows = syncedRows.publish;
