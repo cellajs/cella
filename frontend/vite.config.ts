@@ -100,7 +100,7 @@ const repoDocRoutes = {
 } as const;
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
-const devPort = Number(frontendUrl.port) || 3000;
+const devPort = Number(frontendUrl.port) || appConfig.devPorts.frontend;
 const isTunneled = frontendUrl.hostname !== 'localhost';
 
 // Release identifier for error/replay tagging (Maple serviceVersion). Git SHA
@@ -334,7 +334,8 @@ const viteConfig = {
     {
       enforce: 'pre' as const,
       ...mdx({
-        include: /\/(src\/content\/docs\/.*\.(md|mdx)|(cella\/)?[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
+        // Repo docs live under cella/ only; an app's root-level SHOUTCASE .md (README, CHANGELOG) are not doc pages.
+        include: /\/(src\/content\/docs\/.*\.(md|mdx)|cella\/[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
         // Read component overrides (links, headings) from MDXProvider context. A
         // `components` prop does not cross into imported modules, and wrapper pages

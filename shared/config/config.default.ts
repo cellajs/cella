@@ -117,9 +117,11 @@ export const config = {
    * Local dev listen ports, also the Vite proxy targets. Ports are machine-global, so an app must
    * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
    * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy.
-   * `PORT`-style env vars still override at runtime.
+   * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
+   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins.
    */
   devPorts: {
+    frontend: 3000,
     api: 4000,
     cdcHealth: 4001,
     yjs: 4002,
