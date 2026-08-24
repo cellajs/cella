@@ -66,6 +66,7 @@
   "confirm.delete_account": "Are you sure you want to delete your {{appName}} account with primary email address: {{email}}?",
   "confirm.delete_counted_resource": "Are you sure you want to delete {{count}} {{resource}}?",
   "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
+  "confirm.leave_channel": "Are you sure you want to leave {{name}}?",
   "confirm.remove_members": "Are you sure you want to delete membership of {{emails}} for this {{entityType}}?",
   "connect": "Connect",
   "contact": "Contact",
