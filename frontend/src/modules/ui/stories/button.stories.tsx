@@ -155,3 +155,26 @@ export const Disabled: Story = {
     disabled: true,
   },
 };
+
+const BUTTON_VARIANTS = ['default', 'brand', 'destructive', 'success', 'warning', 'secondary'] as const;
+
+/** Intent button variants in soft and solid fill, side by side, to catch soft labels losing the cascade. */
+export const VariantMatrix: Story = {
+  parameters: { controls: { disable: true }, layout: 'padded' },
+  render: () => (
+    <div className="flex flex-col gap-4">
+      {([true, false] as const).map((soft) => (
+        <div key={String(soft)} className="flex flex-col gap-2">
+          <p className="font-medium text-muted-foreground text-xs uppercase">{soft ? 'soft' : 'solid'}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {BUTTON_VARIANTS.map((variant) => (
+              <Button key={variant} variant={variant} soft={soft} size="sm">
+                {variant}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};

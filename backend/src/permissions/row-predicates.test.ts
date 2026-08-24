@@ -664,4 +664,31 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       }
     }
   });
+
+  // Drafts live outside the sync engine: dispatch is the one leg that drops them, for the author and elevated readers alike.
+  it('drops an unpublished draft at dispatch for everyone, while engine and SQL still read it', async () => {
+    const random = mulberry32(0xd2af);
+
+    for (let i = 0; i < 50; i++) {
+      const { memberships, userId, isSystemAdmin } = randomRealScenario(random);
+      const subscriber = { userId, isSystemAdmin, memberships };
+      const label = `seed 0xd2af scenario ${i} (memberships: ${memberships
+        .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
+        .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
+
+      for (const row of ROWS) {
+        const draftEvent = dispatchEvent(row);
+        const rowData = draftEvent.rowData as Record<string, unknown>;
+        rowData.publishedAt = null;
+        const publishedEvent = { ...draftEvent, rowData: { ...rowData, publishedAt: PUBLIC_AT } };
+
+        const engineAllowed = checkAccess(subscriber, 'read', rowSubject(row)).allowed;
+        // A published row dispatches exactly like the engine decides; the same row as a draft never dispatches.
+        expect(canReceiveProductEvent(subscriber, publishedEvent), `${label} → row ${row.id} published`).toBe(
+          engineAllowed,
+        );
+        expect(canReceiveProductEvent(subscriber, draftEvent), `${label} → row ${row.id} draft`).toBe(false);
+      }
+    }
+  });
 });

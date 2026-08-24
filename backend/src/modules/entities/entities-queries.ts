@@ -50,6 +50,11 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   // { attachment: N, ... }
   const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:${entity}`)}`).join(', ');
 
+  // Home-only twin of `entities` from the `e:c:h:` keys: rows homed directly at the channel, no descendant rollup.
+  const entitySelfJsonPairs = children
+    .map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:h:${entity}`)}`)
+    .join(', ');
+
   // Product descendants only: { attachment: { created: epochMs | null, updated: epochMs | null }, ... }
   const activityJsonPairs = productChildren
     .map(
@@ -66,6 +71,7 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
         'total', ${sql.raw(jsonbIntRaw(col, 'm:c:total'))}
       )`,
     entities: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entityJsonPairs)})`,
+    entitiesSelf: sql<Record<(typeof children)[number], number>>`json_build_object(${sql.raw(entitySelfJsonPairs)})`,
     activity: sql<
       Record<(typeof productChildren)[number], { created: number | null; updated: number | null }>
     >`json_build_object(${sql.raw(activityJsonPairs)})`,
@@ -122,6 +128,7 @@ export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }:
     return {
       membership: zeroMembership as z.infer<typeof membershipCountSchema>,
       entities: zeroEntities as Record<string, number>,
+      entitiesSelf: { ...zeroEntities } as Record<string, number>,
       activity: nullActivity as Record<string, { created: number | null; updated: number | null }>,
     };
   }

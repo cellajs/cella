@@ -1,3 +1,4 @@
+/// <reference types="vite-plugin-svgr/client" />
 /** Release identifier (git SHA, or 'unknown') used as Maple serviceVersion. */
 declare const __APP_VERSION__: string;
 

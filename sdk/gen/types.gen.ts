@@ -469,6 +469,9 @@ export type Organization = {
       entities: {
         attachment: number;
       };
+      entitiesSelf: {
+        attachment: number;
+      };
       activity: {
         attachment: {
           created: number | null;
@@ -3646,6 +3649,9 @@ export type CreateOrganizationsResponses = {
               total: number;
             };
             entities: {
+              attachment: number;
+            };
+            entitiesSelf: {
               attachment: number;
             };
             activity: {

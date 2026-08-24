@@ -24,11 +24,8 @@ export function AuthLayout() {
       data-waited={hasWaited}
       className="group rich-gradient container flex min-h-[90svh] flex-col items-center before:fixed after:fixed sm:min-h-svh"
     >
-      {/* Render bg animation */}
-      <Suspense fallback={<div className="fixed top-0 left-0 h-full w-full bg-loading-placeholder" />}>
-        <div className="fixed top-0 left-0 h-full w-full transition-opacity delay-1000 duration-1000 group-data-[waited=false]:opacity-0 group-data-[waited=true]:opacity-100">
-          <BgAnimation />
-        </div>
+      <Suspense fallback={null}>
+        <BgAnimation />
       </Suspense>
 
       <div className="mt-auto mb-auto">

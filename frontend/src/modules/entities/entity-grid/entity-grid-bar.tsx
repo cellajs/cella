@@ -49,6 +49,15 @@ type Props = {
   sortOptions?: readonly EntityGridSortOption[];
   /** Slot for surface actions (e.g. a create button), rendered before the count while unfiltered. */
   actions?: ReactNode;
+  /** Always-rendered slot for a grid/table view toggle, placed after the filter bar. */
+  viewToggle?: ReactNode;
+  /**
+   * Show the role filter (default true). Discovery-scoped grids pass false: a role filter
+   * collapses the backend scope to membership-only rows.
+   */
+  roleFilter?: boolean;
+  /** Render the bar even at or below GRID_PREVIEW_LIMIT while unfiltered (default false). */
+  alwaysShow?: boolean;
 };
 
 export function EntityGridBar({
@@ -61,6 +70,9 @@ export function EntityGridBar({
   focusView,
   sortOptions = entityGridSortOptions,
   actions,
+  viewToggle,
+  roleFilter = true,
+  alwaysShow = false,
 }: Props) {
   const { q, sort, role } = searchVars;
 
@@ -69,7 +81,7 @@ export function EntityGridBar({
   const isFiltered = !!q;
 
   // Hide the bar at or below the preview count while unfiltered; the actions slot stays rendered
-  if (!isFiltered && (total ?? 0) <= GRID_PREVIEW_LIMIT) {
+  if (!alwaysShow && !isFiltered && (total ?? 0) <= GRID_PREVIEW_LIMIT) {
     return actions ? <div className="flex items-center">{actions}</div> : null;
   }
 
@@ -98,14 +110,18 @@ export function EntityGridBar({
             className="h-10"
             sortOptions={sortOptions}
           />
-          <SelectRole
-            entityType={entityType}
-            value={role === undefined ? 'all' : role}
-            onChange={onRoleChange}
-            className="h-10 sm:min-w-32"
-          />
+          {roleFilter && (
+            <SelectRole
+              entityType={entityType}
+              value={role === undefined ? 'all' : role}
+              onChange={onRoleChange}
+              className="h-10 sm:min-w-32"
+            />
+          )}
         </FilterBarFilters>
       </TableFilterBar>
+
+      {viewToggle}
 
       {focusView && <FocusView iconOnly />}
     </TableBarContainer>

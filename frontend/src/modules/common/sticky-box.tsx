@@ -2,7 +2,8 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
 import { cn } from '~/utils/cn';
 
-function getScrollParent(node: HTMLElement) {
+/** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
+export function getScrollParent(node: HTMLElement): HTMLElement | Window {
   let parent: HTMLElement | null = node;
   // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {

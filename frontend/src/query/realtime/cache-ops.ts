@@ -10,11 +10,13 @@ import {
   hasEntityQueryKeys,
   SYNC_CHUNK_SIZE,
 } from '~/query/basic/entity-query-registry';
+import { findInCache } from '~/query/basic/find-in-list-cache';
 import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
+import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
 
 /** Callers skip remote cache writes while this is true, so optimistic state survives; the mutation's onSuccess reconciles on settle. */
 export function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
@@ -226,7 +228,12 @@ export async function fetchEntityAndUpdateList(
     });
     if (!entity) return;
 
+    // Read before applying: the cached row is the only record of which embedded rows this host referenced.
+    const touches: EmbeddingTouches = new Map();
+    if (entityType) collectEmbeddingTouches(entityType, findInCache<ItemData>(entityType, entityId), entity, touches);
+
     applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null);
+    if (organizationId) invalidateEmbeddedUsage(touches, organizationId);
     // The notification says create: active filtered lists refetch to place the new row.
     if (action === 'create' && organizationId) invalidateFilteredLists(keys.list.org(organizationId));
   } catch {
@@ -241,6 +248,8 @@ export interface RangeFetchResult {
   items: ItemData[];
   /** Highest seq actually returned; 0 when empty. Lets callers detect a short delivery. */
   reachedSeq: number;
+  /** Embedded rows whose usage aggregates the fetched host rows made stale; empty unless status is `ok`. */
+  embeddingTouches: EmbeddingTouches;
 }
 
 // Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
@@ -259,11 +268,11 @@ export async function fetchRangeAndPatch(
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
-    return { status: 'unsupported', items: [], reachedSeq: 0 };
+    return { status: 'unsupported', items: [], reachedSeq: 0, embeddingTouches: new Map() };
   }
 
   const deltaFetch = getEntityDeltaFetch(entityType);
-  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
+  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0, embeddingTouches: new Map() };
 
   try {
     const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
@@ -271,11 +280,14 @@ export async function fetchRangeAndPatch(
     // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
-      return { status: 'overflow', items: [], reachedSeq: 0 };
+      return { status: 'overflow', items: [], reachedSeq: 0, embeddingTouches: new Map() };
     }
 
     let sawNewRow = false;
+    const embeddingTouches: EmbeddingTouches = new Map();
     for (const entity of items) {
+      // Read before applying: the cached row is the only record of which embedded rows this host referenced.
+      collectEmbeddingTouches(entityType, findInCache<ItemData>(entityType, entity.id), entity, embeddingTouches);
       sawNewRow = applyServerEntity(entityType, entity, keys, organizationId) || sawNewRow;
     }
 
@@ -285,9 +297,14 @@ export async function fetchRangeAndPatch(
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
-    return { status: 'ok', items, reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0) };
+    return {
+      status: 'ok',
+      items,
+      reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0),
+      embeddingTouches,
+    };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
-    return { status: 'error', items: [], reachedSeq: 0 };
+    return { status: 'error', items: [], reachedSeq: 0, embeddingTouches: new Map() };
   }
 }

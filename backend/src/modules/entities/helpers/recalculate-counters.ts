@@ -231,15 +231,24 @@ export const recalculateCounters = async (db: DbOrTx) => {
   for (const ref of appConfig.productEmbeddings) {
     // Hydrated single-reference embeddings have no array column to unnest.
     if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
-    const src = tbl(ref.hostProduct as EntityType);
+    const hostType = ref.hostProduct as EntityType;
+    const src = tbl(hostType);
+    const embedded = tbl(ref.embeddedProduct as EntityType);
     const key = `e:c:${ref.hostProduct}`;
 
+    // Driven from the embedded table, not the reference set: a row whose last host dropped it must be
+    // written back to 0, and GROUP BY alone would leave its previous count standing.
     await upsertChannelCounters(
       db,
       `
-      SELECT target_id, jsonb_build_object('${key}', COUNT(*)::int), NOW()
-      FROM ${src}, unnest(${ref.hostColumn}) AS target_id
-      GROUP BY target_id
+      SELECT e.id::text, jsonb_build_object('${key}', COALESCE(u.ref_count, 0)::int), NOW()
+      FROM ${embedded} e
+      LEFT JOIN (
+        SELECT target_id, COUNT(*)::int AS ref_count
+        FROM ${src} h, unnest(h.${ref.hostColumn}) AS target_id
+        WHERE TRUE${livePredicate(hostType, 'h')}${publishedPredicate(hostType, 'h')}
+        GROUP BY target_id
+      ) u ON u.target_id = e.id::text
     `,
     );
   }

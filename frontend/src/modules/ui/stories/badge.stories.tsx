@@ -79,3 +79,35 @@ export const Outline: Story = {
     variant: 'outline',
   },
 };
+
+const BADGE_VARIANTS = [
+  'default',
+  'brand',
+  'destructive',
+  'success',
+  'warning',
+  'secondary',
+  'plain',
+  'outline',
+] as const;
+
+/** Every badge variant in soft and solid fill, side by side, to catch soft text losing the cascade. */
+export const VariantMatrix: Story = {
+  parameters: { controls: { disable: true }, layout: 'padded' },
+  render: () => (
+    <div className="flex flex-col gap-4">
+      {([true, false] as const).map((soft) => (
+        <div key={String(soft)} className="flex flex-col gap-2">
+          <p className="font-medium text-muted-foreground text-xs uppercase">{soft ? 'soft' : 'solid'}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {BADGE_VARIANTS.map((variant) => (
+              <Badge key={variant} variant={variant} soft={soft} size="md">
+                {variant}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};

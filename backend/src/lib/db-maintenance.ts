@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { type PgDB, unsafeInternalAdminDb } from '#/db/db';
+import { type BackendJob, registerBackendJob } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
 
 async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
@@ -59,3 +60,7 @@ export function scheduleDbMaintenance(intervalMs: number = ONE_DAY_MS): () => vo
     clearInterval(interval);
   };
 }
+
+/** Registered on import; the API entrypoint starts every registered job on the migration-owning instance. */
+export const dbMaintenanceJob: BackendJob = { name: 'db-maintenance', start: () => scheduleDbMaintenance() };
+registerBackendJob(dbMaintenanceJob);
