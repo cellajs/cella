@@ -37,4 +37,8 @@ describe('findAppVocabularyFindings', () => {
   it('allows the Cella CLI configuration', () => {
     expect(findAppVocabularyFindings('cella/cella.config.ts', legacyTerm)).toEqual([]);
   });
+
+  it('allows the release-please changelog', () => {
+    expect(findAppVocabularyFindings('cella/CHANGELOG.md', legacyTerm)).toEqual([]);
+  });
 });
