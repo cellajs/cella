@@ -334,7 +334,7 @@ const viteConfig = {
     {
       enforce: 'pre' as const,
       ...mdx({
-        // Repo docs live under cella/ only; fork root-level SHOUTCASE .md (README, CHANGELOG) are not doc pages.
+        // Repo docs live under cella/ only; an app's root-level SHOUTCASE .md (README, CHANGELOG) are not doc pages.
         include: /\/(src\/content\/docs\/.*\.(md|mdx)|cella\/[A-Z][A-Z_]*\.md|[a-z-]+\/README\.md)$/,
         format: 'detect',
         // Read component overrides (links, headings) from MDXProvider context. A
