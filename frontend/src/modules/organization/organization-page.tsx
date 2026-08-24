@@ -13,7 +13,7 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const LeaveOrgButton = lazyNamed(() => import('~/modules/organization/leave-organization'), 'LeaveOrgButton');
+const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
 
 interface Props {
   organizationId: string;
@@ -60,15 +60,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
         panel={
           organization.membership && (
             <Suspense>
-              <LeaveOrgButton
-                channel={organization}
-                role={organization.membership?.role}
-                buttonProps={{
-                  size: 'xs',
-                  variant: 'ghost',
-                  className: 'leading-normal cursor-pointer',
-                }}
-              />
+              <JoinedButton channel={organization} role={organization.membership?.role} />
             </Suspense>
           )
         }
