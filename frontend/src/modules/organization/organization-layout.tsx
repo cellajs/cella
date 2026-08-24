@@ -1,13 +1,17 @@
 import { Outlet } from '@tanstack/react-router';
 import { appConfig, type ProductEntityType } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
+import { onFrontendModuleRegister } from '~/lib/module';
 import { YjsTokenFetcher } from '~/modules/common/blocknote/yjs-token-fetcher';
 
 /**
- * Product types edited through CollaborativeBlockNote. Empty in the template; apps list the types
- * whose backend module registers a `yjsMaterializer`. Only read when the Yjs service is enabled.
+ * Product types edited through CollaborativeBlockNote, collected from module registrations
+ * (`collaborativeProduct`). Only read when the Yjs service is enabled.
  */
-const collaborativeProductTypes: readonly ProductEntityType[] = [];
+const collaborativeProductTypes: ProductEntityType[] = [];
+onFrontendModuleRegister((module) => {
+  if (module.collaborativeProduct) collaborativeProductTypes.push(module.collaborativeProduct);
+});
 
 /**
  * Organization layout body. Yjs tokens are fetched here, not beside an editor: a token is scoped

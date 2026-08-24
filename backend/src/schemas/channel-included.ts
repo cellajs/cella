@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { type ChannelEntityType, hierarchy, isProduct, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { appChannelCountFields } from '#/schemas/app-channel-counts';
 import { membershipCountSchema } from '#/schemas/count-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 
@@ -23,6 +24,7 @@ export const channelIncludedSchema = (entityType: ChannelEntityType) => {
     // Home-only twin of `entities` (`e:c:h:` keys): rows homed directly at the channel.
     entitiesSelf: entityCountSchema,
     activity: activitySchema,
+    ...appChannelCountFields(entityType),
   });
 
   return z.object({
