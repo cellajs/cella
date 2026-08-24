@@ -100,7 +100,7 @@ const repoDocRoutes = {
 } as const;
 
 // Tunnel mode: frontendUrl is the public ngrok origin (no port); Vite still listens locally.
-const devPort = Number(frontendUrl.port) || 3000;
+const devPort = Number(frontendUrl.port) || appConfig.devPorts.frontend;
 const isTunneled = frontendUrl.hostname !== 'localhost';
 
 // Release identifier for error/replay tagging (Maple serviceVersion). Git SHA

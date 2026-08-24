@@ -95,8 +95,9 @@ export const config = {
   /**
    * Local dev service listen ports and Vite proxy targets. Offset the whole block together
    * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
+   * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
    */
-  devPorts: { api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003 },
+  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003 },
   /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.
