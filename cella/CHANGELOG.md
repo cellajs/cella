@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.7](https://github.com/cellajs/cella/compare/0.9.6...0.9.7) (2026-08-24)
+
+
+### 🎉 New features
+
+* projectcampus upstream intake round 2 ([#1095](https://github.com/cellajs/cella/issues/1095)) ([035f3a2](https://github.com/cellajs/cella/commit/035f3a2871a5f1269eb7f9a0818b04ac69b8e2bb))
+
+
+### 🐞 Bug fixes
+
+* stop infinite paging on drifted totals + settle CDC slot before counter recalc ([#1096](https://github.com/cellajs/cella/issues/1096)) ([263b0cd](https://github.com/cellajs/cella/commit/263b0cdae42f8bc51e234e2069e780dc60f4861d))
+
+
+### 🔧 Small improvements
+
+* **infra:** async exec so the registry wait really overlaps the frontend build ([#1093](https://github.com/cellajs/cella/issues/1093)) ([a000598](https://github.com/cellajs/cella/commit/a000598a770050f5895fdb3ae5ef4092d2ed6336))
+
 ## [0.9.6](https://github.com/cellajs/cella/compare/0.9.5...0.9.6) (2026-08-20)
 
 
