@@ -76,7 +76,7 @@
     "session": "bash session.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
+    "@biomejs/biome": "^2.5.10",
     "@cellajs/cli": "^0.2.0",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
@@ -88,7 +88,7 @@
     "semver": "^7.7.3",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "packageManager": "pnpm@11.8.0",
   "commitlint": {
