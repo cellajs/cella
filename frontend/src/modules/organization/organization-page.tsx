@@ -60,7 +60,9 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
         panel={
           organization.membership && (
             <Suspense>
-              <JoinedButton channel={organization} role={organization.membership?.role} />
+              <div className="flex items-center p-2">
+                <JoinedButton channel={organization} role={organization.membership?.role} />
+              </div>
             </Suspense>
           )
         }
