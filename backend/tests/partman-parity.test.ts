@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { notificationsTable } from '#/modules/notification/notification-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { appPartitionConfigs } from '#/tables';
@@ -16,6 +17,7 @@ const drizzleTables: Record<string, PgTable> = {
   unsubscribe_tokens: unsubscribeTokensTable,
   activities: activitiesTable,
   seen_by: seenByTable,
+  notifications: notificationsTable,
   ...Object.fromEntries(appPartitionConfigs.map(({ table }) => [getTableName(table), table])),
 };
 

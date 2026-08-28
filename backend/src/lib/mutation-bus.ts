@@ -14,13 +14,18 @@ export type MutationHandler = (ctx: AuthContext, payload: MutationPayload) => Pr
 
 const handlers = new Map<TrackedEventType, MutationHandler[]>();
 
+/** Direct registration, for cross-module handlers derived from other modules' declarations (e.g. mention derivation). */
+export function registerMutationHandler(event: TrackedEventType, handler: MutationHandler): void {
+  const existing = handlers.get(event);
+  if (existing) existing.push(handler);
+  else handlers.set(event, [handler]);
+}
+
 // Index the `onMutation` handlers each backend module declares (see defineBackendModule).
 onBackendModuleRegister((module) => {
   for (const entry of Object.entries(module.onMutation ?? {})) {
     const [event, handler] = entry as [TrackedEventType, MutationHandler];
-    const existing = handlers.get(event);
-    if (existing) existing.push(handler);
-    else handlers.set(event, [handler]);
+    registerMutationHandler(event, handler);
   }
 });
 
