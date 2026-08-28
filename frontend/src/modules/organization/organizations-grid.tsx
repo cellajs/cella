@@ -44,6 +44,9 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           searchVars={baseSearch}
           label={'c:organization'}
           entityType="organization"
+          // Discovery grid: a role filter collapses the scope to membership-only; bar stays for short lists
+          roleFilter={false}
+          alwaysShow
           setSearch={setSearch}
           isSheet={!focusView}
           focusView={focusView}

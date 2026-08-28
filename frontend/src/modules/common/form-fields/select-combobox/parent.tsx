@@ -11,12 +11,28 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 
 type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ChannelEntityType;
+  /** Restrict the offered parents to one organization (e.g. sub-channels of the picked org). */
+  organizationId?: string;
   options?: ComboboxSelectProps['options'];
   onSelect?: (item: ChannelBase) => void;
 };
 
+/** Channels the user can pick as a parent; shares its cache with the picker's own list query. */
+export function useParentChannels(parentType: ChannelEntityType, organizationId?: string, enabled = true) {
+  const user = useCurrentUser();
+
+  const queryFactory = channelListQueriesByType[parentType];
+  // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
+  const query = useInfiniteQuery({ ...(queryFactory as any)({ userId: user.id, organizationId }), enabled });
+  // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
+  const items = flattenInfiniteData<ChannelBase>(query.data as any);
+
+  return { items, isLoaded: query.isSuccess };
+}
+
 export function SelectParentFormField<TFieldValues extends FieldValues>({
   parentType,
+  organizationId,
   control,
   name,
   label,
@@ -25,13 +41,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
   required,
   disabled,
 }: SelectParentProps<TFieldValues>) {
-  const user = useCurrentUser();
-
-  const queryFactory = channelListQueriesByType[parentType];
-  // biome-ignore lint/suspicious/noExplicitAny: queryFactory returns heterogeneous query options based on parentType
-  const query = useInfiniteQuery((queryFactory as any)({ userId: user.id }));
-  // biome-ignore lint/suspicious/noExplicitAny: queryFactory is heterogeneous, data shape is unknown
-  const items = flattenInfiniteData<ChannelBase>(query.data as any);
+  const { items } = useParentChannels(parentType, organizationId, !disabled);
 
   const options =
     opts ??

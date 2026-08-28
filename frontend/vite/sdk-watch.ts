@@ -90,6 +90,13 @@ export const sdkWatch = (): Plugin => {
 
           if (sdkGenExists()) {
             console.info(`[sdk-watch] ${checkMark} SDK output changed, reloading...`);
+            // server.watch.ignored covers **/sdk/**, so chokidar never invalidates these modules;
+            // without explicit invalidation the full-reload re-serves the stale transforms.
+            if (viteServer) {
+              for (const [id, mod] of viteServer.moduleGraph.idToModuleMap) {
+                if (id.includes(sdkGenDir)) viteServer.moduleGraph.invalidateModule(mod);
+              }
+            }
             viteServer?.ws.send({ type: 'full-reload' });
           }
         }, 200);

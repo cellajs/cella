@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { TagInput } from '~/modules/ui/tag-input';
 
 type DomainsFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
@@ -40,11 +40,10 @@ export function DomainsFormField<TFieldValues extends FieldValues>({
       render={({ field: { onChange } }) => {
         return (
           <FormItem>
-            <FormLabel>
+            <FormLabel help={description}>
               {label}
               {required && <span className="ml-1 opacity-50">*</span>}
             </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
             <TagInput
               inputProps={{ value: currentValue, 'aria-invalid': !isValidInput(currentValue) }}
               onInputChange={(newValue) => setCurrentValue(newValue)}

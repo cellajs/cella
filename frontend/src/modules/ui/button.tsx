@@ -55,7 +55,10 @@ export const buttonVariants = cva(
       {
         variant: ['default', 'brand', 'destructive', 'success', 'warning'],
         soft: true,
-        className: 'soft-bg soft-border hover:soft-bg-hover soft-text border shadow-none',
+        // The strong steps (not plain soft-bg) so the button stays legible on a soft-tinted surface;
+        // hover deepens all three: fill, text and frame.
+        className:
+          'soft-bg-strong soft-border-medium hover:soft-bg-stronger hover:soft-border-strong soft-text-strong hover:soft-text-stronger border shadow-none',
       },
       { variant: 'default', soft: false, className: 'bg-primary text-primary-foreground hover:bg-primary/80' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground hover:bg-brand/80' },

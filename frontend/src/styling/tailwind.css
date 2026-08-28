@@ -95,10 +95,24 @@
   background-color: color-mix(in srgb, var(--intent-color) 10%, var(--background));
 }
 
-/* Intent-colored text for soft variants. In dark mode the intent tokens are too dark to
-   read on the tinted fill, so lift them toward white to restore contrast. */
+/* Subtle depth ramp over soft-bg: brightest at top-right, deepest at bottom-left. One utility
+   covers every status because the stops derive from the same --intent-color map. */
+@utility soft-gradient {
+  background-image: linear-gradient(
+    to bottom left,
+    color-mix(in srgb, var(--intent-color) 6%, var(--background)),
+    color-mix(in srgb, var(--intent-color) 17%, var(--background))
+  );
+}
+
+/* Intent-colored text for soft variants. The `:root &` bump outranks sibling one-class text
+   utilities like Card's `text-card-foreground` in light mode. In dark mode the intent tokens
+   are too dark on the tinted fill, so lift them toward white to restore contrast. */
 @utility soft-text {
   color: var(--intent-color);
+  :root & {
+    color: var(--intent-color);
+  }
   .dark & {
     color: color-mix(in oklch, var(--intent-color), white 35%);
   }
@@ -108,8 +122,53 @@
   background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
 }
 
+/* Stronger steps for interactive elements sitting ON a soft surface, where flat soft-bg blends
+   into the surface's own tint. Text darkens with the fill in light mode; dark mode lifts toward
+   white, harder on hover, to keep contrast. */
+@utility soft-bg-strong {
+  background-color: color-mix(in srgb, var(--intent-color) 18%, var(--background));
+}
+@utility soft-bg-stronger {
+  background-color: color-mix(in srgb, var(--intent-color) 26%, var(--background));
+}
+@utility soft-text-strong {
+  color: color-mix(in oklch, var(--intent-color), black 10%);
+  :root & {
+    color: color-mix(in oklch, var(--intent-color), black 10%);
+  }
+  .dark & {
+    color: color-mix(in oklch, var(--intent-color), white 45%);
+  }
+}
+@utility soft-text-stronger {
+  color: color-mix(in oklch, var(--intent-color), black 20%);
+  :root & {
+    color: color-mix(in oklch, var(--intent-color), black 20%);
+  }
+  .dark & {
+    color: color-mix(in oklch, var(--intent-color), white 55%);
+  }
+}
+
 @utility soft-border {
   border-color: color-mix(in srgb, var(--intent-color) 20%, var(--background));
+}
+
+/* Full-contrast frame: the border takes the exact color soft-text gives the copy, so the outline
+   reads as strongly as the words inside it. */
+@utility soft-border-strong {
+  border-color: var(--intent-color);
+  .dark & {
+    border-color: color-mix(in oklch, var(--intent-color), white 35%);
+  }
+}
+
+/* Button-weight frame: 40% of the full-contrast one at rest; hover steps up to soft-border-strong. */
+@utility soft-border-medium {
+  border-color: color-mix(in srgb, var(--intent-color) 40%, var(--background));
+  .dark & {
+    border-color: color-mix(in srgb, color-mix(in oklch, var(--intent-color), white 35%) 40%, var(--background));
+  }
 }
 
 /* Semantic icon sizes. Icons use classes because the base rule below overrides Lucide's

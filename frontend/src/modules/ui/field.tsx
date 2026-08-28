@@ -131,34 +131,7 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 export function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  const [collapsed, setCollapsed] = React.useState(true);
-
-  const toggleCollapsed = (e: { preventDefault: () => void }) => {
-    setCollapsed(!collapsed);
-    e.preventDefault();
-  };
-
-  return (
-    <div
-      data-slot="field-description"
-      className={cn('relative -mt-2! text-muted-foreground text-sm', className)}
-      {...props}
-    >
-      <div className="flex justify-between">
-        <Button
-          type="button"
-          variant="link"
-          size="sm"
-          onClick={toggleCollapsed}
-          className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
-        >
-          {collapsed && <CircleQuestionMarkIcon />}
-          {!collapsed && <ChevronUpIcon />}
-        </Button>
-        {!collapsed && <span className="py-1">{props.children}</span>}
-      </div>
-    </div>
-  );
+  return <p data-slot="field-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
 
 export function FieldSeparator({
@@ -326,52 +299,76 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
 export function FormLabel({
   className,
   nativeLabel = true,
+  help,
+  children,
   ...props
-}: React.ComponentProps<'label'> & { nativeLabel?: boolean }) {
-  return (
+}: React.ComponentProps<'label'> & { nativeLabel?: boolean; help?: React.ReactNode }) {
+  const [helpOpen, setHelpOpen] = React.useState(false);
+
+  const label = (
     <Field.Label
       data-slot="form-label"
       nativeLabel={nativeLabel}
       className={cn('w-fit select-none font-medium text-sm/4.5 data-invalid:text-destructive', className)}
       {...props}
-    />
+    >
+      {children}
+    </Field.Label>
+  );
+
+  if (help === undefined || help === null) return label;
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center gap-2">
+        {label}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-expanded={helpOpen}
+          onClick={() => setHelpOpen(!helpOpen)}
+          className="-my-1 size-6 opacity-50 hover:opacity-100 active:translate-y-0!"
+        >
+          <span className="relative size-4">
+            <CircleQuestionMarkIcon
+              className={cn(
+                'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
+                helpOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
+              )}
+            />
+            <ChevronUpIcon
+              className={cn(
+                'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
+                helpOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
+              )}
+            />
+          </span>
+        </Button>
+      </div>
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none',
+          helpOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        )}
+      >
+        <Field.Description
+          render={<div />}
+          className={cn(
+            'overflow-hidden text-muted-foreground text-sm transition-opacity duration-200 motion-reduce:transition-none',
+            helpOpen ? 'opacity-100' : 'opacity-0',
+          )}
+        >
+          {help}
+        </Field.Description>
+      </div>
+    </div>
   );
 }
 
 /** Injects native field and accessibility props into one child; value-callback selectors must bind directly inside `FormItem`. */
 export function FormControl({ children }: { children: React.ReactElement }) {
   return <Field.Control render={children} />;
-}
-
-export function FormDescription({ className, children, ...props }: React.ComponentProps<'p'>) {
-  const [collapsed, setCollapsed] = React.useState(true);
-
-  const toggleCollapsed = (e: { preventDefault: () => void }) => {
-    setCollapsed(!collapsed);
-    e.preventDefault();
-  };
-
-  return (
-    <Field.Description
-      render={<div />}
-      className={cn('relative -mt-2! text-muted-foreground text-sm', className)}
-      {...props}
-    >
-      <div className="flex justify-between">
-        <Button
-          type="button"
-          variant="link"
-          size="sm"
-          onClick={toggleCollapsed}
-          className="absolute -top-6 right-1 h-auto p-2 text-regular opacity-50 ring-inset hover:opacity-100"
-        >
-          {collapsed && <CircleQuestionMarkIcon />}
-          {!collapsed && <ChevronUpIcon />}
-        </Button>
-        {!collapsed && <span className="py-1">{children}</span>}
-      </div>
-    </Field.Description>
-  );
 }
 
 export function FormMessage({ className, children, ...props }: React.ComponentProps<'p'>) {

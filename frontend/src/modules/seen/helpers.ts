@@ -7,8 +7,9 @@ export const seenKeys = {
 export const isSeenTracked = (entityType: string): boolean =>
   (appConfig.seenTrackedProductTypes as readonly string[]).includes(entityType);
 
+/** Every channel type a seen-tracked product can be homed in; mirrors the server's grouping set in mark-seen.ts. */
 export const seenGroupingChannelTypes = new Set(
-  appConfig.seenTrackedProductTypes.map((t) => hierarchy.getParent(t)).filter(Boolean),
+  appConfig.seenTrackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)),
 );
 
 /** Grouping channel for a row: its deepest non-null ancestor, matching mark-seen, unseen counts and unseen-sync. */

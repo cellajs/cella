@@ -99,7 +99,7 @@ function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: Men
     <Button
       variant="link"
       size="sm"
-      className="h-4 px-0 py-0 text-xs leading-3 underline-offset-1 opacity-60 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="h-4 px-0 py-0 text-xs leading-3 underline-offset-1 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0"
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
