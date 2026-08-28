@@ -3,6 +3,10 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import {
+  attachmentPlacementFieldsSchema,
+  validateAttachmentPlacement,
+} from '#/modules/attachment/helpers/attachment-placement';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
@@ -66,6 +70,8 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     // The column defaults to {}, making `keys` optional on the generated insert schema; a create
     // must carry at least the original key.
     keys: attachmentKeysSchema,
+    // Placement seam: apps exposing channel placement add their deepest-home-id fields here.
+    ...attachmentPlacementFieldsSchema,
   });
 
 export const attachmentContract = evolutionContract.product('attachment', {
@@ -75,7 +81,17 @@ export const attachmentContract = evolutionContract.product('attachment', {
   },
 });
 
-export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSchema.array().min(1).max(50);
+export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSchema
+  .array()
+  .min(1)
+  .max(50)
+  // Placement seam: per-item validation (e.g. ambiguous home ids); a no-op with no placement fields.
+  .superRefine((items, ctx) => {
+    items.forEach((item, index) => {
+      const issue = validateAttachmentPlacement(item);
+      if (issue) ctx.addIssue({ code: 'custom', path: [index, ...issue.path], message: issue.message });
+    });
+  });
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 

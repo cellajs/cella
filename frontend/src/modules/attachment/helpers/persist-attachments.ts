@@ -6,9 +6,19 @@ import { queryClient } from '~/query/query-client';
 /** Persists BlockNote attachments and splices the confirmed rows into the home list: the own-create realtime echo only patches rows in place. */
 export async function persistAttachments(
   attachments: Attachment[],
-  { tenantId, organizationId }: { tenantId: string; organizationId: string },
+  {
+    tenantId,
+    organizationId,
+    placement,
+  }: {
+    tenantId: string;
+    organizationId: string;
+    /** Placement seam: the deepest home channel id only (ancestors are server-derived); omitted = org-homed. Apps expose their placement fields via the backend seam. */
+    placement?: Record<string, string>;
+  },
 ): Promise<void> {
   if (!attachments.length) return;
-  const result = await createAttachmentsMutationFn({ tenantId, organizationId, data: attachments });
+  const rows = placement ? attachments.map((attachment) => ({ ...attachment, ...placement })) : attachments;
+  const result = await createAttachmentsMutationFn({ tenantId, organizationId, data: rows });
   insertEntitiesIntoHome(queryClient, result.data);
 }
