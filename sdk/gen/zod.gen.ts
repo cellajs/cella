@@ -1711,7 +1711,10 @@ export const zGetMembersPath = z.object({
 
 export const zGetMembersQuery = z.object({
   q: z.string().max(255).optional(),
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
+  sort: z
+    .enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt'])
+    .optional()
+    .default('lastSeenAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().regex(/^\d+$/).optional(),
   limit: z.string().regex(/^\d+$/).optional(),
@@ -1722,6 +1725,7 @@ export const zGetMembersQuery = z.object({
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
   role: z.enum(['admin', 'member']).optional(),
+  include: z.string().optional(),
   userIds: z.string().optional(),
 });
 
@@ -1734,6 +1738,17 @@ export const zGetMembersResponse = z.object({
       z.object({
         lastSeenAt: z.string().nullable(),
         membership: zMembershipBase,
+        counts: z
+          .object({
+            memberships: z.record(z.string(), z.unknown()),
+            products: z.object({
+              attachment: z.number(),
+            }),
+            activity: z.object({
+              attachment: z.number().nullable(),
+            }),
+          })
+          .optional(),
       }),
     ),
   ),

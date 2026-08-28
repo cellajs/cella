@@ -588,6 +588,34 @@
                       "organizationId": { "type": "string", "required": true, "format": "uuid" }
                     },
                     "ref": "#/components/schemas/MembershipBase"
+                  },
+                  "counts": {
+                    "type": "object",
+                    "required": false,
+                    "properties": {
+                      "memberships": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {}
+                      },
+                      "products": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "attachment": { "type": "number", "required": true }
+                        }
+                      },
+                      "activity": {
+                        "type": "object",
+                        "required": true,
+                        "properties": {
+                          "attachment": {
+                            "type": ["number", "null"],
+                            "required": true
+                          }
+                        }
+                      }
+                    }
                   }
                 },
                 "extendsRef": "#/components/schemas/UserBase"
@@ -709,7 +737,7 @@
           "sort": {
             "type": "string",
             "required": false,
-            "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"]
+            "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt", "lastPostedAt"]
           },
           "order": {
             "type": "string",
@@ -730,6 +758,7 @@
             "required": false,
             "enum": ["admin", "member"]
           },
+          "include": { "type": "string", "required": false },
           "userIds": { "type": "string", "required": false }
         }
       }

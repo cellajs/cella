@@ -6,6 +6,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import {
   channelEntityTypeSchema,
+  includeQuerySchema,
   paginationQuerySchema,
   validEmailSchema,
   validIdSchema,
@@ -71,8 +72,11 @@ export const membershipUpdateBodySchema = z.object({
 export const memberListQuerySchema = paginationQuerySchema.extend({
   entityId: validIdSchema,
   entityType: channelEntityTypeSchema,
-  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt'),
+  // lastPostedAt sorts by the member's latest product row in the viewed channel; default is recent activity
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).default('lastSeenAt'),
   role: z.enum(roles.all).optional(),
+  // Opt-in per-member insight counts (member-counts.ts), mirroring the channel lists' include=counts
+  include: includeQuerySchema,
   userIds: z
     .string()
     .transform((value) => value.split(',').map((id) => id.trim()))

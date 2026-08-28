@@ -10162,8 +10162,8 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt"],
-              "default": "createdAt"
+              "enum": ["id", "name", "email", "role", "createdAt", "lastSeenAt", "lastPostedAt"],
+              "default": "lastSeenAt"
             },
             "required": false,
             "name": "sort",
@@ -10231,6 +10231,14 @@
             },
             "required": false,
             "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "include",
             "in": "query"
           },
           {
@@ -10320,6 +10328,34 @@
                               },
                               "membership": {
                                 "$ref": "#/components/schemas/MembershipBase"
+                              },
+                              "counts": {
+                                "type": "object",
+                                "properties": {
+                                  "memberships": {
+                                    "type": "object",
+                                    "properties": {}
+                                  },
+                                  "products": {
+                                    "type": "object",
+                                    "properties": {
+                                      "attachment": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": ["attachment"]
+                                  },
+                                  "activity": {
+                                    "type": "object",
+                                    "properties": {
+                                      "attachment": {
+                                        "type": ["number", "null"]
+                                      }
+                                    },
+                                    "required": ["attachment"]
+                                  }
+                                },
+                                "required": ["memberships", "products", "activity"]
                               }
                             },
                             "required": ["lastSeenAt", "membership"]

@@ -4,6 +4,7 @@ import type { ChannelEntityType, EntityRole } from 'shared';
 import type { AuthContext, DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -259,17 +260,19 @@ interface FindMembersPaginatedOpts {
   entityId: string;
   entityType: ChannelEntityType;
   q?: string;
-  sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role';
+  sort?: 'id' | 'name' | 'email' | 'createdAt' | 'lastSeenAt' | 'role' | 'lastPostedAt';
   order?: 'asc' | 'desc';
   offset: number;
   limit: number;
   role?: EntityRole;
   userIds?: string[];
+  // Opt-in per-member insight counts; caller must run under tenantRead (product subqueries are RLS-guarded)
+  includeCounts?: boolean;
 }
 
 export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds } = opts;
+  const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts } = opts;
 
   const $or = q
     ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))]
@@ -296,6 +299,8 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       // COALESCE so never-signed-in members sort as oldest: plain DESC is NULLS FIRST in Postgres
       lastSeenAt: sql`COALESCE((SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id}), '-infinity')`,
       role: membershipsTable.role,
+      // Latest live product row by the member in the viewed channel; RLS-guarded like the counts
+      lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
     },
     tieBreaker: usersTable.id,
   });
@@ -304,6 +309,8 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .select({
       ...memberSelect,
       membership: membershipBaseSelect,
+      // Per-member insight counts on the page rows only; the total below stays free of the subqueries
+      ...(includeCounts && { counts: memberCountsSelect(entityType, entityId, organizationId) }),
     })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
@@ -314,10 +321,17 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     .limit(limit)
     .offset(offset);
 
+  // Totals count over a slim id-only query, so include=counts never evaluates its subqueries channel-wide
+  const totalQuery = db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+    .where(and(...membersFilters, or(...$or)));
+
   return resolveListTotal(itemsQuery, {
     kind: 'exact',
     getTotal: async () => {
-      const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('members'));
+      const [{ total }] = await db.select({ total: count() }).from(totalQuery.as('members'));
       return total;
     },
   });
