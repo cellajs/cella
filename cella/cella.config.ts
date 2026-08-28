@@ -47,6 +47,7 @@ export default defineConfig({
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
       'frontend/src/query/extra-local-user-stores.ts',
+      'frontend/src/query/realtime/register-channel-paths.ts',
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
       'frontend/src/nav-config.tsx',
