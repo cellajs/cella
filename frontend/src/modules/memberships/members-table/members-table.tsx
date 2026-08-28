@@ -52,7 +52,16 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit });
+  // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships)
+  const queryOptions = membersListQueryOptions({
+    entityId,
+    entityType,
+    tenantId,
+    organizationId,
+    ...search,
+    limit,
+    include: 'counts',
+  });
 
   const {
     data: rows,

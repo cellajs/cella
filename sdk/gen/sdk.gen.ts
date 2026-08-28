@@ -3199,6 +3199,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {enum=} options.query.role - `enum` (optional)
+ * @param {string=} options.query.include - `string` (optional)
  * @param {string=} options.query.userids - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */

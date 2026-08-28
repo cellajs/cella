@@ -38,12 +38,14 @@ export const membersListQueryOptions = (params: MembersListParams) => {
     order = defaults.order,
     role,
     userIds,
+    include,
     limit = appConfig.requestLimits.members,
   } = params;
+  // `include` stays out of the cache key so queries with/without counts share the same cache
   const filters = { q, sort, order, role, userIds };
   const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
   const path = { tenantId, organizationId };
-  const requestQuery = { ...filters, limit: String(limit), entityId, entityType };
+  const requestQuery = { ...filters, include, limit: String(limit), entityId, entityType };
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),

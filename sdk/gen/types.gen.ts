@@ -4561,7 +4561,7 @@ export type GetMembersData = {
   };
   query: {
     q?: string;
-    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
+    sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'lastPostedAt';
     order?: 'asc' | 'desc';
     offset?: string;
     limit?: string;
@@ -4569,6 +4569,7 @@ export type GetMembersData = {
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
+    include?: string;
     userIds?: string;
   };
   url: '/{tenantId}/{organizationId}/memberships/members';
@@ -4615,6 +4616,17 @@ export type GetMembersResponses = {
       UserBase & {
         lastSeenAt: string | null;
         membership: MembershipBase;
+        counts?: {
+          memberships: {
+            [key: string]: unknown;
+          };
+          products: {
+            attachment: number;
+          };
+          activity: {
+            attachment: number | null;
+          };
+        };
       }
     >;
     total: number;
