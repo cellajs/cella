@@ -1,4 +1,4 @@
-export { elevatedRoles, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
+export { policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 export {
   allActionsAllowed,
   allActionsDenied,

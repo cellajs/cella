@@ -1,6 +1,5 @@
 import {
   hierarchy as appHierarchy,
-  elevatedRoles as configuredElevatedRoles,
   type EntityHierarchy,
   getEntityPolicies,
   getPolicyPermissions,
@@ -33,7 +32,8 @@ export interface DeriveViewsInput {
   /** Injectable for synthetic-hierarchy tests; default to the app's real config. */
   policies?: PolicyMatrix;
   hierarchy?: EntityHierarchy;
-  elevatedRoles?: readonly string[];
+  /** Channel-qualified subtree-grant keys; defaults to the hierarchy's compiled set. */
+  elevatedGrants?: ReadonlySet<string>;
 }
 
 /** Derives provable subtree or self views at unconditional grant boundaries; conditional grants and unknown paths keep only the organization fallback. */
@@ -43,7 +43,7 @@ export function deriveGrantBoundaryViews({
   resolvePath,
   policies = policyMatrix,
   hierarchy = appHierarchy,
-  elevatedRoles = configuredElevatedRoles,
+  elevatedGrants = hierarchy.elevatedGrants,
 }: DeriveViewsInput): DerivedSyncView[] {
   const views = new Map<string, DerivedSyncView>();
 
@@ -53,9 +53,9 @@ export function deriveGrantBoundaryViews({
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     const root = ancestors[ancestors.length - 1];
     const homeLevel = ancestors.find((a) => a !== root) ?? root;
-    // Mirrors the engine's isHomeScopedGrant: without elevatedRoles every grant is subtree.
+    // Mirrors the engine's isHomeScopedGrant; the hierarchy-compiled set is always present.
     const isSubtreeGrant = (channelType: string, role: string) =>
-      channelType === homeLevel || elevatedRoles === undefined || elevatedRoles.includes(role);
+      channelType === homeLevel || elevatedGrants.has(`${channelType}:${role}`);
 
     for (const m of memberships) {
       if (!ancestors.includes(m.channelType)) continue;

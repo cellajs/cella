@@ -4,6 +4,7 @@ import {
   deepHierarchy,
   deepReadPolicies as policies,
 } from 'shared/testing/deep-fixture';
+import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
 import { deriveGrantBoundaryViews, type ViewMembership } from './views';
 
@@ -29,7 +30,7 @@ const paths: Record<string, string> = {
 const derive = (
   memberships: ViewMembership[],
   read: (channelType: ChannelType, role: string) => PolicyCellInput,
-  elevatedRoles?: readonly string[],
+  elevatedGrants?: ReadonlySet<string>,
 ) =>
   deriveGrantBoundaryViews({
     memberships,
@@ -37,10 +38,10 @@ const derive = (
     resolvePath: (_type, id) => paths[id] ?? null,
     policies: policies(read),
     hierarchy: deepHierarchy,
-    elevatedRoles,
+    elevatedGrants,
   });
 
-const ELEVATED = ['admin', 'staff'] as const;
+const ELEVATED = elevateAcross(deepHierarchy, ['admin', 'staff']);
 
 describe('deriveGrantBoundaryViews', () => {
   it('org-wide subtree for elevated org roles; org SELF for home-scoped org roles', () => {
@@ -99,16 +100,14 @@ describe('deriveGrantBoundaryViews', () => {
     ]);
   });
 
-  it('a role listed in elevatedRoles keeps its unconditional grant subtree (engine parity)', () => {
-    // Config-independent form: passing `undefined` here would NOT exercise the
-    // "no elevatedRoles configured" branch, because JS default parameters substitute
-    // the app-config default on any undefined, so that branch is reachable
-    // only when the running app's config has no elevatedRoles. Asserting via
-    // an explicit list containing the granted role tests the same subtree
-    // semantics against the function's contract, independent of ambient config.
+  it('an elevated grant keeps its unconditional read subtree (engine parity)', () => {
+    // Config-independent form: an explicit set containing the granted (channel, role) key tests
+    // the subtree semantics against the function's contract, independent of ambient config.
     const studentRead = (ct: ChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
-    expect(derive([membership('course', 'c1', 'student')], studentRead, ['student'])).toEqual([
+    expect(
+      derive([membership('course', 'c1', 'student')], studentRead, elevateAcross(deepHierarchy, ['student'])),
+    ).toEqual([
       {
         key: `${ORG}:item:subtree`,
         organizationId: ORG,

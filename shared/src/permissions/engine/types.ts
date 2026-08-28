@@ -65,8 +65,13 @@ export interface PermissionCheckOptions {
   userId?: string;
   /** The `checkAccess*` wrappers inject the configured grants. @see public-read.ts */
   publicGrants?: PublicReadGrants;
-  /** `undefined` treats every role as subtree-wide. @see shared/config/README.md */
-  elevatedRoles?: readonly string[];
+  /**
+   * `${channelType}:${role}` keys of subtree-wide grants, compiled from the hierarchy's
+   * per-channel `elevated` declarations (`hierarchy.elevatedGrants`). An empty set makes every
+   * product grant home-scoped; `undefined` disables the elevation concept entirely (every grant
+   * subtree-wide) for callers driving the engine with synthetic policies.
+   */
+  elevatedGrants?: ReadonlySet<string>;
   /** Synthetic hierarchy override; defaults to the app singleton. */
   hierarchy?: EntityHierarchy;
   /** Action set override; defaults to `appConfig.entityActions`. */

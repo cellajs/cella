@@ -568,6 +568,25 @@
     "pnpm check"
    ],
    "summary": "field.tsx no longer exports FormDescription; FormLabel gains a help prop rendering a question-mark popover. Fork call sites move description content into help={...} on the sibling FormLabel and drop the import; bare description paragraphs switch to FieldDescription (now a plain <p>, collapse behavior gone)."
+  },
+  {
+   "id": "20260828T2030-elevated-grants-root-roles",
+   "version": "next",
+   "title": "Per-channel elevatedGrants and explicit rootRoles",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "shared",
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check",
+    "pnpm test:core"
+   ],
+   "summary": "Global elevatedRoles export removed: channels declare elevated (compiled to hierarchy.elevatedGrants ${channelType}:${role} keys); an empty set makes non-home grants home-scoped, so forks must declare elevation to keep subtree reads. resolveParentMembershipRole splits into resolveAssociatedMembershipRole and a throwing resolveRootMembershipRole; channels auto-creating root membership rows declare a complete rootRoles map. Tests inject elevation via elevateAcross."
   }
  ]
 }

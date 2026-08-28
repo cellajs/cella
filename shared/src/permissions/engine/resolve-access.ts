@@ -118,7 +118,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
         access.isSystemAdmin === true,
         access.userId,
         options?.publicGrants,
-        options?.elevatedRoles,
+        options?.elevatedGrants,
         options?.debug,
       );
       memo.set(key, decision);

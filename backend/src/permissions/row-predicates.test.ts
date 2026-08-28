@@ -18,9 +18,11 @@ import {
 import {
   type DeepChannelType,
   deepChannelRoles,
+  deepHierarchy,
   deepOverrides,
   deepReadPolicies as deepPolicies,
 } from 'shared/testing/deep-fixture';
+import { elevateAcross } from 'shared/testing/elevate';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { seedDb } from '#/db/db';
@@ -42,7 +44,7 @@ const HOME_INSTANCES = HOME ? ['s1', 's2', 's3'] : []; // home-channel instance 
 const homeIdKey = HOME ? appConfig.entityIdColumnKeys[HOME] : null; // 'projectId' | null
 const homeColumnName = homeIdKey ? toColumnName(homeIdKey) : null; // 'project_id' | null
 
-// Root id column: `elevatedRoles` configs compile home-scoped grants against it, so the scratch table carries it.
+// Root id column: `elevatedGrants` configs compile home-scoped grants against it, so the scratch table carries it.
 const rootIdKey = appConfig.entityIdColumnKeys[ROOT];
 const rootColumnName = toColumnName(rootIdKey);
 
@@ -53,6 +55,14 @@ const baseColumns = {
   // Public readability, denormalized onto the row exactly as `productColumns` carries it.
   publicAt: varchar('public_at'),
   [rootIdKey]: varchar(rootColumnName).notNull(),
+  // Intermediate nullable ancestors (always null here, rows home at HOME or ROOT), so the
+  // compiled scope conditions of elevated intermediate-channel grants find their columns.
+  ...Object.fromEntries(
+    CHAIN.filter((channelType) => channelType !== ROOT && channelType !== HOME).map((channelType) => {
+      const idKey = appConfig.entityIdColumnKeys[channelType];
+      return [idKey, varchar(toColumnName(idKey))];
+    }),
+  ),
 };
 const parityTable = pgTable(
   'test_permission_parity_rows',
@@ -220,13 +230,17 @@ const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
 
 beforeAll(async () => {
   await seedDb.execute(sql`drop table if exists test_permission_parity_rows`);
+  // Intermediate nullable ancestor columns follow the chain (see baseColumns above).
+  const intermediateColumnsDdl = CHAIN.filter((channelType) => channelType !== ROOT && channelType !== HOME)
+    .map((channelType) => `,\n      ${toColumnName(appConfig.entityIdColumnKeys[channelType])} varchar`)
+    .join('');
   await seedDb.execute(
     sql.raw(`
     create table test_permission_parity_rows (
       id varchar primary key,
       created_by varchar,
       public_at varchar,
-      ${rootColumnName} varchar not null${homeColumnName ? `,\n      ${homeColumnName} varchar not null` : ''}
+      ${rootColumnName} varchar not null${homeColumnName ? `,\n      ${homeColumnName} varchar not null` : ''}${intermediateColumnsDdl}
     )
   `),
   );
@@ -419,13 +433,13 @@ const deepRowSubject = (row: DeepParityRow): SubjectForPermission =>
     },
   }) as unknown as SubjectForPermission;
 
-const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly string[]): Set<string> => {
+const deepEngineReadableIds = (scenario: DeepScenario, elevatedGrants?: ReadonlySet<string>): Set<string> => {
   const readable = new Set<string>();
   for (const row of DEEP_ROWS) {
     const { can } = getAllDecisions(scenario.policies, scenario.memberships, deepRowSubject(row), {
       userId: scenario.userId,
       ...deepOverrides,
-      ...(elevatedRoles && { elevatedRoles }),
+      ...(elevatedGrants && { elevatedGrants }),
     });
     if (can.read) readable.add(row.id);
   }
@@ -436,14 +450,17 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedRoles?: readonly 
 const deepActor = (scenario: DeepScenario): Actor =>
   scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
 
-const deepSqlReadableIds = async (scenario: DeepScenario, elevatedRoles?: readonly string[]): Promise<Set<string>> => {
+const deepSqlReadableIds = async (
+  scenario: DeepScenario,
+  elevatedGrants?: ReadonlySet<string>,
+): Promise<Set<string>> => {
   const filter = resolveCollectionReadFilterForPolicies({
     policies: scenario.policies,
     memberships: scenario.memberships,
     entityType: DEEP_ITEM,
     organizationId: ROOT_ID,
     actor: deepActor(scenario),
-    elevatedRoles,
+    elevatedGrants,
     ...deepOverrides,
   });
   const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, deepActor(scenario));
@@ -519,11 +536,11 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
   });
 });
 
-const SUBTREE_ROLES = ['admin', 'staff'] as const;
+const SUBTREE_ROLES = elevateAcross(deepHierarchy, ['admin', 'staff']);
 
 // Non-elevated product roles see rows homed at their grant level; elevated roles keep subtree scope.
-describe('elevatedRoles parity: home-scoped grants agree between engine and SQL', () => {
-  it('agrees on every row across random policies and memberships with elevatedRoles configured', async () => {
+describe('elevatedGrants parity: home-scoped grants agree between engine and SQL', () => {
+  it('agrees on every row across random policies and memberships with elevatedGrants configured', async () => {
     const random = mulberry32(0x50b7);
 
     for (let i = 0; i < 100; i++) {
@@ -619,8 +636,16 @@ const randomRealScenario = (
 };
 
 /** Channel id columns as they appear on an activity event (and its row). */
+// Intermediate nullable ancestors ride as null, exactly as a real row carries them;
+// buildSubject's validateAncestorScope requires every ancestor key present on chains deeper than 2.
 const rowChannelColumns = (row: ParityRow): Record<string, unknown> => ({
   [appConfig.entityIdColumnKeys[ROOT]]: ROOT_ID,
+  ...Object.fromEntries(
+    CHAIN.filter((channelType) => channelType !== ROOT && channelType !== HOME).map((channelType) => [
+      appConfig.entityIdColumnKeys[channelType],
+      null,
+    ]),
+  ),
   ...(homeIdKey ? { [homeIdKey]: row.homeChannelId } : {}),
 });
 

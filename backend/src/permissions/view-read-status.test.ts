@@ -1,6 +1,15 @@
 import type { PolicyCellInput, ProductEntityType } from 'shared';
-import { type DeepChannelType, deepOverrides, deepReadPolicies as policies } from 'shared/testing/deep-fixture';
+import {
+  type DeepChannelType,
+  deepHierarchy,
+  deepOverrides,
+  deepReadPolicies as policies,
+} from 'shared/testing/deep-fixture';
+import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
+
+const DEEP_ELEVATED = elevateAcross(deepHierarchy, ['admin', 'staff']);
+
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { resolveViewReadStatusForPolicies } from './view-read-status';
 
@@ -28,7 +37,7 @@ const statusFor = (
     read?: (channelType: DeepChannelType, role: string) => PolicyCellInput;
     memberships?: MembershipBaseModel[];
     isSystemAdmin?: boolean;
-    elevatedRoles?: readonly string[];
+    elevatedGrants?: ReadonlySet<string>;
     depth?: 'self' | 'subtree';
     truePath?: string | null;
   } = {},
@@ -40,7 +49,7 @@ const statusFor = (
       entityType: ITEM,
       organizationId: ROOT_ID,
       actor: { userId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false },
-      elevatedRoles: opts.elevatedRoles,
+      elevatedGrants: opts.elevatedGrants,
       ...deepOverrides,
     },
     prefix,
@@ -94,14 +103,14 @@ describe('resolveViewReadStatus', () => {
     expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('opaque');
   });
 
-  it('SELF views: a home-scoped grant (non-elevated under elevatedRoles) answers its own node', () => {
-    // Course student read=1 with elevatedRoles configured: the home-scoped grant covers exactly the course wall (rows homed at c1).
+  it('SELF views: a home-scoped grant (non-elevated under elevatedGrants) answers its own node', () => {
+    // Course student read=1 with elevatedGrants configured: the home-scoped grant covers exactly the course wall (rows homed at c1).
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput =>
       ct === 'course' && role === 'student' ? 1 : 0;
     const opts = {
       read: courseStudentRead,
       memberships: [membership('course', 'c1', 'student')],
-      elevatedRoles: ['admin', 'staff'] as const,
+      elevatedGrants: DEEP_ELEVATED,
     };
 
     // Self view on the granted node: provable because homed rows are exactly the grant.
@@ -116,7 +125,7 @@ describe('resolveViewReadStatus', () => {
     const opts = {
       read: courseStaffRead,
       memberships: [membership('course', 'c1', 'staff')],
-      elevatedRoles: ['admin', 'staff'] as const,
+      elevatedGrants: DEEP_ELEVATED,
     };
     expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
   });
@@ -149,7 +158,7 @@ describe('resolveViewReadStatus', () => {
     const opts = {
       read: courseStudentRead,
       memberships: [membership('course', 'c1', 'student')],
-      elevatedRoles: ['admin', 'staff'] as const,
+      elevatedGrants: DEEP_ELEVATED,
     };
     const deep = `${ROOT_ID}/c1/s1/p1`;
     // The student's course home-grant covers the course WALL, not project walls below.

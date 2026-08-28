@@ -1,16 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { resolveParentMembershipRole } from './membership-helpers';
+import { resolveAssociatedMembershipRole, resolveRootMembershipRole } from './membership-helpers';
 
-describe('resolveParentMembershipRole', () => {
-  it("defaults to 'member' when the vocabulary has it (previous hardcoded behavior)", () => {
-    expect(resolveParentMembershipRole('organization', 'admin')).toBe('member');
+describe('resolveAssociatedMembershipRole', () => {
+  it("defaults to the vocabulary's least-privileged role", () => {
+    expect(resolveAssociatedMembershipRole('organization', 'admin')).toBe('member');
   });
 
   it('carries the invited role over when carryRole is set and valid', () => {
-    expect(resolveParentMembershipRole('organization', 'admin', true)).toBe('admin');
+    expect(resolveAssociatedMembershipRole('organization', 'admin', true)).toBe('admin');
   });
 
-  it('ignores carryRole for the default path when the invited role equals member', () => {
-    expect(resolveParentMembershipRole('organization', 'member', true)).toBe('member');
+  it('falls back to the least-privileged role for an invited role outside the vocabulary, even with carryRole', () => {
+    expect(resolveAssociatedMembershipRole('organization', 'staff' as any, true)).toBe('member');
+  });
+});
+
+describe('resolveRootMembershipRole', () => {
+  // The app hierarchy has a single root channel, which cannot declare rootRoles; mapping resolution
+  // against a declared map is covered by the config-builder tests (entity-hierarchy.test.ts).
+  it('throws for a channel without a rootRoles map: explicit escalation is required', () => {
+    expect(() => resolveRootMembershipRole('organization', 'admin')).toThrow(/rootRoles/);
   });
 });
