@@ -200,6 +200,14 @@
   }
 }
 
+/* Spotlight lift for virtualized rows (spotlighter/use-spotlighter.ts): virtua's row wrappers have
+   `contain: layout style`, so escaping the z-110 overlay needs the z-index on the wrapper itself;
+   the row marks itself and this rule climbs one level (pairs with `spotlightLift`, relative z-111). */
+:has(> .spotlight-lift-row) {
+  position: relative;
+  z-index: 111;
+}
+
 /* Keep mobile prose near 16px despite the 18px root. Unlayered rules outrank typography utilities. */
 .prose {
   @apply max-sm:text-md;

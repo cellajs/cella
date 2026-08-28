@@ -6,6 +6,7 @@ import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
+import { Spotlighter } from '~/modules/common/spotlighter/provider';
 import { AppNav } from '~/modules/navigation/app-nav';
 import { SeenTracker } from '~/modules/seen/seen-tracker';
 import { SidebarWrapper } from '~/modules/ui/sidebar';
@@ -46,6 +47,7 @@ function AppLayout() {
           <AttachmentDialogHandler />
         </Suspense>
         <Sheeter />
+        <Spotlighter />
         <DownAlert />
         <Dropdowner />
       </ErrorBoundary>
