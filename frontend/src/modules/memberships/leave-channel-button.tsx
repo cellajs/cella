@@ -16,7 +16,8 @@ import { cn } from '~/utils/cn';
 
 export type LeaveChannelButtonProps = {
   channel: ChannelBase;
-  redirectPath?: string;
+  /** Where to navigate after leaving; `null` stays put, for surfaces outside the channel itself. */
+  redirectPath?: string | null;
   buttonProps?: ButtonProps;
   callback?: (args: CallbackArgs) => void;
 };
@@ -37,7 +38,7 @@ export function LeaveChannelButton({
     },
     onSuccess: () => {
       toaster.success(t('c:success.you_left_entity', { entity: channel.entityType }));
-      navigate({ to: redirectPath, replace: true });
+      if (redirectPath !== null) navigate({ to: redirectPath, replace: true });
 
       // Directly remove entity from list cache so menu updates immediately
       const keys = getEntityQueryKeys(channel.entityType);

@@ -1,3 +1,4 @@
+import type { VariantProps } from 'class-variance-authority';
 import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,11 +7,14 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import type { LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
-import { Button } from '~/modules/ui/button';
+import { Button, type buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 type JoinedButtonProps = Omit<LeaveChannelButtonProps, 'buttonProps'> & {
   /** Membership role shown on the trigger ("✓ Admin"). */
   role?: MembershipBase['role'] | null;
+  size?: VariantProps<typeof buttonVariants>['size'];
+  className?: string;
 };
 
 /**
@@ -18,7 +22,7 @@ type JoinedButtonProps = Omit<LeaveChannelButtonProps, 'buttonProps'> & {
  * to signal that clicking undoes the join. Clicking opens a leave popconfirm through the
  * dropdowner, so it renders as a drawer below the `sm` breakpoint.
  */
-function JoinedButton({ role, ...props }: JoinedButtonProps) {
+function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
@@ -45,13 +49,17 @@ function JoinedButton({ role, ...props }: JoinedButtonProps) {
   };
 
   return (
-    <div className="flex items-center p-2">
-      <Button size="sm" variant="success" className="group" aria-label={t('c:leave')} onClick={openLeaveConfirm}>
-        <CheckIcon className="group-hover:hidden group-focus-visible:hidden group-data-dropdowner-active:hidden" />
-        <XIcon className="hidden group-hover:block group-focus-visible:block group-data-dropdowner-active:block" />
-        <span className="ml-1 max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
-      </Button>
-    </div>
+    <Button
+      size={size}
+      variant="success"
+      className={cn('group', className)}
+      aria-label={t('c:leave')}
+      onClick={openLeaveConfirm}
+    >
+      <CheckIcon className="group-hover:hidden group-focus-visible:hidden group-data-dropdowner-active:hidden" />
+      <XIcon className="hidden group-hover:block group-focus-visible:block group-data-dropdowner-active:block" />
+      <span className="ml-1 max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
+    </Button>
   );
 }
 
