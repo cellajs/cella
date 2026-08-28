@@ -20,6 +20,34 @@ import { useUIStore } from '~/modules/ui/ui-store';
 const ALLOWED_URI_REGEXP =
   /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
+/**
+ * First-pass HTML (unresolved media refs) per document string. Layout-identical to the resolved pass
+ * (media boxes are reserved via aspect-ratio), so a cache hit lets the first commit paint the document
+ * at full height synchronously; lists that measure rows (virtualizers) see the real height at once.
+ */
+const firstPassHtmlCache = new Map<string, string>();
+const FIRST_PASS_CACHE_MAX = 300;
+
+const cacheFirstPass = (document: string, html: string) => {
+  if (firstPassHtmlCache.size >= FIRST_PASS_CACHE_MAX) {
+    const oldest = firstPassHtmlCache.keys().next().value;
+    if (oldest !== undefined) firstPassHtmlCache.delete(oldest);
+  }
+  firstPassHtmlCache.set(document, html);
+};
+
+/**
+ * Computes a document's first-pass HTML into the cache ahead of render, so the component's first
+ * commit is synchronous. Calls blocksToFullHTML (flushSync inside): never call during React render
+ * or commit; an effect's async continuation is safe.
+ */
+export function precomputeDocumentHtml(document: string): void {
+  if (firstPassHtmlCache.has(document)) return;
+  const blocks = getParsedContent(document);
+  if (!blocks) return;
+  cacheFirstPass(document, getHeadlessEditor().blocksToFullHTML(blocks));
+}
+
 interface BlockNoteFullHtmlProps {
   id: string;
   defaultValue: string;
@@ -81,10 +109,11 @@ function BlockNoteFullHtml({
   const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>({
-    html: '',
+  const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>(() => ({
+    // A precomputed first pass paints the document at full height in the first commit (no pop-in).
+    html: firstPassHtmlCache.get(defaultValue) ?? '',
     mediaItems: [],
-  });
+  }));
 
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -106,11 +135,18 @@ function BlockNoteFullHtml({
 
     let cancelled = false;
 
-    queueMicrotask(() => {
-      if (cancelled) return;
-      const html = getHeadlessEditor().blocksToFullHTML(blocks);
-      setRenderState({ html, mediaItems: [] });
-    });
+    const cached = firstPassHtmlCache.get(defaultValue);
+    if (cached !== undefined) {
+      // Covers defaultValue changes after mount; on first mount the initializer already painted it.
+      setRenderState((prev) => (prev.html === cached ? prev : { html: cached, mediaItems: [] }));
+    } else {
+      queueMicrotask(() => {
+        if (cancelled) return;
+        const html = getHeadlessEditor().blocksToFullHTML(blocks);
+        cacheFirstPass(defaultValue, html);
+        setRenderState({ html, mediaItems: [] });
+      });
+    }
 
     async function resolveUrls(blocks: CustomBlock[]) {
       const resolveUrl = (ref: string): Promise<string> =>
