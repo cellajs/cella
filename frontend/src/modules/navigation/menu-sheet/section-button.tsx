@@ -57,7 +57,7 @@ export function MenuSectionButton({
                 className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[visible=true]/menuSection:hidden"
               >
                 {sectionUnseenCount > 0 ? (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-background px-1 font-bold text-[0.6rem] text-primary leading-none">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
                     {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
                   </span>
                 ) : (

@@ -35,7 +35,7 @@ export function SectionArchiveButton({
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{t('c:archived')}</span>
           <span className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[archived-visible=true]/archived:hidden">
             {archivedUnseenCount > 0 ? (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-background px-1 font-bold text-[0.6rem] text-primary leading-none">
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
                 {archivedUnseenCount > 99 ? '99+' : archivedUnseenCount}
               </span>
             ) : (

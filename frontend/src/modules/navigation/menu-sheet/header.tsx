@@ -50,7 +50,7 @@ export function MenuSheetHeader() {
               className="in-[.floating-nav]:inline-flex hidden size-10"
             >
               <EntityAvatar
-                className="size-7 rounded-full border-[0.1rem] border-primary"
+                className="size-7 rounded-full border-[0.1rem] border-current"
                 type="user"
                 id={user.id}
                 name={user.name}

@@ -29,10 +29,13 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
   const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
   const isSubitem = !item.submenu;
 
-  // Parent-level aggregation is skipped when detailedMenu is on: sub-items then show their own badges.
-  let channelIds: string | string[] | undefined;
-  if (seenGroupingChannelTypes.has(item.entityType)) channelIds = item.id;
-  else if (!detailedMenu && item.submenu?.length) channelIds = item.submenu.map((sub) => sub.id);
+  // Own count for grouping channels, plus submenu aggregation when sub-rows don't render their own badges
+  // (detailedMenu off, or an archived item whose submenu is never rendered).
+  const aggregateSubmenu = !!item.submenu?.length && (!detailedMenu || !!item.membership.archived);
+  const channelIds = [
+    ...(seenGroupingChannelTypes.has(item.entityType) ? [item.id] : []),
+    ...(aggregateSubmenu && item.submenu ? item.submenu.map((sub) => sub.id) : []),
+  ];
   const unseenCount = useUnseenCount(channelIds);
   const showBadge = unseenCount > 0 && !item.membership.muted;
 
@@ -97,7 +100,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
         </div>
       </div>
       {showBadge && (
-        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-background px-1 font-bold text-[0.6rem] text-primary leading-none">
+        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
           {unseenCount > 99 ? '99+' : unseenCount}
         </span>
       )}

@@ -168,7 +168,8 @@ export function MembersTableBar({
 
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-        {!isSheet && (
+        {/* Export is gated like the other admin actions in this bar; row selection needs the same grant */}
+        {!isSheet && canUpdate && (
           <Export
             className="max-lg:hidden"
             filename={`${entityType} members`}

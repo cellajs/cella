@@ -42,6 +42,8 @@ interface SyncStoreState {
   setLastSyncAt: (timestamp: string | null) => void;
   setOrgTenantId: (orgId: string, tenantId: string) => void;
   getOrgTenantId: (orgId: string) => string | null;
+  /** Drop a stale org (and its views) from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
+  removeOrg: (orgId: string) => void;
   setOrgSeq: (orgId: string, entityType: string, seq: number) => void;
   getOrgSeq: (orgId: string, entityType: string) => number;
   setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
@@ -108,6 +110,14 @@ export const syncStore = createStore<SyncStoreState>()(
           }),
         getOrgTenantId: (orgId) => get().orgs[orgId]?.tenantId || null,
 
+        removeOrg: (orgId) =>
+          set((s) => {
+            delete s.orgs[orgId];
+            for (const [key, view] of Object.entries(s.views)) {
+              if (view.organizationId === orgId) delete s.views[key];
+            }
+          }),
+
         setOrgSeq: (orgId, entityType, seq) =>
           set((s) => {
             ensureOrg(s.orgs, orgId).seqs[entityType] = seq;
@@ -171,6 +181,13 @@ export const syncStore = createStore<SyncStoreState>()(
           // Registered grant-boundary views ride the same request, adding precision over the org-view baseline.
           for (const [key, view] of Object.entries(get().views)) {
             views.push({ key, ...view });
+          }
+          // Server cap (streamCatchupBodySchema): an oversized body fails SDK validation client-side,
+          // killing the whole catchup. Truncation degrades to partial sync (dropped views simply do
+          // not advance this cycle), which beats no sync at all; org pruning keeps this unreachable.
+          if (views.length > 256) {
+            console.warn(`[SyncStore] Catchup views truncated ${views.length} → 256; sync coverage is partial`);
+            return views.slice(0, 256);
           }
           return views;
         },

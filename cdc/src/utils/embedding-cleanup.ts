@@ -36,7 +36,13 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
       throw new Error(`productEmbeddings: column "${hostColumnName}" not found on "${hostProduct}" table`);
     }
 
-    const parentType = hierarchy.getParent(embeddedProduct);
+    // Scope by the deepest STRICT ancestor, not the parent: a nullable placement column may
+    // be null on the deleted row (which would silently skip cleanup), while the strict ancestor
+    // (ultimately the org root) is present on the row and on every host table.
+    const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProduct));
+    const parentType = hierarchy
+      .getOrderedAncestors(embeddedProduct)
+      .find((ancestor) => !nullableAncestors.has(ancestor));
     if (!parentType)
       throw new Error(
         `productEmbeddings: "${embeddedProduct}" has no parent context: cleanup requires a scoping column`,

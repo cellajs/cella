@@ -11,7 +11,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 
@@ -76,8 +76,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormItem name="bulk-emails">
-          <FormLabel>{t('c:paste_emails')}</FormLabel>
-          <FormDescription>{t('c:paste_emails.text')}</FormDescription>
+          <FormLabel help={t('c:paste_emails.text')}>{t('c:paste_emails')}</FormLabel>
           <Textarea
             value={rawText}
             onChange={(event) => onTextChange(event.target.value)}

@@ -12,7 +12,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
-import { FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
@@ -109,11 +109,10 @@ export function SlugFormField<TFieldValues extends FieldValues>({
       name={name as Path<TFieldValues>}
       render={({ field: { value: formFieldValue, ...rest } }) => (
         <FormItem name={name}>
-          <FormLabel>
+          <FormLabel help={description}>
             {label}
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
-          {description && <FormDescription>{description}</FormDescription>}
           <InputGroup className={cn('', inputClassName)}>
             <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
             {prefix && (

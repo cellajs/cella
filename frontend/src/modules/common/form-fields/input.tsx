@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { type FieldValues, useFormContext } from 'react-hook-form';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
@@ -56,11 +56,10 @@ export function InputFormField<TFieldValues extends FieldValues>({
       name={name}
       render={({ field: { value: formFieldValue, onBlur: fieldOnBlur, ...rest } }) => (
         <FormItem name={name.toString()}>
-          <FormLabel>
+          <FormLabel help={description}>
             {label}
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>
-          {description && <FormDescription>{description}</FormDescription>}
           <div className="relative flex w-full items-center">
             {icon && (
               <button

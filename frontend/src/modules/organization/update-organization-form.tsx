@@ -22,7 +22,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 // welcomeText belongs to the details form; empty optional strings are stored as null.
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
@@ -193,11 +193,10 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
 
         return (
           <FormItem name="defaultLanguage">
-            <FormLabel>
+            <FormLabel help={t('c:default_language.text')}>
               {t('c:default_language')}
               <span className="ml-1 opacity-50">*</span>
             </FormLabel>
-            <FormDescription>{t('c:default_language.text')}</FormDescription>
             <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
             <FormMessage />
           </FormItem>

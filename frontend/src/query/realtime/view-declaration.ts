@@ -47,4 +47,15 @@ export function declareViewsFromMemberships(): void {
   for (const key of Object.keys(syncStore.getState().views)) {
     if (!keep.has(key)) store.removeSyncView(key);
   }
+
+  // Stored orgs the caller is no longer (or never was) a member of: prune them, or they accumulate
+  // forever in the persisted store; every dead org costs one view per entity type in each catchup
+  // body until the request overflows the server's views cap and catchup fails outright. Only prune
+  // against a loaded membership cache; `data` undefined just means memberships have not arrived yet.
+  if (data) {
+    const memberOrgIds = new Set(memberships.map((m) => m.organizationId));
+    for (const orgId of Object.keys(syncStore.getState().orgs)) {
+      if (!memberOrgIds.has(orgId)) store.removeOrg(orgId);
+    }
+  }
 }

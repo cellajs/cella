@@ -61,11 +61,14 @@ export function Export<R extends Record<string, any>>({
       <DropdownMenuContent align="end" className="p-1">
         {isOnline && (
           <>
+            {/* Label the full-export pair so it reads apart from the selected-rows pair below */}
             <DropdownMenuItem onClick={() => exportDefault('csv')}>
               <span>CSV</span>
+              <span className="ml-2 text-xs opacity-75">{t('c:all_rows').toLowerCase()}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => exportDefault('pdf')}>
               <span>PDF</span>
+              <span className="ml-2 text-xs opacity-75">{t('c:all_rows').toLowerCase()}</span>
             </DropdownMenuItem>
           </>
         )}

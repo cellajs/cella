@@ -164,9 +164,11 @@ li:has(.is-focused) {
   font-weight: 600;
 }
 
+/* The handle must fit inside a 1.5rem left inset (the grip glyph's own transparent margin
+   supplies the visual gap), so hosts need no extra gutter beyond their ordinary padding. */
 .bn-shadcn .bn-side-menu {
   position: relative;
-  left: -0.6rem;
+  left: -0.125rem;
   top: -0.15rem;
   opacity: 0.5;
   transition: opacity 0.15s ease;

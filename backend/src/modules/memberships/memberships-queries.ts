@@ -293,7 +293,8 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       name: usersTable.name,
       email: usersTable.email,
       createdAt: usersTable.createdAt,
-      lastSeenAt: sql`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
+      // COALESCE so never-signed-in members sort as oldest: plain DESC is NULLS FIRST in Postgres
+      lastSeenAt: sql`COALESCE((SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id}), '-infinity')`,
       role: membershipsTable.role,
     },
     tieBreaker: usersTable.id,
