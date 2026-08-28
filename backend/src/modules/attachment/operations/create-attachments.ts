@@ -3,8 +3,10 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
+import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
+import { resolveAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
@@ -41,14 +43,20 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
     throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
-  const attachmentsToInsert = input.map(({ stx, ...att }) => {
+  const now = getIsoDate();
+  const attachmentsToInsert: InsertAttachmentModel[] = [];
+  for (const { stx, ...att } of input) {
+    // Placement seam: ancestor columns derived server-side; the org-homed default stamps none.
+    const placement = await resolveAttachmentPlacement(ctx, att);
+
     const attachment = {
       ...att,
       convertedContentType: att.convertedContentType || null,
       groupId: att.groupId || null,
+      ...placement,
       tenantId: organization.tenantId,
       organizationId: organization.id,
-      createdAt: getIsoDate(),
+      createdAt: now,
       createdBy: ctx.var.user.id,
       stx: buildStx(stx),
     };
@@ -56,8 +64,8 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
     // The create-check channel scope comes from the row's hierarchy ancestors, so re-homing
     // attachments on a product entity needs no change here.
     canCreateEntity(ctx, buildSubjectFromEntity('attachment', attachment));
-    return attachment;
-  });
+    attachmentsToInsert.push(attachment);
+  }
 
   const createdAttachments = await tenantContext(ctx, (txCtx) =>
     insertAttachments(txCtx, { attachments: attachmentsToInsert }),

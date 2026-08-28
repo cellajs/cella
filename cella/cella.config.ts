@@ -43,6 +43,7 @@ export default defineConfig({
       'backend/src/tables.ts',
       'backend/src/routes.ts',
       'backend/src/mocks/app-product-mocks.ts',
+      'backend/src/modules/attachment/helpers/attachment-placement.ts',
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
       'frontend/src/query/extra-local-user-stores.ts',
