@@ -38,6 +38,17 @@ interface ChannelEntry<R extends string = string> {
   roles: readonly R[];
   /** Non-ancestor channel entities referenced as optional denormalized columns. */
   relatedChannels?: readonly string[];
+  /**
+   * Explicit root-membership escalation: the root-channel role each of this channel's roles
+   * materializes as when a membership here auto-creates the root context row. When declared, the
+   * map must cover every role of the channel; there is no implicit fallback.
+   */
+  rootRoles?: Readonly<Record<string, string>>;
+  /**
+   * Roles of THIS channel whose product grants cover the whole subtree below it, not only rows
+   * homed at this level. Undeclared roles are home-scoped. Compiled into `elevatedGrants`.
+   */
+  elevated?: readonly string[];
 }
 interface ProductEntry {
   kind: 'product';
@@ -53,6 +64,8 @@ export interface ChannelView<R extends string = string> {
   readonly parent: string | null;
   readonly roles: readonly R[];
   readonly relatedChannels?: readonly string[];
+  readonly rootRoles?: Readonly<Record<string, string>>;
+  readonly elevated?: readonly string[];
 }
 
 export interface ProductView {
@@ -101,9 +114,32 @@ class EntityHierarchyBuilder<
     );
   }
 
-  channel<N extends string, P extends TChannels | null, const RC extends readonly TChannels[] = []>(
+  channel<
+    N extends string,
+    P extends TChannels | null,
+    const RO extends readonly RoleFromRegistry<TRoles>[],
+    const RC extends readonly TChannels[] = [],
+  >(
     name: N,
-    options: { parent: P; roles: readonly RoleFromRegistry<TRoles>[]; relatedChannels?: RC },
+    options: {
+      parent: P;
+      roles: RO;
+      relatedChannels?: RC;
+      /**
+       * Root-channel role each of this channel's roles escalates to when a membership here
+       * auto-creates the root context row. Complete when declared (every role must be mapped,
+       * no implicit fallback), and only valid on non-root channels. A channel without the map
+       * cannot auto-create root memberships (insertMemberships throws).
+       */
+      rootRoles?: Record<RO[number], RoleFromRegistry<TRoles>>;
+      /**
+       * Roles of this channel whose product grants cover its whole subtree; undeclared roles
+       * grant only rows homed at this level. Read by the engine, the collection-scope SQL
+       * compiler, SSE dispatch and the frontend view derivation, which stay mirror-consistent
+       * through the compiled `elevatedGrants` set.
+       */
+      elevated?: readonly RO[number][];
+    },
   ): EntityHierarchyBuilder<
     TRoles,
     TChannels | N,
@@ -116,6 +152,8 @@ class EntityHierarchyBuilder<
     this.validateParent(name, options.parent, 'channel');
     this.validateRoles(name, options.roles);
     this.validateRelatedChannels(name, options.parent, options.relatedChannels);
+    this.validateRootRoles(name, options.parent, options.roles, options.rootRoles);
+    this.validateElevated(name, options.roles, options.elevated);
     return new EntityHierarchyBuilder<
       TRoles,
       TChannels | N,
@@ -130,8 +168,67 @@ class EntityHierarchyBuilder<
         parent: options.parent,
         roles: options.roles,
         relatedChannels: options.relatedChannels,
+        rootRoles: options.rootRoles as Readonly<Record<string, string>> | undefined,
+        elevated: options.elevated,
       }),
     );
+  }
+
+  /** Each elevated role must be one of the channel's own roles. */
+  private validateElevated(name: string, roles: readonly string[], elevated?: readonly string[]): void {
+    if (!elevated) return;
+    for (const role of elevated) {
+      if (!roles.includes(role)) {
+        throw new Error(
+          `EntityHierarchy: channel "${name}" elevates unknown role "${role}". Own roles: ${roles.join(', ')}`,
+        );
+      }
+    }
+  }
+
+  /** Keys must be this channel's own roles; values must be roles of the chain's root channel. */
+  private validateRootRoles(
+    name: string,
+    parent: string | null,
+    roles: readonly string[],
+    rootRoles?: Partial<Record<string, string>>,
+  ): void {
+    if (!rootRoles) return;
+    if (parent === null) {
+      throw new Error(`EntityHierarchy: root channel "${name}" cannot declare rootRoles (it has no root above it)`);
+    }
+
+    // Walk to the chain's root; parents are declared before children, so it already exists.
+    let rootName = parent;
+    let entry = this.entities.get(rootName);
+    while (entry && entry.kind === 'channel' && entry.parent !== null) {
+      rootName = entry.parent;
+      entry = this.entities.get(rootName);
+    }
+    const rootRolesVocabulary = entry?.kind === 'channel' ? entry.roles : [];
+
+    for (const [role, rootRole] of Object.entries(rootRoles)) {
+      if (!roles.includes(role)) {
+        throw new Error(
+          `EntityHierarchy: channel "${name}" maps unknown role "${role}" in rootRoles. Own roles: ${roles.join(', ')}`,
+        );
+      }
+      if (rootRole !== undefined && !rootRolesVocabulary.includes(rootRole)) {
+        throw new Error(
+          `EntityHierarchy: channel "${name}" maps role "${role}" to "${rootRole}", which is not a role of ` +
+            `root channel "${rootName}". Root roles: ${rootRolesVocabulary.join(', ')}`,
+        );
+      }
+    }
+
+    // Complete when declared: a partial map is a config error, caught here at build time.
+    const unmapped = roles.filter((role) => rootRoles[role] === undefined);
+    if (unmapped.length > 0) {
+      throw new Error(
+        `EntityHierarchy: channel "${name}" declares rootRoles but leaves ${unmapped.join(', ')} unmapped. ` +
+          'The map must cover every role — there is no implicit fallback.',
+      );
+    }
   }
 
   /**
@@ -342,6 +439,12 @@ export class EntityHierarchy<
   readonly relatableChannelTypes: readonly TChannels[];
   /** Id-column key per entity type; `appConfig.entityIdColumnKeys` is derived from this. */
   readonly idColumnKeys: { readonly [K in 'user' | TChannels | TProducts]: `${K}Id` };
+  /**
+   * Compiled `${channelType}:${role}` keys of every declared elevated role: the value the
+   * permission engine, SQL scope compiler, SSE dispatch and frontend view derivation consume.
+   * Empty when no channel declares elevation: every product grant is then home-scoped.
+   */
+  readonly elevatedGrants: ReadonlySet<string>;
 
   constructor(roles: TRoles, entities: Map<string, EntityEntry>) {
     this.roleRegistry = roles;
@@ -351,17 +454,20 @@ export class EntityHierarchy<
     const products: TProducts[] = [];
     const all: ('user' | TChannels | TProducts)[] = [];
     const relatableChannels = new Set<TChannels>();
+    const elevatedGrants = new Set<string>();
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TChannels | TProducts);
 
       if (entry.kind === 'channel') {
         channels.push(name as TChannels);
+        for (const role of entry.elevated ?? []) elevatedGrants.add(`${name}:${role}`);
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
         relatableChannels.add(entry.parent as TChannels);
       }
     }
+    this.elevatedGrants = Object.freeze(elevatedGrants);
 
     this.channelTypes = Object.freeze(channels);
     this.productTypes = Object.freeze(products);
@@ -390,6 +496,17 @@ export class EntityHierarchy<
   readonly getRoles = (channelType: string): readonly RoleFromRegistry<TRoles>[] => {
     const entry = this.entities.get(channelType);
     return entry?.kind === 'channel' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
+  };
+
+  /**
+   * Explicit root-channel role a membership role escalates to when it auto-creates the root
+   * context row; undefined when the channel declares no mapping for it (insertMemberships treats
+   * that as a programming error and throws).
+   */
+  readonly getRootRole = (channelType: string, role: string): RoleFromRegistry<TRoles> | undefined => {
+    const entry = this.entities.get(channelType);
+    if (entry?.kind !== 'channel') return undefined;
+    return entry.rootRoles?.[role] as RoleFromRegistry<TRoles> | undefined;
   };
 
   /** Always a channel; null for root entities and for user. */

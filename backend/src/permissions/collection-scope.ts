@@ -2,7 +2,6 @@ import {
   type Actor,
   hierarchy as appHierarchy,
   type ChannelEntityType,
-  elevatedRoles as configuredElevatedRoles,
   publicReadGrants as configuredPublicReadGrants,
   type EntityHierarchy,
   type EntityRole,
@@ -36,7 +35,7 @@ export interface ConditionalScope {
   channelIds: string[] | undefined;
   /** The grant's level; absent = the entity's home channel. */
   channelType?: ChannelEntityType;
-  /** Home-scoped grant (elevatedRoles): these levels' columns must be NULL as well. */
+  /** Home-scoped grant (non-elevated): these levels' columns must be NULL as well. */
   deeperChannels?: ChannelEntityType[];
 }
 
@@ -46,7 +45,7 @@ export interface IntermediateScope {
   channelIds: string[];
 }
 
-/** A HOME-scoped grant (roles outside `elevatedRoles`): that level's column matches AND deeper ancestor columns are NULL. */
+/** A HOME-scoped grant (outside `elevatedGrants`): that level's column matches AND deeper ancestor columns are NULL. */
 export interface HomeScope {
   channelType: ChannelEntityType;
   channelIds: string[];
@@ -60,7 +59,7 @@ interface ScopeAccumulator {
   unconditionalIds: Set<string>;
   /** Unconditional grants at intermediate ancestor levels (deep chains), keyed by channel type. */
   intermediateUnconditional: Map<ChannelEntityType, Set<string>>;
-  /** HOME-scoped unconditional grants (elevatedRoles), keyed by channel type. */
+  /** HOME-scoped unconditional grants (non-elevated), keyed by channel type. */
   homeScoped: Map<ChannelEntityType, Set<string>>;
   /** Keyed by `${condition name}:${level}:${homeOnly}`; the name uniquely identifies the rule. */
   conditional: Map<
@@ -81,17 +80,17 @@ const resolveScopes = (
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
-  elevatedRoles: readonly string[] | undefined,
+  elevatedGrants: ReadonlySet<string> | undefined,
   ancestors: readonly ChannelEntityType[], // most-specific → root, e.g. [project, course, organization]
   publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
   const rootChannel = ancestors.at(-1) ?? null;
   const homeChannelType = ancestors.find((channel) => channel !== rootChannel) ?? null;
 
-  // With elevatedRoles configured, a non-elevated role's grant speaks only for rows HOMED at its
+  // With elevatedGrants configured, a non-elevated grant speaks only for rows HOMED at its
   // level; deepest-level grants are home-exact already, so only higher levels carry the mark.
   const isHomeScopedGrant = (channelType: ChannelEntityType, role: EntityRole): boolean =>
-    elevatedRoles !== undefined && !elevatedRoles.includes(role) && channelType !== homeChannelType;
+    elevatedGrants !== undefined && !elevatedGrants.has(`${channelType}:${role}`) && channelType !== homeChannelType;
 
   const acc: ScopeAccumulator = {
     unconditionalOrgWide: false,
@@ -178,7 +177,7 @@ export interface CollectionReadFilter {
   conditionalScopes: ConditionalScope[];
   /** Unconditional grants at intermediate ancestor levels (aggregate reads only), each scoped by its own level's column. */
   intermediateScopes?: IntermediateScope[];
-  /** HOME-scoped grants (elevatedRoles; aggregate reads only): rows homed exactly at the grant's level. */
+  /** HOME-scoped grants (non-elevated; aggregate reads only): rows homed exactly at the grant's level. */
   homeScopes?: HomeScope[];
 }
 
@@ -268,8 +267,8 @@ export interface CollectionReadScopeInput {
   actor: Actor;
   /** Home-channel narrowing from the request; when neither field is given the read aggregates over the readable scope. */
   requested?: { homeChannelId?: string; homeChannelIds?: string[] };
-  /** Grant scoping role list. @see shared/config/permissions-config.ts */
-  elevatedRoles?: readonly string[];
+  /** Channel-qualified subtree-grant keys, compiled from the hierarchy. @see shared/config/hierarchy-config.ts */
+  elevatedGrants?: ReadonlySet<string>;
   /** Entity-type public read grants. @see shared/src/permissions/public-read.ts */
   publicGrants?: PublicReadGrants;
   /** Hierarchy override, as `getAllDecisions(…, { hierarchy })` takes; parity tests pass a synthetic deep chain. */
@@ -294,7 +293,7 @@ export const resolveCollectionReadFilter = (
     organizationId,
     actor,
     requested,
-    elevatedRoles: configuredElevatedRoles,
+    elevatedGrants: appHierarchy.elevatedGrants,
     publicGrants: configuredPublicReadGrants,
   });
 
@@ -306,7 +305,7 @@ export const resolveCollectionReadFilterForPolicies = ({
   organizationId,
   actor,
   requested,
-  elevatedRoles,
+  elevatedGrants,
   publicGrants,
   hierarchy,
 }: CollectionReadScopeInput): CollectionReadFilter => {
@@ -327,7 +326,7 @@ export const resolveCollectionReadFilterForPolicies = ({
     memberships,
     entityType,
     organizationId,
-    elevatedRoles,
+    elevatedGrants,
     orderedChannels,
     publicGrants,
   );

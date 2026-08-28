@@ -70,7 +70,7 @@ export const buildCollectionReadWhere = (
     clauses.push(inArray(scopeColumn(channelType), channelIds));
   }
 
-  // HOME-scoped grants (elevatedRoles): the grant level's column matches AND every deeper ancestor column is NULL.
+  // HOME-scoped grants (non-elevated): the grant level's column matches AND every deeper ancestor column is NULL.
   for (const { channelType, channelIds, deeperChannels } of filter.homeScopes ?? []) {
     if (channelIds.length === 0) continue;
     const scoped = and(

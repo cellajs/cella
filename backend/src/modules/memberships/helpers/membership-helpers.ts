@@ -14,18 +14,36 @@ const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t
 const rootIdColumnKey = appConfig.entityIdColumnKeys[rootChannelType];
 
 /**
- * Role for an auto-created parent or associated membership: `member` when the target vocabulary has it, else that
- * vocabulary's last role (roles are declared most to least privileged). With `carryRole`, the invited role carries over when valid.
+ * Role for an auto-created associated membership (menuStructure): the invited role carries over
+ * when `carryRole` is set and valid, else the target vocabulary's least-privileged (last) role.
  */
-export const resolveParentMembershipRole = (
+export const resolveAssociatedMembershipRole = (
   channelType: ChannelEntityType,
   invitedRole: MembershipModel['role'],
   carryRole = false,
 ): MembershipModel['role'] => {
   const channelRoles = hierarchy.getRoles(channelType) as readonly MembershipModel['role'][];
   if (carryRole && channelRoles.includes(invitedRole)) return invitedRole;
-  if (channelRoles.includes('member' as MembershipModel['role'])) return 'member' as MembershipModel['role'];
   return channelRoles[channelRoles.length - 1];
+};
+
+/**
+ * Role for the auto-created root context membership, from the source channel's `rootRoles` map.
+ * No implicit fallback: a channel that auto-creates root rows must declare the complete map
+ * (config-time validation makes a miss here a programming error, not a data-dependent one).
+ */
+export const resolveRootMembershipRole = (
+  sourceChannelType: ChannelEntityType,
+  invitedRole: MembershipModel['role'],
+): MembershipModel['role'] => {
+  const explicit = hierarchy.getRootRole(sourceChannelType, invitedRole) as MembershipModel['role'] | undefined;
+  if (explicit === undefined) {
+    throw new Error(
+      `insertMemberships: channel "${sourceChannelType}" declares no rootRoles mapping for role "${invitedRole}"; ` +
+        'explicit escalation is required to auto-create the root membership row.',
+    );
+  }
+  return explicit;
 };
 
 type BaseEntityModel = EntityModel<ChannelEntityType> & {
@@ -119,8 +137,8 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        // Parent membership defaults to the least-privileged fitting role
-        role: resolveParentMembershipRole(rootChannelType, baseMembership.role),
+        // Explicit escalation via the source channel rootRoles map; a missing map throws
+        role: resolveRootMembershipRole(entity.entityType as ChannelEntityType, baseMembership.role),
         [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
         channelType: rootChannelType,
         channelId: targetEntitiesIdColumnKeys[rootIdColumnKey],
@@ -146,7 +164,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
         ...baseMembership,
         tenantId: entity.tenantId,
         // associated membership role: least-privileged fit, or carried over when carryRole is set
-        role: resolveParentMembershipRole(
+        role: resolveAssociatedMembershipRole(
           associatedType as ChannelEntityType,
           baseMembership.role,
           // Config literals only carry the property when an app sets it

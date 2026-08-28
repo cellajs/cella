@@ -103,7 +103,7 @@ export const checkWithIndices = <T extends AccessMembership>(
   isSystemAdmin: boolean,
   userId?: string,
   publicGrants?: PublicReadGrants,
-  elevatedRoles?: readonly string[],
+  elevatedGrants?: ReadonlySet<string>,
   debug?: boolean,
 ): PermissionDecision<T> => {
   const primaryChannel = orderedChannels[0];
@@ -141,11 +141,11 @@ export const checkWithIndices = <T extends AccessMembership>(
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
   const conditionActor: ConditionActor = { userId };
 
-  // Non-elevated roles grant product access only at the row's home channel; channel subjects
-  // keep ancestor elevation.
+  // Non-elevated grants apply only at the row's home channel; channel subjects keep ancestor
+  // elevation. Elevation is per (channelType, role): `${channelType}:${role}` ∈ elevatedGrants.
   const isProductSubject = (subject.entityType as string) !== primaryChannel;
   const homeChannel =
-    elevatedRoles && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
+    elevatedGrants && isProductSubject ? orderedChannels.find((ct) => getSubjectChannelId(subject, ct)) : undefined;
 
   for (const channelType of orderedChannels) {
     const channelRoles = getRoles(channelType);
@@ -172,7 +172,12 @@ export const checkWithIndices = <T extends AccessMembership>(
       // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
 
-      if (elevatedRoles && isProductSubject && !elevatedRoles.includes(m.role) && channelType !== homeChannel) {
+      if (
+        elevatedGrants &&
+        isProductSubject &&
+        !elevatedGrants.has(`${channelType}:${m.role}`) &&
+        channelType !== homeChannel
+      ) {
         continue;
       }
 
@@ -239,7 +244,7 @@ export function getAllDecisions<T extends AccessMembership>(
   const isSystemAdmin = options?.isSystemAdmin === true;
   const userId = options?.userId;
   const publicGrants = options?.publicGrants;
-  const elevatedRoles = options?.elevatedRoles;
+  const elevatedGrants = options?.elevatedGrants;
   const debug = options?.debug === true;
   const { hierarchy: resolvedHierarchy, entityActions, getRoles } = resolveHierarchy(options);
 
@@ -288,7 +293,7 @@ export function getAllDecisions<T extends AccessMembership>(
       isSystemAdmin,
       userId,
       publicGrants,
-      elevatedRoles,
+      elevatedGrants,
       debug,
     );
 

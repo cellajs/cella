@@ -1,4 +1,5 @@
-import { elevatedRoles, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
+import { hierarchy } from '../../config/hierarchy-config.ts';
+import { policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 import type { EntityActionType } from '../../types.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
@@ -52,7 +53,7 @@ export interface CheckAccessFanoutOptions {
 
 // Every entry point injects the same public and elevated grants. SQL collection predicates are
 // the tested database-side projection of the same decisions.
-const boundOptions = { publicGrants: publicReadGrants, elevatedRoles };
+const boundOptions = { publicGrants: publicReadGrants, elevatedGrants: hierarchy.elevatedGrants };
 
 const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>): PermissionCheckOptions => ({
   ...boundOptions,

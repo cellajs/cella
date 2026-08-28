@@ -84,7 +84,6 @@ export {
   computeCan,
   configurePermissions,
   createActionRecord,
-  elevatedRoles,
   formatBatchPermissionSummary,
   formatPermissionDecision,
   getAllDecisions,

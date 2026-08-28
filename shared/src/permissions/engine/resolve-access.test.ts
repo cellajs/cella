@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { elevateAcross } from '../../testing/elevate.ts';
 import {
   configureWidePermissions,
   type WideChannelType,
   type WideProductType,
   type WideRole,
+  wideHierarchy,
   wideMembership,
   wideOverrides,
   wideSubject,
@@ -25,7 +27,7 @@ const USERS = ['user1', 'user2', 'user3', 'user4'];
 interface PolicyScenario {
   name: string;
   result: ReturnType<typeof configureWidePermissions>;
-  elevatedRoles?: readonly string[];
+  elevatedGrants?: ReadonlySet<string>;
 }
 
 const scenarios: PolicyScenario[] = [
@@ -93,7 +95,7 @@ const scenarios: PolicyScenario[] = [
           break;
       }
     }),
-    elevatedRoles: ['admin'],
+    elevatedGrants: elevateAcross(wideHierarchy, ['admin']),
   },
 ];
 
@@ -170,7 +172,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
       const baseOptions = {
         ...wideOverrides,
         publicGrants: publicReadGrants,
-        elevatedRoles: scenario.elevatedRoles,
+        elevatedGrants: scenario.elevatedGrants,
       };
 
       for (let iteration = 0; iteration < 150; iteration++) {

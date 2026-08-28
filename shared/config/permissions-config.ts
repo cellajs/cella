@@ -4,16 +4,6 @@ import { configurePermissions } from '../src/permissions/policy-matrix.ts';
 // Access policies per entity type: `1` = allowed, `0`/omitted = denied. Elevation vs. self rows,
 // product home rows, publicRead and row conditions are all explained in cella/PERMISSIONS.md.
 
-/**
- * Roles whose grants cover every row physically below their channel, not only rows homed at that
- * channel level. Static per role, never per-row. `undefined` keeps every grant subtree-scoped. Read
- * by the engine check, the collection-scope SQL compiler and SSE dispatch, which must stay
- * mirror-consistent.
- *
- * @see cella/PERMISSIONS.md
- */
-export const elevatedRoles: readonly string[] | undefined = undefined;
-
 export const { policyMatrix, publicReadGrants } = configurePermissions(
   appConfig.entityTypes,
   ({ entityType, channels }) => {
