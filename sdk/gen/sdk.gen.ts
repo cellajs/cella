@@ -107,6 +107,12 @@ import type {
   GetMyMembershipsData,
   GetMyMembershipsErrors,
   GetMyMembershipsResponses,
+  GetNotificationPreferencesData,
+  GetNotificationPreferencesErrors,
+  GetNotificationPreferencesResponses,
+  GetNotificationsData,
+  GetNotificationsErrors,
+  GetNotificationsResponses,
   GetOrganizationData,
   GetOrganizationErrors,
   GetOrganizationResponses,
@@ -162,6 +168,9 @@ import type {
   HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  MarkNotificationsReadData,
+  MarkNotificationsReadErrors,
+  MarkNotificationsReadResponses,
   MarkSeenData,
   MarkSeenErrors,
   MarkSeenResponses,
@@ -213,6 +222,8 @@ import type {
   ToggleMfaResponses,
   UnsubscribeMeData,
   UnsubscribeMeErrors,
+  UnsubscribeNotificationsData,
+  UnsubscribeNotificationsErrors,
   UpdateAttachmentData,
   UpdateAttachmentErrors,
   UpdateAttachmentResponses,
@@ -222,6 +233,9 @@ import type {
   UpdateMembershipErrors,
   UpdateMembershipResponses,
   UpdateMeResponses,
+  UpdateNotificationPreferencesData,
+  UpdateNotificationPreferencesErrors,
+  UpdateNotificationPreferencesResponses,
   UpdateOrganizationData,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
@@ -299,6 +313,9 @@ import {
   zGetMyAuthResponse,
   zGetMyInvitationsResponse,
   zGetMyMembershipsResponse,
+  zGetNotificationPreferencesResponse,
+  zGetNotificationsQuery,
+  zGetNotificationsResponse,
   zGetOrganizationPath,
   zGetOrganizationQuery,
   zGetOrganizationResponse,
@@ -336,6 +353,8 @@ import {
   zHandleMembershipInvitationPath,
   zHandleMembershipInvitationResponse,
   zInvokeTokenPath,
+  zMarkNotificationsReadBody,
+  zMarkNotificationsReadResponse,
   zMarkSeenBody,
   zMarkSeenPath,
   zMarkSeenResponse,
@@ -371,6 +390,7 @@ import {
   zToggleMfaBody,
   zToggleMfaResponse,
   zUnsubscribeMeQuery,
+  zUnsubscribeNotificationsQuery,
   zUpdateAttachmentBody,
   zUpdateAttachmentPath,
   zUpdateAttachmentQuery,
@@ -380,6 +400,8 @@ import {
   zUpdateMembershipPath,
   zUpdateMembershipResponse,
   zUpdateMeResponse,
+  zUpdateNotificationPreferencesBody,
+  zUpdateNotificationPreferencesResponse,
   zUpdateOrganizationBody,
   zUpdateOrganizationPath,
   zUpdateOrganizationResponse,
@@ -2367,6 +2389,202 @@ export const getPublicCounts = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zGetPublicCountsResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/metrics/public',
+    ...options,
+  });
+
+/**
+ * List notifications
+ *
+ * Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.
+ *
+ * **GET /notifications** ·· [getNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications) ·· _notifications_
+ *
+ * @param {getNotificationsData} options
+ * @param {enum=} options.query.unread - `enum` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {string=} options.query.before - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getNotifications = <ThrowOnError extends boolean = true>(
+  options?: Options<GetNotificationsData, ThrowOnError>,
+): RequestResult<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetNotificationsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetNotificationsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/notifications',
+    ...options,
+  });
+
+/**
+ * Mark notifications as read
+ *
+ * Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.
+ *
+ * **POST /notifications/read** ·· [markNotificationsRead](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/POST/notifications/read) ·· _notifications_
+ *
+ * @param {markNotificationsReadData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @param {string=} options.body.contextId - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const markNotificationsRead = <ThrowOnError extends boolean = true>(
+  options: Options<MarkNotificationsReadData, ThrowOnError>,
+): RequestResult<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zMarkNotificationsReadBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zMarkNotificationsReadResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/notifications/read',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get notification preferences
+ *
+ * Email and digest preferences for the current user. In-app delivery is not opt-out.
+ *
+ * **GET /notifications/preferences** ·· [getNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/preferences) ·· _notifications_
+ *
+ * @param {getNotificationPreferencesData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
+  options?: Options<GetNotificationPreferencesData, ThrowOnError>,
+): RequestResult<GetNotificationPreferencesResponses, GetNotificationPreferencesErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<
+    GetNotificationPreferencesResponses,
+    GetNotificationPreferencesErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetNotificationPreferencesResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/notifications/preferences',
+    ...options,
+  });
+
+/**
+ * Update notification preferences
+ *
+ * Partial update; unspecified keys keep their stored value.
+ *
+ * **PATCH /notifications/preferences** ·· [updateNotificationPreferences](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/PATCH/notifications/preferences) ·· _notifications_
+ *
+ * @param {updateNotificationPreferencesData} options
+ * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
+ * @param {boolean=} options.body.commentEmail - `boolean` (optional)
+ * @param {enum=} options.body.digest - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const updateNotificationPreferences = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateNotificationPreferencesData, ThrowOnError>,
+): RequestResult<UpdateNotificationPreferencesResponses, UpdateNotificationPreferencesErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).patch<
+    UpdateNotificationPreferencesResponses,
+    UpdateNotificationPreferencesErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateNotificationPreferencesBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateNotificationPreferencesResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/notifications/preferences',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Unsubscribe from a notification category
+ *
+ * Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.
+ *
+ * **GET /notifications/unsubscribe** ·· [unsubscribeNotifications](https://www.cellajs.com/docs/operations?operationTag=notifications#tag/notifications/GET/notifications/unsubscribe) ·· _notifications_
+ *
+ * @param {unsubscribeNotificationsData} options
+ * @param {string} options.query.user - `string`
+ * @param {enum} options.query.category - `enum`
+ * @param {string} options.query.token - `string`
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
+  options: Options<UnsubscribeNotificationsData, ThrowOnError>,
+): RequestResult<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, UnsubscribeNotificationsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zUnsubscribeNotificationsQuery,
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/notifications/unsubscribe',
     ...options,
   });
 

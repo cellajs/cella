@@ -1,0 +1,411 @@
+[
+  {
+    "operationId": "getNotifications",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Notifications and unread count",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "createdAt": { "type": "string", "required": true },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["mention", "comment", "reply"]
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["attachment"]
+                  },
+                  "subjectId": { "type": "string", "required": true },
+                  "contextId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "channelId": { "type": "string", "required": true },
+                  "channelType": { "type": "string", "required": true },
+                  "organizationId": { "type": "string", "required": true },
+                  "tenantId": { "type": "string", "required": true },
+                  "actorId": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "readAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                }
+              }
+            },
+            "unreadCount": { "type": "integer", "required": true, "minimum": 0 }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "unread": {
+            "type": "string",
+            "required": false,
+            "description": "Return only unread notifications",
+            "enum": ["true", "false"]
+          },
+          "limit": {
+            "type": "integer",
+            "required": false,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "before": {
+            "type": "string",
+            "required": false,
+            "description": "createdAt of the last row of the previous page"
+          }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "markNotificationsRead",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Number of notifications marked read",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "updated": { "type": "integer", "required": true, "minimum": 0 }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "required": false,
+            "maxItems": 200,
+            "itemType": "string",
+            "maxLength": 50
+          },
+          "contextId": {
+            "type": "string",
+            "required": false,
+            "description": "Mark everything sharing one context read",
+            "maxLength": 50
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getNotificationPreferences",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Notification preferences",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "mentionEmail": { "type": "boolean", "required": true },
+            "commentEmail": { "type": "boolean", "required": true },
+            "digest": {
+              "type": "string",
+              "required": true,
+              "enum": ["off", "daily", "weekly"]
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "updateNotificationPreferences",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Updated notification preferences",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "mentionEmail": { "type": "boolean", "required": true },
+            "commentEmail": { "type": "boolean", "required": true },
+            "digest": {
+              "type": "string",
+              "required": true,
+              "enum": ["off", "daily", "weekly"]
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "mentionEmail": { "type": "boolean", "required": false },
+          "commentEmail": { "type": "boolean", "required": false },
+          "digest": {
+            "type": "string",
+            "required": false,
+            "enum": ["off", "daily", "weekly"]
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "unsubscribeNotifications",
+    "responses": [
+      { "status": 302, "description": "Redirect to FE" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "user": { "type": "string", "required": true, "maxLength": 50 },
+          "category": {
+            "type": "string",
+            "required": true,
+            "enum": ["digest", "mention", "comment"]
+          },
+          "token": { "type": "string", "required": true }
+        }
+      }
+    }
+  }
+]

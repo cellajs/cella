@@ -1242,6 +1242,116 @@
     }
   },
   {
+    "id": "getNotifications",
+    "hash": "tag/notifications/GET/notifications",
+    "method": "get",
+    "path": "/notifications",
+    "tags": ["notifications"],
+    "summary": "List notifications",
+    "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": ["syncReadLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["notifications"]
+    }
+  },
+  {
+    "id": "markNotificationsRead",
+    "hash": "tag/notifications/POST/notifications/read",
+    "method": "post",
+    "path": "/notifications/read",
+    "tags": ["notifications"],
+    "summary": "Mark notifications as read",
+    "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["notifications"]
+    }
+  },
+  {
+    "id": "getNotificationPreferences",
+    "hash": "tag/notifications/GET/notifications/preferences",
+    "method": "get",
+    "path": "/notifications/preferences",
+    "tags": ["notifications"],
+    "summary": "Get notification preferences",
+    "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["notifications"]
+    }
+  },
+  {
+    "id": "updateNotificationPreferences",
+    "hash": "tag/notifications/PATCH/notifications/preferences",
+    "method": "patch",
+    "path": "/notifications/preferences",
+    "tags": ["notifications"],
+    "summary": "Update notification preferences",
+    "description": "Partial update; unspecified keys keep their stored value.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["authGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["notifications"]
+    }
+  },
+  {
+    "id": "unsubscribeNotifications",
+    "hash": "tag/notifications/GET/notifications/unsubscribe",
+    "method": "get",
+    "path": "/notifications/unsubscribe",
+    "tags": ["notifications"],
+    "summary": "Unsubscribe from a notification category",
+    "description": "Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["notifications"]
+    }
+  },
+  {
     "id": "getUsers",
     "hash": "tag/users/GET/users/users",
     "method": "get",

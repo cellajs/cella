@@ -42,6 +42,12 @@
     "kind": "module"
   },
   {
+    "name": "notifications",
+    "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state rather than synced content.",
+    "count": 5,
+    "kind": "module"
+  },
+  {
     "name": "organizations",
     "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
     "count": 5,

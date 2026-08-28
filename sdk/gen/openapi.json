@@ -226,6 +226,12 @@
       "kind": "module"
     },
     {
+      "name": "notifications",
+      "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state rather than synced content.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
       "name": "organizations",
       "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
       "parent": "cella",
@@ -6782,6 +6788,440 @@
                   },
                   "required": ["user", "organization", "attachment"]
                 }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getNotifications",
+        "tags": ["notifications"],
+        "summary": "List notifications",
+        "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["syncReadLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "description": "Return only unread notifications"
+            },
+            "required": false,
+            "description": "Return only unread notifications",
+            "name": "unread",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "createdAt of the last row of the previous page"
+            },
+            "required": false,
+            "description": "createdAt of the last row of the previous page",
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications and unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": ["mention", "comment", "reply"]
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "enum": ["attachment"]
+                          },
+                          "subjectId": {
+                            "type": "string"
+                          },
+                          "contextId": {
+                            "type": ["string", "null"]
+                          },
+                          "channelId": {
+                            "type": "string"
+                          },
+                          "channelType": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "tenantId": {
+                            "type": "string"
+                          },
+                          "actorId": {
+                            "type": ["string", "null"]
+                          },
+                          "readAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "createdAt",
+                          "type",
+                          "entityType",
+                          "subjectId",
+                          "contextId",
+                          "channelId",
+                          "channelType",
+                          "organizationId",
+                          "tenantId",
+                          "actorId",
+                          "readAt"
+                        ]
+                      }
+                    },
+                    "unreadCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["items", "unreadCount"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/read": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "markNotificationsRead",
+        "tags": ["notifications"],
+        "summary": "Mark notifications as read",
+        "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "maxItems": 200
+                  },
+                  "contextId": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Mark everything sharing one context read"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Number of notifications marked read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["updated"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/preferences": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getNotificationPreferences",
+        "tags": ["notifications"],
+        "summary": "Get notification preferences",
+        "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mentionEmail": {
+                      "type": "boolean"
+                    },
+                    "commentEmail": {
+                      "type": "boolean"
+                    },
+                    "digest": {
+                      "type": "string",
+                      "enum": ["off", "daily", "weekly"]
+                    }
+                  },
+                  "required": ["mentionEmail", "commentEmail", "digest"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateNotificationPreferences",
+        "tags": ["notifications"],
+        "summary": "Update notification preferences",
+        "description": "Partial update; unspecified keys keep their stored value.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mentionEmail": {
+                    "type": "boolean"
+                  },
+                  "commentEmail": {
+                    "type": "boolean"
+                  },
+                  "digest": {
+                    "type": "string",
+                    "enum": ["off", "daily", "weekly"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mentionEmail": {
+                      "type": "boolean"
+                    },
+                    "commentEmail": {
+                      "type": "boolean"
+                    },
+                    "digest": {
+                      "type": "string",
+                      "enum": ["off", "daily", "weekly"]
+                    }
+                  },
+                  "required": ["mentionEmail", "commentEmail", "digest"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/unsubscribe": {
+      "get": {
+        "security": [],
+        "operationId": "unsubscribeNotifications",
+        "tags": ["notifications"],
+        "summary": "Unsubscribe from a notification category",
+        "description": "Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "user",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["digest", "mention", "comment"]
+            },
+            "required": true,
+            "name": "category",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to FE",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
               }
             }
           },

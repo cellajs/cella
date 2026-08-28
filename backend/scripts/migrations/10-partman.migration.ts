@@ -10,6 +10,8 @@ const cellaPartitionConfigs: PartitionConfig[] = [
   { name: 'unsubscribe_tokens', partitionColumn: 'created_at', interval: '1 month', retention: '90 days' },
   { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
   { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
+  // Per-user notification inbox, aligned with seen_by so retention needs no sweep job.
+  { name: 'notifications', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
 ];
 
 /** Cella's entries followed by the app's (`appPartitionConfigs` in tables.ts); the verify block and parity test read this list. */

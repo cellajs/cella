@@ -1226,6 +1226,77 @@ export const zGetPublicCountsResponse = z.object({
   attachment: z.number(),
 });
 
+export const zGetNotificationsQuery = z.object({
+  unread: z.enum(['true', 'false']).optional(),
+  limit: z.int().gte(1).lte(100).optional().default(30),
+  before: z.string().optional(),
+});
+
+/**
+ * Notifications and unread count
+ */
+export const zGetNotificationsResponse = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      createdAt: z.string(),
+      type: z.enum(['mention', 'comment', 'reply']),
+      entityType: z.enum(['attachment']),
+      subjectId: z.string(),
+      contextId: z.string().nullable(),
+      channelId: z.string(),
+      channelType: z.string(),
+      organizationId: z.string(),
+      tenantId: z.string(),
+      actorId: z.string().nullable(),
+      readAt: z.string().nullable(),
+    }),
+  ),
+  unreadCount: z.int().gte(0),
+});
+
+export const zMarkNotificationsReadBody = z.object({
+  ids: z.array(z.string().max(50)).max(200).optional(),
+  contextId: z.string().max(50).optional(),
+});
+
+/**
+ * Number of notifications marked read
+ */
+export const zMarkNotificationsReadResponse = z.object({
+  updated: z.int().gte(0),
+});
+
+/**
+ * Notification preferences
+ */
+export const zGetNotificationPreferencesResponse = z.object({
+  mentionEmail: z.boolean(),
+  commentEmail: z.boolean(),
+  digest: z.enum(['off', 'daily', 'weekly']),
+});
+
+export const zUpdateNotificationPreferencesBody = z.object({
+  mentionEmail: z.boolean().optional(),
+  commentEmail: z.boolean().optional(),
+  digest: z.enum(['off', 'daily', 'weekly']).optional(),
+});
+
+/**
+ * Updated notification preferences
+ */
+export const zUpdateNotificationPreferencesResponse = z.object({
+  mentionEmail: z.boolean(),
+  commentEmail: z.boolean(),
+  digest: z.enum(['off', 'daily', 'weekly']),
+});
+
+export const zUnsubscribeNotificationsQuery = z.object({
+  user: z.string().max(50),
+  category: z.enum(['digest', 'mention', 'comment']),
+  token: z.string(),
+});
+
 export const zGetUsersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),

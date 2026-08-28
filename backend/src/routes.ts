@@ -12,6 +12,7 @@ import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { meHandlers } from '#/modules/me/me-handlers';
 import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 import { metricHandlers } from '#/modules/metrics/metrics-handlers';
+import { notificationHandlers } from '#/modules/notification/notification-handlers';
 import { organizationHandlers } from '#/modules/organization/organization-handlers';
 import { requestHandlers } from '#/modules/requests/requests-handlers';
 import { seenHandlers, unseenHandlers } from '#/modules/seen/seen-handlers';
@@ -39,6 +40,7 @@ baseApp.route('/tenants/:tenantId/domains', domainHandlers);
 
 baseApp.route('/requests', requestHandlers);
 baseApp.route('/metrics', metricHandlers);
+baseApp.route('/notifications', notificationHandlers);
 baseApp.route('/users', userHandlers);
 
 baseApp.route('/yjs', yjsHandlers);

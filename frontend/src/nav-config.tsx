@@ -1,10 +1,12 @@
-import { HouseIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { BellIcon, HouseIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
 import { MenuSheet } from '~/modules/navigation/menu-sheet/menu-sheet';
 import { startSearchAction } from '~/modules/navigation/start-search-action';
+import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
+import { UnreadNavBadge } from '~/modules/notification/unread-nav-badge';
 import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 
 /**
@@ -16,6 +18,8 @@ export const navItems = [
   { id: 'menu', type: 'base', icon: MenuIcon, sheet: () => <MenuSheet />, badgeSlot: UnseenNavBadge },
   { id: 'home', type: 'base', icon: HouseIcon, href: '/home', iconSlot: AppNavLoader },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
+  // Mentions and addressed activity; ambient posts stay on the menu badge above.
+  { id: 'notifications', type: 'base', icon: BellIcon, sheet: () => <NotificationsSheet />, badgeSlot: UnreadNavBadge },
   {
     id: 'account',
     type: 'base',

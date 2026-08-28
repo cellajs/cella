@@ -3357,6 +3357,275 @@ export type GetPublicCountsResponses = {
 
 export type GetPublicCountsResponse = GetPublicCountsResponses[keyof GetPublicCountsResponses];
 
+export type GetNotificationsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Return only unread notifications
+     */
+    unread?: 'true' | 'false';
+    limit?: number;
+    /**
+     * createdAt of the last row of the previous page
+     */
+    before?: string;
+  };
+  url: '/notifications';
+};
+
+export type GetNotificationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+  /**
+   * Notifications and unread count
+   */
+  200: {
+    items: Array<{
+      id: string;
+      createdAt: string;
+      type: 'mention' | 'comment' | 'reply';
+      entityType: 'attachment';
+      subjectId: string;
+      contextId: string | null;
+      channelId: string;
+      channelType: string;
+      organizationId: string;
+      tenantId: string;
+      actorId: string | null;
+      readAt: string | null;
+    }>;
+    unreadCount: number;
+  };
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type MarkNotificationsReadData = {
+  body: {
+    ids?: Array<string>;
+    /**
+     * Mark everything sharing one context read
+     */
+    contextId?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/notifications/read';
+};
+
+export type MarkNotificationsReadErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkNotificationsReadErrors];
+
+export type MarkNotificationsReadResponses = {
+  /**
+   * Number of notifications marked read
+   */
+  200: {
+    updated: number;
+  };
+};
+
+export type MarkNotificationsReadResponse = MarkNotificationsReadResponses[keyof MarkNotificationsReadResponses];
+
+export type GetNotificationPreferencesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/notifications/preferences';
+};
+
+export type GetNotificationPreferencesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetNotificationPreferencesError = GetNotificationPreferencesErrors[keyof GetNotificationPreferencesErrors];
+
+export type GetNotificationPreferencesResponses = {
+  /**
+   * Notification preferences
+   */
+  200: {
+    mentionEmail: boolean;
+    commentEmail: boolean;
+    digest: 'off' | 'daily' | 'weekly';
+  };
+};
+
+export type GetNotificationPreferencesResponse =
+  GetNotificationPreferencesResponses[keyof GetNotificationPreferencesResponses];
+
+export type UpdateNotificationPreferencesData = {
+  body: {
+    mentionEmail?: boolean;
+    commentEmail?: boolean;
+    digest?: 'off' | 'daily' | 'weekly';
+  };
+  path?: never;
+  query?: never;
+  url: '/notifications/preferences';
+};
+
+export type UpdateNotificationPreferencesErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateNotificationPreferencesError =
+  UpdateNotificationPreferencesErrors[keyof UpdateNotificationPreferencesErrors];
+
+export type UpdateNotificationPreferencesResponses = {
+  /**
+   * Updated notification preferences
+   */
+  200: {
+    mentionEmail: boolean;
+    commentEmail: boolean;
+    digest: 'off' | 'daily' | 'weekly';
+  };
+};
+
+export type UpdateNotificationPreferencesResponse =
+  UpdateNotificationPreferencesResponses[keyof UpdateNotificationPreferencesResponses];
+
+export type UnsubscribeNotificationsData = {
+  body?: never;
+  path?: never;
+  query: {
+    user: string;
+    category: 'digest' | 'mention' | 'comment';
+    token: string;
+  };
+  url: '/notifications/unsubscribe';
+};
+
+export type UnsubscribeNotificationsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UnsubscribeNotificationsError = UnsubscribeNotificationsErrors[keyof UnsubscribeNotificationsErrors];
+
 export type GetUsersData = {
   body?: never;
   path?: never;

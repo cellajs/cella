@@ -587,6 +587,26 @@
     "pnpm test:core"
    ],
    "summary": "Global elevatedRoles export removed: channels declare elevated (compiled to hierarchy.elevatedGrants ${channelType}:${role} keys); an empty set makes non-home grants home-scoped, so forks must declare elevation to keep subtree reads. resolveParentMembershipRole splits into resolveAssociatedMembershipRole and a throwing resolveRootMembershipRole; channels auto-creating root membership rows declare a complete rootRoles map. Tests inject elevation via elevateAcross."
+  },
+  {
+   "id": "20260828T2157-notifications-module",
+   "version": "next",
+   "title": "Notifications module: inbox, mentions and email digest",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "locales"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "New dormant-by-default notifications module: per-recipient inbox (partitioned notifications table + notification_preferences), mention derivation, permission/mute-filtered fan-out, instant mention email, daily/weekly digest job. Product modules opt in via a notifications source declaration on defineBackendModule (mentionable/loadRows/writeMentions/resolveRecipients/resolveContextId/loadPreview/loadContextNames/resolveEmailLink). Apps run pnpm generate for the tables, add the bell to their pinned nav-config, and (if they forked notifications before) reconcile onto the cella module with item_id renamed to context_id."
   }
  ]
 }
