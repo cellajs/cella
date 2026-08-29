@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
+import { notificationsQueryOptions } from '~/modules/notification/query';
 import { seenStore, setupSeenBeaconFlush } from '~/modules/seen/seen-store';
-import { useTotalUnseenCount } from './use-unseen-count';
 
 interface PeriodicSyncManager {
   register(tag: string, options?: { minInterval?: number }): Promise<void>;
@@ -43,9 +44,15 @@ export function SeenTracker() {
   return null;
 }
 
-/** Syncs the PWA app badge with the total unseen count. Badging API only (Chrome/Edge/Safari iOS 16.4+); no-ops elsewhere. */
+/**
+ * Syncs the PWA app badge with the unread NOTIFICATION count, not the unseen total: unseen counts
+ * effectively never reach zero in an active channel, and a permanently lit badge is one users
+ * learn to ignore, while unread notifications are addressed to you and clear by reading. Unseen
+ * counts stay on the in-app menu badges. Badging API only (Chrome/Edge/Safari iOS 16.4+).
+ */
 function useAppBadge() {
-  const total = useTotalUnseenCount();
+  const { data } = useQuery(notificationsQueryOptions());
+  const total = data?.unreadCount ?? 0;
 
   useEffect(() => {
     if (!('setAppBadge' in navigator)) return;
