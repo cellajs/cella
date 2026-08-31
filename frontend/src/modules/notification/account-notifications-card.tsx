@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ToolCard } from '~/modules/common/tool-card';
 import { notificationPreferencesQueryOptions, useUpdateNotificationPreferences } from '~/modules/notification/query';
+import { usePushSubscription } from '~/modules/notification/use-push-subscription';
 import { Label } from '~/modules/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { Switch } from '~/modules/ui/switch';
@@ -15,6 +16,7 @@ export function AccountNotificationsCard() {
   const { t } = useTranslation();
   const { data } = useSuspenseQuery(notificationPreferencesQueryOptions());
   const { mutate } = useUpdateNotificationPreferences();
+  const push = usePushSubscription();
 
   return (
     <ToolCard label="c:notifications" description={t('c:notifications.text')} id="notifications" className={cardClass}>
@@ -36,6 +38,18 @@ export function AccountNotificationsCard() {
           />
           <Label htmlFor="commentEmail">{t('c:notifications.comment_email')}</Label>
         </div>
+
+        {push.supported && (
+          <div className="flex items-center gap-4">
+            <Switch
+              id="pushEnabled"
+              checked={push.enabled}
+              disabled={push.busy}
+              onCheckedChange={(checked) => (checked ? push.enable() : push.disable())}
+            />
+            <Label htmlFor="pushEnabled">{t('c:notifications.push')}</Label>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="digest">{t('c:notifications.digest')}</Label>
