@@ -5,15 +5,6 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: (PrecacheEntry | string)[];
 };
 
-// Periodic Background Sync API (Chromium-only), not yet in lib.dom.
-interface PeriodicSyncEvent extends ExtendableEvent {
-  readonly tag: string;
-}
-declare global {
-  interface ServiceWorkerGlobalScopeEventMap {
-    periodicsync: PeriodicSyncEvent;
-  }
-}
 declare const __BACKEND_URL__: string;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network.
@@ -56,35 +47,87 @@ const serwist = new Serwist({
   ],
 });
 
-// Chromium-only (Chrome 80+, Edge), fired at browser-determined intervals.
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'unseen-badge-sync') {
-    event.waitUntil(updateBadge());
+// English-only titles by design: the payload carries ids and a type, never localized content, so
+// the closed-app toast stays generic and the app renders the localized inbox on open.
+const pushTitles: Record<string, string> = {
+  mention: 'You were mentioned',
+  reply: 'New reply',
+  comment: 'New comment',
+};
+
+/** { t: 'notif', activityId, channelId, type } from push-sender.ts; anything else is dropped. */
+interface NotificationPushData {
+  t: string;
+  activityId: string;
+  channelId: string;
+  type: string;
+}
+
+self.addEventListener('push', (event) => {
+  let data: NotificationPushData | null = null;
+  try {
+    data = event.data?.json() ?? null;
+  } catch {
+    // Not our payload; showing nothing is safe because we never send opaque pushes.
   }
+  if (data?.t !== 'notif') return;
+  event.waitUntil(handleNotificationPush(data));
 });
 
-serwist.addEventListeners();
+async function handleNotificationPush(data: NotificationPushData): Promise<void> {
+  // Visible notification first (userVisibleOnly contract), collapsed per channel by tag: a
+  // burst edits one toast in place.
+  await self.registration.showNotification(pushTitles[data.type] ?? 'New notification', {
+    tag: `notif-${data.channelId}`,
+    data: { activityId: data.activityId },
+  });
+  await updateUnreadBadge();
+}
 
-async function updateBadge() {
+/** Recount hint: the push carries no number; the API recount is authoritative and cheap. */
+async function updateUnreadBadge(): Promise<void> {
   try {
-    const res = await fetch(`${__BACKEND_URL__}/unseen/counts`, { credentials: 'include' });
+    const res = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
     if (!res.ok) return;
-
-    const data: Record<string, Record<string, number>> = await res.json();
-
-    let total = 0;
-    for (const channelCounts of Object.values(data)) {
-      for (const count of Object.values(channelCounts)) {
-        total += count;
-      }
-    }
-
-    if (total > 0) {
-      (self.navigator as Navigator).setAppBadge(total);
-    } else {
-      (self.navigator as Navigator).clearAppBadge();
-    }
+    const { unreadCount }: { unreadCount: number } = await res.json();
+    if (unreadCount > 0) (self.navigator as Navigator).setAppBadge(unreadCount);
+    else (self.navigator as Navigator).clearAppBadge();
   } catch {
     // Network error or expired auth: leave the badge unchanged.
   }
 }
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(focusOrOpenApp());
+});
+
+async function focusOrOpenApp(): Promise<void> {
+  const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const existing = clientList[0];
+  if (existing) await existing.focus();
+  else await self.clients.openWindow('/');
+}
+
+// The push service rotated the subscription: re-subscribe with the same key and re-register, or
+// the device silently stops receiving until the user toggles push off and on again.
+self.addEventListener('pushsubscriptionchange', ((event: ExtendableEvent & { oldSubscription?: PushSubscription }) => {
+  event.waitUntil(resubscribe(event.oldSubscription));
+}) as EventListener);
+
+async function resubscribe(oldSubscription?: PushSubscription): Promise<void> {
+  try {
+    const applicationServerKey = oldSubscription?.options.applicationServerKey ?? undefined;
+    const subscription = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+    await fetch(`${__BACKEND_URL__}/push/subscriptions`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(subscription.toJSON()),
+    });
+  } catch {
+    // Re-subscribe failed (offline, permission revoked); the settings toggle recovers it.
+  }
+}
+
+serwist.addEventListeners();

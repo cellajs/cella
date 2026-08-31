@@ -40,6 +40,11 @@ export const env = createEnv({
     PORT: z.string().default(String(appConfig.devPorts.api)),
     UNSUBSCRIBE_SECRET: z.string(),
 
+    // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().optional(),
+
     COOKIE_SECRET: z.string(),
 
     // Operator-managed runtime secret. When the secret has no version the env var is omitted and this

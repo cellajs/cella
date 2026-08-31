@@ -130,6 +130,8 @@ export const config = {
 
   has: {
     pwa: true as boolean,
+    /** Web Push delivery for notifications; also needs VAPID_* backend env vars. */
+    push: false as boolean,
     selfRegistration: false as boolean,
     waitlist: false as boolean,
     uploadEnabled: true as boolean,

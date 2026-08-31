@@ -1297,6 +1297,41 @@ export const zUnsubscribeNotificationsQuery = z.object({
   token: z.string(),
 });
 
+/**
+ * VAPID public key
+ */
+export const zGetPushVapidResponse = z.object({
+  publicKey: z.string().nullable(),
+});
+
+export const zDeletePushSubscriptionQuery = z.object({
+  endpoint: z.url().max(2048),
+});
+
+/**
+ * Number of subscriptions removed
+ */
+export const zDeletePushSubscriptionResponse = z.object({
+  deleted: z.int().gte(0),
+});
+
+export const zCreatePushSubscriptionBody = z.object({
+  endpoint: z.url().max(2048),
+  expirationTime: z.number().nullish(),
+  keys: z.object({
+    p256dh: z.string().min(1).max(512),
+    auth: z.string().min(1).max(512),
+  }),
+});
+
+/**
+ * Stored subscription
+ */
+export const zCreatePushSubscriptionResponse = z.object({
+  id: z.string(),
+  endpoint: z.string(),
+});
+
 export const zGetUsersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),

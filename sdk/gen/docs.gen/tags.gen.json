@@ -54,6 +54,12 @@
     "kind": "module"
   },
   {
+    "name": "push",
+    "description": "Web Push delivery for the notification inbox: per-device subscriptions, VAPID key\n    exposure and the sender that turns fresh notification rows into pushes for offline\n    subscribers. Dormant unless has.push is on AND the deployment carries VAPID keys.",
+    "count": 3,
+    "kind": "module"
+  },
+  {
     "name": "requests",
     "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
     "count": 3,

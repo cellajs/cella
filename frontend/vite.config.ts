@@ -459,7 +459,7 @@ const viteConfig = {
         .filter((key) => process.env[key] !== undefined)
         .map((key) => [key, process.env[key]]),
     ),
-    // Injected into lib/sw.ts for periodic badge sync
+    // Injected into lib/sw.ts for the push badge recount and API path exclusions
     __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)
     __APP_VERSION__: JSON.stringify(gitSha),
@@ -471,7 +471,7 @@ const viteConfig = {
   },
 } satisfies UserConfig;
 
-// Setup PWA with custom service worker (injectManifest) for periodic badge sync
+// Setup PWA with custom service worker (injectManifest) for push delivery and app-badge updates
 viteConfig.plugins?.push(
   VitePWA({
     disable: !appConfig.has.pwa,

@@ -1,7 +1,11 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import {
+  type CreatePushSubscriptionData,
+  createPushSubscription,
+  deletePushSubscription,
   getNotificationPreferences,
   getNotifications,
+  getPushVapid,
   markNotificationsRead,
   type UpdateNotificationPreferencesData,
   updateNotificationPreferences,
@@ -65,3 +69,8 @@ export const useUpdateNotificationPreferences = () =>
     mutationFn: (body: UpdateNotificationPreferencesData['body']) => updateNotificationPreferences({ body }),
     onSuccess: (updated) => queryClient.setQueryData(notificationKeys.preferences, updated),
   });
+
+// Imperative push-subscription calls for use-push-subscription.ts; not queries, so no cache keys.
+export const fetchPushVapid = () => getPushVapid();
+export const registerPushSubscription = (body: CreatePushSubscriptionData['body']) => createPushSubscription({ body });
+export const removePushSubscription = (endpoint: string) => deletePushSubscription({ query: { endpoint } });

@@ -3626,6 +3626,157 @@ export type UnsubscribeNotificationsErrors = {
 
 export type UnsubscribeNotificationsError = UnsubscribeNotificationsErrors[keyof UnsubscribeNotificationsErrors];
 
+export type GetPushVapidData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/push/vapid';
+};
+
+export type GetPushVapidErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPushVapidError = GetPushVapidErrors[keyof GetPushVapidErrors];
+
+export type GetPushVapidResponses = {
+  /**
+   * VAPID public key
+   */
+  200: {
+    publicKey: string | null;
+  };
+};
+
+export type GetPushVapidResponse = GetPushVapidResponses[keyof GetPushVapidResponses];
+
+export type DeletePushSubscriptionData = {
+  body?: never;
+  path?: never;
+  query: {
+    endpoint: string;
+  };
+  url: '/push/subscriptions';
+};
+
+export type DeletePushSubscriptionErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeletePushSubscriptionError = DeletePushSubscriptionErrors[keyof DeletePushSubscriptionErrors];
+
+export type DeletePushSubscriptionResponses = {
+  /**
+   * Number of subscriptions removed
+   */
+  200: {
+    deleted: number;
+  };
+};
+
+export type DeletePushSubscriptionResponse = DeletePushSubscriptionResponses[keyof DeletePushSubscriptionResponses];
+
+export type CreatePushSubscriptionData = {
+  body: {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+  };
+  path?: never;
+  query?: never;
+  url: '/push/subscriptions';
+};
+
+export type CreatePushSubscriptionErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreatePushSubscriptionError = CreatePushSubscriptionErrors[keyof CreatePushSubscriptionErrors];
+
+export type CreatePushSubscriptionResponses = {
+  /**
+   * Stored subscription
+   */
+  200: {
+    id: string;
+    endpoint: string;
+  };
+};
+
+export type CreatePushSubscriptionResponse = CreatePushSubscriptionResponses[keyof CreatePushSubscriptionResponses];
+
 export type GetUsersData = {
   body?: never;
   path?: never;

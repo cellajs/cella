@@ -56,6 +56,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'seen_by',
     'notifications',
     'notification_preferences',
+    'push_subscriptions',
     'product_counters',
     'domains',
     'tenants',

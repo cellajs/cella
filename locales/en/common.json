@@ -335,6 +335,7 @@
   "notifications.digest_off": "Off",
   "notifications.digest_weekly": "Weekly",
   "notifications.mention_email": "Email me when I am mentioned",
+  "notifications.push": "Push notifications on this device",
   "notifications.text": "Choose which emails you receive. The inbox always fills.",
   "oauth": "OAuth providers",
   "oauth.text": "Sign in with an identity provider that you already use.",

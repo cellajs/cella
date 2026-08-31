@@ -2,6 +2,7 @@ import { hierarchy, type ProductEntityType } from 'shared';
 import { tenantReadById } from '#/db/tenant-context';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
+import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { checkAccessFanout } from '#/permissions';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
@@ -110,6 +111,16 @@ async function fanOutRow(
   );
 
   log.debug('Notifications created', { activityId: event.id, subjectId: row.id, recipientCount: allowed.length });
+
+  // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this
+  // costs one subscription lookup. Never awaited into the fan-out's failure path.
+  if (isPushSendConfigured()) {
+    const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
+    await sendNotificationPush(
+      allowed.map((recipient) => recipient.userId),
+      { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType },
+    );
+  }
 }
 
 /**

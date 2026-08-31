@@ -238,6 +238,12 @@
       "kind": "module"
     },
     {
+      "name": "push",
+      "description": "Web Push delivery for the notification inbox: per-device subscriptions, VAPID key\n    exposure and the sender that turns fresh notification rows into pushes for offline\n    subscribers. Dormant unless has.push is on AND the deployment carries VAPID keys.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
       "name": "requests",
       "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
       "parent": "cella",
@@ -7222,6 +7228,213 @@
                   "type": "string"
                 },
                 "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/push/vapid": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPushVapid",
+        "tags": ["push"],
+        "summary": "Get the Web Push application server key",
+        "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "VAPID public key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "publicKey": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["publicKey"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/push/subscriptions": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createPushSubscription",
+        "tags": ["push"],
+        "summary": "Register a Web Push subscription",
+        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "expirationTime": {
+                    "type": ["number", "null"]
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      },
+                      "auth": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      }
+                    },
+                    "required": ["p256dh", "auth"]
+                  }
+                },
+                "required": ["endpoint", "keys"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "endpoint": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "endpoint"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deletePushSubscription",
+        "tags": ["push"],
+        "summary": "Remove a Web Push subscription",
+        "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "format": "uri"
+            },
+            "required": true,
+            "name": "endpoint",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Number of subscriptions removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["deleted"]
+                }
               }
             }
           },
