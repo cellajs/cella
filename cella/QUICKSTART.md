@@ -1,16 +1,10 @@
 # Quickstart
 
-This document gets you from an empty folder to a running Cella app of your own, and points to the CLIs you will use along the way.
-
-### TL;DR
-
-Cella gives you a complete app repository rather than a framework dependency. The command below
-creates a project that you own and can keep updated from the Cella template. Run the setup commands,
-then customize the app's identity, data structure, and access rules in `shared/config/`.
+This document explains how you can use cella to build a modern web app.
 
 ## Create
 
-Create your own copy with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you
+Start a new project with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you
 pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella
 upstream remote configured for future syncs:
 
@@ -55,8 +49,6 @@ Offline and PWA behavior needs a production-style frontend build: the custom Wor
 pnpm offline
 ```
 
-The service worker registers on `localhost` without HTTPS. There is currently no `offline:watch` script — rebuild to pick up frontend changes.
-
 ## Customize & contribute
 
 1. Set your app identity and more in `shared/config/config.default.ts`.
@@ -72,7 +64,7 @@ Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cell
 
 ## Cella CLI
 
-Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations. It also covers auditing outdated/vulnerable packages, file stats, and (for template maintainers) syncing configured downstream repositories.
+Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations.
 
 See the [@cellajs/cli](https://github.com/cellajs/cella-cli#readme) package for full documentation, services, and configuration.
 

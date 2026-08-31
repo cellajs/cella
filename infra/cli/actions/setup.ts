@@ -621,7 +621,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   if (!synced) {
     console.warn(
       `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote).\n` +
-        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''} (see the secrets table in infra/README.md).`,
+        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''}.\n` +
+        '  The environment holds: SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_PROJECT_ID, SCW_ORGANIZATION_ID, PULUMI_CONFIG_PASSPHRASE.',
     );
   }
 

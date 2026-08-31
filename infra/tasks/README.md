@@ -4,20 +4,22 @@
 
 `sequenceCutover` re-points traffic to a newly provisioned VM generation. Every side effect (health probe, LB server-list writes) is passed in as a function on the plan, so the sequencer itself is pure and the unit tests assert exact step order without touching the network.
 
-Two strategies:
+Two strategies (`ReplacementStrategy`, declared per service in [config/services.config.ts](../config/services.config.ts)):
 
-- **lb-overlap**: health-gate the new generation, expand the LB backend to `[old, new]`, contract to `[new]`, then drain. With `healthAfterExpand`, the order is expand → health-gate → contract instead, for services where CI must probe health through the public LB rather than a direct new-generation address.
-- **exclusive**: health-gate only, no LB. Used by `cdc`, which holds a single Postgres replication slot that permits exactly one consumer, so the old generation must release the slot before the new one acquires it. The new generation only reports `/health` healthy once it holds the slot, so "destroy old, then poll new healthy" confirms the handoff; that ordering is orchestrated by the waved rollout (`deploy-rollout.ts` -> `activateService`) around its stack-update bookends.
+- **start-first**: health-gate the new generation, expand the LB backend to `[old, new]`, contract to `[new]`, then drain. With `healthAfterExpand`, the order is expand → health-gate → contract instead, for services where CI must probe health through the public LB rather than a direct new-generation address; the waved rollout always sets it ([rollout.ts](./rollout.ts) -> `activateService`), so the direct-probe order exists for callers of the sequencer, not for the deploy path.
+- **stop-first**: health-gate only, no LB overlap. Declared by `cdc`, which holds a single Postgres replication slot that permits exactly one consumer, so the old generation must release the slot before the new one acquires it. The new generation only reports `/health` healthy once it holds the slot, so "destroy old, then poll new healthy" confirms the handoff; that ordering is orchestrated by the waved rollout (`rollout.ts` -> `activateService`) around its stack-update bookends.
+
+A third case is derived, not declared: under `singleVM` a start-first host that folds a stop-first worker is **effectively** stop-first, because the provisioning update replaces the one VM in place. [rollout-plans.ts](./rollout-plans.ts) marks that plan `exclusive` (via `effectiveStrategy` in [lib/services.ts](../lib/services.ts)), which zeroes `drainSeconds` and empties `oldIps`: the cutover still runs and still health-gates, but it drives the LB pool straight to `[new]` with nothing to overlap with or drain. The service keeps its declared `start-first` strategy; only the plan changes.
 
 An unhealthy new generation aborts before any LB mutation. With `healthAfterExpand`, a health-gate failure after expansion leaves the LB in the overlap state for manual diagnosis rather than rolling back automatically.
 
 The live Scaleway effects (`createLbSetServers`, `createLbGetServers`) call the zoned Load Balancer API v1 (`PUT`/`GET /lb/v1/zones/{zone}/backends/{backendId}/servers`); they run only in a real deploy, unit tests inject fakes instead.
 
-The CLI entry point (the `isMain` guard at the bottom of `cutover.ts`) wires these effects and is invoked by `.github/workflows/deploy.yml`, which wraps it with the `pulumi up` create/destroy bookends:
+A deploy never shells out to this file: [deploy-run.ts](./deploy-run.ts) owns the pipeline and the waved rollout calls `sequenceCutover` in-process, with the `pulumi up` create/destroy bookends around it. The CLI entry point (the `isMain` guard at the bottom of `cutover.ts`) is the operator path for driving one cutover by hand:
 
 ```
 tsx infra/tasks/cutover.ts --service backend --sha <git-sha> \
-  --strategy lb-overlap --drain-policy requests \
+  --strategy start-first --drain-policy requests \
   --lb-zone fr-par-1 --backend-id <uuid> \
   --health-url https://api.example/health \
   --old-ips 10.0.0.4 --new-ips 10.0.0.9 --drain-seconds 10

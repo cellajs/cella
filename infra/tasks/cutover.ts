@@ -41,11 +41,11 @@ export interface CutoverPlan {
   // Injected effects
   /** Gate: resolves true once the new generation serves the expected SHA. Required. */
   healthGate: HealthGateFn;
-  /** lb-overlap: replace the LB backend server list atomically. Required for lb-overlap. */
+  /** start-first: replace the LB backend server list atomically. Required for start-first. */
   setServers?: SetServersFn;
-  /** lb-overlap: read the current LB server list for idempotent resume. */
+  /** start-first: read the current LB server list for idempotent resume. */
   getServers?: GetServersFn;
-  /** lb-overlap: run health/version polling after attaching the new generation to the LB. */
+  /** start-first: run health/version polling after attaching the new generation to the LB. */
   healthAfterExpand?: boolean;
 
   sleep?: (ms: number) => Promise<void>;
@@ -87,7 +87,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps };
   }
 
-  if (!plan.setServers) throw new Error(`cutover: lb-overlap service '${plan.service}' requires a setServers effect`);
+  if (!plan.setServers) throw new Error(`cutover: start-first service '${plan.service}' requires a setServers effect`);
   const setServers = plan.setServers;
 
   const sameIps = (actual: string[], expected: string[]) => {
@@ -266,7 +266,7 @@ if (isMain(import.meta.url)) {
     const zone = getFlag(argv, '--lb-zone');
     const backendId = getFlag(argv, '--backend-id');
     if (!zone || !backendId || !secretKey) {
-      process.stderr.write('lb-overlap requires: --lb-zone, --backend-id, SCW_SECRET_KEY\n');
+      process.stderr.write('start-first requires: --lb-zone, --backend-id, SCW_SECRET_KEY\n');
       process.exit(2);
     }
     setServers = createLbSetServers({ secretKey, zone, backendId });
