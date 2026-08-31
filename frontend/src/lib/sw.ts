@@ -5,15 +5,6 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: (PrecacheEntry | string)[];
 };
 
-// Periodic Background Sync API (Chromium-only), not yet in lib.dom.
-interface PeriodicSyncEvent extends ExtendableEvent {
-  readonly tag: string;
-}
-declare global {
-  interface ServiceWorkerGlobalScopeEventMap {
-    periodicsync: PeriodicSyncEvent;
-  }
-}
 declare const __BACKEND_URL__: string;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network.
@@ -54,13 +45,6 @@ const serwist = new Serwist({
       }),
     },
   ],
-});
-
-// Chromium-only (Chrome 80+, Edge), fired at browser-determined intervals.
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'unseen-badge-sync') {
-    event.waitUntil(updateBadge());
-  }
 });
 
 // English-only titles by design: the payload carries ids and a type, never localized content, so
@@ -147,27 +131,3 @@ async function resubscribe(oldSubscription?: PushSubscription): Promise<void> {
 }
 
 serwist.addEventListeners();
-
-async function updateBadge() {
-  try {
-    const res = await fetch(`${__BACKEND_URL__}/unseen/counts`, { credentials: 'include' });
-    if (!res.ok) return;
-
-    const data: Record<string, Record<string, number>> = await res.json();
-
-    let total = 0;
-    for (const channelCounts of Object.values(data)) {
-      for (const count of Object.values(channelCounts)) {
-        total += count;
-      }
-    }
-
-    if (total > 0) {
-      (self.navigator as Navigator).setAppBadge(total);
-    } else {
-      (self.navigator as Navigator).clearAppBadge();
-    }
-  } catch {
-    // Network error or expired auth: leave the badge unchanged.
-  }
-}

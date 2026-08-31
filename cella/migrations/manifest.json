@@ -607,6 +607,26 @@
     "pnpm check"
    ],
    "summary": "New dormant-by-default notifications module: per-recipient inbox (partitioned notifications table + notification_preferences), mention derivation, permission/mute-filtered fan-out, instant mention email, daily/weekly digest job. Product modules opt in via a notifications source declaration on defineBackendModule (mentionable/loadRows/writeMentions/resolveRecipients/resolveContextId/loadPreview/loadContextNames/resolveEmailLink). Apps run pnpm generate for the tables, add the bell to their pinned nav-config, and (if they forked notifications before) reconcile onto the cella module with item_id renamed to context_id."
+  },
+  {
+   "id": "20260831T1533-web-push",
+   "version": "next",
+   "title": "Web Push for notifications; Periodic Background Sync retired",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "New push module: push_subscriptions table (unique-endpoint upsert, grants only, no CDC), /push subscribe/unsubscribe/VAPID routes, sender delivering {t:'notif', activityId, channelId, type} to offline subscribers of fresh notification rows (online users subtracted via their SSE user channel; 404/410 prunes, 429 backs off). Settings card gains a per-device toggle; SW gains push/notificationclick/pushsubscriptionchange and loses the periodicsync badge path. Double-gated: has.push config flag AND VAPID_* env keys. Apps run pnpm generate, set keys + flag to enable, and verify on desktop Chrome plus an installed iOS PWA."
   }
  ]
 }
