@@ -14,6 +14,7 @@ import '#/modules/memberships/memberships-module';
 import '#/modules/metrics/metrics-module';
 import '#/modules/notification/notification-module';
 import '#/modules/organization/organization-module';
+import '#/modules/push/push-module';
 import '#/modules/requests/requests-module';
 import '#/modules/seen/seen-module';
 import '#/modules/system/system-module';

@@ -29,6 +29,9 @@ import type {
   CreatePasskeyData,
   CreatePasskeyErrors,
   CreatePasskeyResponses,
+  CreatePushSubscriptionData,
+  CreatePushSubscriptionErrors,
+  CreatePushSubscriptionResponses,
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
@@ -59,6 +62,9 @@ import type {
   DeletePasskeyData,
   DeletePasskeyErrors,
   DeletePasskeyResponses,
+  DeletePushSubscriptionData,
+  DeletePushSubscriptionErrors,
+  DeletePushSubscriptionResponses,
   DeleteRequestsData,
   DeleteRequestsErrors,
   DeleteRequestsResponses,
@@ -128,6 +134,9 @@ import type {
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
+  GetPushVapidData,
+  GetPushVapidErrors,
+  GetPushVapidResponses,
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
@@ -266,6 +275,8 @@ import {
   zCreateOrganizationsResponse,
   zCreatePasskeyBody,
   zCreatePasskeyResponse,
+  zCreatePushSubscriptionBody,
+  zCreatePushSubscriptionResponse,
   zCreateRequestBody,
   zCreateRequestResponse,
   zCreateTotpBody,
@@ -288,6 +299,8 @@ import {
   zDeleteOrganizationsResponse,
   zDeletePasskeyPath,
   zDeletePasskeyResponse,
+  zDeletePushSubscriptionQuery,
+  zDeletePushSubscriptionResponse,
   zDeleteRequestsBody,
   zDeleteRequestsResponse,
   zDeleteTotpResponse,
@@ -328,6 +341,7 @@ import {
   zGetPresignedUrlsPath,
   zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
+  zGetPushVapidResponse,
   zGetRequestsQuery,
   zGetRequestsResponse,
   zGetTenantsQuery,
@@ -2586,6 +2600,124 @@ export const unsubscribeNotifications = <ThrowOnError extends boolean = true>(
     responseStyle: 'data',
     url: '/notifications/unsubscribe',
     ...options,
+  });
+
+/**
+ * Get the Web Push application server key
+ *
+ * Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.
+ *
+ * **GET /push/vapid** ·· [getPushVapid](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/GET/push/vapid) ·· _push_
+ *
+ * @param {getPushVapidData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getPushVapid = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPushVapidData, ThrowOnError>,
+): RequestResult<GetPushVapidResponses, GetPushVapidErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPushVapidResponses, GetPushVapidErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetPushVapidResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/push/vapid',
+    ...options,
+  });
+
+/**
+ * Remove a Web Push subscription
+ *
+ * Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.
+ *
+ * **DELETE /push/subscriptions** ·· [deletePushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/DELETE/push/subscriptions) ·· _push_
+ *
+ * @param {deletePushSubscriptionData} options
+ * @param {string} options.query.endpoint - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const deletePushSubscription = <ThrowOnError extends boolean = true>(
+  options: Options<DeletePushSubscriptionData, ThrowOnError>,
+): RequestResult<DeletePushSubscriptionResponses, DeletePushSubscriptionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<
+    DeletePushSubscriptionResponses,
+    DeletePushSubscriptionErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zDeletePushSubscriptionQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeletePushSubscriptionResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/push/subscriptions',
+    ...options,
+  });
+
+/**
+ * Register a Web Push subscription
+ *
+ * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.
+ *
+ * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push_
+ *
+ * @param {createPushSubscriptionData} options
+ * @param {string=} options.body.endpoint - `string` (optional)
+ * @param {number | null=} options.body.expirationTime - `number | null` (optional)
+ * @param {object} options.body.keys - `object`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const createPushSubscription = <ThrowOnError extends boolean = true>(
+  options: Options<CreatePushSubscriptionData, ThrowOnError>,
+): RequestResult<CreatePushSubscriptionResponses, CreatePushSubscriptionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreatePushSubscriptionResponses, CreatePushSubscriptionErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreatePushSubscriptionBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreatePushSubscriptionResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/push/subscriptions',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });
 
 /**

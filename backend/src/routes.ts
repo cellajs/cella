@@ -14,6 +14,7 @@ import { membershipHandlers } from '#/modules/memberships/memberships-handlers';
 import { metricHandlers } from '#/modules/metrics/metrics-handlers';
 import { notificationHandlers } from '#/modules/notification/notification-handlers';
 import { organizationHandlers } from '#/modules/organization/organization-handlers';
+import { pushHandlers } from '#/modules/push/push-handlers';
 import { requestHandlers } from '#/modules/requests/requests-handlers';
 import { seenHandlers, unseenHandlers } from '#/modules/seen/seen-handlers';
 import { systemHandlers } from '#/modules/system/system-handlers';
@@ -41,6 +42,7 @@ baseApp.route('/tenants/:tenantId/domains', domainHandlers);
 baseApp.route('/requests', requestHandlers);
 baseApp.route('/metrics', metricHandlers);
 baseApp.route('/notifications', notificationHandlers);
+baseApp.route('/push', pushHandlers);
 baseApp.route('/users', userHandlers);
 
 baseApp.route('/yjs', yjsHandlers);

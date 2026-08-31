@@ -27,6 +27,8 @@ export interface RequestLimitsConfig {
 
 export interface HasFlagsConfig {
   pwa: boolean;
+  /** Web Push delivery for notifications; sending also needs VAPID_* backend env vars. */
+  push: boolean;
   selfRegistration: boolean;
   waitlist: boolean;
   uploadEnabled: boolean;
