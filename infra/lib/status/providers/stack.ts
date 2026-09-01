@@ -1,4 +1,6 @@
-import { check, deployAction, runSetup } from '../check';
+import { principalNames } from '../../scaleway/principals';
+import { findApplicationIdByName, resolveOrganizationId } from '../../scaleway/scaleway-iam';
+import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
 
 /** Stack-file + compute-deferral checks; every fact lives on the session. */
@@ -31,13 +33,32 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
   },
 };
 
-/** Scaleway project + admin-app identity checks; facts live on the session. */
-export const identityProvider: StatusProvider<Record<string, never>> = {
+/** Resolved admin application id, or `null` when the app does not exist. `undefined` facts mean the probe could not run. */
+export type IdentityFacts = { adminAppId: string | null };
+
+/**
+ * Scaleway project + admin-app identity checks. The project id is a session fact; the admin application is resolved from
+ * IAM by its canonical per-mode name, the same lookup `pulumi up` does, so status reports what the next up will actually see.
+ */
+export const identityProvider: StatusProvider<IdentityFacts> = {
   domain: 'identity',
-  async gather() {
-    return {};
+  async gather(session) {
+    if (session.stackState !== 'bootstrapped') return undefined;
+    if (!session.credentialsAvailable || !session.secretKey || !session.projectId) return undefined;
+    try {
+      // `SCW_ORGANIZATION_ID` is the name the env files and GitHub Environment use; accept it before falling back to the
+      // Account API, which no engine principal is granted (an unresolvable org degrades the check to unknown, never an error).
+      const organizationId =
+        process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim() ||
+        process.env.SCW_ORGANIZATION_ID?.trim() ||
+        (await resolveOrganizationId(session.secretKey, session.projectId));
+      const name = principalNames(session.appConfig.slug, session.mode).admin;
+      return { adminAppId: (await findApplicationIdByName(session.secretKey, organizationId, name)) ?? null };
+    } catch {
+      return undefined;
+    }
   },
-  evaluate(_facts, session) {
+  evaluate(facts, session) {
     const project = check('identity.project', 'Scaleway project');
     const checks = [
       session.projectId
@@ -45,11 +66,16 @@ export const identityProvider: StatusProvider<Record<string, never>> = {
         : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
     ];
     if (session.stackState === 'bootstrapped') {
-      const admin = check('identity.adminApp', 'Admin app');
+      const admin = check('identity.adminApp', 'Admin app', 'scaleway');
       checks.push(
-        session.adminAppId
-          ? admin.ok(session.adminAppId)
-          : admin.warn('SCW_ADMIN_APPLICATION_ID not set; admin bucket access needs it', runSetup),
+        probed(admin, session.credentialsAvailable, facts, 'could not read IAM applications', ({ adminAppId }) =>
+          adminAppId
+            ? admin.ok(adminAppId)
+            : admin.warn(
+                `IAM application '${principalNames(session.appConfig.slug, session.mode).admin}' not found; admin bucket access needs it`,
+                runSetup,
+              ),
+        ),
       );
     }
     return checks;

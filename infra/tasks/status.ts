@@ -106,7 +106,6 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     stackState: ctx.stackState,
     stackYaml: ctx.stackYaml,
     projectId: ctx.projectId ?? resolveProjectId(),
-    adminAppId: process.env.SCW_ADMIN_APPLICATION_ID?.trim() || undefined,
     credentialsAvailable,
     accessKey,
     secretKey,

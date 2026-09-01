@@ -171,10 +171,10 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
 /**
  * Admin IAM application, created on fresh/rotate (the bootstrap key holds IAMManager). It grants Object Storage full plus
  * read-only infra rights for `pulumi preview --refresh`, teardown, and bucket recovery, never IAM write. Its key lives in
- * Secret Manager and is never printed or stored as a GitHub secret. Idempotent: reuses the app and refreshes SCW_ADMIN_APPLICATION_ID in backend/.env.
+ * Secret Manager and is never printed or stored as a GitHub secret. Idempotent: reuses the app.
+ * The id is never persisted: every consumer resolves it from IAM by its canonical name.
  */
 async function ensureAdminApp(ctx: SetupContext): Promise<string> {
-  let adminAppId = process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '';
   try {
     const admin = await setupAdminApp({
       callerSecretKey: ctx.secretKey,
@@ -183,13 +183,11 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
       mode: ctx.context.environment,
       region: ctx.appConfig.s3.region,
     });
-    adminAppId = admin.applicationId;
-    writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_ADMIN_APPLICATION_ID', adminAppId);
-    process.env.SCW_ADMIN_APPLICATION_ID = adminAppId;
+    return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
+    return '';
   }
-  return adminAppId;
 }
 
 function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string }): void {
@@ -209,7 +207,7 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
   }
   if (adminAppId) {
     console.info(
-      `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)} ${pc.dim('(SCW_ADMIN_APPLICATION_ID, written to backend/.env)')}\n` +
+      `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)}\n` +
         `    ${pc.dim('Its key pair is stored in Secret Manager (admin-key): retrieve it with a bootstrap key for day-2 pulumi/teardown runs.')}`,
     );
   }
@@ -591,7 +589,8 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     await warnOnCiPolicyDrift(ctx);
   }
 
-  const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : (process.env.SCW_ADMIN_APPLICATION_ID?.trim() ?? '');
+  // Only a fresh/rotate run touches the admin app; a Resume leaves it alone and reports nothing about it (`infra status` resolves it from IAM).
+  const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : '';
 
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey;
