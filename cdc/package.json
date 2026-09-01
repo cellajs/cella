@@ -41,20 +41,20 @@
   },
   "devDependencies": {
     "@hono/node-server": "^2.1.1",
-    "@types/node": "26.2.0",
+    "@types/node": "26.4.0",
     "@types/pg-format": "^1.0.5",
     "@types/ws": "^8.18.1",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "cross-env": "^10.1.0",
     "drizzle-orm": "1.0.0-rc.3",
-    "hono": "^4.13.4",
+    "hono": "^4.13.5",
     "sdk": "workspace:*",
     "shared": "workspace:*",
     "tsup": "^8.5.1",
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "ws": "^8.21.3",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   }
 }

@@ -11,8 +11,8 @@ if (testMode === 'core') excludePatterns.push('tests/integration/**');
 export default defineConfig({
   resolve: {
     alias: {
-      '#': path.resolve(__dirname, './src'),
-      '#json': path.resolve(__dirname, '../json'),
+      '#': path.resolve(import.meta.dirname, './src'),
+      '#json': path.resolve(import.meta.dirname, '../json'),
     },
   },
   logLevel: 'error',

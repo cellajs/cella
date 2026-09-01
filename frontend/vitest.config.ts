@@ -2,10 +2,6 @@ import { defineConfig } from 'vitest/config'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { playwright } from '@vitest/browser-playwright'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   // vitest does not load vite.config.ts, so build-time literals are repeated here.
@@ -16,8 +12,8 @@ export default defineConfig({
   // from the root vitest config (which flattens nested `projects`).
   resolve: {
     alias: {
-      '~': path.resolve(dirname, './src'),
-      '#json': path.resolve(dirname, '../json'),
+      '~': path.resolve(import.meta.dirname, './src'),
+      '#json': path.resolve(import.meta.dirname, '../json'),
     },
   },
   test: {
@@ -52,8 +48,8 @@ export default defineConfig({
         },
         resolve: {
           alias: {
-            '~': path.resolve(dirname, './src'),
-            '#json': path.resolve(dirname, '../json'),
+            '~': path.resolve(import.meta.dirname, './src'),
+            '#json': path.resolve(import.meta.dirname, '../json'),
           },
         },
       },
@@ -62,7 +58,7 @@ export default defineConfig({
         extends: true,
         plugins: [
           storybookTest({
-            configDir: path.join(dirname, '.storybook'),
+            configDir: path.join(import.meta.dirname, '.storybook'),
             storybookScript: 'pnpm storybook --ci',
           }),
         ],
