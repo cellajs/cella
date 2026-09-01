@@ -7,7 +7,7 @@ import { planForService } from './rollout-plans';
 setEngineConfig(fakeConfig());
 
 describe('planForService', () => {
-  it('builds an lb-overlap plan with normalized health URL and internal-pool repoint', () => {
+  it('builds a start-first plan with normalized health URL and internal-pool repoint', () => {
     const plan = planForService('backend', 'https://www.cellajs.com/api');
     expect(plan).toMatchObject({
       service: 'backend',
@@ -38,7 +38,7 @@ describe('planForService', () => {
     }
   });
 
-  it('requires a health URL for lb-overlap services', () => {
+  it('requires a health URL for start-first services', () => {
     expect(() => planForService('frontend')).toThrow(/health URL/);
   });
 

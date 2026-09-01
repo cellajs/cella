@@ -188,7 +188,7 @@ describe('sequenceCutover: start-first', () => {
   });
 });
 
-describe('sequenceCutover: exclusive (cdc)', () => {
+describe('sequenceCutover: stop-first (cdc)', () => {
   it('never touches an LB backend and succeeds once the new generation is healthy', async () => {
     const lb = recordingSetServers();
     const order: string[] = [];
