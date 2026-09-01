@@ -11,7 +11,7 @@ if (testMode === 'core') excludePatterns.push('src/tests/integration/**');
 export default defineProject({
   resolve: {
     alias: {
-      '#': path.resolve(__dirname, '../backend/src'),
+      '#': path.resolve(import.meta.dirname, '../backend/src'),
     },
   },
   logLevel: 'error',
