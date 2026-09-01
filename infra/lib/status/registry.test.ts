@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GithubFacts } from './providers/github';
 import type { LiveServiceFact } from './providers/live';
+import type { IdentityFacts } from './providers/stack';
 import type { StoreValidationFact } from './providers/stores';
 import type { ToolingFacts } from './providers/tooling';
 import { assembleReport, statusProviders } from './registry';
@@ -14,6 +15,7 @@ import type { Check, ProbeSession, ScalewayFacts } from './types';
 
 interface Facts {
   tooling?: ToolingFacts;
+  identity?: IdentityFacts;
   github?: GithubFacts;
   state?: ScalewayFacts;
   secrets?: string[];
@@ -26,6 +28,7 @@ interface Facts {
 function base(overrides: Partial<Facts> = {}): Facts {
   return {
     tooling: { pulumi: true, dockerBuildx: true, gh: true },
+    identity: { adminAppId: 'app-1' },
     github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
     state: {
       stateBucketExists: true,
@@ -62,7 +65,6 @@ function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
     appConfig: {} as ProbeSession['appConfig'],
     stackState: 'bootstrapped',
     projectId: 'proj-1',
-    adminAppId: 'app-1',
     credentialsAvailable: true,
     hasDomain: true,
     scalewayFacts: async () => ({}),
@@ -75,7 +77,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
   const factsByDomain: Record<string, unknown> = {
     tooling: facts.tooling,
     config: {},
-    identity: {},
+    identity: facts.identity,
     github: facts.github,
     state: facts.state,
     secrets: facts.secrets,
@@ -130,14 +132,39 @@ describe('report envelope (public contract)', () => {
 
 describe('credential degradation', () => {
   it('scaleway-tier checks are unknown (not error) without credentials', () => {
-    const report = reportFor(base({ state: {}, secrets: undefined }), { credentialsAvailable: false });
-    for (const id of ['state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
+    const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), {
+      credentialsAvailable: false,
+    });
+    for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
       expect(check?.credential).toBe('scaleway');
     }
     // Public HTTP checks still evaluate, so nothing scaleway drives nextAction.
     expect(report.nextAction).toBeUndefined();
+  });
+});
+
+describe('admin app identity', () => {
+  it('reports the id resolved from IAM by name', () => {
+    expect(find(reportFor(base()).checks, 'identity.adminApp')?.status).toBe('ok');
+  });
+
+  it('warns and points at setup when the application does not exist', () => {
+    const check = find(reportFor(base({ identity: { adminAppId: null } })).checks, 'identity.adminApp');
+    expect(check?.status).toBe('warn');
+    expect(check?.detail).toContain('not found');
+    expect(check?.nextAction?.command).toBe('pnpm infra');
+  });
+
+  it('is unknown, not a warning, when the IAM probe could not run', () => {
+    const check = find(reportFor(base({ identity: undefined })).checks, 'identity.adminApp');
+    expect(check?.status).toBe('unknown');
+  });
+
+  it('is absent on a stack that has not been bootstrapped', () => {
+    const report = reportFor(base({ identity: undefined }), { stackState: 'fresh' });
+    expect(find(report.checks, 'identity.adminApp')).toBeUndefined();
   });
 });
 

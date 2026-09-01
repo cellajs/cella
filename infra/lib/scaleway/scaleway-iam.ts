@@ -215,6 +215,20 @@ export async function revokeApiKey(callerSecretKey: string, accessKey: string): 
   await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`);
 }
 
+/** Find an IAM application id by exact name within an organization, or undefined. Requires IAMReadOnly; lets a caller resolve a principal without a persisted id. */
+export async function findApplicationIdByName(
+  secretKey: string,
+  organizationId: string,
+  name: string,
+): Promise<string | undefined> {
+  const { applications = [] } = await scwFetch<{ applications?: ScwApp[] }>(
+    { secretKey },
+    'GET',
+    `${IAM_BASE}/applications?organization_id=${organizationId}&name=${encodeURIComponent(name)}&page_size=20`,
+  );
+  return applications.find((app) => app.name === name)?.id;
+}
+
 /** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
 export async function findPolicyIdByName(
   secretKey: string,

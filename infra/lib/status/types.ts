@@ -74,7 +74,6 @@ export interface ProbeSession {
   stackState: StackState;
   stackYaml?: string;
   projectId?: string;
-  adminAppId?: string;
   /** True when SCW_ or AWS_ credentials are present for `scaleway`-tier checks. */
   credentialsAvailable: boolean;
   accessKey?: string;

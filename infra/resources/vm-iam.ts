@@ -47,11 +47,9 @@ export const ciDeployApplicationId = requirePrincipalId(
   `CI deploy ('${names.ciDeploy}')`,
 );
 
-/** Admin application id, the standing human principal. Optional: when absent its bucket-policy statements are dropped with a warning. Falls back to SCW_ADMIN_APPLICATION_ID. */
+/** Admin application id, the standing human principal. Optional: when absent its bucket-policy statements are dropped with a warning. */
 export const adminApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.admin).apply((id) => {
-  const fromEnv = process.env.SCW_ADMIN_APPLICATION_ID?.trim() || undefined;
   if (id) return id;
-  if (fromEnv) return fromEnv;
   pulumi.log.warn(
     `Admin IAM application '${names.admin}' not found: admin bucket-policy statements are dropped this update. ` +
       'Run the infra CLI ("Rotate keys") to create it; until then bucket access is CI-only.',
