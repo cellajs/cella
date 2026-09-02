@@ -248,7 +248,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
         FROM ${src} h, unnest(h.${ref.hostColumn}) AS target_id
         WHERE TRUE${livePredicate(hostType, 'h')}${publishedPredicate(hostType, 'h')}
         GROUP BY target_id
-      ) u ON u.target_id = e.id::text
+      -- Host id arrays may be text[] or uuid[], so both sides compare as text.
+      ) u ON u.target_id::text = e.id::text
     `,
     );
   }

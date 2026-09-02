@@ -107,7 +107,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     },
     {
       key: 'label',
-      name: '',
+      name: t('c:resource_name', { resource: t('c:tab') }),
       minWidth: 160,
       renderCell: ({ row }) => {
         if (!row.description) return <span className="truncate text-sm">{row.name}</span>;

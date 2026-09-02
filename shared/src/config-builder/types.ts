@@ -156,6 +156,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
+  memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   defaultRestrictions: {
     quotas: Record<string, number>;
     rateLimits: { apiPointsPerHour: number };

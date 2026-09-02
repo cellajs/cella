@@ -48,8 +48,14 @@ export interface ModuleNotifications {
   loadPreview?: (tx: DbOrTx, subjectId: string) => Promise<{ title: string; body: string } | null>;
   /** Display names for context ids in digest lines; read inside a tenant transaction. */
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
-  /** Absolute deep link for one notification's email; defaults to the app root. */
-  resolveEmailLink?: (notification: { subjectId: string; contextId: string | null }) => string;
+  /** Absolute deep link for one notification's email; defaults to the app root. A tenant-scoped permalink needs the tenant and channel ids the pending row carries. */
+  resolveEmailLink?: (notification: {
+    subjectId: string;
+    contextId: string | null;
+    tenantId: string;
+    channelId: string;
+    entityType: string;
+  }) => string;
 }
 
 /** Shared module metadata plus backend-only capabilities, indexed by subsystems via {@link onBackendModuleRegister}. */

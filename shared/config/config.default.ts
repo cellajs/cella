@@ -29,6 +29,12 @@ export const config = {
    */
   attachmentUploadTargets: ['organization'] as const,
 
+  /**
+   * Product types with per-member stats in the members table (`include=counts` on GET /members):
+   * a count and a last-activity stamp per type; the first is the "last posted" sort key.
+   */
+  memberStatProductTypes: ['attachment'] as const,
+
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 

@@ -45,6 +45,8 @@
   "paste_emails": "Plak e-mailadressen",
   "paste_emails.placeholder": "Plak tekst met e-mailadressen...",
   "paste_emails.text": "E-mailadressen worden automatisch herkend; één rol geldt voor de hele batch.",
+  "resource_name": "{{resource}} naam",
+  "tab": "Tab",
   "time_mini.hours": "{{count}}u",
   "time_mini.minutes": "{{count}}m",
   "time_mini.now": "Zojuist",

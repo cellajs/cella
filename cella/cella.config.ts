@@ -46,6 +46,7 @@ export default defineConfig({
       'backend/src/modules/attachment/helpers/attachment-placement.ts',
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
+      'shared/app-exports.ts',
       'frontend/src/query/extra-local-user-stores.ts',
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
