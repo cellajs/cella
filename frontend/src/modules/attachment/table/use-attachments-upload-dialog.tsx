@@ -12,8 +12,8 @@ const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.m
 export const useAttachmentsUploadDialog = (
   tenantId: string,
   organizationId: string,
-  /** Placement seam: home channel id column for uploads into a sub-organization channel. */
-  placement?: Record<string, string>,
+  /** Placement seam: home channel id column and `publicAt` default for uploads into a channel. */
+  placement?: Record<string, string | null>,
 ) => {
   const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
 

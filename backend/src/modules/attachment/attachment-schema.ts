@@ -64,6 +64,8 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     publicBucket: true,
     groupId: true,
     convertedContentType: true,
+    // Row-local public read: client-sent, the template client stamps the home channel's value.
+    publicAt: true,
   })
   .extend({
     id: validUuidSchema,
