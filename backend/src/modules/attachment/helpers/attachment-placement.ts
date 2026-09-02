@@ -1,8 +1,9 @@
-import { hierarchy } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
 import type { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**
  * Create-body placement fields, spread into the create-item schema: the deepest home id only.
@@ -42,22 +43,36 @@ export const resolveAttachmentPlacement = async (
 ): Promise<ResolvedAttachmentPlacement> => ({});
 
 /**
- * Column holding a row's home channel id: list reads compile the caller's grant scope against it.
- * Org-homed rows reuse the organization column; an app with one strict home names that column.
+ * The channel type attachments home at: the deepest strict ancestor, else the root. Apps with
+ * nullable placement (rows home at any depth) keep the root here and read org-wide.
  */
-export const attachmentHomeColumnKey = 'organizationId' satisfies keyof typeof attachmentsTable.$inferSelect;
+const homeChannelType =
+  hierarchy
+    .getOrderedAncestors('attachment')
+    .find((type) => !hierarchy.getNullableAncestors('attachment').includes(type)) ?? hierarchy.rootChannelType;
+
+/** Column holding a row's home channel id: list reads compile the caller's grant scope against it. */
+export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
+  homeChannelType
+] as keyof typeof attachmentsTable.$inferSelect;
 
 /**
  * Home channel a list or delta read narrows to, from the `channelId` query param; undefined reads
- * org-wide. Apps validate the id as one of their home channels (requiring read access on it).
- * Org-homed default: the organization is the only home, so any other id is unknown.
+ * org-wide. The organization itself (or no id) is org-wide; any other id must be a readable channel
+ * of the home type. With the root as home there is no narrower channel, so other ids are unknown.
  */
 export const resolveAttachmentHomeScope = async (
   ctx: AuthContext,
   channelId: string | undefined,
 ): Promise<string | undefined> => {
   if (!channelId || channelId === ctx.var.organization.id) return undefined;
-  throw new AppError(404, 'not_found', 'warn', { entityType: hierarchy.rootChannelType });
+  // Widened so a single-channel hierarchy does not narrow `homeChannelType` to never below.
+  const rootChannelType: string = hierarchy.rootChannelType;
+  if (homeChannelType === rootChannelType) {
+    throw new AppError(404, 'not_found', 'warn', { entityType: hierarchy.rootChannelType });
+  }
+  const { entity } = await getValidChannel(ctx, channelId, homeChannelType, 'read');
+  return entity.id;
 };
 
 /** One seed batch: the organization it belongs to and the ancestor columns its rows carry. */
