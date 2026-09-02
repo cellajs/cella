@@ -16,6 +16,7 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
 import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
+import { toBatches } from './seed-volume';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)
 setMockContext('script');
@@ -98,33 +99,32 @@ export const organizationsSeed = async () => {
   const adminMemberships: InsertMembershipModel[] = [];
 
   for (const organization of organizations) {
-    // Make many users → Insert into the database
+    // Make many users → Insert into the database, batched: thousands of ~20-column rows overrun the
+    // Postgres bind-parameter limit in one statement
     const userRecords = mockMany(() => mockUser(), MEMBERS_COUNT);
-    const users = await db
-      .insert(usersTable)
-      .values(userRecords)
-      .returning()
-      .onConflictDoNothing();
+    const users: UserModel[] = [];
+    for (const batch of toBatches(userRecords)) {
+      users.push(...(await db.insert(usersTable).values(batch).returning().onConflictDoNothing()));
+    }
 
     // Make unsubscribeToken row for each user, then insert into the database
     const unsubscribeTokenRecords = await Promise.all(users.map(user => mockUnsubscribeToken(user)));
-    await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecords).onConflictDoNothing();
-
+    for (const batch of toBatches(unsubscribeTokenRecords)) {
+      await db.insert(unsubscribeTokensTable).values(batch).onConflictDoNothing();
+    }
 
     // Make email row for each user, then insert into the database
     const emailRecords = users.map(mockEmail);
-    await db
-      .insert(emailsTable)
-      .values(emailRecords)
-      .onConflictDoNothing();
+    for (const batch of toBatches(emailRecords)) {
+      await db.insert(emailsTable).values(batch).onConflictDoNothing();
+    }
 
     const membershipRecords = users.map(user => mockChannelMembership('organization', organization, user));
 
     // Insert memberships into the database
-    await db
-      .insert(membershipsTable)
-      .values(membershipRecords)
-      .onConflictDoNothing();
+    for (const batch of toBatches(membershipRecords)) {
+      await db.insert(membershipsTable).values(batch).onConflictDoNothing();
+    }
 
     // Add admin membership if the organization is in an even position
     addAdminMembership(
@@ -163,8 +163,10 @@ const addAdminMembership = (
   // Make admin membership
   const membership = mockChannelMembership('organization', organization, adminUser);
 
-  // Adjust the admin membership
+  // Adjust the admin membership: an org admin wherever the membership is live, so the seed admin can
+  // administer every organization in their active menu; archived ones keep a random role
   membership.archived = faker.datatype.boolean(0.5);
+  if (!membership.archived) membership.role = 'admin';
   membership.displayOrder = 1 + adminMemberships.length * 10;
 
   // Add admin membership to the list
