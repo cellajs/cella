@@ -9,67 +9,55 @@ up the applicable database protections, live updates, generated API types, and o
 There is no separate integration layer to write for each entity. Copy from `attachment` for content
 or `organization` for a container throughout.
 
-First decide which kind you are adding
-(see [Architecture](./ARCHITECTURE.md#entity-hierarchy-model)):
-
-- **Channel entity** (like `organization`): a container that owns memberships and roles. The
-  application checks access, and changes refresh through normal API queries.
-- **Product entity** (like `attachment`): user-generated content without its own memberships. It
-  gets tenant-protected reads plus full offline and live-update support.
+Pick the kind ([Architecture](./ARCHITECTURE.md#entity-hierarchy-model)): a **channel entity** (`organization`) owns memberships and roles; a **product entity** (`attachment`) is user content with tenant-protected reads plus offline and live-update support.
 
 ## Product entity
 
 ### Config
 
-- [hierarchy-config.ts](../shared/config/hierarchy-config.ts): add `.product('<name>', { parent: '<channel>' })` to the chain. Parents must be declared earlier in the chain; optional `relatedChannels` for non-ancestor refs.
-- [config.default.ts](../shared/config/config.default.ts): taxonomy arrays and id columns derive from the hierarchy, so nothing is required. Add opt-ins only if relevant: `seenTrackedProductTypes` (unseen badges), `productEmbeddings` (entity is embedded as an id-array in another entity), `defaultRestrictions.quotas`, `requestLimits`.
-- [permissions-config.ts](../shared/config/permissions-config.ts): add a `case '<name>'` with CRUD cells per role and channel. Cells: `1` allow, `0` deny, `'own'` creator-only; optionally `publicRead()`. See [Permissions](./PERMISSIONS.md).
-  - `publicRead` never cascades from a parent; if you need that, propagate `publicAt` down as data.
+- [hierarchy-config.ts](../shared/config/hierarchy-config.ts): add `.product('<name>', { parent: '<channel>' })` after its parent; optional `relatedChannels` for non-ancestor refs.
+- [config.default.ts](../shared/config/config.default.ts): nothing required; opt-ins: `seenTrackedProductTypes` (unseen badges), `productEmbeddings` (embedded as an id-array in another entity; drives CDC ref-counting and cache patching), `defaultRestrictions.quotas`, `requestLimits`.
+- [permissions-config.ts](../shared/config/permissions-config.ts): add `case '<name>'` with CRUD cells per role and channel (`1` allow, `0` deny, `'own'` creator-only, optionally `publicRead()`, which never cascades from a parent) ([Permissions](./PERMISSIONS.md)).
 
 ### Backend
 
-- `backend/src/modules/<name>/<name>-db.ts`: Drizzle table, copy [attachment-db.ts](../backend/src/modules/attachment/attachment-db.ts). Spread `productColumns('<name>')` and `channelRelationColumns('<name>')`; never hand-write those columns. Keep the `(organizationId, seq)` index (delta sync, test-enforced), the tenant composite FK, and `tenantSelectPolicy` + `writeThroughPolicies`. See [Multi-tenancy](./MULTI_TENANCY.md#adding-tables) before adding any non-entity table.
-- [channel-tables.ts](../backend/src/db/channel-tables.ts) or [product-tables.ts](../backend/src/db/product-tables.ts): add a lazy getter for the table. `tables.ts` derives `entityTables` from both, and this one registration drives RLS grants, the CDC publication, immutability triggers and activity tracking.
-- `<name>-schema.ts`: Zod schemas plus `evolutionContract.product('<name>', { createItem, updateOps })`, copy [attachment-schema.ts](../backend/src/modules/attachment/attachment-schema.ts). CI `lens:check` fails without the contract. See [Schema evolution](./SCHEMA_EVOLUTION.md).
-- Remaining module files, copy the [attachment module](../backend/src/modules/attachment/): `<name>-routes.ts` (`createXRoute` with `xGuard: [authGuard, tenantGuard, orgGuard]`), `<name>-handlers.ts`, `<name>-module.ts` (`defineBackendModule`, with the route mount), `<name>-queries.ts`, `operations/*.ts`, `<name>-mocks.ts`.
-  - Wrap reads in `tenantRead()` and writes in `tenantContext()` from [tenant-context.ts](../backend/src/db/tenant-context.ts); permission checks via `canCreateEntity` / `getValidProduct` / `resolveCollectionReadFilter`.
-- `<name>-module.ts`: declare the mount in `defineBackendModule`, e.g. `routes: [{ path: '/:tenantId/:organizationId/<name>s', app: handlers, phase: 'tenant' }]`; [routes.ts](../backend/src/routes.ts) mounts every module's routes per phase (static, then absolute, then tenant-scoped), and [modules.ts](../backend/src/modules.ts) (pinned) is where the module gets imported.
-- `operations/get-<name>s.ts`: support `seqCursor` catch-up, copy [get-attachments.ts](../backend/src/modules/attachment/operations/get-attachments.ts): accept `seqCursor` in the query schema, filter via `seqCursorFilters`, order by `asc(seq)` with `asc(id)` tiebreak, include tombstones, and read via `tenantReadIncludingDeleted`.
+- `backend/src/modules/<name>/<name>-db.ts`: copy [attachment-db.ts](../backend/src/modules/attachment/attachment-db.ts): spread `productColumns('<name>')` and `channelRelationColumns('<name>')`; keep the `(organizationId, seq)` index (test-enforced), the tenant composite FK, and `tenantSelectPolicy` + `writeThroughPolicies`. Non-entity tables: [Multi-tenancy](./MULTI_TENANCY.md#adding-tables).
+- [channel-tables.ts](../backend/src/db/channel-tables.ts) or [product-tables.ts](../backend/src/db/product-tables.ts): add a lazy getter; this feeds `entityTables` and with it RLS grants, the CDC publication, immutability triggers, and activity tracking.
+- `<name>-schema.ts`: Zod schemas plus `evolutionContract.product('<name>', { createItem, updateOps })`, copy [attachment-schema.ts](../backend/src/modules/attachment/attachment-schema.ts); CI `lens:check` fails without it ([Schema evolution](./SCHEMA_EVOLUTION.md)).
+- Other files, copy the [attachment module](../backend/src/modules/attachment/): `<name>-routes.ts` (`createXRoute` with `xGuard: [authGuard, tenantGuard, orgGuard]`), `<name>-handlers.ts`, `<name>-queries.ts`, `operations/*.ts`, `<name>-mocks.ts`. Reads in `tenantRead()`, writes in `tenantContext()` ([tenant-context.ts](../backend/src/db/tenant-context.ts)); permissions via `canCreateEntity` / `getValidProduct` / `resolveCollectionReadFilter`.
+- `<name>-module.ts`: declare the mount in `defineBackendModule`, e.g. `routes: [{ path: '/:tenantId/:organizationId/<name>s', app: handlers, phase: 'tenant' }]`; [routes.ts](../backend/src/routes.ts) mounts per phase; import the module in the pinned [modules.ts](../backend/src/modules.ts).
+- `operations/get-<name>s.ts`: copy [get-attachments.ts](../backend/src/modules/attachment/operations/get-attachments.ts): `seqCursor` in the query schema, `seqCursorFilters`, order `asc(seq)` then `asc(id)`, include tombstones, read via `tenantReadIncludingDeleted`.
 
 ### Migrations
 
-- `pnpm generate`, review the SQL in `backend/drizzle/`, then `pnpm --filter backend migrate`. The RLS/CDC/immutability SQL regenerates from `entityTables`; nothing to hand-write.
-  - Optional seed at `backend/scripts/seeds/NN-<name>.seed.ts`; product inserts must set `stx: mockStx()`.
+- `pnpm generate`, review the SQL in `backend/drizzle/`, then `pnpm --filter backend migrate`; RLS/CDC/immutability SQL regenerates from `entityTables`.
+- Optional seed at `backend/scripts/seeds/NN-<name>.seed.ts`; product inserts must set `stx: mockStx()`.
 
 ### Frontend
 
-- `frontend/src/modules/<name>/query.ts`, copy [attachment/query.ts](../frontend/src/modules/attachment/query.ts):
-  - `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, deltaFetch)`; a missing registration throws at runtime when the SSE stream dispatches.
-  - Query options (canonical, infinite, detail) and mutations using `createOptimisticEntity`.
-  - `addMutationRegistrar(...)` so paused offline mutations resume after reload.
-- Add `types.ts`, `search-params-schemas.ts` and the UI components. SDK types, client functions and Zod schemas are generated from the backend OpenAPI; run `pnpm check` to regenerate.
-- [list-queries-config.tsx](../frontend/src/list-queries-config.tsx): import the module's canonical options (this is the eager import that triggers self-registration) and push them in `buildEntitySyncQueries` under the parent channel. Add a route file under `frontend/src/routes/`.
+- `frontend/src/modules/<name>/query.ts`, copy [attachment/query.ts](../frontend/src/modules/attachment/query.ts): `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, deltaFetch)` (missing registration throws on SSE dispatch); query options (canonical, infinite, detail) and mutations via `createOptimisticEntity`; `addMutationRegistrar(...)` so paused offline mutations resume after reload.
+- Add `types.ts`, `search-params-schemas.ts`, and the UI components; `pnpm check` regenerates SDK types, client functions, and Zod schemas.
+- [list-queries-config.tsx](../frontend/src/list-queries-config.tsx): import the canonical options (the eager import triggers self-registration) and push them in `buildEntitySyncQueries` under the parent channel; add a route file under `frontend/src/routes/`.
 
 ### Verify
 
-- `pnpm check` and `pnpm test` pass. Dev loop: [Quickstart](./QUICKSTART.md); test modes: [Testing](./TESTING.md).
+- `pnpm check` and `pnpm test` pass ([Quickstart](./QUICKSTART.md), [Testing](./TESTING.md)).
 
 ## Channel entity swaps
 
-Same flow with these swaps, copying from `organization`:
+Same flow, copying from `organization`:
 
 - Hierarchy: `.channel('<name>', { parent, roles })`; roles must exist in the role registry.
-- Policies: distinguish elevation rows (declared on an ancestor channel, carrying `create`) from self rows (on the channel itself, omitting `create`). See the header comment in [permissions-config.ts](../shared/config/permissions-config.ts).
-- Table: spread `channelColumns('<name>')`; add a `unique(tenantId, id)` compound so the table can be a composite-FK target. No RLS policies, no `seq`/`stx`.
+- Policies: elevation rows (on an ancestor, with `create`) vs self rows (on the channel, without `create`); see the header comment in [permissions-config.ts](../shared/config/permissions-config.ts).
+- Table: spread `channelColumns('<name>')` plus a `unique(tenantId, id)` compound (composite-FK target); no RLS policies, no `seq`/`stx`.
 - Frontend: register in `channelListQueriesByType` in [list-queries-config.tsx](../frontend/src/list-queries-config.tsx) and add the entity to `menuStructure` in [config.default.ts](../shared/config/config.default.ts); skip `buildEntitySyncQueries`.
 
 ## Optional capabilities
 
-- **Public read**: `publicRead()` in the policy case; setting a row's `publicAt` publishes it to anonymous actors on reads and SSE alike.
+- **Public read**: `publicRead()` in the policy case; a row's `publicAt` publishes it to anonymous actors on reads and SSE.
 - **Drafts**: spread `...publishedColumn` ([published-column.ts](../backend/src/db/utils/published-column.ts)) into the table and re-run `pnpm generate`; rows stay author-only and out of the CDC stream until `publishedAt` is set.
-- **Unseen badges**: add the type to `seenTrackedProductTypes` in [config.default.ts](../shared/config/config.default.ts).
-- **View counts**: reuse the shared helpers from [entities-queries.ts](../backend/src/modules/entities/entities-queries.ts) — `findProductViewCount` for single reads, `productViewCountSelect()` + `productViewCountJoin(<table>.id)` for list joins, and `productViewCountSchema` ([entities-schema.ts](../backend/src/modules/entities/entities-schema.ts)) for the response field. Don't re-derive the `product_counters` query per module; the attachment module shows the wiring.
-- **Embedded id-arrays**: add a `productEmbeddings` entry so CDC ref-counting and cache patching cover the embedding.
-- **Partitioning and grants for non-entity tables**: register the table in [product-tables.ts](../backend/src/db/product-tables.ts): `appPartitionConfigs` for a time-partitioned table with retention (the partman migration, verify block and parity test derive from it), `appFullCrudTables` or `appReadOnlyTables` for a table outside RLS that still needs `runtime_role` grants.
-- **Scheduled jobs**: declare `jobs: [{ name, start }]` in the module's `defineBackendModule` call; `start` schedules the job and returns its stop handle. The API entrypoint starts registered jobs on the migration-owning instance only and stops them on shutdown, so the module never edits `main.api.ts`.
-- **Per-channel tool arrangement**: every channel table already carries `toolsConfig` via `channelColumns()`; to let the channel's settings surface persist arrangement, expose the field on the channel's response/update schemas (see `organization-schema.ts`) and merge it in the update query via [jsonb-merge.ts](../backend/src/db/utils/jsonb-merge.ts).
+- **Unseen badges and embedded id-arrays**: the `seenTrackedProductTypes` and `productEmbeddings` opt-ins in [config.default.ts](../shared/config/config.default.ts).
+- **View counts**: reuse [entities-queries.ts](../backend/src/modules/entities/entities-queries.ts): `findProductViewCount` for single reads, `productViewCountSelect()` + `productViewCountJoin(<table>.id)` for list joins, `productViewCountSchema` ([entities-schema.ts](../backend/src/modules/entities/entities-schema.ts)) for the response field; never re-derive the `product_counters` query.
+- **Partitioning and grants for non-entity tables**: register in [product-tables.ts](../backend/src/db/product-tables.ts): `appPartitionConfigs` for time-partitioned tables with retention (drives the partman migration, verify block, and parity test), `appFullCrudTables` or `appReadOnlyTables` for tables outside RLS that need `runtime_role` grants.
+- **Scheduled jobs**: declare `jobs: [{ name, start }]` in `defineBackendModule` (`start` returns a stop handle); the API entrypoint runs them on the migration-owning instance only, never edit `main.api.ts`.
+- **Per-channel tool arrangement**: `toolsConfig` already exists via `channelColumns()`; expose it on the channel's response/update schemas (see `organization-schema.ts`) and merge it in the update query via [jsonb-merge.ts](../backend/src/db/utils/jsonb-merge.ts).

@@ -10,7 +10,7 @@ in React. Live updates, offline support, and tenant isolation build on that path
 
 ## Overview
 
-This diagram shows a full production stack of a Cella app. Your own setup could be different since for example Yjs is optional. You can also **'cohost' CDC and Yjs into a single backend VM**.
+Full production stack; Yjs is optional, and CDC and Yjs can be **cohosted on the backend VM**.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -31,23 +31,17 @@ This diagram shows a full production stack of a Cella app. Your own setup could 
 
 ## Cella's core philosophy
 
-Five choices give the architecture its shape:
-
 | Anchor | Promise |
 | --- | --- |
 | **PostgreSQL owns truth** | Business data, relationships, audit history, and sync ordering start in one database. |
 | **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
 | **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy describes the product** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC) and Yjs collaboration can run separately or alongside the API without changing feature code. |
+| **Workers add capabilities** | Change data capture (CDC) and Yjs collaboration run separately or alongside the API without changing feature code. |
 
-Cella favors a narrow stack over replaceable abstractions. Libraries remain visible and useful: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie do the work their communities designed them to do. The result is easier to understand, easier to slim down, and less surprising to extend.
-
-The default app is a client-rendered progressive web app (PWA). It uses open standards, supports European-owned cloud infrastructure through Scaleway and Pulumi, and leaves room for projects to cohost services, remove optional modules, or add static generation.
+Cella favors a narrow stack over replaceable abstractions: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
 ## Entity hierarchy model
-
-Cella separates the product hierarchy from supporting resources:
 
 | Concept | Meaning | Template example |
 | --- | --- | --- |
@@ -56,9 +50,7 @@ Cella separates the product hierarchy from supporting resources:
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-The code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`; projects commonly add deeper channels and more product types.
-
-The hierarchy is declared once in `shared/config/hierarchy-config.ts`:
+Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`:
 
 ```ts
 createEntityHierarchy(roles)
@@ -68,21 +60,15 @@ createEntityHierarchy(roles)
   .build();
 ```
 
-That configuration drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features are organized into matching modules, which keeps business logic discoverable and lets projects retain upstream improvements with less friction.
-
-One structural rule matters most when extending the model: every product belongs to a channel, carries its tenant identity, and stays connected to its root channel through database constraints. Change the hierarchy and schema together. The worked recipe lives in [New entity](./ADD_ENTITY.md).
+It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Structural rule: every product belongs to a channel, carries its tenant identity, and stays connected to its root channel through database constraints; change the hierarchy and schema together. Recipe: [New entity](./ADD_ENTITY.md).
 
 ## Selective sync engine
 
-Sync is selective. A `channel` entity stay conventional, while `product` entities can opt into live updates and offline use without changing their API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path.
-
-Read [Client](./CLIENT.md) for state ownership, startup, IndexedDB, and multi-tab behavior. Read [Sync engine](./SYNC_ENGINE.md) for delivery and merge guarantees, and [Schema evolution](./SCHEMA_EVOLUTION.md) for version-tolerant changes.
+Channel entities stay conventional; product entities can opt into live updates and offline use without changing their API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path. See [Client](./CLIENT.md), [Sync engine](./SYNC_ENGINE.md), and [Schema evolution](./SCHEMA_EVOLUTION.md).
 
 ## Trust boundaries
 
-Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password MFA. Sessions are cookie-based, hashed in storage, rate-limited, and can support controlled system administrator impersonation.
-
-After authentication, Cella separates authorization from isolation:
+Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password MFA. Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Authorization and isolation are separate layers:
 
 | Layer | Responsibility |
 | --- | --- |
@@ -91,25 +77,19 @@ After authentication, Cella separates authorization from isolation:
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 
-The permission engine lives in `shared/`, so the API and optional Yjs relay make decisions from the same policy model. The frontend uses those decisions to shape the interface, but the backend is always authoritative.
-
-Row-level security (RLS) is intentionally narrower. It blocks cross-tenant product reads but does not replace application authorization, especially for writes. Channel entities and memberships remain application-authorized and do not use RLS.
-
-Read [Permissions](./PERMISSIONS.md) for contextual roles and row conditions. Read [Multi-tenancy](./MULTI_TENANCY.md) for database scope, write boundaries, and extension rules.
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model; the frontend only shapes the interface with it, the backend is authoritative. Row-level security (RLS) only blocks cross-tenant product reads; application authorization still governs writes, channel entities, and memberships. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Contracts and operations
 
-Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas consumed by the frontend. The contract also powers API documentation and deterministic examples, while shared mocks serve documentation, seeds, tests, and load tests.
+Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples; shared mocks serve docs, seeds, tests, and load tests.
 
-Operational concerns follow the same modular shape. A backend module declares its capabilities once in `defineBackendModule` (mutation handlers, Yjs materializers, scheduled jobs), and app-owned table lists and classifications for partitioning and grants live in the pinned `backend/src/db/product-tables.ts`, so the side-effect migrations and the API entrypoint stay cella-owned. Node services share OpenTelemetry setup for traces, metrics, and logs. PostgreSQL CDC and Yjs collaboration are independent workers with health and shutdown contracts. Pulumi deploys the services to Scaleway, with GitHub Actions providing the delivery path. See [Observability](./OTEL.md) and the [infrastructure guide](../infra/README.md) for those deeper views.
+A backend module declares its capabilities once in `defineBackendModule` (mutation handlers, Yjs materializers, scheduled jobs); app-owned table lists for partitioning and grants live in the pinned `backend/src/db/product-tables.ts`, keeping side-effect migrations and the API entrypoint cella-owned. Node services share OpenTelemetry setup ([Observability](./OTEL.md)); CDC and Yjs are independent workers with health and shutdown contracts; Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
-The test suite covers ordinary feature behavior and the cross-system behavior that protects this
-architecture: generated contracts, permission parity, cross-scope access, database constraints,
-sync catchup, and offline replay. See [Testing](./TESTING.md) for the available test modes.
+Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
 ## Repository map
 
-Cella is a flat-root monorepo. The top-level folders reveal the service boundaries:
+Flat-root monorepo:
 
 ```text
 .
