@@ -60,6 +60,7 @@ export default defineConfig({
       'frontend/src/query/extra-local-user-stores.ts',
       'frontend/src/nav-config.tsx',
       'frontend/src/placement-config.ts',
+      'frontend/src/members-config.ts',
       'frontend/src/routes-config.tsx',
       'frontend/src/menu-config.tsx',
       'frontend/src/alert-config.tsx',
