@@ -739,6 +739,26 @@
     "pnpm test"
    ],
    "summary": "memberStatIcons and hiddenMemberCountColumns move out of members-columns.tsx into the new pinned frontend/src/members-config.ts; buildInsertableProduct, the CDC event-bus test and the yjs permissions test derive ancestor ids from the hierarchy instead of inventing them. Apps add the pin, move their icon and hidden-column values into members-config.ts, and take upstream for the four files."
+  },
+  {
+   "id": "20260902T1536-seam-consolidation",
+   "version": "next",
+   "title": "Seam consolidation: derived memberships, module routes, product tables, app schemas",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "cella"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check",
+    "pnpm test"
+   ],
+   "summary": "memberships-db.ts, routes.ts and tables.ts lose their pins: membership channel columns and indexes derive from the hierarchy, route mounts are declared on defineBackendModule (routes with a phase), entityTables derives from channel-tables.ts plus the new pinned product-tables.ts (also home of the app partition and grant lists). setup-config-schema.ts and app-channel-counts.ts merge into the pinned schemas/app-schemas.ts. user-profile-content.tsx hosts a user.profile slot (cella's organizations grid is a tool). Template pins add modules.ts and drop nav-config.tsx, onboarding-config.ts and user-profile-content.tsx. Apps move their fills, take upstream for the five files, and run generate (index-only migration for sub-root channels)."
   }
  ]
 }

@@ -1615,6 +1615,44 @@
         },
         "x-tags": ["data", "me", "cella"]
       },
+      "Request": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "type": {
+            "type": "string",
+            "enum": ["waitlist", "newsletter", "contact"]
+          },
+          "wasInvited": {
+            "type": "boolean"
+          }
+        },
+        "required": ["createdAt", "id", "message", "email", "type", "wasInvited"],
+        "description": "A contact or waitlist submission from an unauthenticated user.",
+        "example": {
+          "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
+          "email": "al.braun57@gmail.com",
+          "type": "contact",
+          "message": "Amitto sapiente antiquus temptatio verus mollitia.",
+          "createdAt": "2024-03-17T12:06:02.574Z",
+          "wasInvited": false
+        },
+        "x-tags": ["data", "requests", "cella"]
+      },
       "TenantWithOrganization": {
         "allOf": [
           {
@@ -1731,44 +1769,6 @@
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
         "x-tags": ["data", "tenants", "cella"]
-      },
-      "Request": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "message": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "type": {
-            "type": "string",
-            "enum": ["waitlist", "newsletter", "contact"]
-          },
-          "wasInvited": {
-            "type": "boolean"
-          }
-        },
-        "required": ["createdAt", "id", "message", "email", "type", "wasInvited"],
-        "description": "A contact or waitlist submission from an unauthenticated user.",
-        "example": {
-          "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-          "email": "al.braun57@gmail.com",
-          "type": "contact",
-          "message": "Amitto sapiente antiquus temptatio verus mollitia.",
-          "createdAt": "2024-03-17T12:06:02.574Z",
-          "wasInvited": false
-        },
-        "x-tags": ["data", "requests", "cella"]
       },
       "Organization": {
         "type": "object",
@@ -3907,6 +3907,863 @@
         }
       }
     },
+    "/tenants/{tenantId}/domains": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDomains",
+        "tags": ["tenants", "cella"],
+        "summary": "List domains for a tenant",
+        "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "tenantId": {
+                        "type": "string",
+                        "maxLength": 24
+                      },
+                      "domain": {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "verified": {
+                        "type": "boolean"
+                      },
+                      "verificationToken": {
+                        "type": ["string", "null"],
+                        "maxLength": 50
+                      },
+                      "verifiedAt": {
+                        "type": ["string", "null"]
+                      },
+                      "lastCheckedAt": {
+                        "type": ["string", "null"]
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "tenantId",
+                      "domain",
+                      "verified",
+                      "verificationToken",
+                      "verifiedAt",
+                      "lastCheckedAt",
+                      "createdAt"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createDomain",
+        "tags": ["tenants", "cella"],
+        "summary": "Add a domain to a tenant",
+        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "format": "hostname",
+                    "minLength": 4,
+                    "maxLength": 255,
+                    "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
+                  }
+                },
+                "required": ["domain"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created domain",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "domain": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "verifiedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "lastCheckedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/domains/{id}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteDomain",
+        "tags": ["tenants", "cella"],
+        "summary": "Remove a domain",
+        "description": "Removes a domain from a tenant. System admin access required.",
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "domain": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "verifiedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "lastCheckedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getDomain",
+        "tags": ["tenants", "cella"],
+        "summary": "Get domain with verification token",
+        "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain with verification token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "domain": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    },
+                    "verificationToken": {
+                      "type": ["string", "null"],
+                      "maxLength": 50
+                    },
+                    "verifiedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "lastCheckedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tenantId",
+                    "domain",
+                    "verified",
+                    "verificationToken",
+                    "verifiedAt",
+                    "lastCheckedAt",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/domains/{id}/verify": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "verifyDomain",
+        "tags": ["tenants", "cella"],
+        "summary": "Verify domain ownership via DNS",
+        "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
+        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "domain": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "tenantId": {
+                          "type": "string",
+                          "maxLength": 24
+                        },
+                        "domain": {
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "verificationToken": {
+                          "type": ["string", "null"],
+                          "maxLength": 50
+                        },
+                        "verifiedAt": {
+                          "type": ["string", "null"]
+                        },
+                        "lastCheckedAt": {
+                          "type": ["string", "null"]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tenantId",
+                        "domain",
+                        "verified",
+                        "verificationToken",
+                        "verifiedAt",
+                        "lastCheckedAt",
+                        "createdAt"
+                      ]
+                    },
+                    "diagnostics": {
+                      "type": "object",
+                      "properties": {
+                        "recordsFound": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "expectedToken": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["recordsFound", "expectedToken"]
+                    }
+                  },
+                  "required": ["success", "domain"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/entities/{tenantId}/check-slug": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "checkSlug",
+        "tags": ["entities", "cella"],
+        "summary": "Check slug availability",
+        "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+        "x-guard": ["authGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "enum": ["organization"]
+                  }
+                },
+                "required": ["slug", "entityType"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Slug is available"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/entities/app/stream": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getAppStream",
+        "tags": ["entities", "cella"],
+        "summary": "App event SSE stream",
+        "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["streamConnectLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "SSE stream started",
+            "content": {
+              "text/event-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "postAppCatchup",
+        "tags": ["entities", "cella"],
+        "summary": "App event catchup",
+        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cursor": {
+                    "type": "string",
+                    "description": "Last activity cursor received by the client (LSN-based). Omit on first sync.",
+                    "example": "0-16B3748"
+                  },
+                  "views": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "maxLength": 512,
+                          "description": "Client-chosen stable view key, echoed back verbatim to correlate responses"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "prefixes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 512
+                          },
+                          "minItems": 1,
+                          "maxItems": 64,
+                          "description": "Materialized id-path prefixes this view covers (root-first ids, slash-joined)"
+                        },
+                        "entityTypes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["attachment"]
+                          },
+                          "minItems": 1
+                        },
+                        "depth": {
+                          "type": "string",
+                          "enum": ["self", "subtree"],
+                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships."
+                        },
+                        "cursor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)"
+                        }
+                      },
+                      "required": ["key", "organizationId", "prefixes", "entityTypes", "cursor"]
+                    },
+                    "maxItems": 256,
+                    "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catchup summary",
+            "content": {
+              "application/json": {
+                "example": {
+                  "changes": {
+                    "org-example-id": {
+                      "signals": {
+                        "membership": 1
+                      }
+                    }
+                  },
+                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "changes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "signals": {
+                            "type": "object",
+                            "properties": {
+                              "membership": {
+                                "type": "integer"
+                              }
+                            }
+                          },
+                          "propagation": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "embeddedProduct": {
+                                  "type": "string",
+                                  "enum": ["attachment"],
+                                  "description": "Product type whose change triggered the propagation (e.g. label)"
+                                },
+                                "hostProduct": {
+                                  "type": "string",
+                                  "enum": ["attachment"],
+                                  "description": "Host product type whose cache should be patched (e.g. task)"
+                                },
+                                "hostColumn": {
+                                  "type": "string",
+                                  "description": "Column on the host product that embeds the changed product (e.g. labels)"
+                                },
+                                "update": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "Host product IDs that need cache refresh"
+                                },
+                                "remove": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "Host product IDs that need the embedded reference removed"
+                                }
+                              },
+                              "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"]
+                            }
+                          }
+                        }
+                      },
+                      "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }"
+                    },
+                    "views": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "The client-supplied view key, echoed verbatim"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["ok", "opaque", "forbidden"]
+                          },
+                          "frontiers": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            },
+                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})"
+                          },
+                          "counts": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer"
+                            },
+                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})"
+                          }
+                        },
+                        "required": ["key", "status"]
+                      },
+                      "description": "Per-view answers for client-declared views (same order as the request)"
+                    },
+                    "cursor": {
+                      "type": ["string", "null"],
+                      "description": "Last activity ID (use as offset for next request)"
+                    }
+                  },
+                  "required": ["changes", "cursor"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/me": {
       "get": {
         "security": [
@@ -4825,6 +5682,1007 @@
         }
       }
     },
+    "/metrics/public": {
+      "get": {
+        "security": [],
+        "operationId": "getPublicCounts",
+        "tags": ["metrics", "cella"],
+        "summary": "Get public counts",
+        "description": "Returns basic count metrics for entity types such as users and organizations.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Public counts",
+            "content": {
+              "application/json": {
+                "example": {
+                  "user": 404,
+                  "organization": 303,
+                  "attachment": 387
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "number"
+                    },
+                    "organization": {
+                      "type": "number"
+                    },
+                    "attachment": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["user", "organization", "attachment"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getNotifications",
+        "tags": ["notifications"],
+        "summary": "List notifications",
+        "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": ["syncReadLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "description": "Return only unread notifications"
+            },
+            "required": false,
+            "description": "Return only unread notifications",
+            "name": "unread",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "createdAt of the last row of the previous page"
+            },
+            "required": false,
+            "description": "createdAt of the last row of the previous page",
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications and unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": ["mention", "comment", "reply"]
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "enum": ["attachment"]
+                          },
+                          "subjectId": {
+                            "type": "string"
+                          },
+                          "contextId": {
+                            "type": ["string", "null"]
+                          },
+                          "channelId": {
+                            "type": "string"
+                          },
+                          "channelType": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "tenantId": {
+                            "type": "string"
+                          },
+                          "actorId": {
+                            "type": ["string", "null"]
+                          },
+                          "readAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "createdAt",
+                          "type",
+                          "entityType",
+                          "subjectId",
+                          "contextId",
+                          "channelId",
+                          "channelType",
+                          "organizationId",
+                          "tenantId",
+                          "actorId",
+                          "readAt"
+                        ]
+                      }
+                    },
+                    "unreadCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["items", "unreadCount"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/read": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "markNotificationsRead",
+        "tags": ["notifications"],
+        "summary": "Mark notifications as read",
+        "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "maxItems": 200
+                  },
+                  "contextId": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Mark everything sharing one context read"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Number of notifications marked read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["updated"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/preferences": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getNotificationPreferences",
+        "tags": ["notifications"],
+        "summary": "Get notification preferences",
+        "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mentionEmail": {
+                      "type": "boolean"
+                    },
+                    "commentEmail": {
+                      "type": "boolean"
+                    },
+                    "digest": {
+                      "type": "string",
+                      "enum": ["off", "daily", "weekly"]
+                    }
+                  },
+                  "required": ["mentionEmail", "commentEmail", "digest"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateNotificationPreferences",
+        "tags": ["notifications"],
+        "summary": "Update notification preferences",
+        "description": "Partial update; unspecified keys keep their stored value.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mentionEmail": {
+                    "type": "boolean"
+                  },
+                  "commentEmail": {
+                    "type": "boolean"
+                  },
+                  "digest": {
+                    "type": "string",
+                    "enum": ["off", "daily", "weekly"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mentionEmail": {
+                      "type": "boolean"
+                    },
+                    "commentEmail": {
+                      "type": "boolean"
+                    },
+                    "digest": {
+                      "type": "string",
+                      "enum": ["off", "daily", "weekly"]
+                    }
+                  },
+                  "required": ["mentionEmail", "commentEmail", "digest"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/notifications/unsubscribe": {
+      "get": {
+        "security": [],
+        "operationId": "unsubscribeNotifications",
+        "tags": ["notifications"],
+        "summary": "Unsubscribe from a notification category",
+        "description": "Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "user",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["digest", "mention", "comment"]
+            },
+            "required": true,
+            "name": "category",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to FE",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/push/vapid": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getPushVapid",
+        "tags": ["push"],
+        "summary": "Get the Web Push application server key",
+        "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "VAPID public key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "publicKey": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["publicKey"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/push/subscriptions": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createPushSubscription",
+        "tags": ["push"],
+        "summary": "Register a Web Push subscription",
+        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "expirationTime": {
+                    "type": ["number", "null"]
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      },
+                      "auth": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      }
+                    },
+                    "required": ["p256dh", "auth"]
+                  }
+                },
+                "required": ["endpoint", "keys"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "endpoint": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "endpoint"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deletePushSubscription",
+        "tags": ["push"],
+        "summary": "Remove a Web Push subscription",
+        "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
+        "x-guard": ["authGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2048,
+              "format": "uri"
+            },
+            "required": true,
+            "name": "endpoint",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Number of subscriptions removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["deleted"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/requests": {
+      "post": {
+        "security": [],
+        "operationId": "createRequest",
+        "tags": ["requests", "cella"],
+        "summary": "Create request",
+        "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["emailEnumLimiter", "spamLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "minLength": 4,
+                    "maxLength": 255
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["waitlist", "newsletter", "contact"]
+                  },
+                  "message": {
+                    "type": ["string", "null"],
+                    "maxLength": 255
+                  }
+                },
+                "required": ["email", "type", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Requests",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
+                  "email": "al.braun57@gmail.com",
+                  "type": "contact",
+                  "message": "Amitto sapiente antiquus temptatio verus mollitia.",
+                  "createdAt": "2024-03-17T12:06:02.574Z",
+                  "wasInvited": false
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getRequests",
+        "tags": ["requests", "cella"],
+        "summary": "Get list of requests",
+        "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["id", "email", "type", "createdAt"],
+              "default": "createdAt"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "required": false,
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+,\\d+$"
+            },
+            "required": false,
+            "name": "seqCursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requests",
+            "content": {
+              "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
+                      "email": "marielle_donnelly-bashirian18@gmail.com",
+                      "type": "contact",
+                      "message": "Canonicus capio aedificium consequuntur velum.",
+                      "createdAt": "2024-09-19T17:10:46.529Z",
+                      "wasInvited": false
+                    },
+                    {
+                      "id": "d772a771-fc15-4065-be63-546594859fc3",
+                      "email": "ollie_effertz@gmail.com",
+                      "type": "contact",
+                      "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
+                      "createdAt": "2024-03-06T02:06:40.920Z",
+                      "wasInvited": false
+                    }
+                  ],
+                  "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Request"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteRequests",
+        "tags": ["requests", "cella"],
+        "summary": "Delete requests",
+        "description": "Deletes one or more requests from the system by their IDs.",
+        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": ["ids"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/unseen/counts": {
       "get": {
         "security": [
@@ -4853,334 +6711,6 @@
                       "minimum": 0
                     }
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/entities/{tenantId}/check-slug": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "checkSlug",
-        "tags": ["entities", "cella"],
-        "summary": "Check slug availability",
-        "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
-        "x-guard": ["authGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "slug": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 255,
-                    "pattern": "^[a-z0-9]+(-{0,3}[a-z0-9]+)*$"
-                  },
-                  "entityType": {
-                    "type": "string",
-                    "enum": ["organization"]
-                  }
-                },
-                "required": ["slug", "entityType"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Slug is available"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/entities/app/stream": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getAppStream",
-        "tags": ["entities", "cella"],
-        "summary": "App event SSE stream",
-        "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": ["streamConnectLimiter"],
-        "x-cache": [],
-        "responses": {
-          "200": {
-            "description": "SSE stream started",
-            "content": {
-              "text/event-stream": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "postAppCatchup",
-        "tags": ["entities", "cella"],
-        "summary": "App event catchup",
-        "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "cursor": {
-                    "type": "string",
-                    "description": "Last activity cursor received by the client (LSN-based). Omit on first sync.",
-                    "example": "0-16B3748"
-                  },
-                  "views": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "key": {
-                          "type": "string",
-                          "maxLength": 512,
-                          "description": "Client-chosen stable view key, echoed back verbatim to correlate responses"
-                        },
-                        "organizationId": {
-                          "type": "string"
-                        },
-                        "prefixes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "maxLength": 512
-                          },
-                          "minItems": 1,
-                          "maxItems": 64,
-                          "description": "Materialized id-path prefixes this view covers (root-first ids, slash-joined)"
-                        },
-                        "entityTypes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": ["attachment"]
-                          },
-                          "minItems": 1
-                        },
-                        "depth": {
-                          "type": "string",
-                          "enum": ["self", "subtree"],
-                          "description": "View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships."
-                        },
-                        "cursor": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "description": "Org-sequence position this view has fully ingested (0 = baseline not yet established)"
-                        }
-                      },
-                      "required": ["key", "organizationId", "prefixes", "entityTypes", "cursor"]
-                    },
-                    "maxItems": 256,
-                    "description": "Client-declared views: prefix set + entity types + org-sequence cursor per view"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Catchup summary",
-            "content": {
-              "application/json": {
-                "example": {
-                  "changes": {
-                    "org-example-id": {
-                      "signals": {
-                        "membership": 1
-                      }
-                    }
-                  },
-                  "cursor": "d9909rsl2y2ii9vbcsc2ywg7"
-                },
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "changes": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "object",
-                        "properties": {
-                          "signals": {
-                            "type": "object",
-                            "properties": {
-                              "membership": {
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "propagation": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "embeddedProduct": {
-                                  "type": "string",
-                                  "enum": ["attachment"],
-                                  "description": "Product type whose change triggered the propagation (e.g. label)"
-                                },
-                                "hostProduct": {
-                                  "type": "string",
-                                  "enum": ["attachment"],
-                                  "description": "Host product type whose cache should be patched (e.g. task)"
-                                },
-                                "hostColumn": {
-                                  "type": "string",
-                                  "description": "Column on the host product that embeds the changed product (e.g. labels)"
-                                },
-                                "update": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string"
-                                  },
-                                  "description": "Host product IDs that need cache refresh"
-                                },
-                                "remove": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string"
-                                  },
-                                  "description": "Host product IDs that need the embedded reference removed"
-                                }
-                              },
-                              "required": ["embeddedProduct", "hostProduct", "hostColumn", "update", "remove"]
-                            }
-                          }
-                        }
-                      },
-                      "description": "Per-org change summary: { [organizationId]: { signals?, propagation? } }"
-                    },
-                    "views": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "key": {
-                            "type": "string",
-                            "description": "The client-supplied view key, echoed verbatim"
-                          },
-                          "status": {
-                            "type": "string",
-                            "enum": ["ok", "opaque", "forbidden"]
-                          },
-                          "frontiers": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
-                            },
-                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})"
-                          },
-                          "counts": {
-                            "type": "object",
-                            "additionalProperties": {
-                              "type": "integer"
-                            },
-                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})"
-                          }
-                        },
-                        "required": ["key", "status"]
-                      },
-                      "description": "Per-view answers for client-declared views (same order as the request)"
-                    },
-                    "cursor": {
-                      "type": ["string", "null"],
-                      "description": "Last activity ID (use as offset for next request)"
-                    }
-                  },
-                  "required": ["changes", "cursor"]
                 }
               }
             }
@@ -5904,1536 +7434,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getDomains",
-        "tags": ["tenants", "cella"],
-        "summary": "List domains for a tenant",
-        "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of domains",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "format": "uuid"
-                      },
-                      "tenantId": {
-                        "type": "string",
-                        "maxLength": 24
-                      },
-                      "domain": {
-                        "type": "string",
-                        "maxLength": 255
-                      },
-                      "verified": {
-                        "type": "boolean"
-                      },
-                      "verificationToken": {
-                        "type": ["string", "null"],
-                        "maxLength": 50
-                      },
-                      "verifiedAt": {
-                        "type": ["string", "null"]
-                      },
-                      "lastCheckedAt": {
-                        "type": ["string", "null"]
-                      },
-                      "createdAt": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "tenantId",
-                      "domain",
-                      "verified",
-                      "verificationToken",
-                      "verifiedAt",
-                      "lastCheckedAt",
-                      "createdAt"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Add a domain to a tenant",
-        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "domain": {
-                    "type": "string",
-                    "format": "hostname",
-                    "minLength": 4,
-                    "maxLength": 255,
-                    "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
-                  }
-                },
-                "required": ["domain"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Created domain",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains/{id}": {
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Remove a domain",
-        "description": "Removes a domain from a tenant. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Get domain with verification token",
-        "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain with verification token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verificationToken": {
-                      "type": ["string", "null"],
-                      "maxLength": 50
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "tenantId",
-                    "domain",
-                    "verified",
-                    "verificationToken",
-                    "verifiedAt",
-                    "lastCheckedAt",
-                    "createdAt"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains/{id}/verify": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "verifyDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Verify domain ownership via DNS",
-        "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Verification result",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "domain": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "tenantId": {
-                          "type": "string",
-                          "maxLength": 24
-                        },
-                        "domain": {
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "verified": {
-                          "type": "boolean"
-                        },
-                        "verificationToken": {
-                          "type": ["string", "null"],
-                          "maxLength": 50
-                        },
-                        "verifiedAt": {
-                          "type": ["string", "null"]
-                        },
-                        "lastCheckedAt": {
-                          "type": ["string", "null"]
-                        },
-                        "createdAt": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "tenantId",
-                        "domain",
-                        "verified",
-                        "verificationToken",
-                        "verifiedAt",
-                        "lastCheckedAt",
-                        "createdAt"
-                      ]
-                    },
-                    "diagnostics": {
-                      "type": "object",
-                      "properties": {
-                        "recordsFound": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "expectedToken": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["recordsFound", "expectedToken"]
-                    }
-                  },
-                  "required": ["success", "domain"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/requests": {
-      "post": {
-        "security": [],
-        "operationId": "createRequest",
-        "tags": ["requests", "cella"],
-        "summary": "Create request",
-        "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
-        "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["emailEnumLimiter", "spamLimiter"],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "minLength": 4,
-                    "maxLength": 255
-                  },
-                  "type": {
-                    "type": "string",
-                    "enum": ["waitlist", "newsletter", "contact"]
-                  },
-                  "message": {
-                    "type": ["string", "null"],
-                    "maxLength": 255
-                  }
-                },
-                "required": ["email", "type", "message"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Requests",
-            "content": {
-              "application/json": {
-                "example": {
-                  "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-                  "email": "al.braun57@gmail.com",
-                  "type": "contact",
-                  "message": "Amitto sapiente antiquus temptatio verus mollitia.",
-                  "createdAt": "2024-03-17T12:06:02.574Z",
-                  "wasInvited": false
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Request"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getRequests",
-        "tags": ["requests", "cella"],
-        "summary": "Get list of requests",
-        "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 255
-            },
-            "required": false,
-            "name": "q",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["id", "email", "type", "createdAt"],
-              "default": "createdAt"
-            },
-            "required": false,
-            "name": "sort",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["asc", "desc"],
-              "default": "desc"
-            },
-            "required": false,
-            "name": "order",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^\\d+$"
-            },
-            "required": false,
-            "name": "offset",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^\\d+$"
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "pattern": "^\\d+,\\d+$"
-            },
-            "required": false,
-            "name": "seqCursor",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Requests",
-            "content": {
-              "application/json": {
-                "example": {
-                  "items": [
-                    {
-                      "id": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
-                      "email": "marielle_donnelly-bashirian18@gmail.com",
-                      "type": "contact",
-                      "message": "Canonicus capio aedificium consequuntur velum.",
-                      "createdAt": "2024-09-19T17:10:46.529Z",
-                      "wasInvited": false
-                    },
-                    {
-                      "id": "d772a771-fc15-4065-be63-546594859fc3",
-                      "email": "ollie_effertz@gmail.com",
-                      "type": "contact",
-                      "message": "Cognomen deprimo compono defungo vix ullam abeo adimpleo tergo tardus.",
-                      "createdAt": "2024-03-06T02:06:40.920Z",
-                      "wasInvited": false
-                    }
-                  ],
-                  "total": 2
-                },
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Request"
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["items", "total"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteRequests",
-        "tags": ["requests", "cella"],
-        "summary": "Delete requests",
-        "description": "Deletes one or more requests from the system by their IDs.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "minItems": 1,
-                    "maxItems": 50
-                  }
-                },
-                "required": ["ids"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "prefixItems": []
-                    },
-                    "rejectedIds": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
-                    },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    }
-                  },
-                  "required": ["data", "rejectedIds"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/metrics/public": {
-      "get": {
-        "security": [],
-        "operationId": "getPublicCounts",
-        "tags": ["metrics", "cella"],
-        "summary": "Get public counts",
-        "description": "Returns basic count metrics for entity types such as users and organizations.\n      This endpoint is public and uses a 1 minute in memory cache for performance.",
-        "x-guard": ["publicGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "responses": {
-          "200": {
-            "description": "Public counts",
-            "content": {
-              "application/json": {
-                "example": {
-                  "user": 404,
-                  "organization": 303,
-                  "attachment": 387
-                },
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "type": "number"
-                    },
-                    "organization": {
-                      "type": "number"
-                    },
-                    "attachment": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["user", "organization", "attachment"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/notifications": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getNotifications",
-        "tags": ["notifications"],
-        "summary": "List notifications",
-        "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": ["syncReadLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["true", "false"],
-              "description": "Return only unread notifications"
-            },
-            "required": false,
-            "description": "Return only unread notifications",
-            "name": "unread",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 30
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "createdAt of the last row of the previous page"
-            },
-            "required": false,
-            "description": "createdAt of the last row of the previous page",
-            "name": "before",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Notifications and unread count",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "type": {
-                            "type": "string",
-                            "enum": ["mention", "comment", "reply"]
-                          },
-                          "entityType": {
-                            "type": "string",
-                            "enum": ["attachment"]
-                          },
-                          "subjectId": {
-                            "type": "string"
-                          },
-                          "contextId": {
-                            "type": ["string", "null"]
-                          },
-                          "channelId": {
-                            "type": "string"
-                          },
-                          "channelType": {
-                            "type": "string"
-                          },
-                          "organizationId": {
-                            "type": "string"
-                          },
-                          "tenantId": {
-                            "type": "string"
-                          },
-                          "actorId": {
-                            "type": ["string", "null"]
-                          },
-                          "readAt": {
-                            "type": ["string", "null"]
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "createdAt",
-                          "type",
-                          "entityType",
-                          "subjectId",
-                          "contextId",
-                          "channelId",
-                          "channelType",
-                          "organizationId",
-                          "tenantId",
-                          "actorId",
-                          "readAt"
-                        ]
-                      }
-                    },
-                    "unreadCount": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  },
-                  "required": ["items", "unreadCount"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/notifications/read": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "markNotificationsRead",
-        "tags": ["notifications"],
-        "summary": "Mark notifications as read",
-        "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ids": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "maxLength": 50
-                    },
-                    "maxItems": 200
-                  },
-                  "contextId": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "description": "Mark everything sharing one context read"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Number of notifications marked read",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "updated": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  },
-                  "required": ["updated"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/notifications/preferences": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getNotificationPreferences",
-        "tags": ["notifications"],
-        "summary": "Get notification preferences",
-        "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "responses": {
-          "200": {
-            "description": "Notification preferences",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "mentionEmail": {
-                      "type": "boolean"
-                    },
-                    "commentEmail": {
-                      "type": "boolean"
-                    },
-                    "digest": {
-                      "type": "string",
-                      "enum": ["off", "daily", "weekly"]
-                    }
-                  },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "patch": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "updateNotificationPreferences",
-        "tags": ["notifications"],
-        "summary": "Update notification preferences",
-        "description": "Partial update; unspecified keys keep their stored value.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "mentionEmail": {
-                    "type": "boolean"
-                  },
-                  "commentEmail": {
-                    "type": "boolean"
-                  },
-                  "digest": {
-                    "type": "string",
-                    "enum": ["off", "daily", "weekly"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated notification preferences",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "mentionEmail": {
-                      "type": "boolean"
-                    },
-                    "commentEmail": {
-                      "type": "boolean"
-                    },
-                    "digest": {
-                      "type": "string",
-                      "enum": ["off", "daily", "weekly"]
-                    }
-                  },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/notifications/unsubscribe": {
-      "get": {
-        "security": [],
-        "operationId": "unsubscribeNotifications",
-        "tags": ["notifications"],
-        "summary": "Unsubscribe from a notification category",
-        "description": "Turns off one email category from a link in an email. The token identifies the user and the category, so unsubscribing from the digest leaves other email untouched. No auth.",
-        "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "user",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["digest", "mention", "comment"]
-            },
-            "required": true,
-            "name": "category",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "token",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Redirect to FE",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": true
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/push/vapid": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getPushVapid",
-        "tags": ["push"],
-        "summary": "Get the Web Push application server key",
-        "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "responses": {
-          "200": {
-            "description": "VAPID public key",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "publicKey": {
-                      "type": ["string", "null"]
-                    }
-                  },
-                  "required": ["publicKey"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/push/subscriptions": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createPushSubscription",
-        "tags": ["push"],
-        "summary": "Register a Web Push subscription",
-        "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "endpoint": {
-                    "type": "string",
-                    "maxLength": 2048,
-                    "format": "uri"
-                  },
-                  "expirationTime": {
-                    "type": ["number", "null"]
-                  },
-                  "keys": {
-                    "type": "object",
-                    "properties": {
-                      "p256dh": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 512
-                      },
-                      "auth": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 512
-                      }
-                    },
-                    "required": ["p256dh", "auth"]
-                  }
-                },
-                "required": ["endpoint", "keys"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Stored subscription",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "endpoint": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "endpoint"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deletePushSubscription",
-        "tags": ["push"],
-        "summary": "Remove a Web Push subscription",
-        "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
-        "x-guard": ["authGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 2048,
-              "format": "uri"
-            },
-            "required": true,
-            "name": "endpoint",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Number of subscriptions removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "deleted": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  },
-                  "required": ["deleted"]
                 }
               }
             }
@@ -9063,79 +9063,6 @@
         }
       }
     },
-    "/{tenantId}/{organizationId}/mcp": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "x-service": "mcp",
-        "operationId": "handleMcp",
-        "tags": ["mcp", "cella"],
-        "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {}
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "JSON-RPC response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/{tenantId}/{organizationId}/attachments": {
       "get": {
         "security": [
@@ -10280,6 +10207,79 @@
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
                 }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/mcp": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "x-service": "mcp",
+        "operationId": "handleMcp",
+        "tags": ["mcp", "cella"],
+        "summary": "MCP endpoint",
+        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
+        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },

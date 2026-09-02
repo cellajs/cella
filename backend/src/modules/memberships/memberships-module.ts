@@ -1,4 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
+import { membershipHandlers } from './memberships-handlers';
 
 defineBackendModule({
   name: 'memberships',
@@ -8,4 +9,5 @@ defineBackendModule({
     user and a contextual entity such as an organization. Each membership includes role information and
     status flags such as archived or muted. Memberships can also reference parent entities to easily have a
     hierarchical context available.`,
+  routes: [{ path: '/:tenantId/:organizationId/memberships', app: membershipHandlers, phase: 'tenant' }],
 });

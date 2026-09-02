@@ -170,7 +170,7 @@ boundary, verify each of these points:
 4. Scope application queries by trusted tenant and channel context independently of RLS.
 5. Add `tenantSelectPolicy()` and `writeThroughPolicies()` to the Drizzle table definition.
 6. Add composite foreign keys and module-owned constraints for every stored ancestor relationship.
-7. Register the table in `backend/src/tables.ts` so migrations include RLS, grants, publication, and
+7. Register the table in `backend/src/db/channel-tables.ts` or `product-tables.ts` so migrations include RLS, grants, publication, and
    shared immutability setup.
 8. Use `tenantRead*()` for protected reads and `tenantContext*()` for mutation transactions.
 9. Test authorization with RLS bypassed, then test the RLS read boundary directly through

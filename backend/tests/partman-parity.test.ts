@@ -1,16 +1,16 @@
 import { getTableName } from 'drizzle-orm';
 import { getTableConfig, type PgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
+import { appPartitionConfigs } from '#/db/product-tables';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
-import { appPartitionConfigs } from '#/tables';
 import { partitionConfigs } from '../scripts/migrations/10-partman.migration';
 
-// App entries carry their Drizzle table, so the map extends itself from tables.ts.
+// App entries carry their Drizzle table, so the map extends itself from product-tables.ts.
 const drizzleTables: Record<string, PgTable> = {
   sessions: sessionsTable,
   tokens: tokensTable,

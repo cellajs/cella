@@ -1,5 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
 import { scheduleNotificationDigest } from './digest/schedule-digest';
+import { notificationHandlers } from './notification-handlers';
 import './notification-sources';
 
 defineBackendModule({
@@ -13,4 +14,5 @@ defineBackendModule({
     automatic, and excluded from CDC because they are per-user state rather than synced content.`,
   // Exactly one instance sends digests: jobs run on the migration-owning instance only.
   jobs: [{ name: 'notification-digest', start: () => scheduleNotificationDigest() }],
+  routes: [{ path: '/notifications', app: notificationHandlers }],
 });

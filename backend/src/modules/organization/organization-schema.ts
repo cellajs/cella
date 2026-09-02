@@ -6,7 +6,6 @@ import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { setupConfigSchema } from '#/modules/organization/setup-config-schema';
 import {
   excludeArchivedQuerySchema,
   includeQuerySchema,
@@ -21,6 +20,7 @@ import {
   validTempIdSchema,
   validUrlSchema,
 } from '#/schemas';
+import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { toolsConfigSchema } from '#/schemas/tools-config';

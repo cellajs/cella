@@ -1,10 +1,10 @@
 import { getTableName } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ResourceType } from 'shared';
-import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { channelTables } from '#/db/channel-tables';
+import { productTables } from '#/db/product-tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { organizationsTable } from '#/modules/organization/organization-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -15,11 +15,20 @@ export type TableWithId = AnyPgTable & { id: PgColumn };
 export type TableWithIdAndSlug = TableWithId & { slug: PgColumn };
 export type ResolvableTable = TableWithId | TableWithIdAndSlug;
 
-/** Entity-to-table mapping. `satisfies` enforces shape without widening literal keys/values. */
+/** Resolves a pinned map of lazy table getters, keeping each key's exact table type. */
+const resolveTables = <T extends Record<string, () => AnyPgTable>>(getters: T) =>
+  Object.fromEntries(Object.entries(getters).map(([type, get]) => [type, get()])) as {
+    [K in keyof T]: ReturnType<T[K]>;
+  };
+
+/**
+ * Entity-to-table mapping, derived from the pinned `channel-tables.ts` and `product-tables.ts`
+ * lists plus `user`, the one entity that is neither. `satisfies` enforces shape without widening keys.
+ */
 export const entityTables = {
   user: usersTable,
-  organization: organizationsTable,
-  attachment: attachmentsTable,
+  ...resolveTables(channelTables),
+  ...resolveTables(productTables),
 } as const satisfies Record<string, ResolvableTable>;
 
 /** Resource-to-table mapping. */
@@ -57,15 +66,3 @@ export interface PartitionConfig {
   /** Retention period (e.g., '30 days', '90 days'). Null = no retention (keep indefinitely). */
   retention: string | null;
 }
-
-/** App partition entry: the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
-export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };
-
-/** App tables to convert to pg_partman partitions; merged after cella's own entries in the partman migration. */
-export const appPartitionConfigs: AppPartitionConfig[] = [];
-
-/** App tables outside RLS that runtime_role may read and write (application-layer guards), merged into the RLS migration grants. */
-export const appFullCrudTables: string[] = [];
-
-/** App tables outside RLS that runtime_role may only read, merged into the RLS migration grants. */
-export const appReadOnlyTables: string[] = [];

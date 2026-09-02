@@ -1,9 +1,9 @@
 import { foreignKey, index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { membershipChannelColumns } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';

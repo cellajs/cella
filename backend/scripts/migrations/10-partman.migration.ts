@@ -1,5 +1,6 @@
 import { getTableName } from 'drizzle-orm';
-import { appPartitionConfigs, type PartitionConfig } from '#/tables';
+import { appPartitionConfigs } from '#/db/product-tables';
+import type { PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 // Catalog cloning avoids a duplicate schema definition. The parity test verifies each table,
@@ -14,7 +15,7 @@ const cellaPartitionConfigs: PartitionConfig[] = [
   { name: 'notifications', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
 ];
 
-/** Cella's entries followed by the app's (`appPartitionConfigs` in tables.ts); the verify block and parity test read this list. */
+/** Cella's entries followed by the app's (`appPartitionConfigs` in product-tables.ts); the verify block and parity test read this list. */
 export const partitionConfigs: PartitionConfig[] = [
   ...cellaPartitionConfigs,
   ...appPartitionConfigs.map(({ table, ...config }) => ({ name: getTableName(table), ...config })),

@@ -2,6 +2,7 @@ import { type AnyPgTable, index, type PgColumn, uuid } from 'drizzle-orm/pg-core
 import {
   type AncestorChannelType,
   appConfig,
+  type ChannelEntityType,
   type EntityIdColumns,
   type EntityType,
   entityIdColumnName,
@@ -9,6 +10,7 @@ import {
   type NullableAncestorType,
   type ProductEntityType,
   type RelatedChannelType,
+  type RootChannelType,
 } from 'shared';
 import { channelTables } from '#/db/channel-tables';
 
@@ -75,6 +77,48 @@ export const channelRelationIndexes = (
     .map((type) => {
       const column = table[appConfig.entityIdColumnKeys[type]] as PgColumn;
       return index(`${tableName}_${entityIdColumnName(type)}_index`).on(column);
+    });
+
+/** One nullable id column per non-root channel type: the channels a membership can be held at below the root. */
+export type MembershipChannelColumns = EntityIdColumns<
+  Exclude<ChannelEntityType, RootChannelType> & EntityType,
+  NullableUuid
+>;
+
+/**
+ * Sub-root channel columns shared by the membership tables, from hierarchy config: one nullable
+ * `<channel>Id` per non-root channel type, cascade-deleting with its channel row. Fresh builders per
+ * call, so the two membership tables never share instances; empty for a root-only hierarchy.
+ */
+export const membershipChannelColumns = (): MembershipChannelColumns => {
+  const columns = {} as Record<string, NullableUuid>;
+
+  for (const channelType of appConfig.channelEntityTypes) {
+    if (channelType === hierarchy.rootChannelType) continue;
+    columns[appConfig.entityIdColumnKeys[channelType]] = uuid().references(() => referencedChannelId(channelType), {
+      onDelete: 'cascade',
+    });
+  }
+
+  return columns as MembershipChannelColumns;
+};
+
+/**
+ * One `(<channel>_id, user_id, archived)` index per non-root channel, named
+ * `<table>_<channel>_user_archived_idx`, for member lookups scoped to a channel. Empty for a
+ * root-only hierarchy, so cella's own tables are unchanged.
+ */
+export const membershipChannelIndexes = (tableName: string, table: Record<string, unknown>) =>
+  appConfig.channelEntityTypes
+    .filter((channelType) => channelType !== hierarchy.rootChannelType)
+    .map((channelType) => {
+      const column = table[appConfig.entityIdColumnKeys[channelType]] as PgColumn;
+      const channel = entityIdColumnName(channelType).replace(/_id$/, '');
+      return index(`${tableName}_${channel}_user_archived_idx`).on(
+        column,
+        table.userId as PgColumn,
+        table.archived as PgColumn,
+      );
     });
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */
