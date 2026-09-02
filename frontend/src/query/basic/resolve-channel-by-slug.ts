@@ -64,15 +64,17 @@ export async function resolveChannelBySlug<
   if (id) {
     const options = detailQueryOptions(id);
 
-    // Seeding the detail cache lets ensureQueryData return without blocking on a fetch; a stale entry still revalidates in the background.
+    // Seeding the detail cache lets ensureQueryData return without blocking on a fetch.
     if (cached && !queryClient.getQueryData<T>(options.queryKey)) {
       queryClient.setQueryData<T>(options.queryKey, cached);
     }
 
+    // ensureQueryData returns cached data without blocking and, with revalidateIfStale, prefetches a stale entry in the background.
+    // Background revalidation is online-only so an offline entry never leaves the detail query in an error state.
     const shouldEnsure = ensureRequiresOnline ? isOnline : true;
-    entity =
-      queryClient.getQueryData<T>(options.queryKey) ??
-      (shouldEnsure ? await queryClient.ensureQueryData({ ...options, revalidateIfStale }) : undefined);
+    entity = shouldEnsure
+      ? await queryClient.ensureQueryData({ ...options, revalidateIfStale: revalidateIfStale && isOnline })
+      : queryClient.getQueryData<T>(options.queryKey);
   } else if (isOnline) {
     entity = await fetchSlugCacheId(fetchBySlug, slugFetchCacheKey);
   }

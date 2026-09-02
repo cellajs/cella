@@ -35,7 +35,6 @@ export function ScrollArea({
     });
   }, [autoScrollOnDrag, viewportRef]);
 
-  // TODO [#13]: Remove when Base UI observes content subtrees.
   // Base UI's content ResizeObserver cannot fire while the content div is height-pinned to 100%, so a subtree
   // mutation that changes the scrollable size re-dispatches a scroll event to trigger the primitive's recompute.
   React.useEffect(() => {
