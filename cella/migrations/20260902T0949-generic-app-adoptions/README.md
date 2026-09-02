@@ -19,9 +19,9 @@ their copies converge to identical:
 - `frontend/.../derive-description-props.ts` uses `shared/utils/derive-description-core` (cella had
   shipped the core but its own frontend still inlined the walk). `DerivedDescriptionCounts` now also
   carries `attachments: string[]`, the referenced attachment ids.
-- `shared/app-exports.ts` (pinned, empty in cella) is re-exported from `shared/index.ts`: app-owned
-  constants under `shared/config/*` reach consumers through the `shared` import without editing the
-  synced barrel.
+- `shared/package.json` exports `./config/*`, so app-owned modules under `shared/config/` (label
+  vocabularies, setup-config constants) are imported as `shared/config/<file>` the way
+  `shared/transloadit-config` already is, instead of being re-exported from the synced barrel.
 - `appConfig.memberStatProductTypes` (`['attachment']`) drives the members table stats:
   `member-counts.ts` resolves tables through `entityTables`, counts only published rows where the
   table has `publishedAt`, and stamps activity by publish time there; `members-columns.tsx` reads the
@@ -32,8 +32,9 @@ their copies converge to identical:
 
 ## Blast radius
 
-Sync-breaking only through the new `shared/app-exports.ts` import in `shared/index.ts` and the
-new `memberStatProductTypes` config key: `pnpm check` fails until both exist in the app. Everything
+Sync-breaking only through the new `memberStatProductTypes` config key: `pnpm check` fails until
+it exists in the app. `package.json` files are never synced, so the `./config/*` export is a
+manual step. Everything
 else is additive; fork copies of these files merge clean or conflict trivially (take upstream and
 re-apply what is genuinely app-specific).
 
@@ -45,8 +46,9 @@ No script — manual.
 
 1. `shared/config/config.default.ts`: add `memberStatProductTypes` (the product types the members
    table shows stats for; `['attachment']` keeps today's behavior).
-2. Create `shared/app-exports.ts` and move app-owned re-exports out of `shared/index.ts` into it
-   (raak: the label vocabulary exports). Add it to `pinned` in `cella/cella.config.ts`.
+2. Add `"./config/*": "./config/*.ts"` to `exports` in `shared/package.json`, then import
+   app-owned config modules as `shared/config/<file>` and take upstream's `shared/index.ts`
+   verbatim (raak: the label vocabulary exports).
 3. Take upstream for `tenant-context.ts`, `lib/module.ts`, `channel-route.ts`,
    `recalculate-counters.ts`, `tabs-arrangement-card.tsx`, `derive-description-props.ts` (+ test),
    `member-counts.ts`, `members-columns.tsx`, `notification-link.ts`. Keep app-only icons in

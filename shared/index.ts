@@ -8,8 +8,6 @@ export type { ConfigMode } from './src/config-builder/types.ts';
 // `hierarchy` must override these from the same synthetic instance.
 export const { isChannel, isProduct } = hierarchy;
 
-// App-owned exports (label vocabularies, setup-config constants, ...); empty in cella.
-export * from './app-exports.ts';
 export type {
   ChannelView,
   EntityHierarchy,

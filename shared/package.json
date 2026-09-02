@@ -16,7 +16,8 @@
     "./testing/*": "./src/testing/*.ts",
     "./blocknote": "./src/utils/text-from-block.ts",
     "./health-app": "./src/health-app.ts",
-    "./transloadit-config": "./config/transloadit-config.ts"
+    "./transloadit-config": "./config/transloadit-config.ts",
+    "./config/*": "./config/*.ts"
   },
   "dependencies": {
     "@blocknote/core": "^0.54.0",

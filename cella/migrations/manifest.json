@@ -701,7 +701,7 @@
     "pnpm sdk",
     "pnpm check"
    ],
-   "summary": "tenantReadAs, wider resolveEmailLink input, getCreatedChannelRoute/getNearestAncestorRoute, text-compared host ids in recalculate-counters, derive-description-core in the frontend, the pinned shared/app-exports.ts barrel, appConfig.memberStatProductTypes driving member stats, and channelRouteConfig.notificationSearch. Apps add the config key and the barrel file, then take upstream for the listed files."
+   "summary": "tenantReadAs, wider resolveEmailLink input, getCreatedChannelRoute/getNearestAncestorRoute, text-compared host ids in recalculate-counters, derive-description-core in the frontend, a ./config/* subpath export on the shared package, appConfig.memberStatProductTypes driving member stats, and channelRouteConfig.notificationSearch. Apps add the config key and the package export, then take upstream for the listed files."
   },
   {
    "id": "20260902T0950-brand-and-app-locale-ignored",
