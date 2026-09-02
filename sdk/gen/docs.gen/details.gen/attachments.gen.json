@@ -296,7 +296,7 @@
           "offset": { "type": "string", "required": false },
           "limit": { "type": "string", "required": false },
           "seqCursor": { "type": "string", "required": false },
-          "channelId": { "type": "string", "required": false, "maxLength": 50 }
+          "channelId": { "type": "string", "required": false, "format": "uuid" }
         }
       }
     }

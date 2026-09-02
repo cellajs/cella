@@ -9228,7 +9228,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 50
+              "format": "uuid"
             },
             "required": false,
             "name": "channelId",

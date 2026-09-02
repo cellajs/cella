@@ -8,14 +8,7 @@ import {
   validateAttachmentPlacement,
 } from '#/modules/attachment/helpers/attachment-placement';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
-import {
-  batchResponseSchema,
-  maxLength,
-  paginationQuerySchema,
-  stxBaseSchema,
-  validIdSchema,
-  validUuidSchema,
-} from '#/schemas';
+import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
@@ -110,7 +103,7 @@ export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
   // Placement seam: narrow to rows homed at one channel (resolved by `resolveAttachmentHomeScope`);
   // omitted or the organization itself reads org-wide.
-  channelId: validIdSchema.optional(),
+  channelId: validUuidSchema.optional(),
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */
