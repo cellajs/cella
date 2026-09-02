@@ -1,55 +1,85 @@
-import { appConfig, hierarchy } from 'shared';
+import type { z } from '@hono/zod-openapi';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
 import type { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { getValidChannel } from '#/permissions/get-valid-channel';
+import { validUuidSchema } from '#/schemas';
+
+const rootChannelType: string = hierarchy.rootChannelType;
+const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors('attachment'));
+/** Sub-organization ancestors an attachment can home at, deepest first; none in cella. */
+const placementAncestors = hierarchy.getOrderedAncestors('attachment').filter((type) => type !== rootChannelType);
+const placementKey = (type: string) => appConfig.entityIdColumnKeys[type as ChannelEntityType];
 
 /**
- * Create-body placement fields, spread into the create-item schema: the deepest home id only.
- * This file is the attachment placement seam (pinned; apps own their fill): cella homes attachments
- * at the organization, so the defaults below expose no fields, resolve every row org-homed, read
- * lists org-wide and seed one batch per organization. An app re-homing attachments on its channel
- * chain replaces the file; the cella-owned schema, list and create ops and the seed call through it.
+ * Create-body placement fields, spread into the create-item schema. This file is the attachment
+ * placement seam (pinned; apps own their fill), with defaults derived from the hierarchy: the
+ * client sends the deepest home id only (required when that home is a strict ancestor, optional
+ * when nullable), the chain above it is read off the resolved row, and every other sub-organization
+ * ancestor column is null. cella has no sub-organization ancestors, so its rows are org-homed.
  */
-export const attachmentPlacementFieldsSchema = {};
+export const attachmentPlacementFieldsSchema = Object.fromEntries(
+  placementAncestors.map((type) => [
+    placementKey(type),
+    nullableAncestors.has(type) ? validUuidSchema.optional() : validUuidSchema,
+  ]),
+) as Record<string, z.ZodType<string | undefined>>;
 
 /** A create-body item as the placement seam sees it; apps narrow to their placement fields. */
 export type AttachmentPlacementInput = Record<string, unknown>;
 
-/**
- * Ancestor id columns to stamp on the inserted row; empty = org-homed. May also carry `publicAt`
- * when the app inherits the home channel's public-read flag server-side.
- */
+/** Ancestor id columns to stamp on the inserted row (null above the home); empty = org-homed. */
 export type ResolvedAttachmentPlacement = Record<string, string | null>;
 
-/**
- * Per-item create-body validation, anchored at the returned path relative to the item. Apps
- * reject ambiguous placement here (more than one home id per item); with no placement fields
- * there is nothing to reject.
- */
+const providedHome = (item: AttachmentPlacementInput) =>
+  placementAncestors.filter((type) => typeof item[placementKey(type)] === 'string' && item[placementKey(type)]);
+
+/** Per-item create-body validation, anchored at the returned path relative to the item: one home id at most. */
 export const validateAttachmentPlacement = (
-  _item: AttachmentPlacementInput,
-): { path: (string | number)[]; message: string } | null => null;
+  item: AttachmentPlacementInput,
+): { path: (string | number)[]; message: string } | null => {
+  const provided = providedHome(item);
+  if (provided.length <= 1) return null;
+  return {
+    path: [placementKey(provided[0])],
+    message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)',
+  };
+};
 
 /**
- * Ancestor columns for one create-body item; the org-homed default stamps none. Apps resolve
- * the most specific client-sent id to a real row (requiring read access on it) and derive the
- * chain above it server-side, never from client input.
+ * Ancestor columns for one create-body item: the deepest provided id, resolved to a readable
+ * channel row, plus that row's own ancestor ids; never client input above the home. No id means
+ * org-homed, which the fields schema only allows when no strict ancestor exists.
  */
 export const resolveAttachmentPlacement = async (
-  _ctx: AuthContext,
-  _input: AttachmentPlacementInput,
-): Promise<ResolvedAttachmentPlacement> => ({});
+  ctx: AuthContext,
+  input: AttachmentPlacementInput,
+): Promise<ResolvedAttachmentPlacement> => {
+  const placement: ResolvedAttachmentPlacement = Object.fromEntries(
+    placementAncestors.map((type) => [placementKey(type), null]),
+  );
+  const home = providedHome(input)[0];
+  if (!home) return placement;
+
+  const { entity } = await getValidChannel(ctx, input[placementKey(home)] as string, home, 'read');
+  const row = entity as Record<string, unknown>;
+  placement[placementKey(home)] = entity.id;
+  for (const ancestor of hierarchy.getOrderedAncestors(home)) {
+    if (ancestor === rootChannelType) break;
+    const id = row[placementKey(ancestor)];
+    placement[placementKey(ancestor)] = typeof id === 'string' ? id : null;
+  }
+  return placement;
+};
 
 /**
  * The channel type attachments home at: the deepest strict ancestor, else the root. Apps with
  * nullable placement (rows home at any depth) keep the root here and read org-wide.
  */
 const homeChannelType =
-  hierarchy
-    .getOrderedAncestors('attachment')
-    .find((type) => !hierarchy.getNullableAncestors('attachment').includes(type)) ?? hierarchy.rootChannelType;
+  hierarchy.getOrderedAncestors('attachment').find((type) => !nullableAncestors.has(type)) ?? hierarchy.rootChannelType;
 
 /** Column holding a row's home channel id: list reads compile the caller's grant scope against it. */
 export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
@@ -66,8 +96,6 @@ export const resolveAttachmentHomeScope = async (
   channelId: string | undefined,
 ): Promise<string | undefined> => {
   if (!channelId || channelId === ctx.var.organization.id) return undefined;
-  // Widened so a single-channel hierarchy does not narrow `homeChannelType` to never below.
-  const rootChannelType: string = hierarchy.rootChannelType;
   if (homeChannelType === rootChannelType) {
     throw new AppError(404, 'not_found', 'warn', { entityType: hierarchy.rootChannelType });
   }

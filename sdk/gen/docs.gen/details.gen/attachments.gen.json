@@ -876,6 +876,10 @@
               "description": "MIME type of the server-converted variant; null when none.",
               "maxLength": 255
             },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": false
+            },
             "stx": {
               "type": "object",
               "required": true,
