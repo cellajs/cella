@@ -13,7 +13,7 @@ type OrganizationLayoutBeforeLoadArgs = {
 
 /** Loads and authorizes the organization route context. */
 export const organizationLayoutBeforeLoad = async ({ params, cause }: OrganizationLayoutBeforeLoadArgs) => {
-  // TODO [#12] Revalidate on initial entry; child useSuspenseQuery handles search param changes.
+  // Revalidate a stale organization on fresh entry only; preloads and in-route param changes reuse the cache.
   const shouldRevalidate = cause === 'enter';
 
   const { tenantId, organizationSlug } = params;
