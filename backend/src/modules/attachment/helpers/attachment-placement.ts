@@ -1,5 +1,14 @@
 import type { z } from '@hono/zod-openapi';
-import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
+import {
+  type AncestorChannelType,
+  appConfig,
+  type ChannelEntityType,
+  type EntityIdColumns,
+  type EntityType,
+  hierarchy,
+  type NullableAncestorType,
+  type RootChannelType,
+} from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
@@ -30,8 +39,17 @@ export const attachmentPlacementFieldsSchema = Object.fromEntries(
 /** A create-body item as the placement seam sees it; apps narrow to their placement fields. */
 export type AttachmentPlacementInput = Record<string, unknown>;
 
-/** Ancestor id columns to stamp on the inserted row (null above the home); empty = org-homed. */
-export type ResolvedAttachmentPlacement = Record<string, string | null>;
+type SubOrgAncestor = Exclude<AncestorChannelType<'attachment'>, RootChannelType>;
+
+/**
+ * Ancestor id columns to stamp on the inserted row, typed like the table columns: strict ancestors
+ * are `string`, nullable ones `string | null`; empty for org-homed rows.
+ */
+export type ResolvedAttachmentPlacement = EntityIdColumns<
+  Exclude<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType,
+  string
+> &
+  EntityIdColumns<Extract<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType, string | null>;
 
 const providedHome = (item: AttachmentPlacementInput) =>
   placementAncestors.filter((type) => typeof item[placementKey(type)] === 'string' && item[placementKey(type)]);
@@ -57,21 +75,21 @@ export const resolveAttachmentPlacement = async (
   ctx: AuthContext,
   input: AttachmentPlacementInput,
 ): Promise<ResolvedAttachmentPlacement> => {
-  const placement: ResolvedAttachmentPlacement = Object.fromEntries(
+  const columns: Record<string, string | null> = Object.fromEntries(
     placementAncestors.map((type) => [placementKey(type), null]),
   );
   const home = providedHome(input)[0];
-  if (!home) return placement;
+  if (!home) return columns as ResolvedAttachmentPlacement;
 
   const { entity } = await getValidChannel(ctx, input[placementKey(home)] as string, home, 'read');
   const row = entity as Record<string, unknown>;
-  placement[placementKey(home)] = entity.id;
+  columns[placementKey(home)] = entity.id;
   for (const ancestor of hierarchy.getOrderedAncestors(home)) {
     if (ancestor === rootChannelType) break;
     const id = row[placementKey(ancestor)];
-    placement[placementKey(ancestor)] = typeof id === 'string' ? id : null;
+    columns[placementKey(ancestor)] = typeof id === 'string' ? id : null;
   }
-  return placement;
+  return columns as ResolvedAttachmentPlacement;
 };
 
 /**
@@ -119,4 +137,8 @@ export const seedAttachmentPlacements = async (
   _db: DB,
   organizations: { id: string; tenantId: string }[],
 ): Promise<AttachmentSeedPlacement[]> =>
-  organizations.map((org) => ({ organizationId: org.id, tenantId: org.tenantId, placement: {} }));
+  organizations.map((org) => ({
+    organizationId: org.id,
+    tenantId: org.tenantId,
+    placement: {} as ResolvedAttachmentPlacement,
+  }));
