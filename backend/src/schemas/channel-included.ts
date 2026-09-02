@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { type ChannelEntityType, hierarchy, isProduct, recordFromKeys } from 'shared';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { appChannelCountFields } from '#/schemas/app-channel-counts';
+import { appChannelCountFields } from '#/schemas/app-schemas';
 import { membershipCountSchema } from '#/schemas/count-schemas';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 
