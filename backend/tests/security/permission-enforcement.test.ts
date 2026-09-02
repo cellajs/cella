@@ -128,14 +128,19 @@ describe('Permission enforcement via HTTP', async () => {
   describe('Presigned URLs by role', () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
 
-    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0 rejects.
+    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0
+    // rejects. The member only holds the root role, so the cell must also reach the row's home:
+    // the row is org-homed, or the root role is elevated (its grants cover the whole subtree).
     const { rootChannelType } = hierarchy;
+    const memberRole = hierarchy.getLeastPrivilegedRole(rootChannelType);
     const memberAttachmentRead = getPolicyPermissions(
       getEntityPolicies('attachment', policyMatrix),
       rootChannelType,
-      hierarchy.getLeastPrivilegedRole(rootChannelType),
+      memberRole,
     )?.read;
-    const memberSignsUnowned = memberAttachmentRead === 1;
+    const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
+    const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`${rootChannelType}:${memberRole}`);
+    const memberSignsUnowned = memberAttachmentRead === 1 && rootGrantReachesRow;
 
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
