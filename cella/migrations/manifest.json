@@ -685,9 +685,9 @@
    "summary": "The pinned attachment-placement seam gains attachmentHomeColumnKey, resolveAttachmentHomeScope and seedAttachmentPlacements; list reads take a generic channelId param; channelRelationColumns adds lazy ancestor foreign keys via registerChannelTable plus channelRelationIndexes; appConfig.attachmentUploadTargets gates the upload affordance; frontend placement handling is hierarchy-derived. Apps extend the seam file, register their channel tables, add the config key and take upstream for the surrounding files."
   },
   {
-   "id": "20260902T0949-fork-generic-adoptions",
+   "id": "20260902T0949-generic-app-adoptions",
    "version": "next",
-   "title": "Generic fork improvements adopted upstream",
+   "title": "Generic app improvements adopted upstream",
    "kind": "manual",
    "syncBreaking": true,
    "clientCacheBump": false,

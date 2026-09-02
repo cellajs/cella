@@ -1,9 +1,9 @@
-# Generic fork improvements adopted upstream
+# Generic app improvements adopted upstream
 
 ## What & why
 
-Small generalisations both forks carried as `// fork:` deltas on cella-owned files, now in cella so
-the fork copies converge to identical:
+Small generalisations both apps carried as `// fork:` deltas on cella-owned files, now in cella so
+their copies converge to identical:
 
 - `tenantReadAs(ctx, tenantId, fn)` in `backend/src/db/tenant-context.ts`: `tenantRead` with an
   explicit tenant id for cross-tenant routes.
