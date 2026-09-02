@@ -2,48 +2,39 @@
 
 ## What & why
 
-The `EntityHierarchy` instance is now the ONLY entry point for row location and entity-kind
-guards. Removed from the `shared` barrel:
-
-- Free functions `resolveDeepestAncestorId`, `resolveNonNullAncestors`,
-  `possibleHomeChannels`, `computeAncestorPath`, `computeProductPath`, `computeChannelPath`,
-  `pathColumnSql`, `deepestAncestorSql` (call the same-named method on a hierarchy instance).
-- Entity guards `isChannelEntity`, `isProductEntity`, `getChannelRoles`
-  (`shared/src/entity-guards.ts` deleted; use `hierarchy.isChannel`, `hierarchy.isProduct`,
-  `hierarchy.getRoles`; the guards now accept `null | undefined` and return false). For the
-  two highest-frequency guards, `shared` re-exports the app singleton's bound methods as
-  `isChannel` / `isProduct` (class methods are arrow fields, so destructuring keeps `this`);
-  these are aliases of the instance methods, not separate implementations. Test mocks that
-  replace `hierarchy` must override `isChannel`/`isProduct` from the same synthetic instance.
-- Types `AncestorSource`, `CountsHierarchy`, `TopologyHierarchy`: every injectable-topology
-  parameter is now typed `EntityHierarchy` (the class gained generic defaults so the bare
-  name works as an annotation). `PermissionTopology.hierarchy` is an `EntityHierarchy`.
-
-The id-column snake-caser is single-sourced: `entityIdColumnName(type)` delegates to
-`toColumnName`, so the camel-to-snake regex exists once.
+The `EntityHierarchy` instance is the only entry point for row location and entity-kind guards.
+Removed from the `shared` barrel: free functions `resolveDeepestAncestorId`,
+`resolveNonNullAncestors`, `possibleHomeChannels`, `computeAncestorPath`, `computeProductPath`,
+`computeChannelPath`, `pathColumnSql`, `deepestAncestorSql` (same-named instance methods); guards
+`isChannelEntity`, `isProductEntity`, `getChannelRoles` (`shared/src/entity-guards.ts` deleted; use
+`hierarchy.isChannel` / `hierarchy.isProduct` / `hierarchy.getRoles`, which accept `null | undefined`
+and return false; `shared` re-exports the app singleton's bound `isChannel` / `isProduct` as
+aliases); types `AncestorSource`, `CountsHierarchy`, `TopologyHierarchy` (annotate
+`EntityHierarchy`; `PermissionTopology.hierarchy` is one). `entityIdColumnName(type)` delegates to
+`toColumnName`.
 
 ## Blast radius
 
-Sync-breaking on imports and call shape, mechanical to apply. No wire, DB, or behavior
-change: every removed function's implementation is the method's implementation. Tests that
-passed hand-rolled `{ getOrderedAncestors: ... }` fakes must build real instances with
-`createEntityHierarchy` (see `shared/testing/deep-fixture.ts` and `wide-fixture.ts`).
+Sync-breaking on imports and call shape, mechanical. No wire, DB, or behavior change. Test mocks
+replacing `hierarchy` must override `isChannel`/`isProduct` from the same synthetic instance;
+hand-rolled `{ getOrderedAncestors: ... }` fakes become real `createEntityHierarchy` instances (see
+`shared/testing/deep-fixture.ts` and `wide-fixture.ts`).
 
 ## Run
 
-No script — manual. The patterns are regular enough for search-and-replace:
+No script, manual search-and-replace:
 
 - `fn(h, a, b)` becomes `h.fn(a, b)` for the eight row-location functions.
 - `isProductEntity(x)` becomes `hierarchy.isProduct(x)` (same for channel/roles variants).
-- Type annotations `AncestorSource` / `CountsHierarchy` / `TopologyHierarchy` become
-  `EntityHierarchy` (import type from `shared`).
+- `AncestorSource` / `CountsHierarchy` / `TopologyHierarchy` annotations become `EntityHierarchy`
+  (import type from `shared`).
 
 ## Manual steps
 
-1. Sweep app-specific code for the removed imports (`grep -rn "isProductEntity\|isChannelEntity\|getChannelRoles\|AncestorSource\|resolveDeepestAncestorId\|computeProductPath\|computeChannelPath\|computeAncestorPath\|possibleHomeChannels\|resolveNonNullAncestors" src/`) and apply the patterns above.
-2. Replace any hand-rolled hierarchy fakes in tests with real builder instances.
-3. If app code relied on `isProductEntity(nullableValue)` null tolerance, the instance
-   methods now accept `null | undefined` directly.
+1. Sweep app code for the removed imports and apply the patterns above: `grep -rn "isProductEntity\|isChannelEntity\|getChannelRoles\|AncestorSource\|resolveDeepestAncestorId\|computeProductPath\|computeChannelPath\|computeAncestorPath\|possibleHomeChannels\|resolveNonNullAncestors" src/`
+2. Replace hand-rolled hierarchy fakes in tests with real builder instances.
+3. Code relying on `isProductEntity(nullableValue)` null tolerance: the instance methods accept
+   `null | undefined` directly.
 
 ## Verify
 

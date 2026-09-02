@@ -2,65 +2,42 @@
 
 ## What & why
 
-Cella has two entity families: **channel entities** (membership-scoped, e.g. `organization`) and
-**product entities** (content, e.g. `attachment`). The word `entity` belongs on genuinely
-entity-agnostic code and on the type-string unions (`ChannelEntityType`, `productEntityTypes`, the
-`entityType`/`entityId` discriminator columns). Many identifiers that were constrained to one
-family still carried a redundant `Entity`. This sweep sharpens them:
-
-- The two base schemas drop `Entity` and keep `Base`: `ChannelEntityBase` -> **`ChannelBase`**,
-  `ProductEntityBase` -> **`ProductBase`** (with their `*BaseSchema` values, `channelBaseSelect`,
-  mocks `mockChannelBase`/`mockProductBase`, and `.openapi()` component names).
-- Everything else drops `Entity`: `getValidChannelEntity` -> `getValidChannel`,
-  `EnrichedChannelEntity` -> `EnrichedChannel`, `ChannelEntityView` -> `ChannelView`,
-  `ChannelEntityIdColumns` -> `ChannelIdColumns`, `channelEntityColumns` -> `channelColumns`, and so
-  on across enrichment, routes, list-query wiring, UI, and DB column helpers. Product siblings move
-  the same way (`getValidProductEntity` -> `getValidProduct`, `ProductEntityView` -> `ProductView`,
-  `productEntityColumns` -> `productColumns`, …).
-
-The full old -> new map is the `RENAMES` object in
-[`drop-entity-suffix-renames.ts`](./drop-entity-suffix-renames.ts) (48 identifiers) and its
-`FILE_STEMS` (9 files). It is an allow-list, word-boundary matched, so it can never touch the
-type-string unions (`ChannelEntityType`, `productEntityTypes`, `entityType`, …).
-
-The bare instance renames `channelEntity` -> `channel` (~140) and `channelEntityId` / `channelEntityIds`
-/ `channelEntityKey` -> `channelId` / `channelIds` / `channelKey` are included, but only after a
-per-file scan confirmed no real `channel` / `channelId` identifier co-occurs with them in the same
-file (the large whole-repo counts of `channel` are the English word in comments, not identifiers).
-None is a wire/SDK field, so they stay local renames. An app whose own code pairs a `channelEntity`
-variable with a distinct `channel` in the same file should reconcile that file by hand.
-
-The permission subject map also becomes `ChannelScope` -> `AncestorChannelIds`. It carries ancestor
-IDs and is distinct from the computed authorization scopes used for collection reads.
+Identifiers constrained to one entity family drop their redundant `Entity`: `ChannelEntityBase` ->
+`ChannelBase`, `ProductEntityBase` -> `ProductBase` (with `*BaseSchema`, `channelBaseSelect`,
+`mockChannelBase`/`mockProductBase`, `.openapi()` names), `getValidChannelEntity` -> `getValidChannel`,
+`EnrichedChannelEntity` -> `EnrichedChannel`, `ChannelEntityView` -> `ChannelView`,
+`ChannelEntityIdColumns` -> `ChannelIdColumns`, `channelEntityColumns` -> `channelColumns`, product
+siblings (`getValidProduct`, `ProductView`, `productColumns`), bare `channelEntity` -> `channel`,
+`channelEntityId`/`Ids`/`Key` -> `channelId`/`Ids`/`Key`, `ChannelScope` -> `AncestorChannelIds`.
+Type-string unions (`ChannelEntityType`, `productEntityTypes`, `entityType`/`entityId`) keep
+`entity`. Full map: `RENAMES` (48 ids) and `FILE_STEMS` (9 files) in
+[`drop-entity-suffix-renames.ts`](./drop-entity-suffix-renames.ts), allow-listed and word-boundary
+matched.
 
 ## Blast radius
 
-Internal rename only. **No wire-shape change**: the OpenAPI component names change
-(`ChannelEntityBase` -> `ChannelBase`, `ProductEntityBase` -> `ProductBase`) but the field shapes
-are identical, so `oasdiff breaking` reports nothing and **no `clientCacheVersion` bump / lens is
-needed**. It does rename public SDK type names, so it is a breaking change for external SDK
-consumers: cut it as `feat!`. ~120 files upstream; an app is affected wherever it references any
-renamed identifier or imports a renamed file.
+Internal rename, ~120 upstream files. No wire-shape change (OpenAPI component names change, field
+shapes identical; `oasdiff breaking` clean; no `clientCacheVersion` bump or lens). Public SDK type
+names change: cut as `feat!`. Affected wherever an app references a renamed identifier or file; a
+file pairing its own `channelEntity` with a distinct `channel` is reconciled by hand.
 
 ## Run
 
-On app-specific code after pulling the upstream sweep, from the repo root:
+On app-specific code after pulling the upstream sweep:
 
 ```sh
 pnpm exec tsx cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts inventory backend/src backend/tests backend/scripts frontend/src shared cdc/src yjs/src
 pnpm exec tsx cella/migrations/20260722T0902-drop-entity-suffix-renames/drop-entity-suffix-renames.ts rewrite   backend/src backend/tests backend/scripts frontend/src shared cdc/src yjs/src
 ```
 
-Add app-specific single-family identifiers with `--extra-renames <file>` (a JSON `{ "old": "new" }`
-object), never by editing the shipped script.
+App-specific identifiers go in `--extra-renames <file>` (a JSON `{ "old": "new" }` object), never in
+the shipped script.
 
 ## Manual steps
 
-1. **De-shadow the local mock type** (before or after the sweep): in
-   `backend/src/modules/memberships/memberships-mocks.ts`, the module-local
-   `type ChannelEntity = { id; tenantId }` is renamed to `ChannelRef` so it does not read as the new
-   canonical `ChannelEntity`. The codemod does not touch it (no `ChannelEntity` key in the map).
-2. **`git mv` the renamed files** (the codemod already rewrote the import paths that point at them):
+1. In `backend/src/modules/memberships/memberships-mocks.ts`, rename the module-local
+   `type ChannelEntity = { id; tenantId }` to `ChannelRef` (the codemod has no `ChannelEntity` key).
+2. `git mv` the renamed files (import paths are already rewritten):
 
    | old | new |
    | --- | --- |
@@ -83,19 +60,5 @@ pnpm check    # single gate: sdk regen + typecheck + lint:fix
 
 ## Not renamed (decided)
 
-- **`isChannelEntity` / `isProductEntity`** stay as-is. Dropping `Entity` (`-> isChannel`/`isProduct`)
-  was considered and declined: those names already belong to the `hierarchy.isChannel` /
-  `topology.isProduct` methods (the guards are thin wrappers over them), so a free function of the
-  same name would blur the model and would force local booleans like
-  `const isChannel = isChannelEntity(x)` into awkward renames. The guards read unambiguously as-is.
-
-## Consolidation opportunities (noted, not done here)
-
-- **`search-result-block.tsx`** used to re-derive `channelEntities.includes(entityType)`; now calls
-  the `isChannelEntity` guard directly (done as a standalone cleanup, not part of this codemod). The
-  local caches in `build-message.ts` and `validation.ts` are left as-is: they cache the guard result
-  and carry its type narrowing, which is intentional, not redundant.
-- **Test re-derivation**: `backend/tests/integration/rls-security.test.ts` and
-  `backend/scripts/migrations/10-rls.migration.ts` each locally derive channel table names from
-  `appConfig.channelEntityTypes`. There is no shared helper to import; consolidating would mean
-  extracting one. Low value, left for later.
+`isChannelEntity` / `isProductEntity` stay: `isChannel` / `isProduct` already name the
+`hierarchy.isChannel` / `topology.isProduct` methods the guards wrap.

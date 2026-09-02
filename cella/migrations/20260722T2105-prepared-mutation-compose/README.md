@@ -2,61 +2,48 @@
 
 ## What & why
 
-The offline mutation template dropped the `usePreparedMutation` hook wrapper in
-[`frontend/src/query/offline/prepared-mutation.ts`](../../../frontend/src/query/offline/prepared-mutation.ts).
-It hid `useMutation` behind a five-generic hook signature that every call site had to spell out. The
-reusable core, `buildPreparedHandlers(mutation, prepare)` (pure, unit-tested), stays. Each mutation
-hook now calls `useMutation` directly and spreads the prepared handlers over it:
+`usePreparedMutation` is removed from
+[`frontend/src/query/offline/prepared-mutation.ts`](../../../frontend/src/query/offline/prepared-mutation.ts);
+it hid `useMutation` behind five explicit generics. `buildPreparedHandlers(mutation, prepare)`
+stays; hooks call `useMutation` and spread the handlers:
 
 ```ts
 const mutation = useMutation(options);
 return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 ```
 
-This keeps react-query first-class at the call site, collapses the five explicit generics to three
-that infer, and removes the `mutation as Mutatable` cast (the `Mutatable` interface now uses method
-syntax so a `UseMutationResult` is assignable without it). `PreparedVars`, the `COALESCED` sentinel,
-and `buildPreparedHandlers` are unchanged and still exported, so callers that await a create and
-narrow against `COALESCED` keep working untouched.
+Three generics infer; the `mutation as Mutatable` cast is gone (`Mutatable` uses method syntax).
+`PreparedVars`, `COALESCED`, and `buildPreparedHandlers` are unchanged and still exported.
 
 ## Blast radius
 
-Sync-breaking, frontend only. Any app mutation hook that imports `usePreparedMutation` breaks at
-compile time (`pnpm check` catches every site). In a stock cella app these are the per-entity
-`query.ts` files that drive offline create/update/delete (e.g. `attachment`, and in a task-style
-app also `label` and `task`). The `prepare` functions themselves, the squash/coalesce logic, and
-the `COALESCED` call sites do not change.
-
-No wire-shape change, so no `clientCacheVersion` bump and no lens. No database change. An app that
-never wrote a mutation hook on top of `usePreparedMutation` (only consumed the entity hooks) is
-unaffected beyond pulling the upstream files.
+Sync-breaking, frontend only; `pnpm check` catches every site: app hooks importing
+`usePreparedMutation` (per-entity `query.ts` offline create/update/delete, e.g. `attachment`;
+`label` and `task` in a task-style app). `prepare` functions, squash/coalesce logic, and
+`COALESCED` call sites are unchanged. No wire-shape, `clientCacheVersion`, lens, or database
+change; apps that only consume the entity hooks are unaffected.
 
 ## Run
 
-No script -- manual. The rewrite restructures each hook (introduce a `useMutation` local, replace
-the `return`, annotate the inline `prepare` input type so `TInput` infers) and cannot be done by a
-safe word-boundary codemod. Call sites are few (one block per mutation hook).
+No script, manual (one block per hook).
 
 ## Manual steps
 
-1. Find every app call site (upstream files arrive already migrated):
+1. Find every app call site (upstream files arrive migrated):
 
    ```sh
    grep -rn "usePreparedMutation" frontend/src --include=*.ts --include=*.tsx
    ```
 
-2. In each `query.ts` that matched, fix the imports:
+2. In each matching `query.ts`, add `useMutation` to the `@tanstack/react-query` import and swap
+   `usePreparedMutation` for `buildPreparedHandlers`, keeping `PreparedVars` (and `COALESCED` if
+   imported):
 
-   - Add `useMutation` to the `@tanstack/react-query` import.
-   - Change the prepared-mutation import from `usePreparedMutation` to `buildPreparedHandlers`,
-     keeping `PreparedVars` (and `COALESCED` if the module already imported it):
+   ```ts
+   import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
+   ```
 
-     ```ts
-     import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
-     ```
-
-3. Rewrite each hook. Drop the five generics; build the mutation with `useMutation`, then spread the
-   prepared handlers. For a create (inline `prepare`, annotate its input so `TInput` infers):
+3. Rewrite each hook. Create (inline `prepare`, annotate its input):
 
    ```ts
    // before
@@ -74,8 +61,8 @@ safe word-boundary codemod. Call sites are few (one block per mutation hook).
    return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
    ```
 
-   For update/delete, the `prepare` const is already annotated (`(input): PreparedVars<Vars> => …`);
-   leave its body as is and only swap the return:
+   Update/delete (`prepare` already annotated `(input): PreparedVars<Vars> => …`; swap only the
+   return):
 
    ```ts
    // before
@@ -90,11 +77,11 @@ safe word-boundary codemod. Call sites are few (one block per mutation hook).
    return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
    ```
 
-4. Leave `COALESCED` call sites unchanged. `mutateAsync` still resolves to `TData | typeof
-   COALESCED`, so `createdEntity !== COALESCED` guards keep narrowing correctly.
+4. Leave `COALESCED` call sites unchanged: `mutateAsync` still resolves to `TData | typeof
+   COALESCED`, so `createdEntity !== COALESCED` guards keep narrowing.
 
 ## Verify
 
 ```sh
-pnpm check     # typecheck flags any remaining usePreparedMutation reference or missed generic
+pnpm check     # flags any remaining usePreparedMutation reference or missed generic
 ```
