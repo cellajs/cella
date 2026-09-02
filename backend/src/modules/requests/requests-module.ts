@@ -1,4 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
+import { requestHandlers } from './requests-handlers';
 
 defineBackendModule({
   name: 'requests',
@@ -6,4 +7,5 @@ defineBackendModule({
   scope: ['frontend', 'backend'],
   description: `Endpoints for handling incoming requests such as contact form submissions, newsletter signups,
     and waitlist entries.`,
+  routes: [{ path: '/requests', app: requestHandlers }],
 });

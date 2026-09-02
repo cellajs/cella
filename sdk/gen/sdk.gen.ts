@@ -1212,6 +1212,312 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * List domains for a tenant
+ *
+ * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
+ *
+ * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains) ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains) ·· _tenants_cella_
+ *
+ * @param {getDomainsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getDomains = <ThrowOnError extends boolean = true>(
+  options: Options<GetDomainsData, ThrowOnError>,
+): RequestResult<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetDomainsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetDomainsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains',
+    ...options,
+  });
+
+/**
+ * Add a domain to a tenant
+ *
+ * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
+ *
+ * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains) ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains) ·· _tenants_cella_
+ *
+ * @param {createDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string=} options.body.domain - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const createDomain = <ThrowOnError extends boolean = true>(
+  options: Options<CreateDomainData, ThrowOnError>,
+): RequestResult<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateDomainBody,
+          path: zCreateDomainPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateDomainResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove a domain
+ *
+ * Removes a domain from a tenant. System admin access required.
+ *
+ * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/DELETE/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ *
+ * @param {deleteDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const deleteDomain = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteDomainData, ThrowOnError>,
+): RequestResult<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zDeleteDomainPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteDomainResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}',
+    ...options,
+  });
+
+/**
+ * Get domain with verification token
+ *
+ * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
+ *
+ * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
+ *
+ * @param {getDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getDomain = <ThrowOnError extends boolean = true>(
+  options: Options<GetDomainData, ThrowOnError>,
+): RequestResult<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetDomainPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetDomainResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}',
+    ...options,
+  });
+
+/**
+ * Verify domain ownership via DNS
+ *
+ * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
+ *
+ * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
+ *
+ * @param {verifyDomainData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const verifyDomain = <ThrowOnError extends boolean = true>(
+  options: Options<VerifyDomainData, ThrowOnError>,
+): RequestResult<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zVerifyDomainPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zVerifyDomainResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/domains/{id}/verify',
+    ...options,
+  });
+
+/**
+ * Check slug availability
+ *
+ * Checks whether a given slug is available within a tenant for the specified entity type.
+ * Primarily used to prevent slug collisions before creating or updating an entity.
+ *
+ * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/{tenantId}/check-slug) ·· _entities_cella_
+ *
+ * @param {checkSlugData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string=} options.body.slug - `string` (optional)
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const checkSlug = <ThrowOnError extends boolean = true>(
+  options: Options<CheckSlugData, ThrowOnError>,
+): RequestResult<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCheckSlugBody,
+          path: zCheckSlugPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCheckSlugResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/{tenantId}/check-slug',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * App event SSE stream
+ *
+ * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
+ *
+ * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/entities/app/stream) ·· _entities_cella_
+ *
+ * @param {getAppStreamData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getAppStream = <ThrowOnError extends boolean = true>(
+  options?: Options<GetAppStreamData, ThrowOnError, unknown>,
+): Promise<ServerSentEventsResult<GetAppStreamResponses>> =>
+  (options?.client ?? client).sse.get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/app/stream',
+    ...options,
+  });
+
+/**
+ * App event catchup
+ *
+ * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.
+ *
+ * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
+ *
+ * @param {postAppCatchupData} options
+ * @param {string=} options.body.cursor - `string` (optional)
+ * @param {any[]=} options.body.views - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const postAppCatchup = <ThrowOnError extends boolean = true>(
+  options: Options<PostAppCatchupData, ThrowOnError>,
+): RequestResult<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPostAppCatchupBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPostAppCatchupResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/entities/app/stream',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * Delete self
  *
  * Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
@@ -1620,764 +1926,6 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get unseen counts
- *
- * Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.
- *
- * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
- *
- * @param {getUnseenCountsData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getUnseenCounts = <ThrowOnError extends boolean = true>(
-  options?: Options<GetUnseenCountsData, ThrowOnError>,
-): RequestResult<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetUnseenCountsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/unseen/counts',
-    ...options,
-  });
-
-/**
- * Check slug availability
- *
- * Checks whether a given slug is available within a tenant for the specified entity type.
- * Primarily used to prevent slug collisions before creating or updating an entity.
- *
- * **POST /entities/{tenantId}/check-slug** ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/{tenantId}/check-slug) ·· [checkSlug](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/{tenantId}/check-slug) ·· _entities_cella_
- *
- * @param {checkSlugData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string=} options.body.slug - `string` (optional)
- * @param {enum=} options.body.entityType - `enum` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
- */
-export const checkSlug = <ThrowOnError extends boolean = true>(
-  options: Options<CheckSlugData, ThrowOnError>,
-): RequestResult<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CheckSlugResponses, CheckSlugErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCheckSlugBody,
-          path: zCheckSlugPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCheckSlugResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/{tenantId}/check-slug',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * App event SSE stream
- *
- * SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.
- *
- * **GET /entities/app/stream** ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/GET/entities/app/stream) ·· [getAppStream](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/entities/app/stream) ·· _entities_cella_
- *
- * @param {getAppStreamData} options
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getAppStream = <ThrowOnError extends boolean = true>(
-  options?: Options<GetAppStreamData, ThrowOnError, unknown>,
-): Promise<ServerSentEventsResult<GetAppStreamResponses>> =>
-  (options?.client ?? client).sse.get<GetAppStreamResponses, GetAppStreamErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/app/stream',
-    ...options,
-  });
-
-/**
- * App event catchup
- *
- * Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.
- *
- * **POST /entities/app/stream** ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=entities#tag/entities/POST/entities/app/stream) ·· [postAppCatchup](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/entities/app/stream) ·· _entities_cella_
- *
- * @param {postAppCatchupData} options
- * @param {string=} options.body.cursor - `string` (optional)
- * @param {any[]=} options.body.views - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const postAppCatchup = <ThrowOnError extends boolean = true>(
-  options: Options<PostAppCatchupData, ThrowOnError>,
-): RequestResult<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<PostAppCatchupResponses, PostAppCatchupErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zPostAppCatchupBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zPostAppCatchupResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/entities/app/stream',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Invite to system
- *
- * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
- *
- * **POST /system/invite** ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/invite) ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/invite) ·· _system_cella_
- *
- * @param {systemInviteData} options
- * @param {any[]=} options.body.emails - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const systemInvite = <ThrowOnError extends boolean = true>(
-  options: Options<SystemInviteData, ThrowOnError>,
-): RequestResult<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zSystemInviteBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zSystemInviteResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/invite',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Delete users
- *
- * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
- *
- * **DELETE /system** ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/DELETE/system) ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/system) ·· _system_cella_
- *
- * @param {deleteUsersData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deleteUsers = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteUsersData, ThrowOnError>,
-): RequestResult<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zDeleteUsersBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeleteUsersResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update user
- *
- * Updates a user identified by ID.
- *
- * **PUT /system/{id}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/system/{id}) ·· _system_cella_
- *
- * @param {updateUserData} options
- * @param {string} options.path.id - `string`
- * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
- * @param {string | null=} options.body.description - `string | null` (optional)
- * @param {string | null=} options.body.firstName - `string | null` (optional)
- * @param {string | null=} options.body.lastName - `string | null` (optional)
- * @param {enum=} options.body.language - `enum` (optional)
- * @param {boolean=} options.body.newsletter - `boolean` (optional)
- * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
- * @param {string=} options.body.slug - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const updateUser = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateUserData, ThrowOnError>,
-): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zUpdateUserBody.optional(),
-          path: zUpdateUserPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zUpdateUserResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/{id}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Newsletter to members
- *
- * Sends a newsletter to members of one or more specified organizations.
- *
- * **POST /system/newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/newsletter) ·· _system_cella_
- *
- * @param {sendNewsletterData} options
- * @param {any=} options.query.toself - `any` (optional)
- * @param {any[]=} options.body.organizationIds - `any[]` (optional)
- * @param {any[]=} options.body.roles - `any[]` (optional)
- * @param {string=} options.body.subject - `string` (optional)
- * @param {string=} options.body.content - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
- */
-export const sendNewsletter = <ThrowOnError extends boolean = true>(
-  options: Options<SendNewsletterData, ThrowOnError>,
-): RequestResult<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zSendNewsletterBody,
-          path: z.never().optional(),
-          query: zSendNewsletterQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zSendNewsletterResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/system/newsletter',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get list of tenants
- *
- * Returns a paginated list of tenants. System admin access required.
- *
- * **GET /tenants** ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants) ·· _tenants_cella_
- *
- * @param {getTenantsData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @param {enum=} options.query.status - `enum` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getTenants = <ThrowOnError extends boolean = true>(
-  options?: Options<GetTenantsData, ThrowOnError>,
-): RequestResult<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetTenantsQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetTenantsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants',
-    ...options,
-  });
-
-/**
- * Create a tenant for yourself
- *
- * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.
- *
- * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/self) ·· _tenants_cella_
- *
- * @param {selfCreateTenantData} options
- * @param {string=} options.body.name - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const selfCreateTenant = <ThrowOnError extends boolean = true>(
-  options: Options<SelfCreateTenantData, ThrowOnError>,
-): RequestResult<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zSelfCreateTenantBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zSelfCreateTenantResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/self',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Update a tenant
- *
- * Updates a tenant by ID. System admin access required.
- *
- * **PUT /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PUT/tenants/{tenantId}) ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/tenants/{tenantId}) ·· _tenants_cella_
- *
- * @param {updateTenantData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string=} options.body.name - `string` (optional)
- * @param {enum=} options.body.status - `enum` (optional)
- * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
- * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
- * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
- * @param {any[]=} options.body.authStrategies - `any[]` (optional)
- * @param {object=} options.body.restrictions - `object` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const updateTenant = <ThrowOnError extends boolean = true>(
-  options: Options<UpdateTenantData, ThrowOnError>,
-): RequestResult<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).put<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zUpdateTenantBody,
-          path: zUpdateTenantPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zUpdateTenantResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * List domains for a tenant
- *
- * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
- *
- * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains) ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains) ·· _tenants_cella_
- *
- * @param {getDomainsData} options
- * @param {string} options.path.tenantid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getDomains = <ThrowOnError extends boolean = true>(
-  options: Options<GetDomainsData, ThrowOnError>,
-): RequestResult<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetDomainsPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetDomainsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains',
-    ...options,
-  });
-
-/**
- * Add a domain to a tenant
- *
- * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
- *
- * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains) ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains) ·· _tenants_cella_
- *
- * @param {createDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string=} options.body.domain - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const createDomain = <ThrowOnError extends boolean = true>(
-  options: Options<CreateDomainData, ThrowOnError>,
-): RequestResult<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreateDomainBody,
-          path: zCreateDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCreateDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Remove a domain
- *
- * Removes a domain from a tenant. System admin access required.
- *
- * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/DELETE/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
- *
- * @param {deleteDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deleteDomain = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteDomainData, ThrowOnError>,
-): RequestResult<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zDeleteDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeleteDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}',
-    ...options,
-  });
-
-/**
- * Get domain with verification token
- *
- * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
- *
- * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
- *
- * @param {getDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getDomain = <ThrowOnError extends boolean = true>(
-  options: Options<GetDomainData, ThrowOnError>,
-): RequestResult<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}',
-    ...options,
-  });
-
-/**
- * Verify domain ownership via DNS
- *
- * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
- *
- * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
- *
- * @param {verifyDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const verifyDomain = <ThrowOnError extends boolean = true>(
-  options: Options<VerifyDomainData, ThrowOnError>,
-): RequestResult<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zVerifyDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zVerifyDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}/verify',
-    ...options,
-  });
-
-/**
- * Delete requests
- *
- * Deletes one or more requests from the system by their IDs.
- *
- * **DELETE /requests** ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/requests) ·· _requests_cella_
- *
- * @param {deleteRequestsData} options
- * @param {any[]=} options.body.ids - `any[]` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deleteRequests = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteRequestsData, ThrowOnError>,
-): RequestResult<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zDeleteRequestsBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeleteRequestsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/requests',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Get list of requests
- *
- * Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.
- *
- * **GET /requests** ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/requests) ·· _requests_cella_
- *
- * @param {getRequestsData} options
- * @param {string=} options.query.q - `string` (optional)
- * @param {enum=} options.query.sort - `enum` (optional)
- * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getRequests = <ThrowOnError extends boolean = true>(
-  options?: Options<GetRequestsData, ThrowOnError>,
-): RequestResult<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetRequestsQuery.optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetRequestsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/requests',
-    ...options,
-  });
-
-/**
- * Create request
- *
- * Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.
- *
- * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
- *
- * @param {createRequestData} options
- * @param {string=} options.body.email - `string` (optional)
- * @param {enum=} options.body.type - `enum` (optional)
- * @param {string | null=} options.body.message - `string | null` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
- */
-export const createRequest = <ThrowOnError extends boolean = true>(
-  options: Options<CreateRequestData, ThrowOnError>,
-): RequestResult<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreateRequestBody,
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCreateRequestResponse.parseAsync(data),
-    responseStyle: 'data',
-    url: '/requests',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Get public counts
  *
  * Returns basic count metrics for entity types such as users and organizations.
@@ -2713,6 +2261,458 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/push/subscriptions',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete requests
+ *
+ * Deletes one or more requests from the system by their IDs.
+ *
+ * **DELETE /requests** ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/DELETE/requests) ·· [deleteRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/requests) ·· _requests_cella_
+ *
+ * @param {deleteRequestsData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const deleteRequests = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteRequestsData, ThrowOnError>,
+): RequestResult<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteRequestsResponses, DeleteRequestsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zDeleteRequestsBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteRequestsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/requests',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get list of requests
+ *
+ * Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.
+ *
+ * **GET /requests** ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/GET/requests) ·· [getRequests](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/requests) ·· _requests_cella_
+ *
+ * @param {getRequestsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.seqcursor - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getRequests = <ThrowOnError extends boolean = true>(
+  options?: Options<GetRequestsData, ThrowOnError>,
+): RequestResult<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetRequestsResponses, GetRequestsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetRequestsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetRequestsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/requests',
+    ...options,
+  });
+
+/**
+ * Create request
+ *
+ * Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.
+ *
+ * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
+ *
+ * @param {createRequestData} options
+ * @param {string=} options.body.email - `string` (optional)
+ * @param {enum=} options.body.type - `enum` (optional)
+ * @param {string | null=} options.body.message - `string | null` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ */
+export const createRequest = <ThrowOnError extends boolean = true>(
+  options: Options<CreateRequestData, ThrowOnError>,
+): RequestResult<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateRequestResponses, CreateRequestErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateRequestBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateRequestResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/requests',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get unseen counts
+ *
+ * Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.
+ *
+ * **GET /unseen/counts** ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=seen#tag/seen/GET/unseen/counts) ·· [getUnseenCounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/unseen/counts) ·· _seen_cella_
+ *
+ * @param {getUnseenCountsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getUnseenCounts = <ThrowOnError extends boolean = true>(
+  options?: Options<GetUnseenCountsData, ThrowOnError>,
+): RequestResult<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetUnseenCountsResponses, GetUnseenCountsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetUnseenCountsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/unseen/counts',
+    ...options,
+  });
+
+/**
+ * Invite to system
+ *
+ * Invites one or more users to the system via email. Can be used to onboard system level users or admins.
+ *
+ * **POST /system/invite** ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/invite) ·· [systemInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/invite) ·· _system_cella_
+ *
+ * @param {systemInviteData} options
+ * @param {any[]=} options.body.emails - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const systemInvite = <ThrowOnError extends boolean = true>(
+  options: Options<SystemInviteData, ThrowOnError>,
+): RequestResult<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<SystemInviteResponses, SystemInviteErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSystemInviteBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSystemInviteResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system/invite',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete users
+ *
+ * Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.
+ *
+ * **DELETE /system** ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/DELETE/system) ·· [deleteUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/system) ·· _system_cella_
+ *
+ * @param {deleteUsersData} options
+ * @param {any[]=} options.body.ids - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const deleteUsers = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteUsersData, ThrowOnError>,
+): RequestResult<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteUsersResponses, DeleteUsersErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zDeleteUsersBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteUsersResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update user
+ *
+ * Updates a user identified by ID.
+ *
+ * **PUT /system/{id}** ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/PUT/system/{id}) ·· [updateUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/system/{id}) ·· _system_cella_
+ *
+ * @param {updateUserData} options
+ * @param {string} options.path.id - `string`
+ * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
+ * @param {string | null=} options.body.firstName - `string | null` (optional)
+ * @param {string | null=} options.body.lastName - `string | null` (optional)
+ * @param {enum=} options.body.language - `enum` (optional)
+ * @param {boolean=} options.body.newsletter - `boolean` (optional)
+ * @param {string | null=} options.body.thumbnailUrl - `string | null` (optional)
+ * @param {string=} options.body.slug - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const updateUser = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateUserData, ThrowOnError>,
+): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<UpdateUserResponses, UpdateUserErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateUserBody.optional(),
+          path: zUpdateUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateUserResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Newsletter to members
+ *
+ * Sends a newsletter to members of one or more specified organizations.
+ *
+ * **POST /system/newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/newsletter) ·· _system_cella_
+ *
+ * @param {sendNewsletterData} options
+ * @param {any=} options.query.toself - `any` (optional)
+ * @param {any[]=} options.body.organizationIds - `any[]` (optional)
+ * @param {any[]=} options.body.roles - `any[]` (optional)
+ * @param {string=} options.body.subject - `string` (optional)
+ * @param {string=} options.body.content - `string` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const sendNewsletter = <ThrowOnError extends boolean = true>(
+  options: Options<SendNewsletterData, ThrowOnError>,
+): RequestResult<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<SendNewsletterResponses, SendNewsletterErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSendNewsletterBody,
+          path: z.never().optional(),
+          query: zSendNewsletterQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSendNewsletterResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/system/newsletter',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get list of tenants
+ *
+ * Returns a paginated list of tenants. System admin access required.
+ *
+ * **GET /tenants** ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants) ·· [getTenants](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants) ·· _tenants_cella_
+ *
+ * @param {getTenantsData} options
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {enum=} options.query.sort - `enum` (optional)
+ * @param {enum=} options.query.order - `enum` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {enum=} options.query.status - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getTenants = <ThrowOnError extends boolean = true>(
+  options?: Options<GetTenantsData, ThrowOnError>,
+): RequestResult<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetTenantsResponses, GetTenantsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetTenantsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetTenantsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants',
+    ...options,
+  });
+
+/**
+ * Create a tenant for yourself
+ *
+ * Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.
+ *
+ * **POST /tenants/self** ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/self) ·· [selfCreateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/self) ·· _tenants_cella_
+ *
+ * @param {selfCreateTenantData} options
+ * @param {string=} options.body.name - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const selfCreateTenant = <ThrowOnError extends boolean = true>(
+  options: Options<SelfCreateTenantData, ThrowOnError>,
+): RequestResult<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<SelfCreateTenantResponses, SelfCreateTenantErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSelfCreateTenantBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSelfCreateTenantResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/self',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update a tenant
+ *
+ * Updates a tenant by ID. System admin access required.
+ *
+ * **PUT /tenants/{tenantId}** ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/PUT/tenants/{tenantId}) ·· [updateTenant](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/tenants/{tenantId}) ·· _tenants_cella_
+ *
+ * @param {updateTenantData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {string | null=} options.body.subscriptionId - `string | null` (optional)
+ * @param {enum=} options.body.subscriptionStatus - `enum` (optional)
+ * @param {string | null=} options.body.subscriptionPlan - `string | null` (optional)
+ * @param {any[]=} options.body.authStrategies - `any[]` (optional)
+ * @param {object=} options.body.restrictions - `object` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const updateTenant = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateTenantData, ThrowOnError>,
+): RequestResult<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<UpdateTenantResponses, UpdateTenantErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateTenantBody,
+          path: zUpdateTenantPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateTenantResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -3062,46 +3062,6 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * MCP endpoint
- *
- * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
- *
- * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
- *
- * @param {handleMcpData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.organizationid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const handleMcp = <ThrowOnError extends boolean = true>(
-  options: Options<HandleMcpData, ThrowOnError>,
-): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zHandleMcpBody,
-          path: zHandleMcpPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/{tenantId}/{organizationId}/mcp',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
  * Delete attachments
  *
  * Deletes one or more attachment records by ID. This does not delete the underlying file in storage.
@@ -3347,6 +3307,46 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * MCP endpoint
+ *
+ * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
+ *
+ * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
+ *
+ * @param {handleMcpData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const handleMcp = <ThrowOnError extends boolean = true>(
+  options: Options<HandleMcpData, ThrowOnError>,
+): RequestResult<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<HandleMcpResponses, HandleMcpErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zHandleMcpBody,
+          path: zHandleMcpPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/mcp',
     ...options,
     headers: {
       'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
+import { meHandlers } from './me-handlers';
 
 defineBackendModule({
   name: 'me',
@@ -7,4 +8,5 @@ defineBackendModule({
   description: `Endpoints scoped to the current user, meaning the user associated with the active session making
     the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act
     exclusively on the current user and follow a different authorization flow.`,
+  routes: [{ path: '/me', app: meHandlers }],
 });

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { UserBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import { hierarchy } from 'shared';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
@@ -45,12 +46,21 @@ type ChannelTabsSlotContexts = {
   [C in ChannelEntityType as `${C}.tabs`]: ChannelEntityContext<C>;
 };
 
+/** Render context of the profile page body: the viewed user, the organization route it opened from, and whether it is a sheet. */
+export interface UserProfileContext {
+  user: UserBase;
+  organizationId?: string;
+  isSheet: boolean;
+}
+
 /** Every slot id a tool can be placed into, mapped to the context its `render` receives. */
 export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSlotContexts {
   /** The current user's account settings page (the consumer passes no grants or pairs). */
   'account.settings': MeUser;
   /** The home page's stacked sections below the built-in content (no grants or pairs). */
   'home.sections': MeUser;
+  /** A user's profile page body below the header, stacked (no grants or pairs); each tool owns its container. */
+  'user.profile': UserProfileContext;
   /** The system admin panel's tab bar: a non-entity surface, so tools render with no context. */
   'system.tabs': undefined;
 }

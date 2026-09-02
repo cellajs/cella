@@ -361,6 +361,18 @@ export type UploadToken = {
 };
 
 /**
+ * A contact or waitlist submission from an unauthenticated user.
+ */
+export type Request = {
+  createdAt: string;
+  id: string;
+  message: string | null;
+  email: string;
+  type: 'waitlist' | 'newsletter' | 'contact';
+  wasInvited: boolean;
+};
+
+/**
  * A tenant together with the single organization it holds.
  */
 export type TenantWithOrganization = Tenant & {
@@ -402,18 +414,6 @@ export type Tenant = {
    * Number of domains claimed by this tenant
    */
   domainsCount: number;
-};
-
-/**
- * A contact or waitlist submission from an unauthenticated user.
- */
-export type Request = {
-  createdAt: string;
-  id: string;
-  message: string | null;
-  email: string;
-  type: 'waitlist' | 'newsletter' | 'contact';
-  wasInvited: boolean;
 };
 
 /**
@@ -1629,6 +1629,521 @@ export type MicrosoftCallbackErrors = {
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
+export type GetDomainsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains';
+};
+
+export type GetDomainsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDomainsError = GetDomainsErrors[keyof GetDomainsErrors];
+
+export type GetDomainsResponses = {
+  /**
+   * List of domains
+   */
+  200: Array<{
+    id: string;
+    tenantId: string;
+    domain: string;
+    verified: boolean;
+    verificationToken: string | null;
+    verifiedAt: string | null;
+    lastCheckedAt: string | null;
+    createdAt: string;
+  }>;
+};
+
+export type GetDomainsResponse = GetDomainsResponses[keyof GetDomainsResponses];
+
+export type CreateDomainData = {
+  body: {
+    domain: string;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains';
+};
+
+export type CreateDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateDomainError = CreateDomainErrors[keyof CreateDomainErrors];
+
+export type CreateDomainResponses = {
+  /**
+   * Created domain
+   */
+  200: {
+    id: string;
+    tenantId: string;
+    domain: string;
+    verified: boolean;
+    verifiedAt: string | null;
+    lastCheckedAt: string | null;
+    createdAt: string;
+  };
+};
+
+export type CreateDomainResponse = CreateDomainResponses[keyof CreateDomainResponses];
+
+export type DeleteDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}';
+};
+
+export type DeleteDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteDomainError = DeleteDomainErrors[keyof DeleteDomainErrors];
+
+export type DeleteDomainResponses = {
+  /**
+   * Domain removed
+   */
+  200: {
+    id: string;
+    tenantId: string;
+    domain: string;
+    verified: boolean;
+    verifiedAt: string | null;
+    lastCheckedAt: string | null;
+    createdAt: string;
+  };
+};
+
+export type DeleteDomainResponse = DeleteDomainResponses[keyof DeleteDomainResponses];
+
+export type GetDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}';
+};
+
+export type GetDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetDomainError = GetDomainErrors[keyof GetDomainErrors];
+
+export type GetDomainResponses = {
+  /**
+   * Domain with verification token
+   */
+  200: {
+    id: string;
+    tenantId: string;
+    domain: string;
+    verified: boolean;
+    verificationToken: string | null;
+    verifiedAt: string | null;
+    lastCheckedAt: string | null;
+    createdAt: string;
+  };
+};
+
+export type GetDomainResponse = GetDomainResponses[keyof GetDomainResponses];
+
+export type VerifyDomainData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/domains/{id}/verify';
+};
+
+export type VerifyDomainErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type VerifyDomainError = VerifyDomainErrors[keyof VerifyDomainErrors];
+
+export type VerifyDomainResponses = {
+  /**
+   * Verification result
+   */
+  200: {
+    success: boolean;
+    domain: {
+      id: string;
+      tenantId: string;
+      domain: string;
+      verified: boolean;
+      verificationToken: string | null;
+      verifiedAt: string | null;
+      lastCheckedAt: string | null;
+      createdAt: string;
+    };
+    diagnostics?: {
+      recordsFound: Array<string>;
+      expectedToken: string;
+    };
+  };
+};
+
+export type VerifyDomainResponse = VerifyDomainResponses[keyof VerifyDomainResponses];
+
+export type CheckSlugData = {
+  body: {
+    slug: string;
+    entityType: 'organization';
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/entities/{tenantId}/check-slug';
+};
+
+export type CheckSlugErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CheckSlugError = CheckSlugErrors[keyof CheckSlugErrors];
+
+export type CheckSlugResponses = {
+  /**
+   * Slug is available
+   */
+  204: void;
+};
+
+export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
+
+export type GetAppStreamData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/entities/app/stream';
+};
+
+export type GetAppStreamErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
+
+export type GetAppStreamResponses = {
+  /**
+   * SSE stream started
+   */
+  200: unknown;
+};
+
+export type PostAppCatchupData = {
+  body: {
+    /**
+     * Last activity cursor received by the client (LSN-based). Omit on first sync.
+     */
+    cursor?: string;
+    /**
+     * Client-declared views: prefix set + entity types + org-sequence cursor per view
+     */
+    views?: Array<{
+      /**
+       * Client-chosen stable view key, echoed back verbatim to correlate responses
+       */
+      key: string;
+      organizationId: string;
+      /**
+       * Materialized id-path prefixes this view covers (root-first ids, slash-joined)
+       */
+      prefixes: Array<string>;
+      entityTypes: Array<'attachment'>;
+      /**
+       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.
+       */
+      depth?: 'self' | 'subtree';
+      /**
+       * Org-sequence position this view has fully ingested (0 = baseline not yet established)
+       */
+      cursor: number;
+    }>;
+  };
+  path?: never;
+  query?: never;
+  url: '/entities/app/stream';
+};
+
+export type PostAppCatchupErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PostAppCatchupError = PostAppCatchupErrors[keyof PostAppCatchupErrors];
+
+export type PostAppCatchupResponses = {
+  /**
+   * Catchup summary
+   */
+  200: {
+    /**
+     * Per-org change summary: { [organizationId]: { signals?, propagation? } }
+     */
+    changes: {
+      [key: string]: {
+        signals?: {
+          membership?: number;
+        };
+        propagation?: Array<{
+          /**
+           * Product type whose change triggered the propagation (e.g. label)
+           */
+          embeddedProduct: 'attachment';
+          /**
+           * Host product type whose cache should be patched (e.g. task)
+           */
+          hostProduct: 'attachment';
+          /**
+           * Column on the host product that embeds the changed product (e.g. labels)
+           */
+          hostColumn: string;
+          /**
+           * Host product IDs that need cache refresh
+           */
+          update: Array<string>;
+          /**
+           * Host product IDs that need the embedded reference removed
+           */
+          remove: Array<string>;
+        }>;
+      };
+    };
+    /**
+     * Per-view answers for client-declared views (same order as the request)
+     */
+    views?: Array<{
+      /**
+       * The client-supplied view key, echoed verbatim
+       */
+      key: string;
+      status: 'ok' | 'opaque' | 'forbidden';
+      /**
+       * Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})
+       */
+      frontiers?: {
+        [key: string]: number;
+      };
+      /**
+       * Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})
+       */
+      counts?: {
+        [key: string]: number;
+      };
+    }>;
+    /**
+     * Last activity ID (use as offset for next request)
+     */
+    cursor: string | null;
+  };
+};
+
+export type PostAppCatchupResponse = PostAppCatchupResponses[keyof PostAppCatchupResponses];
+
 export type DeleteMeData = {
   body?: never;
   path?: never;
@@ -2177,1137 +2692,6 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
-export type GetUnseenCountsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/unseen/counts';
-};
-
-export type GetUnseenCountsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsErrors];
-
-export type GetUnseenCountsResponses = {
-  /**
-   * Unseen counts per parent channel entity per entity type
-   */
-  200: {
-    [key: string]: {
-      [key: string]: number;
-    };
-  };
-};
-
-export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
-
-export type CheckSlugData = {
-  body: {
-    slug: string;
-    entityType: 'organization';
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/entities/{tenantId}/check-slug';
-};
-
-export type CheckSlugErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CheckSlugError = CheckSlugErrors[keyof CheckSlugErrors];
-
-export type CheckSlugResponses = {
-  /**
-   * Slug is available
-   */
-  204: void;
-};
-
-export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
-
-export type GetAppStreamData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/entities/app/stream';
-};
-
-export type GetAppStreamErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetAppStreamError = GetAppStreamErrors[keyof GetAppStreamErrors];
-
-export type GetAppStreamResponses = {
-  /**
-   * SSE stream started
-   */
-  200: unknown;
-};
-
-export type PostAppCatchupData = {
-  body: {
-    /**
-     * Last activity cursor received by the client (LSN-based). Omit on first sync.
-     */
-    cursor?: string;
-    /**
-     * Client-declared views: prefix set + entity types + org-sequence cursor per view
-     */
-    views?: Array<{
-      /**
-       * Client-chosen stable view key, echoed back verbatim to correlate responses
-       */
-      key: string;
-      organizationId: string;
-      /**
-       * Materialized id-path prefixes this view covers (root-first ids, slash-joined)
-       */
-      prefixes: Array<string>;
-      entityTypes: Array<'attachment'>;
-      /**
-       * View depth: subtree (default) covers rows at or below the prefix node; self covers only rows HOMED at the node (exact placement: a channel wall). Self views are answerable by direct home-scoped memberships.
-       */
-      depth?: 'self' | 'subtree';
-      /**
-       * Org-sequence position this view has fully ingested (0 = baseline not yet established)
-       */
-      cursor: number;
-    }>;
-  };
-  path?: never;
-  query?: never;
-  url: '/entities/app/stream';
-};
-
-export type PostAppCatchupErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type PostAppCatchupError = PostAppCatchupErrors[keyof PostAppCatchupErrors];
-
-export type PostAppCatchupResponses = {
-  /**
-   * Catchup summary
-   */
-  200: {
-    /**
-     * Per-org change summary: { [organizationId]: { signals?, propagation? } }
-     */
-    changes: {
-      [key: string]: {
-        signals?: {
-          membership?: number;
-        };
-        propagation?: Array<{
-          /**
-           * Product type whose change triggered the propagation (e.g. label)
-           */
-          embeddedProduct: 'attachment';
-          /**
-           * Host product type whose cache should be patched (e.g. task)
-           */
-          hostProduct: 'attachment';
-          /**
-           * Column on the host product that embeds the changed product (e.g. labels)
-           */
-          hostColumn: string;
-          /**
-           * Host product IDs that need cache refresh
-           */
-          update: Array<string>;
-          /**
-           * Host product IDs that need the embedded reference removed
-           */
-          remove: Array<string>;
-        }>;
-      };
-    };
-    /**
-     * Per-view answers for client-declared views (same order as the request)
-     */
-    views?: Array<{
-      /**
-       * The client-supplied view key, echoed verbatim
-       */
-      key: string;
-      status: 'ok' | 'opaque' | 'forbidden';
-      /**
-       * Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})
-       */
-      frontiers?: {
-        [key: string]: number;
-      };
-      /**
-       * Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})
-       */
-      counts?: {
-        [key: string]: number;
-      };
-    }>;
-    /**
-     * Last activity ID (use as offset for next request)
-     */
-    cursor: string | null;
-  };
-};
-
-export type PostAppCatchupResponse = PostAppCatchupResponses[keyof PostAppCatchupResponses];
-
-export type SystemInviteData = {
-  body: {
-    emails: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/system/invite';
-};
-
-export type SystemInviteErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
-
-export type SystemInviteResponses = {
-  /**
-   * Invitations are sent
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-    invitesSentCount: number;
-  };
-};
-
-export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
-
-export type DeleteUsersData = {
-  body: {
-    ids: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/system';
-};
-
-export type DeleteUsersErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
-
-export type DeleteUsersResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
-
-export type UpdateUserData = {
-  body?: {
-    bannerUrl?: string | null;
-    description?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    language?: 'en' | 'nl';
-    newsletter?: boolean;
-    thumbnailUrl?: string | null;
-    slug?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/system/{id}';
-};
-
-export type UpdateUserErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
-
-export type UpdateUserResponses = {
-  /**
-   * User
-   */
-  200: User;
-};
-
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
-
-export type SendNewsletterData = {
-  body: {
-    organizationIds: Array<string>;
-    roles: Array<'admin' | 'member'>;
-    subject: string;
-    content: string;
-  };
-  path?: never;
-  query?: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    toSelf?: BooleanQueryValue;
-  };
-  url: '/system/newsletter';
-};
-
-export type SendNewsletterErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SendNewsletterError = SendNewsletterErrors[keyof SendNewsletterErrors];
-
-export type SendNewsletterResponses = {
-  /**
-   * Newsletter sent
-   */
-  204: void;
-};
-
-export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
-
-export type GetTenantsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'createdAt' | 'name';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
-    /**
-     * Filter by status
-     */
-    status?: 'active' | 'suspended' | 'archived';
-  };
-  url: '/tenants';
-};
-
-export type GetTenantsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
-
-export type GetTenantsResponses = {
-  /**
-   * Tenants list
-   */
-  200: {
-    items: Array<TenantWithOrganization>;
-    total: number;
-  };
-};
-
-export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
-
-export type SelfCreateTenantData = {
-  body: {
-    name: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/tenants/self';
-};
-
-export type SelfCreateTenantErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type SelfCreateTenantError = SelfCreateTenantErrors[keyof SelfCreateTenantErrors];
-
-export type SelfCreateTenantResponses = {
-  /**
-   * Created tenant
-   */
-  200: Tenant;
-};
-
-export type SelfCreateTenantResponse = SelfCreateTenantResponses[keyof SelfCreateTenantResponses];
-
-export type UpdateTenantData = {
-  body: {
-    name?: string;
-    status?: 'active' | 'suspended' | 'archived';
-    subscriptionId?: string | null;
-    subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
-    subscriptionPlan?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
-    /**
-     * Partial restrictions override
-     */
-    restrictions?: {
-      /**
-       * Entity quotas (0 = unlimited)
-       */
-      quotas?: {
-        [key: string]: number;
-      };
-      rateLimits?: {
-        apiPointsPerHour?: number;
-      };
-    };
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}';
-};
-
-export type UpdateTenantErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UpdateTenantError = UpdateTenantErrors[keyof UpdateTenantErrors];
-
-export type UpdateTenantResponses = {
-  /**
-   * Updated tenant
-   */
-  200: Tenant;
-};
-
-export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
-
-export type GetDomainsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains';
-};
-
-export type GetDomainsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetDomainsError = GetDomainsErrors[keyof GetDomainsErrors];
-
-export type GetDomainsResponses = {
-  /**
-   * List of domains
-   */
-  200: Array<{
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verificationToken: string | null;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  }>;
-};
-
-export type GetDomainsResponse = GetDomainsResponses[keyof GetDomainsResponses];
-
-export type CreateDomainData = {
-  body: {
-    domain: string;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains';
-};
-
-export type CreateDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateDomainError = CreateDomainErrors[keyof CreateDomainErrors];
-
-export type CreateDomainResponses = {
-  /**
-   * Created domain
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type CreateDomainResponse = CreateDomainResponses[keyof CreateDomainResponses];
-
-export type DeleteDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}';
-};
-
-export type DeleteDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteDomainError = DeleteDomainErrors[keyof DeleteDomainErrors];
-
-export type DeleteDomainResponses = {
-  /**
-   * Domain removed
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type DeleteDomainResponse = DeleteDomainResponses[keyof DeleteDomainResponses];
-
-export type GetDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}';
-};
-
-export type GetDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetDomainError = GetDomainErrors[keyof GetDomainErrors];
-
-export type GetDomainResponses = {
-  /**
-   * Domain with verification token
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verificationToken: string | null;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type GetDomainResponse = GetDomainResponses[keyof GetDomainResponses];
-
-export type VerifyDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}/verify';
-};
-
-export type VerifyDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type VerifyDomainError = VerifyDomainErrors[keyof VerifyDomainErrors];
-
-export type VerifyDomainResponses = {
-  /**
-   * Verification result
-   */
-  200: {
-    success: boolean;
-    domain: {
-      id: string;
-      tenantId: string;
-      domain: string;
-      verified: boolean;
-      verificationToken: string | null;
-      verifiedAt: string | null;
-      lastCheckedAt: string | null;
-      createdAt: string;
-    };
-    diagnostics?: {
-      recordsFound: Array<string>;
-      expectedToken: string;
-    };
-  };
-};
-
-export type VerifyDomainResponse = VerifyDomainResponses[keyof VerifyDomainResponses];
-
-export type DeleteRequestsData = {
-  body: {
-    ids: Array<string>;
-  };
-  path?: never;
-  query?: never;
-  url: '/requests';
-};
-
-export type DeleteRequestsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
-
-export type DeleteRequestsResponses = {
-  /**
-   * Success
-   */
-  200: {
-    data: Array<unknown>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-  };
-};
-
-export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
-
-export type GetRequestsData = {
-  body?: never;
-  path?: never;
-  query?: {
-    q?: string;
-    sort?: 'id' | 'email' | 'type' | 'createdAt';
-    order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
-  };
-  url: '/requests';
-};
-
-export type GetRequestsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
-
-export type GetRequestsResponses = {
-  /**
-   * Requests
-   */
-  200: {
-    items: Array<Request>;
-    total: number;
-  };
-};
-
-export type GetRequestsResponse = GetRequestsResponses[keyof GetRequestsResponses];
-
-export type CreateRequestData = {
-  body: {
-    email: string;
-    type: 'waitlist' | 'newsletter' | 'contact';
-    message: string | null;
-  };
-  path?: never;
-  query?: never;
-  url: '/requests';
-};
-
-export type CreateRequestErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
-
-export type CreateRequestResponses = {
-  /**
-   * Requests
-   */
-  201: Request;
-};
-
-export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];
-
 export type GetPublicCountsData = {
   body?: never;
   path?: never;
@@ -3776,6 +3160,622 @@ export type CreatePushSubscriptionResponses = {
 };
 
 export type CreatePushSubscriptionResponse = CreatePushSubscriptionResponses[keyof CreatePushSubscriptionResponses];
+
+export type DeleteRequestsData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/requests';
+};
+
+export type DeleteRequestsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteRequestsError = DeleteRequestsErrors[keyof DeleteRequestsErrors];
+
+export type DeleteRequestsResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type DeleteRequestsResponse = DeleteRequestsResponses[keyof DeleteRequestsResponses];
+
+export type GetRequestsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'id' | 'email' | 'type' | 'createdAt';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    seqCursor?: string;
+  };
+  url: '/requests';
+};
+
+export type GetRequestsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetRequestsError = GetRequestsErrors[keyof GetRequestsErrors];
+
+export type GetRequestsResponses = {
+  /**
+   * Requests
+   */
+  200: {
+    items: Array<Request>;
+    total: number;
+  };
+};
+
+export type GetRequestsResponse = GetRequestsResponses[keyof GetRequestsResponses];
+
+export type CreateRequestData = {
+  body: {
+    email: string;
+    type: 'waitlist' | 'newsletter' | 'contact';
+    message: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: '/requests';
+};
+
+export type CreateRequestErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
+
+export type CreateRequestResponses = {
+  /**
+   * Requests
+   */
+  201: Request;
+};
+
+export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];
+
+export type GetUnseenCountsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/unseen/counts';
+};
+
+export type GetUnseenCountsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetUnseenCountsError = GetUnseenCountsErrors[keyof GetUnseenCountsErrors];
+
+export type GetUnseenCountsResponses = {
+  /**
+   * Unseen counts per parent channel entity per entity type
+   */
+  200: {
+    [key: string]: {
+      [key: string]: number;
+    };
+  };
+};
+
+export type GetUnseenCountsResponse = GetUnseenCountsResponses[keyof GetUnseenCountsResponses];
+
+export type SystemInviteData = {
+  body: {
+    emails: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/system/invite';
+};
+
+export type SystemInviteErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SystemInviteError = SystemInviteErrors[keyof SystemInviteErrors];
+
+export type SystemInviteResponses = {
+  /**
+   * Invitations are sent
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+    invitesSentCount: number;
+  };
+};
+
+export type SystemInviteResponse = SystemInviteResponses[keyof SystemInviteResponses];
+
+export type DeleteUsersData = {
+  body: {
+    ids: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: '/system';
+};
+
+export type DeleteUsersErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteUsersError = DeleteUsersErrors[keyof DeleteUsersErrors];
+
+export type DeleteUsersResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
+  };
+};
+
+export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
+
+export type UpdateUserData = {
+  body?: {
+    bannerUrl?: string | null;
+    description?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    language?: 'en' | 'nl';
+    newsletter?: boolean;
+    thumbnailUrl?: string | null;
+    slug?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/system/{id}';
+};
+
+export type UpdateUserErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+
+export type UpdateUserResponses = {
+  /**
+   * User
+   */
+  200: User;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+
+export type SendNewsletterData = {
+  body: {
+    organizationIds: Array<string>;
+    roles: Array<'admin' | 'member'>;
+    subject: string;
+    content: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Boolean query value accepted as a boolean or its lowercase string representation.
+     */
+    toSelf?: BooleanQueryValue;
+  };
+  url: '/system/newsletter';
+};
+
+export type SendNewsletterErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SendNewsletterError = SendNewsletterErrors[keyof SendNewsletterErrors];
+
+export type SendNewsletterResponses = {
+  /**
+   * Newsletter sent
+   */
+  204: void;
+};
+
+export type SendNewsletterResponse = SendNewsletterResponses[keyof SendNewsletterResponses];
+
+export type GetTenantsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    q?: string;
+    sort?: 'createdAt' | 'name';
+    order?: 'asc' | 'desc';
+    offset?: string;
+    limit?: string;
+    seqCursor?: string;
+    /**
+     * Filter by status
+     */
+    status?: 'active' | 'suspended' | 'archived';
+  };
+  url: '/tenants';
+};
+
+export type GetTenantsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetTenantsError = GetTenantsErrors[keyof GetTenantsErrors];
+
+export type GetTenantsResponses = {
+  /**
+   * Tenants list
+   */
+  200: {
+    items: Array<TenantWithOrganization>;
+    total: number;
+  };
+};
+
+export type GetTenantsResponse = GetTenantsResponses[keyof GetTenantsResponses];
+
+export type SelfCreateTenantData = {
+  body: {
+    name: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/tenants/self';
+};
+
+export type SelfCreateTenantErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SelfCreateTenantError = SelfCreateTenantErrors[keyof SelfCreateTenantErrors];
+
+export type SelfCreateTenantResponses = {
+  /**
+   * Created tenant
+   */
+  200: Tenant;
+};
+
+export type SelfCreateTenantResponse = SelfCreateTenantResponses[keyof SelfCreateTenantResponses];
+
+export type UpdateTenantData = {
+  body: {
+    name?: string;
+    status?: 'active' | 'suspended' | 'archived';
+    subscriptionId?: string | null;
+    subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
+    subscriptionPlan?: string | null;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
+    /**
+     * Partial restrictions override
+     */
+    restrictions?: {
+      /**
+       * Entity quotas (0 = unlimited)
+       */
+      quotas?: {
+        [key: string]: number;
+      };
+      rateLimits?: {
+        apiPointsPerHour?: number;
+      };
+    };
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}';
+};
+
+export type UpdateTenantErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateTenantError = UpdateTenantErrors[keyof UpdateTenantErrors];
+
+export type UpdateTenantResponses = {
+  /**
+   * Updated tenant
+   */
+  200: Tenant;
+};
+
+export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
 
 export type GetUsersData = {
   body?: never;
@@ -4289,52 +4289,6 @@ export type UpdateOrganizationResponses = {
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type HandleMcpData = {
-  body: unknown;
-  path: {
-    tenantId: string;
-    organizationId: string;
-  };
-  query?: never;
-  url: '/{tenantId}/{organizationId}/mcp';
-};
-
-export type HandleMcpErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
-
-export type HandleMcpResponses = {
-  /**
-   * JSON-RPC response
-   */
-  200: unknown;
-};
-
 export type DeleteAttachmentsData = {
   body: {
     ids: Array<string>;
@@ -4739,6 +4693,52 @@ export type UpdateAttachmentResponses = {
 };
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
+
+export type HandleMcpData = {
+  body: unknown;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/mcp';
+};
+
+export type HandleMcpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type HandleMcpError = HandleMcpErrors[keyof HandleMcpErrors];
+
+export type HandleMcpResponses = {
+  /**
+   * JSON-RPC response
+   */
+  200: unknown;
+};
 
 export type DeleteMembershipsData = {
   body: {

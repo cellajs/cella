@@ -1,5 +1,8 @@
+import { Suspense } from 'react';
 import type { UserBase } from 'sdk';
-import { OrganizationsGrid } from '~/modules/organization/organizations-grid';
+import { getTools, resolvePlacementList } from '~/lib/placements';
+
+const slot = 'user.profile';
 
 interface Props {
   user: UserBase;
@@ -7,11 +10,22 @@ interface Props {
   isSheet?: boolean;
 }
 
-export function UserProfileContent({ isSheet, user }: Props) {
-  // The page does not wrap this: content owns its container (so it can span full width) and its top padding
+/**
+ * Profile page body below the header: hosts the `user.profile` slot, so apps add or replace profile
+ * surfaces from their module config without patching this file. Cella's organization module
+ * contributes the organizations grid. The page does not wrap this: each tool owns its container
+ * (so it can run full width) and its top padding.
+ */
+export function UserProfileContent({ user, organizationId, isSheet = false }: Props) {
+  const tools = resolvePlacementList(slot, getTools(slot));
+
   return (
-    <div className="container pt-4">
-      <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
-    </div>
+    <>
+      {tools.map((tool) => (
+        <Suspense key={tool.id} fallback={null}>
+          {tool.render({ user, organizationId, isSheet })}
+        </Suspense>
+      ))}
+    </>
   );
 }

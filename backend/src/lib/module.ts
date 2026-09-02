@@ -1,5 +1,7 @@
+import type { Hono } from 'hono';
 import type { ProductEntityType, TrackedEventType } from 'shared';
 import { type ModuleConfig, registerModule } from 'shared/module-registry';
+import type { Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
@@ -8,6 +10,25 @@ import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 export interface BackendJob {
   name: string;
   start: () => () => void;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: a mounted app carries its own route schema; the entrypoint only needs the Env.
+export type BackendRouteApp = Hono<Env, any, any>;
+
+/**
+ * Mount phases, applied in this order by the API entrypoint: static paths, then apps mounted at
+ * `/` with absolute `/:tenantId/...` routes, then `/:tenantId/:organizationId/...` mounts. Param
+ * segments therefore never shadow a static path. Within a phase, mounts follow registration order.
+ */
+export type BackendRoutePhase = 'static' | 'absolute' | 'tenant';
+
+/** One handler app and where the API entrypoint mounts it. */
+export interface BackendRoute {
+  /** Mount path, e.g. `/me` or `/:tenantId/:organizationId/attachments`. */
+  path: string;
+  app: BackendRouteApp;
+  /** Defaults to `static`. */
+  phase?: BackendRoutePhase;
 }
 
 /** A subject row as the notification machinery needs it; modules return their own rows widened to this. */
@@ -70,11 +91,14 @@ export interface BackendModule extends ModuleConfig {
   jobs?: BackendJob[];
   /** Notification source declaration for `productEntity` (indexed by the notification module). */
   notifications?: ModuleNotifications;
+  /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
+  routes?: BackendRoute[];
 }
 
 const backendModules: BackendModule[] = [];
 const listeners: ((module: BackendModule) => void)[] = [];
 const backendJobs: BackendJob[] = [];
+const backendRoutes: BackendRoute[] = [];
 
 /** Metadata goes to the shared registry, capabilities to registration listeners. Call once at module-load time. */
 export function defineBackendModule(module: BackendModule): void {
@@ -83,12 +107,20 @@ export function defineBackendModule(module: BackendModule): void {
     yjsMaterializer: _yjsMaterializer,
     onMutation: _onMutation,
     jobs = [],
+    routes = [],
+    notifications: _notifications,
     ...metadata
   } = module;
   registerModule(metadata);
   backendModules.push(module);
   backendJobs.push(...jobs);
+  backendRoutes.push(...routes);
   for (const listener of listeners) listener(module);
+}
+
+/** Route mounts from every module definition, in registration order; the entrypoint applies them per phase. */
+export function getBackendRoutes(): readonly BackendRoute[] {
+  return backendRoutes;
 }
 
 /** Registers a job that belongs to no module (core infrastructure such as DB maintenance). */

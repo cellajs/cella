@@ -50,10 +50,9 @@ export default defineConfig({
     ],
     // Paths pinned to fork; prefer fork version during merge conflicts
     pinned: [
-      'backend/src/tables.ts',
       'backend/src/db/channel-tables.ts',
+      'backend/src/db/product-tables.ts',
       'backend/src/modules.ts',
-      'backend/src/routes.ts',
       'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/attachment/helpers/attachment-placement.ts',
       'backend/src/schemas/app-schemas.ts',
@@ -66,7 +65,6 @@ export default defineConfig({
       'frontend/src/list-queries-config.tsx',
       'frontend/src/styling/gradients.css',
       'frontend/src/modules/home/home-page.tsx',
-      'frontend/src/modules/user/user-profile-content.tsx',
       'json/text-blocks.json',
       'locales/en/about.json',
     ],

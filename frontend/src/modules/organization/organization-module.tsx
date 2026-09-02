@@ -20,6 +20,7 @@ const OrganizationDeleteCard = lazyNamed(
   () => import('~/modules/organization/settings-tools'),
   'OrganizationDeleteCard',
 );
+const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organizations-grid'), 'OrganizationsGrid');
 
 defineFrontendModule({
   name: 'organizations',
@@ -46,6 +47,21 @@ defineFrontendModule({
       ...dangerToolBase('organization', 'c:organization'),
       slot: 'organization.settings',
       render: (organization) => <OrganizationDeleteCard organization={organization} />,
+    },
+    // The organizations a user is a member of, on their profile page.
+    {
+      id: 'organizations',
+      label: 'c:organization_other',
+      slot: 'user.profile',
+      render: ({ user, isSheet }) => (
+        <div className="container pt-4">
+          <OrganizationsGrid
+            fixedQuery={{ relatableUserId: user.id }}
+            saveDataInSearch={!isSheet}
+            focusView={!isSheet}
+          />
+        </div>
+      ),
     },
   ],
 });

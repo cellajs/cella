@@ -1,6 +1,7 @@
 import { getTableName } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { appFullCrudTables, appReadOnlyTables, entityTables } from '#/tables';
+import { appFullCrudTables, appReadOnlyTables } from '#/db/product-tables';
+import { entityTables } from '#/tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
