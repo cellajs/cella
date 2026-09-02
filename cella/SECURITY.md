@@ -2,12 +2,12 @@
 
 ## Reporting a vulnerability
 
-If you have a security issue to report, please contact us at [security@cellajs.com](mailto:security@cellajs.com).
+Report security issues to [security@cellajs.com](mailto:security@cellajs.com).
 
 ## Security monitoring
 
-- `pnpm cella audit`: check for outdated packages, known CVEs, and unneeded `pnpm.overrides`
-- `pnpm test:full`: run full test suite including authentication guards, RBAC, and protected route enforcement
+- `pnpm cella audit`: outdated packages, known CVEs, and unneeded `pnpm.overrides`
+- `pnpm test:full`: full suite including authentication guards, RBAC, and protected route enforcement
 
 ## Resources
 

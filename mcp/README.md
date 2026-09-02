@@ -2,7 +2,7 @@
 
 Standalone MCP worker exposing the server tool registry to external clients.
 
-Thin entrypoint that delegates to `backend/src/modules/mcp/worker/`. Sets `MODE=mcp` and imports the backend main module, so all MCP logic lives in the backend codebase.
+A thin entrypoint: it sets `MODE=mcp` and imports the backend main module. All MCP worker code lives in `backend/src/modules/mcp/worker/`.
 
 ## File structure
 
@@ -10,8 +10,6 @@ Thin entrypoint that delegates to `backend/src/modules/mcp/worker/`. Sets `MODE=
 mcp/src
 └── mcp-worker.ts    Entry point (sets MODE, loads backend)
 ```
-
-All MCP worker code lives in `backend/src/modules/mcp/worker/`.
 
 ## Scripts
 
