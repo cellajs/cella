@@ -1,65 +1,47 @@
 # Attachment module
 
-Attachments are file uploads (images, video, audio, PDFs, anything else) scoped to an organization. An attachment is two things that this module constantly has to keep distinct:
+Attachments are file uploads (images, video, audio, PDFs, anything else) scoped to an organization, in two distinct parts:
 
-- the **entity row**: metadata in Postgres (`Attachment` in the sdk), replicated to the client through the normal entity-sync machinery (canonical org query + SSE + delta fetch), and
-- the **file bytes**: stored in S3 via Transloadit processing, optionally mirrored into a local per-user IndexedDB blob store for offline viewing.
-
-Everything in this module is a layer on one of those two, or glue between them.
+- the **entity row**: metadata in Postgres (`Attachment` in the sdk), replicated to the client through entity sync (canonical org query + SSE + delta fetch)
+- the **file bytes**: in S3 via Transloadit processing, optionally mirrored into a local per-user IndexedDB blob store for offline viewing.
 
 ## File variants
 
-Transloadit processing produces up to four cloud objects per file, stored as a single `keys` map on the row (`Partial<Record<variant, string>>`, `original` always present): `original` (processed original), `converted` (e.g. HEIC→JPEG, with `convertedContentType`), `preview` (mid-size inline preview / doc-video poster), and `thumbnail` (tiny grid-cell image thumbnail). The local blob store adds a fifth, local-only variant: `raw`, the untouched user file, stored before upload so nothing is lost offline. Variant vocabulary lives in `offline/attachments-db.ts` (`BlobVariant`).
+Transloadit produces up to four cloud objects per file, stored as one `keys` map on the row (`Partial<Record<variant, string>>`, `original` always present): `original`, `converted` (e.g. HEIC→JPEG, with `convertedContentType`), `preview` (mid-size inline preview / doc-video poster) and `thumbnail` (tiny grid-cell image). The local blob store adds a local-only fifth, `raw`: the untouched user file, stored before upload. Variant vocabulary: `BlobVariant` in `offline/attachments-db.ts`.
 
 ## Layers
 
-**Query layer** (`query.ts`, `query-mutations.ts`). One canonical flat query per org (`['attachment','list',orgId]`) that sync keeps fresh; the table serves its default view from it via `select`, and any deviating filter/sort switches to a server-filtered infinite query. Mutation hooks are optimistic with rollback; mutation _functions_ are separated into `query-mutations.ts` so persisted offline mutations can replay identically after a reload (`tests/attachment-replay.test.ts` locks this in). `useGroupAttachments` derives multi-file upload groups (`groupId`) from the canonical query.
-
-**The offline pipeline** (`offline/`): one subsystem, one folder. `attachments-db.ts` defines the schema and resolves tables from the active `localUserDb` (throws while signed out; guard with `getLocalUserDb()`). `storage-service.ts` (`attachmentStorage`) is the blob CRUD API: store upload/download blobs, variant fallback chains (`converted → original → raw` for display, `preview → original → raw` for previews, `thumbnail → preview → original → raw` for thumbnails), raw-blob eviction once a durable variant exists, per-org storage accounting. `download-queue.ts` is the state machine for background caching (`pending → downloading → downloaded/failed`, plus `skipped` with a reason; skip filters and priority come from `appConfig.localBlobStorage`).
-
-The queue table doubles as the **dedupe registry**: a `downloaded` or `skipped` row is what stops an attachment being re-fetched on every list refresh, so rows are left alone rather than collected. `enqueue` is the one place that revives them: a `skipped`-for-no-key row once its key arrives, a `failed` row while `attempts < downloadRetryAttempts`. Rows are dropped only when their attachment is deleted (`downloadQueue.remove`).
-
-`download-service.ts` and `upload-service.ts` are started together in `~/query/provider.tsx`. The download service watches the query cache: any attachment appearing in a list query gets enqueued, then variants are fetched (thumbnail first) and stored locally: automatic, capped at `maxTotalSize` per org (default 100MB), `video/*` excluded by default. It also watches the mutation cache to drop local blobs and queue rows when attachments are deleted. The upload service pushes locally-stored `pending` blobs to Transloadit (headless Uppy, fresh token per upload) every 60s and on reconnect; without cloud config, blobs are downgraded to `local-only`.
-
-**URL resolution.** `file-url.ts` builds cloud URLs and owns the public-vs-private branch: public files → CDN URL from the key; private files → presigned URL requested _by attachment id + variant_ so the server resolves and signs it (the client never submits a storage key). Use `getCloudUrl` rather than re-deriving that branch. `helpers/resolve-url.ts` is the engine on top: `resolveAttachmentUrl` tries the local blob first, falls back to cloud, and opportunistically enqueues a background download; `resolveBlockNoteFileRef` is the same idea for editor block references. `hooks/use-attachment-url.ts` (single) and `hooks/use-resolved-attachments.ts` (batch, with retry-before-"not found" and blob-URL lifecycle management) are the React bindings.
-
-**UI.** `table/` is the org attachments grid (route `/$tenantId/$orgSlug/organization/attachments`): thumbnail with upload-status badge, inline rename (the only editable field), per-row cloud download, bulk delete with confirmation, seen-marking via row visibility. `dialog/` + `attachments-carousel.tsx` are the viewer: full-screen dialog driven by the `attachmentDialogId` (+ `groupId`) search params via the globally-mounted `AttachmentDialogHandler`, so it is deep-linkable, reload-safe, and the back button closes it; slide navigation rewrites the param with `replace: true`. Those param keys and the shared dialog chrome live in `dialog/params.ts`; don't spell them out again. `render/` lazy-loads per-mime renderers (pan/zoom image, audio, video, react-pdf); unsupported types get a "download to view" placeholder.
+| Layer | File | Responsibility |
+| --- | --- | --- |
+| Query | `query.ts` | One canonical flat query per org (`['attachment','list',orgId]`) kept fresh by sync; the table's default view is a `select` on it; any other filter/sort switches to a server-filtered infinite query. `useGroupAttachments` derives upload groups (`groupId`) from it. |
+| Mutations | `query-mutations.ts` | Optimistic hooks with rollback; mutation functions live apart from hooks so persisted offline mutations replay identically after reload (`tests/attachment-replay.test.ts`). |
+| Offline schema | `offline/attachments-db.ts` | Schema; resolves tables from the active `localUserDb` (throws while signed out: guard with `getLocalUserDb()`). |
+| Blob storage | `offline/storage-service.ts` (`attachmentStorage`) | Blob CRUD; variant fallback chains (display `converted → original → raw`, previews `preview → original → raw`, thumbnails `thumbnail → preview → original → raw`); raw-blob eviction once a durable variant exists; per-org storage accounting. |
+| Download queue | `offline/download-queue.ts` | State machine for background caching (statuses below; skip filters and priority from `appConfig.localBlobStorage`). Doubles as the **dedupe registry**: a `downloaded` or `skipped` row stops re-fetching on every list refresh, so rows are never garbage-collected. Only `enqueue` revives them: `skipped`-for-no-key once its key arrives, `failed` while `attempts < downloadRetryAttempts`. Rows are dropped only when the attachment is deleted (`downloadQueue.remove`). |
+| Download service | `offline/download-service.ts` | Started in `~/query/provider.tsx`. Enqueues every attachment appearing in a list query, fetches variants (thumbnail first) and stores them, capped at `maxTotalSize` per org (default 100MB), `video/*` excluded by default. Drops blobs and queue rows when the mutation cache reports a delete. |
+| Upload service | `offline/upload-service.ts` | Started alongside it. Pushes local `pending` blobs to Transloadit (headless Uppy, fresh token per upload) every 60s and on reconnect; without cloud config, blobs become `local-only`. |
+| Cloud URLs | `file-url.ts` | Owns the public-vs-private branch: public → CDN URL from the key; private → presigned URL requested by attachment id + variant (the client never submits a storage key). Use `getCloudUrl`; never re-derive the branch. |
+| URL resolution | `helpers/resolve-url.ts` | `resolveAttachmentUrl`: local blob first, cloud fallback, enqueues a background download. `resolveBlockNoteFileRef`: same for editor blocks. |
+| URL hooks | `hooks/use-attachment-url.ts`, `hooks/use-resolved-attachments.ts` | React bindings, single and batch (retry-before-"not found", blob-URL lifecycle). |
+| Table | `table/` | Org grid (route `/$tenantId/$orgSlug/organization/attachments`): thumbnail with upload-status badge, inline rename (the only editable field), per-row cloud download, bulk delete with confirmation, seen-marking via row visibility. |
+| Viewer | `dialog/`, `attachments-carousel.tsx` | Full-screen dialog driven by the `attachmentDialogId` (+ `groupId`) search params via the globally mounted `AttachmentDialogHandler`: deep-linkable, reload-safe, back button closes it; slide navigation rewrites the param with `replace: true`. Param keys and dialog chrome: `dialog/params.ts`, never spelled out elsewhere. |
+| Renderers | `render/` | Lazy per-mime renderers (pan/zoom image, audio, video, react-pdf); unsupported types show a "download to view" placeholder. |
 
 ## Upload paths
 
-Two entry points, one pipeline:
+1. **Table upload button** → `useAttachmentsUploadDialog` opens the shared Uppy uploader (`modules/common/uploader`): max 20 files, 10MB each by default, any type, webcam / screen-capture / audio / URL-import plugins. On assembly completion `helpers/parse-uploaded.ts` turns Transloadit results into attachment inputs (shared `groupId` when >1 file, name = filename minus extension, converted/preview/thumbnail keys correlated by upload id); rows are created via `useAttachmentCreateMutation`.
+2. **BlockNote file panel** (`modules/common/blocknote/custom-file-panel/uppy-upload-panel.tsx`) for image/video/audio/file blocks: one file per block. The block stores the attachment id (private) or cloud key (public) as its URL; the host form persists the parsed attachments under those ids (`helpers/persist-attachments.ts`) so block references stay valid. Refs resolve through `blocknote/helpers/resolve-file-url.ts` (wraps `resolveBlockNoteFileRef`); the carousel opens imperatively (no URL binding).
 
-1. **Table upload button** → `useAttachmentsUploadDialog` opens the shared Uppy uploader (`modules/common/uploader`): max 20 files, 10MB each by default, any type, with webcam / screen-capture / audio / URL-import plugins. On assembly completion, `helpers/parse-uploaded.ts` turns Transloadit results into attachment inputs (shared `groupId` when >1 file, name = filename minus extension, converted/preview/thumbnail keys correlated by upload id), and the rows are created through `useAttachmentCreateMutation`.
-2. **BlockNote file panel** (`modules/common/blocknote/custom-file-panel/uppy-upload-panel.tsx`) for image/video/audio/file blocks: one file per block. The block stores the attachment id (private) or cloud key (public) as its URL; the host form later persists the parsed attachments with those same ids (`helpers/persist-attachments.ts`), so block references stay valid. BlockNote resolves refs through `blocknote/helpers/resolve-file-url.ts` (a thin wrapper over `resolveBlockNoteFileRef`) and opens the same carousel imperatively (no URL binding).
+**One id, minted early.** `onBeforeFileAdded` assigns `file.meta.attachmentId` when a file is picked. That id keys the local blob, rides through Transloadit as `user_meta.attachmentId`, and becomes the row id; the upload-status badge, raw-blob eviction, blob deletion with the entity, and skipping re-download of a just-uploaded file all look the blob up by it. A custom Uppy instance must pass that meta.
 
-**One id, minted early.** `onBeforeFileAdded` assigns `file.meta.attachmentId` the moment a file is picked. That id keys the local blob, rides through Transloadit as `user_meta.attachmentId`, and becomes the attachment row's id. Everything downstream depends on this holding: the upload-status badge, raw-blob eviction, blob deletion with the entity, and not re-downloading a file you just uploaded all work by looking the blob up _by row id_. If you build your own Uppy instance, pass that meta.
-
-In both paths the raw file is stored locally _before_ upload, then uploaded via Tus; offline or without cloud config the upload is intercepted and the blob stays local (`pending` / `local-only`) for the upload service to push later. Because creates go through the mutation, an offline upload also leaves an optimistic row in cache and replays the create on reconnect (or after a reload, via the persisted mutation queue), and since the blob shares the row's id, that row renders from local bytes in the meantime.
+Both paths store the raw file locally before the Tus upload. Offline or without cloud config, the upload is intercepted and the blob stays `pending` / `local-only` for the upload service. Creates go through the mutation, so an offline upload leaves an optimistic row in cache and replays the create on reconnect or after a reload (persisted mutation queue); the blob shares the row id, so the row renders from local bytes meanwhile.
 
 ## Statuses
 
-- Blob upload status (per local blob): `pending → uploading → uploaded | failed`, or `local-only`
-  when no cloud is configured. `useBlobUploadStatus` returns this state for the thumbnail badge.
-  `uploaded` is also stamped on blobs that were _downloaded_ (it effectively means "exists in
-  cloud").
-- Download-queue status (per attachment): `pending → downloading → downloaded | failed`, or `skipped` (too large / excluded type / no key yet). `failed` and `skipped`-for-no-key are revived by `enqueue`, not by the service; see the dedupe-registry note above.
-- Row optimism: rows created by `createOptimisticEntity` carry `_optimistic`; `isPersisted()` (`types.ts`) gates cloud operations (presigned URLs, download queueing) on real rows.
+- Blob upload status (per local blob): `pending → uploading → uploaded | failed`, or `local-only` without cloud config; `useBlobUploadStatus` feeds the thumbnail badge. Downloaded blobs are also stamped `uploaded` ("exists in cloud").
+- Download-queue status (per attachment): `pending → downloading → downloaded | failed`, or `skipped` (too large / excluded type / no key yet). `failed` and `skipped`-for-no-key are revived by `enqueue`, not the service (see Download queue).
+- Row optimism: rows from `createOptimisticEntity` carry `_optimistic`; `isPersisted()` (`types.ts`) gates cloud operations (presigned URLs, download queueing) on real rows.
 
 ## Permissions & limits
 
-Backend enforces everything: org admins get full CRUD, members create/read ( `shared/config/permissions-config.ts`); presigned-URL signing is permission-checked and fails closed; tenant quota (default 100 attachments) returns 429 on create. The frontend currently gates only inline rename on `can.attachment.update`. Upload restrictions come from `appConfig.uppy.defaultRestrictions`; local-cache behavior from `appConfig.localBlobStorage` (enabled flag, per-file/total size caps, content-type filters, concurrency, retry delays).
-
-## Known gaps
-
-What is still open, in rough order of user impact:
-
-- **Failed uploads are a dead end.** `processPendingUploads` only selects `pending`, so a `failed` blob is never retried and no UI offers retry or discard. The backoff bookkeeping it would need (`nextRetryAt`, `uploadAttempts`, `localBlobStorage.uploadRetryAttempts`) is written on every failure and read by nobody. Downloads got their retry (see above); uploads still need theirs.
-- **Delete affordances ignore permissions.** Members see delete buttons the backend will reject; only inline rename checks `can.attachment.update`, and the upload button is gated by a route-level hardcoded `canUpload = true`. The backend's `splitByPermission` returns `rejectedIds` that the frontend discards, so a denied row disappears optimistically and returns on next sync.
-- **Locally-cached files lose their download/open affordances.** The dialog's toolbar buttons render only for `isCDNUrl(...)`, so they vanish once a file resolves to a local `blob:` URL, including for unsupported mime types, whose "download to view" placeholder then has nothing to click. `DownloadCell` always fetches from cloud, so it fails offline even when the blob is local.
-- **The offline cache is invisible and unmanageable.** Fully automatic, hard stop at 100MB/org with no LRU, no storage meter, no clear-cache control (only sign-out), and no user-facing indicator of download state; `useBlobUploadStatus` reflects upload state only.
-- **BlockNote vs table divergence.** The BlockNote carousel has no URL binding, so no deep link, back-button, or shareable URL. `resolveBlockNoteFileRef` returns an object URL it cannot revoke (no lifecycle to hang it on), so re-resolving inline media leaks blob URLs.
-- **Quota/size failures arrive after the bytes are already in the bucket:** the tenant quota is
-  enforced at row creation (429), by which point Transloadit has stored the file.
-- Smaller: deep-linking a dialog on a non-org route spins forever; opening the dialog doesn't mark the attachment seen (only table-row visibility does); `delete-attachments.tsx` reads `attachments[0]` and would throw on an empty array.
-
-Absent by design (candidate roadmap, not bugs): global drag-drop/paste upload, copy-link/share, undo delete, offline force-download ("keep offline" pin), storage management UI, editing metadata beyond `name`.
+Backend enforces everything: org admins full CRUD, members create/read (`shared/config/permissions-config.ts`); presigned-URL signing is permission-checked and fails closed; tenant quota (default 100 attachments) returns 429 on create. The frontend gates only inline rename, on `can.attachment.update`. Upload restrictions: `appConfig.uppy.defaultRestrictions`; local-cache behavior: `appConfig.localBlobStorage` (enabled flag, per-file/total size caps, content-type filters, concurrency, retry delays).
