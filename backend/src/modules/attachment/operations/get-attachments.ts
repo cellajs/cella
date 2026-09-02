@@ -6,6 +6,7 @@ import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
+import { attachmentHomeColumnKey, resolveAttachmentHomeScope } from '#/modules/attachment/helpers/attachment-placement';
 import {
   getOrganizationEntityCount,
   productViewCountJoin,
@@ -24,12 +25,25 @@ type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
 export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
-  const { q, sort, order, limit, offset, seqCursor } = input;
+  const { q, sort, order, limit, offset, seqCursor, channelId } = input;
 
-  // Organization-homed attachments reuse the organization column as the home column.
+  // Placement seam: the readable scope compiles against the app's home column and, when a home
+  // channel is requested, narrows to it; the org-homed default reads org-wide.
+  const homeChannelId = await resolveAttachmentHomeScope(ctx, channelId);
   const actor = actorFrom(ctx);
-  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, 'attachment', organizationId, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable.organizationId, actor);
+  const readFilter = resolveCollectionReadFilter(
+    ctx.var.memberships,
+    'attachment',
+    organizationId,
+    actor,
+    homeChannelId ? { homeChannelId } : undefined,
+  );
+  const scopeWhere = buildCollectionReadWhere(
+    readFilter,
+    attachmentsTable,
+    attachmentsTable[attachmentHomeColumnKey],
+    actor,
+  );
 
   if (scopeWhere.kind === 'none') {
     return { items: [], total: 0 };

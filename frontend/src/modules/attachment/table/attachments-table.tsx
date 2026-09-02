@@ -42,8 +42,10 @@ export interface AttachmentsTableProps {
 }
 
 function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  // Create has no row to resolve 'own' against, so only an unconditional grant shows upload.
-  const allowUpload = canUpload ?? channel.can?.attachment?.create === true;
+  // Create has no row to resolve 'own' against, so only an unconditional grant shows upload, and
+  // only on channels the app declares as upload targets (`attachmentUploadTargets`).
+  const isUploadTarget = (appConfig.attachmentUploadTargets as readonly string[]).includes(channel.entityType);
+  const allowUpload = canUpload ?? (isUploadTarget && channel.can?.attachment?.create === true);
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 

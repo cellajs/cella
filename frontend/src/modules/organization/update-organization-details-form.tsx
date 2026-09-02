@@ -4,7 +4,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { zUpdateOrganizationBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
@@ -39,8 +39,11 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 
-  // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which an organization UPDATE grant does not imply.
-  const canUploadAttachments = organization.can?.attachment?.create === true;
+  // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which
+  // an organization UPDATE grant does not imply, and the organization must be an upload target.
+  const canUploadAttachments =
+    (appConfig.attachmentUploadTargets as readonly string[]).includes(hierarchy.rootChannelType) &&
+    organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),

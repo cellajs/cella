@@ -14,7 +14,7 @@ export async function persistAttachments(
     tenantId: string;
     organizationId: string;
     /** Placement seam: the deepest home channel id only (ancestors are server-derived); omitted = org-homed. Apps expose their placement fields via the backend seam. */
-    placement?: Record<string, string>;
+    placement?: Record<string, string | null | undefined>;
   },
 ): Promise<void> {
   if (!attachments.length) return;

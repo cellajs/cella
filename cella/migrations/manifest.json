@@ -663,6 +663,26 @@
     "pnpm check"
    ],
    "summary": "hierarchy.rootChannelType, getLeastPrivilegedRole and getMostPrivilegedRole replace every 'member' literal in cella tests, stories, email previews, membership column defaults and the invite default role. Apps with another vocabulary drop their `fork: role vocabulary` markers and take upstream."
+  },
+  {
+   "id": "20260902T0945-attachment-placement-seam-v2",
+   "version": "next",
+   "title": "Attachment placement seam v2",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend",
+    "frontend/src",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "The pinned attachment-placement seam gains attachmentHomeColumnKey, resolveAttachmentHomeScope and seedAttachmentPlacements; list reads take a generic channelId param; channelRelationColumns adds lazy ancestor foreign keys via registerChannelTable plus channelRelationIndexes; appConfig.attachmentUploadTargets gates the upload affordance; frontend placement handling is hierarchy-derived. Apps extend the seam file, register their channel tables, add the config key and take upstream for the surrounding files."
   }
  ]
 }

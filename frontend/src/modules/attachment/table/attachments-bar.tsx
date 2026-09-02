@@ -2,6 +2,7 @@ import { InfoIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
+import { appConfig, hierarchy } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
@@ -36,7 +37,11 @@ export function AttachmentsTableBar({
 }: AttachmentsTableBarProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  const { open } = useAttachmentsUploadDialog(channel.tenantId, channel.id);
+  // Placement seam: a sub-organization channel homes its uploads on itself; the organization row is the org.
+  const isRoot = channel.entityType === hierarchy.rootChannelType;
+  const organizationId = !isRoot && 'organizationId' in channel ? String(channel.organizationId) : channel.id;
+  const placement = isRoot ? undefined : { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id };
+  const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
   const resolveCan = useResolveCan();
 
   const deleteButtonRef = useRef(null);

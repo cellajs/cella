@@ -23,6 +23,12 @@ export const config = {
    */
   seenTrackedProductTypes: ['attachment'] as const,
 
+  /**
+   * Channels whose attachments table offers a direct upload, i.e. a home the create can write into.
+   * Apps whose attachments only come from host media blocks (an owned embedding) declare none.
+   */
+  attachmentUploadTargets: ['organization'] as const,
+
   /** Maps entity types to their ID column names, derived from the hierarchy (`${type}Id`). */
   entityIdColumnKeys: hierarchy.idColumnKeys,
 

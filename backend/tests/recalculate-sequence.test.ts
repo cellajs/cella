@@ -23,18 +23,24 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   // Shared ancestor ids make all rows roll into one assertable self-counter node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
+  // Nullable ancestors stay null (their FKs would reject invented ids), so rows home at the
+  // deepest strict ancestor; invented ids remain only for strict deeper ancestors.
+  const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(PRODUCT));
   const deeperAncestorIds = Object.fromEntries(
-    ANCESTORS.filter((type) => type !== 'organization').map((type) => [type, crypto.randomUUID()]),
+    ANCESTORS.filter((type) => type !== 'organization' && !nullableAncestors.has(type)).map((type) => [
+      type,
+      crypto.randomUUID(),
+    ]),
   );
   const homeChannelId = () => {
-    const deepest = ANCESTORS[0];
-    return deepest === 'organization' ? tenant.organization.id : deeperAncestorIds[deepest];
+    const deepest = ANCESTORS.find((type) => type === 'organization' || !nullableAncestors.has(type));
+    return !deepest || deepest === 'organization' ? tenant.organization.id : deeperAncestorIds[deepest];
   };
   const ancestorColumns = (orgId: string) =>
     Object.fromEntries(
       ANCESTORS.map((type) => [
         appConfig.entityIdColumnKeys[type],
-        type === 'organization' ? orgId : deeperAncestorIds[type],
+        type === 'organization' ? orgId : (deeperAncestorIds[type] ?? null),
       ]),
     );
 
