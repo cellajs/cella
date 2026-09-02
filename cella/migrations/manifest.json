@@ -702,6 +702,23 @@
     "pnpm check"
    ],
    "summary": "tenantReadAs, wider resolveEmailLink input, getCreatedChannelRoute/getNearestAncestorRoute, text-compared host ids in recalculate-counters, derive-description-core in the frontend, the pinned shared/app-exports.ts barrel, appConfig.memberStatProductTypes driving member stats, and channelRouteConfig.notificationSearch. Apps add the config key and the barrel file, then take upstream for the listed files."
+  },
+  {
+   "id": "20260902T0950-brand-and-app-locale-ignored",
+   "version": "next",
+   "title": "Brand assets and the app locale namespace are ignored, not pinned",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "cella",
+    "locales"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "favicons, thumbnail.png, logo.tsx, legal-config.ts and locales/*/app.json move from pinned to ignored in the template cella.config.ts; cella's onboarding copy moves from app.json to common.json. Apps take upstream's lists, drop stale ignores and re-adopt comment-only pins."
   }
  ]
 }
