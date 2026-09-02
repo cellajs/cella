@@ -1,21 +1,27 @@
 import type { GetMyMembershipsResponse } from 'sdk';
+import { hierarchy } from 'shared';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
+import { findInCache } from '~/query/basic/find-in-list-cache';
 import { queryClient } from '~/query/query-client';
 import { deriveGrantBoundaryViews } from '~/query/realtime/views';
 import { syncStore } from './sync-store';
 
-/** Apps register a resolver for cached sub-organization channel paths. An unknown path skips its precise grant view, and the organization baseline still covers it. */
-let channelPathResolver: (channelType: string | null, channelId: string) => string | null = () => null;
+/** Sub-organization channel types: every channel below the root carries a server-computed `path`. */
+const nestedChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) !== null);
 
-export function registerChannelPathResolver(
-  resolver: (channelType: string | null, channelId: string) => string | null,
-): void {
-  channelPathResolver = resolver;
-}
-
-/** `channelType` is null when the caller knows only the id, as in the fetch prioritizer's covering-prefix computation; resolvers then search their cached channel types. */
+/**
+ * Root-first id path of a cached channel row, or null when uncached; the engine then keeps the
+ * organization-wide view, so this is precision, never a correctness dependency. `channelType` is null
+ * when the caller knows only the id, as in the fetch prioritizer's covering-prefix computation; every
+ * nested channel type is searched then. Cella's single-channel hierarchy has no nested types.
+ */
 export function resolveChannelPath(channelType: string | null, channelId: string): string | null {
-  return channelPathResolver(channelType, channelId);
+  const types = channelType ? [channelType] : nestedChannelTypes;
+  for (const type of types) {
+    const row = findInCache<{ id: string; path?: string | null }>(type, channelId);
+    if (row?.path) return row.path;
+  }
+  return null;
 }
 
 /** Rebuilt from the membership cache before each catchup request: built-in org views absorb equivalent derived views, and a disappeared grant removes its own. */
@@ -27,7 +33,7 @@ export function declareViewsFromMemberships(): void {
   const derived = deriveGrantBoundaryViews({
     memberships,
     entityTypes,
-    resolvePath: (channelType, channelId) => channelPathResolver(channelType, channelId),
+    resolvePath: resolveChannelPath,
   });
 
   const store = syncStore.getState();

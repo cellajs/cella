@@ -1,5 +1,4 @@
 import type { ChannelEntityType } from 'shared';
-import '~/query/realtime/register-channel-paths';
 import { attachmentsCanonicalOptions } from '~/modules/attachment/query';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
