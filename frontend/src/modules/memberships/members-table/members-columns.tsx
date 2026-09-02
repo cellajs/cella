@@ -1,7 +1,8 @@
-import { BoxIcon, type LucideIcon, PaperclipIcon } from 'lucide-react';
+import { BoxIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { hiddenMemberCountColumns, memberStatIcons } from '~/members-config';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -11,10 +12,8 @@ import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
 // Product types with per-member stat columns, from config (the response only carries these keys).
+// Their icons and the count columns hidden by default are app-owned in members-config.
 const memberStatProductTypes = appConfig.memberStatProductTypes;
-const memberStatIcons: Partial<Record<string, LucideIcon>> = {
-  attachment: PaperclipIcon,
-};
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
@@ -123,6 +122,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         return {
           key: `${type}Count`,
           name: t(`c:${type}`, { count: 2 }),
+          hidden: hiddenMemberCountColumns.includes(type),
           minBreakpoint: 'md',
           minWidth: 60,
           maxWidth: 120,
@@ -143,6 +143,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
           (type): ColumnOrColumnGroup<Member> => ({
             key: `${type}Count`,
             name: t(`c:${type}`, { count: 2, defaultValue: type }),
+            hidden: hiddenMemberCountColumns.includes(type),
             minBreakpoint: 'md',
             minWidth: 60,
             maxWidth: 120,

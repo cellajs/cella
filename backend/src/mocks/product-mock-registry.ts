@@ -1,5 +1,5 @@
 import { getTableColumns } from 'drizzle-orm';
-import type { ProductEntityType } from 'shared';
+import { appConfig, hierarchy, type ProductEntityType } from 'shared';
 import { appProductMocks } from '#/mocks/app-product-mocks';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { getEntityTable } from '#/tables';
@@ -29,10 +29,15 @@ export function buildInsertableProduct(
       .filter(([, column]) => column.generated)
       .map(([prop]) => prop),
   );
+  // Nullable ancestors insert as null (org-homed) unless overridden: the SELECT-shape mock invents
+  // ids that never satisfy the ancestor foreign keys channelRelationColumns declares.
+  const nullableAncestorKeys = new Set<string>(
+    hierarchy.getNullableAncestors(entityType).map((type) => appConfig.entityIdColumnKeys[type]),
+  );
   const row: Record<string, unknown> = {};
   for (const [prop, value] of Object.entries(mock)) {
     if (generatedProps.has(prop)) continue;
-    row[prop] = value;
+    row[prop] = nullableAncestorKeys.has(prop) ? null : value;
   }
   return { ...row, ...overrides };
 }

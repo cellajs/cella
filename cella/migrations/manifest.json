@@ -719,6 +719,26 @@
     "pnpm check"
    ],
    "summary": "favicons, thumbnail.png, logo.tsx, legal-config.ts and locales/*/app.json move from pinned to ignored in the template cella.config.ts; cella's onboarding copy moves from app.json to common.json. Apps take upstream's lists, drop stale ignores and re-adopt comment-only pins."
+  },
+  {
+   "id": "20260902T1355-members-config-and-hierarchy-test-seeds",
+   "version": "next",
+   "title": "Members table config seam and hierarchy-aware test seeds",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src",
+    "backend/src/mocks",
+    "backend/tests",
+    "yjs/src/tests"
+   ],
+   "requires": [
+    "pnpm check",
+    "pnpm test"
+   ],
+   "summary": "memberStatIcons and hiddenMemberCountColumns move out of members-columns.tsx into the new pinned frontend/src/members-config.ts; buildInsertableProduct, the CDC event-bus test and the yjs permissions test derive ancestor ids from the hierarchy instead of inventing them. Apps add the pin, move their icon and hidden-column values into members-config.ts, and take upstream for the four files."
   }
  ]
 }

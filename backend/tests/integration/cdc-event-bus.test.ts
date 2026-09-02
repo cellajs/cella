@@ -21,12 +21,14 @@ const mockEventWithData = (key: string): ActivityEvent =>
   }) as ActivityEvent;
 
 import { eq, sql } from 'drizzle-orm';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { mockUser } from '#/modules/user/user-mocks';
+import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
 import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
 // Covers local ActivityBus events and the full DB change to CDC worker to WebSocket path.
@@ -74,6 +76,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let testOrg: { id: string; slug: string; tenantId: string };
   let testUser: { id: string; email: string };
+  // Ancestor chain derived from the app hierarchy; an org-only app seeds nothing.
+  let plan: TestEntityHierarchyPlan;
 
   beforeAll(async () => {
     cdcHarness = await startInProcessCdcWorker();
@@ -91,10 +95,19 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const userData = mockUser();
     [testUser] = await db.insert(usersTable).values(userData).returning({ id: usersTable.id, email: usersTable.email });
     await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
+
+    // Strict sub-organization ancestor columns carry foreign keys, so their rows must exist.
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootChannelId: testOrg.id,
+      makeChannelId: () => crypto.randomUUID(),
+    });
+    await seedEntityHierarchy(db, plan, { tenantId: testOrg.tenantId, createdBy: testUser.id, slugPrefix: 'cdc-seq' });
   });
 
   afterAll(async () => {
     await cdcHarness?.stop();
+    await cleanupEntityHierarchy(db, plan);
     await clearDatabase();
   });
 
@@ -123,7 +136,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       {
         id: attachmentId,
         tenantId: testOrg.tenantId,
-        organizationId: testOrg.id,
+        ...plan.channelIdColumns,
         createdBy: testUser.id,
         updatedBy: testUser.id,
         seq: 0,

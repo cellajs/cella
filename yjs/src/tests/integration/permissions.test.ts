@@ -55,7 +55,16 @@ async function seedEntityHierarchy(
   slugPrefix: string,
 ) {
   for (const row of plan.seedChannelRows) {
-    const columns = ['id', 'tenant_id', 'entity_type', 'name', 'slug', 'created_by', row.parentColumnName];
+    // Every ancestor id column is NOT NULL on nested channel tables, so seed all of them, not only the parent.
+    const columns = [
+      'id',
+      'tenant_id',
+      'entity_type',
+      'name',
+      'slug',
+      'created_by',
+      ...row.ancestorColumns.map((column) => column.columnName),
+    ];
     const values = [
       row.id,
       tenantId,
@@ -63,7 +72,7 @@ async function seedEntityHierarchy(
       `Authz ${row.channelType}`,
       `${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`,
       createdBy,
-      row.parentId,
+      ...row.ancestorColumns.map((column) => column.id),
     ];
     const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
