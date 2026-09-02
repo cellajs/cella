@@ -1,4 +1,4 @@
-import { appConfig, type EntityRole } from 'shared';
+import { appConfig, type EntityRole, hierarchy } from 'shared';
 import {
   EmailAvatar,
   EmailBody,
@@ -83,7 +83,12 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<
     );
   },
   preview: {
-    statics: { senderName: 'John', senderThumbnailUrl: null, entityName: 'Acme', role: 'member' },
+    statics: {
+      senderName: 'John',
+      senderThumbnailUrl: null,
+      entityName: 'Acme',
+      role: hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+    },
     recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
   },
 });

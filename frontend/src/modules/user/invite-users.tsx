@@ -20,11 +20,9 @@ import { InviteSearchForm } from '~/modules/user/invite-search-form';
 const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
 
-const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] => {
-  const channelRoles = entityType ? hierarchy.getRoles(entityType) : [];
-  if (!channelRoles.length || channelRoles.includes('member')) return 'member';
-  return channelRoles[channelRoles.length - 1] as InviteFormValues['role'];
-};
+/** The target vocabulary's least-privileged role, falling back to the root channel's floor. */
+const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
+  hierarchy.getLeastPrivilegedRole(entityType ?? hierarchy.rootChannelType) as InviteFormValues['role'];
 
 export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {

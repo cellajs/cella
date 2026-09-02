@@ -1,8 +1,11 @@
-import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
+import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { configurePolicyMatrix } from '../../testing/policies.ts';
 import { getAllDecisions } from './check.ts';
 import type { SubjectForPermission } from './types.ts';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 type TestMembership = {
   id: string;
@@ -23,11 +26,11 @@ const policies = configurePolicyMatrix(appConfig.entityTypes, ({ entityType, cha
   switch (entityType) {
     case 'organization':
       channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      channels.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
+      channels.organization[memberRole]({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'attachment':
       channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      channels.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
+      channels.organization[memberRole]({ create: 1, read: 1, update: 0, delete: 0 });
       break;
   }
 });
@@ -40,7 +43,7 @@ const createMemberships = (count: number): TestMembership[] =>
     channelId: `org${i}`,
     userId: `user${i}`,
     organizationId: `org${i}`,
-    role: i % 3 === 0 ? ('admin' as const) : ('member' as const),
+    role: i % 3 === 0 ? ('admin' as const) : memberRole,
     displayOrder: 0,
     muted: false,
     archived: false,

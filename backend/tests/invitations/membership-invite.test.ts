@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
+import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -7,6 +8,9 @@ import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 vi.mock('#/modules/memberships/handlers', async () => {
   const actual = await vi.importActual('#/modules/memberships/handlers');
@@ -76,7 +80,7 @@ describe('Membership Invitation', async () => {
     const { response: res, data } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['user1@example.com', 'user2@example.com'], role: 'member' },
+      { emails: ['user1@example.com', 'user2@example.com'], role: memberRole },
       sessionCookie,
     );
 
@@ -89,8 +93,8 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships).toHaveLength(2);
     expect(inactiveMemberships[0].email).toBe('user1@example.com');
     expect(inactiveMemberships[1].email).toBe('user2@example.com');
-    expect(inactiveMemberships[0].role).toBe('member');
-    expect(inactiveMemberships[1].role).toBe('member');
+    expect(inactiveMemberships[0].role).toBe(memberRole);
+    expect(inactiveMemberships[1].role).toBe(memberRole);
   });
 
   it('should invite existing users to organization', async () => {
@@ -122,7 +126,7 @@ describe('Membership Invitation', async () => {
     const { response: res, data } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['existing@example.com', 'newuser@example.com'], role: 'member' },
+      { emails: ['existing@example.com', 'newuser@example.com'], role: memberRole },
       sessionCookie,
     );
 
@@ -169,7 +173,7 @@ describe('Membership Invitation', async () => {
     const { response: res } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['user@example.com'], role: 'member' },
+      { emails: ['user@example.com'], role: memberRole },
       sessionCookie,
     );
 
@@ -180,7 +184,7 @@ describe('Membership Invitation', async () => {
       .from(inactiveMembershipsTable)
       .where(eq(inactiveMembershipsTable.organizationId, organization.id));
     expect(inactiveMemberships).toHaveLength(1);
-    expect(inactiveMemberships[0].role).toBe('member');
+    expect(inactiveMemberships[0].role).toBe(memberRole);
   });
 
   it('should reject invitations without authentication', async () => {
@@ -188,7 +192,7 @@ describe('Membership Invitation', async () => {
 
     const { response: res } = await call(membershipInvite, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { emails: ['user@example.com'], role: 'member' },
+      body: { emails: ['user@example.com'], role: memberRole },
       query: { entityId: organization.id, entityType: 'organization' as const },
       headers: defaultHeaders,
     });
@@ -205,7 +209,7 @@ describe('Membership Invitation', async () => {
     const { response: res } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['newuser@example.com'], role: 'member' },
+      { emails: ['newuser@example.com'], role: memberRole },
       sessionCookie,
     );
 
@@ -215,7 +219,7 @@ describe('Membership Invitation', async () => {
   it('should handle already invited users', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
-    const inviteData = { emails: ['user@example.com'], role: 'member' };
+    const inviteData = { emails: ['user@example.com'], role: memberRole };
 
     const { response: firstRes } = await makeInviteRequest(
       organization.tenantId,

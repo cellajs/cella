@@ -27,7 +27,13 @@ describe('Permission enforcement via HTTP', async () => {
     mockFetchRequest();
 
     tenant = await createTestTenant(call, 'perm-test');
-    member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'perm-member', 'member');
+    member = await createOrgUser(
+      call,
+      tenant.tenantId,
+      tenant.organization.id,
+      'perm-member',
+      hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+    );
   });
 
   afterAll(async () => {
@@ -96,10 +102,12 @@ describe('Permission enforcement via HTTP', async () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
 
     // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0 rejects.
-    const rootChannelType = hierarchy.channelTypes.find((type) => hierarchy.getParent(type) === null);
-    const memberAttachmentRead = rootChannelType
-      ? getPolicyPermissions(getEntityPolicies('attachment', policyMatrix), rootChannelType, 'member')?.read
-      : undefined;
+    const { rootChannelType } = hierarchy;
+    const memberAttachmentRead = getPolicyPermissions(
+      getEntityPolicies('attachment', policyMatrix),
+      rootChannelType,
+      hierarchy.getLeastPrivilegedRole(rootChannelType),
+    )?.read;
     const memberSignsUnowned = memberAttachmentRead === 1;
 
     beforeAll(async () => {

@@ -1,9 +1,13 @@
+import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { EntityType } from '../../types.ts';
 import { wideEntityTypes, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture.ts';
 import { getAllDecisions } from './engine/index.ts';
 import { configurePermissions } from './policy-matrix.ts';
 import type { PolicyCallback } from './types.ts';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 describe('missing policy rows', () => {
   it('denies every action instead of requiring explicit all-zero rows', () => {
@@ -60,7 +64,7 @@ describe('row conditions on create', () => {
   it("rejects create: 'own' because no row exists yet", () => {
     expect(() =>
       configure(({ entityType, channels }) => {
-        if (entityType === 'attachment') channels.organization.member({ create: 'own', read: 1 });
+        if (entityType === 'attachment') channels.organization[memberRole]({ create: 'own', read: 1 });
       }),
     ).toThrow(/row condition[\s\S]*'create'[\s\S]*never match/);
   });
@@ -69,7 +73,7 @@ describe('row conditions on create', () => {
     expect(() =>
       configure(({ entityType, channels }) => {
         if (entityType === 'attachment') {
-          channels.organization.member({ create: 1, read: 'own', update: 'own', delete: 'own' });
+          channels.organization[memberRole]({ create: 1, read: 'own', update: 'own', delete: 'own' });
         }
       }),
     ).not.toThrow();

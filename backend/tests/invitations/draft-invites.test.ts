@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, membershipInvite } from 'sdk';
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { AuthContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
@@ -12,6 +12,9 @@ import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -65,12 +68,12 @@ describe('Draft context invite deferral', async () => {
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
-    const { response } = await invite(organization, ['new-member@example.com'], 'member', sessionCookie);
+    const { response } = await invite(organization, ['new-member@example.com'], memberRole, sessionCookie);
     expect(response.status).toBe(200);
 
     const [row] = await getInactiveRows(organization.id);
     expect(row).toBeDefined();
-    expect(row.role).toBe('member');
+    expect(row.role).toBe(memberRole);
     expect(row.tokenId).toBeTruthy(); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
 
@@ -94,7 +97,7 @@ describe('Draft context invite deferral', async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     const invitee = await createTestUser('invitee@example.com');
 
-    await invite(organization, [invitee.email], 'member', sessionCookie);
+    await invite(organization, [invitee.email], memberRole, sessionCookie);
 
     const inviteeCookie = await createTestSession(invitee);
     const myInvitations = () => call(getMyInvitations, { headers: { ...defaultHeaders, Cookie: inviteeCookie } });
@@ -119,7 +122,7 @@ describe('Draft context invite deferral', async () => {
   it('dispatch rotates tokens, stamps remindedAt, and honors the 7-day throttle', async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
 
-    await invite(organization, ['deferred@example.com'], 'member', sessionCookie);
+    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [beforeRow] = await getInactiveRows(organization.id);
     const originalTokenId = beforeRow.tokenId;
     expect(beforeRow.remindedAt).toBeNull();
@@ -154,12 +157,12 @@ describe('Draft context invite deferral', async () => {
     // Reminders apply only to invitees with a known email; new-user invites are conflict-suppressed.
     const invitee = await createTestUser('pending@example.com');
 
-    await invite(organization, [invitee.email], 'member', sessionCookie);
+    await invite(organization, [invitee.email], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     expect(initial.remindedAt).toBeNull(); // initial invite email is not a reminder
 
     // The pending invite was dispatched at creation, so an immediate re-invite sends no reminder.
-    await invite(organization, [invitee.email], 'member', sessionCookie);
+    await invite(organization, [invitee.email], memberRole, sessionCookie);
     const [afterEarlyReinvite] = await getInactiveRows(organization.id);
     expect(afterEarlyReinvite.remindedAt).toBeNull();
 
@@ -171,7 +174,7 @@ describe('Draft context invite deferral', async () => {
       .where(eq(inactiveMembershipsTable.id, initial.id));
     const [aged] = await getInactiveRows(organization.id);
 
-    await invite(organization, [invitee.email], 'member', sessionCookie);
+    await invite(organization, [invitee.email], memberRole, sessionCookie);
     const [afterDueReinvite] = await getInactiveRows(organization.id);
     expect(afterDueReinvite.remindedAt).not.toBeNull();
     expect(afterDueReinvite.remindedAt).not.toBe(aged.remindedAt);

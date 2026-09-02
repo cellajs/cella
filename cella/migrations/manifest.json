@@ -644,6 +644,25 @@
     "pnpm check"
    ],
    "summary": "resolveChannelPath in view-declaration.ts now reads the server-computed path off cached rows of every non-root hierarchy channel type itself; registerChannelPathResolver and the pinned frontend/src/query/realtime/register-channel-paths.ts seam are gone. Apps delete the file, drop its side-effect import from list-queries-config.tsx and remove the pinned entry from cella/cella.config.ts."
+  },
+  {
+   "id": "20260902T0939-role-vocabulary-from-hierarchy",
+   "version": "next",
+   "title": "Role vocabulary derived from the hierarchy",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend",
+    "frontend/src",
+    "shared/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "hierarchy.rootChannelType, getLeastPrivilegedRole and getMostPrivilegedRole replace every 'member' literal in cella tests, stories, email previews, membership column defaults and the invite default role. Apps with another vocabulary drop their `fork: role vocabulary` markers and take upstream."
   }
  ]
 }
