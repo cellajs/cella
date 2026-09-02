@@ -192,7 +192,7 @@ app edits inside template-owned modules. See
 - Console: `console.log` for temp debugging (remove before commit), `console.info` for logging, `console.debug` for dev (stripped in prod).
 - Links as buttons: Use `<Link>` with `buttonVariants()` for linkable actions. Allow new-tab opening for URL-targetable sheet content.
 - React-compiler: `useMemo`/`useCallback` can be avoided in most cases.
-- Translations: All UI text via `useTranslation()` and `t('c:key')`. Never hardcode. Files in `locales/en/`. General translations go in `common.json`, app-specific ones in `app.json`. Both are merged into the single `c` namespace at runtime, so always use `t('c:key')`, never `t('app:key')` or `t('common:key')`. `app.json` is app-owned and never synced to forks, so every key a template component reads must live in `common.json` (an app overrides it from its `app.json`).
+- Translations: All UI text via `useTranslation()` and `t('c:key')`. Never hardcode. Files in `locales/en/`. General translations go in `common.json`, app-specific ones in `app.json`. Both are merged into the single `c` namespace at runtime, so always use `t('c:key')`, never `t('app:key')` or `t('common:key')`. `app.json` is app-owned and never synced, so every key a template component reads must live in `common.json` (an app overrides it from its `app.json`).
 
 ## Testing
 

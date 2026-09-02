@@ -5,15 +5,12 @@ import type { DB } from '#/db/db';
 import type { attachmentsTable } from '#/modules/attachment/attachment-db';
 
 /**
- * Attachment placement seam (pinned; apps own their fill). cella homes attachments at the
- * organization only, so this default exposes no placement fields, resolves every row org-homed,
- * reads lists org-wide and seeds one batch per organization. An app that re-homes attachments on
- * its channel chain (nullable ancestor columns, deepest non-null = home) replaces this file; the
- * cella-owned schema, list and create ops and the seed call through these exports, so the swap
- * stays local to it.
+ * Create-body placement fields, spread into the create-item schema: the deepest home id only.
+ * This file is the attachment placement seam (pinned; apps own their fill): cella homes attachments
+ * at the organization, so the defaults below expose no fields, resolve every row org-homed, read
+ * lists org-wide and seed one batch per organization. An app re-homing attachments on its channel
+ * chain replaces the file; the cella-owned schema, list and create ops and the seed call through it.
  */
-
-/** Create-body placement fields, spread into the create-item schema: the deepest home id only. */
 export const attachmentPlacementFieldsSchema = {};
 
 /** A create-body item as the placement seam sees it; apps narrow to their placement fields. */
