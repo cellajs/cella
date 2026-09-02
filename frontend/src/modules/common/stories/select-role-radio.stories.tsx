@@ -1,8 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 const meta = {
   title: 'common/SelectRoleRadio',
@@ -40,12 +43,12 @@ export const Selected: Story = {
 
 export const WrappedLayout: Story = {
   args: {
-    value: 'member',
+    value: memberRole,
     onValueChange: () => {},
     className: 'flex-wrap items-start gap-3',
   },
   render: function Render() {
-    const [value, setValue] = useState<EntityRole | undefined>('member');
+    const [value, setValue] = useState<EntityRole | undefined>(memberRole);
 
     return (
       <div className="w-72 rounded-lg border p-4">

@@ -1,4 +1,4 @@
-import { appConfig, type EntityRole } from 'shared';
+import { appConfig, type EntityRole, hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
   canReceiveProductEvent,
@@ -8,6 +8,9 @@ import {
 } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 /**
  * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
@@ -99,13 +102,13 @@ describe('dispatch batch eligibility: deterministic splits', () => {
     const clean: SubscriberAccess = {
       userId: 'user-1',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[0], 'member', 'user-1')],
+      memberships: [membership(ORGS[0], memberRole, 'user-1')],
     };
     // A granting membership plus a malformed one: the engine fail-closes just this access.
     const broken: SubscriberAccess = {
       userId: 'user-2',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[0], 'member', 'user-2'), membership(ORGS[1], 'member', 'user-2', true)],
+      memberships: [membership(ORGS[0], memberRole, 'user-2'), membership(ORGS[1], memberRole, 'user-2', true)],
     };
 
     // broken comes first: were classes shared naively, its deny would leak onto clean.
@@ -131,7 +134,7 @@ describe('dispatch batch eligibility: deterministic splits', () => {
     const author: SubscriberAccess = {
       userId: 'user-1',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[0], 'member', 'user-1')],
+      memberships: [membership(ORGS[0], memberRole, 'user-1')],
     };
     const admin: SubscriberAccess = { userId: 'user-2', isSystemAdmin: true, memberships: [] };
 
@@ -152,12 +155,12 @@ describe('dispatch batch eligibility: deterministic splits', () => {
     const orgAMember: SubscriberAccess = {
       userId: 'user-1',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[0], 'member', 'user-1')],
+      memberships: [membership(ORGS[0], memberRole, 'user-1')],
     };
     const orgCMember: SubscriberAccess = {
       userId: 'user-2',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[2], 'member', 'user-2')],
+      memberships: [membership(ORGS[2], memberRole, 'user-2')],
     };
 
     expect(batchDecisions([orgAMember, orgCMember], event)).toEqual([true, false]);
@@ -180,7 +183,7 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
     const SEED = 0xce11a;
     const random = mulberry32(SEED);
     const pick = <T>(items: T[]): T => items[Math.floor(random() * items.length)];
-    const roles: EntityRole[] = ['admin', 'member'] as EntityRole[];
+    const roles: EntityRole[] = ['admin', memberRole];
 
     for (let iteration = 0; iteration < 300; iteration++) {
       const eventOrg = pick(ORGS);

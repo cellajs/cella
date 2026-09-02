@@ -9224,6 +9224,15 @@
             "required": false,
             "name": "seqCursor",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "channelId",
+            "in": "query"
           }
         ],
         "responses": {

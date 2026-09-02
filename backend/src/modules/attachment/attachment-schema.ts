@@ -101,6 +101,9 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
+  // Placement seam: narrow to rows homed at one channel (resolved by `resolveAttachmentHomeScope`);
+  // omitted or the organization itself reads org-wide.
+  channelId: validUuidSchema.optional(),
 });
 
 /** Selectable stored-file variants. Mirrors the frontend `BlobVariant`. */

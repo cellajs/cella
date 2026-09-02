@@ -1,17 +1,29 @@
-import { uuid } from 'drizzle-orm/pg-core';
+import { type AnyPgTable, index, type PgColumn, uuid } from 'drizzle-orm/pg-core';
 import {
   type AncestorChannelType,
   appConfig,
   type EntityIdColumns,
   type EntityType,
+  entityIdColumnName,
   hierarchy,
   type NullableAncestorType,
   type ProductEntityType,
   type RelatedChannelType,
 } from 'shared';
+import { channelTables } from '#/db/channel-tables';
 
 type NotNullUuid = ReturnType<ReturnType<typeof uuid>['notNull']>;
 type NullableUuid = ReturnType<typeof uuid>;
+export type ChannelTable = AnyPgTable & { id: PgColumn };
+
+/**
+ * Non-root ancestors and related channels reference their table through the pinned
+ * `channel-tables.ts` map, read lazily inside `references` so the import cycle between a channel
+ * table and its products is harmless. The root channel is not referenced here; product tables keep
+ * their composite `(tenant_id, <root>_id)` foreign key.
+ */
+const referencedChannelId = (channelType: string): PgColumn =>
+  channelTables[channelType as keyof typeof channelTables]().id;
 
 /** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
 export type ChannelRelationColumns<E extends string> = EntityIdColumns<
@@ -24,20 +36,46 @@ export type ChannelRelationColumns<E extends string> = EntityIdColumns<
 /** Ancestor-context id columns spanning all product entities, all nullable, for cross-entity tables like `activities`. */
 export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
-/** From hierarchy config; table definitions still declare their own indexes and foreign keys. */
+/**
+ * From hierarchy config. Non-root ancestor columns cascade-delete with their channel row and
+ * related-channel columns null out; table definitions still declare the root's composite foreign
+ * key and their own indexes (see {@link channelRelationIndexes}).
+ */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
   const columns = {} as Record<string, NotNullUuid | NullableUuid>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? uuid() : uuid().notNull();
+    const column =
+      ancestor === hierarchy.rootChannelType
+        ? uuid()
+        : uuid().references(() => referencedChannelId(ancestor), { onDelete: 'cascade' });
+    columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? column : column.notNull();
   }
   for (const related of hierarchy.getRelatedChannels(entityType)) {
-    columns[appConfig.entityIdColumnKeys[related]] = uuid();
+    columns[appConfig.entityIdColumnKeys[related]] = uuid().references(() => referencedChannelId(related), {
+      onDelete: 'set null',
+    });
   }
 
   return columns as ChannelRelationColumns<E>;
 };
+
+/**
+ * One index per non-root ancestor and related-channel column, named `<table>_<column>_index`, for
+ * a product table's index list. Empty for org-homed products, so cella's own tables are unchanged.
+ */
+export const channelRelationIndexes = (
+  tableName: string,
+  table: Record<string, unknown>,
+  entityType: ProductEntityType,
+) =>
+  [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
+    .filter((type) => type !== hierarchy.rootChannelType)
+    .map((type) => {
+      const column = table[appConfig.entityIdColumnKeys[type]] as PgColumn;
+      return index(`${tableName}_${entityIdColumnName(type)}_index`).on(column);
+    });
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */
 export const activityChannelColumns = (): ActivityChannelColumns => {

@@ -6,15 +6,33 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
+import { appConfig, hierarchy } from 'shared';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { baseDb as db } from '#/db/db';
+import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
+import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+// The create body carries the deepest seeded home id only (the placement seam derives the chain
+// above it server-side and the relation columns reference it); empty in cella's org-homed default.
+let plan: TestEntityHierarchyPlan | undefined;
+type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
+const bodyChannelIdColumns = (): BodyChannelIdColumns => {
+  const deepest = hierarchy
+    .getOrderedAncestors('attachment')
+    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+  if (!deepest) return {} as BodyChannelIdColumns;
+  const key = appConfig.entityIdColumnKeys[deepest];
+  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
+};
 
 const attachmentBody = (id: string) => ({
   id,
@@ -24,7 +42,7 @@ const attachmentBody = (id: string) => ({
   keys: { original: `test/cross-tenant-${id}.pdf` },
   bucketName: 'test-bucket',
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...generateMockEntityBodyChannelIdColumns('attachment'),
+  ...bodyChannelIdColumns(),
   stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
 });
 
@@ -38,6 +56,16 @@ describe('Cross-tenant API isolation', async () => {
     mockFetchRequest();
     tenantA = await createTestTenant(call, 'tenant-a');
     tenantB = await createTestTenant(call, 'tenant-b');
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootChannelId: tenantA.organization.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, {
+      tenantId: tenantA.tenantId,
+      createdBy: tenantA.user.id,
+      slugPrefix: 'cross-tenant',
+    });
   });
 
   afterAll(async () => {

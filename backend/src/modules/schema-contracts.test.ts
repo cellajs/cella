@@ -1,7 +1,11 @@
+import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { activityListQuerySchema } from '#/modules/activities/activities-schema';
 import { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { sendNewsletterBodySchema } from '#/modules/system/system-schema';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 const firstId = '00000000-0000-4000-8000-000000000001';
 const secondId = '00000000-0000-4000-8000-000000000002';
@@ -31,7 +35,7 @@ describe('memberListQuerySchema', () => {
 });
 
 describe('sendNewsletterBodySchema', () => {
-  const baseBody = { organizationIds: [firstId], roles: ['member'] as const, subject: 'Subject', content: 'Content' };
+  const baseBody = { organizationIds: [firstId], roles: [memberRole] as const, subject: 'Subject', content: 'Content' };
 
   it('keeps an empty organization scope available for toSelf previews', () => {
     expect(sendNewsletterBodySchema.safeParse({ ...baseBody, organizationIds: [] }).success).toBe(true);
@@ -40,7 +44,7 @@ describe('sendNewsletterBodySchema', () => {
   it.each([
     { ...baseBody, organizationIds: ['not-an-id'] },
     { ...baseBody, organizationIds: [firstId, firstId] },
-    { ...baseBody, roles: ['member', 'member'] },
+    { ...baseBody, roles: [memberRole, memberRole] },
   ])('rejects invalid or duplicate targeting values %#', (body) => {
     expect(sendNewsletterBodySchema.safeParse(body).success).toBe(false);
   });

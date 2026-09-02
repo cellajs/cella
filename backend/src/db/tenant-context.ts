@@ -34,6 +34,25 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
   );
 }
 
+/**
+ * `tenantRead` with an explicit tenant id, for cross-tenant routes (bare `baseDb`, no
+ * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
+ * list whose per-row subqueries read RLS-guarded product tables.
+ */
+export async function tenantReadAs<T>(
+  ctx: AuthContext,
+  tenantId: string,
+  fn: (readCtx: AuthContext) => Promise<T>,
+): Promise<T> {
+  return baseDb.transaction(
+    async (tx) => {
+      await setSessionVars(tx, tenantId, ctx.var.userId, false);
+      return fn({ var: { ...ctx.var, db: tx } });
+    },
+    { accessMode: 'read only' },
+  );
+}
+
 /** Read-only tenant RLS transaction for normal product queries. */
 export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext) => Promise<T>): Promise<T> {
   // Fold READ ONLY into BEGIN, saving one DB round trip per read.

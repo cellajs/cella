@@ -8,6 +8,8 @@ import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,
   organizationId: string,
+  /** Placement seam: the deepest home channel id column (`{ projectId }`); omitted = org-homed. */
+  placement?: Record<string, string>,
 ): Attachment[] => {
   const originalFiles = result[':original'] ?? [];
 
@@ -41,6 +43,7 @@ export const parseUploadedAttachments = (
       keys: { original: url ?? '' },
       groupId,
       organizationId,
+      ...placement,
     });
 
     attachments.push(attachment as Attachment);

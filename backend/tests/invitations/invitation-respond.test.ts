@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { handleMembershipInvitation } from 'sdk';
+import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -9,6 +10,9 @@ import { createTestOrganization, createTestSession, createTestUser } from '../he
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createMembershipInvitationToken } from './helpers';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -45,7 +49,7 @@ describe('Invitation response', async () => {
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
       organization.id,
-      'member',
+      memberRole,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(invitedUser);
@@ -57,7 +61,7 @@ describe('Invitation response', async () => {
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(1);
     expect(memberships[0].organizationId).toBe(organization.id);
-    expect(memberships[0].role).toBe('member');
+    expect(memberships[0].role).toBe(memberRole);
 
     const remainingInactive = await db
       .select()
@@ -94,7 +98,7 @@ describe('Invitation response', async () => {
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
       organization.id,
-      'member',
+      memberRole,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(invitedUser);
@@ -139,7 +143,7 @@ describe('Invitation response', async () => {
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
       organization.id,
-      'member',
+      memberRole,
       organization.tenantId,
     );
     const attackerSession = await createTestSession(attacker);
@@ -170,7 +174,7 @@ describe('Invitation response', async () => {
     const { inactiveMembership } = await createMembershipInvitationToken(
       invitedUser,
       organization.id,
-      'member',
+      memberRole,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(invitedUser);

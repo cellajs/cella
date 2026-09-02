@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { onlineManager } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { hierarchy } from 'shared';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 const meta = {
   title: 'common/SelectRole',
@@ -49,11 +53,11 @@ export const EntityRoles: Story = {
 export const Preselected: Story = {
   args: {
     entityType: 'organization',
-    value: 'member',
+    value: memberRole,
     onChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<string | undefined>('member');
+    const [value, setValue] = useState<string | undefined>(memberRole);
 
     return (
       <div className="w-80">

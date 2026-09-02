@@ -644,6 +644,81 @@
     "pnpm check"
    ],
    "summary": "resolveChannelPath in view-declaration.ts now reads the server-computed path off cached rows of every non-root hierarchy channel type itself; registerChannelPathResolver and the pinned frontend/src/query/realtime/register-channel-paths.ts seam are gone. Apps delete the file, drop its side-effect import from list-queries-config.tsx and remove the pinned entry from cella/cella.config.ts."
+  },
+  {
+   "id": "20260902T0939-role-vocabulary-from-hierarchy",
+   "version": "next",
+   "title": "Role vocabulary derived from the hierarchy",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend",
+    "frontend/src",
+    "shared/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "hierarchy.rootChannelType, getLeastPrivilegedRole and getMostPrivilegedRole replace every 'member' literal in cella tests, stories, email previews, membership column defaults and the invite default role. Apps with another vocabulary drop their `fork: role vocabulary` markers and take upstream."
+  },
+  {
+   "id": "20260902T0945-attachment-placement-seam-v2",
+   "version": "next",
+   "title": "Attachment placement seam v2",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend",
+    "frontend/src",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "The pinned attachment-placement seam gains attachmentHomeColumnKey, resolveAttachmentHomeScope and seedAttachmentPlacements; list reads take a generic channelId param; channelRelationColumns adds lazy ancestor foreign keys via registerChannelTable plus channelRelationIndexes; appConfig.attachmentUploadTargets gates the upload affordance; frontend placement handling is hierarchy-derived. Apps extend the seam file, register their channel tables, add the config key and take upstream for the surrounding files."
+  },
+  {
+   "id": "20260902T0949-generic-app-adoptions",
+   "version": "next",
+   "title": "Generic app improvements adopted upstream",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "tenantReadAs, wider resolveEmailLink input, getCreatedChannelRoute/getNearestAncestorRoute, text-compared host ids in recalculate-counters, derive-description-core in the frontend, the pinned shared/app-exports.ts barrel, appConfig.memberStatProductTypes driving member stats, and channelRouteConfig.notificationSearch. Apps add the config key and the barrel file, then take upstream for the listed files."
+  },
+  {
+   "id": "20260902T0950-brand-and-app-locale-ignored",
+   "version": "next",
+   "title": "Brand assets and the app locale namespace are ignored, not pinned",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "cella",
+    "locales"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "favicons, thumbnail.png, logo.tsx, legal-config.ts and locales/*/app.json move from pinned to ignored in the template cella.config.ts; cella's onboarding copy moves from app.json to common.json. Apps take upstream's lists, drop stale ignores and re-adopt comment-only pins."
   }
  ]
 }

@@ -1,5 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import { appConfig, type EntityRole } from 'shared';
+import { appConfig, type EntityRole, hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -7,6 +7,9 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { StreamNotification } from '#/schemas';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 /**
  * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates
@@ -89,7 +92,7 @@ afterEach(() => {
 
 describe('dispatchMoveOuts', () => {
   it('sends moveOut with the OLD path to subscribers who lost readability', async () => {
-    const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // The new row is an unpublished draft, unreadable for everyone; the old row is published
@@ -118,7 +121,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('does NOT send moveOut to subscribers who can read both locations (normal update routes it)', async () => {
-    const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // Positive control: both rows are authored by the reader, so both locations are readable
@@ -134,7 +137,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('is a no-op for events without movedFrom', async () => {
-    const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     await dispatchMoveOuts(updateEvent({ rowData: row('att-1') }));
@@ -143,7 +146,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('handles per-row movedFrom in batches, one moveOut per moved row', async () => {
-    const member = fakeSubscriber([membership(ORG, 'member', 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // Rows meant to be readable by member-user are authored by them, so they stay readable

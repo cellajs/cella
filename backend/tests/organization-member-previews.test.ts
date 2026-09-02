@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getOrganizations } from 'sdk';
+import { type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -9,6 +10,9 @@ import { createTestUser } from './helpers';
 import { clearSecurityTestData, createSecondOrg, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { mockFetchRequest, setTestConfig } from './test-utils';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -38,7 +42,7 @@ describe('Organization member previews (include=members)', async () => {
   const insertMembership = async (
     userId: string,
     orgId: string,
-    role: 'admin' | 'member',
+    role: EntityRole,
     createdAt: string,
     tenantId: string = tenant.tenantId,
   ) => {
@@ -74,7 +78,7 @@ describe('Organization member previews (include=members)', async () => {
     }
     const member = await createTestUser('org-member-previews-member@security-test.com');
     memberUserId = member.id;
-    await insertMembership(member.id, tenant.organization.id, 'member', daysAgo(2));
+    await insertMembership(member.id, tenant.organization.id, memberRole, daysAgo(2));
 
     // A second org, in its own tenant, has only the caller as admin; the global list spans tenants.
     const secondOrg = await createSecondOrg();

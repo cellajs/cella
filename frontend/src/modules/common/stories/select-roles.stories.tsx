@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
+
+/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
 
 const meta = {
   title: 'common/SelectRoles',
@@ -27,11 +30,11 @@ export const Empty: Story = {
 
 export const Preselected: Story = {
   args: {
-    value: ['member'],
+    value: [memberRole],
     onValueChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<EntityRole[]>(['member']);
+    const [value, setValue] = useState<EntityRole[]>([memberRole]);
 
     return <SelectRoles value={value} onValueChange={setValue} />;
   },
@@ -39,11 +42,11 @@ export const Preselected: Story = {
 
 export const MultipleSelected: Story = {
   args: {
-    value: ['member', 'admin'],
+    value: [memberRole, 'admin'],
     onValueChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<EntityRole[]>(['member', 'admin']);
+    const [value, setValue] = useState<EntityRole[]>([memberRole, 'admin']);
 
     return <SelectRoles value={value} onValueChange={setValue} />;
   },
@@ -51,11 +54,11 @@ export const MultipleSelected: Story = {
 
 export const WrappedLayout: Story = {
   args: {
-    value: ['member'],
+    value: [memberRole],
     onValueChange: () => {},
   },
   render: function Render() {
-    const [value, setValue] = useState<EntityRole[]>(['member']);
+    const [value, setValue] = useState<EntityRole[]>([memberRole]);
 
     return (
       <div className="w-64 rounded-lg border p-4">

@@ -1,6 +1,6 @@
 import { boolean, foreignKey, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
-import { channelRelationColumns } from '#/db/utils/channel-relation-columns';
+import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
@@ -38,6 +38,8 @@ export const attachmentsTable = snakeCase.table(
     index('attachments_created_by_index').on(table.createdBy),
     index('attachments_updated_by_index').on(table.updatedBy),
     index('attachments_group_id_index').on(table.groupId),
+    // Placement seam: an index per sub-organization ancestor column; none for org-homed rows.
+    ...channelRelationIndexes('attachments', table, 'attachment'),
     foreignKey({
       columns: [table.tenantId, table.organizationId],
       foreignColumns: [organizationsTable.tenantId, organizationsTable.id],

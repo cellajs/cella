@@ -21,6 +21,7 @@ describe('deriveDescriptionCounts', () => {
       checkboxCount: 2,
       checkedCount: 1,
       attachmentCount: 0,
+      attachments: [],
     });
   });
 
@@ -38,6 +39,7 @@ describe('deriveDescriptionCounts', () => {
       checkboxCount: 2,
       checkedCount: 2,
       attachmentCount: 1,
+      attachments: [],
     });
   });
 
@@ -57,6 +59,7 @@ describe('deriveDescriptionCounts', () => {
       checkboxCount: 0,
       checkedCount: 0,
       attachmentCount: 0,
+      attachments: [],
     });
   });
 });

@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { seedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
@@ -16,7 +17,7 @@ setMockContext('script');
 
 /**
  * Known S3 files that should exist in the dev bucket under the `seed/` prefix.
- * Each seeded organization gets one attachment per file.
+ * Each placement the seam returns (one per organization by default) gets one attachment per file.
  */
 const SEED_FILES = [
   { filename: 'sample-image.webp', contentType: 'image/webp', size: '24500', originalKey: 'seed/sample-image.webp', public: true },
@@ -51,17 +52,25 @@ export const attachmentsSeed = async () => {
     return;
   }
 
+  // Placement seam: apps home the seeded rows on their own channels, or return none to skip.
+  const placements = await seedAttachmentPlacements(db, organizations);
+  if (!placements.length) {
+    warnSpinner('No attachment placements from the placement seam → skip seeding');
+    return;
+  }
+
   let totalCreated = 0;
 
-  for (const org of organizations) {
+  for (const { organizationId, tenantId, placement } of placements) {
     const records = SEED_FILES.map((file, i) =>
-      withFakerSeed(`attachment:seed:${org.id}:${i}`, () => {
+      withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
         const createdAt = faker.date.recent({ days: 30 }).toISOString();
         return {
           id: mockUuid(),
           entityType: 'attachment' as const,
-          tenantId: org.tenantId,
-          organizationId: org.id,
+          tenantId,
+          organizationId,
+          ...placement,
           createdAt,
           updatedAt: createdAt,
           createdBy: defaultAdminUser.id,
@@ -84,7 +93,7 @@ export const attachmentsSeed = async () => {
     totalCreated += records.length;
   }
 
-  succeedSpinner(`Created ${totalCreated} attachments across ${organizations.length} organizations`);
+  succeedSpinner(`Created ${totalCreated} attachments across ${placements.length} placements`);
 };
 
 export const seedConfig: SeedScript = { name: 'attachments', run: attachmentsSeed };

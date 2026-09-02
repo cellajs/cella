@@ -9,12 +9,17 @@ import { useUploader } from '~/modules/common/uploader/use-uploader';
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
 
-export const useAttachmentsUploadDialog = (tenantId: string, organizationId: string) => {
+export const useAttachmentsUploadDialog = (
+  tenantId: string,
+  organizationId: string,
+  /** Placement seam: home channel id column for uploads into a sub-organization channel. */
+  placement?: Record<string, string>,
+) => {
   const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
 
   const open = () => {
     const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
-      const attachments = parseUploadedAttachments(result, organizationId);
+      const attachments = parseUploadedAttachments(result, organizationId, placement);
 
       // Close the uploader either way; the optimistic row is what the user watches from here.
       useUploader.getState().remove();

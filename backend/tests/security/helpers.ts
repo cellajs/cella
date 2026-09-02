@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { EntityRole } from 'shared';
+import { type EntityRole, hierarchy } from 'shared';
 import { baseDb as db } from '#/db/db';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import type { createAppClient } from '../test-client';
@@ -42,7 +42,7 @@ export async function createOrgUser(
   tenantId: string,
   organizationId: string,
   label: string,
-  role: EntityRole = 'member',
+  role: EntityRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
 ) {
   const email = `${label}-user@security-test.com`;
 

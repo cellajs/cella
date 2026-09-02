@@ -1,5 +1,5 @@
 import { foreignKey, index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, roles } from 'shared';
+import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -24,7 +24,7 @@ export const inactiveMembershipsTable = snakeCase.table(
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
     tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
-    role: varchar({ enum: roleEnum }).notNull().default('member'),
+    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType)),
     rejectedAt: timestamp({ mode: 'string' }),
     remindedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()

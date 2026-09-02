@@ -434,6 +434,8 @@ export class EntityHierarchy<
   private readonly descendantsCache = new Map<string, readonly (TChannels | TProducts)[]>();
 
   readonly channelTypes: readonly TChannels[];
+  /** The parentless channel (`organization` in cella): the tenant boundary every other channel nests under. */
+  readonly rootChannelType: TChannels;
   readonly productTypes: readonly TProducts[];
   readonly allTypes: readonly ('user' | TChannels | TProducts)[];
   readonly relatableChannelTypes: readonly TChannels[];
@@ -455,12 +457,14 @@ export class EntityHierarchy<
     const all: ('user' | TChannels | TProducts)[] = [];
     const relatableChannels = new Set<TChannels>();
     const elevatedGrants = new Set<string>();
+    let rootChannelType: TChannels | undefined;
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TChannels | TProducts);
 
       if (entry.kind === 'channel') {
         channels.push(name as TChannels);
+        if (entry.parent === null) rootChannelType ??= name as TChannels;
         for (const role of entry.elevated ?? []) elevatedGrants.add(`${name}:${role}`);
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
@@ -470,6 +474,8 @@ export class EntityHierarchy<
     this.elevatedGrants = Object.freeze(elevatedGrants);
 
     this.channelTypes = Object.freeze(channels);
+    if (!rootChannelType) throw new Error('Entity hierarchy declares no root channel (a channel with parent: null)');
+    this.rootChannelType = rootChannelType;
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
     this.relatableChannelTypes = Object.freeze([...relatableChannels]);
@@ -496,6 +502,25 @@ export class EntityHierarchy<
   readonly getRoles = (channelType: string): readonly RoleFromRegistry<TRoles>[] => {
     const entry = this.entities.get(channelType);
     return entry?.kind === 'channel' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
+  };
+
+  /**
+   * Roles are declared most to least privileged, so the last role is a channel's floor: the invite
+   * default, the auto-created associated-membership fallback and the membership column default.
+   * Apps with other vocabularies (`guest`, `student`) get their own floor; throws for non-channels.
+   */
+  readonly getLeastPrivilegedRole = (channelType: string): RoleFromRegistry<TRoles> => {
+    const roles = this.getRoles(channelType);
+    const role = roles[roles.length - 1];
+    if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
+    return role;
+  };
+
+  /** The first declared role of a channel; see {@link getLeastPrivilegedRole} for the ordering rule. */
+  readonly getMostPrivilegedRole = (channelType: string): RoleFromRegistry<TRoles> => {
+    const role = this.getRoles(channelType)[0];
+    if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
+    return role;
   };
 
   /**

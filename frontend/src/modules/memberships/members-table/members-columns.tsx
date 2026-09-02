@@ -1,7 +1,7 @@
 import { BoxIcon, type LucideIcon, PaperclipIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ChannelEntityType, hierarchy, isChannel } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -10,9 +10,8 @@ import { Badge } from '~/modules/ui/badge';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-// Product types with per-member stat columns; must match `memberStatProductTypes` in the
-// backend's member-counts.ts (the response only carries these keys).
-const memberStatProductTypes = ['attachment'] as const;
+// Product types with per-member stat columns, from config (the response only carries these keys).
+const memberStatProductTypes = appConfig.memberStatProductTypes;
 const memberStatIcons: Partial<Record<string, LucideIcon>> = {
   attachment: PaperclipIcon,
 };
@@ -115,7 +114,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         minWidth: 120,
         placeholderValue: '-',
         renderCell: ({ row }) => {
-          const lastPostedAt = row.counts?.activity.attachment;
+          const lastPostedAt = row.counts?.activity[memberStatProductTypes[0]];
           return lastPostedAt ? dateShort(new Date(lastPostedAt)) : null;
         },
       },

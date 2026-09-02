@@ -1,5 +1,5 @@
 import { boolean, doublePrecision, foreignKey, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
-import { appConfig, roles } from 'shared';
+import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -30,7 +30,7 @@ export const membershipsTable = snakeCase.table(
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: varchar({ enum: roleEnum }).notNull().default('member'),
+    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType)),
     createdBy: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'set null' }),

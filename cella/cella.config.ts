@@ -36,19 +36,29 @@ export default defineConfig({
       'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
       'frontend/src/modules/common/bg-animation',
+      // App identity: brand assets and the app's own locale namespace. cella has no upstream fix
+      // to push into these, so they are never synced (a pin would still merge and drop upstream
+      // hunks on conflict). Template-consumed copy lives in common.json, never in app.json.
+      'frontend/public/favicon.ico',
+      'frontend/public/favicon.svg',
+      'frontend/public/thumbnail.png',
+      'frontend/src/modules/common/logo.tsx',
+      'frontend/src/modules/auth/legal/legal-config.ts',
+      'locales/en/app.json',
+      'locales/nl/app.json',
       '.github/release-please-manifest.json',
     ],
     // Paths pinned to fork; prefer fork version during merge conflicts
     pinned: [
       'backend/src/tables.ts',
+      'backend/src/db/channel-tables.ts',
       'backend/src/routes.ts',
       'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/attachment/helpers/attachment-placement.ts',
       'backend/src/modules/memberships/memberships-db.ts',
       'backend/src/modules/organization/setup-config-schema.ts',
+      'shared/app-exports.ts',
       'frontend/src/query/extra-local-user-stores.ts',
-      'frontend/public/favicon.ico',
-      'frontend/public/favicon.svg',
       'frontend/src/nav-config.tsx',
       'frontend/src/placement-config.ts',
       'frontend/src/routes-config.tsx',
@@ -58,11 +68,9 @@ export default defineConfig({
       'frontend/src/styling/gradients.css',
       'frontend/src/modules/home/home-page.tsx',
       'frontend/src/modules/home/onboarding/onboarding-config.ts',
-      'frontend/src/modules/common/logo.tsx',
       'frontend/src/modules/user/user-profile-content.tsx',
       'json/text-blocks.json',
       'locales/en/about.json',
-      'locales/en/app.json',
     ],
   },
 });

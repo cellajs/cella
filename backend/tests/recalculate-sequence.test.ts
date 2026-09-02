@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, seedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
+import { getEntityTable } from '#/tables';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { mockFetchRequest, setTestConfig } from './test-utils';
@@ -23,24 +24,51 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   // Shared ancestor ids make all rows roll into one assertable self-counter node.
   const PRODUCT = 'attachment';
   const ANCESTORS = hierarchy.getOrderedAncestors(PRODUCT); // deepest → root
+  // Nullable ancestors stay null (their FKs would reject invented ids), so rows home at the
+  // deepest strict ancestor; invented ids remain only for strict deeper ancestors.
+  const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(PRODUCT));
   const deeperAncestorIds = Object.fromEntries(
-    ANCESTORS.filter((type) => type !== 'organization').map((type) => [type, crypto.randomUUID()]),
+    ANCESTORS.filter((type) => type !== 'organization' && !nullableAncestors.has(type)).map((type) => [
+      type,
+      crypto.randomUUID(),
+    ]),
   );
   const homeChannelId = () => {
-    const deepest = ANCESTORS[0];
-    return deepest === 'organization' ? tenant.organization.id : deeperAncestorIds[deepest];
+    const deepest = ANCESTORS.find((type) => type === 'organization' || !nullableAncestors.has(type));
+    return !deepest || deepest === 'organization' ? tenant.organization.id : deeperAncestorIds[deepest];
   };
   const ancestorColumns = (orgId: string) =>
     Object.fromEntries(
       ANCESTORS.map((type) => [
         appConfig.entityIdColumnKeys[type],
-        type === 'organization' ? orgId : deeperAncestorIds[type],
+        type === 'organization' ? orgId : (deeperAncestorIds[type] ?? null),
       ]),
     );
 
   beforeAll(async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'recalc-sequence');
+
+    // Relation columns reference strict deeper ancestors, so their rows must exist: one minimal
+    // channel row per strict deeper ancestor, root-first, under the test organization (none in cella).
+    for (const type of [...ANCESTORS].reverse().filter((type) => type in deeperAncestorIds)) {
+      const ownAncestors = Object.fromEntries(
+        hierarchy
+          .getOrderedAncestors(type as ChannelEntityType)
+          .map((ancestor) => [
+            appConfig.entityIdColumnKeys[ancestor],
+            ancestor === 'organization' ? tenant.organization.id : (deeperAncestorIds[ancestor] ?? null),
+          ]),
+      );
+      await seedDb.insert(getEntityTable(type as ChannelEntityType)).values({
+        id: deeperAncestorIds[type],
+        tenantId: tenant.tenantId,
+        ...ownAncestors,
+        name: `recalc ${type}`,
+        slug: `recalc-${type}-${deeperAncestorIds[type].slice(0, 8)}`,
+        createdBy: tenant.user.id,
+      } as never);
+    }
 
     const base = (key: string, seq: number, extra: Record<string, unknown> = {}) =>
       // Audit users are nulled: mock ids have no users rows and the columns are nullable FKs.

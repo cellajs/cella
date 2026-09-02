@@ -4414,6 +4414,7 @@ export type GetAttachmentsData = {
     offset?: string;
     limit?: string;
     seqCursor?: string;
+    channelId?: string;
   };
   url: '/{tenantId}/{organizationId}/attachments';
 };

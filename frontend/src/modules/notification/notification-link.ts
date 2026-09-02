@@ -1,12 +1,15 @@
 import type { ChannelEntityType } from 'shared';
 import type { EntityRoute } from '~/modules/navigation/types';
-import { channelRouteConfig } from '~/routes-config';
+import { type ChannelRouteEntry, channelRouteConfig } from '~/routes-config';
 
 interface LinkTarget {
   channelId: string;
   channelType: string;
   organizationId: string;
   tenantId: string;
+  /** With `subjectId`, lets the channel's `notificationSearch` open the subject itself (a sheet, a scroll target). */
+  entityType?: string;
+  subjectId?: string;
 }
 
 /**
@@ -23,5 +26,9 @@ export function getNotificationRoute(notification: LinkTarget): EntityRoute | nu
   };
   params[config.paramName] = notification.channelId;
 
-  return { to: config.path, params, search: {} };
+  const entry: ChannelRouteEntry = config;
+  const { entityType, subjectId } = notification;
+  const search =
+    entry.notificationSearch && entityType && subjectId ? entry.notificationSearch({ entityType, subjectId }) : {};
+  return { to: config.path, params, search };
 }

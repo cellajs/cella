@@ -1,13 +1,31 @@
 import { createAttachments, deleteAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
+import { appConfig, hierarchy } from 'shared';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { baseDb as db } from '#/db/db';
+import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
+import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+// The create body carries the deepest seeded home id only (the placement seam derives the chain
+// above it server-side and the relation columns reference it); empty in cella's org-homed default.
+let plan: TestEntityHierarchyPlan | undefined;
+type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
+const bodyChannelIdColumns = (): BodyChannelIdColumns => {
+  const deepest = hierarchy
+    .getOrderedAncestors('attachment')
+    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+  if (!deepest) return {} as BodyChannelIdColumns;
+  const key = appConfig.entityIdColumnKeys[deepest];
+  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
+};
 
 const attachmentBody = (id: string) => ({
   id,
@@ -17,7 +35,7 @@ const attachmentBody = (id: string) => ({
   keys: { original: `test/cross-org-${id}.pdf` },
   bucketName: 'test-bucket',
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...generateMockEntityBodyChannelIdColumns('attachment'),
+  ...bodyChannelIdColumns(),
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
@@ -33,6 +51,16 @@ describe('Cross-organization API isolation', async () => {
     mockFetchRequest();
 
     tenant = await createTestTenant(call, 'org-isolation');
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootChannelId: tenant.organization.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, {
+      tenantId: tenant.tenantId,
+      createdBy: tenant.user.id,
+      slugPrefix: 'cross-org',
+    });
 
     const secondOrg = await createSecondOrg();
     orgB = { id: secondOrg.id, slug: secondOrg.slug, tenantId: secondOrg.tenantId };

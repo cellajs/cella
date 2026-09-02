@@ -3160,6 +3160,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.offset - `string` (optional)
  * @param {string=} options.query.limit - `string` (optional)
  * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {string=} options.query.channelid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getAttachments = <ThrowOnError extends boolean = true>(

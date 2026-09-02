@@ -9,8 +9,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
-/** The parentless channel entity type (e.g. 'organization'), derived from the hierarchy so apps can change the root type. */
-const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
+const rootChannelType = hierarchy.rootChannelType;
 const rootIdColumnKey = appConfig.entityIdColumnKeys[rootChannelType];
 
 /**
@@ -24,7 +23,7 @@ export const resolveAssociatedMembershipRole = (
 ): MembershipModel['role'] => {
   const channelRoles = hierarchy.getRoles(channelType) as readonly MembershipModel['role'][];
   if (carryRole && channelRoles.includes(invitedRole)) return invitedRole;
-  return channelRoles[channelRoles.length - 1];
+  return hierarchy.getLeastPrivilegedRole(channelType) as MembershipModel['role'];
 };
 
 /**

@@ -6,16 +6,33 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { appConfig, getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { baseDb as db } from '#/db/db';
+import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
+import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+// The create body carries the deepest seeded home id only (the placement seam derives the chain
+// above it server-side and the relation columns reference it); empty in cella's org-homed default.
+let plan: TestEntityHierarchyPlan | undefined;
+type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
+const bodyChannelIdColumns = (): BodyChannelIdColumns => {
+  const deepest = hierarchy
+    .getOrderedAncestors('attachment')
+    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+  if (!deepest) return {} as BodyChannelIdColumns;
+  const key = appConfig.entityIdColumnKeys[deepest];
+  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
+};
 
 // Verifies role-based organization permissions and unauthenticated rejection via HTTP.
 describe('Permission enforcement via HTTP', async () => {
@@ -27,7 +44,23 @@ describe('Permission enforcement via HTTP', async () => {
     mockFetchRequest();
 
     tenant = await createTestTenant(call, 'perm-test');
-    member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'perm-member', 'member');
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootChannelId: tenant.organization.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, {
+      tenantId: tenant.tenantId,
+      createdBy: tenant.user.id,
+      slugPrefix: 'perm-test',
+    });
+    member = await createOrgUser(
+      call,
+      tenant.tenantId,
+      tenant.organization.id,
+      'perm-member',
+      hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+    );
   });
 
   afterAll(async () => {
@@ -95,12 +128,22 @@ describe('Permission enforcement via HTTP', async () => {
   describe('Presigned URLs by role', () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
 
-    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0 rejects.
-    const rootChannelType = hierarchy.channelTypes.find((type) => hierarchy.getParent(type) === null);
-    const memberAttachmentRead = rootChannelType
-      ? getPolicyPermissions(getEntityPolicies('attachment', policyMatrix), rootChannelType, 'member')?.read
-      : undefined;
-    const memberSignsUnowned = memberAttachmentRead === 1;
+    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0
+    // rejects. The member only holds the root role, so the cell must also reach the row's home:
+    // the row is org-homed, or the root role is elevated (its grants cover the whole subtree).
+    const { rootChannelType } = hierarchy;
+    const memberRole = hierarchy.getLeastPrivilegedRole(rootChannelType);
+    const memberAttachmentRead = getPolicyPermissions(
+      getEntityPolicies('attachment', policyMatrix),
+      rootChannelType,
+      memberRole,
+    )?.read;
+    // Evaluated inside the test: the seeded plan only exists after the outer beforeAll has run.
+    const memberSignsUnowned = () => {
+      const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
+      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`${rootChannelType}:${memberRole}`);
+      return memberAttachmentRead === 1 && rootGrantReachesRow;
+    };
 
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
@@ -113,7 +156,8 @@ describe('Permission enforcement via HTTP', async () => {
             size: '1024',
             keys: { original: `test/perm-${presignAttachmentId}.pdf` },
             bucketName: 'test-bucket',
-            ...generateMockEntityBodyChannelIdColumns('attachment'),
+            // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
+            ...bodyChannelIdColumns(),
             stx: { mutationId: presignAttachmentId, sourceId: 'perm-test', fieldTimestamps: {} },
           },
         ],
@@ -142,7 +186,7 @@ describe('Permission enforcement via HTTP', async () => {
       });
       expect(response.status).toBe(200);
       const result = data as GetPresignedUrlsResponse;
-      if (memberSignsUnowned) {
+      if (memberSignsUnowned()) {
         expect(result.data).toHaveLength(1);
         expect(result.rejectedIds).toEqual([]);
       } else {
