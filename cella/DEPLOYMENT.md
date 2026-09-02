@@ -122,7 +122,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 [tasks/deploy-run.ts](../infra/tasks/deploy-run.ts) (entered via [tasks/deploy.ts](../infra/tasks/deploy.ts)) owns everything after the image builds: preflights, stack lock (released in `finally`), frontend build and asset upload, base stack update, waved rollout, version verification, atomic frontend entry publish, smoke checks, boot diagnostics on failure.
 
-The rollout records the release SHA as `pendingSha` in the S3 control object; only the Pulumi program provisions generations (`vm-<svc>-<genId>`, `genId` content-addressed from release SHA plus static config), so a re-run is a no-op and a manual `pulumi up` cannot fork one. Cutover: [Rollout strategies](#rollout-strategies).
+The rollout records the release SHA as `pendingSha` in the S3 control object; only the Pulumi program provisions generations (`vm-<svc>-<genId>`, `genId` content-addressed from release SHA plus static config), so a re-run is a no-op and a manual `pulumi up` cannot start a competing one. Cutover: [Rollout strategies](#rollout-strategies).
 
 - Pushes to main auto-deploy **staging**. Bootstrap a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main, or the push job fails. The newest push cancels a superseded in-flight staging run (`cancel-in-progress`); production rollouts never cancel. Manual: Actions → Deploy → Run workflow → `staging`.
 - **Production** deploys only on a published release or a manual dispatch. For a manual promote, give the `production` GitHub Environment required reviewers; the run then pauses for approval.
