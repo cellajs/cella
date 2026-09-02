@@ -138,9 +138,12 @@ describe('Permission enforcement via HTTP', async () => {
       rootChannelType,
       memberRole,
     )?.read;
-    const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
-    const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`${rootChannelType}:${memberRole}`);
-    const memberSignsUnowned = memberAttachmentRead === 1 && rootGrantReachesRow;
+    // Evaluated inside the test: the seeded plan only exists after the outer beforeAll has run.
+    const memberSignsUnowned = () => {
+      const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
+      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`${rootChannelType}:${memberRole}`);
+      return memberAttachmentRead === 1 && rootGrantReachesRow;
+    };
 
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
@@ -183,7 +186,7 @@ describe('Permission enforcement via HTTP', async () => {
       });
       expect(response.status).toBe(200);
       const result = data as GetPresignedUrlsResponse;
-      if (memberSignsUnowned) {
+      if (memberSignsUnowned()) {
         expect(result.data).toHaveLength(1);
         expect(result.rejectedIds).toEqual([]);
       } else {
