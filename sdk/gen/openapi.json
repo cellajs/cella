@@ -9469,6 +9469,9 @@
                       "maxLength": 255,
                       "description": "MIME type of the server-converted variant; null when none."
                     },
+                    "publicAt": {
+                      "type": ["string", "null"]
+                    },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
                     }

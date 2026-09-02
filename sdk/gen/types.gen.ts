@@ -4486,6 +4486,7 @@ export type CreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
+    publicAt?: string | null;
     stx: StxBase;
   }>;
   path: {

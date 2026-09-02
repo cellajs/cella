@@ -18,8 +18,12 @@ New seam exports (cella ships the org-homed defaults; apps replace the file):
   as one of the app's home channels and returns it; the default accepts only the organization.
 - `seedAttachmentPlacements(db, organizations)`: where the attachment seed homes its rows; return
   `[]` to skip seeding.
-- `ResolvedAttachmentPlacement` may carry `publicAt` so an app inherits the home channel's
-  public-read flag server-side instead of accepting it from the client.
+- The default fill is hierarchy-derived: the fields schema requires the deepest home id when that
+  ancestor is strict and accepts it optionally when nullable, validation rejects a second id as
+  ambiguous, and resolution reads the chain above the home off the resolved row. Apps with no
+  extra behavior keep cella's file as is.
+- `publicAt` is accepted on attachment create, as PERMISSIONS.md prescribes for every product:
+  client-sent, row-local, the template upload path stamps the home channel's value as the default.
 
 Cella-owned changes that read the seam or the hierarchy:
 
@@ -61,10 +65,9 @@ No script — manual.
 2. Create the pinned `backend/src/db/channel-tables.ts` from cella's and add one lazy getter per
    channel type (`project: () => projectsTable`, ...); add it to `pinned` in `cella/cella.config.ts`.
    Product tables that declared ancestor foreign keys by hand drop them (same constraint names).
-3. Extend the pinned `attachment-placement.ts` with `attachmentHomeColumnKey`,
-   `resolveAttachmentHomeScope` and `seedAttachmentPlacements` (see cella's default for the
-   contract). Move any `publicAt` inheritance from the client body into
-   `resolveAttachmentPlacement`.
+3. Take cella's `attachment-placement.ts` and keep only what the derived defaults do not cover
+   (typically `seedAttachmentPlacements`). Apps that inherited `publicAt` server-side send it from
+   the client instead (the upload path stamps the home channel's value).
 4. Take upstream for `attachment-schema.ts`, `get-attachments.ts`, `attachment-db.ts`,
    `20-attachment.seed.ts`, `recalculate-sequence.test.ts`, `frontend/.../query.ts`,
    `query-mutations.ts`, `parse-uploaded.ts`, `persist-attachments.ts`,
