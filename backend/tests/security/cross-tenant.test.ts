@@ -21,16 +21,18 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './help
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// The body's placement ids must resolve to seeded ancestor rows: the placement seam resolves the
-// home channel server-side and the relation columns reference it (empty in cella).
+// The create body carries the deepest seeded home id only (the placement seam derives the chain
+// above it server-side and the relation columns reference it); empty in cella's org-homed default.
 let plan: TestEntityHierarchyPlan | undefined;
 type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (): BodyChannelIdColumns =>
-  Object.fromEntries(
-    Object.entries(plan?.channelIdColumns ?? {}).filter(
-      ([key]) => key !== appConfig.entityIdColumnKeys[hierarchy.rootChannelType],
-    ),
-  ) as BodyChannelIdColumns;
+const bodyChannelIdColumns = (): BodyChannelIdColumns => {
+  const deepest = hierarchy
+    .getOrderedAncestors('attachment')
+    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+  if (!deepest) return {} as BodyChannelIdColumns;
+  const key = appConfig.entityIdColumnKeys[deepest];
+  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
+};
 
 const attachmentBody = (id: string) => ({
   id,
