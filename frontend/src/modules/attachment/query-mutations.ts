@@ -16,8 +16,9 @@ const placementKeys = hierarchy
   .filter((type) => type !== hierarchy.rootChannelType)
   .map((type) => appConfig.entityIdColumnKeys[type]) as readonly string[];
 
+// Placement keys keep the row's own nullability: a strict ancestor stays `string`, so an optimistic row validates.
 export type CreateAttachmentInput = (Omit<CreateAttachmentItem, 'stx' | PlacementKey> &
-  Partial<Record<PlacementKey, string | null>>)[];
+  Partial<Pick<Attachment, PlacementKey>>)[];
 type UpdateAttachmentFields = UpdateAttachmentData['body']['ops'];
 export type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 

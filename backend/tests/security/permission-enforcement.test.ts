@@ -6,16 +6,31 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { appConfig, getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { baseDb as db } from '#/db/db';
+import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
+import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+// The body's placement ids must resolve to seeded ancestor rows: the placement seam resolves the
+// home channel server-side and the relation columns reference it (empty in cella).
+let plan: TestEntityHierarchyPlan | undefined;
+type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
+const bodyChannelIdColumns = (): BodyChannelIdColumns =>
+  Object.fromEntries(
+    Object.entries(plan?.channelIdColumns ?? {}).filter(
+      ([key]) => key !== appConfig.entityIdColumnKeys[hierarchy.rootChannelType],
+    ),
+  ) as BodyChannelIdColumns;
 
 // Verifies role-based organization permissions and unauthenticated rejection via HTTP.
 describe('Permission enforcement via HTTP', async () => {
@@ -27,6 +42,16 @@ describe('Permission enforcement via HTTP', async () => {
     mockFetchRequest();
 
     tenant = await createTestTenant(call, 'perm-test');
+    plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      rootChannelId: tenant.organization.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, {
+      tenantId: tenant.tenantId,
+      createdBy: tenant.user.id,
+      slugPrefix: 'perm-test',
+    });
     member = await createOrgUser(
       call,
       tenant.tenantId,
@@ -121,7 +146,8 @@ describe('Permission enforcement via HTTP', async () => {
             size: '1024',
             keys: { original: `test/perm-${presignAttachmentId}.pdf` },
             bucketName: 'test-bucket',
-            ...generateMockEntityBodyChannelIdColumns('attachment'),
+            // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
+            ...bodyChannelIdColumns(),
             stx: { mutationId: presignAttachmentId, sourceId: 'perm-test', fieldTimestamps: {} },
           },
         ],
