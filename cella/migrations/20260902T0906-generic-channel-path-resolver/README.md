@@ -17,7 +17,7 @@ never-customized single-channel app needs only steps 1 and 3.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

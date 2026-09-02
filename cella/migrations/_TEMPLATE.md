@@ -21,7 +21,7 @@ lens, or touches the database. Say when an app that never customized this area i
 
 ## Run
 
-<The codemod invocation, or "No script — manual." Always from the repo root.>
+<The codemod invocation, or "No script: manual." Always from the repo root.>
 
 ```sh
 pnpm exec tsx cella/migrations/<id>/<script>.ts inventory <roots>   # report only

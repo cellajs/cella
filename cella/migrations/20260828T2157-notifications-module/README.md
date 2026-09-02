@@ -22,7 +22,7 @@ routes. Pre-cella forks (projectcampus): steps 3 to 5.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

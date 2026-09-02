@@ -17,7 +17,7 @@ that never touched ports sync clean. Collision protection needs an offset overri
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

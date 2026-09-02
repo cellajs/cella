@@ -16,7 +16,7 @@ never did shows cella's `common.json` copy, as before.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

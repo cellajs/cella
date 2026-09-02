@@ -18,7 +18,7 @@ blue/green replacement, no downtime by design).
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ```sh
 sed -i '' "s/'lb-overlap'/'start-first'/g; s/'exclusive'/'stop-first'/g; s/lbPathBegin/pathPrefix/g" infra/config/services.config.ts

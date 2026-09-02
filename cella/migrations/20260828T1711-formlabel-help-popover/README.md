@@ -17,7 +17,7 @@ badges, `focus-effect` textareas) need no action.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ```sh
 grep -rln "FormDescription" frontend/src

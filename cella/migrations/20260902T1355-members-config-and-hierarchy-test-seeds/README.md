@@ -23,7 +23,7 @@ Not sync-breaking, no `clientCacheVersion` bump, no DB change. Apps that never t
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

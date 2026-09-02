@@ -21,7 +21,7 @@ or wire change; `clientCacheVersion` untouched.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

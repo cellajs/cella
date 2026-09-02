@@ -19,7 +19,7 @@ should hand-apply the rewrite.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

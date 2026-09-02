@@ -22,7 +22,7 @@ bump, no schema change.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

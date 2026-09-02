@@ -36,7 +36,7 @@ change. DB: sub-root channels get one index-only migration on `memberships`
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

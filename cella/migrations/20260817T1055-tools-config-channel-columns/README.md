@@ -18,7 +18,7 @@ key after the `...channelColumns(...)` spread silently wins with no TypeScript e
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

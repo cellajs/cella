@@ -43,7 +43,7 @@ It owns the whole pipeline: preflights, stack lock, frontend build and hashed-as
 Three rules:
 
 1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Rollback is a revert commit through the same path. Exception: `singleVM` folds every worker onto the backend VM and, because cdc is stop-first, replaces that host in place: health-gated, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
-2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot fork a generation. Rollout state lives in one S3 **control object** read by the deploy command and the Pulumi program.
+2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation. Rollout state lives in one S3 **control object** read by the deploy command and the Pulumi program.
 3. **Least-privilege credentials, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([credential tiers](../cella/DEPLOYMENT.md#credentials)).
 
 ## Security boundaries

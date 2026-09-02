@@ -17,7 +17,7 @@ via push). Custom `lib/sw.ts` or `seen-tracker.tsx` edits: merge by hand.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

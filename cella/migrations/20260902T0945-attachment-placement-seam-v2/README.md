@@ -33,7 +33,7 @@ go or `pnpm generate` emits duplicates; a sub-organization column without a fore
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 

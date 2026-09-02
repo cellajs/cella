@@ -31,7 +31,7 @@ additive; on conflict take upstream and re-apply what is app-specific.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 
