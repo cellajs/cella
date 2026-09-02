@@ -26,9 +26,11 @@ Cella-owned changes that read the seam or the hierarchy:
 - `attachmentListQuerySchema.channelId` (optional) replaces app-specific params like `projectId`;
   the frontend delta fetch passes the covering channel id through it.
 - `channelRelationColumns` now adds a lazy `references` to every non-root ancestor and related
-  channel through a channel-table registry (`registerChannelTable` in each channel's table module),
-  and `channelRelationIndexes(tableName, table, entityType)` emits one index per such column. The
-  root keeps the composite `(tenant_id, organization_id)` foreign key declared on the table.
+  channel through the pinned `backend/src/db/channel-tables.ts` map (one lazy getter per channel
+  type; `satisfies Record<ChannelEntityType, ...>` makes a missing channel a compile error), and
+  `channelRelationIndexes(tableName, table, entityType)` emits one index per such column. The
+  root keeps the composite `(tenant_id, organization_id)` foreign key declared on the table. A
+  runtime registry would not do: drizzle-kit loads every `*-db.ts` in isolation.
 - `appConfig.attachmentUploadTargets` (`['organization']`): channels whose attachments table shows
   the upload button and whose editors persist inline media. Apps whose attachments only come from
   host media blocks declare `[]`.
@@ -56,8 +58,9 @@ No script — manual.
    today's behavior; `[]` for apps whose attachments come only from host media blocks (then delete
    the fork edits in `attachments-bar.tsx`, `attachments-table.tsx` and
    `update-organization-details-form.tsx` that removed the upload affordance).
-2. In every channel table module (`project-db.ts`, `workspace-db.ts`, `course-db.ts`, ...), add
-   `registerChannelTable('<type>', () => <table>)` after the table definition.
+2. Create the pinned `backend/src/db/channel-tables.ts` from cella's and add one lazy getter per
+   channel type (`project: () => projectsTable`, ...); add it to `pinned` in `cella/cella.config.ts`.
+   Product tables that declared ancestor foreign keys by hand drop them (same constraint names).
 3. Extend the pinned `attachment-placement.ts` with `attachmentHomeColumnKey`,
    `resolveAttachmentHomeScope` and `seedAttachmentPlacements` (see cella's default for the
    contract). Move any `publicAt` inheritance from the client body into

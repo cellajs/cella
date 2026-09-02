@@ -1,13 +1,18 @@
-import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { EntityType } from '../../types.ts';
-import { wideEntityTypes, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture.ts';
+import {
+  configureWidePermissions,
+  wideEntityTypes,
+  wideHierarchy,
+  wideMembership,
+  wideOverrides,
+  wideSubject,
+} from '../testing/wide-fixture.ts';
 import { getAllDecisions } from './engine/index.ts';
 import { configurePermissions } from './policy-matrix.ts';
-import type { PolicyCallback } from './types.ts';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The wide fixture's root floor role; the callbacks below configure `wideOverrides`, not the app hierarchy. */
+const memberRole = wideHierarchy.getLeastPrivilegedRole(wideHierarchy.rootChannelType);
 
 describe('missing policy rows', () => {
   it('denies every action instead of requiring explicit all-zero rows', () => {
@@ -58,8 +63,7 @@ describe('missing policy rows', () => {
 });
 
 describe('row conditions on create', () => {
-  const configure = (callback: PolicyCallback) =>
-    configurePermissions(wideEntityTypes as unknown as readonly EntityType[], callback, wideOverrides);
+  const configure = configureWidePermissions;
 
   it("rejects create: 'own' because no row exists yet", () => {
     expect(() =>

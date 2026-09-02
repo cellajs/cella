@@ -2,7 +2,6 @@ import { type AnyPgTable, index, type PgColumn, uuid } from 'drizzle-orm/pg-core
 import {
   type AncestorChannelType,
   appConfig,
-  type ChannelEntityType,
   type EntityIdColumns,
   type EntityType,
   entityIdColumnName,
@@ -11,32 +10,20 @@ import {
   type ProductEntityType,
   type RelatedChannelType,
 } from 'shared';
+import { channelTables } from '#/db/channel-tables';
 
 type NotNullUuid = ReturnType<ReturnType<typeof uuid>['notNull']>;
 type NullableUuid = ReturnType<typeof uuid>;
-type ChannelTable = AnyPgTable & { id: PgColumn };
+export type ChannelTable = AnyPgTable & { id: PgColumn };
 
 /**
- * Channel tables by type, registered by each channel's table module (`registerChannelTable` next
- * to the table). Product tables reference their non-root ancestors through it lazily: drizzle
- * resolves `references` callbacks after every module has loaded, which a direct import between a
- * product table and its ancestor table could not do without an import cycle. The root channel is
- * not referenced here; product tables keep their composite `(tenant_id, <root>_id)` foreign key.
+ * Non-root ancestors and related channels reference their table through the pinned
+ * `channel-tables.ts` map, read lazily inside `references` so the import cycle between a channel
+ * table and its products is harmless. The root channel is not referenced here; product tables keep
+ * their composite `(tenant_id, <root>_id)` foreign key.
  */
-const channelTables = new Map<string, () => ChannelTable>();
-
-export const registerChannelTable = (channelType: ChannelEntityType, table: () => ChannelTable): void => {
-  channelTables.set(channelType, table);
-};
-
-const referencedChannelId = (channelType: string): PgColumn => {
-  const table = channelTables.get(channelType);
-  if (!table)
-    throw new Error(
-      `Channel table for '${channelType}' is not registered; call registerChannelTable in its table module`,
-    );
-  return table().id;
-};
+const referencedChannelId = (channelType: string): PgColumn =>
+  channelTables[channelType as keyof typeof channelTables]().id;
 
 /** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
 export type ChannelRelationColumns<E extends string> = EntityIdColumns<

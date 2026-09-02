@@ -51,6 +51,7 @@ export default defineConfig({
     // Paths pinned to fork; prefer fork version during merge conflicts
     pinned: [
       'backend/src/tables.ts',
+      'backend/src/db/channel-tables.ts',
       'backend/src/routes.ts',
       'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/attachment/helpers/attachment-placement.ts',

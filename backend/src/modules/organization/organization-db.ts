@@ -1,7 +1,6 @@
 import { boolean, index, json, jsonb, snakeCase, unique, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type Language, type OrganizationFlags, type OrganizationSetupConfig } from 'shared';
 import { channelColumns } from '#/db/utils/channel-columns';
-import { registerChannelTable } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
 
 const languagesEnum = appConfig.languages;
@@ -41,9 +40,6 @@ export const organizationsTable = snakeCase.table(
     unique('organizations_tenant_id_unique').on(table.tenantId, table.id),
   ],
 );
-
-// Product tables reference their ancestors through the registry (see channel-relation-columns).
-registerChannelTable('organization', () => organizationsTable);
 
 export type OrganizationModel = typeof organizationsTable.$inferSelect;
 export type InsertOrganizationModel = typeof organizationsTable.$inferInsert;
