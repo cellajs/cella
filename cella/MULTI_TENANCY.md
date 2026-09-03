@@ -113,25 +113,6 @@ request scope. Never use the admin connection in a request handler; it removes t
 | An RLS-bypass security test leaks data | Application authorization or query scope is relying on RLS |
 | A maintenance query sees no protected rows | It is likely using `runtime_role` without tenant context |
 
-## Adding tables
-
-Full recipe: [New entity guide](./ADD_ENTITY.md). At the security boundary, verify:
-
-1. Give the table `tenant_id` and its channel IDs through the shared entity-column helpers.
-2. Place the correct authentication, tenant, and channel guards on every route.
-3. Apply the shared permission engine to detail, collection, create, update, delete, and bulk paths.
-4. Scope application queries by trusted tenant and channel context independently of RLS.
-5. Add `tenantSelectPolicy()` and `writeThroughPolicies()` to the Drizzle table definition.
-6. Add composite foreign keys and module-owned constraints for every stored ancestor relationship.
-7. Register the table in `backend/src/db/channel-tables.ts` or `product-tables.ts` so migrations
-   include RLS, grants, publication, and shared immutability setup.
-8. Use `tenantRead*()` for protected reads and `tenantContext*()` for mutation transactions.
-9. Test authorization with RLS bypassed, then test the RLS read boundary directly through
-   `runtime_role`.
-
-Register a tenant-scoped support table explicitly and review its authorization, query scope,
-grants, constraints, and lifecycle.
-
 ## Verification
 
 | Location | Current responsibility |
