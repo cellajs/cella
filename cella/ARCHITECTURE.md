@@ -50,17 +50,7 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`:
-
-```ts
-createEntityHierarchy(roles)
-  .user()
-  .channel("organization", { parent: null, roles: roles.all })
-  .product("attachment", { parent: "organization" })
-  .build();
-```
-
-It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Structural rule: every product belongs to a channel, carries its tenant identity, and stays connected to its root channel through database constraints; change the hierarchy and schema together. Recipe: [New entity](./ADD_ENTITY.md).
+Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Structural rule: every product belongs to a channel, carries its tenant identity, and stays connected to its root channel through database constraints; change the hierarchy and schema together. Recipe: [New entity](./ADD_ENTITY.md).
 
 ## Selective sync engine
 
@@ -77,7 +67,7 @@ Authentication supports magic links, passkeys, OAuth, and optional time-based on
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model; the frontend only shapes the interface with it, the backend is authoritative. Row-level security (RLS) only blocks cross-tenant product reads; application authorization still governs writes, channel entities, and memberships. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model; the frontend only shapes the interface with it, the backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Contracts and operations
 

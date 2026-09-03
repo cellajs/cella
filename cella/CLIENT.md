@@ -61,11 +61,7 @@ Cache subscribers, not extra stores:
 
 A mutation patches the cache optimistically, sends the request, then reconciles with the server response; on error it rolls back. Queries and mutations run in `offlineFirst` network mode.
 
-Offline writes queue rather than fail: a network failure retries briefly, then pauses the mutation, persisted for replay after reload. Server errors never queue; a 4xx during replay is quarantined into the `failed_sync` table.
-
-Replay has two rules: mutation functions are registered as defaults at startup, before the cache restores (functions cannot be persisted); and persisted variables carry the ids that route the request. Offline queue rewriting (squash, coalesce, cancel): [Paused writes](./SYNC_ENGINE.md#paused-writes).
-
-Each tab owns its paused-mutation record through Web Locks; a restoring tab adopts dead tabs' records. Replay waits for the first catchup so it runs against fresh data.
+Offline queueing, replay registration, and per-tab queues: [Writes](./SYNC_ENGINE.md#writes), [Paused writes](./SYNC_ENGINE.md#paused-writes), [Multiple tabs](./SYNC_ENGINE.md#multiple-tabs).
 
 ## Files and blobs
 
@@ -107,11 +103,11 @@ The database follows authentication, not routes: signing in binds it and hydrate
 Boot order (cached data first, never an empty-cursor connection):
 
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
-2. The storage lifecycle binds the per-user database and hydrates its Zustand stores, sync cursor included.
+2. The storage lifecycle binds the per-user database and hydrates its Zustand stores, sync cursor included (`localUserStorageReady()` gates the stream on the hydrated cursor; consumers read `getLocalUserDb()` and tolerate `null`).
 3. The persister restores the cache scope (replay defaults are already registered).
 4. One tab is elected leader, performs catchup, and owns the live connection; paused mutations resume after that catchup.
 5. Route loaders fill the current view; background fill freshens the current organization's lists, other organizations with offline access.
 
 ## Tabs and upgrades
 
-Every tab can write; one leader tab owns the stream and broadcasts notifications to the rest. The service worker keeps the app shell loadable offline but never caches API responses. After a deploy, an old tab that sees newer persisted data stops persisting and prompts for a reload. Details: [multiple tabs](./SYNC_ENGINE.md#multiple-tabs) and [Schema evolution](./SCHEMA_EVOLUTION.md).
+The service worker keeps the app shell loadable offline but never caches API responses. Leader election and old tabs after a deploy: [Multiple tabs](./SYNC_ENGINE.md#multiple-tabs) and [Schema evolution](./SCHEMA_EVOLUTION.md).

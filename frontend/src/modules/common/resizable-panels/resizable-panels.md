@@ -20,7 +20,7 @@ Constants used in all examples:
 ## General rules
 
 - **State**: `resolveLayout(panelConfigs, separatorIndex, initialWidths, dx, mode)` is a pure, idempotent function returning the complete layout (widths + hint data). Dragging back reverses the change; no undo logic.
-- **Layout**: pixel widths (`style.width`) in a flex container; no CSS grid or fr tracks. Stored widths equal rendered widths. No max-width cap on the grower (G8).
+- **Layout**: pixel widths (`style.width`) in a flex container; no CSS grid or fr tracks. Stored widths equal rendered widths.
 
 ## G1: Direction determines roles
 
@@ -46,7 +46,6 @@ The panel on the shrinking side of the separator is the victim, the growing side
 
 - A collapsed grower snaps to `minWidth` only after the full `minWidth - collapsedWidth` drag distance. Until then the handle is frozen and the expand hint shows progress 0->1.
 - Reversing below the threshold re-enters the gate.
-- After the snap the grower keeps growing without cap (G8).
 
 ```
   A=500 (victim), B=50 (collapsed grower), drag left.
@@ -79,7 +78,7 @@ Every pixel freed by victims goes to the grower, uncapped in both modes, so the 
 
 - Phase 1: shrink victims toward `minWidth` in order away from the separator.
 - Phase 2: collapse, only after all victims are at min; freed pixels fund the grower (G8).
-- Panels collapsed at drag start are skipped in both phases. G11 overrides the phase order when the last victim is off-screen.
+- Panels collapsed at drag start are skipped in both phases.
 
 ```
   Before:
@@ -95,14 +94,6 @@ Every pixel freed by victims goes to the grower, uncapped in both modes, so the 
   Then C collapses -> A absorbs 250 more -> 1100.
 ```
 
-## G10: No swap (expand blocks direct victim collapse)
-
-While a collapsed grower is expanding via the expand gate, the direct victim cannot collapse until the pixels freed by Phase 1 shrinking meet the expand cost (`totalFreed >= expandCost`). Once funded, further collapse is normal nearest-first cascading, not a swap.
-
-## Pre-collapsed panels in cascade
-
-Panels already collapsed at drag start are skipped (X) in both phases; the cascade jumps to the next victim.
-
 ```
   A=400, B=collapsed 50, C=300 (min), D=350. Drag left:
 
@@ -116,9 +107,13 @@ Panels already collapsed at drag start are skipped (X) in both phases; the casca
   Phase 2: C collapses -> B X skip -> A collapses. D absorbs all freed (G8) -> 850.
 ```
 
+## G10: No swap (expand blocks direct victim collapse)
+
+While a collapsed grower is expanding via the expand gate, the direct victim cannot collapse until the pixels freed by Phase 1 shrinking meet the expand cost (`totalFreed >= expandCost`). Once funded, further collapse is normal nearest-first cascading, not a swap.
+
 ## AUTOFILL MODE
 
-Panels fit the container. Collapse-freed pixels fund the uncapped grower (G8); `redistributePanels` rebalances on drop.
+Panels fit the container; `redistributePanels` rebalances on drop.
 
 ```
   A=400 (grower), B=300, C=300, drag right (Phase 2). B collapses -> 250 freed pixels fund A:
@@ -132,7 +127,7 @@ Panels fit the container. Collapse-freed pixels fund the uncapped grower (G8); `
 
 ## OVERFLOW MODE
 
-Panels exceed the container (horizontal scroll). Collapse-freed pixels fund the grower as in autoFill; the total panel sum stays constant, so no trailing gap and a static container width mid-drag.
+Panels exceed the container (horizontal scroll).
 
 ### O2: Expand is free in overflow mode
 
@@ -167,8 +162,6 @@ Condition, checked once at drag start and fixed for the drag: mode is overflow, 
 
 - Phase 1: shrink all victims to `minWidth`, nearest first (as G9).
 - Phase 2: per-panel collapse, nearest first: each victim enters the collapse zone and collapses before the next is touched.
-
-With all victims visible, standard G9 applies.
 
 ```
   5 panels, E off-screen. Drag right (A grower):

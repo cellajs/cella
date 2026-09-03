@@ -14,14 +14,3 @@ tests/
 ├── integration/     # Tests that need more than the test database (excluded in core mode)
 └── <area>/          # Route-level tests grouped by area (sign-in, security, invitations, ...)
 ```
-
-## Running tests
-
-```bash
-pnpm test
-```
-
-## Notes
-
-- Tests run serially against the shared Docker test database; never assume it is empty.
-- Configuration (e.g. enabled auth strategies) can be toggled per test via `setup.ts`.

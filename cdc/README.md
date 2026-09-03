@@ -33,7 +33,7 @@ The API receives the messages on `/internal/cdc`, publishes them to its Activity
 
 The worker consumes `cdc_pub` through `cdc_slot` with `pgoutput`; the CDC migration (`backend/scripts/migrations/10-cdc.migration.ts`) builds the publication and replica identities from the backend's entity and resource table maps.
 
-Draft-lifecycle product tables carry the filter `WHERE published_at IS NOT NULL` (PostgreSQL 17+): publishing is an insert, unpublishing a delete with the old row, draft-only changes are absent, and soft-deleting a published row stays an update so its tombstone syncs. Channel tables are unfiltered: filtering on their `publishedAt` would break channel-path sync.
+Draft-lifecycle product tables carry the publication filter `WHERE published_at IS NOT NULL` (PostgreSQL 17+); channel tables are unfiltered because a `publishedAt` filter would break channel-path sync. What each lifecycle step emits: [Sync engine, Drafts](../cella/SYNC_ENGINE.md#drafts).
 
 ### Parse and batch
 
@@ -61,16 +61,7 @@ Per group, in order: persist activities (IDs derive from the LSN, duplicates ign
 
 ### Sequences and counters
 
-Each group reserves a contiguous per-organization range from `channel_counters.counts['sequence']`, assigned to product creates and updates in WAL order; all product types share one sequence. Soft-delete and restore count as delete and create.
-
-| Keys | Meaning |
-| --- | --- |
-| `sequence` | Sequence reservation |
-| `e:f:{type}`, `e:f:h:{type}` | Subtree and home-node sequence frontiers |
-| `e:c:{type}`, `e:c:h:{type}` | Subtree and home-node entity counts |
-| `m:c:{role}`, `m:c:total`, `m:c:pending` | Membership counts |
-| `membership` | Detects missed membership updates after reconnect |
-| `e:li:h:{type}`, `e:lu:h:{type}` | Last-insert and last-update timestamps |
+Each group reserves a contiguous per-organization range from `channel_counters.counts['sequence']`, assigned to product creates and updates in WAL order. Soft-delete and restore count as delete and create. Key grammar and scopes: [Sync engine, Counters](../cella/SYNC_ENGINE.md#counters).
 
 Frontier and timestamp keys max-merge; count keys sum with a lower bound of zero (`apply_count_deltas`). Reparenting moves self counts and re-credits ancestors.
 
@@ -78,7 +69,7 @@ Frontier and timestamp keys max-merge; count keys sum with a lower bound of zero
 
 One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: isolated internal path, `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, single-connection limit, 90-second idle timeout.
 
-`CdcOutboundMessage` carries the activity, compacted row data, previous location for reparented rows, permission-relevant batch rows, and trace context. Batches split by `(path, entityType)` so each message has one audience; sequence ranges may interleave across groups, so `count`, not range arithmetic, defines batch size. After channel-entity creates and updates, the worker copies the row's canonical path to `channel_counters.path` for catch-up authorization; counter recalculation backfills it.
+`CdcOutboundMessage` carries the activity, compacted row data, previous location for reparented rows, permission-relevant batch rows, and trace context. After channel-entity creates and updates, the worker copies the row's canonical path to `channel_counters.path` for catch-up authorization; counter recalculation backfills it.
 
 Control messages (`health`, `catchup_complete`, `wal_lag_alert`) bypass the data-message schema. `src/tests/wire-contract.type-check.ts` verifies the outbound type against the backend's `CdcMessage` schema.
 
@@ -101,8 +92,7 @@ The slot advances only after processing and is the only durable buffer, so a cra
 
 - **Adding a tracked table takes two changes:** the backend's entity or resource table map, then rerunning the CDC migration. Missing either drops events.
 - **`REPLICA IDENTITY FULL` is mandatory** (deletes need the old tuple), so publication column lists are unavailable and large columns are stripped in the worker.
-- **`stx` and `seq` are part of the protocol** (see Parse and batch).
-- **Only one worker may consume the slot.** The backend also accepts only one CDC connection.
+- **Only one worker may consume the slot.**
 - **WAL retention is the recovery margin.** Needs `wal_level=logical`, slot/sender capacity, a suitable `max_slot_wal_keep_size`, and a `REPLICATION` role.
 
 ## Health and configuration

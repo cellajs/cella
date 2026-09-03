@@ -5,10 +5,9 @@ description: Apply pending cella upstream migrations to an app after a sync. Com
 
 # Applying cella migrations to an app
 
-Run after a `cella sync` pull, or whenever `cella/migrations/run.ts` reports pending work.
-Pipeline: **inventory → plan → transform → validate → ship**, one migration at a time, in array
-order (later migrations may assume earlier ones ran). Never batch or skip ahead: apply, gate,
-record, next.
+Run after a `cella sync` pull, or whenever `cella/migrations/run.ts` reports pending work. One
+migration at a time, in array order (later migrations may assume earlier ones ran). Never batch or
+skip ahead: apply, gate, record, next.
 
 ## 1. Inventory
 

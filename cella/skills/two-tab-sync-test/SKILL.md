@@ -49,7 +49,7 @@ Decision rule: **no console notification line** → SSE/leader/broadcast layer; 
 
 Leader semantics: the first tab owns the SSE connection (`Became leader`), others log `Not leader, listening to broadcasts only`; both process notifications independently. A tab on the org route is in the viewing tier (instant flush); hidden tabs get ~1s timer throttling from chromium, so use generous assert windows.
 
-Creates not propagating: check the `applyServerEntity` applicator in `cache-ops.ts` first (inserts new rows into canonical scope lists, invalidates filtered lists once per flush; before `d4bc3e9c0` new rows were fetched then dropped; `.todos/SYNC_FANOUT_DEVLOG.md`).
+Creates not propagating: check the `applyServerEntity` applicator in `cache-ops.ts` first (inserts new rows into canonical scope lists, invalidates filtered lists once per flush).
 
 ## Gotchas
 

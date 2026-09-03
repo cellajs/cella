@@ -1,7 +1,5 @@
 # infra tests: where a test file lives
 
-Two homes, chosen by what the test exercises.
-
 ## Co-located `*.test.ts` (next to the module): the default
 
 A test that imports **one** module and exercises its exported behaviour lives beside that module (`lib/**`, `tasks/**`, `boot/src/**`, `cli/**`, `compose/**`).
@@ -13,7 +11,3 @@ Modules under `resources/` construct live Pulumi resources at import time, so th
 - **`tests/unit/`**: tests without a single owning module. Source-shape checks that read a file as text (`loadbalancer`, `compute`, `resource-contracts`, `no-unexpected-public`, `caddyfile`), or tests spanning several modules or packages (`runtime-secrets` reads each service's `env.ts`).
 - **`tests/integration/`**: needs a live host or network; excluded from `pnpm test`, opt in with `pnpm test:integration` (`INTEGRATION=1`).
 - **`tests/helpers/`**: shared fixtures and the Pulumi mock harness. Not tests.
-
-## Quick decision
-
-> Does the test import and drive exactly one module (mock harness is fine)? → co-locate. Otherwise → `tests/`.

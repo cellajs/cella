@@ -21,11 +21,7 @@ the same allow or deny result through a test role that bypasses RLS.
 | A permission bug exposes data within the active tenant | RLS cannot help because the row still matches the tenant |
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
-By layer: guards establish the actor and validate tenant and channel entry; the permission engine
-decides whether the actor may act on a subject; scoped queries limit candidates to tenant, channel,
-and readable row scope; RLS rejects cross-tenant product reads when application tenant scope is
-wrong or missing; foreign keys, unique constraints, and triggers reject inconsistent identities,
-duplicates, and identity changes. Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
+Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
 
 ## What RLS covers
 
@@ -43,7 +39,7 @@ tables; the template protects `attachments` and `yjs_documents`.
 The migration classifier takes registered entity tables, removes `user`, configured channel types,
 and explicit exclusions such as `pages`, then adds configured support tables, so a registered product
 entity is protected automatically. Channel-entity and membership queries use `baseDb`; protected
-product reads must enter a tenant helper; a contextless `baseDb` query returns no protected rows.
+product reads must enter a tenant helper.
 
 ## Product reads
 
@@ -55,10 +51,6 @@ variables before product queries:
 | `app.tenant_id` | Required tenant match for protected SELECTs; missing or empty fails closed |
 | `app.include_deleted` | Makes soft-deleted rows visible to explicit tombstone and delta reads |
 | `app.user_id` | Available to the transaction; current RLS policies do not consult it |
-
-The SELECT policy requires a non-empty tenant context equal to the row's `tenant_id`; a wrong or
-missing tenant yields zero rows. RLS stops at the tenant boundary: organization and deeper channel
-boundaries stay with guards, permission predicates, and query scope.
 
 ### Transaction helpers
 
@@ -109,28 +101,6 @@ request scope. Never use the admin connection in a request handler; it removes t
 | The request enters the channel but cannot perform an action | The permission engine denied it |
 | A row combines a tenant with another tenant's root channel | The composite foreign key rejects it |
 | A mutation changes `tenant_id` or the root channel | The immutability trigger rejects it |
-| A contextless insert succeeds through `runtime_role` | Expected from write-through RLS; audit the missing application path |
-| An RLS-bypass security test leaks data | Application authorization or query scope is relying on RLS |
-| A maintenance query sees no protected rows | It is likely using `runtime_role` without tenant context |
-
-## Adding tables
-
-Full recipe: [New entity guide](./ADD_ENTITY.md). At the security boundary, verify:
-
-1. Give the table `tenant_id` and its channel IDs through the shared entity-column helpers.
-2. Place the correct authentication, tenant, and channel guards on every route.
-3. Apply the shared permission engine to detail, collection, create, update, delete, and bulk paths.
-4. Scope application queries by trusted tenant and channel context independently of RLS.
-5. Add `tenantSelectPolicy()` and `writeThroughPolicies()` to the Drizzle table definition.
-6. Add composite foreign keys and module-owned constraints for every stored ancestor relationship.
-7. Register the table in `backend/src/db/channel-tables.ts` or `product-tables.ts` so migrations
-   include RLS, grants, publication, and shared immutability setup.
-8. Use `tenantRead*()` for protected reads and `tenantContext*()` for mutation transactions.
-9. Test authorization with RLS bypassed, then test the RLS read boundary directly through
-   `runtime_role`.
-
-Register a tenant-scoped support table explicitly and review its authorization, query scope,
-grants, constraints, and lifecycle.
 
 ## Verification
 
@@ -145,6 +115,3 @@ grants, constraints, and lifecycle.
 | `backend/tests/integration/schema-verification.test.ts` | Catalog checks under the integration-test role setup |
 | `backend/tests/security/cross-tenant.test.ts` | Normal API tenant-guard behavior |
 | `backend/tests/security/cross-org.test.ts` | Normal API channel and permission behavior |
-
-Both are required: RLS behavior tests prove the backstop works, RLS-bypass tests prove it is not
-the primary boundary.

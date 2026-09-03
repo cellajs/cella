@@ -6,7 +6,7 @@ Schema-evolution lens registry (doba lenses).
 
 ## Lens convention: [`define.ts`](./define.ts)
 
-A lens declares one breaking schema change once; widened wire schemas, ops/stx key maps, cache-row migrations, and versioned OpenAPI specs are derived from it. Lens modules are frozen once shipped and appended in date order to `lens-list.ts`. The global schema version is the lens count.
+A lens declares one breaking schema change once; widened wire schemas, ops/stx key maps, cache-row migrations, and versioned OpenAPI specs are derived from it.
 
 ## Append point: [`lens-list.ts`](./lens-list.ts)
 
