@@ -5839,6 +5839,22 @@
                           "actorId": {
                             "type": ["string", "null"]
                           },
+                          "actor": {
+                            "anyOf": [
+                              {
+                                "$ref": "#/components/schemas/UserMinimalBase"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "channelName": {
+                            "type": "string"
+                          },
+                          "subjectTitle": {
+                            "type": "string"
+                          },
                           "readAt": {
                             "type": ["string", "null"]
                           }
@@ -5855,6 +5871,9 @@
                           "organizationId",
                           "tenantId",
                           "actorId",
+                          "actor",
+                          "channelName",
+                          "subjectTitle",
                           "readAt"
                         ]
                       }

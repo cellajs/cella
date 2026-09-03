@@ -2804,6 +2804,9 @@ export type GetNotificationsResponses = {
       organizationId: string;
       tenantId: string;
       actorId: string | null;
+      actor: UserMinimalBase | null;
+      channelName: string;
+      subjectTitle: string;
       readAt: string | null;
     }>;
     unreadCount: number;

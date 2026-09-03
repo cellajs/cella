@@ -14,6 +14,12 @@ contract, `updateAttachmentOp` as materializer, a collaborative description edit
 `app-schemas.ts` extends the type enum and labels; `shared/utils/blocknote-server-schema.ts` is
 the one server schema; `pnpm style` reads `shared/config/vocabulary-allowlist.ts`.
 
+The inbox card reads like the pre-cella app's: `getNotifications` items carry `actor`, `channelName`
+and `subjectTitle`, and `c:notification.<type>` sentences interpolate them. `channelRouteConfig`
+entries declare `notificationSearch` so a link opens the subject (cella: `attachmentDialogId`); a
+channel without it lands on its default tab. `pnpm seed` gains a notifications seed built on
+`mockSeedNotification` (`notification-mocks.ts`).
+
 ## Blast radius
 
 Sync-breaking for apps with a `notifications` source (`loadRows` and `resolveEmailLink` change
@@ -44,6 +50,13 @@ No script: manual.
 6. Create backend `ServerBlockNoteEditor` instances with `serverBlockNoteSchema` from
    `shared/utils/blocknote-server-schema` and delete mention-flattening workarounds; take
    upstream for `yjs/src/lib/blocknote-seed.ts`.
+
+7. Give every channel in `channelRouteConfig` a `notificationSearch` mapping your subject types to
+   the search param that opens them (projectcampus: item and comment ids on the feed); without it
+   a notification lands on the channel's default tab, which is why item links opened the
+   organization's courses tab. Rewrite your `notification.<type>` keys as sentences with `actor`,
+   `subject` and `channel`, and add `someone` to `app.json` if you override it.
+8. Port your notifications seed onto `mockSeedNotification` (projectcampus's `55-notifications.seed.ts`).
 
 ## Verify
 

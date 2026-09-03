@@ -1,9 +1,8 @@
-import { tenantReadById } from '#/db/tenant-context';
 import { i18n } from '../../../../emails/i18n';
 import { findChannelNames } from '../helpers/channel-names';
 import { escapeString } from '../helpers/render-digest-html';
+import { findSubjectNames } from '../helpers/subject-names';
 import { findUndigestedNotifications } from '../notification-queries';
-import { getNotificationSource, loadSubjectNames } from '../notification-sources';
 
 /** Rows quoted per channel before the section collapses into "and N more". */
 const ROWS_PER_CHANNEL = 5;
@@ -35,28 +34,7 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
   const rows = await findUndigestedNotifications(userId, since?.toISOString() ?? null, MAX_ROWS);
   if (rows.length === 0) return { notificationIds: [], sections: [] };
 
-  // Context titles live in tenant-scoped product tables, so they must be read under a tenant
-  // transaction: on a bare connection the fail-closed RLS policy returns nothing and every line
-  // renders blank. A user's notifications are almost always one tenant, so this is normally a
-  // single round trip per source type.
-  const contextIdsByTenantAndType = new Map<string, string[]>();
-  for (const row of rows) {
-    if (!row.contextId) continue;
-    const key = `${row.tenantId}:${row.entityType}`;
-    const list = contextIdsByTenantAndType.get(key) ?? [];
-    list.push(row.contextId);
-    contextIdsByTenantAndType.set(key, list);
-  }
-
-  const contextNames = new Map<string, string>();
-  for (const [key, contextIds] of contextIdsByTenantAndType) {
-    const [tenantId, entityType] = key.split(':');
-    const source = getNotificationSource(entityType);
-    if (!source) continue;
-    const names = await tenantReadById(tenantId, (tx) => loadSubjectNames(source, tx, [...new Set(contextIds)]));
-    for (const [id, name] of names) contextNames.set(id, name);
-  }
-
+  const contextNames = await findSubjectNames(rows.map((row) => ({ ...row, id: row.contextId })));
   const channelNames = await findChannelNames(rows.map((row) => row.channelId));
 
   const byChannel = new Map<string, typeof rows>();

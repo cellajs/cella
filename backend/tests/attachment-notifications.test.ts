@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { updateAttachment } from 'sdk';
+import { type GetNotificationsResponse, getNotifications, updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -51,7 +51,7 @@ const nullAncestorScopes = Object.fromEntries(
 describe('Attachment mentions (template notification source)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  let member: { id: string };
+  let member: { id: string; sessionCookie: string };
   let plan: TestEntityHierarchyPlan;
 
   const putDescription = async (description: string) =>
@@ -172,5 +172,19 @@ describe('Attachment mentions (template notification source)', async () => {
     // Mention email is on by default; the member's address is verified.
     await sendPendingInstantEmails(tenant.organization.id);
     expect((await notificationsFor(member.id))[0]?.emailedAt).not.toBeNull();
+  });
+
+  it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {
+    const result = await call(getNotifications, {
+      query: { limit: 10 },
+      headers: { ...defaultHeaders, Cookie: member.sessionCookie },
+    });
+    expect(result.response.status).toBe(200);
+    // The test client types the body loosely; the SDK response type names the fields under test.
+    const [row] = (result.data as GetNotificationsResponse | undefined)?.items ?? [];
+    expect(row).toMatchObject({ type: 'mention', subjectId: attachmentId, entityType: 'attachment' });
+    expect(row?.actor?.id).toBe(tenant.user.id);
+    expect(row?.channelName).not.toBe('');
+    expect(row?.subjectTitle).not.toBe('');
   });
 });

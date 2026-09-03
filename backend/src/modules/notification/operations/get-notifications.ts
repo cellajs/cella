@@ -1,6 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
-import { countUnreadByUser, findNotificationsByUser } from '../notification-queries';
+import { findChannelNames } from '../helpers/channel-names';
+import { findSubjectNames } from '../helpers/subject-names';
+import { countUnreadByUser, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
 import type { notificationSchema } from '../notification-schema';
 
 type NotificationResponse = z.infer<typeof notificationSchema>;
@@ -12,7 +14,8 @@ export interface GetNotificationsInput {
 }
 
 /**
- * The inbox page plus the unread count.
+ * The inbox page plus the unread count, with the actor, channel and subject names the card's
+ * sentence needs.
  *
  * Both travel together so the badge can never disagree with the list the user is looking at; the
  * client treats this response as the source of truth and any realtime signal only as a hint to
@@ -24,6 +27,12 @@ export async function getNotificationsOp(ctx: AuthContext, input: GetNotificatio
   const [rows, unreadCount] = await Promise.all([
     findNotificationsByUser(ctx, { userId, ...input }),
     countUnreadByUser(ctx, userId),
+  ]);
+
+  const [actors, channelNames, subjectTitles] = await Promise.all([
+    findUsersMinimal(rows.map((row) => row.actorId).filter((id): id is string => id !== null)),
+    findChannelNames(rows.map((row) => row.channelId)),
+    findSubjectNames(rows.map((row) => ({ ...row, id: row.subjectId }))),
   ]);
 
   const items: NotificationResponse[] = rows.map((row) => ({
@@ -38,6 +47,9 @@ export async function getNotificationsOp(ctx: AuthContext, input: GetNotificatio
     organizationId: row.organizationId,
     tenantId: row.tenantId,
     actorId: row.actorId,
+    actor: (row.actorId && actors.get(row.actorId)) || null,
+    channelName: channelNames.get(row.channelId) ?? '',
+    subjectTitle: subjectTitles.get(row.subjectId) ?? '',
     readAt: row.readAt,
   }));
 

@@ -45,6 +45,14 @@
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "actor": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/UserMinimalBase",
+                    "refDescription": "Minimal user data for references."
+                  },
+                  "channelName": { "type": "string", "required": true },
+                  "subjectTitle": { "type": "string", "required": true },
                   "readAt": {
                     "type": ["string", "null"],
                     "required": true
