@@ -28,9 +28,9 @@ No script: manual.
 
 1. Sync, `pnpm generate`, migrate, verify the `notifications` partitions exist.
 2. Add the bell to your pinned `nav-config.tsx` (copy cella's entry).
-3. Declare a source on each relevant product module:
-   `notifications: { mentionable: true, loadRows, writeMentions, resolveRecipients, ... }`;
-   `resolveRecipients` carries your thread/assignee model, the rest is common code.
+3. Declare a source on each relevant product module: `notifications: true` takes the defaults
+   derived from the product table (see `ModuleNotifications` in `backend/src/lib/module.ts`);
+   `{ resolveRecipients, resolveContextId }` carries your thread/assignee model.
 4. Dispatch from the module's create and update ops, inside the write transaction:
    `dispatchMutation(txCtx, '<type>.created', { after: rows })` and
    `dispatchMutation(txCtx, '<type>.updated', { before: [entity], after: [updated] })`

@@ -763,7 +763,7 @@
   {
    "id": "20260903T0640-notifications-contract",
    "version": "next",
-   "title": "Notifications contract: attachment mentions, app types, deriveFrom, server BlockNote schema",
+   "title": "Notifications contract: table-derived sources, attachment mentions, /n deep link",
    "kind": "manual",
    "syncBreaking": true,
    "clientCacheBump": false,
@@ -780,7 +780,7 @@
     "pnpm check",
     "pnpm test:core"
    ],
-   "summary": "Attachments become the template notification source: attachments.mentions, description on the update contract, updateAttachmentOp as Yjs materializer, collaborative description editor in a sheet (table cell + dialog caption), so test:core covers derivation, fan-out and instant email. appNotificationTypes in the pinned app-schemas.ts extends the type enum and label keys. ModuleNotifications.deriveFrom replaces the hardcoded serverOrigin skip. Shared server BlockNote schema for the Yjs relay and backend blocksToHtml. pnpm style reads shared/config/vocabulary-allowlist.ts and allows the root CHANGELOG.md."
+   "summary": "Notification sources derive from the product table (notifications: true; live rows, mentions writing via mentionableColumns(), previews and digest names, deriveFrom both with a yjsMaterializer), apps declare only resolveRecipients/resolveContextId. Email and push links are self-describing /n links resolved by the frontend, resolveEmailLink is gone. Attachments are the template consumer (mentions column, description update op, materializer, collaborative editor in a sheet; useDescriptionUpdate is the shared persistence policy). appNotificationTypes extends the type enum and labels. Shared server BlockNote schema; pnpm style app allowlist."
   }
  ]
 }

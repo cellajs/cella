@@ -1,6 +1,5 @@
 import { defineBackendModule } from '#/lib/module';
 import { attachmentHandlers } from './attachment-handlers';
-import { attachmentNotifications } from './attachment-notifications';
 import { updateAttachmentOp } from './operations/update-attachment';
 
 defineBackendModule({
@@ -13,6 +12,7 @@ defineBackendModule({
     and is a notification source for mentions.`,
   productEntity: 'attachment',
   yjsMaterializer: updateAttachmentOp,
-  notifications: attachmentNotifications,
+  // Table-derived source: the `mentions` column makes it mentionable, the materializer makes Yjs writes count.
+  notifications: true,
   routes: [{ path: '/:tenantId/:organizationId/attachments', app: attachmentHandlers, phase: 'tenant' }],
 });

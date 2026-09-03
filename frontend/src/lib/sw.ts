@@ -55,12 +55,14 @@ const pushTitles: Record<string, string> = {
   comment: 'New comment',
 };
 
-/** { t: 'notif', activityId, channelId, type } from push-sender.ts; anything else is dropped. */
+/** { t: 'notif', activityId, channelId, type, url } from push-sender.ts; anything else is dropped. */
 interface NotificationPushData {
   t: string;
   activityId: string;
   channelId: string;
   type: string;
+  /** Self-describing `/n` link to the subject; a click opens it. */
+  url?: string;
 }
 
 self.addEventListener('push', (event) => {
@@ -79,7 +81,7 @@ async function handleNotificationPush(data: NotificationPushData): Promise<void>
   // burst edits one toast in place.
   await self.registration.showNotification(pushTitles[data.type] ?? 'New notification', {
     tag: `notif-${data.channelId}`,
-    data: { activityId: data.activityId },
+    data: { activityId: data.activityId, url: data.url },
   });
   await updateUnreadBadge();
 }
@@ -99,14 +101,20 @@ async function updateUnreadBadge(): Promise<void> {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  event.waitUntil(focusOrOpenApp());
+  const url = typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/';
+  event.waitUntil(focusOrOpenApp(url));
 });
 
-async function focusOrOpenApp(): Promise<void> {
+/** An open tab navigates to the subject; otherwise a new window opens on it. */
+async function focusOrOpenApp(url: string): Promise<void> {
   const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   const existing = clientList[0];
-  if (existing) await existing.focus();
-  else await self.clients.openWindow('/');
+  if (!existing) {
+    await self.clients.openWindow(url);
+    return;
+  }
+  await existing.focus();
+  if ('navigate' in existing) await existing.navigate(url);
 }
 
 // The push service rotated the subscription: re-subscribe with the same key and re-register, or

@@ -2,9 +2,9 @@ import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import type { Attachment } from 'sdk';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
-import { attachmentQueryKeys, findAttachmentInCache, useAttachmentUpdateMutation } from '~/modules/attachment/query';
+import { attachmentQueryKeys, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { CollaborativeBlockNote } from '~/modules/common/blocknote/collaborative-blocknote';
-import { patchDescriptionCaches } from '~/modules/common/blocknote/description-cache';
+import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
 import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -37,25 +37,15 @@ export function AttachmentDescriptionForm({ attachment }: { attachment: Attachme
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organization.id);
-
-  const updateData = async (description: string, collaborative: boolean) => {
-    if (collaborative) {
-      // The relay persists; the caches show the text until the materialized row arrives over SSE.
-      patchDescriptionCaches(
-        'attachment',
-        attachment.id,
-        {
-          detailKey: attachmentQueryKeys.detail.byId(attachment.id),
-          listKey: attachmentQueryKeys.list.org(organization.id),
-        },
-        { description, updatedAt: new Date().toISOString() },
-      );
-      return;
-    }
-    // Deleted while the sheet was open (unmount flush): nothing to persist.
-    if (!findAttachmentInCache(attachment.id)) return;
-    await mutateAsync({ id: attachment.id, ops: { description } });
-  };
+  const updateData = useDescriptionUpdate({
+    entityType: 'attachment',
+    entity: attachment,
+    keys: {
+      detailKey: attachmentQueryKeys.detail.byId(attachment.id),
+      listKey: attachmentQueryKeys.list.org(organization.id),
+    },
+    update: (ops) => mutateAsync({ id: attachment.id, ops }),
+  });
 
   return (
     <CollaborativeBlockNote

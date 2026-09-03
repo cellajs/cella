@@ -1,18 +1,17 @@
-import { hierarchy, type ProductEntityType } from 'shared';
+import { hierarchy } from 'shared';
 import { tenantReadById } from '#/db/tenant-context';
 import type { ActivityEvent } from '#/lib/activity-bus';
-import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
+import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
-import { checkAccessFanout } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import { accessForUserIds } from '../helpers/access-for-users';
+import { buildNotificationLink } from '../helpers/notification-link';
+import { readableAccess } from '../helpers/readable-access';
 import {
   findNotifiedUserIds,
   insertNotificationsIgnoringDuplicates,
   type NotificationInsert,
 } from '../notification-queries';
-import { getNotificationSource } from '../notification-sources';
+import { getNotificationSource, type NotificationSource } from '../notification-sources';
 import { type NotificationType, notificationTypes } from '../notification-types';
 
 /** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
@@ -63,7 +62,7 @@ function collectSubjectIds(event: ActivityEvent): string[] {
 async function fanOutRow(
   event: ActivityEvent,
   entityType: string,
-  source: ModuleNotifications,
+  source: NotificationSource,
   row: NotificationSubjectRow,
   tenantId: string,
 ): Promise<void> {
@@ -116,9 +115,17 @@ async function fanOutRow(
   // costs one subscription lookup. Never awaited into the fan-out's failure path.
   if (isPushSendConfigured()) {
     const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
+    const url = buildNotificationLink({
+      tenantId,
+      organizationId: event.organizationId as string,
+      channelId: channel.id,
+      channelType: channel.type,
+      entityType,
+      subjectId: row.id,
+    });
     await sendNotificationPush(
       allowed.map((recipient) => recipient.userId),
-      { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType },
+      { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType, url },
     );
   }
 }
@@ -134,25 +141,19 @@ async function filterByReadAccess(
   row: NotificationSubjectRow,
   candidates: Candidate[],
 ): Promise<Candidate[]> {
-  const accessByUser = await accessForUserIds(candidates.map((candidate) => candidate.userId));
-  const subject = buildSubjectFromEntity(
-    entityType as ProductEntityType,
-    row as unknown as { id: string; createdBy?: string | null },
+  const readable = await readableAccess(
+    entityType,
+    row,
+    candidates.map((candidate) => candidate.userId),
   );
-
-  const accesses = candidates.map((candidate) => accessByUser.get(candidate.userId)).filter((a) => a !== undefined);
-  if (accesses.length !== candidates.length) return [];
-
-  const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
   const { id: channelId } = resolveChannel(entityType, row);
 
-  return candidates.filter((candidate, index) => {
-    if (!decisions[index]?.allowed) return false;
+  return candidates.filter((candidate) => {
+    const access = readable.get(candidate.userId);
+    if (!access) return false;
     if (!mutedTypes.has(candidate.type)) return true;
 
-    const muted = accessByUser
-      .get(candidate.userId)
-      ?.memberships?.some((membership) => membership.channelId === channelId && membership.muted);
+    const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
     return !muted;
   });
 }
@@ -160,8 +161,8 @@ async function filterByReadAccess(
 /**
  * The row's home channel: deepest non-null ancestor, organization as the fallback.
  *
- * Same rule as `getSeenChannelId`, so a notification and an unseen badge always agree about which
- * channel a row belongs to.
+ * Row-side twin of `homeChannelIdSql` (seen module), so a notification and an unseen badge always
+ * agree about which channel a row belongs to.
  */
 function resolveChannel(entityType: string, row: NotificationSubjectRow): { id: string; type: string } {
   const [deepest] = hierarchy.resolveNonNullAncestors(entityType, row);

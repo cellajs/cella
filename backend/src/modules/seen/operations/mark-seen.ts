@@ -1,10 +1,11 @@
-import { and, eq, getColumns, gt, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, SeenTrackedProductType } from 'shared';
 import { appConfig, hierarchy, seenWindowMs } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
+import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
@@ -43,16 +44,8 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
   const entityTable = getEntityTable(productType);
 
   const orgTable = entityTable as OrgScopedEntityTable;
-  const columns = getColumns(entityTable);
 
-  // Home context id: deepest non-null ancestor. Must match the notification channelId or unseen badges land under the wrong key.
-  const ancestorColumns = hierarchy
-    .getOrderedAncestors(productType)
-    .map((ancestor) => (columns as Record<string, PgColumn | undefined>)[appConfig.entityIdColumnKeys[ancestor]])
-    .filter((column): column is PgColumn => Boolean(column));
-  const channelIdColumn = ancestorColumns.length
-    ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
-    : orgTable.organizationId;
+  const channelIdColumn = homeChannelIdSql(productType, entityTable);
 
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 

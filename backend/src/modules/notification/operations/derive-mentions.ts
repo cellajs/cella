@@ -1,12 +1,9 @@
-import type { ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
-import { checkAccessFanout } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import { accessForUserIds } from '../helpers/access-for-users';
 import { extractMentionIds } from '../helpers/extract-mentions';
+import { readableAccess } from '../helpers/readable-access';
 
 /**
  * Mutation handler that re-derives `mentions` from the stored body, inside the writing
@@ -35,7 +32,9 @@ export function deriveMentionsFor(entityType: string, source: ModuleNotification
 
     for (const row of rows) {
       const mentioned = extractMentionIds(row.description);
-      const allowed = mentioned.length ? await filterReadable(entityType, row, mentioned) : [];
+      // A mention must never leak a row's existence to someone who may not read it.
+      const readable = await readableAccess(entityType, row, mentioned);
+      const allowed = mentioned.filter((userId) => readable.has(userId));
 
       // Only write when the derived set actually differs, so an unrelated edit is a no-op.
       if (sameSet(allowed, row.mentions ?? [])) continue;
@@ -51,21 +50,6 @@ export function deriveMentionsFor(entityType: string, source: ModuleNotification
       }
     }
   };
-}
-
-/** Drop mentioned users who may not read the row; a mention must never leak its existence. */
-async function filterReadable(entityType: string, row: NotificationSubjectRow, userIds: string[]): Promise<string[]> {
-  const accessByUser = await accessForUserIds(userIds);
-  const subject = buildSubjectFromEntity(
-    entityType as ProductEntityType,
-    row as unknown as { id: string; createdBy?: string | null },
-  );
-
-  const accesses = userIds.map((userId) => accessByUser.get(userId)).filter((access) => access !== undefined);
-  if (accesses.length !== userIds.length) return [];
-
-  const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
-  return userIds.filter((_, index) => decisions[index]?.allowed);
 }
 
 function derivesFrom(mode: NonNullable<ModuleNotifications['deriveFrom']>, payload: MutationPayload): boolean {

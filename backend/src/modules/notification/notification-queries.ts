@@ -199,8 +199,10 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
       entityType: notificationsTable.entityType,
       contextId: notificationsTable.contextId,
       tenantId: notificationsTable.tenantId,
+      organizationId: notificationsTable.organizationId,
       actorId: notificationsTable.actorId,
       channelId: notificationsTable.channelId,
+      channelType: notificationsTable.channelType,
     })
     .from(notificationsTable)
     .leftJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, notificationsTable.userId))

@@ -1,9 +1,8 @@
-import { sql } from 'drizzle-orm';
-import { boolean, foreignKey, index, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
-import { productColumns } from '#/db/utils/product-columns';
+import { mentionableColumns, productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
@@ -28,8 +27,8 @@ export const attachmentsTable = snakeCase.table(
       .$type<AttachmentKeys>()
       .notNull()
       .default({} as AttachmentKeys),
-    /** User ids mentioned in `description`, derived server-side on every write (notification source). */
-    mentions: text().array().notNull().default(sql`'{}'::text[]`),
+    // Mentions in the description make attachments a notification source.
+    ...mentionableColumns(),
     ...channelRelationColumns('attachment'),
   },
   (table) => [
