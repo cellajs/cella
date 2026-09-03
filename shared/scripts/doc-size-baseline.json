@@ -1,7 +1,6 @@
 {
-  "recordedAt": "2026-09-02",
+  "recordedAt": "2026-09-03",
   "files": {
-    ".github/copilot-instructions.md": 408,
     "README.md": 141,
     "SECURITY.md": 20,
     "backend/README.md": 366,
@@ -19,7 +18,7 @@
     "cella/MULTI_TENANCY.md": 1399,
     "cella/OTEL.md": 900,
     "cella/PERMISSIONS.md": 2295,
-    "cella/QUICKSTART.md": 382,
+    "cella/QUICKSTART.md": 356,
     "cella/RELEASES.md": 649,
     "cella/SCHEMA_EVOLUTION.md": 3493,
     "cella/SECURITY.md": 54,
