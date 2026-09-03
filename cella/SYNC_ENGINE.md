@@ -6,9 +6,7 @@ This document explains how product data stays current across clients and what th
 
 **Notify-then-fetch**: When relevant data changes, the server sends a small notification and the
 client fetches the changed rows through the normal API, often served from cache, then patches only
-the affected cache entries. The stream carries only rows the recipient may fetch, so a notification
-is a pointer rather than data. The sync system reuses the app's existing data model, storage, and
-permission checks.
+the affected cached client entries. This way, the sync engine reuses the app's existing data model, storage, and permission checks.
 
 ```text
 Database change -> live notification -> normal API fetch -> client cache update
