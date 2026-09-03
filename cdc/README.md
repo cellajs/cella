@@ -37,13 +37,7 @@ Draft-lifecycle product tables carry the publication filter `WHERE published_at 
 
 ### Parse and batch
 
-At startup the worker builds a registry from the backend's `entityTables` and `resourceTables`; unregistered tables are ignored. Handlers produce `{ activity, rowData, oldRowData }`:
-
-- Product updates use `stx.changedFields`; other tables diff old and new WAL tuples.
-- `stx` and `seq` are excluded from diffs so worker stamp-backs do not loop.
-- No-op updates, updates to already-soft-deleted rows, and embedding-cleanup-only writes are ignored.
-- Deletes use the old tuple, hence `REPLICA IDENTITY FULL`.
-- Varchar columns of 10,000+ characters are stripped after change detection; consumers must tolerate their absence from `rowData`.
+At startup the worker builds a registry from the backend's `entityTables` and `resourceTables`; unregistered tables are ignored. Rows that carry `stx.changedFields` (product updates through the API) use it as the change set; everything else diffs the old and new WAL tuples, ignoring the worker's own `stx`, `seq`, and `path` stamps so stamp-backs do not loop. Deletes use the old tuple, hence `REPLICA IDENTITY FULL`. Varchar columns of 10,000+ characters are stripped after change detection; consumers must tolerate their absence from `rowData`.
 
 `TransactionBuffer` holds a transaction and suppresses cascade child deletes and embedding-propagation updates paired with a source delete; survivors enter `FlushBuffer`, which flushes on the first limit reached:
 
@@ -57,7 +51,7 @@ Each flush groups events by type and action (`attachment:update`), which can reo
 
 ### Persist, stamp, and publish
 
-Per group, in order: persist activities (IDs derive from the LSN, duplicates ignored); apply unified deltas (reserve sequence values, apply frontier and count deltas in parallel, bulk-write `seq` back, clear `stx.changedFields`); publish the WebSocket message, then remove deleted embedded IDs from host rows. After each group settles, the worker acknowledges the highest LSN.
+Per group, in order: persist activities (IDs derive from the LSN, so a replay is idempotent), reserve sequence values and apply counter deltas, stamp `seq` back onto the rows, mirror changed channel paths onto `channel_counters`, publish the WebSocket message, then clean up embedded references. Groups of one flush run concurrently; the worker acknowledges the highest LSN once every group has settled.
 
 ### Sequences and counters
 
@@ -67,11 +61,9 @@ Frontier and timestamp keys max-merge; count keys sum with a lower bound of zero
 
 ## Internal API channel
 
-One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: isolated internal path, `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, single-connection limit, 90-second idle timeout.
+One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: isolated internal path, `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, one connection at a time (a new one replaces the old), 90-second idle timeout.
 
-`CdcOutboundMessage` carries the activity, compacted row data, previous location for reparented rows, permission-relevant batch rows, and trace context. After channel-entity creates and updates, the worker copies the row's canonical path to `channel_counters.path` for catch-up authorization; counter recalculation backfills it.
-
-Control messages (`health`, `catchup_complete`, `wal_lag_alert`) bypass the data-message schema. `src/tests/wire-contract.type-check.ts` verifies the outbound type against the backend's `CdcMessage` schema.
+Data messages carry the activity, compacted row data, the previous location of reparented rows, permission-relevant batch rows, and trace context; `src/tests/wire-contract.type-check.ts` pins the outbound type to the backend's `CdcMessage` schema. Control messages (`health`, `catchup_complete`) bypass that schema.
 
 ## Failure and recovery
 
@@ -79,14 +71,14 @@ The slot advances only after processing and is the only durable buffer, so a cra
 
 | Failure | Detection | Recovery |
 | --- | --- | --- |
-| Activity persistence fails | Insert error | Retry three times, then per row; still failing, skip counters and notification. Three consecutive failures open a per-table circuit for 60 seconds, then half-open. |
-| API WebSocket unavailable | Connection drop; slot lag checked every 10 seconds (1 GB warns, 2 GB also unhealthy, both send `wal_lag_alert`) | Pause acknowledgements (WAL stays behind the slot); reconnect with exponential backoff, 1 to 30 seconds. |
+| Activity persistence fails | Insert error | Transient errors retry three times, then per row; still failing, skip counters and notification. Three consecutive failures open a per-table circuit for 60 seconds, then half-open. |
+| API WebSocket unavailable | Connection drop; slot lag checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Hold data acknowledgements so WAL stays behind the slot; reconnect with exponential backoff, 1 to 30 seconds. |
 | Worker more than 10 seconds behind | Commit timestamp lag | Catch-up mode: ignore seeded inserts (`00000000-` or `gen-` IDs); after three transactions under 2 seconds, recalculate counters and send `catchup_complete` so the backend invalidates its entity cache. |
-| Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry takeover 12 times at 500 ms, then every 5 seconds. |
+| Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry the subscription 12 times at 500 ms, then every 5 seconds (the same cadence as any subscribe error). |
 | Transaction never commits | 30-second timer, or a new `BEGIN` | Flush it unfiltered. |
-| Unexpected data | Draft row, or product group without an organization | Drop the draft row (rate-limited warning); log and skip the group, still acknowledging its LSN. |
+| Unexpected data | Draft row, or product group without an organization | Drop the draft row (rate-limited warning); log and skip the whole group, activities included, still acknowledging its LSN. |
 | Slot manually rewound or reset | Counter and sequence writes applied twice | Full counter recalculation. |
-| Slot dropped or `lost` | Unacknowledged changes gone | Recalculate counters; the activity history keeps a gap. |
+| Slot dropped or `lost` | Unacknowledged changes gone | Operator recalculates counters; the activity history keeps a gap. A missing publication makes the worker drop and recreate its slot once, discarding unacknowledged WAL. |
 
 ## Operational constraints
 
@@ -100,7 +92,7 @@ The slot advances only after processing and is the only durable buffer, so a cra
 | Endpoint | Response |
 | --- | --- |
 | `GET /health` on `CDC_HEALTH_PORT` | 204 |
-| `GET /health?depth=full` | JSON snapshot (also sent to the backend every 15 seconds); degraded when replication stops, acknowledgements pause, slot lag hits 2 GB, or a circuit opens |
+| `GET /health?depth=full` | JSON snapshot; `degraded` when acknowledgements pause, the WebSocket is down, a circuit is open, or event-loop lag passes 100 ms; `unhealthy` when replication stops, slot lag hits 2 GB, or event-loop lag passes 1 second. A smaller status payload also goes to the backend every 15 seconds. |
 
 Environment, validated in `src/env.ts` (loads the backend's `.env`):
 
