@@ -14,7 +14,7 @@ Database change -> live notification -> normal API fetch -> client cache update
 
 ## Selective sync
 
-Only product entities sync. A **channel** (`ChannelEntityType`) is a container: REST CRUD, memberships, permission boundaries. A **product** (`ProductEntityType`) is synced content: sequence stamps, notifications, range catchup, merge metadata. The template ships `organization -> attachment`; apps add deeper hierarchies, drafts, embeddings, and Yjs fields.
+Only product entities sync. A **channel** (`ChannelEntityType`) is a container: REST CRUD, memberships, permission boundaries. A **product** (`ProductEntityType`) is synced content: beyond REST CRUD it carries sequence stamps, notifications, range catchup, and merge metadata. The template ships `organization -> attachment`; apps can add deeper hierarchies, drafts, embeddings, and Yjs fields.
 
 | Concept | Meaning |
 | --- | --- |
@@ -26,7 +26,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 | **Summary** | Frontier, counts, and timestamps denormalized onto a channel row, so one read answers for a subtree |
 | **View** | The slice of the stream a client tracks (prefixes, entity types, depth, cursor); the unit catchup authorizes and answers |
 | **Cursor** | Latest sequence position a view has ingested |
-| **Stream cursor** | ID of the last activity a connection received; the server sends it as `offset` and the client returns it on reconnect |
+| **Stream cursor** | ID of the last activity a connection received; sent as `offset`, returned on reconnect |
 | **Range fetch** | Ordinary list request bounded by `seqCursor` |
 | **Tombstone** | Soft-deleted row that remains fetchable so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write (mutation ID, source ID, per-field HLC timestamps) for merge arbitration and echo recognition |
@@ -48,15 +48,13 @@ Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`
 
 ### Ordering
 
-The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then micro-batches committed events by type and action. Product batches are split by `(path, entityType)`, one audience per notification. Channel paths are generated columns; product paths are computed.
+The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then micro-batches committed events by type and action. Product batches are split by `(path, entityType)`, one audience per notification.
 
 Commit order is sequence order across product types. A batch range can contain positions of other types or paths, so `count` is the authoritative batch size; never infer it from range arithmetic.
 
-The API accepts the worker only at `/internal/cdc` ([CDC worker](../cdc/README.md#internal-api-channel)).
-
 ### Counters
 
-Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys follow `<domain>:<metric>:[h:]<type|role>`; `h` marks a **home-only** summary, its absence the **subtree** aggregate. Subtree keys are written to the home node and every ancestor up to the organization, home-only keys to the home node, singletons to the organization row. Counter recalculation rebuilds every key and the canonical paths from table data with the same live-and-published predicates the worker uses.
+Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate. Subtree keys are written to the home node and every ancestor up to the organization, home-only keys to the home node, singletons to the organization row. Recalculation rebuilds every key and the canonical paths from table data with the worker's live-and-published predicates.
 
 | Key | Scope | Meaning |
 | --- | --- | --- |
@@ -78,11 +76,13 @@ Product tables that opt into drafts use a PostgreSQL publication row filter:
 - Draft creates, edits, and deletes never reach the worker.
 - Soft-deleting a published row flows as an update tombstone.
 
-Channel tables are not filtered, because a `publishedAt` filter would break channel-path sync; their `publishedAt` controls invitees, not replication. A worker entrance check and a dispatch veto reject drafts if an app adds a draft column without regenerating the publication. API reads still apply their published-row predicate; drafts remain in the table.
+The filter is the boundary, not the only guard. If an app adds a draft column without regenerating the publication, the worker drops drafts at entrance and dispatch vetoes them; API reads always apply the published-row predicate.
+
+Channel tables stay unfiltered, because a `publishedAt` filter would break channel-path sync. A channel's `publishedAt` means something else: null marks a draft context whose invites are recorded but held until publish.
 
 ### Moves
 
-When an update changes a product path, the worker includes the permission-relevant part of the old row and dispatch compares readability at both locations: readers of both receive a normal update and route the row to its new caches; readers of only the old location receive `moveOut` with the old path, and the notification itself removes the row because no range fetch can return it. A publish plus reparent arrives as an insert without an old row, so no `moveOut`.
+When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` with the old path and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update. A publish plus reparent is an insert, so no `moveOut`.
 
 ## Access
 
@@ -100,9 +100,9 @@ When an update changes a product path, the worker includes the permission-releva
 | `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers; refetch cached active lists |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
 
-A direct unconditional membership proves a `self` view at that node. A `subtree` view also needs a subtree-scoped grant: an elevated role at the node or a grant at the deepest hierarchy level. Prefix sets are proven one prefix at a time. Canonical ancestry comes from `channel_counters.path`, never from a client claim; a forged or stale prefix returns `opaque`, not `forbidden`, so the status is no existence oracle.
+A `self` view needs a direct unconditional membership at the node; a `subtree` view needs a subtree-scoped grant as well: an elevated role at the node, or a grant at the deepest hierarchy level. Prefixes are proven against `channel_counters.path`, never a client claim, and a forged or stale prefix returns `opaque` rather than `forbidden`, so the status leaks no existence.
 
-The client derives views from the user's memberships and the policy matrix before every catchup, so apps declare none by hand: organization-wide and elevated grants produce subtree views, home-scoped grants self views, a set of granted homes one prefix-set view; conditional grants produce no summary views. Changing a view's prefixes, entity types, or depth resets its cursor. Membership state and content cursors advance independently, with no snapshot consistency tokens. Read [Permissions](./PERMISSIONS.md) for the policy model.
+The client derives its views from the user's memberships and the policy matrix before every catchup; apps declare none by hand. Read [Permissions](./PERMISSIONS.md) for the policy model.
 
 ## Client
 
@@ -117,56 +117,47 @@ Membership changes invalidate membership and channel queries. Product notificati
 | Delete-style removal | `action: 'delete'` | Mark the detail stale and invalidate scoped lists; no sync-visible row remains to fetch |
 | Move-out | `action: 'moveOut'` | Remove the row from caches and unseen tracking immediately |
 
-A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. Deletes are never echo-skipped because their `stx` may identify an earlier writer. Echo handling returns before cursor advancement, so catchup can refetch the position.
+A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. Deletes are never echo-skipped, because their `stx` may name an earlier writer.
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A first connection stores frontiers as baselines and fetches nothing; route loaders own initial data. On later connections a view behind its frontier hands the gap to the fetch prioritizer, the viewed organization is fetched at once, and the cursor advances only after ingest.
+Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A first connection stores frontiers as baselines and fetches nothing; route loaders own initial data. On later connections a view behind its frontier hands the gap to the fetch prioritizer, and the cursor advances only after ingest.
 
-A view count that moved since the last catchup signals a removal the client may never see, such as an unpublish or physical delete; the matching list is invalidated. Every catchup also refetches `me` and the user's memberships; a lost channel membership drops that organization's product caches so surviving rows refetch under current permissions.
+A view count that moved since the last catchup reveals a removal the client could never see, such as an unpublish or physical delete, and invalidates the list. Every catchup also refetches the user's memberships, and a lost channel membership drops that organization's product caches.
 
 ### Fetch prioritization
 
-A notification is not fetched at once. The client puts the notified range in a queue and fetches it after a delay set by how urgent the scope is for this client and how loaded the server is:
+A notified range is queued, not fetched at once. The delay depends on how urgent the scope is for this client and how loaded the server is:
 
 ```text
 delay = clamp(tier minimum, this client's fixed slot within the server's spreadWindow, tier maximum)
 ```
 
-Client tiers, decided per scope:
-
-- A viewed channel fetches immediately. At organization level the route decides; below it, a mounted list query carrying the channel id does (prefetches have no observers and do not count).
+- A viewed channel fetches immediately: at organization level the route decides, below it a mounted list query carrying the channel id.
 - A muted or archived channel fetches when opened.
 - Every other channel fetches in the background between 2 and 30 seconds.
 
-The server's `spreadWindow` grows with the organization's online audience and database pool pressure, capped at 120 seconds. The queue merges overlapping ranges per product type and home channel; a new notification never postpones an earlier deadline. The queue flushes early when navigation enters a channel, a channel gains its first observer, the tab hides, or the browser returns online. At flush, all due channels of one organization and product type share one covering fetch, narrowed with `channelId` when the cached channel paths prove a common ancestor (the template fetches org-wide); rows route to their home lists and each covered channel advances to the shared upper bound.
+The server's `spreadWindow` grows with the organization's online audience and database pool pressure, capped at 120 seconds. The queue flushes early when a channel comes into view, the tab hides, or the browser returns online, and one organization's due channels share a single fetch per product type. Fetches start after a view's ingested cursor, so small gaps self-repair; repeated failures fall back to list invalidation and advance, so a range never loops.
 
-Fetches start after a view's ingested cursor, not its newest known position, so small gaps self-repair. Repeated failures and full chunks fall back to list invalidation and advance, so a range never loops.
-
-Apps derive per-user state from the signals in `query/realtime/sync-signals.ts`, never from queue logic. `onChangeEvent` fires for every readable notification before any tier decision, muted and archived channels included, and carries ids only. `onSyncedRows` fires once a range has settled, with the rows, or with an empty `degraded` batch that means invalidate instead of derive.
+Apps derive per-user state from `query/realtime/sync-signals.ts`, never from queue logic: `onChangeEvent` announces every readable notification before any tier decision, with ids only; `onSyncedRows` delivers a settled range's rows, or an empty `degraded` batch that means invalidate instead of derive.
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, and route-loader prefetches reuse the synced lists. A failed stream or a delivery shortfall drops them to a five-minute stale time, so route loaders and reconnects refetch them until a clean catchup restores trust. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream or a delivery shortfall drops them to a five-minute stale time until a clean catchup restores trust. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
 
 ### Unseen tracking
 
-Unseen badges update from delivered rows, mirroring the server predicate: inside the shared `seenWindowMs` window, published, not deleted, not locally seen. Qualifying rows increment, tombstones decrement, marking seen decrements once; ID guards and a reconciliation timestamp prevent double counting. The exact count endpoint replaces the estimate after staleness, focus changes, and catchup; cross-device seen marks reconcile there because `seen_by` does not enter CDC. Seen-tracked types require unconditional channel read; types with conditional row visibility keep endpoint counting.
+Unseen badges update from delivered rows with the server's own predicate (inside `seenWindowMs`, published, not deleted, not locally seen); an exact server recount replaces the estimate on staleness and after catchup, because cross-device seen marks never enter CDC. Seen-tracked types require unconditional channel read; types with conditional row visibility keep endpoint counting.
 
 ### Embeddings
 
-A product can reference other products through an id array column: the **host** row holds the ids, each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` (`hostProduct`, `embeddedProduct`, `hostColumn`); the template configures none. Host and embedded rows sync independently, so patching runs both ways:
-
-- **Embedded row changes.** Notifications and catchup carry the changed embedded ids (`PropagationHint`); after the embedded rows' range fetch the client patches the copies inside cached host rows, keeping whichever copy has the newer `updatedAt`. A same-tab echo returns before propagation, so that mutation updates host products itself.
-- **Host row changes.** Values derived per embedded row, such as a usage count, get no signal of their own, so ingesting a host range compares each row's embedding columns against the cached copy and refetches the lists of embedded rows whose references were added or removed, narrowed to their home channels; an uncached host row touches every id.
-
-When the client invalidates a host list instead of ingesting rows (first connection, opaque view, nothing cached, delivery failure), it also invalidates the embedded products' lists. Derived counts come from the list endpoint only.
+A product can reference other products through an id array column: the **host** row holds the ids, each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` (`hostProduct`, `embeddedProduct`, `hostColumn`); the template configures none. Host and embedded rows sync independently, so patching runs both ways: an embedded row change carries a `PropagationHint` that patches the copies inside cached host rows, and a host row change refetches the lists of embedded rows whose references it added or removed, because derived values such as a usage count come from the list endpoint only.
 
 ## Writes
 
-Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching list and detail caches, the mutation runs with React Query `networkMode: 'offlineFirst'`, success merges the authoritative server row, failure follows module and global error handling, including optimistic rollback where configured.
+Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching caches, success merges the authoritative server row, failure rolls back where configured. Mutations run with React Query `networkMode: 'offlineFirst'`.
 
-An edit attempted offline retries network errors only (three attempts, enough to outlast the connectivity probe), then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay; online writes never wait.
+An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay; online writes never wait.
 
 ### Merge metadata
 
@@ -177,7 +168,7 @@ HLC: 1710500000123:0001:abcde
      unix millis : counter : source hash
 ```
 
-Comparison uses milliseconds, then counter, then source. Each tab advances its own clock; the server advances its clock from received and stored timestamps before generating its own; clients never advance from remote values. This is deterministic last-writer-wins, not a causal clock.
+Comparison uses milliseconds, then counter, then source. Each tab advances its own clock; the server advances its clock from received timestamps before generating its own. This is deterministic last-writer-wins, not a causal clock.
 
 Value shape selects merge behavior:
 
@@ -192,18 +183,16 @@ Value shape selects merge behavior:
 }
 ```
 
-Update schemas require `fieldTimestamps` to match the scalar operation keys exactly; missing, unrelated, malformed, and array-delta timestamps are rejected. The server omits scalar values that lose HLC comparison and returns the authoritative row, never a conflict response. Trusted server updates advance beyond stored scalar clocks and assign one server HLC.
-
-Array deltas remove first, then add. Replaying the same delta is idempotent, but the operation is not a commutative CRDT: opposite concurrent operations are order-sensitive, and the resolved array is written whole. Merge resolution is no SQL compare-and-set and takes no `FOR UPDATE` lock, so overlapping updates can race, especially whole-array writes and `stx` metadata.
+`fieldTimestamps` must name exactly the scalar operation keys. The server omits scalar values that lose HLC comparison and returns the authoritative row, never a conflict response. Array deltas remove first, then add; replaying one is idempotent, but opposite concurrent deltas are order-sensitive and the resolved array is written whole. Merge resolution takes no `FOR UPDATE` lock, so overlapping updates can race.
 
 ### Paused writes
 
-Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data; hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps. Only paused mutations are persisted.
+Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data; hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps.
 
 While offline, before a queued mutation completes a round trip, the queue is rewritten:
 
 - **Squash** folds queued same-entity updates into one request.
-- **Coalesce** absorbs an update over a still-queued create into that create (top-level `id` and batch `data[]` shapes).
+- **Coalesce** absorbs an update over a still-queued create into that create.
 - **Cancel** drops a still-queued create and its updates when the entity is deleted, finishing the deletion cache-side.
 
 Persisted variables are also rewritten during schema evolution. Idempotency is operation-specific: attachment create checks its mutation ID against the stored `stx` and can return an existing batch; update and delete do not.
@@ -220,7 +209,7 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 
 ### Detail cache
 
-The server keeps an authenticated TTL cache for enriched product detail responses, keyed by entity type and ID. Hits recheck permission and draft visibility, misses coalesce concurrent requests, and CDC invalidates changed entries, including batch rows and physical deletes. Defaults: 5,000 entries, 10-minute TTL. List fan-out bypasses it.
+The server keeps an authenticated TTL cache for enriched product detail responses, keyed by entity type and ID. Hits recheck permission and draft visibility, and CDC invalidates changed entries. Defaults: 5,000 entries, 10-minute TTL. List fan-out bypasses it.
 
 ### Yjs
 

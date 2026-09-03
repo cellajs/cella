@@ -6,11 +6,11 @@ This document explains the basics of Cella.
 
 Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**. Most
 feature work follows a familiar path: store rows in PostgreSQL, expose API endpoints, and read them
-in React. Live updates, offline support, and tenant isolation build on that path.
+in React. Live updates, offline support, and tenant isolation are supported out-of-the-box.
 
 ## Overview
 
-Full production stack; Yjs is optional, and CDC and Yjs can be **cohosted on the backend VM**.
+Below you see a typical full production stack. However, Yjs is optional and CDC and Yjs can be **cohosted on the backend VM** to reduce costs.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -36,8 +36,8 @@ Full production stack; Yjs is optional, and CDC and Yjs can be **cohosted on the
 | **PostgreSQL owns truth** | Business data, relationships, audit history, and sync ordering start in one database. |
 | **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
 | **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
-| **One hierarchy describes the product** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC) and Yjs collaboration run separately or alongside the API without changing feature code. |
+| **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
+| **Workers add capabilities** | Change data capture (CDC) and Yjs workers run separately or alongside the API. |
 
 Cella favors a narrow stack over replaceable abstractions: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
@@ -50,15 +50,15 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Structural rule: every product belongs to a channel, carries its tenant identity, and stays connected to its root channel through database constraints; change the hierarchy and schema together. Recipe: [New entity](./ADD_ENTITY.md).
+Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Recipe: [New entity](./ADD_ENTITY.md).
 
 ## Selective sync engine
 
-Channel entities stay conventional; product entities can opt into live updates and offline use without changing their API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path. See [Client](./CLIENT.md), [Sync engine](./SYNC_ENGINE.md), and [Schema evolution](./SCHEMA_EVOLUTION.md).
+Channel entities stay conventional CRUD. Product entities get live updates and offline use without a very different API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path. See [Sync engine](./SYNC_ENGINE.md), [Client (React)](./CLIENT.md) and [Schema evolution](./SCHEMA_EVOLUTION.md).
 
 ## Trust boundaries
 
-Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password MFA. Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Authorization and isolation are separate layers:
+Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Cella has a layered approach to balance defense in depth, maintainability and performance.
 
 | Layer | Responsibility |
 | --- | --- |
@@ -73,7 +73,7 @@ The permission engine lives in `shared/`, so the API and the optional Yjs relay 
 
 Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples; shared mocks serve docs, seeds, tests, and load tests.
 
-A backend module declares its capabilities once in `defineBackendModule` (mutation handlers, Yjs materializers, scheduled jobs); app-owned table lists for partitioning and grants live in the pinned `backend/src/db/product-tables.ts`, keeping side-effect migrations and the API entrypoint cella-owned. Node services share OpenTelemetry setup ([Observability](./OTEL.md)); CDC and Yjs are independent workers with health and shutdown contracts; Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)); CDC and Yjs are independent workers with health and shutdown contracts; Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
@@ -84,8 +84,8 @@ Flat-root monorepo:
 ```text
 .
 ├── backend       Hono API, Drizzle schema, migrations, emails, and seeds
-├── frontend      React SPA/PWA and browser-side data layer
-├── shared        Entity config, permissions, types, and cross-tier utilities
+├── frontend      React SPA/PWA with React Query client
+├── shared        Hierarchy and entity config, permissions, types, and cross-tier utils
 ├── sdk           Generated OpenAPI client, types, and Zod schemas
 ├── cdc           PostgreSQL change-data-capture worker
 ├── yjs           Optional collaborative-editing relay

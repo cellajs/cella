@@ -4,7 +4,7 @@ This document explains how you can get started building a modern web app with ce
 
 ## Create
 
-The [`create-cella`](https://github.com/cellajs/cella-cli) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs:
+The [`create-cella`](https://github.com/cellajs/cella-cli) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs. Requirements: docker, node. Recommended: [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh), [gh cli](https://cli.github.com/)
 
 ```bash
 pnpm create @cellajs/cella my-app
