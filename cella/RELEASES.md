@@ -23,7 +23,7 @@ Production deploys fire only when the `cella` GitHub Release is published: [depl
 
 The heavy suites (full tests + Storybook component tests) run **only on the release-please PR**, as required status checks in [ci.yml](../.github/workflows/ci.yml):
 
-- Feature PRs run cheap checks only (`lint`, `pr-title`, `schema-bust-gate`). The heavy jobs report `skipped`, which a required check treats as a pass.
+- Feature PRs run cheap checks only (`lint`, `pr-title`, `schema-bust-gate`, `frontend-build`). The heavy jobs report `skipped`, which a required check treats as a pass.
 - Each merge to `main` refreshes the release PR, and the heavy jobs run for real against current `main`.
 - The release PR cannot merge until they pass, so a broken `main` blocks the release before any tag or deploy.
 

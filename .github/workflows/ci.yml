@@ -4,7 +4,7 @@ name: CI
 permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
-#   • Every PR: cheap checks (lint, pr-title, schema-bust-gate) for fast feedback.
+#   • Every PR: cheap checks (lint, pr-title, schema-bust-gate, frontend-build) for fast feedback.
 #   • Release PR only: the heavy suites (test, storybook-test) run on the
 #     release-please PR. That PR is what you merge to cut the release + deploy,
 #     so gating its merge gates production. On feature PRs these jobs are
@@ -84,6 +84,34 @@ jobs:
       # (infra/resources/compute.ts), so a stale copy must fail the PR.
       - name: Check compose model artifact is committed
         run: pnpm --filter infra compose:check
+
+  # Production frontend build. Cheap (~1 min): runs on every PR. Some breakage only surfaces at
+  # build time (a repo-doc import the MDX include regex refuses, a broken relative import in a
+  # docs wrapper) and would otherwise fail the release deploy, which builds the frontend from the tag.
+  # Apps keep their release-please CHANGELOG.md at the repo root, a path cella itself never builds.
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter frontend build
 
   # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
   # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
