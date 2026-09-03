@@ -53,8 +53,6 @@ Each entity module registers its query keys and delta fetch once in its `query.t
 Cache subscribers, not extra stores:
 
 - **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map for interface affordances, and `ancestorSlugs` for URLs. It never replaces backend permission checks.
-- **Download feeding**: the attachment download service queues every persisted attachment row that appears in a list query, so visible files become available offline.
-- **Blob cleanup**: a successful attachment delete removes matching local blobs and queue rows.
 - **Unseen counts**: sync-delivered rows bump badge counts; an exact server recount replaces the estimate on staleness and after catchup.
 
 ## Mutations
@@ -80,7 +78,7 @@ The persister snapshots the cache into the per-user database and restores it on 
 | **Session** (`offlineAccess=false`) | One `s-<uuid>` scope per tab | Survives reload; scopes of closed tabs are swept on a later startup | Current route and channel on demand |
 | **Offline** (`offlineAccess=true`) | Shared `rq` scope | Survives tab and browser restarts | Current channel first, then other accessible channels |
 
-Two version stamps guard every restore. A `clientCacheVersion` mismatch wipes cached queries but keeps paused mutations. A schema version behind the bundle runs the boot lens migration; one ahead of it stops persisting rather than downgrade newer data. Read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
+Two version stamps guard every restore; read [Schema evolution](./SCHEMA_EVOLUTION.md) before changing a cached wire shape.
 
 ## The per-user database
 
@@ -94,7 +92,7 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `downloadQueue` | Background download work |
 | `failedSync` | Mutations quarantined after a 4xx error, for export and manual repair |
 
-The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in. Impersonation never binds the impersonated user's database.
+The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in.
 
 ## Cold start to live
 
@@ -105,7 +103,3 @@ Boot order, cached data first:
 3. The persister restores the cache scope.
 4. One tab is elected leader, performs catchup, and owns the live connection; paused mutations resume after that catchup.
 5. Route loaders fill the current view; background fill freshens the current organization's lists, other organizations with offline access.
-
-## Tabs and upgrades
-
-The service worker precaches the app shell and runtime-caches docs and grammar chunks, never API responses. Leader election and old tabs after a deploy: [Multiple tabs](./SYNC_ENGINE.md#multiple-tabs) and [Schema evolution](./SCHEMA_EVOLUTION.md).

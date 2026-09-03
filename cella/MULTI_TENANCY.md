@@ -79,8 +79,6 @@ the shared engine, and a contextless insert passes RLS.
 | Tenant and root channel agree | Composite foreign key such as `(tenant_id, organization_id)` | Does not authorize the actor |
 | Product identity cannot move | Shared product trigger makes `tenant_id` and root channel immutable after insert | Does not validate the insert; deeper ancestor IDs not covered |
 | Membership identity, activity log | Immutability triggers on membership identity columns; activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits; `admin_role` can delete activities |
-| Duplicate identity is rejected | Primary keys and unique constraints | Does not establish tenant ownership |
-| Support tables such as `yjs_documents` | Owning module's foreign keys, query scope, update privileges, constraints | No automatic product triggers |
 
 ## Database roles
 
@@ -95,26 +93,6 @@ that refuse the attribute, with only a notice, so check the role on a new provid
 system administrator is not `admin_role`; their requests use the runtime connection and normal
 request scope. Never use the admin connection in a request handler; it removes the RLS backstop.
 
-## Failure modes
-
-| Symptom | Likely boundary |
-| --- | --- |
-| A protected product query unexpectedly returns `[]` | The code used `baseDb`, omitted a tenant helper, or selected the wrong tenant |
-| A request cannot enter a tenant or channel | Guard or membership validation failed before the operation |
-| The request enters the channel but cannot perform an action | The permission engine denied it |
-| A row combines a tenant with another tenant's root channel | The composite foreign key rejects it |
-| A mutation changes `tenant_id` or the root channel | The immutability trigger rejects it |
-
 ## Verification
 
-| Location | Current responsibility |
-| --- | --- |
-| `backend/src/db/rls-helpers.ts` | Tenant SELECT and write-through policy builders |
-| `backend/src/db/tenant-context.ts` | Scoped transactions and session variables |
-| `backend/scripts/migrations/10-rls.migration.ts` | Table classification, ownership, forced RLS, and grants |
-| `backend/scripts/migrations/99-verify.migration.ts` | Generated checks for triggers, forced RLS, grants, partitions, and the CDC publication |
-| `backend/src/db/immutability-triggers.ts` | Protected identity columns and append-only rules |
-| `backend/tests/integration/rls-security.test.ts` | Runtime-role read isolation, write-through behavior, and structural backstops |
-| `backend/tests/integration/schema-verification.test.ts` | Catalog checks under the integration-test role setup |
-| `backend/tests/security/cross-tenant.test.ts` | Normal API tenant-guard behavior |
-| `backend/tests/security/cross-org.test.ts` | Normal API channel and permission behavior |
+Builders and helpers: `backend/src/db/rls-helpers.ts`, `tenant-context.ts`, `immutability-triggers.ts`; migrations `10-rls` (classification, ownership, forced RLS, grants) and `99-verify` (generated checks); tests `backend/tests/integration/rls-security.test.ts`, `schema-verification.test.ts`, `backend/tests/security/cross-tenant.test.ts`, `cross-org.test.ts`.

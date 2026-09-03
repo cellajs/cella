@@ -43,12 +43,6 @@ sent back to clients.
 | YJS | `{appName}-yjs` | No | None currently | Observable gauges | No |
 | Frontend | `{appName}-frontend` | Fetch only | Via `FetchInstrumentation` | None | Yes (→ devtools) |
 
-The frontend has no secret ingest key (no secrets in browser bundles); `maplePublicIngestKey` in `appConfig` is safe to bundle and exports browser telemetry directly to Maple.
-
-### HTTP semantic conventions
-
-Backend auto-instrumentation emits the **stable** OTel HTTP attributes (`http.request.method`, `http.response.status_code`, `url.full`, …), not the legacy `http.*` keys. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both key sets during a migration; an explicit value wins over the shared factory's default.
-
 ## Add a worker
 
 Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTTP, a health endpoint; CDC is the reference:
@@ -66,18 +60,6 @@ Serve `createHealthApp({ version, full })` from `shared/health-app`; `full()` re
 ### Metrics
 
 Add observable gauges for runtime state, and counters and histograms for request-scoped measurements (see the backend sync-metrics module):
-
-```typescript
-const meter = otel.meterProvider.getMeter("myworker-health");
-
-meter
-  .createObservableGauge("myworker.connections.active", {
-    description: "Active connections",
-  })
-  .addCallback((result) => {
-    result.observe(getConnectionCount());
-  });
-```
 
 ## Add tracing
 

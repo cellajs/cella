@@ -78,8 +78,6 @@ One final stack update reaps every displaced generation
 (CI passes `--defer-reap` and runs that update as a follow-up `reap` job)
 ```
 
-The LB targets the host port each service's compose profile publishes.
-
 The primary service owns migrations. `cdc` has no public health endpoint; its replacement is confirmed by the primary public service coming up healthy.
 
 **Rollback:** nothing is retained for two generations. Commit a revert and redeploy: same forward path, every service recreated (cdc in place), cached generation reused because `genId` is content-addressed.
@@ -104,8 +102,6 @@ The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
 ```
 
-Implementation: [tasks/deploy-run.ts](../infra/tasks/deploy-run.ts) via [tasks/deploy.ts](../infra/tasks/deploy.ts); the stack lock is released in `finally`, boot diagnostics are pulled on failure. Cutover: [Rollout strategies](#rollout-strategies).
-
 - Pushes to main auto-deploy **staging**. Bootstrap a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main; until `Pulumi.staging.yaml` carries the bootstrap marker the deploy job is skipped. The newest push cancels a superseded in-flight staging run (`cancel-in-progress`); production rollouts never cancel. Manual: Actions → Deploy → Run workflow → `staging`.
 - **Production** deploys only on a published release or a manual dispatch. For a manual promote, give the `production` GitHub Environment required reviewers; the run then pauses for approval.
 
@@ -126,24 +122,16 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | **stop-first** | cdc (holds one Postgres replication slot) | Pulumi provisions only the new generation, replacing the old in the same `up`; the new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
 | **exclusive** (`singleVM`) | the backend VM when it hosts a stop-first worker | Plan marked `exclusive` in [tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts): `drainSeconds` 0, no old IPs; the cutover health-gates, then points the LB pool straight at the new generation. | Yes, on that host. Split-VM (the default) is unaffected. |
 
-**`drainPolicy`** tunes how the old generation leaves the LB: `requests` (HTTP; `onMarkedDownAction: none`, in-flight requests finish) for backend/frontend/mcp, or `reconnect` (WebSocket; sessions shed, clients re-dial and resync from durable state) for yjs.
-
-[tasks/rollout.ts](../infra/tasks/rollout.ts) sequences the two waves in [Deploy flow](#deploy-flow). Internal consumers reach a service through the LB's ACL-guarded **internal route** at `@{<svc>.internalHost}:@{<svc>.internalPort}`, stable across cutovers; `@{<svc>.privateIp}` resolves a same-stack generation IP baked at deploy time. A frontend **content** release is an S3 upload only; a Caddy/CSP/cloud-init change replaces the frontend VM.
-
 ### Runtime secret delivery
 
 Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` the boot runner writes from Secret Manager at boot.
 
 - **Every secret value must be a single line** (an `env_file` is line-based). Store multi-line values such as a PEM certificate **base64-encoded** and decode them in the consuming service, as `DATABASE_SSL_CA` does (encoded by the postgres store in [resources/stores/postgres-managed.ts](../infra/resources/stores/postgres-managed.ts), decoded in the db clients). The rule lives in [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the boot runner.
 - An undeliverable `required` secret fails hydration and blocks boot, rather than crash-looping behind a 502.
-- **The secret manifest is baked into cloud-init**: the per-service list of secrets a VM hydrates (metadata only, never values), built by Pulumi ([resources/compute.ts](../infra/resources/compute.ts)).
-- **Deliverability is preflighted** before any VM rolls: the deploy asserts every `required` secret can be hydrated the way a VM will, failing with the offending env vars ([tasks/assert-secrets-deliverable.ts](../infra/tasks/assert-secrets-deliverable.ts): **Verify runtime secrets are deliverable**, next to **Verify VM IAM grants**).
 
 ### Certificate issuance and recovery
 
-A new service's DNS record must propagate before Scaleway requests its Let's Encrypt certificate; otherwise ACME resolvers see `NXDOMAIN` and leave a terminally errored certificate Scaleway never retries. [`DnsPropagationGate`](../infra/resources/dns-cert-gates.ts) waits for public resolvers to return the LB IP first; `CertReadyGate` surfaces ACME failure details and delays frontend attachment until the certificate is ready. Both gates are create-only.
-
-The deploy runs [`repair-certs.ts`](../infra/tasks/repair-certs.ts) before the base stack update: it removes terminally errored certificates from Pulumi state (a dependent frontend makes Pulumi refuse, preserving TLS material in use), then from Scaleway, so gated issuance can rerun. Manual run: `pnpm --filter infra repair-certs --stack <stack>`.
+Certificate issuance waits for the new DNS record to propagate ([dns-cert-gates.ts](../infra/resources/dns-cert-gates.ts)), and every deploy first runs [repair-certs.ts](../infra/tasks/repair-certs.ts) to clear terminally errored certificates; manual run: `pnpm --filter infra repair-certs --stack <stack>`.
 
 ## Configuration
 
@@ -154,9 +142,6 @@ All tunable infra config lives in committed, type-checked files under [config/](
 | [config/services.config.ts](../infra/config/services.config.ts) | Per-service VM size (`instanceType`, required), replacement strategy, drain policy, LB routing, env; which services exist comes from `appConfig.services.<name>.enabled` | routine CI deploy |
 | [config/general.config.ts](../infra/config/general.config.ts) | DB node type & volume, asset retention | DB fields via CLI **Apply infra change** (bootstrap-owned RDB); the rest via routine CI deploy |
 | [config/runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts) | Which services receive each runtime secret | routine CI deploy |
-
-- Pulumi config holds only the encryption salt, the `infra:bootstrapComplete` marker CI gates on, the transient DB public-endpoint break-glass toggle (`infra:dbPublicEndpoint` / `infra:dbPublicAcl`), and the bootstrap `computeDeferred` lifecycle marker.
-- Rollout state and the stack lock: [control object](../infra/README.md#vocabulary), [lib/stack/README](../infra/lib/stack/README.md).
 
 ## Changing infrastructure
 
@@ -202,14 +187,10 @@ pnpm infra
 4. Creates the required credentials.
 5. Configures GitHub (if `gh` is authenticated).
 6. Optionally runs the first `pulumi up` (registry, DB, network; no compute yet).
-7. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app; declining leaves it to CI (step 5).
+7. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app; declining leaves it to CI (step 4).
 8. Offers to **revoke the bootstrap key** as its last call.
 
-### 4. Compute base image
-
-Service VMs boot from Scaleway's stock **`docker`** marketplace image (`compute.image` in [config/general.config.ts](../infra/config/general.config.ts)); there is no image bake. Cloud-init writes the boot plan, logs into the registry, and `docker run`s the boot runner (`infra-boot`, host Docker socket mounted), which owns compose/env files, secret hydration, image pull, migrate, and app start ([Updating the boot runner](#updating-the-boot-runner)).
-
-### 5. Commit and push
+### 4. Commit and push
 
 1. Commit `infra/Pulumi.<mode>.yaml` and push.
 2. CI needs the GitHub Environment secrets (the local wizard does not). If `gh` was authenticated, bootstrap already set them on the stack's Environment; otherwise add them under **Settings → Environments → `<mode>` → Environment secrets** (environment-scoped, not repo-level):
@@ -222,19 +203,29 @@ Service VMs boot from Scaleway's stock **`docker`** marketplace image (`compute.
 | `SCW_PROJECT_ID` | Scaleway project ID |
 | `SCW_ORGANIZATION_ID` | Scaleway organization ID |
 
-### 6. Revoke the bootstrap key
+### 5. Revoke the bootstrap key
 
 Do this immediately after bootstrap. The wizard's final step covers it; if you declined or it failed:
 
 1. Delete the key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys).
 2. Optionally delete the temporary bootstrap application.
 
-### 7. Sign in as the first admin
+### 6. Sign in as the first admin
 
 The one-shot `backend-release` companion (the migrate step on every new generation) seeds a single admin when the users table is empty ([backend/src/main.migrate.ts](../backend/src/main.migrate.ts), idempotent), from the **required** `admin-email` runtime secret (`ADMIN_EMAIL`) the wizard prompts for; the deploy preflight refuses to roll while it is missing.
 
 1. Open the app and request a magic link for the admin email.
 2. Sign in. If magic links do not arrive, seed the Brevo API key (or your email provider's) via **Manage runtime secrets**.
+
+## Architecture reference
+
+Resource modules, layer order, and the infra file layout: [infra/README.md](../infra/README.md).
+
+## Advanced operations
+
+### Seed the admin by hand
+
+When the magic link for the first admin never arrives and the runtime secrets are right, seed directly.
 
 **Fallback: seed by hand** via the serial console (backend instance in the [Scaleway console](https://console.scaleway.com/instance/servers) → **Console**, root password on the instance page), using the bundled seed runner ([backend/scripts/seeds-bundle.ts](../backend/scripts/seeds-bundle.ts)) with the `backend-release` image and its `.env`/`.env.runtime` (`DATABASE_ADMIN_URL`):
 
@@ -263,32 +254,6 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
    pnpm infra   # → "Public DB access: OPEN, close it"
    ```
 
-## Architecture reference
-
-Resource modules, layer order, and the infra file layout: [infra/README.md](../infra/README.md).
-
-### How config flows
-
-```
-shared/config/config.default.ts    → appConfig (slug, domain, URLs, S3 settings)
-shared/config/config.<mode>.ts     → per-mode overrides
-        ↓
-infra/config/engine-config.ts      → loads the app description the deploy needs
-                                     (from `shared`, or the INFRA_CONFIG_MODULE
-                                     module pointer in package mode)
-        ↓
-infra/config/*.config.ts           → app-owned sizing/feature knobs (VMs, DB, secrets map)
-        ↓
-infra/pulumi-context.ts            → stack identity + derived naming (the stack
-                                     name IS the mode; APP_MODE derives from it)
-        ↓
-infra/resources/*.ts               → declare all resources from config + naming
-        ↓
-Pulumi.<stack>.yaml                → encryption salt + transient operator toggles only
-```
-
-## Advanced operations
-
 ### Reset the database
 
 Rebuilds the app's logical database from migrations plus the admin seed. **Pre-production only, or with services deliberately quiesced: a hard outage.** `pnpm infra` → **Reset database** takes a backup (aborting unless it reports ready), deletes and recreates the logical database over the Scaleway API with a bootstrap key, and re-grants both roles; it never exposes the database and never runs `pulumi up`. Then, on the serial console, re-run the migrate companion, which also seeds the admin from the `ADMIN_EMAIL` runtime secret while the users table is empty ([main.migrate.ts](../backend/src/main.migrate.ts)):
@@ -302,19 +267,7 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 
 - **Nothing but you stops this.** Scaleway's API deletes a live database with connected clients and an active replication slot; the typed `<database>@<instance>` confirmation is the only guard.
 - **Re-granting is mandatory, and the task owns it.** Deleting a database drops its Scaleway privileges; neither a recreate nor a backup restore brings them back (`pg_dump` carries table ACLs, not database-level ones), so without it `CONNECT` is absent and the app reports `database_unreachable`.
-- **Pulumi is untouched.** Scaleway resource IDs are name-derived, so a same-name recreate keeps stack state correct.
-- **The CDC worker needs no restart.** It re-ensures its replication slot on every retry.
 - If the task fails after the delete, it prints the exact `scw rdb backup restore` command plus the two `privilege set` calls a restore does not perform.
-
-### Updating the boot runner
-
-The boot runner (`infra-boot`) is a registry container CI rebuilds per commit ([boot/Dockerfile](../infra/boot/Dockerfile)), so any change under [boot/](../infra/boot/) ships on the next deploy. Local build:
-
-```bash
-pnpm --filter infra boot:image   # tsup bundle + docker build (tag via BOOT_IMAGE)
-```
-
-Set `compute.image` to a literal image UUID only to pin a base image for rollback.
 
 ### Key rotation
 
@@ -332,15 +285,11 @@ Set `compute.image` to a literal image UUID only to pin a base image for rollbac
 3. Syncs the new `PULUMI_CONFIG_PASSPHRASE` to the GitHub Environment (when `gh` is authenticated).
 4. Reminds you to commit `infra/Pulumi.<stack>.yaml`.
 
-No bootstrap key is needed: any key with state-bucket access works. A drifted or missing `PULUMI_CONFIG_PASSPHRASE` Environment secret needs no rotation: every **Resume**/**Rotate keys** run re-syncs it when `gh` is authenticated.
-
 > Losing the current passphrase means existing secret outputs cannot be decrypted; there is no recovery. Actions secrets are write-only, so the GitHub copy keeps CI working but can never be viewed. Keep your password-manager copy current.
 
 ### Teardown
 
 `pnpm infra` → **Teardown** deletes every resource to stop billing without holding owner-tier credentials ([Credentials](#credentials)): it prompts for a transient bootstrap-grade key (`SCW_TEARDOWN_*` env for unattended runs), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
-
-**Manual fallback (lost passphrase):** delete by hand in the console, in dependency order: load balancer (+IP) → instance (+volumes, +IP) → database → registry namespace → secrets → buckets (empty incl. versions, then delete; state bucket last) → private network → VPC → IAM apps/policies → DNS records → the now-empty project. The database and VPC need an owner or full-access key, not the CI key.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to re-bootstrap a still-running stack; live resources stay.
 

@@ -50,11 +50,11 @@ Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`
 
 The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then micro-batches committed events by type and action. Product batches are split by `(path, entityType)`, one audience per notification.
 
-Commit order is sequence order across product types. A batch range can contain positions of other types or paths, so `count` is the authoritative batch size; never infer it from range arithmetic.
+Commit order is sequence order across product types.
 
 ### Counters
 
-Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate. Subtree keys are written to the home node and every ancestor up to the organization, home-only keys to the home node, singletons to the organization row. Recalculation rebuilds every key and the canonical paths from table data with the worker's live-and-published predicates.
+Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
 
 | Key | Scope | Meaning |
 | --- | --- | --- |
@@ -76,13 +76,11 @@ Product tables that opt into drafts use a PostgreSQL publication row filter:
 - Draft creates, edits, and deletes never reach the worker.
 - Soft-deleting a published row flows as an update tombstone.
 
-The filter is the boundary, not the only guard. If an app adds a draft column without regenerating the publication, the worker drops drafts at entrance and dispatch vetoes them; API reads always apply the published-row predicate.
-
-Channel tables stay unfiltered, because a `publishedAt` filter would break channel-path sync. A channel's `publishedAt` means something else: null marks a draft context whose invites are recorded but held until publish.
+Channels tables also have a `publishedAt` but it means something else entirely: it marks a channel to indicate invites are recorded but held until publish. So it doesn't have the filtering that product tables have.
 
 ### Moves
 
-When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` with the old path and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update. A publish plus reparent is an insert, so no `moveOut`.
+When an update moves a product to a path a subscriber can no longer read, that subscriber receives `moveOut` with the old path and drops the row, because no range fetch could return it. Subscribers who can read both locations receive a normal update.
 
 ## Access
 
@@ -100,8 +98,6 @@ When an update moves a product to a path a subscriber can no longer read, that s
 | `opaque` | Rows may be readable, but the summary is not fully proven | Reveal no numbers; refetch cached active lists |
 | `forbidden` | User has no readable scope in the organization | Drop the view |
 
-A `self` view needs a direct unconditional membership at the node; a `subtree` view needs a subtree-scoped grant as well: an elevated role at the node, or a grant at the deepest hierarchy level. Prefixes are proven against `channel_counters.path`, never a client claim, and a forged or stale prefix returns `opaque` rather than `forbidden`, so the status leaks no existence.
-
 The client derives its views from the user's memberships and the policy matrix before every catchup; apps declare none by hand. Read [Permissions](./PERMISSIONS.md) for the policy model.
 
 ## Client
@@ -117,13 +113,11 @@ Membership changes invalidate membership and channel queries. Product notificati
 | Delete-style removal | `action: 'delete'` | Mark the detail stale and invalidate scoped lists; no sync-visible row remains to fetch |
 | Move-out | `action: 'moveOut'` | Remove the row from caches and unseen tracking immediately |
 
-A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. Deletes are never echo-skipped, because their `stx` may name an earlier writer.
+A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`.
 
 ### Catchup
 
 Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A first connection stores frontiers as baselines and fetches nothing; route loaders own initial data. On later connections a view behind its frontier hands the gap to the fetch prioritizer, and the cursor advances only after ingest.
-
-A view count that moved since the last catchup reveals a removal the client could never see, such as an unpublish or physical delete, and invalidates the list. Every catchup also refetches the user's memberships, and a lost channel membership drops that organization's product caches.
 
 ### Fetch prioritization
 
@@ -136,8 +130,6 @@ delay = clamp(tier minimum, this client's fixed slot within the server's spreadW
 - A viewed channel fetches immediately: at organization level the route decides, below it a mounted list query carrying the channel id.
 - A muted or archived channel fetches when opened.
 - Every other channel fetches in the background between 2 and 30 seconds.
-
-The server's `spreadWindow` grows with the organization's online audience and database pool pressure, capped at 120 seconds. The queue flushes early when a channel comes into view, the tab hides, or the browser returns online, and one organization's due channels share a single fetch per product type. Fetches start after a view's ingested cursor, so small gaps self-repair; repeated failures fall back to list invalidation and advance, so a range never loops.
 
 Apps derive per-user state from `query/realtime/sync-signals.ts`, never from queue logic: `onChangeEvent` announces every readable notification before any tier decision, with ids only; `onSyncedRows` delivers a settled range's rows, or an empty `degraded` batch that means invalidate instead of derive.
 
@@ -183,19 +175,13 @@ Value shape selects merge behavior:
 }
 ```
 
-`fieldTimestamps` must name exactly the scalar operation keys. The server omits scalar values that lose HLC comparison and returns the authoritative row, never a conflict response. Array deltas remove first, then add; replaying one is idempotent, but opposite concurrent deltas are order-sensitive and the resolved array is written whole. Merge resolution takes no `FOR UPDATE` lock, so overlapping updates can race.
+`fieldTimestamps` must name exactly the scalar operation keys. The server omits scalar values that lose HLC comparison and returns the authoritative row, never a conflict response. Merge resolution takes no `FOR UPDATE` lock, so overlapping updates can race.
 
 ### Paused writes
 
 Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data; hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps.
 
-While offline, before a queued mutation completes a round trip, the queue is rewritten:
-
-- **Squash** folds queued same-entity updates into one request.
-- **Coalesce** absorbs an update over a still-queued create into that create.
-- **Cancel** drops a still-queued create and its updates when the entity is deleted, finishing the deletion cache-side.
-
-Persisted variables are also rewritten during schema evolution. Idempotency is operation-specific: attachment create checks its mutation ID against the stored `stx` and can return an existing batch; update and delete do not.
+Idempotency is operation-specific: attachment create checks its mutation ID against the stored `stx` and can return an existing batch; update and delete do not.
 
 ## Resilience
 
@@ -205,11 +191,7 @@ Old tabs and old queued writes survive a wire-shape deploy through lenses: [Sche
 
 ### Multiple tabs
 
-The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards notifications through BroadcastChannel; a follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue; a restoring tab absorbs the queues of dead tabs, and replay is idempotent, so absorbing a queue twice is safe.
-
-### Detail cache
-
-The server keeps an authenticated TTL cache for enriched product detail responses, keyed by entity type and ID. Hits recheck permission and draft visibility, and CDC invalidates changed entries. Defaults: 5,000 entries, 10-minute TTL. List fan-out bypasses it.
+The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards notifications through BroadcastChannel; a follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
 
 ### Yjs
 
@@ -277,3 +259,7 @@ interface CatchupChangeSummary {
 ```
 
 `seqCursor=51,150` is the inclusive bounded range and the only form. Range fetches may carry `channelId` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`); never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
+
+### Detail cache
+
+The server keeps a TTL cache of enriched product detail responses (5,000 entries, 10 minutes) that CDC invalidates; hits recheck permission and draft visibility, list fan-out bypasses it.

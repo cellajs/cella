@@ -40,8 +40,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 
 ### Database access patterns
 
-- **Product entity handlers** wrap reads in `tenantRead(ctx, fn)` (RLS-scoped SELECT) and writes in `tenantContext(ctx, fn)` (read-write transaction; sets RLS session vars so internal SELECTs/RETURNING pass; write authorization stays with guards, permissions, FKs and triggers), both from `backend/src/db/tenant-context.ts`.
-- **Channel entity handlers** use `ctx.var.db` (baseDb) directly, no RLS.
+- Product entity handlers use the tenant helpers in `backend/src/db/tenant-context.ts`; channel entity handlers use `ctx.var.db` (baseDb).
 
 Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
@@ -102,13 +101,12 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from the cached entity version; idempotency via `isTransactionProcessed()` (`backend/src/utils/idempotency.ts`) against the `activities` table.
 - **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc`.
-- **Realtime frontend** (`frontend/src/query/realtime/`): `AppStream`, authenticated, leader-tab coordinated (Web Locks + BroadcastChannel), echo prevention via `stx.sourceId`, catchup through declared views over the org sequence.
 - **Seen-by tracking**: `IntersectionObserver` marks entities seen; a Zustand store batches IDs, flushes on timer + `sendBeacon` on unload, persists flushed IDs in `localUserDb` (`kv` table); unseen badges decrement optimistically in the query cache. Backend: `seen_by` (one row per user+product), `product_counters` (denormalized counts).
 - **Product cache** (`backend/src/middlewares/product-cache/`): [Sync engine](./SYNC_ENGINE.md#detail-cache).
 - **Sync signals** (`frontend/src/query/realtime/sync-signals.ts`): the only extension point for sync-derived per-user state; never import module logic into the prioritizer. Contract: [Sync engine](./SYNC_ENGINE.md#fetch-prioritization).
 - **Server-driven writes** (CDC fan-out, materialization, scheduled jobs) must strip the client's `changedFields` from the stored `stx`, else the CDC worker attributes the write to the wrong columns (absent key = WAL diff): `stripChangedFields` (`backend/src/db/utils/strip-changed-fields.ts`) or `stripChangedFieldsStx` in the CDC worker.
 - **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/schema-evolution/`; never edit a shipped module. Until the first lens ships, a breaking wire-shape change bumps `appConfig.clientCacheVersion` (gate: Commits & PRs). Playbook: [Schema evolution](/docs/page/architecture/schema-evolution).
-- **Evolution contract (new entity modules)**: register once in the module's schema file via `evolutionContract.product(entityType, { createItem, updateOps })` or `evolutionContract.channel(entityType, { createItem, updateBody })` (`backend/src/core/schema-evolution/evolution-contract.ts`); route bodies through `contract.createItemSchema` / `contract.updateBodySchema`, and call the contract seam first in every operation: `normalizeCreateItem` and `resolveUpdateOps` (products), `normalizeBody` (channels). `lens:check` fails a configured entity type without a factory call.
+- **Evolution contract**: every entity module registers `evolutionContract.product` or `.channel` once and routes bodies through it; `lens:check` fails a configured type without one. Recipe: [New entity](./ADD_ENTITY.md); model: [Schema evolution](./SCHEMA_EVOLUTION.md#evolution-contract).
 
 ## Cross-product references
 
@@ -125,7 +123,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 - **Entity id columns**: the hierarchy is the ONE source of truth for id-column names (`organization` → `organizationId`). Never hand-write `` `${type}Id` `` or hardcode `'organizationId'`/`'projectId'`. Prefer, in order: `EntityIdColumns<TS, V>` (shared) for an entity-type → id-column map _type_; `EntityIdColumnKey<T>` for one key type; `appConfig.entityIdColumnKeys[type]` or `entityIdColumnKey(type)` / `entityIdColumnName(type)` at runtime. Root channel id: `EntityIdColumnKey<RootChannelType>` / `appConfig.entityIdColumnKeys[rootChannelType]`, not `'organizationId'`. Row-location logic and entity-kind guards (`isChannel`, `isProduct`, `getRoles`, `hierarchy.resolveDeepestAncestorId`, `hierarchy.computeProductPath`, `hierarchy.pathColumnSql`, ...) are bound arrow methods on `EntityHierarchy` (destructuring keeps `this`), no free-function twin. `shared` re-exports the singleton's `isChannel`/`isProduct` as aliases, so a `vi.mock('shared')` factory replacing `hierarchy` must also override `isChannel: h.isChannel, isProduct: h.isProduct`. Injectable-hierarchy parameters are typed `EntityHierarchy`, defaulting to the app singleton (`options.hierarchy` on permission checks).
 - **Debug mode**: `VITE_DEBUG_MODE=true` in `frontend/.env`.
 - **Icons**: import from `lucide-react` with `*Icon`-suffixed names (`LoaderCircleIcon`, not `Loader2`/`Loader2Icon`; Biome-enforced). Size with classes only: `icon-xs/sm/md/lg/xl` (12-24px) or `size-*`; NEVER lucide's `size` prop (a global `:where(svg.lucide)` rule overrides its px attributes). Never combine two `icon-*`/`size-*` classes on one element (tailwind-merge does not dedupe them). strokeWidth defaults via `LucideProvider` in main.tsx (`appConfig.theme.strokeWidth`); per-icon `strokeWidth` overrides. Custom SVG icons in `frontend/src/modules/common/icons/` carry the `lucide` class. Icon-as-prop declarations use `IconComponent` from `~/modules/common/icons/types` (omits `size`).
-- **Migrations**: every sync-breaking change ships a `cella/migrations/<YYYYMMDDThhmm>-<slug>/` folder plus manifest entry in the same PR; structure and apply loop: `cella/migrations/README.md`.
+- **Migrations**: every sync-breaking change ships a `cella/migrations/` folder plus manifest entry in the same PR: `cella/migrations/README.md`.
 - **Syncing (apps)**: the `cella-sync` skill (`cella/skills/cella-sync/SKILL.md`) drives `pnpm cella sync` / `pnpm cella analyze`: conflict triage, silent-damage sweep, migration bookkeeping, drift triage.
 - **Skills**: `cella/skills/` is the single home for agent skills (synced to apps). Claude Code only discovers `.claude/skills` (gitignored): `ln -s ../cella/skills .claude/skills`.
 - **OpenAPI nullable**: `z.union([schema, z.null()])`, never `schema.nullable()`, for named schemas.
@@ -182,7 +180,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 
 - Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks, scoped changes.
-- Breaking OpenAPI diffs fail the `schema-bust-gate` CI job unless the PR bumps `clientCacheVersion`; title such PRs `feat!:` so release-please cuts a major.
+- Breaking OpenAPI diffs: [Cache-bust](./SCHEMA_EVOLUTION.md#cache-bust-interim).
 
 ## Commands
 

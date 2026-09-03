@@ -50,8 +50,6 @@ Entity authorization runs after the socket opens, via an RLS-scoped read by the 
 
 ### State and seeding
 
-Rooms are keyed by `{entityType}:{entityId}` and held in process memory as raw binary updates (`Y.mergeUpdates`, `Y.diffUpdate`, `Y.encodeStateAsUpdate`); short-lived `Y.Doc` instances exist only for Yjs/BlockNote conversion. Sync step 1 diffs against the client's state vector, or sends full state if the stored update is corrupt.
-
 When no `yjs_documents` row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the canonical seed. Concurrent first connections race; `ON CONFLICT DO NOTHING` plus a reload picks one winner. The seed is the materialization baseline, so opening an untouched document does not update the entity.
 
 ### Relay, save, and materialize
@@ -79,13 +77,11 @@ Clients need no unload handlers or final flush; the only loss window is the thre
 
 | Failure | Outcome |
 | --- | --- |
-| Tab closes right after typing | The relay still saves and materializes the received update |
 | A client loses its connection | Client falls back to solo REST/offline; the relay materializes what it has |
 | The backend is unavailable | Materialization is retried on the next save window or at cleanup, which keeps the session row until the backend recovers |
 | The relay restarts | Clients reconnect with complete documents; the startup sweep recovers orphaned sessions |
 | Entity deleted or access revoked | Permanent materialization failure; cleanup does not resurrect the entity |
 | SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
-| A solo-mode edit during a collaborative session | Known conflict: the next collaborative materialization can supersede the solo description, which never enters the shared document |
 
 ## Operational constraints
 
@@ -103,17 +99,6 @@ Clients need no unload handlers or final flush; the only loss window is the thre
 | `GET /health` on `YJS_PORT` | 204 |
 | `GET /health?depth=full` | JSON: version, uptime, connection, document, client, and event-loop-lag data; degraded at 100 ms lag, unhealthy at 1 second |
 | Any other path | 404 |
-
-The HTTP server starts before backend readiness checks, so the port is visible immediately.
-
-| Setting | Default | Location |
-| --- | --- | --- |
-| Save and materialize debounce | 3 seconds | `src/constants.ts` |
-| Grace period and cleanup retry | 5 minutes | `src/constants.ts` |
-| Awareness rate | 2 per second per client | `src/constants.ts` |
-| Connection rate | 20 per user per 60 seconds | `src/server/rate-limiter.ts` |
-| Maximum WebSocket payload | 2 MB | `src/server/ws-server.ts` |
-| Pre-authorization buffer | 100 messages | `src/sync/relay.ts` |
 
 Environment, validated in `src/env.ts` (loads the backend's `.env`):
 

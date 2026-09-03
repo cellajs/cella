@@ -39,13 +39,7 @@ Draft-lifecycle product tables carry the publication filter `WHERE published_at 
 
 At startup the worker builds a registry from the backend's `entityTables` and `resourceTables`; unregistered tables are ignored. Rows that carry `stx.changedFields` (product updates through the API) use it as the change set; everything else diffs the old and new WAL tuples, ignoring the worker's own `stx`, `seq`, and `path` stamps so stamp-backs do not loop. Deletes use the old tuple, hence `REPLICA IDENTITY FULL`. Varchar columns of 10,000+ characters are stripped after change detection; consumers must tolerate their absence from `rowData`.
 
-`TransactionBuffer` holds a transaction and suppresses cascade child deletes and embedding-propagation updates paired with a source delete; survivors enter `FlushBuffer`, which flushes on the first limit reached:
-
-| Trigger | Limit |
-| --- | --- |
-| Normal load | 100 events |
-| Low traffic | 50 ms |
-| Hard cap | 20,000 events |
+`TransactionBuffer` holds a transaction and suppresses cascade child deletes and embedding-propagation updates paired with a source delete; survivors enter `FlushBuffer`, which flushes on a size or time limit (`src/constants.ts`).
 
 Each flush groups events by type and action (`attachment:update`), which can reorder messages across transactions.
 
@@ -56,8 +50,6 @@ Per group, in order: persist activities (IDs derive from the LSN, so a replay is
 ### Sequences and counters
 
 Each group reserves a contiguous per-organization range from `channel_counters.counts['sequence']`, assigned to product creates and updates in WAL order. Soft-delete and restore count as delete and create. Key grammar and scopes: [Sync engine, Counters](../cella/SYNC_ENGINE.md#counters).
-
-Frontier and timestamp keys max-merge; count keys sum with a lower bound of zero (`apply_count_deltas`). Reparenting moves self counts and re-credits ancestors.
 
 ## Internal API channel
 
@@ -75,9 +67,7 @@ The slot advances only after processing and is the only durable buffer, so a cra
 | API WebSocket unavailable | Connection drop; slot lag checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Hold data acknowledgements so WAL stays behind the slot; reconnect with exponential backoff, 1 to 30 seconds. |
 | Worker more than 10 seconds behind | Commit timestamp lag | Catch-up mode: ignore seeded inserts (`00000000-` or `gen-` IDs); after three transactions under 2 seconds, recalculate counters and send `catchup_complete` so the backend invalidates its entity cache. |
 | Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry the subscription 12 times at 500 ms, then every 5 seconds (the same cadence as any subscribe error). |
-| Transaction never commits | 30-second timer, or a new `BEGIN` | Flush it unfiltered. |
 | Unexpected data | Draft row, or product group without an organization | Drop the draft row (rate-limited warning); log and skip the whole group, activities included, still acknowledging its LSN. |
-| Slot manually rewound or reset | Counter and sequence writes applied twice | Full counter recalculation. |
 | Slot dropped or `lost` | Unacknowledged changes gone | Operator recalculates counters; the activity history keeps a gap. A missing publication makes the worker drop and recreate its slot once, discarding unacknowledged WAL. |
 
 ## Operational constraints
@@ -106,4 +96,3 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
 
-`CDC_SLOT_NAME` (default `cdc_slot`) and `RELEASE_SHA` come straight from `process.env`; flush, retry, catch-up, and WAL-lag thresholds live in `src/constants.ts`.
