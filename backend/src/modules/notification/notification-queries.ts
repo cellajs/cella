@@ -4,12 +4,13 @@ import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
+import { type DigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
 import {
-  type DigestFrequency,
+  type EmailPreferenceKey,
+  emailPreferenceKey,
   type NotificationType,
-  notificationPreferencesTable,
-  notificationsTable,
-} from './notification-db';
+  notificationTypes,
+} from './notification-types';
 
 // ── Inbox reads ──────────────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ export async function findOrCreatePreferences(ctx: DbContext, userId: string) {
 export async function updatePreferences(
   ctx: DbContext,
   userId: string,
-  values: { mentionEmail?: boolean; commentEmail?: boolean; digest?: DigestFrequency },
+  values: Partial<Record<EmailPreferenceKey, boolean>> & { digest?: DigestFrequency },
 ) {
   const [updated] = await ctx.var.db
     .update(notificationPreferencesTable)
@@ -189,11 +190,16 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
 
 // ── Instant email ────────────────────────────────────────────────────────────
 
-/** Unmailed mention notifications for recipients who still want the email. */
-export async function findPendingMentionEmails(organizationId: string, limit: number) {
+/** Unmailed notifications whose recipients keep the `<type>Email` preference on for their type. */
+export async function findPendingInstantEmails(organizationId: string, limit: number) {
+  const wantsEmail = notificationTypes.map((type) =>
+    and(eq(notificationsTable.type, type), eq(notificationPreferencesTable[emailPreferenceKey(type)], true)),
+  );
+
   return baseDb
     .select({
       id: notificationsTable.id,
+      type: notificationsTable.type,
       userId: notificationsTable.userId,
       subjectId: notificationsTable.subjectId,
       entityType: notificationsTable.entityType,
@@ -207,10 +213,9 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
     .where(
       and(
         eq(notificationsTable.organizationId, organizationId),
-        eq(notificationsTable.type, 'mention'),
         isNull(notificationsTable.emailedAt),
         isNull(notificationsTable.readAt),
-        eq(notificationPreferencesTable.mentionEmail, true),
+        or(...wantsEmail),
       ),
     )
     .limit(limit);

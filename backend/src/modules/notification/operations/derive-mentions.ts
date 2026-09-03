@@ -17,12 +17,14 @@ import { extractMentionIds } from '../helpers/extract-mentions';
  * notify anyone, including users with no access to the row. Deriving server-side and filtering by
  * read permission makes the column trustworthy, which is what the fan-out relies on.
  *
- * Yjs materialisation re-writes rows without a user intent behind them; those are skipped so a
- * collaborative save cannot resurrect a mention that was edited away.
+ * The source's `deriveFrom` picks the writes to read. By default Yjs materialization is skipped:
+ * it re-writes a client-owned body without a user intent behind it, so a collaborative save
+ * could resurrect a mention that was edited away. A source whose Yjs document is the body's
+ * source of truth derives from the materialized body, or from both.
  */
 export function deriveMentionsFor(entityType: string, source: ModuleNotifications): MutationHandler {
   return async (ctx: AuthContext, payload: MutationPayload): Promise<void> => {
-    if (payload.serverOrigin) return;
+    if (!derivesFrom(source.deriveFrom ?? 'client', payload)) return;
     if (!source.writeMentions) {
       log.error('Mentionable notification source lacks writeMentions; derivation skipped', { entityType });
       return;
@@ -64,6 +66,11 @@ async function filterReadable(entityType: string, row: NotificationSubjectRow, u
 
   const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
   return userIds.filter((_, index) => decisions[index]?.allowed);
+}
+
+function derivesFrom(mode: NonNullable<ModuleNotifications['deriveFrom']>, payload: MutationPayload): boolean {
+  if (mode === 'both') return true;
+  return payload.serverOrigin ? mode === 'materialized' : mode === 'client';
 }
 
 function sameSet(a: string[], b: string[]): boolean {

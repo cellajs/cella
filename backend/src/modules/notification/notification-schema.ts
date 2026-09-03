@@ -1,7 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { validIdSchema } from '#/schemas';
-import { digestFrequencies, notificationTypes } from './notification-db';
+import { digestFrequencies } from './notification-db';
+import { emailPreferenceRecord, notificationTypes } from './notification-types';
 
 export const notificationSchema = z.object({
   id: z.string(),
@@ -41,9 +42,9 @@ export const markReadResponseSchema = z.object({
   updated: z.number().int().min(0),
 });
 
+/** One `<type>Email` switch per notification type (template and app types alike) plus the digest cadence. */
 export const preferencesSchema = z.object({
-  mentionEmail: z.boolean(),
-  commentEmail: z.boolean(),
+  ...emailPreferenceRecord(() => z.boolean()),
   digest: z.enum(digestFrequencies),
 });
 

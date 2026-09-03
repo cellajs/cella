@@ -18,7 +18,7 @@ app-owned) for the new tables
 `notification_preferences`, verifying the partitions exist in the DB (do not trust exit codes),
 and the bell (`BellIcon`, `NotificationsSheet`, `UnreadNavBadge`) in the pinned `nav-config.tsx`,
 which does not sync. No new env beyond `UNSUBSCRIBE_SECRET`; the SDK gains `/notifications`
-routes. Pre-cella forks (projectcampus): steps 3 to 5.
+routes. Pre-cella forks (projectcampus): steps 3 to 6.
 
 ## Run
 
@@ -31,9 +31,14 @@ No script: manual.
 3. Declare a source on each relevant product module:
    `notifications: { mentionable: true, loadRows, writeMentions, resolveRecipients, ... }`;
    `resolveRecipients` carries your thread/assignee model, the rest is common code.
-4. Pre-cella forks: delete your copy, move recipient logic into step 3's declarations, rename
+4. Dispatch from the module's create and update ops, inside the write transaction:
+   `dispatchMutation(txCtx, '<type>.created', { after: rows })` and
+   `dispatchMutation(txCtx, '<type>.updated', { before: [entity], after: [updated] })`
+   (`serverOrigin: true` from Yjs materialization). Mention derivation listens on the mutation bus,
+   so a source without these calls derives nothing; the attachment ops are the template example.
+5. Pre-cella forks: delete your copy, move recipient logic into step 3's declarations, rename
    stored `item_id` usage to `context_id` (a fresh `pnpm generate` covers pre-production databases).
-5. Mentions need a `mentions` column on the product table and a composer emitting
+6. Mentions need a `mentions` column on the product table and a composer emitting
    `data-mention-id` spans (cella's mention element already does).
 
 ## Verify

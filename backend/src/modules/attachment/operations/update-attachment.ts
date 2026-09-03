@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
+import { dispatchMutation } from '#/lib/mutation-bus';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-user';
@@ -31,7 +32,10 @@ export async function updateAttachmentOp(
       updatedBy: user.id,
       ...(resolved.changed ? { stx: resolved.stx } : {}),
     };
-    return updateAttachment(txCtx, { id, values });
+    const updated = await updateAttachment(txCtx, { id, values });
+    // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
+    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated] });
+    return updated;
   });
 
   log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });

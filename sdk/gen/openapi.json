@@ -5810,7 +5810,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": ["mention", "comment", "reply"]
+                            "enum": ["mention", "comment", "reply", "edit"]
                           },
                           "entityType": {
                             "type": "string",
@@ -5994,12 +5994,18 @@
                     "commentEmail": {
                       "type": "boolean"
                     },
+                    "replyEmail": {
+                      "type": "boolean"
+                    },
+                    "editEmail": {
+                      "type": "boolean"
+                    },
                     "digest": {
                       "type": "string",
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
+                  "required": ["mentionEmail", "commentEmail", "replyEmail", "editEmail", "digest"]
                 }
               }
             }
@@ -6050,6 +6056,12 @@
                   "commentEmail": {
                     "type": "boolean"
                   },
+                  "replyEmail": {
+                    "type": "boolean"
+                  },
+                  "editEmail": {
+                    "type": "boolean"
+                  },
                   "digest": {
                     "type": "string",
                     "enum": ["off", "daily", "weekly"]
@@ -6073,12 +6085,18 @@
                     "commentEmail": {
                       "type": "boolean"
                     },
+                    "replyEmail": {
+                      "type": "boolean"
+                    },
+                    "editEmail": {
+                      "type": "boolean"
+                    },
                     "digest": {
                       "type": "string",
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "digest"]
+                  "required": ["mentionEmail", "commentEmail", "replyEmail", "editEmail", "digest"]
                 }
               }
             }
@@ -6127,7 +6145,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["digest", "mention", "comment"]
+              "enum": ["digest", "mention", "comment", "reply", "edit"]
             },
             "required": true,
             "name": "category",

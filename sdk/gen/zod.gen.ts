@@ -1043,7 +1043,7 @@ export const zGetNotificationsResponse = z.object({
     z.object({
       id: z.string(),
       createdAt: z.string(),
-      type: z.enum(['mention', 'comment', 'reply']),
+      type: z.enum(['mention', 'comment', 'reply', 'edit']),
       entityType: z.enum(['attachment']),
       subjectId: z.string(),
       contextId: z.string().nullable(),
@@ -1076,12 +1076,16 @@ export const zMarkNotificationsReadResponse = z.object({
 export const zGetNotificationPreferencesResponse = z.object({
   mentionEmail: z.boolean(),
   commentEmail: z.boolean(),
+  replyEmail: z.boolean(),
+  editEmail: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
 export const zUpdateNotificationPreferencesBody = z.object({
   mentionEmail: z.boolean().optional(),
   commentEmail: z.boolean().optional(),
+  replyEmail: z.boolean().optional(),
+  editEmail: z.boolean().optional(),
   digest: z.enum(['off', 'daily', 'weekly']).optional(),
 });
 
@@ -1091,12 +1095,14 @@ export const zUpdateNotificationPreferencesBody = z.object({
 export const zUpdateNotificationPreferencesResponse = z.object({
   mentionEmail: z.boolean(),
   commentEmail: z.boolean(),
+  replyEmail: z.boolean(),
+  editEmail: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
 export const zUnsubscribeNotificationsQuery = z.object({
   user: z.string().max(50),
-  category: z.enum(['digest', 'mention', 'comment']),
+  category: z.enum(['digest', 'mention', 'comment', 'reply', 'edit']),
   token: z.string(),
 });
 

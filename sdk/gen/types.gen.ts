@@ -2795,7 +2795,7 @@ export type GetNotificationsResponses = {
     items: Array<{
       id: string;
       createdAt: string;
-      type: 'mention' | 'comment' | 'reply';
+      type: 'mention' | 'comment' | 'reply' | 'edit';
       entityType: 'attachment';
       subjectId: string;
       contextId: string | null;
@@ -2908,6 +2908,8 @@ export type GetNotificationPreferencesResponses = {
   200: {
     mentionEmail: boolean;
     commentEmail: boolean;
+    replyEmail: boolean;
+    editEmail: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -2919,6 +2921,8 @@ export type UpdateNotificationPreferencesData = {
   body: {
     mentionEmail?: boolean;
     commentEmail?: boolean;
+    replyEmail?: boolean;
+    editEmail?: boolean;
     digest?: 'off' | 'daily' | 'weekly';
   };
   path?: never;
@@ -2963,6 +2967,8 @@ export type UpdateNotificationPreferencesResponses = {
   200: {
     mentionEmail: boolean;
     commentEmail: boolean;
+    replyEmail: boolean;
+    editEmail: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -2975,7 +2981,7 @@ export type UnsubscribeNotificationsData = {
   path?: never;
   query: {
     user: string;
-    category: 'digest' | 'mention' | 'comment';
+    category: 'digest' | 'mention' | 'comment' | 'reply' | 'edit';
     token: string;
   };
   url: '/notifications/unsubscribe';

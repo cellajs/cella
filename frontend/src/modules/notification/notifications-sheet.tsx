@@ -4,7 +4,6 @@ import { BellIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GetNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
-import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
@@ -16,13 +15,6 @@ import { getNotificationRoute } from './notification-link';
 import { notificationsQueryOptions, useMarkNotificationsRead } from './query';
 
 type Notification = GetNotificationsResponse['items'][number];
-
-/** Explicit map: template-literal keys do not narrow to `TKey`, and each type reads differently. */
-const labelByType = {
-  mention: 'c:notification.mention',
-  comment: 'c:notification.comment',
-  reply: 'c:notification.reply',
-} as const satisfies Record<Notification['type'], TKey>;
 
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {
@@ -79,7 +71,8 @@ function NotificationRow({
     <>
       {!notification.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
       <span className="flex flex-col gap-0.5">
-        <span className="text-sm">{t(labelByType[notification.type])}</span>
+        {/* One `c:notification.<type>` key per vocabulary type; apps add theirs to app.json */}
+        <span className="text-sm">{t(`c:notification.${notification.type}`)}</span>
         <span className="text-muted-foreground text-xs">{relativeDate}</span>
       </span>
     </>

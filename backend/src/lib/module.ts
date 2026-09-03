@@ -4,6 +4,7 @@ import { type ModuleConfig, registerModule } from 'shared/module-registry';
 import type { Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
+import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
 /** A periodic in-process job. `start` schedules it and returns the stop handle called on shutdown. */
@@ -43,20 +44,31 @@ export interface NotificationSubjectRow {
   [key: string]: unknown;
 }
 
-/** One would-be inbox row; `type` must be one of the notification module's `notificationTypes`. */
+/** One would-be inbox row, typed by the notification vocabulary (template types plus `appNotificationTypes`). */
 export interface NotificationCandidate {
   userId: string;
-  type: string;
+  type: NotificationType;
 }
 
 /**
  * Per-module notification source declaration, indexed by the notification module. Declaring it
  * turns the module's product writes into inbox rows: mentions generically (when `mentionable`),
  * app-specific recipients via `resolveRecipients`. Requires `productEntity`.
+ *
+ * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
+ * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |
+ * '<type>.updated', { before, after })` inside the write transaction (`serverOrigin: true` for
+ * Yjs materialization); see the attachment ops for the shape.
  */
 export interface ModuleNotifications {
   /** Enables server-side mention derivation and mention fan-out; the module's rows must carry `description` and a `mentions` column. */
   mentionable?: boolean;
+  /**
+   * Which writes mention derivation reads: `client` (default) skips Yjs materialization so a
+   * collaborative re-write cannot resurrect a mention edited away in a client-owned body;
+   * `materialized` for bodies whose Yjs document is the source of truth; `both` when either path edits.
+   */
+  deriveFrom?: 'client' | 'materialized' | 'both';
   /** Batch-load audience-bearing subject rows for the given ids; drop drafts and deleted rows here. */
   loadRows: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
   /** Persist the server-derived mention set for one row (required with `mentionable`). */

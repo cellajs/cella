@@ -21,7 +21,7 @@
                   "type": {
                     "type": "string",
                     "required": true,
-                    "enum": ["mention", "comment", "reply"]
+                    "enum": ["mention", "comment", "reply", "edit"]
                   },
                   "entityType": {
                     "type": "string",
@@ -213,6 +213,8 @@
           "properties": {
             "mentionEmail": { "type": "boolean", "required": true },
             "commentEmail": { "type": "boolean", "required": true },
+            "replyEmail": { "type": "boolean", "required": true },
+            "editEmail": { "type": "boolean", "required": true },
             "digest": {
               "type": "string",
               "required": true,
@@ -278,6 +280,8 @@
           "properties": {
             "mentionEmail": { "type": "boolean", "required": true },
             "commentEmail": { "type": "boolean", "required": true },
+            "replyEmail": { "type": "boolean", "required": true },
+            "editEmail": { "type": "boolean", "required": true },
             "digest": {
               "type": "string",
               "required": true,
@@ -336,6 +340,8 @@
         "properties": {
           "mentionEmail": { "type": "boolean", "required": false },
           "commentEmail": { "type": "boolean", "required": false },
+          "replyEmail": { "type": "boolean", "required": false },
+          "editEmail": { "type": "boolean", "required": false },
           "digest": {
             "type": "string",
             "required": false,
@@ -401,7 +407,7 @@
           "category": {
             "type": "string",
             "required": true,
-            "enum": ["digest", "mention", "comment"]
+            "enum": ["digest", "mention", "comment", "reply", "edit"]
           },
           "token": { "type": "string", "required": true }
         }

@@ -4,16 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
-
-/**
- * Notification vocabulary, shared by the table enum, the fan-out and the preference schema.
- *
- * `mention` outranks the activity types when one event would produce both: a mention is addressed
- * to you personally, so it survives a muted channel and defaults to email-on, while ambient
- * activity does neither.
- */
-export const notificationTypes = ['mention', 'comment', 'reply'] as const;
-export type NotificationType = (typeof notificationTypes)[number];
+import { emailPreferenceRecord, notificationTypePolicies, notificationTypes } from './notification-types';
 
 /** Digest cadence options for `notification_preferences.digest`. */
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
@@ -81,9 +72,8 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
   userId: uuid()
     .primaryKey()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  /** In-app delivery is never opt-out; only email is. */
-  mentionEmail: boolean().notNull().default(true),
-  commentEmail: boolean().notNull().default(false),
+  // One `<type>Email` switch per notification type, defaulted by its policy; in-app delivery is never opt-out.
+  ...emailPreferenceRecord((type) => boolean().notNull().default(notificationTypePolicies[type].email)),
   digest: varchar({ enum: digestFrequencies }).notNull().default('weekly'),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: timestamp({ mode: 'string' }),

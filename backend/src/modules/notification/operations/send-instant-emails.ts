@@ -2,11 +2,11 @@ import { appConfig } from 'shared';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
 import { log } from '#/utils/logger';
-import { mentionEmail } from '../emails/mention-email';
+import { notificationEmail } from '../emails/notification-email';
 import { buildUnsubscribeLink } from '../helpers/category-token';
 import { findChannelNames } from '../helpers/channel-names';
 import { htmlToExcerpt } from '../helpers/render-digest-html';
-import { findPendingMentionEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
+import { findPendingInstantEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
 import { getNotificationSource } from '../notification-sources';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
@@ -16,13 +16,13 @@ const EXCERPT_LENGTH = 250;
 const MAX_PER_RUN = 200;
 
 /**
- * Send instant emails for freshly created mention notifications.
+ * Send instant emails for freshly created notifications whose recipients keep the type's
+ * `<type>Email` preference on (mentions by default, see `notificationTypePolicies`).
  *
- * Only mentions mail instantly, and only when the recipient has not opted out. Everything mailed
- * here is stamped `emailedAt`, which is what keeps the digest from repeating it.
+ * Everything mailed here is stamped `emailedAt`, which is what keeps the digest from repeating it.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
-  const pending = await findPendingMentionEmails(organizationId, MAX_PER_RUN);
+  const pending = await findPendingInstantEmails(organizationId, MAX_PER_RUN);
   if (pending.length === 0) return;
 
   const recipients = await findVerifiedRecipients(pending.map((row) => row.userId));
@@ -49,8 +49,9 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     if (!preview) continue;
 
     await mailer.prepareEmails(
-      mentionEmail,
+      notificationEmail,
       {
+        type: notification.type,
         actorName: notification.actorId ? (actorNames.get(notification.actorId) ?? '') : '',
         channelName: channelNames.get(notification.channelId) ?? '',
       },
@@ -62,7 +63,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
           subjectTitle: preview.title,
           excerpt: htmlToExcerpt(preview.body, EXCERPT_LENGTH),
           link: source.resolveEmailLink?.(notification) ?? appConfig.frontendUrl,
-          unsubscribeLink: buildUnsubscribeLink(user.id, 'mention'),
+          unsubscribeLink: buildUnsubscribeLink(user.id, notification.type),
         },
       ],
     );
@@ -73,5 +74,5 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   if (sent.length === 0) return;
 
   await stampEmailed(sent);
-  log.info('Mention emails sent', { count: sent.length, organizationId });
+  log.info('Instant notification emails sent', { count: sent.length, organizationId });
 }

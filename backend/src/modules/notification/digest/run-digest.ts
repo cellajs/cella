@@ -41,7 +41,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
   for (const recipient of due) {
     try {
       const since = recipient.lastDigestAt ? new Date(recipient.lastDigestAt) : null;
-      const content = await buildDigestForUser(recipient.userId, since);
+      const content = await buildDigestForUser(recipient.userId, since, recipient.language);
 
       // Skip-if-empty: weekly is on by default, so silence must stay silent.
       if (content.sections.length === 0) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findAppVocabularyFindings } from './check-app-vocabulary.ts';
+import { findAppVocabularyFindings, loadAllowlist } from './check-app-vocabulary.ts';
 
 const legacyTerm = ['fo', 'rk'].join('');
 
@@ -38,7 +38,23 @@ describe('findAppVocabularyFindings', () => {
     expect(findAppVocabularyFindings('cella/cella.config.ts', legacyTerm)).toEqual([]);
   });
 
-  it('allows the release-please changelog', () => {
+  it('allows the release-please changelogs, template and app root alike', () => {
     expect(findAppVocabularyFindings('cella/CHANGELOG.md', legacyTerm)).toEqual([]);
+    expect(findAppVocabularyFindings('CHANGELOG.md', legacyTerm)).toEqual([]);
+  });
+
+  it('honours an app allowlist by file and by prefix', () => {
+    const allowlist = { files: ['json/lucide-icon-names.json'], prefixes: ['frontend/public/static/generated/'] };
+    expect(findAppVocabularyFindings('json/lucide-icon-names.json', `git-${legacyTerm}`, allowlist)).toEqual([]);
+    expect(findAppVocabularyFindings('frontend/public/static/generated/icons.svg', legacyTerm, allowlist)).toEqual([]);
+    expect(findAppVocabularyFindings('json/other.json', legacyTerm, allowlist)).toHaveLength(1);
+  });
+});
+
+describe('loadAllowlist', () => {
+  it('merges the template allowlist with the app-owned file', async () => {
+    const allowlist = await loadAllowlist();
+    expect(allowlist.files).toContain('cella/CHANGELOG.md');
+    expect(allowlist.prefixes).toContain('cella/migrations/');
   });
 });
