@@ -17,7 +17,3 @@ export const MemoizedProjectTile = memo(function MemoizedProjectTile(props: Proj
 ```
 
 Never annotate component declarations with `React.FC` or `FC`. Use `ComponentType<Props>` when a component is passed or stored as a value.
-
-Give every exported function and constant a one- or two-sentence JSDoc description.
-
-Local comments explain non-obvious constraints or reasoning, never assignments, branches, render structure, or repeated operations. One comment above a repetitive block covers its shared constraint.

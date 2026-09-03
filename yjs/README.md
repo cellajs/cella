@@ -77,12 +77,6 @@ A startup sweep handles rows orphaned by a crash: rows with `last_edited_by` and
 
 ## Durability and failure
 
-Durability layers:
-
-1. Every connected client holds a complete live `Y.Doc`.
-2. `yjs_documents` preserves the relay session (saved within three seconds, kept five minutes after the last disconnect).
-3. The entity's `description` is the durable application record.
-
 Clients need no unload handlers or final flush; the only loss window is the three-second debounce, and only if the relay and every connected client disappear within it.
 
 | Failure | Outcome |
@@ -98,7 +92,6 @@ Clients need no unload handlers or final flush; the only loss window is the thre
 ## Operational constraints
 
 - **Live collaboration is process-local.** Clients editing one entity must reach the same relay instance (single instance or entity-affinity routing), or updates are not shared and snapshots collide.
-- **One document per entity**, keyed by entity type plus ID in both room and database.
 - **No server-side edit history**: the database holds a merged snapshot; undo, redo, and per-edit history live in clients.
 - **Fragment and schema must stay aligned.** The `document-store` fragment and React-free shared BlockNote schema must match the frontend binding (custom blocks have round-trip tests).
 - **Seeds are server-generated and never merged.**

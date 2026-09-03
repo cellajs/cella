@@ -13,11 +13,7 @@ published.
 
 1. Merge work into `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally).
 2. release-please keeps an open **release PR per package**, updating the proposed version bump and generated [Changelog](./CHANGELOG.md) on every merge.
-3. The release PR runs full CI including the heavy suites (see [Gating](#gating)). Merging it bumps the version, updates the changelog, tags, and publishes the GitHub Release.
-
-## Deploy timing
-
-Production deploys fire only when the `cella` GitHub Release is published: [deploy.yml](../.github/workflows/deploy.yml) listens for `release: published`. Manual staging/production deploys remain available via `workflow_dispatch`.
+3. The release PR runs full CI including the heavy suites (see [Gating](#gating)). Merging it bumps the version, updates the changelog, tags, and publishes the GitHub Release, which triggers the production deploy ([CI deploys](./DEPLOYMENT.md#ci-deploys)).
 
 ## Gating
 
@@ -74,5 +70,5 @@ On `0.x` (`bump-minor-pre-major`), breaking changes bump the minor and features 
 
 **Repo settings:**
 
-- `main` ruleset: squash-merge only, linear history, require `lint`, `test`, `storybook-test`, `schema-bust-gate`. `test` and `storybook-test` skip (pass) on feature PRs and run for real on the release PR, so keeping them required blocks a release PR whose heavy suites fail.
+- `main` ruleset: squash-merge only, linear history, require `lint`, `test`, `storybook-test`, `schema-bust-gate`.
 - "Allow GitHub Actions to create and approve pull requests" can stay **disabled**: the App creates the release PR, not Actions.

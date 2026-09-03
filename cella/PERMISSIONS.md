@@ -65,7 +65,7 @@ Creator-only rules compare the user with the row's `createdBy` value.
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The engine lives in `shared/`, ORM-free and tier-neutral: backend, frontend, and the standalone Yjs relay reach the same verdict from the same code. The engine **never loads rows**; callers hand in the row data a decision needs. The two config files are validated once at boot and change together: every role in every channel needs a policy row. Postgres RLS is a separate tenant-isolation layer with no role awareness; see [Multi-tenancy](./MULTI_TENANCY.md).
+The engine **never loads rows**; callers hand in the row data a decision needs. The two config files are validated once at boot and change together: every role in every channel needs a policy row. Postgres RLS: [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Vocabulary
 
@@ -206,7 +206,7 @@ Three exhaustive `switch`es map the name to behaviour: `matchesRowCondition` (JS
 | Create | `canCreateEntity` | No row exists yet; the subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |
 | Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate; never materializes rows to reject them | `{ kind: 'none' }` returns `[]` without querying |
-| Channel lists | `resolveChannelCollectionReadScope` → `buildChannelListReadWhere` (`channel-collection-scope.ts`) | Sub-org channel rows readable beyond own memberships, from org-root and ancestor grants (read+update sees drafts, read-only sees published); dormant in the template | Same tri-state |
+| Channel lists | `resolveChannelCollectionReadScope` → `buildChannelListReadWhere` (`channel-collection-scope.ts`; its header comment is the consumer contract) | Sub-org channel rows readable beyond own memberships, from org-root and ancestor grants (read+update sees drafts, read-only sees published); dormant in the template | Same tri-state |
 | SSE dispatch | `rowReadDecisions` (`canReceiveProductEvent` is its batch-of-1) | One `checkAccessFanout` per event row over the channel's subscribers | Subscriber not notified; over-notifying leaks data because notified rows are fetchable by seq |
 | Catchup views | `resolveViewReadStatus` | May the caller see the subtree's aggregate change signal (`e:f:`/counts)? `ok` needs a grant on the node or a verified ancestor; claimed prefixes must equal the counters row's canonical path ([Access](./SYNC_ENGINE.md#access)) | `opaque` or `forbidden` |
 | Yjs relay | `canEditEntity` on WS upgrade | Reads the row and memberships over raw `pg` (`toTableName`/`toColumnName`), runs the same engine | WebSocket closed; `4400` for missing scope |
@@ -220,25 +220,20 @@ export type CollectionReadWhere =
   | { kind: "where"; where: SQL };
 ```
 
-A bare `undefined` WHERE would leak the table; likewise the compiled SQL for a row condition emits `false` for an anonymous actor. Apps with sub-org channels compile the channel-list scope into a LEFT-joined membership list so discovery rows match single-row `checkAccess` results; the header comment of `channel-collection-scope.ts` is the consumer contract.
+A bare `undefined` WHERE would leak the table; likewise the compiled SQL for a row condition emits `false` for an anonymous actor.
 
 ### Drafts and visibility
 
 Two independent row axes sit beside the engine, which has no draft vocabulary; every check is introspection-guarded so tables without the column are untouched.
 
 - **Draft** (`publishedAt`, opt-in product column, `shared/src/published-rows.ts`): unpublished rows are visible to their author alone, checked before the engine on every row path; publish is one-way. The primary boundary is the publication row filter that keeps drafts out of replication ([Drafts](./SYNC_ENGINE.md#drafts)); the SSE dispatch veto is fail-closed defense for a misconfigured app. The table still holds drafts, so collection and delta reads exclude them by predicate, the detail read 404s non-authors, the detail cache refuses them, and the Yjs relay rejects non-author write connections. Channel `publishedAt` (`defaultNow`) gates setup and invites, not reads.
-- **Visibility** (`publicAt`): row-local and client-driven. A row is publicly readable only when its own `publicAt` is set; the server never derives it. The client sends `publicAt` on create (omitted means private; the template client defaults to the cached parent's value); afterwards the row owns its value, no cascade. Make private acts per row, channel, or batch.
-
-Anonymous read requires the row's own `publicAt`, plus `publishedAt` where the column exists.
+- **Visibility** (`publicAt`): row-local and client-driven. The client sends `publicAt` on create (omitted means private; the template client defaults to the cached parent's value); afterwards the row owns its value, no cascade. Make private acts per row, channel, or batch.
 
 ## Behavior
 
 | Scenario | Outcome |
 | --- | --- |
-| Org admin acts on a product in their org | Allowed, `grantedBy: membership` |
-| Member with `update: 'own'` edits a row they created | Allowed, `grantedBy: relation` (`own`) |
 | Member with `update: 'own'` edits someone else's row | Denied; the UI enables the control optimistically, the backend rejects on save |
 | Actor reads a row whose `publicAt` is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
-| System admin acts on any single row | Allowed, `grantedBy: systemAdmin`, before membership lookup |
 | Actor loses access mid-Yjs-session | Materialization re-checks `update` on the backend before persisting |
 | System admin joins a Yjs collab session | No bypass; authorized as the acting user, matching materialization |

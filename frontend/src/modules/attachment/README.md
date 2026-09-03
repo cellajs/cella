@@ -18,7 +18,7 @@ Transloadit produces up to four cloud objects per file, stored as one `keys` map
 | Offline schema | `offline/attachments-db.ts` | Schema; resolves tables from the active `localUserDb` (throws while signed out: guard with `getLocalUserDb()`). |
 | Blob storage | `offline/storage-service.ts` (`attachmentStorage`) | Blob CRUD; variant fallback chains (display `converted → original → raw`, previews `preview → original → raw`, thumbnails `thumbnail → preview → original → raw`); raw-blob eviction once a durable variant exists; per-org storage accounting. |
 | Download queue | `offline/download-queue.ts` | State machine for background caching (statuses below; skip filters and priority from `appConfig.localBlobStorage`). Doubles as the **dedupe registry**: a `downloaded` or `skipped` row stops re-fetching on every list refresh, so rows are never garbage-collected. Only `enqueue` revives them: `skipped`-for-no-key once its key arrives, `failed` while `attempts < downloadRetryAttempts`. Rows are dropped only when the attachment is deleted (`downloadQueue.remove`). |
-| Download service | `offline/download-service.ts` | Started in `~/query/provider.tsx`. Enqueues every attachment appearing in a list query, fetches variants (thumbnail first) and stores them, capped at `maxTotalSize` per org (default 100MB), `video/*` excluded by default. Drops blobs and queue rows when the mutation cache reports a delete. |
+| Download service | `offline/download-service.ts` | Started in `~/query/provider.tsx`. Enqueues every attachment appearing in a list query, fetches variants (thumbnail first) and stores them, capped at `maxTotalSize` per org (default 100MB), `video/*` excluded by default. |
 | Upload service | `offline/upload-service.ts` | Started alongside it. Pushes local `pending` blobs to Transloadit (headless Uppy, fresh token per upload) every 60s and on reconnect; without cloud config, blobs become `local-only`. |
 | Cloud URLs | `file-url.ts` | Owns the public-vs-private branch: public → CDN URL from the key; private → presigned URL requested by attachment id + variant (the client never submits a storage key). Use `getCloudUrl`; never re-derive the branch. |
 | URL resolution | `helpers/resolve-url.ts` | `resolveAttachmentUrl`: local blob first, cloud fallback, enqueues a background download. `resolveBlockNoteFileRef`: same for editor blocks. |
@@ -34,12 +34,12 @@ Transloadit produces up to four cloud objects per file, stored as one `keys` map
 
 **One id, minted early.** `onBeforeFileAdded` assigns `file.meta.attachmentId` when a file is picked. That id keys the local blob, rides through Transloadit as `user_meta.attachmentId`, and becomes the row id; the upload-status badge, raw-blob eviction, blob deletion with the entity, and skipping re-download of a just-uploaded file all look the blob up by it. A custom Uppy instance must pass that meta.
 
-Both paths store the raw file locally before the Tus upload. Offline or without cloud config, the upload is intercepted and the blob stays `pending` / `local-only` for the upload service. Creates go through the mutation, so an offline upload leaves an optimistic row in cache and replays the create on reconnect or after a reload (persisted mutation queue); the blob shares the row id, so the row renders from local bytes meanwhile.
+Both paths store the raw file locally before the Tus upload. Creates go through the mutation, so an offline upload leaves an optimistic row in cache and replays the create on reconnect or after a reload (persisted mutation queue); the row renders from local bytes meanwhile.
 
 ## Statuses
 
 - Blob upload status (per local blob): `pending → uploading → uploaded | failed`, or `local-only` without cloud config; `useBlobUploadStatus` feeds the thumbnail badge. Downloaded blobs are also stamped `uploaded` ("exists in cloud").
-- Download-queue status (per attachment): `pending → downloading → downloaded | failed`, or `skipped` (too large / excluded type / no key yet). `failed` and `skipped`-for-no-key are revived by `enqueue`, not the service (see Download queue).
+- Download-queue status (per attachment): `pending → downloading → downloaded | failed`, or `skipped` (too large / excluded type / no key yet).
 - Row optimism: rows from `createOptimisticEntity` carry `_optimistic`; `isPersisted()` (`types.ts`) gates cloud operations (presigned URLs, download queueing) on real rows.
 
 ## Permissions & limits

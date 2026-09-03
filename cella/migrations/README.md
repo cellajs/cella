@@ -38,7 +38,7 @@ pnpm exec tsx cella/migrations/run.ts mark <id>
 ```
 
 The [`migrate` skill](../skills/migrate/SKILL.md) drives this loop with an agent; `run.ts --json`
-feeds it the plan. Codemods are idempotent where possible: rerunning one on migrated code is a no-op.
+feeds it the plan.
 
 ## For maintainers: authoring a migration
 

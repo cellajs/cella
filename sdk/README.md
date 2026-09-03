@@ -2,7 +2,7 @@
 
 Auto-generated TypeScript SDK for the backend API.
 
-[@hey-api/openapi-ts](https://heyapi.dev) generates a typed SDK from `backend/openapi.cache.json`: API functions, Zod v4 runtime schemas, and a fetch-based client (`@hey-api/client-fetch`) that throws on error. Never edit `gen/` by hand; run `pnpm generate:sdk`.
+[@hey-api/openapi-ts](https://heyapi.dev) generates a typed SDK from `backend/openapi.cache.json`: API functions, Zod v4 runtime schemas, and a fetch-based client (`@hey-api/client-fetch`) that throws on error.
 
 ## File structure
 
@@ -54,4 +54,4 @@ pnpm watch          # Alias for dev
 
 ## Development
 
-`pnpm dev` watches `backend/openapi.cache.json` and regenerates on change (it calls `generate-sdk.ts --watch` in-process). The frontend dev server watches SDK output via `frontend/vite/sdk-watch.ts`.
+The frontend dev server watches SDK output via `frontend/vite/sdk-watch.ts`.

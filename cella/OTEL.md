@@ -61,11 +61,11 @@ Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTT
 
 ### Health endpoint (if HTTP)
 
-Serve `createHealthApp({ version, full })` from `shared/health-app`: `GET /health` returns 204; `?depth=full` returns `full()` as JSON with at least `status` and `uptime`.
+Serve `createHealthApp({ version, full })` from `shared/health-app`; `full()` returns at least `status` and `uptime`.
 
 ### Metrics
 
-Add observable gauges for key runtime state:
+Add observable gauges for runtime state, and counters and histograms for request-scoped measurements (see the backend sync-metrics module):
 
 ```typescript
 const meter = otel.meterProvider.getMeter("myworker-health");
@@ -115,10 +115,6 @@ CDC wraps this in a `withSpan()` helper returning `{ traceId, spanId }` for trac
 ### Span names and attributes
 
 Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix (`cdc.*`, `sync.*`); never inline strings. The shared tracing module also exports attribute builders (`cdcAttrs`, `activityAttrs`, `eventAttrs`); add a helper when a group of spans shares attributes.
-
-### Custom metrics
-
-Use the `MeterProvider` from your service's `otel` export: observable gauges for runtime state, counters and histograms for request-scoped measurements (see the backend sync-metrics module).
 
 ## Trace correlation
 

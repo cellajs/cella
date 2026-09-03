@@ -53,7 +53,7 @@ The CDC worker consumes PostgreSQL logical replication, preserves transaction bo
 
 Commit order is sequence order across product types. A batch range can contain positions of other types or paths, so `count` is the authoritative batch size; never infer it from range arithmetic.
 
-The API accepts the worker only at `/internal/cdc`: shared secret, production sources limited to loopback or the deployment VPC, one connection, idle peers closed after 90 seconds. See the [CDC worker](../cdc/README.md).
+The API accepts the worker only at `/internal/cdc` ([CDC worker](../cdc/README.md#internal-api-channel)).
 
 ### Counters
 
@@ -79,7 +79,7 @@ Product tables that opt into drafts use a PostgreSQL publication row filter:
 - Draft creates, edits, and deletes never reach the worker.
 - Soft-deleting a published row flows as an update tombstone.
 
-Channel tables are not filtered; their `publishedAt` controls invitees. A worker entrance check and a dispatch veto reject drafts if an app adds a draft column without regenerating the publication. API reads still apply their published-row predicate; drafts remain in the table.
+Channel tables are not filtered, because a `publishedAt` filter would break channel-path sync; their `publishedAt` controls invitees, not replication. A worker entrance check and a dispatch veto reject drafts if an app adds a draft column without regenerating the publication. API reads still apply their published-row predicate; drafts remain in the table.
 
 ### Moves
 
@@ -154,11 +154,9 @@ The server's `spreadWindow` grows with the online audience and database pool pre
 
 Fetches start after a view's ingested cursor, not its newest known position, so small gaps self-repair; repeated failures fall back to targeted invalidation and advance, so a range never loops.
 
-Apps derive per-user state from the signals in `query/realtime/sync-signals.ts` (`onChangeEvent` per readable notification, `onSyncedRows` once a range settles), never from prioritizer logic.
+Apps derive per-user state from the signals in `query/realtime/sync-signals.ts`, never from prioritizer logic. `onChangeEvent` fires for every readable notification before any tier decision, muted and archived channels included, and carries ids only. `onSyncedRows` fires once a range has settled, with the rows, or with an empty `degraded` batch that means invalidate instead of derive.
 
 ### Freshness
-
-After SSE goes live, background fill loads product queries for the current organization; other organizations only with `offlineAccess`. That flag also sets cache lifetime and scope (see [Client](./CLIENT.md#the-persister)).
 
 Synced product queries use infinite stale time while the stream is healthy, so catchup owns their freshness and route-loader prefetches reuse synced lists. A failed stream drops them to a five-minute fallback with mount refetching, reconnect refetching, and pull-to-refresh. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
 
@@ -225,7 +223,7 @@ Persisted variables are also rewritten during schema evolution. Idempotency is o
 
 ### Schema changes
 
-Old PWA tabs can hold old cache rows and mutation variables after a new server shape deploys; append-only schema lenses normalize old writes on the server and migrate persisted client state before use; tabs coordinate migration through a Web Lock and stop persisting on detecting a newer schema version. Read [Schema evolution](./SCHEMA_EVOLUTION.md).
+Old tabs and old queued writes survive a wire-shape deploy through lenses: [Schema evolution](./SCHEMA_EVOLUTION.md).
 
 ### Multiple tabs
 
@@ -237,7 +235,7 @@ The server keeps an authenticated TTL cache for enriched product detail response
 
 ### Yjs
 
-Yjs collaboration is disabled in the template. When enabled, the relay is the single writer for registered rich-text fields during a session and persists through the standard product update path; clients suppress SSE replacement of fields owned by an editor while other fields keep syncing. See the [Yjs worker](../yjs/README.md).
+Yjs collaboration is disabled in the template. Relay, single-writer, and materialization semantics: [Yjs worker](../yjs/README.md).
 
 ## Reference
 

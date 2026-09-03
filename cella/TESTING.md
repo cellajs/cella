@@ -17,7 +17,7 @@ services or network servers go in `tests/integration/`.
 pnpm test
 ```
 
-Starts the test database (Docker, `db_test` service in [backend/compose.yaml](../backend/compose.yaml)), then runs all package tests in full mode with a coverage summary. Only failures print output.
+Uses the `db_test` service in [backend/compose.yaml](../backend/compose.yaml).
 
 Requirements:
 
@@ -60,13 +60,11 @@ Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not chang
 
 **Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts); do not load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](../backend/tests/global-setup.ts); never assume an empty database. Use the `#/` import alias as in source.
 
-**Don't over-gate.** A test that needs only the test database, or none, belongs in the regular set. Use `tests/integration/` + `TEST_MODE` gating only for external moving parts.
-
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
 ## Storybook
 
-Frontend components are also tested through stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`). **Not part of `pnpm test`.**
+Frontend components are also tested through stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`).
 
 ```bash
 # one-time: install the browser
@@ -78,7 +76,5 @@ pnpm sdk
 # run the storybook test project
 pnpm test:storybook
 ```
-
-`pnpm story` opens the interactive Storybook dev server without running the browser tests.
 
 Every story is render-tested in headless Chromium; stories with `play` functions also get their interactions exercised. A new component story is a test automatically.

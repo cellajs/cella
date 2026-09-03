@@ -6,10 +6,10 @@ description: Drive a pnpm cella sync or analyze for an app forked from the cella
 # Cella sync for a forked app
 
 Run whenever the app pulls the cella template: `pnpm cella sync` (merge) or `pnpm cella analyze`
-(dry-run drift report). Every pass must leave the fork delta smaller or better-protected.
+(dry-run drift report).
 
 **Hard rule**: the CLI commits and ships the merge, never plain git. Each `pnpm cella sync` run
-advances one stage; the run that commits never ships (steps 6 and 7).
+advances one stage (steps 6 and 7).
 
 ## Vocabulary
 
@@ -17,8 +17,9 @@ advances one stage; the run that commits never ships (steps 6 and 7).
 - **ignored / pinned**: `overrides` in `cella.config.ts`. Ignored: never synced. Pinned: fork side
   wins on conflict, upstream changes that merge cleanly still arrive.
 - **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`) on every
-  intentional app edit in a cella-owned file. JSON cannot carry markers: pin or ignore changed
-  JSON files.
+  intentional app edit in a cella-owned file, one marker per contiguous edit, naming the
+  customization axis, not the diff; unmarked drift counts as accidental. JSON cannot carry
+  markers: pin or ignore changed JSON files.
 
 ## 1. Preflight
 
@@ -31,7 +32,7 @@ advances one stage; the run that commits never ships (steps 6 and 7).
 
 ## 2. Conflict triage
 
-Resolve in this order; each resolution should make the NEXT sync cheaper.
+Resolve in this order.
 
 | Conflict shape | Resolution |
 |---|---|
@@ -64,15 +65,9 @@ the marked lines survived; CI stays green until typecheck when one is dropped.
 
 ## 5. Migration bookkeeping
 
-`pnpm exec tsx cella/migrations/run.ts` prints the pending plan. Per entry:
-
-- **Already satisfied** (the change originated here, or an earlier sync brought the code): verify
-  the README's "Verify" steps pass, then mark.
-- **To apply**: follow the README (the `migrate` skill drives the loop), gate on `pnpm check`,
-  then mark.
-
-Mark: `pnpm exec tsx cella/migrations/run.ts mark <id...>`. The pending list must be empty at the
-end of a sync.
+Run the `migrate` skill; entries whose change originated here or arrived by an earlier sync are
+verified (README "Verify" steps) and marked, not re-applied. The pending list must be empty at
+the end of a sync.
 
 ## 6. Commit, then drift triage
 

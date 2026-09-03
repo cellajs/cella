@@ -2,7 +2,7 @@
 
 Standalone MCP worker exposing the server tool registry to external clients.
 
-A thin entrypoint: it sets `MODE=mcp` and imports the backend main module. All MCP worker code lives in `backend/src/modules/mcp/worker/`.
+All MCP worker code lives in `backend/src/modules/mcp/worker/`.
 
 ## File structure
 

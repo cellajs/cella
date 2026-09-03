@@ -4,7 +4,7 @@ How load-test seed data is defined, registered, and cleaned up.
 
 ## Self-registration
 
-Each `*.bench.ts` file here calls `registerBenchSeed()` as an import side effect (same pattern as `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` under `seeds/`, so an app adds a load-test table by dropping in one file, with no barrel or `data-setup.ts` edit.
+Each `*.bench.ts` file here calls `registerBenchSeed()` as an import side effect (same pattern as `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` under `seeds/` in Node.js (not inside Artillery scenarios), so an app adds a load-test table by dropping in one file, with no barrel or `data-setup.ts` edit.
 
 ## Seed kinds
 
@@ -22,5 +22,3 @@ Copy `attachment.bench.ts` (the reference) to `seeds/<name>.bench.ts`, point it 
 - pick an `order` of 100 or higher (core seeds use under 100), after anything you FK-reference (e.g. `task.bench.ts` after `project.bench.ts`)
 - claim an unused `idVariant` in the `b*` band, or set an explicit `cleanupWhere` when rows have no id
 - import id/relation helpers from `./ids`
-
-Seed files run in Node.js via `data-setup.ts`, not inside Artillery scenarios.

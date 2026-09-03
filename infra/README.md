@@ -16,17 +16,17 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Full stack deployment.** One guided setup: domain, HTTPS, load balancer, managed database, file storage, servers.
 
-**Releases can't break what is running.** Fresh servers per release; traffic moves once the new version provably serves. `singleVM` trades that overlap for a short serving gap ([Core philosophy](#core-philosophy)).
+**Releases can't break what is running.** Fresh servers per release.
 
-**Secure by default.** No machine logins; credentials descend in privilege (bootstrap → CI deploy → VM keys); key rotation is a menu action.
+**Secure by default.** No machine logins, descending credentials.
 
-**Observable by default.** Every deploy emits an OpenTelemetry trace with audit and error events; VMs report boot progress and crash logs to it.
+**Observable by default.** One OpenTelemetry trace per deploy.
 
-**Easy to leave.** One deploy command, runnable from any CI or a laptop, on Pulumi, Docker Compose and OTLP.
+**Easy to leave.** Pulumi, Docker Compose and OTLP.
 
 ## How it works
 
-**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one pasted bootstrap key: it creates project, state storage, Pulumi passphrase, credential chain and GitHub Environment secrets, runs the first provision and (with docker) the first deploy, then revokes the key. Fresh installs target staging; production is the same wizard with `--mode production` ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
+**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one pasted bootstrap key ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
 
 **Release** is one command, triggered by a published GitHub release, a manual dispatch, or any other CI:
 
@@ -34,16 +34,16 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 pnpm --filter infra run deploy --mode <production|staging> --sha <sha> [--build]
 ```
 
-It owns the whole pipeline: preflights, stack lock, frontend build and hashed-asset upload, two-wave rollout onto fresh VM generations, version verification, atomic frontend entry publish, smoke checks, reaping ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). `--build` also bakes and pushes the images, for self-contained laptop and bring-your-own-CI deploys. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
+It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). `--build` also bakes and pushes the images, for self-contained laptop and bring-your-own-CI deploys. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
 
-**Manage** is the same `pnpm infra` entrypoint on an existing stack: an operator menu for resume (re-sync config and GitHub secrets), key and passphrase rotation, privileged `pulumi up` on protected infra, drift preview, runtime secrets, database actions, stale-lock clearing and teardown ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
+**Manage** is the same `pnpm infra` entrypoint on an existing stack: an operator menu for resume (re-sync config and GitHub secrets), key and passphrase rotation, privileged `pulumi up` on protected infra, drift preview, runtime secrets, database actions, stale-lock clearing and [teardown](../cella/DEPLOYMENT.md#teardown) ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
 
 ## Core philosophy
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Rollback is a revert commit through the same path. Exception: `singleVM` folds every worker onto the backend VM and, because cdc is stop-first, replaces that host in place: health-gated, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
-2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation. Rollout state lives in one S3 **control object** read by the deploy command and the Pulumi program.
+1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Exception: `singleVM` replaces the backend host in place, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
+2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
 3. **Least-privilege credentials, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([credential tiers](../cella/DEPLOYMENT.md#credentials)).
 
 ## Security boundaries
@@ -95,10 +95,6 @@ Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `
 
 Operator credentials load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. Day-2 only: privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete temporary env files afterwards.
 
-## Teardown
-
-**Teardown** (menu action) prompts for a transient bootstrap-grade key (`SCW_TEARDOWN_*` env for unattended runs), requires typing `<slug>-<mode>`, and runs `pulumi destroy --refresh` under the stack lock; production resources marked `protect: true` are refused until protection is lifted in code. Walkthrough: [Teardown](../cella/DEPLOYMENT.md#teardown).
-
 ## Extending
 
 The engine is plain Pulumi plus the Scaleway SDK; no plugin framework. App-owned registries under [config/](config/): [services.config.ts](config/services.config.ts) (services, strategies, routes), [sizing.ts](config/sizing.ts), [stores.config.ts](config/stores.config.ts) (backing stores), [runtime-secrets.config.ts](config/runtime-secrets.config.ts) and [env-suppliers.config.ts](config/env-suppliers.config.ts) (secrets), [managed-keys.config.ts](config/managed-keys.config.ts), [health.config.ts](config/health.config.ts), [frontend-csp.config.ts](config/frontend-csp.config.ts), [telemetry.config.ts](config/telemetry.config.ts) and [general.config.ts](config/general.config.ts). Modules under [resources/](resources/) are ordinary Pulumi programs. [config/engine-config.ts](config/engine-config.ts) injects the app description, decoupling the engine from any one workspace.
@@ -125,6 +121,6 @@ One name per concept across code and docs:
 | **boot runner** | The `infra-boot` container run at first boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |
-| **boot diagnostics** | Logs and JSONL events a VM uploads at boot; `infra diag` reads, `--replay` re-ships. |
+| **boot diagnostics** | Logs and JSONL events a VM uploads at boot. |
 | **internal route** | Private, ACL-guarded LB frontend: a stable in-network address across cutovers. |
 | **engine config** | The injected app description ([config/engine-config.ts](config/engine-config.ts)); defaults to `appConfig`. |
