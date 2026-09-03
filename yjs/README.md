@@ -28,7 +28,7 @@ entity description + derived fields
 Postgres → CDC → SSE → non-editing viewers
 ```
 
-Keystrokes merge at character level and reach peers immediately; once per save window the relay persists the merged document and the backend updates description, summary, checkbox counts, keywords, and sync metadata through its normal update pipeline.
+Keystrokes merge at character level and reach peers immediately; once per save window the relay persists the merged document and the backend writes the description, plus whatever the entity's registered materializer derives, through its normal update pipeline.
 
 ## Connection and auth
 
@@ -36,16 +36,14 @@ Keystrokes merge at character level and reach peers immediately; once per save w
 ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 ```
 
-Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit; failed upgrades get a raw HTTP rejection so the client's reconnect backoff survives.
+Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit; a failure is an HTTP 400 with a JSON `{ code, reason }` body, so the client's reconnect backoff survives and the browser sees close code 1006.
 
-Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync messages wait behind it (up to 100 messages or about 200 KB); awareness is not buffered.
+Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Up to 100 sync messages wait behind it, later ones are dropped; awareness is not buffered.
 
 | Close code | Meaning |
 | --- | --- |
-| `4001` | Invalid or expired token |
-| `4003` | Token scope mismatch or entity access denied |
+| `4003` | Entity access denied |
 | `4400` | Missing or invalid entity scope |
-| `4429` | Connection rate exceeded |
 | `4503` | Authorization unavailable |
 
 ## Session lifecycle
@@ -60,12 +58,12 @@ When no `yjs_documents` row exists, the relay loads the entity's `description` w
 
 Updates are broadcast to peers, then merged into pending state; a three-second debounce yields one save per document, overwriting its single `yjs_documents` row. A failed save merges back into pending state for the next window.
 
-After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content; on change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, rechecks update permission, sanitizes media URLs, derives fields, and applies a server HLC.
+After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content; on change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, sanitizes media URLs, and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers none, so materialization returns `4xx` until an app registers one through `defineBackendModule({ yjsMaterializer })`.
 
 | Result | Behavior |
 | --- | --- |
 | `2xx` | Mark the snapshot materialized |
-| `4xx` | Permanent: entity deleted, access revoked, or no materializer |
+| `4xx` | Permanent: entity deleted, access revoked, or no materializer registered |
 | `5xx` or network failure | Keep the session row and retry |
 | Unparseable stored state | Permanent, so corrupt data cannot block cleanup |
 
@@ -73,7 +71,7 @@ After saving, the relay compares the snapshot's BlockNote JSON with the last mat
 
 After the last client disconnects, the room stays warm for five minutes (a reconnect reuses pending state); then cleanup flushes remaining updates, runs a final materialization, and deletes the `yjs_documents` row, or reschedules on a retryable failure.
 
-A startup sweep handles rows orphaned by a crash: rows with `last_edited_by` and non-empty state are materialized before deletion, seed-only rows deleted directly, retryable failures left for a later boot. Duplicate materialization is harmless: unchanged content is a no-op and HLC ordering resolves concurrent writes.
+A startup sweep handles rows older than the grace period that a crash orphaned: rows with `last_edited_by` and non-empty state are materialized before deletion, seed-only rows deleted directly, retryable failures left for a later boot. Duplicate materialization is harmless because unchanged content is a no-op.
 
 ## Durability and failure
 
@@ -83,7 +81,7 @@ Clients need no unload handlers or final flush; the only loss window is the thre
 | --- | --- |
 | Tab closes right after typing | The relay still saves and materializes the received update |
 | A client loses its connection | Client falls back to solo REST/offline; the relay materializes what it has |
-| The backend is unavailable | Materialization retries; cleanup keeps the session row until the backend recovers |
+| The backend is unavailable | Materialization is retried on the next save window or at cleanup, which keeps the session row until the backend recovers |
 | The relay restarts | Clients reconnect with complete documents; the startup sweep recovers orphaned sessions |
 | Entity deleted or access revoked | Permanent materialization failure; cleanup does not resurrect the entity |
 | SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
@@ -122,12 +120,12 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | RLS-scoped reads and session writes |
-| `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS; required in production |
+| `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS; required in production unless `NODB` |
 | `YJS_SECRET` | HMAC and internal materialization secret; minimum 16 characters |
-| `YJS_PORT` | WebSocket and health port; defaults to the configured Yjs URL or 4002 |
+| `YJS_PORT` | WebSocket and health port; default 4002 (`devPorts.yjs`) |
 | `YJS_DB_POOL_MAX` | PostgreSQL pool size; default 20 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
-| `NODB` | Disable database paths; in-memory rate limiter |
+| `NODB` | In-memory connection limiter and no TLS CA requirement; database reads still open lazily |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
 
-The backend counterpart in `backend/src/modules/yjs/` issues tokens, exposes `/yjs/materialize`, sanitizes media URLs, and registers per-entity materializers in `yjs-materializers.ts`.
+The backend counterpart in `backend/src/modules/yjs/` issues tokens, exposes `/yjs/materialize`, sanitizes media URLs, and indexes the materializers modules register.
