@@ -51,12 +51,12 @@ export interface NotificationCandidate {
 }
 
 /**
- * Notification source overrides for a product module (`notifications: true` takes every default).
- * The notification module derives the defaults from the product table: live rows are the
- * non-deleted, published ones; a `mentions` column (`mentionableColumns()`) switches mention
- * derivation and mention fan-out on; previews and digest lines read `name` and `description`;
- * `deriveFrom` is `both` when the module registers a `yjsMaterializer`. Apps typically declare
- * only `resolveRecipients` and `resolveContextId`.
+ * Notification source declaration for a product module (`notifications: true` declares nothing).
+ * Each reader below is used when given, else the notification module reads the product table
+ * (`notification-sources.ts`): live rows are the non-deleted, published ones; a `mentions` column
+ * (`mentionableColumns`) switches mention derivation and mention fan-out on; previews and digest
+ * lines read `name` and `description`; `deriveFrom` is `both` when the module registers a
+ * `yjsMaterializer`. Apps typically declare only `resolveRecipients` and `resolveContextId`.
  *
  * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
  * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |

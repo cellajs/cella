@@ -38,11 +38,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
-  const updateData = useDescriptionUpdate({
-    entityType: 'attachment',
-    entity: attachment,
-    update: (ops) => mutateAsync({ id: attachment.id, ops }),
-  });
+  const updateData = useDescriptionUpdate('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
 
   return (
     <CollaborativeBlockNote

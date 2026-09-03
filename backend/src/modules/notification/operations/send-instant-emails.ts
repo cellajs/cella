@@ -8,7 +8,7 @@ import { buildUnsubscribeLink } from '../helpers/category-token';
 import { findChannelNames } from '../helpers/channel-names';
 import { htmlToExcerpt } from '../helpers/render-digest-html';
 import { findPendingMentionEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
-import { getNotificationSource } from '../notification-sources';
+import { getNotificationSource, loadSubjectPreview } from '../notification-sources';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const EXCERPT_LENGTH = 250;
@@ -42,10 +42,10 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     if (!user) continue;
 
     const source = getNotificationSource(notification.entityType);
-    if (!source?.loadPreview) continue;
+    if (!source) continue;
 
     const preview = await tenantReadById(notification.tenantId, (tx) =>
-      source.loadPreview!(tx, notification.subjectId),
+      loadSubjectPreview(source, tx, notification.subjectId),
     );
     if (!preview) continue;
 

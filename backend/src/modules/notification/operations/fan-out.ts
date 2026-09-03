@@ -11,7 +11,7 @@ import {
   insertNotificationsIgnoringDuplicates,
   type NotificationInsert,
 } from '../notification-queries';
-import { getNotificationSource, type NotificationSource } from '../notification-sources';
+import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
 import { type NotificationType, notificationTypes } from '../notification-types';
 
 /** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
@@ -38,7 +38,7 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<void> {
   if (subjectIds.length === 0) return;
 
   // Batch events carry only permission columns, never `mentions`, so the rows are always re-read.
-  const rows = await tenantReadById(tenantId, (tx) => source.loadRows(tx, subjectIds));
+  const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds));
 
   for (const row of rows) {
     try {
@@ -78,8 +78,9 @@ async function fanOutRow(
 
   if (source.mentionable) for (const mentioned of row.mentions ?? []) add(mentioned, 'mention');
 
-  if (source.resolveRecipients) {
-    const recipients = await tenantReadById(tenantId, (tx) => source.resolveRecipients!(tx, row));
+  const { resolveRecipients, resolveContextId } = source.declaration;
+  if (resolveRecipients) {
+    const recipients = await tenantReadById(tenantId, (tx) => resolveRecipients(tx, row));
     for (const recipient of recipients) add(recipient.userId, recipient.type);
   }
 
@@ -101,7 +102,7 @@ async function fanOutRow(
       type: recipient.type,
       entityType,
       subjectId: row.id,
-      contextId: source.resolveContextId ? source.resolveContextId(row) : row.id,
+      contextId: resolveContextId ? resolveContextId(row) : row.id,
       channelId: channel.id,
       channelType: channel.type,
       organizationId,

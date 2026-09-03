@@ -3,7 +3,7 @@ import { i18n } from '../../../../emails/i18n';
 import { findChannelNames } from '../helpers/channel-names';
 import { escapeString } from '../helpers/render-digest-html';
 import { findUndigestedNotifications } from '../notification-queries';
-import { getNotificationSource } from '../notification-sources';
+import { getNotificationSource, loadSubjectNames } from '../notification-sources';
 
 /** Rows quoted per channel before the section collapses into "and N more". */
 const ROWS_PER_CHANNEL = 5;
@@ -52,8 +52,8 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
   for (const [key, contextIds] of contextIdsByTenantAndType) {
     const [tenantId, entityType] = key.split(':');
     const source = getNotificationSource(entityType);
-    if (!source?.loadContextNames) continue;
-    const names = await tenantReadById(tenantId, (tx) => source.loadContextNames!(tx, [...new Set(contextIds)]));
+    if (!source) continue;
+    const names = await tenantReadById(tenantId, (tx) => loadSubjectNames(source, tx, [...new Set(contextIds)]));
     for (const [id, name] of names) contextNames.set(id, name);
   }
 

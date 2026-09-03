@@ -35,8 +35,8 @@ No script: manual.
    types (e.g. `['assigned']`) and add `notification.<type>` plus `email.digest_line.<type>` to
    `app.json`.
 3. Replace `use-<product>-description-update.ts` hooks with `useDescriptionUpdate` from
-   `modules/common/blocknote` (`derive` for title or summary fields, `soloWriteDelayMs` for
-   commit-on-every-change editors).
+   `modules/common/blocknote`, or compose its halves (`patchCollaborativeDescription` with your
+   derived fields, `persistStandaloneDescription` behind a debounce) when the editor needs more.
 4. Take upstream for the attachment module (backend and frontend), `pnpm generate` for
    `attachments.mentions`, and for `frontend/src/lib/sw.ts` (push clicks open the subject).
 5. Create `shared/config/vocabulary-allowlist.ts` from the template and move app-side exceptions
