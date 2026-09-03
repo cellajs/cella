@@ -30,15 +30,16 @@ RLS migration lists; the template protects `attachments` and `yjs_documents`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
-| RLS-classified product entities | Tenant-scoped SELECT; permissive writes | Guards, scoped queries, and permissions |
+| Product entities | Tenant-scoped SELECT; permissive writes | Guards, scoped queries, and permissions |
 | Listed tenant support tables | Same RLS shape; `yjs_documents` in the template | Owning module and guards |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
 | Ordinary resources | No RLS unless the migration lists them | Owning route or module |
 
-The migration classifier takes registered entity tables, removes `user` and the channel types, then
-adds the listed support tables, so a registered product entity is protected automatically.
-Channel-entity and membership queries use `baseDb`; protected product reads must enter a tenant helper.
+Every product entity has a tenant and a home channel by construction (the hierarchy rejects a
+product without a channel parent), so the RLS migration protects every registered product table
+without per-table opt-in. Channel-entity and membership queries use `baseDb`; product reads must
+enter a tenant helper.
 
 ## Product reads
 
