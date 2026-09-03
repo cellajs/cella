@@ -26,6 +26,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 | **Summary** | Frontier, counts, and timestamps denormalized onto a channel row, so one read answers for a subtree |
 | **View** | The slice of the stream a client tracks (prefixes, entity types, depth, cursor); the unit catchup authorizes and answers |
 | **Cursor** | Latest sequence position a view has ingested |
+| **Stream cursor** | ID of the last activity a connection received; the server sends it as `offset` and the client returns it on reconnect |
 | **Range fetch** | Ordinary list request bounded by `seqCursor` |
 | **Tombstone** | Soft-deleted row that remains fetchable so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write (mutation ID, source ID, per-field HLC timestamps) for merge arbitration and echo recognition |
@@ -41,7 +42,7 @@ Renaming attachment `a42` inside `org1`:
 5. Dispatch checks the full row with the permission engine used by REST reads; allowed subscribers receive an SSE notification with entity ID, path, sequence range, and `stx`.
 6. The originating tab recognizes its `sourceId` and patches only cached `stx`. Other clients fetch the notified range through the list endpoint and patch their caches.
 
-Reconnect uses the same path: cursor `3` and frontier `7` become `?seqCursor=4`, and the cursor advances to `7` only after ingest.
+Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`, and the cursor advances to `7` only after ingest.
 
 ## Server
 
@@ -55,7 +56,7 @@ The API accepts the worker only at `/internal/cdc` ([CDC worker](../cdc/README.m
 
 ### Counters
 
-Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys follow `<domain>:<metric>:[h:]<type|role>`; `h` marks a **home-only** summary, its absence the **subtree** aggregate. Subtree keys are written to the home node and every ancestor up to the organization, home-only keys to the home node, singletons to the organization row. Counter recalculation rebuilds sequence, frontiers, counts, timestamps, and canonical paths from table data with the CDC live-and-published predicates, ignoring historical stamps on old drafts.
+Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys follow `<domain>:<metric>:[h:]<type|role>`; `h` marks a **home-only** summary, its absence the **subtree** aggregate. Subtree keys are written to the home node and every ancestor up to the organization, home-only keys to the home node, singletons to the organization row. Counter recalculation rebuilds every key and the canonical paths from table data with the same live-and-published predicates the worker uses.
 
 | Key | Scope | Meaning |
 | --- | --- | --- |
@@ -101,7 +102,7 @@ When an update changes a product path, the worker includes the permission-releva
 
 A direct unconditional membership proves a `self` view at that node. A `subtree` view also needs a subtree-scoped grant: an elevated role at the node or a grant at the deepest hierarchy level. Prefix sets are proven one prefix at a time. Canonical ancestry comes from `channel_counters.path`, never from a client claim; a forged or stale prefix returns `opaque`, not `forbidden`, so the status is no existence oracle.
 
-Declare views where grants live: organization-wide and elevated grants produce subtree views, home-scoped grants self views, a set of granted homes one prefix-set view; conditional grants produce no precise summary views. Changing a view's prefixes, entity types, or depth resets its cursor. Membership state and content cursors advance independently, with no snapshot consistency tokens. Read [Permissions](./PERMISSIONS.md) for the policy model.
+The client derives views from the user's memberships and the policy matrix before every catchup, so apps declare none by hand: organization-wide and elevated grants produce subtree views, home-scoped grants self views, a set of granted homes one prefix-set view; conditional grants produce no summary views. Changing a view's prefixes, entity types, or depth resets its cursor. Membership state and content cursors advance independently, with no snapshot consistency tokens. Read [Permissions](./PERMISSIONS.md) for the policy model.
 
 ## Client
 
@@ -126,39 +127,37 @@ A view count that moved since the last catchup signals a removal the client may 
 
 ### Fetch prioritization
 
-Fetch delay is set by client priority and server load:
+A notification is not fetched at once. The client puts the notified range in a queue and fetches it after a delay set by how urgent the scope is for this client and how loaded the server is:
 
 ```text
-delay = clamp(client minimum, deterministic jitter within spreadWindow, client maximum)
+delay = clamp(tier minimum, this client's fixed slot within the server's spreadWindow, tier maximum)
 ```
 
-Client tiers:
+Client tiers, decided per scope:
 
-- A viewed channel fetches immediately.
+- A viewed channel fetches immediately. At organization level the route decides; below it, a mounted list query carrying the channel id does (prefetches have no observers and do not count).
 - A muted or archived channel fetches when opened.
-- Other channels fetch in the background between 2 and 30 seconds.
+- Every other channel fetches in the background between 2 and 30 seconds.
 
-Route state identifies the viewed channel at organization level; deeper, observed list queries do (prefetches are not observers).
+The server's `spreadWindow` grows with the organization's online audience and database pool pressure, capped at 120 seconds. The queue merges overlapping ranges per product type and home channel; a new notification never postpones an earlier deadline. The queue flushes early when navigation enters a channel, a channel gains its first observer, the tab hides, or the browser returns online. At flush, all due channels of one organization and product type share one covering fetch, narrowed with `channelId` when the cached channel paths prove a common ancestor (the template fetches org-wide); rows route to their home lists and each covered channel advances to the shared upper bound.
 
-The server's `spreadWindow` grows with the online audience and database pool pressure, capped at 120 seconds. The prioritizer merges contiguous ranges per product type and home channel; a new notification never postpones an earlier deadline. It flushes when navigation enters a channel, a channel gains its first observer, the tab hides, or the browser returns online. At flush, all due channels of one organization and product type share one covering fetch, narrowed with `pathPrefix` when the channel-path resolver proves a common ancestor (the template fetches org-wide); rows route to their home lists and each covered channel advances to the shared upper bound.
+Fetches start after a view's ingested cursor, not its newest known position, so small gaps self-repair. Repeated failures and full chunks fall back to list invalidation and advance, so a range never loops.
 
-Fetches start after a view's ingested cursor, not its newest known position, so small gaps self-repair; repeated failures fall back to targeted invalidation and advance, so a range never loops.
-
-Apps derive per-user state from the signals in `query/realtime/sync-signals.ts`, never from prioritizer logic. `onChangeEvent` fires for every readable notification before any tier decision, muted and archived channels included, and carries ids only. `onSyncedRows` fires once a range has settled, with the rows, or with an empty `degraded` batch that means invalidate instead of derive.
+Apps derive per-user state from the signals in `query/realtime/sync-signals.ts`, never from queue logic. `onChangeEvent` fires for every readable notification before any tier decision, muted and archived channels included, and carries ids only. `onSyncedRows` fires once a range has settled, with the rows, or with an empty `degraded` batch that means invalidate instead of derive.
 
 ### Freshness
 
-Synced product queries use infinite stale time while the stream is healthy, so catchup owns their freshness and route-loader prefetches reuse synced lists. A failed stream drops them to a five-minute fallback with mount refetching, reconnect refetching, and pull-to-refresh. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness, and route-loader prefetches reuse the synced lists. A failed stream or a delivery shortfall drops them to a five-minute stale time, so route loaders and reconnects refetch them until a clean catchup restores trust. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
 
 ### Unseen tracking
 
-Unseen badges update from delivered rows, mirroring the server predicate: inside the shared time window, published, not deleted, not locally seen. Qualifying rows increment, tombstones decrement, marking seen decrements once; ID guards and a reconciliation timestamp prevent double counting. The exact count endpoint replaces the estimate after staleness, focus changes, and catchup; cross-device seen marks reconcile there because `seen_by` does not enter CDC. Seen-tracked types require unconditional channel read; types with conditional row visibility keep endpoint counting.
+Unseen badges update from delivered rows, mirroring the server predicate: inside the shared `seenWindowMs` window, published, not deleted, not locally seen. Qualifying rows increment, tombstones decrement, marking seen decrements once; ID guards and a reconciliation timestamp prevent double counting. The exact count endpoint replaces the estimate after staleness, focus changes, and catchup; cross-device seen marks reconcile there because `seen_by` does not enter CDC. Seen-tracked types require unconditional channel read; types with conditional row visibility keep endpoint counting.
 
 ### Embeddings
 
 A product can reference other products through an id array column: the **host** row holds the ids, each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` (`hostProduct`, `embeddedProduct`, `hostColumn`); the template configures none. Host and embedded rows sync independently, so patching runs both ways:
 
-- **Embedded row changes.** Notifications and catchup carry the changed embedded ids (`PropagationHint`); the client patches the copies inside cached host rows, guarded by `updatedAt`, after the embedded range fetch (live) or all organization range fetches (catchup). A same-tab echo returns before propagation, so that mutation updates host products itself.
+- **Embedded row changes.** Notifications and catchup carry the changed embedded ids (`PropagationHint`); after the embedded rows' range fetch the client patches the copies inside cached host rows, keeping whichever copy has the newer `updatedAt`. A same-tab echo returns before propagation, so that mutation updates host products itself.
 - **Host row changes.** Values derived per embedded row, such as a usage count, get no signal of their own, so ingesting a host range compares each row's embedding columns against the cached copy and refetches the lists of embedded rows whose references were added or removed, narrowed to their home channels; an uncached host row touches every id.
 
 When the client invalidates a host list instead of ingesting rows (first connection, opaque view, nothing cached, delivery failure), it also invalidates the embedded products' lists. Derived counts come from the list endpoint only.
@@ -167,7 +166,7 @@ When the client invalidates a host list instead of ingesting rows (first connect
 
 Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching list and detail caches, the mutation runs with React Query `networkMode: 'offlineFirst'`, success merges the authoritative server row, failure follows module and global error handling, including optimistic rollback where configured.
 
-An edit attempted offline retries network errors only (backoff sized to outlast the connectivity probe), then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay; online writes never wait.
+An edit attempted offline retries network errors only (three attempts, enough to outlast the connectivity probe), then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay; online writes never wait.
 
 ### Merge metadata
 
@@ -178,7 +177,7 @@ HLC: 1710500000123:0001:abcde
      unix millis : counter : source hash
 ```
 
-Comparison uses milliseconds, then counter, then source. Each tab advances its own clock; the server advances its clock from received timestamps before generating its own; clients never advance from remote values. This is deterministic last-writer-wins, not a causal clock.
+Comparison uses milliseconds, then counter, then source. Each tab advances its own clock; the server advances its clock from received and stored timestamps before generating its own; clients never advance from remote values. This is deterministic last-writer-wins, not a causal clock.
 
 Value shape selects merge behavior:
 
@@ -199,7 +198,7 @@ Array deltas remove first, then add. Replaying the same delta is idempotent, but
 
 ### Paused writes
 
-Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data; hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps. Only `isPaused` mutations are dehydrated.
+Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data; hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps. Only paused mutations are persisted.
 
 While offline, before a queued mutation completes a round trip, the queue is rewritten:
 
@@ -221,7 +220,7 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 
 ### Detail cache
 
-The server keeps an authenticated TTL cache for enriched product detail responses, keyed by entity type and ID. Hits recheck permission and draft visibility, misses coalesce concurrent requests, and CDC invalidates changed entries, including batch rows and physical deletes. Defaults: 5,000 entries (roughly 25 to 50 MB), 10-minute TTL. List fan-out bypasses it.
+The server keeps an authenticated TTL cache for enriched product detail responses, keyed by entity type and ID. Hits recheck permission and draft visibility, misses coalesce concurrent requests, and CDC invalidates changed entries, including batch rows and physical deletes. Defaults: 5,000 entries, 10-minute TTL. List fan-out bypasses it.
 
 ### Yjs
 
@@ -231,11 +230,13 @@ Yjs collaboration is disabled in the template. Relay, single-writer, and materia
 
 ### SSE wire
 
+Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload; `unauthorized`, `forbidden`, and `tenant_revoked` stop reconnecting).
+
 ```typescript
 interface StreamNotification {
-  kind: "entity" | "membership";
+  kind: "product" | "membership";
   action: "create" | "update" | "delete" | "moveOut";
-  entityType: string | null;
+  productType: string | null;
   resourceType: string | null;
   subjectId: string | null;
   organizationId: string | null;
@@ -286,4 +287,4 @@ interface CatchupChangeSummary {
 }
 ```
 
-`seqCursor=51,150` is the inclusive bounded range and the only form. Range fetches may carry `pathPrefix` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`); never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
+`seqCursor=51,150` is the inclusive bounded range and the only form. Range fetches may carry `channelId` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`); never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
