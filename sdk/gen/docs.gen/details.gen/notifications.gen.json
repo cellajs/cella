@@ -34,7 +34,11 @@
                     "required": true
                   },
                   "channelId": { "type": "string", "required": true },
-                  "channelType": { "type": "string", "required": true },
+                  "channelType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
                   "organizationId": { "type": "string", "required": true },
                   "tenantId": { "type": "string", "required": true },
                   "actorId": {

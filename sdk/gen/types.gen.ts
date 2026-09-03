@@ -527,7 +527,6 @@ export type Attachment = {
     thumbnail?: string;
     converted?: string;
   };
-  mentions: Array<string>;
   organizationId: string;
   viewCount?: number;
 };
@@ -2801,7 +2800,7 @@ export type GetNotificationsResponses = {
       subjectId: string;
       contextId: string | null;
       channelId: string;
-      channelType: string;
+      channelType: 'organization';
       organizationId: string;
       tenantId: string;
       actorId: string | null;

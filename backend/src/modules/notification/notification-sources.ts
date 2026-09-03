@@ -1,9 +1,9 @@
-import type { Block } from '@blocknote/core';
-import { and, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, eq, getColumns, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, TrackedEventType } from 'shared';
-import { getTextFromBlock } from 'shared/blocknote';
+import { textFromDocument } from 'shared/blocknote';
 import type { DbOrTx } from '#/db/db';
+import type { mentionableColumns, productColumns } from '#/db/utils/product-columns';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import type { BackendModule, ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
 import { onBackendModuleRegister } from '#/lib/module';
@@ -12,14 +12,10 @@ import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 import { deriveMentionsFor } from './operations/derive-mentions';
 
-/** The `productColumns` every product table carries, plus the opt-in `mentions` column. */
-type ProductTable = AnyPgTable & {
-  id: PgColumn;
-  name: PgColumn;
-  description: PgColumn;
-  deletedAt: PgColumn;
-  mentions?: PgColumn;
-};
+/** A product table as `productColumns` and the opt-in `mentionableColumns` shape it. */
+type ProductTable = AnyPgTable &
+  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn> &
+  Partial<Record<keyof typeof mentionableColumns, PgColumn>>;
 
 /** A declaration completed with the table-derived defaults: the readers the fan-out, emails and digest call. */
 export type NotificationSource = ModuleNotifications &
@@ -52,13 +48,7 @@ onBackendModuleRegister((module) => {
   }
 });
 
-/**
- * The declaration completed from the product table: live rows are the non-deleted, published
- * ones; `mentions` is written when the table carries the column (which also switches
- * `mentionable` on); previews and context names read `name` and `description`; materialized
- * writes count as edits when the module registers a Yjs materializer. Apps override any member,
- * typically only `resolveRecipients` and `resolveContextId`.
- */
+/** The declaration completed with the table-derived defaults `ModuleNotifications` documents. */
 function withTableDefaults(module: BackendModule, entityType: ProductEntityType): NotificationSource {
   const overrides: ModuleNotifications = module.notifications === true ? {} : (module.notifications ?? {});
   // Product tables all carry productColumns; the registry types them as a union of concrete tables.
@@ -68,12 +58,15 @@ function withTableDefaults(module: BackendModule, entityType: ProductEntityType)
   const liveRows = (ids: string[]): SQL | undefined =>
     and(inArray(table.id, ids), isNull(table.deletedAt), publishedRowsPredicate(table));
 
+  // The fan-out needs ids, audience and permission columns; the body and search text are the bulk of a row.
+  const { description: _description, keywords: _keywords, ...subjectColumns } = getColumns(table);
+
   return {
     mentionable,
     deriveFrom: overrides.deriveFrom ?? (module.yjsMaterializer ? 'both' : 'client'),
     loadRows: async (tx: DbOrTx, ids: string[]) =>
       // A product row satisfies NotificationSubjectRow; the generic table select is untyped.
-      (await tx.select().from(table).where(liveRows(ids))) as NotificationSubjectRow[],
+      (await tx.select(subjectColumns).from(table).where(liveRows(ids))) as NotificationSubjectRow[],
     writeMentions:
       table.mentions === undefined
         ? undefined
@@ -98,18 +91,8 @@ function withTableDefaults(module: BackendModule, entityType: ProductEntityType)
 
 /** Plain text of a stored body for email excerpts: block documents flatten, legacy HTML passes through. */
 function descriptionText(description: unknown): string {
-  if (typeof description !== 'string' || !description) return '';
-  if (!description.trimStart().startsWith('[')) return description;
-  try {
-    const blocks: unknown = JSON.parse(description);
-    if (!Array.isArray(blocks)) return description;
-    return blocks
-      .map((block) => getTextFromBlock(block as Block))
-      .filter(Boolean)
-      .join(' ');
-  } catch {
-    return description;
-  }
+  if (typeof description !== 'string') return '';
+  return textFromDocument(description) ?? description;
 }
 
 export const getNotificationSource = (entityType: string): NotificationSource | undefined => sources.get(entityType);

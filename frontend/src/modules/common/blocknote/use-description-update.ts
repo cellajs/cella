@@ -1,13 +1,13 @@
-import type { QueryKey } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { ProductEntityType } from 'shared';
+import { useDebouncedCallback } from 'use-debounce';
 import { patchDescriptionCaches } from '~/modules/common/blocknote/description-cache';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
 interface DescriptionUpdateOptions {
   entityType: ProductEntityType;
-  entity: { id: string; description: string | null };
-  keys: { detailKey: QueryKey; listKey: QueryKey };
+  entity: { id: string; organizationId: string; description: string | null };
   /** The product's update mutation; runs only in standalone mode. */
   update: (ops: { description: string }) => Promise<unknown>;
   /** Fields derived from the document that list and detail views render (a title, a summary), patched alongside it. */
@@ -26,53 +26,32 @@ interface DescriptionUpdateOptions {
 export function useDescriptionUpdate({
   entityType,
   entity,
-  keys,
   update,
   derive,
-  soloWriteDelayMs,
+  soloWriteDelayMs = 0,
 }: DescriptionUpdateOptions) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRef = useRef<string | null>(null);
-
   const writeSolo = async (description: string) => {
     if (description === entity.description) return;
     if (!findInCache(entityType, entity.id)) return;
     await update({ description });
   };
-
-  const flushPending = async () => {
-    const description = pendingRef.current;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = null;
-    pendingRef.current = null;
-    if (description !== null) await writeSolo(description);
-  };
+  const writeSoloDebounced = useDebouncedCallback(writeSolo, soloWriteDelayMs);
 
   // Closing the editor mid-debounce must not drop the last keystrokes.
-  const flushRef = useRef(flushPending);
-  flushRef.current = flushPending;
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) void flushRef.current();
-    };
-  }, []);
+  useEffect(() => () => void writeSoloDebounced.flush(), [writeSoloDebounced]);
 
   return async (description: string, collaborative: boolean) => {
     if (collaborative) {
-      patchDescriptionCaches(entityType, entity.id, keys, {
-        description,
-        ...derive?.(description),
-        updatedAt: new Date().toISOString(),
-      });
+      const keys = getEntityQueryKeys(entityType);
+      patchDescriptionCaches(
+        entityType,
+        entity.id,
+        { detailKey: keys.detail.byId(entity.id), listKey: keys.list.org(entity.organizationId) },
+        { description, ...derive?.(description), updatedAt: new Date().toISOString() },
+      );
       return;
     }
-
-    if (!soloWriteDelayMs) {
-      await writeSolo(description);
-      return;
-    }
-    pendingRef.current = description;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => void flushRef.current(), soloWriteDelayMs);
+    if (soloWriteDelayMs) writeSoloDebounced(description);
+    else await writeSolo(description);
   };
 }

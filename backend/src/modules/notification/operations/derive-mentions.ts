@@ -1,3 +1,4 @@
+import type { ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
@@ -8,18 +9,13 @@ import { readableAccess } from '../helpers/readable-access';
 /**
  * Mutation handler that re-derives `mentions` from the stored body, inside the writing
  * transaction, for one mentionable notification source (registered per source by
- * notification-sources.ts).
+ * notification-sources.ts); the source's `deriveFrom` picks which writes count.
  *
  * Deriving client-side and storing whatever the client sends would let a hand-crafted request
  * notify anyone, including users with no access to the row. Deriving server-side and filtering by
  * read permission makes the column trustworthy, which is what the fan-out relies on.
- *
- * The source's `deriveFrom` picks the writes to read. By default Yjs materialization is skipped:
- * it re-writes a client-owned body without a user intent behind it, so a collaborative save
- * could resurrect a mention that was edited away. A source whose Yjs document is the body's
- * source of truth derives from the materialized body, or from both.
  */
-export function deriveMentionsFor(entityType: string, source: ModuleNotifications): MutationHandler {
+export function deriveMentionsFor(entityType: ProductEntityType, source: ModuleNotifications): MutationHandler {
   return async (ctx: AuthContext, payload: MutationPayload): Promise<void> => {
     if (!derivesFrom(source.deriveFrom ?? 'client', payload)) return;
     if (!source.writeMentions) {
@@ -30,7 +26,11 @@ export function deriveMentionsFor(entityType: string, source: ModuleNotification
     const rows = (payload.after ?? []) as unknown as NotificationSubjectRow[];
     if (rows.length === 0) return;
 
-    for (const row of rows) {
+    for (const [index, row] of rows.entries()) {
+      // `before`/`after` are index-aligned; an edit that left the body alone changes no mentions.
+      const before = payload.before?.[index];
+      if (before && before.description === row.description) continue;
+
       const mentioned = extractMentionIds(row.description);
       // A mention must never leak a row's existence to someone who may not read it.
       const readable = await readableAccess(entityType, row, mentioned);

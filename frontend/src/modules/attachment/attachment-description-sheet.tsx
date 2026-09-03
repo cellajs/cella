@@ -1,49 +1,46 @@
-import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import type { Attachment } from 'sdk';
-import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
-import { attachmentQueryKeys, useAttachmentUpdateMutation } from '~/modules/attachment/query';
+import { hierarchy, isChannel } from 'shared';
+import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { CollaborativeBlockNote } from '~/modules/common/blocknote/collaborative-blocknote';
 import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
 import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { membersListQueryOptions } from '~/modules/memberships/query';
 import type { Member } from '~/modules/memberships/types';
-import { organizationQueryOptions } from '~/modules/organization/query';
+import { findInCache } from '~/query/basic/find-in-list-cache';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
 const sheetId = 'attachment-description';
 
 /**
- * Collaborative description editor for one attachment: organization members feed the mention
- * menu, the relay persists collaborative sessions, the update mutation covers the standalone
- * fallback. Read-only for viewers without update permission.
+ * Collaborative description editor for one attachment. Grants and the mention audience come
+ * from the row's home channel (deepest ancestor, organization for org-homed rows), so an app that
+ * re-homes attachments below the organization needs no change here. Read-only without update
+ * permission; the relay persists collaborative sessions, the update mutation the standalone fallback.
  */
-export function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
-  const { organization: routeOrganization, tenantId } = useOrganizationLayoutContext();
-  // The cached organization carries the enriched `can` grants; the route context row does not.
-  const { data: organization } = useSuspenseQuery(organizationQueryOptions(routeOrganization.id, tenantId));
+function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
+  const { tenantId, organizationId } = attachment;
+  const [deepest] = hierarchy.resolveNonNullAncestors('attachment', attachment);
+  const home = deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : null;
+  const homeId = home?.id ?? organizationId;
+  const homeType = home?.type ?? hierarchy.rootChannelType;
+
   const resolveCan = useResolveCan();
-  const canEdit = resolveCan(organization.can?.attachment?.update, attachment.createdBy?.id ?? null);
+  const channel = findInCache<EnrichedChannel>(homeType, homeId);
+  const canEdit = resolveCan(channel?.can?.attachment?.update, attachment.createdBy);
 
   const membersQuery = useInfiniteQuery(
-    membersListQueryOptions({
-      entityId: organization.id,
-      entityType: 'organization',
-      tenantId,
-      organizationId: organization.id,
-    }),
+    membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }),
   );
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
-  const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organization.id);
+  const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
   const updateData = useDescriptionUpdate({
     entityType: 'attachment',
     entity: attachment,
-    keys: {
-      detailKey: attachmentQueryKeys.detail.byId(attachment.id),
-      listKey: attachmentQueryKeys.list.org(organization.id),
-    },
     update: (ops) => mutateAsync({ id: attachment.id, ops }),
   });
 

@@ -1,10 +1,8 @@
 import { redirect } from '@tanstack/react-router';
 import { markNotificationsRead } from 'sdk';
-import type { z } from 'zod';
-import { getNotificationRoute, type notificationLinkSearchSchema } from '~/modules/notification/notification-link';
+import type { NotificationLinkSearch } from 'shared/utils/notification-link';
+import { getNotificationRoute } from '~/modules/notification/notification-link';
 import { invalidateNotifications } from '~/modules/notification/query';
-
-type NotificationLinkSearch = z.infer<typeof notificationLinkSearchSchema>;
 
 /**
  * `/n` resolves an email or push link to the subject's channel route and forwards. The link is

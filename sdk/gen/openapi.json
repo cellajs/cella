@@ -2204,12 +2204,6 @@
             "required": ["original"],
             "description": "Storage object keys per variant, keyed by variant name; only generated variants are present."
           },
-          "mentions": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "organizationId": {
             "type": "string",
             "format": "uuid"
@@ -2243,7 +2237,6 @@
           "convertedContentType",
           "size",
           "keys",
-          "mentions",
           "organizationId"
         ],
         "description": "A product entity for file attachment metadata.",
@@ -5834,7 +5827,8 @@
                             "type": "string"
                           },
                           "channelType": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": ["organization"]
                           },
                           "organizationId": {
                             "type": "string"

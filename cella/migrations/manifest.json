@@ -780,7 +780,7 @@
     "pnpm check",
     "pnpm test:core"
    ],
-   "summary": "Notification sources derive from the product table (notifications: true; live rows, mentions writing via mentionableColumns(), previews and digest names, deriveFrom both with a yjsMaterializer), apps declare only resolveRecipients/resolveContextId. Email and push links are self-describing /n links resolved by the frontend, resolveEmailLink is gone. Attachments are the template consumer (mentions column, description update op, materializer, collaborative editor in a sheet; useDescriptionUpdate is the shared persistence policy). appNotificationTypes extends the type enum and labels. Shared server BlockNote schema; pnpm style app allowlist."
+   "summary": "Notification sources derive from the product table (notifications: true; live rows, mentions writing via mentionableColumns, previews and digest names, deriveFrom both with a yjsMaterializer), apps declare only resolveRecipients/resolveContextId. Email and push links are self-describing /n links resolved by the frontend, resolveEmailLink is gone. Attachments are the template consumer (mentions column, description update op, materializer, collaborative editor in a sheet; useDescriptionUpdate is the shared persistence policy). appNotificationTypes extends the type enum and labels. Shared server BlockNote schema; pnpm style app allowlist."
   }
  ]
 }

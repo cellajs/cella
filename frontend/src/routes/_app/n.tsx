@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { notificationLinkSearchSchema } from '~/modules/notification/notification-link';
+import { notificationLinkSearchSchema } from 'shared/utils/notification-link';
 import { notificationLinkBeforeLoad } from '~/modules/notification/route-logic';
 import { SpinnerPage } from '~/routes/-route-utils';
 

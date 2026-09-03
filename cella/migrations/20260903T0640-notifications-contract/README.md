@@ -4,7 +4,7 @@
 
 A notification source is derived from the product table: `notifications: true` on
 `defineBackendModule` gives live-row loading (`deletedAt`, `publishedAt`), `mentions` writing when
-the table has `mentionableColumns()`, previews and digest names from `name` and `description`, and
+the table has `mentionableColumns`, previews and digest names from `name` and `description`, and
 `deriveFrom: 'both'` when the module registers a `yjsMaterializer`; apps override only
 `resolveRecipients` and `resolveContextId`. Email and push links are self-describing (`/n?...`,
 `buildNotificationLink`, frontend `notification-link.ts`), so `resolveEmailLink` is gone.
@@ -29,7 +29,7 @@ No script: manual.
 
 1. Delete per-product `*-notifications.ts` files; declare `notifications: true` on the module, or
    `{ resolveRecipients, resolveContextId }` for thread and assignee models. Replace the
-   `mentions` column line in each product table with `...mentionableColumns()`. Remove
+   `mentions` column line in each product table with `...mentionableColumns`. Remove
    `resolveEmailLink` and any `onMutation` handler that re-dispatched server-origin writes.
 2. Append the template's `appNotificationTypes` export to your pinned `app-schemas.ts`; list your
    types (e.g. `['assigned']`) and add `notification.<type>` plus `email.digest_line.<type>` to
@@ -41,8 +41,9 @@ No script: manual.
    `attachments.mentions`, and for `frontend/src/lib/sw.ts` (push clicks open the subject).
 5. Create `shared/config/vocabulary-allowlist.ts` from the template and move app-side exceptions
    into it; take upstream for `check-app-vocabulary.ts`.
-6. Replace backend `ServerBlockNoteEditor` conversions and mention-flattening workarounds with
-   `blocksToHtml` from `#/lib/blocknote-server`; take upstream for `yjs/src/lib/blocknote-seed.ts`.
+6. Create backend `ServerBlockNoteEditor` instances with `serverBlockNoteSchema` from
+   `shared/utils/blocknote-server-schema` and delete mention-flattening workarounds; take
+   upstream for `yjs/src/lib/blocknote-seed.ts`.
 
 ## Verify
 

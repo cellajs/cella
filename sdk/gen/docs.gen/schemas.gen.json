@@ -118,7 +118,6 @@
             "converted": { "type": "string", "required": false }
           }
         },
-        "mentions": { "type": "array", "required": true, "itemType": "string" },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },
         "viewCount": { "type": "integer", "required": false, "minimum": 0 }
       }

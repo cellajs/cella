@@ -12,7 +12,6 @@ defineBackendModule({
     and is a notification source for mentions.`,
   productEntity: 'attachment',
   yjsMaterializer: updateAttachmentOp,
-  // Table-derived source: the `mentions` column makes it mentionable, the materializer makes Yjs writes count.
   notifications: true,
   routes: [{ path: '/:tenantId/:organizationId/attachments', app: attachmentHandlers, phase: 'tenant' }],
 });

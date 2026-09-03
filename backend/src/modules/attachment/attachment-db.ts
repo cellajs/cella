@@ -27,8 +27,7 @@ export const attachmentsTable = snakeCase.table(
       .$type<AttachmentKeys>()
       .notNull()
       .default({} as AttachmentKeys),
-    // Mentions in the description make attachments a notification source.
-    ...mentionableColumns(),
+    ...mentionableColumns,
     ...channelRelationColumns('attachment'),
   },
   (table) => [

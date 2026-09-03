@@ -37,7 +37,7 @@ export const notificationsTable = snakeCase.table(
     contextId: uuid(),
     /** Deepest non-null ancestor, org as fallback. Must match `getSeenChannelId` or badges disagree. */
     channelId: uuid().notNull(),
-    channelType: varchar({ length: maxLength.field }).notNull(),
+    channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),
     /** CDC activity id: the dedupe key for at-least-once delivery. */

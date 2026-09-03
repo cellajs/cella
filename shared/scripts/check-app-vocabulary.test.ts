@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findAppVocabularyFindings, loadAllowlist } from './check-app-vocabulary.ts';
 
@@ -52,9 +55,21 @@ describe('findAppVocabularyFindings', () => {
 });
 
 describe('loadAllowlist', () => {
-  it('merges the template allowlist with the app-owned file', async () => {
-    const allowlist = await loadAllowlist();
-    expect(allowlist.files).toContain('cella/CHANGELOG.md');
-    expect(allowlist.prefixes).toContain('cella/migrations/');
+  it('merges the app-owned file into the template allowlist', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'vocabulary-allowlist-'));
+    mkdirSync(join(root, 'shared/config'), { recursive: true });
+    writeFileSync(
+      join(root, 'shared/config/vocabulary-allowlist.ts'),
+      "export const vocabularyAllowlist = { files: ['json/lucide-icon-names.json'], prefixes: ['generated/'] };\n",
+    );
+
+    const allowlist = await loadAllowlist(root);
+    expect(allowlist.files).toEqual(expect.arrayContaining(['cella/CHANGELOG.md', 'json/lucide-icon-names.json']));
+    expect(allowlist.prefixes).toEqual(['cella/migrations/', 'generated/']);
+  });
+
+  it('falls back to the template allowlist without the app file', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'vocabulary-allowlist-'));
+    expect((await loadAllowlist(root)).prefixes).toEqual(['cella/migrations/']);
   });
 });

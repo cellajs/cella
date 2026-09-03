@@ -86,11 +86,7 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
  */
 function describeRow(type: string, contextTitle: string, lng: string): string {
   const title = `<strong>${escapeString(contextTitle || '-')}</strong>`;
-  return i18n.t(`c:email.digest_line.${type}`, {
-    lng,
-    title,
-    defaultValue: i18n.t('c:email.digest_line.default', { lng, title }),
-  });
+  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title });
 }
 
 /** Digest sections as sanitised HTML, because Brevo per-recipient params are strings only. */

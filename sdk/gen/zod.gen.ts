@@ -458,7 +458,6 @@ export const zAttachment = z.object({
     thumbnail: z.string().optional(),
     converted: z.string().optional(),
   }),
-  mentions: z.array(z.string()),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
 });
@@ -1049,7 +1048,7 @@ export const zGetNotificationsResponse = z.object({
       subjectId: z.string(),
       contextId: z.string().nullable(),
       channelId: z.string(),
-      channelType: z.string(),
+      channelType: z.enum(['organization']),
       organizationId: z.string(),
       tenantId: z.string(),
       actorId: z.string().nullable(),

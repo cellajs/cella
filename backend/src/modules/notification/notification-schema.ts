@@ -12,7 +12,7 @@ export const notificationSchema = z.object({
   subjectId: z.string(),
   contextId: z.string().nullable(),
   channelId: z.string(),
-  channelType: z.string(),
+  channelType: z.enum(appConfig.channelEntityTypes),
   organizationId: z.string(),
   // Route params accept ids in place of slugs (beforeLoad rewrites), so these three are all the
   // client needs to deep-link without resolving slugs first.

@@ -26,6 +26,6 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
  * Server-derived user ids mentioned in `description`. Its presence on a product table switches
  * on mention derivation and mention fan-out for that product's notification source.
  */
-export const mentionableColumns = () => ({
+export const mentionableColumns = {
   mentions: text().array().notNull().default(sql`'{}'::text[]`),
-});
+};

@@ -1,10 +1,11 @@
+import { appConfig } from 'shared';
+import { buildNotificationLink } from 'shared/utils/notification-link';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
 import { log } from '#/utils/logger';
 import { mentionEmail } from '../emails/mention-email';
 import { buildUnsubscribeLink } from '../helpers/category-token';
 import { findChannelNames } from '../helpers/channel-names';
-import { buildNotificationLink } from '../helpers/notification-link';
 import { htmlToExcerpt } from '../helpers/render-digest-html';
 import { findPendingMentionEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
 import { getNotificationSource } from '../notification-sources';
@@ -61,7 +62,15 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
           lng: user.language,
           subjectTitle: preview.title,
           excerpt: htmlToExcerpt(preview.body, EXCERPT_LENGTH),
-          link: buildNotificationLink({ ...notification, notificationId: notification.id }),
+          link: buildNotificationLink(appConfig.frontendUrl, {
+            tenantId: notification.tenantId,
+            organizationId: notification.organizationId,
+            channelId: notification.channelId,
+            channelType: notification.channelType,
+            entityType: notification.entityType,
+            subjectId: notification.subjectId,
+            nid: notification.id,
+          }),
           unsubscribeLink: buildUnsubscribeLink(user.id, 'mention'),
         },
       ],

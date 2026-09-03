@@ -1,10 +1,10 @@
-import { hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy, isChannel, isProduct, type ProductEntityType } from 'shared';
+import { buildNotificationLink } from 'shared/utils/notification-link';
 import { tenantReadById } from '#/db/tenant-context';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { log } from '#/utils/logger';
-import { buildNotificationLink } from '../helpers/notification-link';
 import { readableAccess } from '../helpers/readable-access';
 import {
   findNotifiedUserIds,
@@ -28,8 +28,9 @@ type Candidate = { userId: string; type: NotificationType };
  */
 export async function fanOutNotifications(event: ActivityEvent): Promise<void> {
   const entityType = event.entityType;
-  const source = entityType ? getNotificationSource(entityType) : undefined;
-  if (!entityType || !source) return;
+  if (!entityType || !isProduct(entityType)) return;
+  const source = getNotificationSource(entityType);
+  if (!source) return;
   const { organizationId, tenantId, id: activityId } = event;
   if (!organizationId || !tenantId || !activityId) return;
 
@@ -61,7 +62,7 @@ function collectSubjectIds(event: ActivityEvent): string[] {
 
 async function fanOutRow(
   event: ActivityEvent,
-  entityType: string,
+  entityType: ProductEntityType,
   source: NotificationSource,
   row: NotificationSubjectRow,
   tenantId: string,
@@ -93,6 +94,7 @@ async function fanOutRow(
   if (allowed.length === 0) return;
 
   const channel = resolveChannel(entityType, row);
+  const organizationId = event.organizationId as string;
   await insertNotificationsIgnoringDuplicates(
     allowed.map<NotificationInsert>((recipient) => ({
       userId: recipient.userId,
@@ -102,7 +104,7 @@ async function fanOutRow(
       contextId: source.resolveContextId ? source.resolveContextId(row) : row.id,
       channelId: channel.id,
       channelType: channel.type,
-      organizationId: event.organizationId as string,
+      organizationId,
       tenantId,
       activityId: event.id as string,
       actorId,
@@ -115,9 +117,9 @@ async function fanOutRow(
   // costs one subscription lookup. Never awaited into the fan-out's failure path.
   if (isPushSendConfigured()) {
     const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
-    const url = buildNotificationLink({
+    const url = buildNotificationLink(appConfig.frontendUrl, {
       tenantId,
-      organizationId: event.organizationId as string,
+      organizationId,
       channelId: channel.id,
       channelType: channel.type,
       entityType,
@@ -130,14 +132,9 @@ async function fanOutRow(
   }
 }
 
-/**
- * Keep only recipients who may actually read the row, then apply mute.
- *
- * Mute silences ambient channel activity but never a direct mention, which is why `mutedTypes`
- * excludes it.
- */
+/** Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted. */
 async function filterByReadAccess(
-  entityType: string,
+  entityType: ProductEntityType,
   row: NotificationSubjectRow,
   candidates: Candidate[],
 ): Promise<Candidate[]> {
@@ -158,13 +155,12 @@ async function filterByReadAccess(
   });
 }
 
-/**
- * The row's home channel: deepest non-null ancestor, organization as the fallback.
- *
- * Row-side twin of `homeChannelIdSql` (seen module), so a notification and an unseen badge always
- * agree about which channel a row belongs to.
- */
-function resolveChannel(entityType: string, row: NotificationSubjectRow): { id: string; type: string } {
+/** The row's home channel, row-side twin of `homeChannelIdSql`. */
+function resolveChannel(
+  entityType: ProductEntityType,
+  row: NotificationSubjectRow,
+): { id: string; type: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(entityType, row);
-  return deepest ? { id: deepest.id, type: deepest.type } : { id: row.organizationId, type: 'organization' };
+  if (deepest && isChannel(deepest.type)) return { id: deepest.id, type: deepest.type };
+  return { id: row.organizationId, type: hierarchy.rootChannelType };
 }

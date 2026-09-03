@@ -10,7 +10,7 @@ import { accessForUserIds, type UserAccess } from './access-for-users';
  * Fails closed: an unknown user drops the whole set, as a doctored id must never notify anyone.
  */
 export async function readableAccess(
-  entityType: string,
+  entityType: ProductEntityType,
   row: NotificationSubjectRow,
   userIds: string[],
 ): Promise<Map<string, UserAccess>> {
@@ -21,7 +21,7 @@ export async function readableAccess(
   const accesses = userIds.map((userId) => accessByUser.get(userId)).filter((access) => access !== undefined);
   if (accesses.length !== userIds.length) return readable;
 
-  const subject = buildSubjectFromEntity(entityType as ProductEntityType, row);
+  const subject = buildSubjectFromEntity(entityType, row);
   const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
   accesses.forEach((access, index) => {
     if (decisions[index]?.allowed) readable.set(access.userId, access);

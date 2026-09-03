@@ -5,7 +5,7 @@ import { appNotificationTypes } from '#/schemas/app-schemas';
  * and mails instantly by default; `comment` and `reply` are thread activity an app's
  * `resolveRecipients` classifies (projectcampus comments), delivered in-app and by digest.
  */
-export const templateNotificationTypes = ['mention', 'comment', 'reply'] as const;
+const templateNotificationTypes = ['mention', 'comment', 'reply'] as const;
 
 /**
  * Notification vocabulary: the template types plus the app's `appNotificationTypes` (pinned
