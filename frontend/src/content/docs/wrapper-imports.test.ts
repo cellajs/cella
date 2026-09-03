@@ -13,8 +13,8 @@ function collectPages(dir: string): string[] {
   });
 }
 
-// Guards relative imports in docs wrappers because PR CI does not run the frontend build.
-// Broken repo-doc imports otherwise fail only at build time.
+// Guards relative imports in docs wrappers with a fast, local check. The `frontend-build` CI job
+// catches the same breakage, but only after a full production build.
 describe('docs content wrapper imports', () => {
   const pages = collectPages(contentRoot);
 
