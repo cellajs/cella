@@ -2,7 +2,7 @@
 
 Auto-generated TypeScript SDK for the backend API.
 
-Uses [@hey-api/openapi-ts](https://heyapi.dev) to generate a fully typed SDK from the backend's OpenAPI specification in `backend/openapi.cache.json`. The generated output includes type-safe API functions, Zod v4 runtime validation schemas, and a fetch-based HTTP client (`@hey-api/client-fetch`) with automatic error throwing. Nothing in `gen/` should be edited manually. Run `pnpm generate:sdk` to regenerate.
+[@hey-api/openapi-ts](https://heyapi.dev) generates a typed SDK from `backend/openapi.cache.json`: API functions, Zod v4 runtime schemas, and a fetch-based client (`@hey-api/client-fetch`) that throws on error. Never edit `gen/` by hand; run `pnpm generate:sdk`.
 
 ## File structure
 
@@ -28,13 +28,13 @@ sdk
 
 ## Generation lifecycle
 
-1. The backend produces `backend/openapi.cache.json` via its OpenAPI spec
-2. `generate-sdk.ts` runs `@hey-api/openapi-ts` with the config in `openapi-ts.config.ts`
-3. Output is generated to a temp folder first, then diffed against `sdk/gen/`
-4. Only files with actual changes are copied over, which prevents unnecessary HMR triggers
-5. A lock file prevents concurrent generation runs
-6. The spec hash is cached in `src/.spec-hash` so the watcher skips redundant runs on restart
-7. The `openapi.json` source spec is also output to `frontend/public/static/`
+1. The backend writes `backend/openapi.cache.json`
+2. `generate-sdk.ts` runs `@hey-api/openapi-ts` with `openapi-ts.config.ts`
+3. Output lands in a temp folder and is diffed against `sdk/gen/`
+4. Only changed files are copied, which avoids needless HMR triggers
+5. A lock file prevents concurrent runs
+6. `src/.spec-hash` caches the spec hash so the watcher skips redundant runs on restart
+7. The `openapi.json` source spec is also written to `frontend/public/static/`
 
 ## Exports
 
@@ -54,6 +54,4 @@ pnpm watch          # Alias for dev
 
 ## Development
 
-During development, run `pnpm dev` to start in watch mode. It monitors `backend/openapi.cache.json` and automatically regenerates the SDK when the spec changes (calling `generate-sdk.ts --watch` directly instead of spawning a subprocess).
-
-The frontend dev server watches for SDK output changes via `frontend/vite/sdk-watch.ts`.
+`pnpm dev` watches `backend/openapi.cache.json` and regenerates on change (it calls `generate-sdk.ts --watch` in-process). The frontend dev server watches SDK output via `frontend/vite/sdk-watch.ts`.

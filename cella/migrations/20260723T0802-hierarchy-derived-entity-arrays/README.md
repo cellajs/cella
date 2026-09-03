@@ -2,47 +2,37 @@
 
 ## What & why
 
-The entity taxonomy is now declared exactly once, in the hierarchy builder.
-`config.default.ts` derives `entityTypes`, `channelEntityTypes`, and `productEntityTypes`
-from `hierarchy.allTypes` / `hierarchy.channelTypes` / `hierarchy.productTypes`, wrapped in
-the new `nonEmpty()` helper (shared) which narrows a runtime array to the non-empty tuple
-type drizzle and zod enum sites require. The bidirectional compile-time checks between the
-config arrays and the hierarchy in `config-validation.ts` are deleted (they are structurally
-guaranteed now), and the `EntityIdColumnKeysShape` type export is removed as orphaned.
+The entity taxonomy is declared once, in the hierarchy builder. `config.default.ts` derives
+`entityTypes`, `channelEntityTypes`, and `productEntityTypes` from `hierarchy.allTypes` /
+`hierarchy.channelTypes` / `hierarchy.productTypes` through the new shared `nonEmpty()` helper,
+which narrows to the non-empty tuple drizzle and zod enum sites require. The bidirectional
+compile-time checks in `config-validation.ts` are deleted and the orphaned
+`EntityIdColumnKeysShape` export is removed.
 
 ## Blast radius
 
-Sync-breaking on `config.default.ts` only. Call sites do not change: the derived arrays keep
-the exact literal-union element types, and `nonEmpty()` preserves the tuple shape enum sites
-need, so `z.enum(appConfig.productEntityTypes)` and `varchar({ enum: ... })` compile as
-before. An app that keeps its literal arrays still compiles but reintroduces the drift the
-old validation existed to catch, with that validation now gone: derive, do not redeclare.
-Any app import of `EntityIdColumnKeysShape` must be dropped (the derived map makes it
-meaningless).
+Sync-breaking on `config.default.ts` only; call sites keep their literal-union element types and
+tuple shape, so `z.enum(appConfig.productEntityTypes)` and `varchar({ enum: ... })` compile as
+before. No wire or DB change. Literal arrays still compile but reintroduce unchecked drift: derive,
+do not redeclare. App imports of `EntityIdColumnKeysShape` must go.
 
 ## Run
 
-No script — manual.
+No script, manual.
 
 ## Manual steps
 
-1. In your app's `config.default.ts`, delete the hand-written `entityTypes`,
-   `channelEntityTypes`, and `productEntityTypes` arrays (including any hoisted `const`s)
-   and replace them with:
-   `entityTypes: nonEmpty(hierarchy.allTypes)`,
-   `channelEntityTypes: nonEmpty(hierarchy.channelTypes)`,
-   `productEntityTypes: nonEmpty(hierarchy.productTypes)`.
-   Import `nonEmpty` from `../src/config-builder/utils` and `hierarchy` from your hierarchy
-   config module.
-2. Rewrite any local `(typeof productEntityTypes)[number]` style references to
+1. In `config.default.ts`, delete the hand-written `entityTypes`, `channelEntityTypes`, and
+   `productEntityTypes` arrays (including hoisted `const`s) and write
+   `entityTypes: nonEmpty(hierarchy.allTypes)`, `channelEntityTypes: nonEmpty(hierarchy.channelTypes)`,
+   `productEntityTypes: nonEmpty(hierarchy.productTypes)`; import `nonEmpty` from
+   `../src/config-builder/utils` and `hierarchy` from your hierarchy config module.
+2. Rewrite `(typeof productEntityTypes)[number]` style references to
    `(typeof hierarchy.productTypes)[number]`.
-3. Remove app imports of `EntityIdColumnKeysShape` if any exist.
+3. Remove app imports of `EntityIdColumnKeysShape`.
 
 ## Verify
 
 ```sh
-pnpm check
+pnpm check   # EntityType/ChannelEntityType/ProductEntityType unions unchanged; a type error at an enum site means a hand-written array survived
 ```
-
-Entity-type unions (`EntityType`, `ChannelEntityType`, `ProductEntityType`) must be
-unchanged; any type error at an enum site means a hand-written array survived somewhere.

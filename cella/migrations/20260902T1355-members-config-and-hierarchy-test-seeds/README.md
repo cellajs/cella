@@ -2,40 +2,28 @@
 
 ## What & why
 
-Two things landed together, both distilled from fork drift after the 2026-09-02 syncs.
+**Members config seam.** `memberStatIcons` (icon per `appConfig.memberStatProductTypes` entry,
+`BoxIcon` fallback) and `hiddenMemberCountColumns` (product and sub-channel `${type}Count` columns
+hidden until toggled on) move out of
+`frontend/src/modules/memberships/members-table/members-columns.tsx` into the new pinned
+`frontend/src/members-config.ts`.
 
-**Members table config seam.** `frontend/src/modules/memberships/members-table/members-columns.tsx`
-hardcoded the icon per product stat (`memberStatIcons`) and offered no way to hide a count column
-by default. Apps with their own product types (projectcampus: item and comment) had to edit the
-template file. Both knobs now live in the new pinned, app-owned `frontend/src/members-config.ts`:
-`memberStatIcons` (icon per `appConfig.memberStatProductTypes` entry, `BoxIcon` fallback) and
-`hiddenMemberCountColumns` (product and sub-channel `${type}Count` columns hidden until the user
-toggles them on). Cella ships the attachment paperclip and hides nothing.
-
-**Hierarchy-aware test seeds.** Since the ancestor foreign keys of `channelRelationColumns`
-(20260902T0906), invented ancestor ids no longer insert. Three template files now derive them:
-
-- `backend/src/mocks/product-mock-registry.ts`: `buildInsertableProduct` inserts nullable
-  ancestors as null unless overridden (`hierarchy.getNullableAncestors`).
-- `backend/tests/integration/cdc-event-bus.test.ts` (full mode): seeds the attachment's ancestor
-  chain through `buildTestEntityHierarchyPlan` and `seedEntityHierarchy`, then spreads
-  `plan.channelIdColumns` into the insert.
-- `yjs/src/tests/integration/permissions.test.ts`: seeds every `ancestorColumns` entry of nested
-  channel rows, not only the parent.
-
-All three are no-ops on cella's org-only hierarchy; they exist for apps with nested channels.
+**Hierarchy-aware test seeds.** Since `channelRelationColumns` (20260902T0906) adds ancestor
+foreign keys, invented ancestor ids no longer insert: `buildInsertableProduct`
+(`backend/src/mocks/product-mock-registry.ts`) inserts nullable ancestors as null unless overridden
+(`hierarchy.getNullableAncestors`); `backend/tests/integration/cdc-event-bus.test.ts` (full mode)
+seeds the ancestor chain through `buildTestEntityHierarchyPlan` and `seedEntityHierarchy` and
+spreads `plan.channelIdColumns` into the insert; `yjs/src/tests/integration/permissions.test.ts`
+seeds every `ancestorColumns` entry of nested channel rows. No-ops on cella's org-only hierarchy.
 
 ## Blast radius
 
-Not sync-breaking, no `clientCacheVersion` bump, no database change. An app that never touched
-`members-columns.tsx` and never patched these tests is unaffected beyond taking upstream and
-adding the pin. raak and projectcampus carry fork-marked versions of the three test and mock files
-that are byte-for-byte the upstream logic with a different comment; the sync merge reports them as
-diverged on that comment hunk only.
+Not sync-breaking, no `clientCacheVersion` bump, no DB change. Apps that never touched
+`members-columns.tsx` or these tests only take upstream and add the pin.
 
 ## Run
 
-No script — manual.
+No script: manual.
 
 ## Manual steps
 
@@ -46,16 +34,13 @@ No script — manual.
    upstream for `members-columns.tsx`.
 3. Take upstream for `backend/src/mocks/product-mock-registry.ts`,
    `backend/tests/integration/cdc-event-bus.test.ts` and
-   `yjs/src/tests/integration/permissions.test.ts` if your copies carry the fork-marked version of
-   the same change (only the comment differs).
+   `yjs/src/tests/integration/permissions.test.ts` if your copies carry the fork-marked version
+   (raak and projectcampus: same logic, comment hunk only).
 
 ## Verify
 
 ```sh
-pnpm cella analyze
+pnpm cella analyze   # none of the four files drifted or diverged; members-config.ts shows as protected
 pnpm check
 pnpm test
 ```
-
-`cella analyze` should list none of the four files as drifted or diverged; `members-config.ts`
-shows as protected.

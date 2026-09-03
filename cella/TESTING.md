@@ -2,14 +2,14 @@
 
 <!-- Sync test marker: 2026-01-28-test-1 -->
 
-This document explains how to run the test suite and where new tests belong.
+How to run the test suite and where new tests belong.
 
 ### TL;DR
 
 All package tests use [Vitest](https://vitest.dev) and share one root setup. `pnpm test` starts the
-required Docker test database and runs the tests with a coverage summary. Storybook UI examples run
-separately in a browser with `pnpm test:storybook`. Keep unit tests next to their source, and put
-tests that require extra services or network servers in `tests/integration/`.
+Docker test database and runs everything with a coverage summary. Storybook UI tests run separately
+in a browser with `pnpm test:storybook`. Keep unit tests next to their source; tests that need extra
+services or network servers go in `tests/integration/`.
 
 ## Running tests
 
@@ -17,28 +17,28 @@ tests that require extra services or network servers in `tests/integration/`.
 pnpm test
 ```
 
-This starts the test database (Docker, `db_test` service from [backend/compose.yaml](../backend/compose.yaml)), then runs all package tests in full mode with a coverage summary. Passing tests are silenced; only failures print output.
+Starts the test database (Docker, `db_test` service in [backend/compose.yaml](../backend/compose.yaml)), then runs all package tests in full mode with a coverage summary. Only failures print output.
 
 Requirements:
 
 - Docker running
-- `backend/.env` present with `DB_TEST_PORT` set (copied from `.env.example` during setup); the test database URL is derived from it in [shared/src/test-db.ts](../shared/src/test-db.ts)
+- `backend/.env` with `DB_TEST_PORT` set (copied from `.env.example` during setup); [shared/src/test-db.ts](../shared/src/test-db.ts) derives the test database URL from it
 
 ### Variants
 
 | Command | What it does |
 | --- | --- |
 | `pnpm test` | Everything, with coverage summary (alias for `test:full`) |
-| `pnpm test:full:verbose` | Same, but prints passing test output too |
-| `pnpm test:core` | Skips integration tests (backend, yjs, cdc); rarely needed: `pnpm test` is fast enough for day-to-day (`test:core:verbose` for full output) |
+| `pnpm test:full:verbose` | Same, plus passing test output |
+| `pnpm test:core` | Skips integration tests (backend, yjs, cdc); rarely needed (`test:core:verbose` for full output) |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium; not part of `pnpm test` ([see below](#storybook)) |
-| `pnpm story` | Interactive Storybook dev server for writing stories; does not run tests |
+| `pnpm story` | Interactive Storybook dev server; runs no tests |
 
-`core` vs `full` is controlled by the `TEST_MODE` env var. In `core` mode the per-package vitest configs exclude `tests/integration/**`, and individual tests can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
+The `TEST_MODE` env var selects `core` or `full`. In `core` mode the per-package vitest configs exclude `tests/integration/**`; a test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
 
 ### Running a subset
 
-Start the test database once (`pnpm docker:test`), then invoke vitest directly:
+Start the test database once (`pnpm docker:test`), then call vitest directly:
 
 ```bash
 pnpm vitest run --project=backend            # one package
@@ -46,29 +46,27 @@ pnpm vitest run backend/tests/health.test.ts # one file
 pnpm vitest run -t 'rate limiter'            # by test name
 ```
 
-Packages that don't touch the database (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker.
+Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker.
 
 ## Conventions
 
-**Placement.** Two patterns are in use; pick based on scope:
+**Placement.** Pick by scope:
 
-- _Unit tests_: colocate with the code they cover: either `some-module.test.ts` next to the source file, or a `tests/` folder inside the module directory when there are several files (e.g. [backend/src/lib/tests/](../backend/src/lib/tests/)).
-- _Route/API-level tests_: in the package's top-level `tests/` folder (e.g. [backend/tests/sign-in/](../backend/tests/sign-in/), [backend/tests/security/](../backend/tests/security/)).
-- _Integration tests_: in `tests/integration/`; these are the only tests excluded in `core` mode. Reserve this for tests that need more than the test database (CDC replication slots, spun-up WebSocket servers, RLS verification against real roles).
+- _Unit tests_: next to the code, as `some-module.test.ts` or a `tests/` folder inside the module when there are several (e.g. [backend/src/lib/tests/](../backend/src/lib/tests/)).
+- _Route/API-level tests_: the package's top-level `tests/` folder (e.g. [backend/tests/sign-in/](../backend/tests/sign-in/), [backend/tests/security/](../backend/tests/security/)).
+- _Integration tests_: `tests/integration/`, the only tests excluded in `core` mode. Reserve for tests that need more than the test database (CDC replication slots, WebSocket servers, RLS against real roles).
 
-Coverage automatically excludes `*.test.ts`, `tests/**` folders and mocks, so placement doesn't affect coverage numbers.
+Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not change coverage numbers.
 
-**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts); don't load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](../backend/tests/global-setup.ts); write tests so they don't assume an empty database. Use the `#/` import alias as in source code.
+**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts); do not load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](../backend/tests/global-setup.ts); never assume an empty database. Use the `#/` import alias as in source.
 
-**Don't over-gate.** A test that only needs the test database (or no database) belongs in the regular
-set. Only reach for `tests/integration/` + `TEST_MODE` gating when external moving parts are
-required.
+**Don't over-gate.** A test that needs only the test database, or none, belongs in the regular set. Use `tests/integration/` + `TEST_MODE` gating only for external moving parts.
 
-**New packages.** When adding a workspace package with tests, register it in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and to the `coverage.include` globs.
+**New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
 ## Storybook
 
-Frontend components are also tested through Storybook stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`). **These are not part of `pnpm test`**.
+Frontend components are also tested through stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`). **Not part of `pnpm test`.**
 
 ```bash
 # one-time: install the browser
@@ -81,6 +79,6 @@ pnpm sdk
 pnpm test:storybook
 ```
 
-Use `pnpm story` when you want the interactive Storybook dev server in a browser; it does not run the Vitest browser tests by itself.
+`pnpm story` opens the interactive Storybook dev server without running the browser tests.
 
-Every story is render-tested in headless Chromium, and stories with `play` functions get their interactions exercised. When you add a frontend component story, it becomes a test automatically.
+Every story is render-tested in headless Chromium; stories with `play` functions also get their interactions exercised. A new component story is a test automatically.

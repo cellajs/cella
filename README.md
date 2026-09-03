@@ -38,18 +38,18 @@
 
 ## Requirements
 
-- Nodejs 24.x. Check `node -v`
-- Make sure you can work with [Docker](https://docs.docker.com/get-docker/)
-- You work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and have [gh cli](https://cli.github.com/) installed
+- Node.js 24.x (`node -v`)
+- [Docker](https://docs.docker.com/get-docker/)
+- [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and the [gh cli](https://cli.github.com/)
 
 <br>
 
 ## Create app
 
-Do **not create your app from a GitHub repository copy**. Use the create CLI to get started:
+Do **not** copy this repository. Use the create CLI:
 
 ```bash
 pnpm create @cellajs/cella
 ```
 
-Read the [Quickstart](./cella/QUICKSTART.md) so you can build something unique quickly.
+Then read the [Quickstart](./cella/QUICKSTART.md).

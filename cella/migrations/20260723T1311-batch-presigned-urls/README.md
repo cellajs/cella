@@ -3,31 +3,27 @@
 ## What & why
 
 `GET /{tenantId}/{organizationId}/attachments/presigned-url` (`getPresignedUrl`) is replaced by
-`POST /{tenantId}/{organizationId}/attachments/presigned-urls` (`getPresignedUrls`), which signs up
-to 50 `{ attachmentId, variant }` items in one call: one RLS read (`findAttachmentsByIds`), one
-`checkAccessBatch` pass, N local signatures. Missing and denied ids merge into a uniform
-`rejectedIds` list, closing the 403-vs-404 existence oracle the single endpoint had. On the
-frontend, `getPrivateFileUrlById` now delegates to a coalescer
-(`frontend/src/modules/attachment/presign-batch.ts`) that merges concurrent requests into one batch
-call, dedupes identical in-flight pairs, and memoizes signed URLs for an hour, so grids resolve
-with a single request and repeat views of the same file need no call at all. Backend symbols
-removed: `getPresignedUrlOp`, `findAttachmentById`, `presignedUrlQuerySchema` (superseded by
-`getPresignedUrlsOp`, `findAttachmentsByIds`, `presignedUrlsBodySchema` + `presignedUrlItemSchema`).
+`POST /{tenantId}/{organizationId}/attachments/presigned-urls` (`getPresignedUrls`): up to 50
+`{ attachmentId, variant }` items per call (one RLS read via `findAttachmentsByIds`, one
+`checkAccessBatch` pass, N local signatures); missing and denied ids merge into `rejectedIds`,
+closing the 403-vs-404 existence oracle. Frontend `getPrivateFileUrlById` delegates to the
+coalescer in `frontend/src/modules/attachment/presign-batch.ts` (batches concurrent requests,
+dedupes in-flight pairs, memoizes signed URLs for an hour). Removed: `getPresignedUrlOp`,
+`findAttachmentById`, `presignedUrlQuerySchema`; superseded by `getPresignedUrlsOp`,
+`findAttachmentsByIds`, `presignedUrlsBodySchema` + `presignedUrlItemSchema`.
 
 ## Blast radius
 
-Sync-breaking for any app code that calls the removed SDK function `getPresignedUrl` or imports
-the removed backend symbols. Bumps `clientCacheVersion` (`v6-batch-presigned-urls`). No database
-change. An app whose presign call sites are only the synced cella files (`file-url.ts`,
-`resolve-url.ts`, `download-service.ts`, attachment table/carousel) gets everything through the
-sync pull and has nothing to do beyond the checks below. Apps that widened `findAttachmentById`
-locally (or carry a pre-hardening copy without the `deletedAt` filter) should adopt the new
-`findAttachmentsByIds`, which keeps the `isNull(deletedAt)` guard so soft-deleted rows are never
-signed.
+Sync-breaking for app code calling the removed SDK function `getPresignedUrl` or the removed
+backend symbols. Bumps `clientCacheVersion` (`v6-batch-presigned-urls`). No database change. Apps
+whose presign sites are only synced cella files (`file-url.ts`, `resolve-url.ts`,
+`download-service.ts`, attachment table/carousel) need nothing beyond the checks. Apps that widened
+`findAttachmentById` (or lack the `deletedAt` filter) adopt `findAttachmentsByIds`, which keeps the
+`isNull(deletedAt)` guard.
 
 ## Run
 
-No script. Manual; these greps find every site.
+No script; these greps find every site:
 
 ```sh
 grep -rn "getPresignedUrl\b\|getPresignedUrlOp\|findAttachmentById\|presignedUrlQuerySchema" \
@@ -36,15 +32,13 @@ grep -rn "getPresignedUrl\b\|getPresignedUrlOp\|findAttachmentById\|presignedUrl
 
 ## Manual steps
 
-1. Frontend calls of `getPresignedUrl({ path, query })` -> `getPresignedUrls({ path, body: { items: [{ attachmentId, variant }] } })`,
-   or preferably route them through `getPrivateFileUrlById` / `getCloudUrl` so they inherit the
-   coalescer's batching and memo.
-2. Backend imports of `getPresignedUrlOp` / `findAttachmentById` / `presignedUrlQuerySchema` ->
-   the batch twins listed above. `selectVariantKey` stays private to the batch op.
-3. Rejection handling: a denied or missing id is no longer an HTTP 403/404; it appears in
-   `rejectedIds` on a 200 response. Client code catching per-id failures should catch
+1. Frontend `getPresignedUrl({ path, query })` -> `getPresignedUrls({ path, body: { items: [{ attachmentId, variant }] } })`,
+   or preferably `getPrivateFileUrlById` / `getCloudUrl` to inherit batching and memo.
+2. Backend imports of `getPresignedUrlOp` / `findAttachmentById` / `presignedUrlQuerySchema` -> the
+   batch twins above; `selectVariantKey` stays private to the batch op.
+3. A denied or missing id is an entry in `rejectedIds` on a 200, not HTTP 403/404; catch
    `PresignRejectedError` from `~/modules/attachment/presign-batch` (permanent; do not retry).
-4. Bump your app's `clientCacheVersion` if it overrides the default config.
+4. Bump `clientCacheVersion` if your app overrides the default config.
 
 ## Verify
 

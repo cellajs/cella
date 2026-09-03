@@ -1,6 +1,6 @@
 # Schema evolution
 
-This document explains how breaking changes to entity wire shapes ship without stranding offline clients, and tracks the remaining work on that system.
+This document explains how breaking changes to entity wire shapes ship without stranding offline clients.
 
 ### TL;DR
 
@@ -14,76 +14,45 @@ Until the first real lens is added, use the interim [cache reset](#cache-bust-in
 
 ## The lens model
 
-Breaking schema changes (e.g., rename `attachment.name` → `attachment.title`) are shipped as **append-only lens modules**. Each lens declares the change once; everything else is derived from that declaration:
+A breaking schema change (rename `attachment.name` to `attachment.title`, say) ships as an **append-only lens module**. The lens declares the change once; everything else derives from it:
 
-1. **Widened wire schemas** (build time): during the expand window, ops/create schemas accept both old and new field names; entity rows carry both columns so responses dual-emit both
-2. **Ops normalization** (server, runtime touch point 1): old-shape `ops` + `stx.fieldTimestamps` keys normalized to canonical inside the existing stx resolve path
-3. **Client cache migration** (client, runtime touch point 2): boot-time Dexie pass rewrites cached rows + queued mutations locally, no refetch
-4. **Versioned OpenAPI specs + response down-migration** (Phase 2 only): for cross-app negotiation
+1. **Widened wire schemas** (build time): during the expand window, ops/create schemas accept both field names, and rows carry both columns so responses dual-emit both.
+2. **Ops normalization** (server, runtime touch point 1): old-shape `ops` and `stx.fieldTimestamps` keys map to canonical inside the existing stx resolve path.
+3. **Client cache migration** (client, runtime touch point 2): a boot-time Dexie pass rewrites cached rows and queued mutations locally, without refetch.
+4. **Versioned OpenAPI specs + response down-migration** (Phase 2 only): cross-app negotiation.
 
-**Phase 1 has exactly two runtime transformation touch points.** Everything else is build-time schema generation, data-level dual-emit during expand windows, or deferred to Phase 2.
+Phase 1 has exactly two runtime touch points; the rest is build-time schema generation or dual-emit during expand windows.
 
-doba provides the migration chain executor, bidirectional migrations, graph path-finding (Phase 2), and telemetry hooks.
-
-**Two phases:**
-
-- **Phase 1 (internal version tolerance)**: app's own offline clients survive deploys (PWA skew, mid-exam, offline queue replay). Built; passthrough until lens #1.
-- **Phase 2 (cross-app negotiation)**: independently deployed Cella apps interoperate via version negotiation. Future work.
+- **Phase 1 (internal version tolerance)**: the app's own offline clients survive deploys (PWA skew, offline queue replay). Built; passthrough until lens #1.
+- **Phase 2 (cross-app negotiation)**: independently deployed Cella apps interoperate via version negotiation. Not started.
 
 ---
 
 ## Cache-bust (interim)
 
-Until the first lens ships and proves itself, breaking schema changes are handled by a simpler, throwaway escape hatch:
+Until the first lens ships, breaking schema changes use a throwaway escape hatch:
 
-1. **`appConfig.clientCacheVersion`** ([shared/config/config.default.ts](../shared/config/config.default.ts)): a string token, colocated with `apiVersion`/`cookieVersion` in the VERSIONING section. Bump it (e.g. `'v1' → 'v2'`) in the **same PR** as any breaking change to a cached entity's wire shape.
-2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`. On mismatch it wipes cached query data (product records + bundled channel queries) but **keeps queued mutations**, which replay against the fresh cache. A missing version (pre-feature build) seeds without wiping. Session scopes are wiped wholesale.
-3. **Mutation salvage**: kept mutations replay; any that 4xx are quarantined to the `failed_sync` Dexie table ([frontend/src/query/offline/failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) rather than dropped (non-blocking, JSON-exportable).
-4. **CI gate**: `schema-bust-gate` in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs oasdiff on the committed `backend/openapi.cache.json` (base vs head). A breaking diff **fails the PR** unless `clientCacheVersion` was bumped in the same PR. Couple with a `feat!` PR title so release-please cuts a major. The gate is PR-time only: it never blocks the release/deploy jobs.
+1. **`appConfig.clientCacheVersion`** ([shared/config/config.default.ts](../shared/config/config.default.ts)): a string token next to `apiVersion`/`cookieVersion`. Bump it (`'v1'` to `'v2'`) in the **same PR** as any breaking change to a cached entity's wire shape.
+2. **Client wipe, mutations preserved**: on boot, [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) compares the persisted version to `appConfig.clientCacheVersion`; on mismatch it wipes cached query data (product records + bundled channel queries) but **keeps queued mutations**, which replay against the fresh cache. A missing version (pre-feature build) seeds without wiping. Session scopes are wiped wholesale.
+3. **Mutation salvage**: replayed mutations that 4xx are quarantined to the `failed_sync` Dexie table ([frontend/src/query/offline/failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)), never dropped (non-blocking banner, JSON export).
+4. **CI gate**: `schema-bust-gate` in [.github/workflows/ci.yml](../.github/workflows/ci.yml) runs oasdiff on the committed `backend/openapi.cache.json` (base vs head). A breaking diff **fails the PR** unless `clientCacheVersion` was bumped in the same PR. Pair it with a `feat!` PR title so release-please cuts a major. The gate is PR-time only and never blocks release/deploy jobs.
 
-**Teardown**: when lenses are stable, delete `appConfig.clientCacheVersion`, the persister bust branch, the `failed_sync` quarantine, and the `schema-bust-gate` job; wire the lens engine in its place. No entanglement: the cache-version mechanism and the lens engine are independent.
+**Teardown**: once lenses are stable, delete `appConfig.clientCacheVersion`, the persister bust branch, the `failed_sync` quarantine, and the `schema-bust-gate` job; the lens engine is independent of all four.
 
-The `apiVersion` backstop (session-cookie name bump, idle-gated re-auth, jitter/pre-warm) is separate from both and unchanged by the lens system: it versions the protocol, not entity resources (see [Tier 3](#entity-coverage)).
-
----
-
-## Remaining work
-
-### Open (needed before/at lens #1) ❌
-
-- **oasdiff gate lacks the "or a lens module was added" pass condition**: today the only escape from `schema-bust-gate` is a `clientCacheVersion` bump, so shipping a lens would force a pointless cache bust. Add the lens escape before lens #1.
-- **The [shipping playbook](#lens-playbook) is not yet written.** AGENTS.md, SYNC_ENGINE.md, and ARCHITECTURE.md point at this doc for it.
-
-### Deferred (deliberate) ⬜
-
-- Staleness deadline: the `staleBundleMaxDays` knob exists in [config.ts](../shared/src/schema-evolution/config.ts) but has zero consumers; the forced idle-gated reload is unbuilt. Nice-to-have: the persist guard already blocks stale writes.
-- Versioned OpenAPI specs (2.1): no replay logic in generate-openapi.ts yet.
-- `GET /versions`, `Accept-Version`, `downgradeEntity` call sites (2.2) — the engine function exists with zero callers.
-- Server `failed_mutations` DLQ (2.4).
-- `contractedLenses` contract-phase bookkeeping (name only, no code anywhere).
-- CLI diff→lens derivation (panproto's model): a `cella` CLI step diffs Zod/OpenAPI schemas and _proposes_ the lens module; the developer resolves rename-vs-drop+add ambiguity. Replaces hand-authoring, not the review.
-
-### Lens #1 policy
-
-**No permanent rehearsal lens** (decided 2026-07). Renaming a field purely as a rehearsal pollutes
-the API forever (lens modules are append-only), and the natural candidate `attachment.name` is a
-shared `productEntityColumns` base column: renaming it on one entity would diverge from the template
-convention. All schema and runtime entry points remain registered as passthroughs; rehearse via a
-**branch-local lens** (see [playbook](#lens-playbook)) and ship lens #1 when a real breaking change
-needs it.
+The `apiVersion` backstop (session-cookie name bump, idle-gated re-auth, jitter/pre-warm) versions the protocol, not entity resources ([Tier 3](#entity-coverage)), and is unchanged by lenses.
 
 ---
 
 ## Lens playbook
 
-> ❌ **Not yet written** — a prerequisite for lens #1. Required content:
->
-> - **Expand PR recipe**: the lens module, the Drizzle expand-migration convention (add + backfill the new column, keep the old), mirror-write window start, `feat!` title / gate interplay.
-> - **Verification**: the offline e2e runbook (`pnpm offline` flow: bundle A populates cache + offline edits, swap to bundle B with the lens, reconnect, assert zero data loss and no refetch storm).
-> - **Contract PR recipe**: fleet-floor check against `X-Client-Version` telemetry, column drop, and the not-yet-built `contractedLenses` mechanism.
-> - **Branch-local rehearsal**: exercising a throwaway lens on a branch without polluting the append-only registry (temporary lens-list entry, never merged; `lens:check` append-only rules apply from first commit on main only).
+Not yet written; required before lens #1. Must cover:
 
-Authoring note: expect `add` to dominate. Additions are >50% of schema changes in 9 of 10 studied projects ([NoSQL study](https://arxiv.org/pdf/2003.00054)); practical frequency is add-with-default ≫ drop > rename ≈ retype > enum renames > restructuring.
+- **Expand PR**: the lens module, the Drizzle expand-migration convention (add and backfill the new column, keep the old), the mirror-write window start, and the `feat!` title / `schema-bust-gate` interplay.
+- **Verification**: the offline e2e runbook (`pnpm offline`: bundle A populates the cache and makes offline edits, swap to bundle B with the lens, reconnect, assert zero data loss and no refetch storm).
+- **Contract PR**: fleet-floor check against `X-Client-Version` telemetry, column drop, the unbuilt `contractedLenses` bookkeeping.
+- **Branch-local rehearsal**: a throwaway lens in a temporary lens-list entry that is never merged (`lens:check` append-only rules apply from the first commit on main only). Never ship a rehearsal lens: modules are append-only, so a rehearsal rename pollutes the API forever.
+
+Expect `add` to dominate ([NoSQL study](https://arxiv.org/pdf/2003.00054)): add-with-default > drop > rename ≈ retype > enum renames > restructuring.
 
 ---
 
@@ -136,104 +105,29 @@ Authoring note: expect `add` to dominate. Additions are >50% of schema changes i
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│       Phase 2 - cross-app negotiation adds per-version transforms (▣)       │
-├──────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   App B (schemaVersion 5)                This app (schemaVersion 9)        │
-│                                                                              │
-│   ops:{name} ── Accept-Version: 5 ──>  ▣ upgrade via doba path               │
-│                                          (v5 → v7 → current)                 │
-│                                            │                                 │
-│                                            ▼                                 │
-│                                          normalizeOps ──> handler ──> DB     │
-│                                                                              │
-│   reads name <── response ──────────── ▣ downgradeEntity(entity, v5)         │
-│                                          post-TTL-cache; lossyBackward       │
-│                                          fields omitted                      │
-│                                                                              │
-│   GET /versions ──> { schemaVersion, lenses, /openapi/{v}.json }             │
-│   no path in lens graph ──> 426 Upgrade Required                             │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
 ---
 
 ## Why doba
 
-Verified against doba source (`packages/doba`, v0.1.0):
-
-| Requirement | doba support | Verified |
-| --- | --- | --- |
-| Bidirectional lenses | `'v0<->v1': { forward, backward }` reversible migrations | `migration.ts`, `resolveMigrations` |
-| Declarative single-source transform | pipe builder: `p.rename().map().drop().add()` | helpers docs + playground |
-| Lens graph + shortest path (cross-app) | BFS/Dijkstra, `cost`/`preferred`/`deprecated` edges, `findPath`, `explain()` | `graph.ts`, `registry.ts#L328` |
-| Zod compat | Standard Schema v1 (`~standard.validate`); Cella ships Zod 4.4.3 (native SSv1) | `standard-schema.ts` |
-| Browser + Node | Zero runtime deps, pure ESM, no Node APIs (`performance.now()` only) | package.json, registry source |
-| Hot-path perf | `validate: 'none'` skips all schema validation; `from === to` fast path; graph precomputed at construction | `transformCore`, `transform()` |
-| Tolerant reader | `identify` guard map + `tryParse` fallback, `identifyAndTransform()` (not used in Phase 1; see [backstop](#backstop)) | `registry.ts#L837-L926` |
-| Telemetry | `hooks.onTransform/onStep/onWarning`, `ctx.warn`/`ctx.defaulted` → `result.meta.warnings/defaults` | `context.ts` |
-| Error handling | Errors as values (`Result<T, DobaIssue[]>`), migrations that throw → `transform_failed` issue | `result.ts`, `transformCore` catch |
-| Packaging quality | publint + arethetypeswrong in `prepublishOnly`, `files: [dist]` | package.json |
-
-**Risk management for the dependency:**
-
-- Pinned exact (`dobajs@0.1.0`) in [shared/package.json](../shared/package.json); review diffs on every bump.
-- MIT, zero deps, ~10 source files → **vendoring into `shared/` is the documented escape hatch** if the project stalls.
-- The integration sits behind a thin facade, [shared/src/schema-evolution/engine.ts](../shared/src/schema-evolution/engine.ts), so doba is swappable: only the facade imports `dobajs`.
-
-**What doba does NOT provide (we build):**
-
-- Lens module convention (frozen, append-only, date-ordered files)
-- Key-map derivation for `ops` + `stx.fieldTimestamps` (see D1)
-- OpenAPI spec replay artifact
-- Cache pointer + Dexie migration pass
-- CI guards (append-only lint, oasdiff, config-collision validator)
-
-**Note on Phase 1 footprint:** Phase 1 exercises doba only as a linear chain executor for cache-row
-migration; graph path-finding is first used in Phase 2. This keeps the dependency trivially
-replaceable while Phase 1 hardens in production.
+[dobajs](https://github.com/karol-broda/doba) (pinned exact at `0.1.0` in [shared/package.json](../shared/package.json)) supplies bidirectional migrations, lens-graph path-finding for Phase 2, Standard Schema v1 Zod compatibility, zero runtime deps, a `validate: 'none'` hot path, telemetry hooks, and errors as values. Only the facade [shared/src/schema-evolution/engine.ts](../shared/src/schema-evolution/engine.ts) imports it, so it stays swappable; vendoring into `shared/` is the escape hatch. Lens module convention, key-map derivation, spec replay, cache pointer, and CI guards are ours.
 
 ---
 
 ## Architecture decisions
 
-### D1: One entity registry per type; ops handled by derived key maps
-
-A product entity has two wire shapes (`entity` full row; `ops` partial update with AWSet deltas), but they do **not** need separate transform machinery. For every delta kind except `retype`, the ops-side transform is a pure key rename, identical to the entity-side key change. So:
-
-- **One doba registry per entity type** (entity shape; nodes `v0`, `v3`, ... `current`): used by the client cache migration and Phase 2 `downgradeEntity`
-- **One derived key map per lens** (`Record<oldKey, newKey>`) applied to `ops` objects, `stx.fieldTimestamps`, and queued mutation variables; a ~10-line helper, no registry needed
-- Only `retype` deltas (rare) declare a custom ops converter in the lens
+| Decision | Rule | Consequence |
+| --- | --- | --- |
+| **D1** One registry per entity type; ops via key maps | One doba registry per entity type (nodes `v0`, `v3`, ... `current`) plus one derived key map per lens (`Record<oldKey, newKey>`) applied to `ops`, `stx.fieldTimestamps`, and queued mutation variables. Only `retype` deltas declare a custom ops converter. | No separate ops transform machinery; `entityRegistries` and `keyMaps` in engine.ts are the whole runtime surface. |
+| **D2** Global schema version = lens count | `currentSchemaVersion = lenses.length`, baked into both bundles from `shared`. Per entity type, nodes exist only where that entity changed; a global version maps to the latest node at or below it (`versionNodeFor`). | Short linear chains (BFS); Phase 2 branches use doba's Dijkstra with `deprecated`/`cost` edges, no code change. |
+| **D3** No version negotiation in Phase 1 | Server normalization is presence-based (`'name' in ops` maps to `title`); no header consulted. Cache version comes from the persisted `schemaVersion` meta pointer, never from inspecting rows; the RQ `buster` slot must stay `''`. `X-Client-Version` is telemetry-only (fleet floor). | Old-shape requests without a version header (curl, tests) stay valid. `Accept-Version` becomes a correctness input only in Phase 2. |
+| **D4** Canonical inside; dual-emit at the edge | DB logic, CDC, activitiesTable, TTL entity cache, SSE: newest shape only (plus the mirrored old column during expand). The **frozen envelope** changes only via `apiVersion` bump: `stx`/`ops` wire structure, `StreamNotification`, `CatchupChangeSummary`, counter key formats (`sequence`, `e:f:{type}`/`e:f:h:{type}`, `e:c:{type}`/`e:c:h:{type}`), auth/session contract, SSE/WebSocket protocol. Enforced by the `lens:check` config-collision rule. | No per-request response transform in Phase 1; Phase 2 `downgradeEntity` runs after the TTL cache read. |
+| **D5** Old schemas derived, not snapshotted | Older schema nodes are generated at startup by reverse-applying each lens delta to the current Zod schema (`.omit()`/`.extend()`). | The same replay powers the versioned OpenAPI artifact (Phase 2); derived schemas matter only for tests, `tryParse`, and spec generation. |
 
 ```ts
 // shared/src/schema-evolution/engine.ts (facade: only file that imports dobajs)
 const entityRegistries: Record<LensEntityType, Registry<...>>; // doba: cached rows, peer downgrade
 const keyMaps: Record<LensEntityType, Record<string, string>>; // ops + stx timestamp keys
 ```
-
-### D2: Global schema version = lens count; per-entity nodes derived
-
-- `currentSchemaVersion = lenses.length` (global ordinal, monotonic, baked into both bundles from `shared`).
-- Per entity type, version **nodes** exist only where that entity changed: attachment lenses at global ordinals 3 and 7 → attachment nodes `v0` (pre-3), `v3`, `v7` (= current). A consumer at global version 5 maps to attachment node `v3` (latest node ≤ 5). This keeps chains short and avoids no-op hops.
-- Within an app, chains are linear → BFS. Cross-app negotiation (Phase 2) adds branches → Dijkstra with `deprecated`/`cost` edges. Both are doba built-ins; nothing changes in our code.
-
-### D3: Phase 1 needs no version negotiation for correctness
-
-- **Server writes**: the widened expand-window schema makes old-shape ops _valid_; normalization is presence-based (`'name' in ops` → map to `title`) and unambiguous within an expand window. No header consulted.
-- **Cache rows**: version comes from the persisted **cache pointer** (the dedicated `schemaVersion` meta field; the RQ `buster` slot round-trips through PersistQueryClientProvider and must stay `''`), never from inspecting rows.
-- `X-Client-Version` is sent from day one, but in Phase 1 it is **telemetry-only** (fleet floor for contract gating). It becomes a correctness input only in Phase 2, where `Accept-Version` drives response down-migration for arbitrarily-old peers.
-
-### D4: Canonical shape inside; dual-emit at the edge during expand
-
-- DB business logic, CDC, activitiesTable, TTL entity cache, SSE notifications: **newest shape only** (plus the mirrored old column during an expand window).
-- Responses need **no per-request transform in Phase 1**: during expand, the row contains both columns (Drizzle backfill + mirror writes), so responses dual-emit both field names with zero work. Per-version `downgradeEntity` exists only in Phase 2 for peers, applied _after_ TTL cache read (canonical cache, no per-version fragmentation).
-- The **frozen envelope** is exempt from lensing and may only change via `apiVersion` bump: `stx`/`ops` wire structure, `StreamNotification`, `CatchupChangeSummary`, counter key formats (`sequence`, `e:f:{type}`/`e:f:h:{type}`, `e:c:{type}`/`e:c:h:{type}`), auth/session contract, SSE/WebSocket protocol. Enforced by the `lens:check` config-collision rule.
-
-### D5: Old schema versions are derived, not snapshotted
-
-We never snapshot full entity Zod schemas per version. The doba registry's older schema nodes are **generated at startup** by reverse-applying each lens's declarative delta to the current canonical schema (`.omit()` / `.extend()` on Zod objects). The same replay logic will power the versioned OpenAPI artifact (2.1). Hot paths use `validate: 'none'`, so these derived schemas matter only for tests, tolerant-reader `tryParse`, and spec generation.
 
 ---
 
@@ -277,23 +171,22 @@ export default defineLens({
 });
 ```
 
-Supported `delta` kinds (each with deterministic forward/backward/spec/timestamp derivations): `rename`, `add` (with default for backward-compat fill), `drop`, `retype` (requires `custom` converters), `setRename` (rename of an AWSet field).
+Supported `delta` kinds (each with deterministic forward/backward/spec/timestamp derivations): `rename`, `add` (with a default for backward-compat fill), `drop`, `retype` (requires `custom` converters; may lose data backward, so each such lens sets `lossyBackward`), `setRename` (rename of an AWSet field).
 
-Design details of the module format:
+Module format rules:
 
-- **Default-as-function for `add`** (`resolveAddDefault` in [define.ts](../shared/src/schema-evolution/define.ts)): `default` may be a pure `(row) => value` (still passing the purity lint). Covers "new field derived from existing ones", the gap Cambria flagged as unsolved ("no mechanism to look up missing data").
-- **The lens-module format is itself versioned** (`formatVersion` + `LENS_FORMAT_VERSION`, stamped/validated by `defineLens`). This is Cambria's "lens inception" open problem; modules are append-only and immortal, so day-one was the cheap moment.
-- **`unknownFieldHandling` policy knob** (`ignore | strip | fail`, default `strip`, in `schemaEvolutionPolicy`; modeled on LiveStore's `unknownEventHandling`): `normalizeOps` handles post-lens unmappable fields per policy when callers pass `canonicalKeys`, and always reports them via `unknownFields` (hosts log/otel).
-- **Non-goals**: no restructuring ops (`hoist`/`plunge`, `wrap`/`head`, `in`/`map`). Cambria's appendix shows scalar↔array has only trade-offs, and Cella's flat SQL-backed rows rarely nest; model rare restructures as `drop` + `add`-with-computed-default. One-to-many splits / cross-entity moves stay outside the lens system as one-off scripts (unsolved by Cambria and DXOS alike).
-- **Future adjustment worth stealing** (panproto, per Diskin et al. lenses-with-complement): stash `drop`-removed values in a side-channel so round-trips are lossless. Cheap for queued mutations; most relevant to Phase 2 peer downgrades.
+- **`add` defaults may be functions** (`resolveAddDefault` in [define.ts](../shared/src/schema-evolution/define.ts)): a pure `(row) => value` covers fields derived from existing ones.
+- **The module format is versioned** (`formatVersion` + `LENS_FORMAT_VERSION`, stamped and validated by `defineLens`), because modules are immortal.
+- **`unknownFieldHandling`** (`ignore | strip | fail`, default `strip`, in `schemaEvolutionPolicy`): `normalizeOps` applies it to post-lens unmappable fields when callers pass `canonicalKeys`, and always reports them via `unknownFields`.
+- **Non-goals**: no restructuring ops (`hoist`/`plunge`, `wrap`/`head`, `in`/`map`). Model rare restructures as `drop` + `add`-with-computed-default; one-to-many splits and cross-entity moves stay one-off scripts.
 
-The derived `fieldTimestamps` key map is applied wherever stx travels: server-side `normalizeOps` (incoming `stx.fieldTimestamps`), cache migration (stored entity `stx`), and queued mutation rewrite. **This closes the LWW-skew gap**: without it, a renamed scalar would lose its HLC history and an older offline edit could win.
+The derived `fieldTimestamps` key map is applied wherever stx travels: server-side `normalizeOps`, cache migration (stored entity `stx`), and queued mutation rewrite. Without it a renamed scalar would lose its HLC history and an older offline edit could win.
 
 ---
 
 ## Entity coverage
 
-The lens system covers both entity classes under a **three-tier contract**; the non-entity protocol surface stays versioned.
+Both entity classes fall under a **three-tier contract**; the non-entity protocol surface stays versioned by `apiVersion`.
 
 | Surface | Write path | Client cache | Lens coverage |
 | --- | --- | --- | --- |
@@ -301,21 +194,22 @@ The lens system covers both entity classes under a **three-tier contract**; the 
 | **Channel entities** (`organization`; `user` follows the same plain-REST pattern, add when first needed) | plain `PUT`, full-body partial (drizzle-zod); no ops, no stx, no HLC | bundled into the single Dexie meta record (`channelQueries`), no seq | **Tier 2, reduced derivation**: body-schema widening + `normalizeBody` + cache/mutation migration + dual-emit reads. No key maps, no `fieldTimestamps` rewriting, no mirror-write LWW logic: no per-field merge exists on this path. |
 | **Non-entity surface** (auth/session, stx/ops envelope, SSE notifications, catchup summaries, counter formats) | frozen envelope (D4) | n/a | **Tier 3, excluded**: changes only via `apiVersion` |
 
-Why Tier 2 matters for Phase 1 (not just Phase 2 optics): channel mutations _are_ queued offline (`networkMode: 'offlineFirst'` is global; `shouldDehydrateMutation` persists any paused mutation regardless of entity type). An org rename queued under an old bundle must replay correctly against a new server. Both entity classes share one lens ordinal, one telemetry chain, and the same CI guards, so what a peer or 3rd party consumes is uniform: **every resource** is version-tolerant under the same rules, and the protocol advertises `apiVersion` — the standard industry split (Stripe's model: payload down-migration per consumer version, transport/auth versioned as a whole).
+Tier 2 matters in Phase 1 because channel mutations are queued offline too (`networkMode: 'offlineFirst'` is global; `shouldDehydrateMutation` persists any paused mutation), so an org rename queued under an old bundle must replay against a new server. Both classes share one lens ordinal, one telemetry chain, and the same CI guards.
 
-Boundary notes:
+Boundaries:
 
-- **Membership**: rides on channel entities via enrichment and has its own table/wire shape; treat its fields as frozen-envelope-adjacent until a concrete need arises. Enrichment output (`membership`, `can`, `ancestorSlugs`) is computed, not stored, so cache migration never touches it.
-- **Channel entities stay on plain PUT by design**: moving them onto ops+stx was considered and rejected — it would drag them into CDC/seq/catchup scope for no user-visible gain and contradicts the deliberately lightweight channel design (SYNC_ENGINE.md). The factory aligns the **schema/tolerance layer**, not the **merge layer**.
-- **Full-API tolerance was rejected**: lensing the frozen envelope would mean transforming the sync protocol itself per consumer version — the exact trap Cambria hit patch-lensing Automerge internals (D4, [Prior art](#prior-art)).
+- **Membership** rides on channel entities via enrichment and has its own table and wire shape; treat its fields as frozen-envelope-adjacent until needed. Enrichment output (`membership`, `can`, `ancestorSlugs`) is computed, not stored, so cache migration never touches it.
+- **Channel entities stay on plain PUT**: ops+stx would drag them into CDC/seq/catchup scope for no user-visible gain. The contract factory aligns the schema/tolerance layer, not the merge layer.
+- **Full-API tolerance is rejected**: lensing the frozen envelope would mean transforming the sync protocol per consumer version (D4).
+- **Yjs-edited description fields** are outside the lens system (CRDT binary, separate worker); treat them as frozen-envelope-adjacent.
 
 ---
 
 ## Evolution contract
 
-Every wire body is an **entity body**, full (create) or partial (update), optionally accompanied by `stx`. An `ops` object _is_ a partial entity body; a context PUT body is the same thing without stx. Widening (old-name aliases) and normalization (canonical keys + expand mirror writes) are body-level operations; the only sync-specific extra is rewriting `stx.fieldTimestamps` keys, and the presence of `stx` is exactly the discriminator.
+Every wire body is an **entity body**, full (create) or partial (update), optionally with `stx`. An `ops` object is a partial entity body; a channel PUT body is the same without stx. Widening (old-name aliases) and normalization (canonical keys + expand mirror writes) are body-level; the only sync-specific extra is rewriting `stx.fieldTimestamps` keys, and the presence of `stx` is the discriminator.
 
-So there is **one registration point per entity module** ([backend/src/core/schema-evolution/evolution-contract.ts](../backend/src/core/schema-evolution/evolution-contract.ts)), with two factories under one `evolutionContract` object (clearer TypeScript inference than a single factory with a class flag):
+Each entity module registers once through [backend/src/core/schema-evolution/evolution-contract.ts](../backend/src/core/schema-evolution/evolution-contract.ts), via one of two `evolutionContract` factories:
 
 ```ts
 // Product (sync) entity: attachment-schema.ts
@@ -348,13 +242,13 @@ export const organizationContract = evolutionContract.channel("organization", {
 // organizationContract.normalizeBody(body)                 - entity-bound runtime seam
 ```
 
-- **One widener**: `widenBodySchema(entityType, zodObject)` ([lens-seam.ts](../backend/src/core/schema-evolution/lens-seam.ts)) is applied to every derived schema — create bodies, product ops shapes ([update-schema.ts](../backend/src/core/schema-evolution/update-schema.ts)), and channel partial bodies. One implementation of the lens alias derivation.
-- **One runtime normalizer core**: `normalizeBody(entityType, body)` (a thin `normalizeOps` wrapper) for plain bodies; every create/update operation calls its contract-bound seam first thing.
-- **`createItem` stays a module-assembled ZodObject** rather than being derived from a shared field source: create schemas carry picks, defaults, and batch refines that a raw-shape union can't express without reinventing drizzle-zod. The update shape is still declared exactly once (in `updateOps`/`updateBody`, adjacent to `createItem` in the same call).
-- **Typed by construction**: the factories are generic over the raw shapes (`z.ZodObject<S>` parameters, not a `ZodObject<ZodRawShape>` constraint, which would collapse inference to `Record<string, unknown>` and silently degrade the generated SDK).
-- **Completeness is CI-enforced**: `lens:check` rule 4 asserts every `appConfig` product/channel entity type calls its contract factory in `backend/src/modules` — an app-specific entity can never silently miss the seams.
+- **One widener**: `widenBodySchema(entityType, zodObject)` ([lens-seam.ts](../backend/src/core/schema-evolution/lens-seam.ts)) covers every derived schema: create bodies, product ops shapes ([update-schema.ts](../backend/src/core/schema-evolution/update-schema.ts)), channel partial bodies.
+- **One runtime normalizer**: `normalizeBody(entityType, body)` (thin `normalizeOps` wrapper) for plain bodies; every create/update operation calls its contract-bound seam first.
+- **`createItem` stays a module-assembled ZodObject** because create schemas carry picks, defaults, and batch refines a raw-shape union cannot express; the update shape is declared once in `updateOps`/`updateBody`.
+- **Typed by construction**: the factories are generic over the raw shapes (`z.ZodObject<S>` parameters); a `ZodObject<ZodRawShape>` constraint would collapse inference to `Record<string, unknown>` and degrade the generated SDK.
+- **Completeness is CI-enforced**: `lens:check` rule 4 asserts every `appConfig` product/channel entity type calls its contract factory in `backend/src/modules`.
 
-Update _semantics_ stay divergent by design: product updates merge per-field (HLC/AWSet over `{ ops, stx }`), channel updates stay full-body-partial PUT with server-authoritative last-write. Likewise create vs update keep different _shapes_ (full vs partial, create-only fields): the factory aligns their _source and derivation_, not their contracts.
+Update semantics stay divergent: product updates merge per field (HLC/AWSet over `{ ops, stx }`); channel updates stay full-body-partial PUT with server-authoritative last write.
 
 ---
 
@@ -362,14 +256,11 @@ Update _semantics_ stay divergent by design: product updates merge per-field (HL
 
 ### Version telemetry header
 
-- `currentSchemaVersion` (= lens count) is exported from [shared/src/schema-evolution](../shared/src/schema-evolution/index.ts) and baked into each bundle at build time.
-- **Frontend**: the fetch wrapper in [frontend/src/lib/api-client.ts](../frontend/src/lib/api-client.ts) sets `X-Client-Version` on every SDK request — one place, covers the whole generated SDK. No SSE changes (notifications carry no entity fields).
-- **Backend**: [client-version.ts](../backend/src/middlewares/client-version.ts) (mounted on all routes) feeds the `schema.client_version.seen` otel counter ([schema-version-metrics.ts](../backend/src/lib/schema-version-metrics.ts)); [lens-telemetry.ts](../backend/src/lib/lens-telemetry.ts) wires doba's transform hooks into otel.
-- The version distribution is the **fleet floor** for "safe to contract". Phase 2 upgrades the same header pattern into a correctness input for peers.
+`currentSchemaVersion` (= lens count) is exported from [shared/src/schema-evolution](../shared/src/schema-evolution/index.ts) and baked into each bundle. The fetch wrapper in [frontend/src/lib/api-client.ts](../frontend/src/lib/api-client.ts) sets `X-Client-Version` on every SDK request (SSE is unchanged). On the backend, [client-version.ts](../backend/src/middlewares/client-version.ts) (mounted on all routes) feeds the `schema.client_version.seen` otel counter ([schema-version-metrics.ts](../backend/src/lib/schema-version-metrics.ts)), and [lens-telemetry.ts](../backend/src/lib/lens-telemetry.ts) wires doba's transform hooks into otel. Its distribution is the **fleet floor** for "safe to contract".
 
 ### Engine API
 
-[engine.ts](../shared/src/schema-evolution/engine.ts) exposes the only API the rest of the codebase uses:
+[engine.ts](../shared/src/schema-evolution/engine.ts) is the only API the codebase uses:
 
 ```ts
 normalizeOps(entityType, ops, stx, options?): { ops, stx, unknownFields } // key maps + mirror writes (server seam)
@@ -382,176 +273,73 @@ versionNodeFor(entityType, globalVersion): string            // D2 mapping
 configureLensTelemetry(hooks): void                          // host-provided doba hooks
 ```
 
-All calls use `validate: 'none'` (zod-openapi / Dexie context validate elsewhere); `from === to` short-circuits in doba make the steady-state cost ~zero. Policy knobs live in [config.ts](../shared/src/schema-evolution/config.ts): `expandWindowMinDays: 14`, `staleBundleMaxDays: 30`, `unknownFieldHandling: 'strip'`.
+All calls use `validate: 'none'` (zod-openapi and Dexie validate elsewhere). Policy knobs live in [config.ts](../shared/src/schema-evolution/config.ts): `expandWindowMinDays: 14`, `staleBundleMaxDays: 30`, `unknownFieldHandling: 'strip'`. `staleBundleMaxDays` has no consumer yet; the forced idle-gated reload is unbuilt.
 
 ### Server write path
 
-No middleware, no body re-parsing, no Hono internals. Two derived pieces, both reached through the [evolution contract](#evolution-contract):
+No middleware, no body re-parsing. Two derived pieces, both reached through the [evolution contract](#evolution-contract):
 
-1. **Widened wire schemas (build time)**: while a lens is in its expand window, the derived ops/create/body Zod schemas accept **both** field names (old optional alias generated from `delta`, never hand-edited in module schemas). Old-shape requests pass OpenAPIHono validation unchanged, including curl/tests that send no version header.
-2. **Normalization at the existing seam (runtime)**: `resolveUpdateOps` ([backend/src/core/stx/resolve-update.ts](../backend/src/core/stx/resolve-update.ts)) and the create/body seams call `normalizeOps` first thing:
-   - apply lens key maps to `ops` and `stx.fieldTimestamps` (old → canonical),
-   - during expand, **mirror-write** the twin column (new client sends `title` → also writes `name`; old client sends `name` → also writes `title`) so every reader sees fresh data in whichever field its bundle knows,
-   - run `custom.opsConvert` for `retype` lenses.
-
-HLC/LWW resolution and AWSet application then operate on canonical keys only. This is the **only server-side runtime touch point**, and it sits in code the sync engine already owns.
+1. **Widened wire schemas (build time)**: during a lens's expand window, the derived ops/create/body Zod schemas accept both field names (old optional alias generated from `delta`, never hand-edited), so old-shape requests pass OpenAPIHono validation unchanged.
+2. **Normalization at the existing seam (runtime)**: `resolveUpdateOps` ([backend/src/core/stx/resolve-update.ts](../backend/src/core/stx/resolve-update.ts)) and the create/body seams call `normalizeOps` first. It applies lens key maps to `ops` and `stx.fieldTimestamps`, **mirror-writes** the twin column during expand (a `title` write also writes `name`, and vice versa), and runs `custom.opsConvert` for `retype` lenses. HLC/LWW resolution and AWSet application then see canonical keys only; this is the only server-side runtime touch point.
 
 ### Read path
 
-Phase 1 deliberately has **no response-side transform**:
+Phase 1 has no response-side transform:
 
-- During expand, the entity row carries both columns (Drizzle migration adds + backfills the new column; mirror writes keep both fresh). Responses, TTL-cache entries, and seq-cursor delta fetches all dual-emit both field names with zero per-request work.
-- **Contract is the enforcement point**: the old column/field is removed only when the `X-Client-Version` fleet floor has passed the expand ordinal for `expandWindowMinDays`. Automation of this check is Phase 2 (2.5); until then it is a manual step in the contract PR (playbook).
-- SSE notifications and catchup summaries are untouched either way (frozen envelope: IDs and seqs only).
-- Tradeoff (accepted): expand windows live for days-to-weeks; old+new columns coexist in DB and payloads. Standard parallel-change practice: costs bytes, not transforms.
-- Per-version `downgradeEntity` (a true response transform) arrives only in Phase 2, where peers can be arbitrarily many versions behind.
+- During expand, the row carries both columns (the Drizzle migration adds and backfills the new column; mirror writes keep both fresh), so responses, TTL-cache entries, and seq-cursor delta fetches dual-emit both field names for free.
+- **Contract is the enforcement point**: remove the old column/field only after the `X-Client-Version` fleet floor has passed the expand ordinal for `expandWindowMinDays`; until Phase 2 automates this, it is a manual contract-PR step.
+- SSE notifications and catchup summaries are untouched (frozen envelope: IDs and seqs only).
+- Accepted tradeoff: old and new columns coexist in DB and payloads for days to weeks; mirror writes produce dual deltas in CDC `changedFields`.
 
 ### Client cache migration
 
-Seam: [frontend/src/query/persister.ts](../frontend/src/query/persister.ts) `migrateScopeToCurrent`. Product entities are per-query Dexie records; the meta record holds `mutations` + `channelQueries` and a dedicated **`schemaVersion`** pointer field (the global lens ordinal; see D3 for why not the `buster` slot).
+Seam: `migrateScopeToCurrent` in [frontend/src/query/persister.ts](../frontend/src/query/persister.ts). Product entities are per-query Dexie records; the meta record holds `mutations`, `channelQueries`, and the **`schemaVersion`** pointer (global lens ordinal).
 
-- Pointer behind the bundle → **migration pass before hydration**: every persisted product-entity query record maps through `migrateCachedEntity()` (includes stx key rewrite); `channelQueries` rows and `meta.mutations` variables are rewritten via the same engine (`entityTypeOf` in [cache-migration.ts](../frontend/src/query/cache-migration.ts) recognizes both product and channel types).
-- Writes are **chunked** (200 rows per Dexie transaction) with the pointer advanced atomically in the final meta write → crash-resume re-runs idempotently (migrations are idempotent by construction: renaming an already-renamed field is a no-op).
-- Pointer ahead of the bundle (another tab migrated forward, or a rollback deploy) → the bundle **marks itself stale, restores nothing, never writes** — not "backward-migrate or wipe". The common case is a stale tab beside a newer tab (a wipe would destroy the newer tab's migrated cache); a genuine rollback is rare, is a no-op within an expand window, and recovers on the next forward deploy. The PWA update flow replaces the stale bundle.
-- **Session scopes** (`s-<uuid>`): wiped on pointer mismatch instead of migrated (they're allowed to be cold; avoids migrating dozens of orphaned scopes).
+- Pointer behind the bundle: a **migration pass runs before hydration**. Every persisted product-entity query record maps through `migrateCachedEntity()` (including the stx key rewrite); `channelQueries` rows and `meta.mutations` variables go through the same engine (`entityTypeOf` in [cache-migration.ts](../frontend/src/query/cache-migration.ts) recognizes both classes).
+- Writes are **chunked** (200 rows per Dexie transaction) and the pointer advances atomically in the final meta write, so a crash-resume re-runs idempotently.
+- Pointer ahead of the bundle (another tab migrated forward, or a rollback deploy): the bundle **marks itself stale, restores nothing, and never writes**. A wipe would destroy the newer tab's migrated cache; a rollback recovers on the next forward deploy.
+- **Session scopes** (`s-<uuid>`) are wiped on pointer mismatch, not migrated.
 - **Leader gating**: the pass runs only under a Web Lock; followers wait before restoring.
-- No network involved: hundreds of clients migrating costs the server nothing. Covered by [boot-migration.test.ts](../frontend/src/query/tests/boot-migration.test.ts).
 
 ### Queued mutation replay
 
-Seam: `resumePausedMutations()` runs after `waitForActiveCatchup()` in [frontend/src/query/provider.tsx](../frontend/src/query/provider.tsx).
-
-- Mutations were already rewritten on disk in the same transaction chain as the pointer; they replay in current shape with consistent `stx.fieldTimestamps`.
-- In-memory pending mutations during a live PWA update (SW swap without full reload) are covered by the reload flow: the new bundle restores rewritten mutations from disk.
-- Squashing (`squashPendingMutation` / `coalescePendingCreate` in [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts)) operates post-migration, so field keys always match: no cross-version squash bugs.
+Seam: `resumePausedMutations()` after `waitForActiveCatchup()` in [frontend/src/query/provider.tsx](../frontend/src/query/provider.tsx). Mutations were rewritten on disk in the same transaction chain as the pointer, so they replay in current shape with consistent `stx.fieldTimestamps`. In-memory pending mutations during a live PWA update are covered by the reload flow (the new bundle restores rewritten mutations from disk). Squashing (`squashPendingMutation` / `coalescePendingCreate` in [squash-utils.ts](../frontend/src/query/offline/squash-utils.ts)) runs post-migration, so field keys always match.
 
 ### Backstop
 
-Because every lens migration is idempotent by construction, the backstop is trivial:
+Every lens migration is idempotent, so the backstop is small:
 
-- If boot detects an interrupted pass (pointer behind), **re-run the whole chain** over the affected scope: idempotency makes mixed old/new rows safe.
-- Any row that still fails a downstream Zod parse → evict that single query record (refetch on demand). Never fleet-wide.
-- Any migrated mutation that still fails replay with a 4xx is quarantined to the `failed_sync` Dexie table ([failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)) — never dropped; shown in a non-blocking banner with JSON export.
-- No doba `identify()`, no `tryParse`, no steady-state Zod parsing of the cache. (Identify-based shape detection is reconsidered only if Phase 2 peer payload auditing needs it.)
+- Boot detects an interrupted pass (pointer behind): **re-run the whole chain** over the affected scope; mixed old/new rows are safe.
+- A row that still fails a downstream Zod parse: evict that single query record (refetch on demand). Never fleet-wide.
+- A migrated mutation that still fails replay with a 4xx: quarantine to the `failed_sync` Dexie table ([failed-sync.ts](../frontend/src/query/offline/failed-sync.ts)), never drop; shown in a non-blocking banner with JSON export.
+- No doba `identify()`, `tryParse`, or steady-state Zod parsing of the cache.
 
 ### Multi-tab + PWA coordination
 
-The race this closes: an old-bundle tab persisting old-shape rows after a new-bundle tab migrates.
+Closes the race where an old-bundle tab persists old-shape rows after a new-bundle tab migrates.
 
-- **Schema-version broadcast**: [tab-coordinator.tsx](../frontend/src/query/realtime/tab-coordinator.tsx) announces `currentSchemaVersion` on the existing BroadcastChannel at init; a tab seeing a _higher_ version marks itself stale (stops persisting), a tab seeing a _lower_ one re-announces so late-booting old tabs learn.
-- **Persist guard**: [schema-version-guard.ts](../frontend/src/query/schema-version-guard.ts) + persister — a stale bundle never writes; the flush path also checks the on-disk pointer directly (broadcast can race the first write).
-- **PWA update**: [reload-prompt.tsx](../frontend/src/modules/common/reload-prompt.tsx) polls every 15 min + on visibility/online and shows the refresh prompt, replacing the stale bundle. The _forced_ staleness deadline (`staleBundleMaxDays`, idle-gated) is unbuilt (deferred ⬜) — nice-to-have now that the guard blocks stale writes.
+- **Schema-version broadcast**: [tab-coordinator.tsx](../frontend/src/query/realtime/tab-coordinator.tsx) announces `currentSchemaVersion` on the existing BroadcastChannel at init. A tab seeing a higher version marks itself stale and stops persisting; a tab seeing a lower one re-announces so late-booting old tabs learn.
+- **Persist guard**: [schema-version-guard.ts](../frontend/src/query/schema-version-guard.ts) plus the persister: a stale bundle never writes, and the flush path also checks the on-disk pointer directly because the broadcast can race the first write.
+- **PWA update**: [reload-prompt.tsx](../frontend/src/modules/common/reload-prompt.tsx) polls every 15 min and on visibility/online and shows the refresh prompt that replaces the stale bundle.
 
 ### CI guards
 
 1. **`lens:check`** ([shared/scripts/check-lenses.ts](../shared/scripts/check-lenses.ts)), in root `pnpm check` and the CI lint job (with `fetch-depth: 0` for the history compare):
    1. **Append-only**: any committed lens module differing from its first-commit blob fails.
-   2. **Config-collision**: every lens `delta` field name is checked against reserved surfaces — the frozen envelope (D4), CDC counter field reads, `appConfig.productEmbeddings[].hostColumn`, `hostsByEmbeddedProduct` — plus contract-requires-prior-expand.
+   2. **Config-collision**: every lens `delta` field name is checked against reserved surfaces (the frozen envelope, CDC counter field reads, `appConfig.productEmbeddings[].hostColumn`, `hostsByEmbeddedProduct`), plus contract-requires-prior-expand.
    3. **Purity**: no `await`, no value-dependent logic beyond declared `custom` converters, no dynamic key access from input data.
    4. **Contract completeness**: every configured product/channel entity type must call its `evolutionContract` factory in `backend/src/modules`.
-2. **oasdiff gate** (`schema-bust-gate` in ci.yml): breaking OpenAPI diff fails the PR unless `clientCacheVersion` was bumped. ❌ Still needs the "or a lens module was added" pass condition before lens #1 (see [Remaining work](#remaining-work)).
+2. **oasdiff gate** (`schema-bust-gate` in ci.yml): a breaking OpenAPI diff fails the PR unless `clientCacheVersion` was bumped. Add an "or a lens module was added" pass condition before lens #1, or shipping a lens forces a pointless cache bust.
 
-### Telemetry + failure capture
+### Telemetry
 
-- doba hooks: `onTransform`/`onStep` → otel histograms (`lens.transform.duration`, per lens id); `ctx.defaulted`/`warnings` → counters. Server-side registry created with these hooks; client-side registry without (or dev-only `debug: true`).
-- `X-Client-Version` distribution → fleet-floor view: contract allowed only when the floor has passed the expand lens's ordinal for `expandWindowMinDays`.
-- Client-side failures land in `failed_sync` (see [Backstop](#backstop)); the server-side DLQ is Phase 2 (2.4) — internal clients are covered by the client table + version telemetry.
+- doba hooks: `onTransform`/`onStep` feed otel histograms (`lens.transform.duration`, per lens id); `ctx.defaulted`/`warnings` feed counters. Only the server-side registry gets these hooks (client: dev-only `debug: true`).
+- `X-Client-Version` distribution is the fleet-floor view: contract only when the floor has passed the expand lens's ordinal for `expandWindowMinDays`.
+- Client-side failures land in `failed_sync` ([Backstop](#backstop)); a server-side DLQ is Phase 2.
 
 ### Testing
 
-- **Engine tests** (shared): [engine.test.ts](../shared/src/schema-evolution/tests/engine.test.ts) — per-delta-kind derivation + round-trip tests (forward∘backward = identity modulo declared loss), timestamp-map consistency; [engine-empty.test.ts](../shared/src/schema-evolution/tests/engine-empty.test.ts) asserts every seam is a passthrough while the lens list is empty.
-- **Seam tests** (backend): [lens-seam.test.ts](../backend/src/core/schema-evolution/tests/lens-seam.test.ts) — widening + normalization through the contract factories, including a synthetic lens.
-- **Client tests** (frontend, Vitest + fake-indexeddb): `boot-migration.test.ts` — old-shape records + queued mutations, lens registry one ahead → rewritten rows, advanced pointer, replay in new shape; crash-resume idempotency.
-- **E2E (with lens #1)**: the offline runbook — build bundle A, populate cache + offline edits, swap to bundle B with the lens, reconnect, assert zero data loss and no refetch storm. Part of the [playbook](#lens-playbook).
-
----
-
-## Cross-app schemas
-
-Builds on Phase 1's lens registry; adds negotiation between independently-deployed Cella apps whose entity models diverge. Not started; items below are in dependency order.
-
-### 2.1 Versioned OpenAPI spec artifact
-
-- Extend [generate-openapi.ts](../backend/scripts/generate-openapi.ts): after producing the latest spec, replay lens `delta`s newest→oldest to emit each historical spec at `backend/openapi/{ordinal}.json`. Pure JSON-schema rewrites driven by the same `delta` kinds — the lens's fourth artifact.
-- Expand-phase specs show both field names; contract-phase specs show only the new one.
-- SDK generation ([sdk/openapi-ts.config.ts](../sdk/openapi-ts.config.ts)) stays single-spec (current version): versioned specs are **for peers**, not for our own SDK.
-
-### 2.2 Version discovery + negotiation
-
-- `GET /versions` (unauthenticated, cacheable): `{ apiVersion, schemaVersion, lenses: [{ id, entityType, phase }], specs: '/openapi/{v}.json' }`.
-- Peer requests carry `Accept-Version: <schemaVersion>` (and identify as peers via existing auth: service tokens / org-scoped credentials, reusing `checkAccess()` guards; **no new auth surface**).
-- Server behavior: peer requests flow through the same write-path seam (key maps cover the live expand window; older peers get an explicit doba chain upgrade before `normalizeOps`; context bodies go through the same widener/normalizer). Responses gain the **first true response transform**: `downgradeEntity(entity, peerVersion)` applied post-TTL-cache on all entity routes (Tier 1+2) when `Accept-Version < currentSchemaVersion`. `lossyBackward` lenses omit rather than restore removed fields (security: a field dropped for exposure reasons must not reappear for old peers).
-- Unknown/too-old version (no path in the registry graph) → `426 Upgrade Required` with the `/versions` URL: explicit, never silent.
-
-### 2.3 Cross-app lens graphs (where doba pays off)
-
-- An app's registry = upstream cella lenses + app-specific lenses. Schema nodes get namespaced ids (`cella:v7`, `app:v3`) and the graph **branches**: exactly doba's model (schemas are nodes, migrations are edges, Dijkstra with `deprecated`/`cost` edges picks routes).
-- Shared-core contract: apps interoperate on the **upstream entity subset** (entities + fields defined in cella core). App-divergent fields are dropped with `ctx.defaulted` telemetry when crossing the boundary (lossy edge, costed higher).
-- The `cella` sync CLI gains a check: app-specific lenses must not collide with upstream lens ids (date-prefix + app namespace makes this mechanical).
-- Peer-to-peer calls between apps at different upstream baselines route through the shared upstream chain: `appA@v3 → cella:v7 → cella:v5 → appB@v2`. doba `findPath` + `explain()` give debuggable routing; `pathStrategy: 'direct'` available for pinned contracts.
-
-### 2.4 Server `failed_mutations` DLQ
-
-- Postgres table: `{ id, peerOrClientVersion, entityType, entityId, mutationId, body jsonb, issues jsonb, createdAt }`.
-- Written when up-migration or validation fails for a versioned consumer (after lens path attempts). Never auto-replayed; idempotent manual replay via `stx.mutationId`.
-- Primary value: observability. Alertable signal that some consumer is broken + audit trail for repair.
-
-### 2.5 Contract lifecycle automation
-
-- Header-distribution telemetry feeds a "safe to contract" check: contract lens PRs are CI-blocked unless the fleet floor (internal clients **and** registered peers) has passed the expand ordinal for the configured window.
-- Sunset/Deprecation headers (RFC 8594/9745) emitted on responses served to consumers more than N lenses behind.
-
----
-
-## Known challenges
-
-1. **Expand windows are long-lived state**: old+new columns coexist for days-to-weeks, and overlapping expand windows for the same entity must compose (key-map chains are order-sensitive). Covered by chain property tests; worth a "max concurrent expand lenses per entity" lint.
-2. **doba maturity**: v0.1.0, single maintainer. Mitigated by facade + pin + vendoring path, but worth a periodic health check; if we hit a bug, contributing upstream is cheaper than maintaining a separate implementation. Phase 1 exercises it only as a chain executor, so the blast radius is small.
-3. **Derivation in `engine.ts`** (delta → schema widening, key maps, doba migrations, spec deltas) is our code, not doba's. It is the highest-correctness-risk module and gets the densest property tests.
-4. **`retype` deltas** (e.g., `string → number`) need `custom` converters and may lose data during
-   backward conversion; each lens sets its own `lossyBackward` policy and telemetry.
-5. **Yjs-edited description fields** are outside the lens system (CRDT binary, separate worker); renaming a description-derived field touches the Yjs derived-fields PATCH contract; treat as frozen-envelope-adjacent until needed.
-6. **Expand-phase mirror writes** produce dual deltas in CDC `changedFields` and slightly larger payloads during the window: accepted noise, documented.
-
----
-
-## Prior art
-
-The lens approach here is not novel: it composes well-established ideas. Useful background for anyone extending the system:
-
-### The lens model (closest prior art)
-
-- **Project Cambria: "Translate your data with lenses"** (Ink & Switch). Bidirectional lenses for evolving document schemas in local-first apps, with forward/backward transforms and graph-based version resolution. `doba` is effectively a typed, modern take on this model. <https://www.inkandswitch.com/cambria/> · code: <https://github.com/inkandswitch/cambria-project> · paper (PaPoC '21): <https://dl.acm.org/doi/10.1145/3447865.3457963>
-  - Op vocabulary: `rename`, `add`, `remove`, `hoist`/`plunge` (nesting), `wrap`/`head` (scalar↔array), `in`/`map` (nested), `convert` (arbitrary, breaks round-trip guarantees; our `retype` is the same trade).
-  - Hard-won lessons we follow: lens at the wire/patch boundary, never inside CRDT internals (patch-lensing Automerge's op format is what killed [cambria-automerge](https://github.com/inkandswitch/cambria-automerge)); tag data with writer schema, translate at read/ingest; defaults mandatory on add/drop. Open problems they left: computed defaults, scalar↔array (six strategies, none correct), one-to-many splits, lens-format versioning ("lens inception").
-- **panproto**, the notable 2024-2026 advance: Rust engine (TS bindings) that diffs schema versions and **auto-generates bidirectional lenses**, with machine-checked lens laws, lenses-with-**complement** (lossless drop/restore round-trips), complement-cost pathfinding, and per-edit translation pipelines. Very active (v0.56.x, 2026). Too general to depend on; steal the complement idea and diff→lens derivation. <https://github.com/panproto/panproto> · <https://panproto.dev/> · <https://docs.rs/panproto-lens/latest/panproto_lens/>
-- **Local-first software** (Ink & Switch): motivates offline-tolerant schema migration and sync. <https://www.inkandswitch.com/local-first/>
-- **`doba` / `dobajs`**: the transform/registry engine this plan builds on. Note its pipe ops are `rename`/`map`/`drop`/`add` only; our `retype` and `setRename` are extensions in the facade. <https://github.com/karol-broda/doba>
-
-### How local-first sync engines handle this today (2025-2026 survey)
-
-- **Automerge**: no built-in migration support; cookbook says hand-write versioned upgrade functions; Cambria's ideas "not yet implemented". The gap this plan fills is still open in the flagship CRDT. <https://automerge.org/docs/cookbook/modeling-data/>
-- **Jazz**: `withMigration` runs on load, per-value, unidirectional; docs admit no guard against mixed-version concurrency. Validates our bidirectional ambition. <https://jazz.tools/docs/react-native/schemas/accounts-and-migrations>
-- **DXOS ECHO**: stop-the-world **Epochs** + `MigrationBuilder`; explicitly names Cambria-style lenses as the missing fix for stale-peer writes. <https://dxos.org/blog/decentralized-schema-changes-and-data-migrations/>
-- **Zero (Rocicorp)**: no transforms. Schema-hash handshake, incompatible clients rejected, manual expand/contract discipline. Our plan is essentially Zero's discipline automated by lenses; their client rejection is our Phase 2 `426` backstop. <https://zero.rocicorp.dev/docs/zero-schema>
-- **LiveStore**: event-sourced; versioned event names + an explicit `unknownEventHandling: warn/ignore/fail/callback` policy knob, copied into our `unknownFieldHandling` design. <https://docs.livestore.dev/patterns/app-evolution/>
-- **Electric SQL**: punts (plain Postgres migrations). <https://electric-sql.com/docs/usage/data-modelling/migrations>
-
-### Bidirectional transformations (the theory under "lenses")
-
-- **Boomerang / lenses**: Foster, Greenwald, Moore, Pierce & Schmitt, _"Combinators for Bidirectional Tree Transformations: A Linguistic Approach to the View-Update Problem."_ Origin of the well-behaved `get`/`put` lens laws our `forward`/`backward` pairs approximate.
-- **Edit lenses / symmetric lenses** (Hofmann, Pierce & Wagner, POPL '11/'12): translating _changes_ (not states) with complements, the formal basis for patch-level lensing of `ops`.
-- **Lenses with complement**: Diskin et al. 2011; panproto's foundation and the theory behind the complement idea under [Lens anatomy](#lens-anatomy).
-- **BiDEL / InVerDa**: co-existing bidirectionally-linked schema versions in SQL at scale; corroborates the expand-window dual-emit approach. <https://arxiv.org/pdf/1608.05564>
-- **Empirical op frequency**: additions dominate schema evolution (>50% of changes in 9 of 10 studied projects): <https://arxiv.org/pdf/2003.00054> · survey: <https://www.worldscientific.com/doi/full/10.1142/S2972370124300012>
-
-### Expand/contract rollout (our `phase: 'expand' | 'contract'`)
-
-- **Martin Fowler: ParallelChange (expand-contract).** <https://martinfowler.com/bliki/ParallelChange.html>
-- **Refactoring Databases** (Ambler & Sadalage): catalog of safe, staged schema migrations the `delta` kinds mirror.
-- **Evolutionary Database Design.** <https://martinfowler.com/articles/evodb.html>
-
-### Adjacent / corroborating
-
-- **CRDT data migration**: Automerge docs and the Ink & Switch CRDT work; rationale for our lens also rewriting `stx.fieldTimestamps` (HLC) keys, not just field names.
-- **Per-consumer API versioning**: Stripe's API-upgrade write-ups describe response down-migration keyed on consumer version, the shape of our Phase 2 `downgradeEntity` + `Accept-Version`.
+- **Engine** (shared): [engine.test.ts](../shared/src/schema-evolution/tests/engine.test.ts) covers per-delta-kind derivation, round trips (forward then backward = identity modulo declared loss), and timestamp-map consistency; [engine-empty.test.ts](../shared/src/schema-evolution/tests/engine-empty.test.ts) asserts every seam is a passthrough while the lens list is empty.
+- **Seams** (backend): [lens-seam.test.ts](../backend/src/core/schema-evolution/tests/lens-seam.test.ts) covers widening and normalization through the contract factories, including a synthetic lens.
+- **Client** (frontend, Vitest + fake-indexeddb): `boot-migration.test.ts` covers old-shape records and queued mutations with the registry one ahead (rewritten rows, advanced pointer, replay in new shape, crash-resume idempotency).
+- **E2E (with lens #1)**: the offline runbook in the [playbook](#lens-playbook).

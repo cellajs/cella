@@ -46,6 +46,8 @@
     "vocabulary:check": "node shared/scripts/check-app-vocabulary.ts",
     "docs:style": "node shared/scripts/check-doc-style.ts",
     "docs:style:audit": "node shared/scripts/check-doc-style.ts --audit",
+    "docs:size": "node shared/scripts/check-doc-size.ts",
+    "docs:size:gate": "node shared/scripts/check-doc-size.ts --gate",
     "frontend:style": "node shared/scripts/check-frontend-style.ts",
     "style": "node shared/scripts/check-style.ts",
     "prose:check": "pnpm style",

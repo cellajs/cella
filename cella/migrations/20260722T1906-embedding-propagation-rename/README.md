@@ -2,40 +2,30 @@
 
 ## What & why
 
-The embedding-propagation hint used a third vocabulary (`source`/`target`) for the two roles that
-the `productEmbeddings` config already names `embedded`/`host`. The hint fields are renamed to match
-the config, so there is now one vocabulary end to end:
-
-- `sourceType` -> `embeddedProduct`
-- `targetType` -> `hostProduct`
-- `field` -> `hostColumn`
-
-This touches the exported `PropagationHint` type (`shared`), the wire schema
-`propagationHintSchema` on `StreamNotification.propagation` and the catchup `changes[].propagation`
-array, plus the producers/consumers `build-message.ts`, `propagation-hints.ts`
-(`propagationTargets` -> `hostsByEmbeddedProduct`), and `propagation.ts`. The two product-type wire
-fields are also tightened from `z.string()` to `z.enum(productEntityTypes)`.
+`PropagationHint` fields use the `productEmbeddings` vocabulary: `sourceType` -> `embeddedProduct`,
+`targetType` -> `hostProduct`, `field` -> `hostColumn`. Touched: the exported `PropagationHint`
+type (`shared`), the wire schema `propagationHintSchema` on `StreamNotification.propagation` and
+catchup `changes[].propagation`, `build-message.ts`, `propagation-hints.ts` (`propagationTargets`
+-> `hostsByEmbeddedProduct`), `propagation.ts`. The two product-type wire fields tighten from
+`z.string()` to `z.enum(productEntityTypes)`.
 
 ## Blast radius
 
-Sync-breaking and cache-bumping. The `productEmbeddings` config keys are unchanged, so config needs
-no edit. But the wire shape of `StreamNotification.propagation` changed, which is a breaking OpenAPI
-diff: the app's `schema-bust-gate` will demand a `clientCacheVersion` bump on the sync PR even for an
-app with `productEmbeddings: []` that never emits a hint. Any app code that reads a propagation
-hint's `.sourceType` / `.targetType` / `.field`, constructs a `PropagationHint`, or imports the
-`PropagationHint` type and destructures its fields, breaks at compile time (caught by `pnpm check`).
-An app that added no custom propagation code only needs the `clientCacheVersion` bump.
-
-No database change.
+Sync-breaking and cache-bumping; no database change; `productEmbeddings` config keys unchanged. The
+`StreamNotification.propagation` wire shape changed, so `schema-bust-gate` demands a
+`clientCacheVersion` bump even with `productEmbeddings: []`. App code reading `.sourceType` /
+`.targetType` / `.field` on a hint or constructing a `PropagationHint` fails `pnpm check`; apps
+with no custom propagation code only need the bump.
 
 ## Run
 
-No script -- manual. The three field names (`sourceType`, `targetType`, `field`) are too generic for
-a safe word-boundary codemod (`field` especially), so rename by hand in propagation contexts only.
+No script, manual (`sourceType`, `targetType`, `field` are too generic for a safe codemod).
 
 ## Manual steps
 
-1. Grep your app for hint field reads outside the upstream files (which arrive already migrated):
+1. Grep for hint field reads outside the upstream files; rename
+   `sourceType` -> `embeddedProduct`, `targetType` -> `hostProduct`, `field` -> `hostColumn` in
+   propagation hints only (leave `resourceType`, data-grid columns, form fields alone):
 
    ```sh
    grep -rnE "\.(sourceType|targetType)\b" --include=*.ts --include=*.tsx \
@@ -43,14 +33,9 @@ a safe word-boundary codemod (`field` especially), so rename by hand in propagat
    grep -rn "PropagationHint" --include=*.ts backend/src frontend/src shared
    ```
 
-   In each propagation hint, rename `sourceType` -> `embeddedProduct`, `targetType` -> `hostProduct`,
-   `field` -> `hostColumn`. Do not touch unrelated identifiers named `field`, `sourceType`, or
-   `targetType` (e.g. `resourceType`, data-grid columns, form fields).
-
-2. If your app references the renamed map `propagationTargets`, use `hostsByEmbeddedProduct`.
-
-3. Bump `clientCacheVersion` in your app's `shared/config/config.default.ts` (any new value) so the
-   `schema-bust-gate` passes and clients wipe stale cache. Queued mutations survive the wipe.
+2. `propagationTargets` references become `hostsByEmbeddedProduct`.
+3. Bump `clientCacheVersion` in `shared/config/config.default.ts` (any new value); queued
+   mutations survive the wipe.
 
 ## Verify
 

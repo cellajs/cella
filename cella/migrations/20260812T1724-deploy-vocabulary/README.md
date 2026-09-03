@@ -2,28 +2,23 @@
 
 ## What & why
 
-The 2026-08 planned generation roll adopts the standard deploy vocabulary
-(Compose `deploy.update_config.order` / Traefik idioms) and retires the
-legacy names in one batch: `replacementStrategy` values `'lb-overlap'` →
-`'start-first'` and `'exclusive'` → `'stop-first'`; the service field
-`lbPathBegin` → `pathPrefix` (the Scaleway `path_begin` term stays inside the
-LB resource layer); the pinned genId fingerprint key `runMigrate` →
-`runRelease`; and the flat `db*` stack outputs (`dbConnectionStringAdmin`,
-`dbCaCertificate`, …) → the generic `storeOutputs.<storeId>.<key>` object
-(the db-exposure/seed CLI reads the primary store's entry).
+The 2026-08 generation roll adopts Compose/Traefik deploy vocabulary in one batch:
+`replacementStrategy` values `'lb-overlap'` to `'start-first'` and `'exclusive'` to `'stop-first'`;
+service field `lbPathBegin` to `pathPrefix` (Scaleway `path_begin` stays inside the LB resource
+layer); pinned genId fingerprint key `runMigrate` to `runRelease`; flat `db*` stack outputs
+(`dbConnectionStringAdmin`, `dbCaCertificate`, ...) to `storeOutputs.<storeId>.<key>` (the
+db-exposure/seed CLI reads the primary store's entry).
 
 ## Blast radius
 
-Infra-only: no app wire shape, no DB, no sync break, no clientCacheVersion
-bump. Fork files affected: `infra/config/services.config.ts` (values + field
-name) and anything fork-local reading the retired `db*` stack outputs by
-name. The fingerprint-key rename deliberately RE-ROLLS EVERY GENERATION on
-the first deploy after adoption — expect a full blue/green replacement of all
-VMs (normal cutover, no downtime by design).
+Infra-only: no wire shape, no DB, no sync break, no clientCacheVersion bump. Fork files:
+`infra/config/services.config.ts` plus anything fork-local reading the retired `db*` outputs by
+name. The fingerprint rename RE-ROLLS EVERY GENERATION on the first deploy after adoption (full
+blue/green replacement, no downtime by design).
 
 ## Run
 
-No script — manual (three sed-able renames in one fork file):
+No script: manual.
 
 ```sh
 sed -i '' "s/'lb-overlap'/'start-first'/g; s/'exclusive'/'stop-first'/g; s/lbPathBegin/pathPrefix/g" infra/config/services.config.ts
@@ -31,10 +26,9 @@ sed -i '' "s/'lb-overlap'/'start-first'/g; s/'exclusive'/'stop-first'/g; s/lbPat
 
 ## Manual steps
 
-1. Grep fork-local scripts for the retired stack outputs
-   (`dbConnectionString`, `dbCaCertificate`, `dbInstanceId`, `dbHost`,
-   `dbName` as OUTPUTS — `naming.dbName` is unrelated) and switch them to
-   `pulumi stack output storeOutputs --json` → `.<primaryStoreId>.<key>`.
+1. Grep fork-local scripts for the retired stack outputs (`dbConnectionString`, `dbCaCertificate`,
+   `dbInstanceId`, `dbHost`, `dbName` as OUTPUTS; `naming.dbName` is unrelated) and switch them to
+   `pulumi stack output storeOutputs --json` and `.<primaryStoreId>.<key>`.
 2. Regenerate the compose model: `pnpm --filter infra compose:generate`.
 
 ## Verify
@@ -43,7 +37,5 @@ sed -i '' "s/'lb-overlap'/'start-first'/g; s/'exclusive'/'stop-first'/g; s/lbPat
 pnpm --filter infra exec vitest run
 pnpm --filter infra ts
 pnpm check
+# first deploy after merge rolls all generations (intended): watch one full cutover complete
 ```
-
-First deploy after merge rolls all generations (intended); watch it complete
-one full cutover.

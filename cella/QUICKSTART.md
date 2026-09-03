@@ -1,12 +1,10 @@
 # Quickstart
 
-This document explains how you can use cella to build a modern web app.
+This document explains how you can get started building a modern web app with cella.
 
 ## Create
 
-Start a new project with the [`create-cella`](https://github.com/cellajs/cella-cli) CLI. It lets you
-pick optional modules, ports and a seed admin, then initializes a fresh git repo with the cella
-upstream remote configured for future syncs:
+The [`create-cella`](https://github.com/cellajs/cella-cli) CLI picks optional modules, ports, and a seed admin, then initializes a git repo with the cella upstream remote for later syncs:
 
 ```bash
 pnpm create @cellajs/cella my-app
@@ -24,7 +22,7 @@ pnpm dev
 
 ## Check
 
-Update openapi & sdk, check types and format/fix code style in one go:
+Regenerates openapi & sdk, checks types, and fixes code style:
 
 ```bash
 pnpm check
@@ -32,7 +30,7 @@ pnpm check
 
 ## Run tests
 
-See [Testing](./TESTING.md) for full documentation on writing and running tests.
+See [Testing](./TESTING.md) for writing and running tests.
 
 ```bash
 pnpm test # Run tests (excluding ui stories)
@@ -41,32 +39,28 @@ pnpm story # Start storybook
 
 ## Test offline & PWA
 
-Offline and PWA behavior needs a production-style frontend build: the custom Workbox service worker is generated through VitePWA's `injectManifest` strategy and doesn't run under plain `pnpm dev`.
+Builds the frontend + service worker and serves it with vite preview. Also starts servers in dev mode.
 
 ```bash
-# Builds the frontend + service worker and serves it with vite preview
-# (on the port from appConfig.frontendUrl); also starts backend + CDC in dev mode
 pnpm offline
 ```
 
 ## Customize & contribute
 
-1. Set your app identity and more in `shared/config/config.default.ts`.
-2. Model your entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
-3. Update root `package.json`, and read `.env` to see which secrets are required (e.g. to send emails).
-4. Explore the `*-config.ts` files and each package's README to learn the moving parts.
-5. Uploads run through Transloadit into S3-compatible Object Storage, with a local-only fallback.
-6. Changed the db schema? Run `pnpm generate` for a new drizzle migration.
-7. Read the [architecture](./ARCHITECTURE.md) and other info in your own repo or in cella docs.
-8. The [MDX files](../frontend/src/content/docs) mention cella documentation, you might want to change or remove it.
+1. Set your app identity in `shared/config/config.default.ts`.
+2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
+3. Update root `package.json`; `.env` lists the secrets each feature needs (e.g. email).
+4. The `*-config.ts` files and each package README describe the moving parts.
+5. Uploads go through Transloadit into S3-compatible Object Storage, with a local-only fallback.
+6. After a db schema change, run `pnpm generate` for a new drizzle migration.
+7. Read the [architecture](./ARCHITECTURE.md) in your repo or on the cella docs site.
+8. The [MDX files](../frontend/src/content/docs) mention cella documentation; change or remove them.
 
-Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella) to get involved.
+Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
 
 ## Cella CLI
 
-Keep your app in sync with the Cella template - pull upstream bug fixes, features and dependency updates while preserving your customizations.
-
-See the [@cellajs/cli](https://github.com/cellajs/cella-cli#readme) package for full documentation, services, and configuration.
+Pulls upstream fixes, features, and dependency updates into your app while preserving your customizations. Docs: [@cellajs/cli](https://github.com/cellajs/cella-cli#readme).
 
 ```bash
 pnpm cella
@@ -74,9 +68,7 @@ pnpm cella
 
 ## Infra CLI
 
-Deploy your app to [Scaleway](https://www.scaleway.com/) using Pulumi + GitHub Actions. CI handles routine zero-downtime deploys on push to `main`. The CLI generates the Docker Compose synth and drives the Pulumi infrastructure tasks.
-
-See the [infra guide](../infra/README.md) for full documentation and configuration.
+One guided setup (`pnpm infra`) provisions a full stack on [Scaleway](https://www.scaleway.com/) using Pulumi: domain, HTTPS, load balancer, database, storage, servers. From then on GitHub Actions deploys every published release with zero downtime. Docs: [infra guide](../infra/README.md).
 
 ```bash
 pnpm infra
@@ -84,9 +76,7 @@ pnpm infra
 
 ## Bench CLI
 
-Artillery load testing to keep services such as backend, cdc and yjs performant. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one.
-
-See the [bench guide](../bench/README.md) for full documentation and scenarios.
+Artillery load testing. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one. Docs: [bench guide](../bench/README.md).
 
 ```bash
 pnpm bench

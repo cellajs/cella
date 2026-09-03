@@ -2,16 +2,9 @@
 
 ## What & why
 
-The permission subsystem carried four vocabulary layers that grew across iterations: a legacy
-`context` vocabulary for what the hierarchy calls a channel, a half-applied `Access*` /
-`Permission*` prefix split, a `topology` wrapper for what the rest of the repo calls the
-hierarchy, and three words (`can`, `enabled`, `isAllowed`) for "the action is allowed". This
-migration aligns permission naming with the repo's hierarchy vocabulary. The naming rule is now
-stated in `cella/PERMISSIONS.md`: you present an access, the policy is consulted, you get back
-permissions, and every permission names the grants that earned it; `subject` remains the one
-engine-only noun for the checked instance.
-
-Renamed exports (old → new):
+Permission naming follows the hierarchy vocabulary (rule in `cella/PERMISSIONS.md`; `subject`
+stays the engine-only noun for the checked instance). The legacy `context` vocabulary, the
+`Access*`/`Permission*` split, the `topology` wrapper, and `can`/`enabled`/`isAllowed` are gone:
 
 | Old | New |
 | --- | --- |
@@ -37,29 +30,24 @@ Renamed exports (old → new):
 | `requested.subChannelId(s)` | `requested.homeChannelId(s)` |
 | scope slices' `subChannelIds` | `channelIds` (level given by the slice's `channelType`) |
 
-Config DSL (`shared/config/permissions-config.ts`): the callback receives
-`({ entityType, channels })` instead of `({ subject, contexts })`; branch on `entityType` and
-declare cells via `channels.<channel>.<role>({ ... })`.
-
-Renamed files: `shared/src/permissions/permission-manager/` → `shared/src/permissions/engine/`,
-`check-permission.ts` → `check-access.ts` (shared and backend), backend `permissions/actor.ts` →
-`permissions/access.ts`, `access-policies.ts` → `policy-matrix.ts`, `engine/topology.ts` +
-`engine/resolve-topology.ts` → `engine/resolve-hierarchy.ts` (`HierarchyOverrides`,
-`resolveHierarchy`). Test fixtures: `wideTopology` / `deepTopology` → `wideOverrides` /
-`deepOverrides`.
+Config DSL (`shared/config/permissions-config.ts`): the callback receives `({ entityType, channels })`
+instead of `({ subject, contexts })`; branch on `entityType`, declare cells via
+`channels.<channel>.<role>({ ... })`. Files: `shared/src/permissions/permission-manager/` ->
+`shared/src/permissions/engine/`; `check-permission.ts` -> `check-access.ts` (shared and backend);
+backend `permissions/actor.ts` -> `permissions/access.ts`; `access-policies.ts` ->
+`policy-matrix.ts`; `engine/topology.ts` + `engine/resolve-topology.ts` ->
+`engine/resolve-hierarchy.ts` (`HierarchyOverrides`, `resolveHierarchy`); fixtures `wideTopology` /
+`deepTopology` -> `wideOverrides` / `deepOverrides`.
 
 ## Blast radius
 
 Sync-breaking at the type and config level for every app: `shared/config/permissions-config.ts`
-uses the renamed DSL, and any handler or test importing the renamed symbols stops compiling. No
-wire-shape change, no `clientCacheVersion` bump, no lens, no database change. The decision logic
-is untouched; the parity property test and the full permission suites pass unchanged apart from
-the renames.
+uses the renamed DSL, and code importing renamed symbols stops compiling. No wire-shape change, no
+`clientCacheVersion` bump, no lens, no database change; decision logic untouched.
 
 ## Run
 
-No script. The renames are word-boundary symbol swaps; apply the table above with your editor's
-rename-symbol or a grep-guided pass:
+No script; word-boundary symbol swaps, grep-guided:
 
 ```sh
 grep -rnE "AccessPolic|accessPolicies|PermissionValue|ActionPermissionState|resolvePermission|isUnconditionalPermission|PermissionMembership|isAllowed|PermissionTopology|topology|subChannel|ancestorScopes|subject, contexts|permission-manager|check-permission" --include="*.ts" --include="*.tsx" backend frontend/src shared yjs/src
@@ -67,16 +55,16 @@ grep -rnE "AccessPolic|accessPolicies|PermissionValue|ActionPermissionState|reso
 
 ## Manual steps
 
-1. Apply the symbol renames from the table (word-boundary; skip unrelated `isAllowed`/`enabled`
-   identifiers outside permission code).
-2. Rewrite the `configurePermissions` callback signature: `({ subject, contexts })` →
-   `({ entityType, channels })`, `switch (subject.name)` → `switch (entityType)`.
-3. Replace `options.topology`/`{ topology: { hierarchy: h } }` with `{ hierarchy: h }` (and
-   `entityActions` alongside if overridden).
-4. `git mv` any app-specific imports of the renamed files (`#/permissions/actor` →
-   `#/permissions/access`, `shared/src/permissions/permission-manager/*` → `.../engine/*`).
-5. In collection-scope consumers, rename filter fields per the table (`subChannelIds` at the
-   top level is `homeChannelIds`; inside scope slices it is `channelIds`).
+1. Apply the table's symbol renames (word-boundary; skip unrelated `isAllowed`/`enabled` outside
+   permission code).
+2. `configurePermissions` callback: `({ subject, contexts })` -> `({ entityType, channels })`,
+   `switch (subject.name)` -> `switch (entityType)`.
+3. `options.topology`/`{ topology: { hierarchy: h } }` -> `{ hierarchy: h }` (plus `entityActions`
+   if overridden).
+4. `git mv` any app-specific imports of the renamed files (`#/permissions/actor` ->
+   `#/permissions/access`, `shared/src/permissions/permission-manager/*` -> `.../engine/*`).
+5. Collection-scope consumers: rename filter fields per the table (top-level `subChannelIds` ->
+   `homeChannelIds`; inside scope slices -> `channelIds`).
 
 ## Verify
 

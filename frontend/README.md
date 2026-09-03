@@ -1,10 +1,10 @@
 # frontend
 
-React SPA built with Vite. Uses TanStack Router for routing, Zustand for state management, and TanStack Query for data fetching. Runs as part of `pnpm dev`.
+React SPA on Vite: TanStack Router for routing, Zustand for state, TanStack Query for data fetching. Runs as part of `pnpm dev`.
 
 ## Source style
 
-Declare named React components with functions. Component wrappers use a named function expression:
+Declare named React components with functions. Wrappers use a named function expression:
 
 ```tsx
 export function ProjectTile(props: ProjectTileProps) {
@@ -16,8 +16,8 @@ export const MemoizedProjectTile = memo(function MemoizedProjectTile(props: Proj
 });
 ```
 
-Do not annotate component declarations with `React.FC` or `FC`. Use `ComponentType<Props>` when a component is passed or stored as a value.
+Never annotate component declarations with `React.FC` or `FC`. Use `ComponentType<Props>` when a component is passed or stored as a value.
 
-Add a concise JSDoc description above every exported function and constant. Keep frontend descriptions to one or two sentences.
+Give every exported function and constant a one- or two-sentence JSDoc description.
 
-Local comments explain non-obvious constraints or reasoning. Do not narrate assignments, branches, render structure, or repeated operations. Put one comment above a repetitive block when the block has a shared constraint.
+Local comments explain non-obvious constraints or reasoning, never assignments, branches, render structure, or repeated operations. One comment above a repetitive block covers its shared constraint.

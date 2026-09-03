@@ -43,80 +43,27 @@ sent back to clients.
 | YJS | `{appName}-yjs` | No | None currently | 3 observable gauges | No |
 | Frontend | `{appName}-frontend` | Fetch only | Via `FetchInstrumentation` | None | Yes (→ devtools) |
 
-The frontend cannot use the server-side secret ingest key (no secrets in browser bundles). It uses `SpanStoreProcessor` for devtools and `FetchInstrumentation` to inject `traceparent` headers for cross-service correlation. A `maplePublicIngestKey` in `appConfig` (safe to bundle) can be used to export browser telemetry directly to Maple.
+The frontend has no secret ingest key (no secrets in browser bundles); `maplePublicIngestKey` in `appConfig` is safe to bundle and exports browser telemetry directly to Maple.
 
 ### HTTP semantic conventions
 
-The backend auto-instrumentation emits the **stable** OTel HTTP attributes (`http.request.method`, `http.response.status_code`, `url.full`, `server.address`, `user_agent.original`, …) rather than the legacy `http.*` keys. The shared factory sets `OTEL_SEMCONV_STABILITY_OPT_IN=http` (via `??=`) before constructing `getNodeAutoInstrumentations()`, so no per-deployment env var is required. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` in the environment to emit both old and new keys during a migration; an explicit value always overrides the default.
-
-Each service has a `tracing.ts` (or `otel.ts` for frontend) that calls the shared factory. Look at the CDC or YJS worker for the most complete examples.
+Backend auto-instrumentation emits the **stable** OTel HTTP attributes (`http.request.method`, `http.response.status_code`, `url.full`, `server.address`, `user_agent.original`, …), not the legacy `http.*` keys: the shared factory sets `OTEL_SEMCONV_STABILITY_OPT_IN=http` (via `??=`) before `getNodeAutoInstrumentations()`. Set `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` to emit both key sets during a migration; an explicit value wins.
 
 ## Add a worker
 
-Every new Node.js worker needs four things: OTel setup, logging, graceful shutdown, and optionally a health endpoint. Follow these steps:
+Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTTP, a health endpoint; CDC is the reference:
 
-### 1. OTel setup: `tracing.ts`
+| File | Role | What to know |
+| --- | --- | --- |
+| [tracing.ts](../cdc/src/lib/tracing.ts) | `createOtelSDK()` from `shared/otel`: `serviceName` (`appConfig.slug` plus worker suffix), `mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY`, `autoInstrumentations: false` | `autoInstrumentations: true` only for HTTP servers; add a `SpanStoreProcessor` to `spanProcessors` for local span debugging. |
+| [pino.ts](../cdc/src/lib/pino.ts) | `createWorkerLog('<worker>', env)` from `shared/pino`, which calls `createLogger()` with `enableOtelTransport: true` and the same key and service name | With a key, logs also ship to Maple via `pino-opentelemetry-transport` in dev and production alike; the console keeps `pino-pretty` in dev and raw JSON in production. |
+| [index.ts](../cdc/src/index.ts) | `otel.start()`, then `setupGracefulShutdown({ name, log, cleanup })` from `shared/utils/worker-lifecycle` | `cleanup` closes servers and connections and awaits `otel.shutdown()`; handles SIGINT/SIGTERM, double-signal force exit, a timeout (default 10s), and uncaught exceptions. |
 
-```typescript
-import { appConfig } from "shared";
-import { createOtelSDK, type OtelSDK } from "shared/otel";
-import { env } from "./env";
+### Health endpoint (if HTTP)
 
-export const otel: OtelSDK = createOtelSDK({
-  serviceName: `${appConfig.name}-myworker`,
-  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
-  autoInstrumentations: false, // true only for HTTP servers
-});
-```
+Serve `createHealthApp({ version, full })` from `shared/health-app`: `GET /health` returns 204; `?depth=full` returns `full()` as JSON with at least `status` and `uptime`.
 
-To add local span debugging, pass a `SpanStoreProcessor` (see how CDC does it).
-
-### 2. Logging: `pino.ts`
-
-```typescript
-import { appConfig } from "shared";
-import { createLogger } from "shared/pino";
-import { env } from "./env";
-
-export const log = createLogger({
-  isProduction: env.NODE_ENV === "production",
-  isTest: env.NODE_ENV === "test",
-  enableOtelTransport: true,
-  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
-  serviceName: `${appConfig.slug}-myworker`,
-});
-```
-
-Whenever `mapleSecretIngestKey` is set, Pino ships structured logs to Maple via `pino-opentelemetry-transport`, in **dev and production alike** (the transport runs in a worker thread and is handed the Maple endpoint + key explicitly). The console keeps its own format in parallel: `pino-pretty` in dev, raw JSON on stdout in production. Without a key, logs stay on the console only.
-
-### 3. Graceful shutdown
-
-In your entry point `index.ts`, wire up lifecycle management:
-
-```typescript
-import { setupGracefulShutdown } from "shared/utils/worker-lifecycle";
-import { otel } from "./tracing";
-import { log } from "./pino";
-
-setupGracefulShutdown({
-  name: "myworker",
-  log,
-  cleanup: async () => {
-    // Close connections, flush buffers, etc.
-    await otel.shutdown();
-  },
-});
-
-otel.start();
-```
-
-This handles SIGINT/SIGTERM, double-signal force exit, configurable timeout (default 10s), and uncaught exceptions.
-
-### 4. Health endpoint (if HTTP)
-
-If your worker exposes an HTTP server, add a `GET /health` route. The default (no query params) should return 204 No Content for lightweight liveness probes. Support `?depth=full` for JSON diagnostics with at least `status` and `uptime`. See the backend or CDC health handlers for reference.
-
-### 5. Metrics
+### Metrics
 
 Add observable gauges for key runtime state:
 
@@ -136,7 +83,7 @@ meter
 
 ### Manual spans
 
-Use `@opentelemetry/api` directly to create spans in any service that has OTel initialized:
+Use `@opentelemetry/api` directly in any service with OTel initialized:
 
 ```typescript
 import { trace, SpanStatusCode } from "@opentelemetry/api";
@@ -163,38 +110,26 @@ async function doWork() {
 }
 ```
 
-For services that need trace context propagation (like CDC), wrap this pattern in a `withSpan()` helper that returns `{ traceId, spanId }`. See the CDC worker's implementation.
+CDC wraps this in a `withSpan()` helper returning `{ traceId, spanId }` for trace propagation ([cdc/src/lib/tracing.ts](../cdc/src/lib/tracing.ts)).
 
-### Span naming conventions
+### Span names and attributes
 
-Span names are centralized as constants in the shared tracing module, grouped by service prefix (`cdc.*`, `sync.*`). Always add new span names there rather than using inline strings. This avoids typos and makes span names easy to search and rename.
-
-### Attribute helpers
-
-The shared tracing module exports attribute builder functions (`cdcAttrs`, `activityAttrs`, `eventAttrs`) that produce consistent attribute objects. Add new helpers there when a group of spans needs the same attributes.
+Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix (`cdc.*`, `sync.*`); never inline strings. The shared tracing module also exports attribute builders (`cdcAttrs`, `activityAttrs`, `eventAttrs`); add a helper when a group of spans shares attributes.
 
 ### Custom metrics
 
-Use the `MeterProvider` from your service's `otel` export. Observable gauges work well for runtime state; counters and histograms work for request-scoped measurements. See the backend sync-metrics module for counter/histogram examples.
+Use the `MeterProvider` from your service's `otel` export: observable gauges for runtime state, counters and histograms for request-scoped measurements (see the backend sync-metrics module).
 
 ## Trace correlation
 
-The trace flow across services:
-
-1. **Frontend** → `FetchInstrumentation` auto-injects `traceparent` header on API calls
-2. **Backend** → OTel auto-instrumentation picks up `traceparent`, creating child spans under the frontend trace
-3. **CDC** → stamps `_trace` (containing `traceId`, `spanId`, `cdcTimestamp`) on activity payloads sent to backend via WebSocket
-4. **Backend → Frontend** → SSE notifications carry `_trace`, frontend calculates `e2e_latency_ms = now - cdcTimestamp`
-
-This gives full end-to-end visibility from user action → API → database → CDC → SSE → client, all correlated under a single trace.
+1. **Frontend**: `FetchInstrumentation` injects `traceparent` on API calls.
+2. **Backend**: auto-instrumentation picks up `traceparent` and creates child spans.
+3. **CDC**: stamps `_trace` (`traceId`, `spanId`, `cdcTimestamp`) on activity payloads sent to the backend over WebSocket.
+4. **Backend → Frontend**: SSE notifications carry `_trace`; the frontend computes `e2e_latency_ms = now - cdcTimestamp`.
 
 ## Data model
 
-**SpanData** is the shared span representation: a plain object with `traceId`, `spanId`, `name`, `startTime`, `endTime`, `duration`, `attributes`, `status`, `events`, and optional `parentSpanId`.
-
-**SpanStore** is an in-memory ring buffer (default 500 spans) with pub/sub, filtering by prefix, and statistics. Used by the frontend devtools and CDC debug logging.
-
-**SpanStoreProcessor** bridges real OTel spans to the `SpanStore`. It implements OTel's `SpanProcessor` interface and converts `ReadableSpan` → `SpanData` on `onEnd`.
+**SpanData**: the shared span object with `traceId`, `spanId`, `name`, `startTime`, `endTime`, `duration`, `attributes`, `status`, `events`, and optional `parentSpanId`. **SpanStore**: an in-memory ring buffer (default 500 spans) with pub/sub, prefix filtering, and statistics, used by the frontend devtools and CDC debug logging. **SpanStoreProcessor**: an OTel `SpanProcessor` that converts `ReadableSpan` → `SpanData` on `onEnd` into the `SpanStore`.
 
 ## Health endpoints
 
@@ -204,6 +139,4 @@ This gives full end-to-end visibility from user action → API → database → 
 | CDC | `GET /health` | Status, uptime, replication state, WebSocket connection, circuit breakers |
 | YJS | `GET /health` | Status, uptime, connection/document/client counts |
 
-All health endpoints default to **shallow** (204 No Content), safe for load balancers, container orchestrators, and liveness probes without extra configuration. Use `?depth=full` to get JSON diagnostics.
-
-Backend health degrades to `degraded` if CDC reports stale connections, and to `unhealthy` if the database probe fails. CDC health degrades if replication is paused or the WebSocket is disconnected, and becomes `unhealthy` if replication is stopped.
+All default to **shallow** 204 for load balancers and liveness probes; `?depth=full` returns JSON. Backend health is `degraded` when CDC reports stale connections and `unhealthy` when the database probe fails; CDC is degraded when replication is paused or the WebSocket is disconnected, `unhealthy` when replication is stopped.

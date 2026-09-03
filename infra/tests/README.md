@@ -1,17 +1,17 @@
 # infra tests: where a test file lives
 
-Two homes, chosen by what the test actually exercises. Keep to this rule so the layout stays predictable.
+Two homes, chosen by what the test exercises.
 
 ## Co-located `*.test.ts` (next to the module): the default
 
-A test that imports **one** module and exercises its exported behaviour lives beside that module. This is the common case (`lib/**`, `tasks/**`, `boot/src/**`, `cli/**`, `compose/**`).
+A test that imports **one** module and exercises its exported behaviour lives beside that module (`lib/**`, `tasks/**`, `boot/src/**`, `cli/**`, `compose/**`).
 
-Modules under `resources/` construct live Pulumi resources at import time, so a co-located test primes the mock runtime and dynamic-imports the module. It is still a single-module behavioural test and still lives beside the source (`resources/storage.test.ts`, `resources/network.test.ts`, `resources/cloud-init.test.ts`). Store modules follow the same rule one level down (`resources/stores/*.test.ts`).
+Modules under `resources/` construct live Pulumi resources at import time, so their co-located test primes the mock runtime and dynamic-imports the module. It is still a single-module test and lives beside the source (`resources/storage.test.ts`, `resources/network.test.ts`, `resources/cloud-init.test.ts`, `resources/stores/*.test.ts`).
 
 ## `tests/`: everything cross-cutting
 
-- **`tests/unit/`**: tests that don't belong to a single module. Source-shape checks that read a file as text and assert on its shape (`loadbalancer`, `compute`, `resource-contracts`, `no-unexpected-public`, `caddyfile`), or that span several modules / packages (`runtime-secrets` reads each service's `env.ts`).
-- **`tests/integration/`**: needs a live host or network; excluded from `pnpm test`, opt back in with `pnpm test:integration` (`INTEGRATION=1`).
+- **`tests/unit/`**: tests without a single owning module. Source-shape checks that read a file as text (`loadbalancer`, `compute`, `resource-contracts`, `no-unexpected-public`, `caddyfile`), or tests spanning several modules or packages (`runtime-secrets` reads each service's `env.ts`).
+- **`tests/integration/`**: needs a live host or network; excluded from `pnpm test`, opt in with `pnpm test:integration` (`INTEGRATION=1`).
 - **`tests/helpers/`**: shared fixtures and the Pulumi mock harness. Not tests.
 
 ## Quick decision

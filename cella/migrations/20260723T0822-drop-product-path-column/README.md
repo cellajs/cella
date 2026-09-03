@@ -2,53 +2,40 @@
 
 ## What & why
 
-Product rows no longer store a generated `path` column. Their location path is computed from
-the ancestor id columns on the same row via `hierarchy.computeProductPath`, at the three
-places that consumed the stored value: CDC batch grouping (`activity-service`), CDC move
-detection (`update.ts`, comparing computed old and new location from the REPLICA IDENTITY
-FULL images), and backend stream notifications (`build-message.ts`, including the moveOut old
-path from `movedFrom`). The SQL and JS path rules are parity-tested, so computed values are
-byte-identical to what the column stored.
-
-**Channel tables keep their generated path column.** It remains the canonical ancestry that
-CDC mirrors onto `channel_counters.path` for catchup prefix verification, and the value app
-client resolvers read off cached channel rows.
-
-`productPathColumn` is removed from `backend/src/db/utils/path-column.ts`
-(`channelPathColumn` stays), and `'path'` leaves the CDC permission-row subset
-(`permission-row-data.ts`); the ancestor id columns already carried there are sufficient.
+Product tables lose their generated `path` column; `hierarchy.computeProductPath` derives it from
+the row's ancestor id columns at the three consumers: CDC batch grouping (`activity-service`), CDC
+move detection (`update.ts`, old vs new location from the REPLICA IDENTITY FULL images), and
+stream notifications (`build-message.ts`, including the moveOut path from `movedFrom`). SQL and JS
+path rules are parity-tested, so values are byte-identical. Channel tables keep their generated
+`path` (mirrored to `channel_counters.path`). `productPathColumn` leaves
+`backend/src/db/utils/path-column.ts` (`channelPathColumn` stays); `'path'` leaves the CDC
+permission-row subset (`permission-row-data.ts`).
 
 ## Blast radius
 
-Sync-breaking, with a wire-shape change: product REST responses lose the `path` field
-(drizzle `createSelectSchema` exposed it), so this ships with a `clientCacheVersion` bump
-(`v4-no-product-path`). SSE notifications still carry `path`, computed, with identical
-values. The database change is one dropped column per product table, produced by
-`pnpm generate`. Apps whose client code reads `path` off cached PRODUCT rows (none of the
-current apps do; channel rows are unaffected) must switch to
-`hierarchy.computeProductPath(type, row)`.
+Sync-breaking with a wire-shape change: product REST responses lose `path`, so `clientCacheVersion`
+is bumped (`v4-no-product-path`). SSE notifications still carry a computed `path`. DB: one dropped
+column per product table via `pnpm generate`. Client code reading `path` off cached PRODUCT rows (no
+current app does) switches to `hierarchy.computeProductPath(type, row)`; channel rows are unaffected.
 
 ## Run
 
-No script — manual.
+No script, manual.
 
 ## Manual steps
 
-1. Pull the template change; run `pnpm generate` so drizzle emits the DROP COLUMN migration
-   for every product table in your app.
-2. Remove any app mock/seed code that sets `path` on product rows or product response mocks.
-3. If app client code reads `path` from cached product entities, replace it with
-   `hierarchy.computeProductPath(entityType, row)`. Channel-row `path` reads are unaffected.
-4. Bump your app's `clientCacheVersion` if you maintain your own (the template bump arrives
-   with the sync).
+1. Pull the template change and run `pnpm generate` so drizzle emits the DROP COLUMN migration for
+   every product table.
+2. Remove app mock/seed code that sets `path` on product rows or product response mocks.
+3. Replace client reads of `path` from cached product entities with
+   `hierarchy.computeProductPath(entityType, row)`; channel-row `path` reads stay.
+4. Bump your app's `clientCacheVersion` if you maintain your own (the template bump arrives with the
+   sync).
 
 ## Verify
 
 ```sh
 pnpm generate
 pnpm check
-pnpm test
+pnpm test   # backend/src/db/utils/path-column.test.ts parity suite; CDC and stream tests cover grouping, move detection, moveOut
 ```
-
-The parity suite (`backend/src/db/utils/path-column.test.ts`) still proves the SQL and JS
-path rules agree; CDC and stream tests cover computed grouping, move detection, and moveOut.
