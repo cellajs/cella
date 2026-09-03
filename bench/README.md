@@ -13,7 +13,7 @@ Each run is saved and compared with the previous one: read results as trends, no
 Start these first (bench checks they are reachable and exits with guidance if not):
 
 - **Postgres** seeded with app data (`pnpm docker` + `pnpm seed`)
-- **Services** running via `pnpm dev` (backend, cdc, yjs). CDC throughput is measured only with `DEV_MODE=full` (default).
+- **Services** running via `pnpm dev`
 
 ## Commands
 
