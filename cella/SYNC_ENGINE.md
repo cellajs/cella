@@ -122,17 +122,9 @@ A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab
 
 ### Catchup
 
-The client opens SSE and posts its cursor and views when the server's `offset` event arrives. The server authorizes each prefix and returns view statuses, permitted frontiers and counts, membership signals, and embedding hints; then the stream is live.
+Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A first connection stores frontiers as baselines and fetches nothing; route loaders own initial data. On later connections a view behind its frontier hands the gap to the fetch prioritizer, the viewed organization is fetched at once, and the cursor advances only after ingest.
 
-- A first connection stores permitted frontiers as baselines; route loaders own initial data.
-- An `ok` view behind its frontier fetches changed rows once per product type; child-homed rows route into matching caches. Full chunks and failed requests fall back to active-list invalidation; background channels may defer the fetch to the prioritizer.
-- An `opaque` view invalidates its cached active lists. A `forbidden` view is removed.
-- Tombstones remove rows from detail and list caches.
-- Membership lists refresh only where the organization membership signal changed; channel lists, `me`, and the user's memberships refresh on any change.
-- Embedding propagation runs after the organization's range fetches.
-- Each view total is compared with the last total seen, never with the permission-filtered cached list; a moved total invalidates the matching list, repairing missed removals such as unpublish or physical delete.
-
-A connection covers the organizations visible when it opens plus a per-user channel for self-membership events; a new organization membership makes the client reconnect to register that channel.
+A view count that moved since the last catchup signals a removal the client may never see, such as an unpublish or physical delete; the matching list is invalidated. Every catchup also refetches `me` and the user's memberships; a lost channel membership drops that organization's product caches so surviving rows refetch under current permissions.
 
 ### Fetch prioritization
 
@@ -279,6 +271,8 @@ interface PropagationHint {
 ### Catchup wire
 
 The request carries a stream cursor and views `{ key, organizationId, prefixes, entityTypes, depth?, cursor }` (`depth`: `self` or `subtree`, default `subtree`); the response carries view answers, organization change summaries, and the stream cursor.
+
+A stream subscription covers the organizations the user belongs to when it opens plus a per-user subscription for self-membership events; a membership in a new organization reaches the user there, and the client reconnects to subscribe to that organization and catch up on its history.
 
 ```typescript
 interface CatchupViewAnswer {
