@@ -1,6 +1,6 @@
 # Quickstart
 
-How to create, run, check, test, and customize a cella app.
+This document explains how you can get started building a modern web app with cella.
 
 ## Create
 
@@ -39,11 +39,9 @@ pnpm story # Start storybook
 
 ## Test offline & PWA
 
-Offline and PWA behavior needs a production-style frontend build: the Workbox service worker comes from VitePWA's `injectManifest` and does not run under `pnpm dev`.
+Builds the frontend + service worker and serves it with vite preview. Also starts servers in dev mode.
 
 ```bash
-# Builds the frontend + service worker and serves it with vite preview
-# (on the port from appConfig.frontendUrl); also starts backend + CDC in dev mode
 pnpm offline
 ```
 
@@ -70,7 +68,7 @@ pnpm cella
 
 ## Infra CLI
 
-Deploys to [Scaleway](https://www.scaleway.com/) with Pulumi + GitHub Actions; CI runs zero-downtime deploys on push to `main`. The CLI generates the Docker Compose synth and drives the Pulumi tasks. Docs: [infra guide](../infra/README.md).
+One guided setup (`pnpm infra`) provisions a full stack on [Scaleway](https://www.scaleway.com/) using Pulumi: domain, HTTPS, load balancer, database, storage, servers. From then on GitHub Actions deploys every published release with zero downtime. Docs: [infra guide](../infra/README.md).
 
 ```bash
 pnpm infra
@@ -78,7 +76,7 @@ pnpm infra
 
 ## Bench CLI
 
-Artillery load tests for backend, cdc, and yjs. Seeds deterministic data, runs declarative scenarios against your dev DB, and stores each run as a baseline for the next comparison. Docs: [bench guide](../bench/README.md).
+Artillery load testing. It seeds deterministic test data, runs declarative scenarios against your dev DB, and saves every run as a baseline to compare against the previous one. Docs: [bench guide](../bench/README.md).
 
 ```bash
 pnpm bench
