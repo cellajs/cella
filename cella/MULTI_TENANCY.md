@@ -25,16 +25,15 @@ Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
 
 ## What RLS covers
 
-Cella applies `FORCE ROW LEVEL SECURITY` to tenant-scoped product tables and the support tables the
-RLS migration lists; the template protects `attachments` and `yjs_documents`.
+Cella applies `FORCE ROW LEVEL SECURITY` to product tables and to resources that hold tenant data;
+the template protects `attachments` and `yjs_documents`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
 | Product entities | Tenant-scoped SELECT; permissive writes | Guards, scoped queries, and permissions |
-| Listed tenant support tables | Same RLS shape; `yjs_documents` in the template | Owning module and guards |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
-| Ordinary resources | No RLS unless the migration lists them | Owning route or module |
+| Resources | RLS only when they hold tenant data and the migration lists them (`yjs_documents`); none otherwise | Owning module and guards |
 
 Every product entity has a tenant and a home channel by construction (the hierarchy rejects a
 product without a channel parent), so the RLS migration protects every registered product table
