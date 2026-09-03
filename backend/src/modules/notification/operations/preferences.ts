@@ -1,15 +1,14 @@
 import type { z } from '@hono/zod-openapi';
 import type { AuthContext } from '#/core/context';
-import type { NotificationPreferencesModel } from '../notification-db';
 import { findOrCreatePreferences, updatePreferences } from '../notification-queries';
 import type { preferencesSchema, updatePreferencesBodySchema } from '../notification-schema';
-import { emailPreferenceKey, emailPreferenceRecord } from '../notification-types';
 
 type Preferences = z.infer<typeof preferencesSchema>;
 type PreferencesUpdate = z.infer<typeof updatePreferencesBodySchema>;
 
-const toResponse = (row: NotificationPreferencesModel): Preferences => ({
-  ...emailPreferenceRecord((type) => row[emailPreferenceKey(type)]),
+const toResponse = (row: { mentionEmail: boolean; commentEmail: boolean; digest: Preferences['digest'] }) => ({
+  mentionEmail: row.mentionEmail,
+  commentEmail: row.commentEmail,
   digest: row.digest,
 });
 

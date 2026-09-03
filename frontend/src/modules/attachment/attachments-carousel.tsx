@@ -6,9 +6,12 @@ import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
+import { openAttachmentDescriptionSheet } from '~/modules/attachment/attachment-description-sheet';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { ATTACHMENT_DIALOG_PARAM, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
+import { attachmentDescriptionText } from '~/modules/attachment/helpers/description-text';
+import { findAttachmentInCache } from '~/modules/attachment/query';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -36,6 +39,8 @@ export type CarouselItemData = {
   convertedContentType?: string | null;
   /** URL is a local blob object URL, which fails the CDN check the toolbar buttons rely on. */
   isLocal?: boolean;
+  /** Stored description blocks; the dialog shows its text as a caption. */
+  description?: string | null;
 };
 
 interface CarouselPropsBase {
@@ -171,6 +176,8 @@ export function AttachmentsCarousel({
         </div>
       )}
 
+      {isDialog && <DialogCaption item={currentItem} />}
+
       <CarouselContent className="h-full">
         {items.map(({ id, url, filename, contentType = 'image', convertedContentType }, idx) => {
           return (
@@ -212,5 +219,39 @@ export function AttachmentsCarousel({
       )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
     </BaseCarousel>
+  );
+}
+
+/**
+ * Description text under the dialog chrome; activating it opens the editor sheet. The dialog
+ * closes first because sheets stack below dialogs. Local (unsynced) items have no row to edit.
+ */
+function DialogCaption({ item }: { item: CarouselItemData }) {
+  const removeDialog = useDialoger((state) => state.remove);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const attachment = findAttachmentInCache(item.id);
+  const text = attachmentDescriptionText(item.description ?? attachment?.description);
+
+  if (!attachment) return null;
+
+  const openEditor = () => {
+    removeDialog();
+    openAttachmentDescriptionSheet(attachment, buttonRef);
+  };
+
+  return (
+    <div className="fixed bottom-0 left-0 z-10 flex w-full justify-center bg-background/60 p-2 backdrop-blur-xs">
+      <Button
+        ref={buttonRef}
+        variant="ghost"
+        size="sm"
+        className="max-w-3xl truncate font-normal opacity-80 hover:opacity-100"
+        onClick={openEditor}
+      >
+        <span className="truncate">
+          {text || i18n.t('c:add_resource', { resource: i18n.t('c:description').toLowerCase() })}
+        </span>
+      </Button>
+    </div>
   );
 }

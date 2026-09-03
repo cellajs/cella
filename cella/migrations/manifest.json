@@ -763,7 +763,7 @@
   {
    "id": "20260903T0640-notifications-contract",
    "version": "next",
-   "title": "Notifications contract: app types, deriveFrom, dispatch, server BlockNote schema",
+   "title": "Notifications contract: attachment mentions, app types, deriveFrom, server BlockNote schema",
    "kind": "manual",
    "syncBreaking": true,
    "clientCacheBump": false,
@@ -780,7 +780,7 @@
     "pnpm check",
     "pnpm test:core"
    ],
-   "summary": "appNotificationTypes in the pinned app-schemas.ts extends the notification vocabulary (per-type { email, muted } policy); column enum, <type>Email preference columns, unsubscribe categories, instant emails and frontend labels derive from the merged list, template adds edit. ModuleNotifications.deriveFrom replaces the hardcoded serverOrigin skip. Attachment module becomes the template notification source and its ops dispatch onto the mutation bus. Shared server BlockNote schema for the Yjs relay and backend blocksToHtml. pnpm style reads shared/config/vocabulary-allowlist.ts and allows the root CHANGELOG.md."
+   "summary": "Attachments become the template notification source: attachments.mentions, description on the update contract, updateAttachmentOp as Yjs materializer, collaborative description editor in a sheet (table cell + dialog caption), so test:core covers derivation, fan-out and instant email. appNotificationTypes in the pinned app-schemas.ts extends the type enum and label keys. ModuleNotifications.deriveFrom replaces the hardcoded serverOrigin skip. Shared server BlockNote schema for the Yjs relay and backend blocksToHtml. pnpm style reads shared/config/vocabulary-allowlist.ts and allows the root CHANGELOG.md."
   }
  ]
 }

@@ -1,10 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { appConfig } from 'shared';
 import { env } from '#/env';
-import { notificationTypes } from '../notification-types';
 
-/** The digest cadence plus one `<type>Email` switch per notification type. */
-export const unsubscribeCategories = ['digest', ...notificationTypes] as const;
+export const unsubscribeCategories = ['digest', 'mention', 'comment'] as const;
 export type UnsubscribeCategory = (typeof unsubscribeCategories)[number];
 
 /**

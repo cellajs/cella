@@ -4,7 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
-import { emailPreferenceRecord, notificationTypePolicies, notificationTypes } from './notification-types';
+import { notificationTypes } from './notification-types';
 
 /** Digest cadence options for `notification_preferences.digest`. */
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
@@ -72,8 +72,9 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
   userId: uuid()
     .primaryKey()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
-  // One `<type>Email` switch per notification type, defaulted by its policy; in-app delivery is never opt-out.
-  ...emailPreferenceRecord((type) => boolean().notNull().default(notificationTypePolicies[type].email)),
+  /** In-app delivery is never opt-out; only email is. */
+  mentionEmail: boolean().notNull().default(true),
+  commentEmail: boolean().notNull().default(false),
   digest: varchar({ enum: digestFrequencies }).notNull().default('weekly'),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: timestamp({ mode: 'string' }),

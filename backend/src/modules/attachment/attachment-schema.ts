@@ -80,6 +80,8 @@ export const attachmentContract = evolutionContract.product('attachment', {
   createItem: attachmentCreateBodySchema,
   updateOps: {
     name: z.string().max(maxLength.field),
+    /** BlockNote blocks JSON; the collaborative editor persists it through the Yjs materializer. */
+    description: z.string().max(maxLength.html),
   },
 });
 

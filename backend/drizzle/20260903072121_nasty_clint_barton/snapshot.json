@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "30f4928e-16f9-4d4d-afe3-f04a2bfd5656",
+  "id": "242cbce4-3547-4c11-8905-32d1e7923674",
   "prevIds": [
     "8a645694-48bb-420d-92c5-1abc780d0cc4"
   ],
@@ -626,6 +626,19 @@
       "generated": null,
       "identity": null,
       "name": "keys",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 1,
+      "default": "'{}'",
+      "generated": null,
+      "identity": null,
+      "name": "mentions",
       "entityType": "columns",
       "schema": "public",
       "table": "attachments"
@@ -1952,32 +1965,6 @@
       "generated": null,
       "identity": null,
       "name": "comment_email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "notification_preferences"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "reply_email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "notification_preferences"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "edit_email",
       "entityType": "columns",
       "schema": "public",
       "table": "notification_preferences"

@@ -179,7 +179,7 @@
     },
     {
       "name": "attachments",
-      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities.",
+      "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities. The description is edited collaboratively\n    and is a notification source for mentions.",
       "parent": "cella",
       "kind": "module"
     },
@@ -2204,6 +2204,12 @@
             "required": ["original"],
             "description": "Storage object keys per variant, keyed by variant name; only generated variants are present."
           },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "organizationId": {
             "type": "string",
             "format": "uuid"
@@ -2237,6 +2243,7 @@
           "convertedContentType",
           "size",
           "keys",
+          "mentions",
           "organizationId"
         ],
         "description": "A product entity for file attachment metadata.",
@@ -2282,6 +2289,7 @@
           "keys": {
             "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
           },
+          "mentions": [],
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
         "x-tags": ["data", "attachments", "cella"]
@@ -5810,7 +5818,7 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": ["mention", "comment", "reply", "edit"]
+                            "enum": ["mention", "comment", "reply"]
                           },
                           "entityType": {
                             "type": "string",
@@ -5994,18 +6002,12 @@
                     "commentEmail": {
                       "type": "boolean"
                     },
-                    "replyEmail": {
-                      "type": "boolean"
-                    },
-                    "editEmail": {
-                      "type": "boolean"
-                    },
                     "digest": {
                       "type": "string",
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "replyEmail", "editEmail", "digest"]
+                  "required": ["mentionEmail", "commentEmail", "digest"]
                 }
               }
             }
@@ -6056,12 +6058,6 @@
                   "commentEmail": {
                     "type": "boolean"
                   },
-                  "replyEmail": {
-                    "type": "boolean"
-                  },
-                  "editEmail": {
-                    "type": "boolean"
-                  },
                   "digest": {
                     "type": "string",
                     "enum": ["off", "daily", "weekly"]
@@ -6085,18 +6081,12 @@
                     "commentEmail": {
                       "type": "boolean"
                     },
-                    "replyEmail": {
-                      "type": "boolean"
-                    },
-                    "editEmail": {
-                      "type": "boolean"
-                    },
                     "digest": {
                       "type": "string",
                       "enum": ["off", "daily", "weekly"]
                     }
                   },
-                  "required": ["mentionEmail", "commentEmail", "replyEmail", "editEmail", "digest"]
+                  "required": ["mentionEmail", "commentEmail", "digest"]
                 }
               }
             }
@@ -6145,7 +6135,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["digest", "mention", "comment", "reply", "edit"]
+              "enum": ["digest", "mention", "comment"]
             },
             "required": true,
             "name": "category",
@@ -9229,6 +9219,7 @@
                       "keys": {
                         "original": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php"
                       },
+                      "mentions": [],
                       "organizationId": "f54ea01d-336a-43f3-90f2-043315ebed4a"
                     },
                     {
@@ -9273,6 +9264,7 @@
                       "keys": {
                         "original": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi"
                       },
+                      "mentions": [],
                       "organizationId": "4859fc3d-4ffc-4d93-bda6-f4757fd00cc2"
                     }
                   ],
@@ -9478,6 +9470,7 @@
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
+                      "mentions": [],
                       "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
                     },
                     {
@@ -9522,6 +9515,7 @@
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },
+                      "mentions": [],
                       "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
                     }
                   ],
@@ -9607,6 +9601,7 @@
                       "keys": {
                         "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml"
                       },
+                      "mentions": [],
                       "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
                     },
                     {
@@ -9651,6 +9646,7 @@
                       "keys": {
                         "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4"
                       },
+                      "mentions": [],
                       "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
                     }
                   ],
@@ -10069,6 +10065,7 @@
                   "keys": {
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
+                  "mentions": [],
                   "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
                 },
                 "schema": {
@@ -10161,6 +10158,10 @@
                       "name": {
                         "type": "string",
                         "maxLength": 255
+                      },
+                      "description": {
+                        "type": "string",
+                        "maxLength": 1000000
                       }
                     }
                   },
@@ -10220,6 +10221,7 @@
                   "keys": {
                     "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
                   },
+                  "mentions": [],
                   "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
                 },
                 "schema": {

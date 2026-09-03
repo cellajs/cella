@@ -118,6 +118,7 @@
             "converted": { "type": "string", "required": false }
           }
         },
+        "mentions": { "type": "array", "required": true, "itemType": "string" },
         "organizationId": { "type": "string", "required": true, "format": "uuid" },
         "viewCount": { "type": "integer", "required": false, "minimum": 0 }
       }
@@ -169,6 +170,7 @@
       "convertedContentType": null,
       "size": "7202058",
       "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
+      "mentions": [],
       "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
     }
   },

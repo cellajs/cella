@@ -36,6 +36,7 @@ function buildItemData(
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
     convertedContentType: item.convertedContentType || cached?.convertedContentType || null,
+    description: item.description ?? cached?.description ?? null,
   };
 }
 

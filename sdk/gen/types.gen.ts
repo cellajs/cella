@@ -527,6 +527,7 @@ export type Attachment = {
     thumbnail?: string;
     converted?: string;
   };
+  mentions: Array<string>;
   organizationId: string;
   viewCount?: number;
 };
@@ -2795,7 +2796,7 @@ export type GetNotificationsResponses = {
     items: Array<{
       id: string;
       createdAt: string;
-      type: 'mention' | 'comment' | 'reply' | 'edit';
+      type: 'mention' | 'comment' | 'reply';
       entityType: 'attachment';
       subjectId: string;
       contextId: string | null;
@@ -2908,8 +2909,6 @@ export type GetNotificationPreferencesResponses = {
   200: {
     mentionEmail: boolean;
     commentEmail: boolean;
-    replyEmail: boolean;
-    editEmail: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -2921,8 +2920,6 @@ export type UpdateNotificationPreferencesData = {
   body: {
     mentionEmail?: boolean;
     commentEmail?: boolean;
-    replyEmail?: boolean;
-    editEmail?: boolean;
     digest?: 'off' | 'daily' | 'weekly';
   };
   path?: never;
@@ -2967,8 +2964,6 @@ export type UpdateNotificationPreferencesResponses = {
   200: {
     mentionEmail: boolean;
     commentEmail: boolean;
-    replyEmail: boolean;
-    editEmail: boolean;
     digest: 'off' | 'daily' | 'weekly';
   };
 };
@@ -2981,7 +2976,7 @@ export type UnsubscribeNotificationsData = {
   path?: never;
   query: {
     user: string;
-    category: 'digest' | 'mention' | 'comment' | 'reply' | 'edit';
+    category: 'digest' | 'mention' | 'comment';
     token: string;
   };
   url: '/notifications/unsubscribe';
@@ -4645,6 +4640,7 @@ export type UpdateAttachmentData = {
   body: {
     ops: {
       name?: string;
+      description?: string;
     };
     stx: StxBase;
   };

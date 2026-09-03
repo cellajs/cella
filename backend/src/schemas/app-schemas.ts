@@ -1,6 +1,5 @@
 import { z } from '@hono/zod-openapi';
 import type { ChannelEntityType } from 'shared';
-import type { NotificationTypePolicy } from '#/modules/notification/notification-types';
 
 /**
  * App-owned fields on template wire schemas (pinned). The template ships empty shapes; apps fill
@@ -20,10 +19,8 @@ export const setupConfigSchema = z.object({});
 export const appChannelCountFields = (_entityType: ChannelEntityType) => ({});
 
 /**
- * App notification types beyond the template's `mention`, `comment`, `reply` and `edit`
- * (`modules/notification/notification-types.ts`), each with its delivery policy, e.g.
- * `assigned: { email: true, muted: false }`. Every type needs the `c:notification.<type>` and
- * `c:notifications.<type>_email` keys in `app.json`; adding one adds a `<type>_email` preference
- * column (`pnpm generate`).
+ * App notification types beyond the template's `mention`, `comment` and `reply`
+ * (`modules/notification/notification-types.ts`), e.g. `['assigned']`. Each needs a
+ * `notification.<type>` label in `app.json` and, for its digest line, `email.digest_line.<type>`.
  */
-export const appNotificationTypes = {} as const satisfies Record<string, NotificationTypePolicy>;
+export const appNotificationTypes = [] as const;

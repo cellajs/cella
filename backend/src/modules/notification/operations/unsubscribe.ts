@@ -5,16 +5,17 @@ import { baseDb } from '#/db/db';
 import { usersTable } from '#/modules/user/user-db';
 import { type UnsubscribeCategory, verifyCategoryToken } from '../helpers/category-token';
 import { findOrCreatePreferences, updatePreferences } from '../notification-queries';
-import { type EmailPreferenceKey, emailPreferenceKey } from '../notification-types';
 
 // Opened straight from an email client, so failures redirect to an error page, never JSON.
 const errorPage = { willRedirect: true, meta: { errorPagePath: '/auth/error' } } as const;
 
-/** Turning the digest off is a frequency change; every notification type has its own `<type>Email` switch. */
-const disableFor = (
-  category: UnsubscribeCategory,
-): Partial<Record<EmailPreferenceKey, boolean>> & { digest?: 'off' } =>
-  category === 'digest' ? { digest: 'off' } : { [emailPreferenceKey(category)]: false };
+/** Turning the digest off is a frequency change; the other two are booleans. */
+const disableFor = (category: UnsubscribeCategory) =>
+  category === 'digest'
+    ? { digest: 'off' as const }
+    : category === 'mention'
+      ? { mentionEmail: false }
+      : { commentEmail: false };
 
 /**
  * Turn off one email category from an emailed link, without a session.

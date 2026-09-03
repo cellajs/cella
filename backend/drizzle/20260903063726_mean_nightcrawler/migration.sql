@@ -1,2 +1,0 @@
-ALTER TABLE "notification_preferences" ADD COLUMN "reply_email" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "notification_preferences" ADD COLUMN "edit_email" boolean DEFAULT false NOT NULL;

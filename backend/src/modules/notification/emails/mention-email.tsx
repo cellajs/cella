@@ -12,16 +12,14 @@ import { Link } from '../../../../emails/components/primitives';
 import { i18n } from '../../../../emails/i18n';
 import { smallTextStyle } from '../../../../emails/styles';
 import { defineEmailTemplate, type EmailRecipient } from '../../../../emails/types';
-import type { NotificationType } from '../notification-types';
 
-interface NotificationStatic {
-  type: NotificationType;
+interface MentionStatic {
   /** Empty string when the actor is gone; the copy falls back to a generic subject. */
   actorName: string;
   channelName: string;
 }
 
-type NotificationRecipient = EmailRecipient & {
+type MentionRecipient = EmailRecipient & {
   subjectTitle: string;
   excerpt: string;
   link: string;
@@ -29,29 +27,21 @@ type NotificationRecipient = EmailRecipient & {
 };
 
 /**
- * Instant email for one notification. Copy comes from `c:email.<type>.*` when the type has its own
- * keys (the template types do; apps add theirs to `app.json`), else the generic
- * `c:email.notification.*` set.
+ * Instant email for a direct mention: the one activity email that is on by default, because a
+ * mention is addressed to you while ambient comment activity is not.
  *
  * Lives in the module, not `backend/emails/templates`, keeping the feature self-contained; the
  * mailer takes any template satisfying the contract regardless of where it sits.
  */
-export const notificationEmail = defineEmailTemplate<NotificationStatic, NotificationRecipient>()({
-  translate(lng, { type, actorName, channelName }) {
-    const copy = (part: 'subject' | 'preview' | 'title') =>
-      i18n.t(`c:email.${type}.${part}`, {
-        lng,
-        actorName,
-        channelName,
-        defaultValue: i18n.t(`c:email.notification.${part}`, { lng, actorName, channelName }),
-      });
+export const mentionEmail = defineEmailTemplate<MentionStatic, MentionRecipient>()({
+  translate(lng, { actorName, channelName }) {
     return {
-      subject: copy('subject'),
-      previewText: copy('preview'),
-      headerHtml: copy('title'),
-      inText: i18n.t('c:email.notification.in', { lng, channelName }),
-      buttonText: i18n.t('c:email.notification.button', { lng }),
-      unsubscribeText: i18n.t('c:email.unsubscribe_notification', { lng }),
+      subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName }),
+      previewText: i18n.t('c:email.mention.preview', { lng, actorName }),
+      headerHtml: i18n.t('c:email.mention.title', { lng, actorName }),
+      inText: i18n.t('c:email.mention.in', { lng, channelName }),
+      buttonText: i18n.t('c:email.mention.button', { lng }),
+      unsubscribeText: i18n.t('c:email.unsubscribe_mentions', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
@@ -94,7 +84,7 @@ export const notificationEmail = defineEmailTemplate<NotificationStatic, Notific
     );
   },
   preview: {
-    statics: { type: 'mention', actorName: 'John', channelName: 'Design 101' },
+    statics: { actorName: 'John', channelName: 'Design 101' },
     recipient: {
       subjectTitle: 'Roadmap review',
       excerpt: 'Could you take a look at this before Friday?',

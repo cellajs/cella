@@ -130,6 +130,7 @@
                       "converted": { "type": "string", "required": false }
                     }
                   },
+                  "mentions": { "type": "array", "required": true, "itemType": "string" },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
@@ -182,6 +183,7 @@
               "convertedContentType": null,
               "size": "3838237",
               "keys": { "original": "uploads/sllfn51vpq8cnfsar9hbjwto/finally_wherever_nasalise.php" },
+              "mentions": [],
               "organizationId": "f54ea01d-336a-43f3-90f2-043315ebed4a"
             },
             {
@@ -224,6 +226,7 @@
               "convertedContentType": null,
               "size": "1155007",
               "keys": { "original": "uploads/rvg8ngqzxmk35ee92ta8rpig/buzzing_brr_hm.rmi" },
+              "mentions": [],
               "organizationId": "4859fc3d-4ffc-4d93-bda6-f4757fd00cc2"
             }
           ],
@@ -432,6 +435,7 @@
                       "converted": { "type": "string", "required": false }
                     }
                   },
+                  "mentions": { "type": "array", "required": true, "itemType": "string" },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
@@ -495,6 +499,7 @@
               "convertedContentType": null,
               "size": "9057832",
               "keys": { "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml" },
+              "mentions": [],
               "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
             },
             {
@@ -537,6 +542,7 @@
               "convertedContentType": null,
               "size": "4961674",
               "keys": { "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4" },
+              "mentions": [],
               "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
             }
           ],
@@ -671,6 +677,7 @@
                       "converted": { "type": "string", "required": false }
                     }
                   },
+                  "mentions": { "type": "array", "required": true, "itemType": "string" },
                   "organizationId": { "type": "string", "required": true, "format": "uuid" },
                   "viewCount": { "type": "integer", "required": false, "minimum": 0 }
                 },
@@ -734,6 +741,7 @@
               "convertedContentType": null,
               "size": "9057832",
               "keys": { "original": "uploads/dl2xm36um7v2n0dmwpblyotm/inasmuch.xhtml" },
+              "mentions": [],
               "organizationId": "55b68dde-9bc4-4a07-a5e7-b48057f53a0c"
             },
             {
@@ -776,6 +784,7 @@
               "convertedContentType": null,
               "size": "4961674",
               "keys": { "original": "uploads/3rrfeu660ozr0yjbednvd5gs/victoriously.mp4" },
+              "mentions": [],
               "organizationId": "044316a1-c906-4c0e-9632-932306ebef5b"
             }
           ],
@@ -1271,6 +1280,7 @@
                 "converted": { "type": "string", "required": false }
               }
             },
+            "mentions": { "type": "array", "required": true, "itemType": "string" },
             "organizationId": { "type": "string", "required": true, "format": "uuid" },
             "viewCount": { "type": "integer", "required": false, "minimum": 0 }
           },
@@ -1317,6 +1327,7 @@
           "convertedContentType": null,
           "size": "7202058",
           "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
+          "mentions": [],
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         }
       },
@@ -1498,6 +1509,7 @@
                 "converted": { "type": "string", "required": false }
               }
             },
+            "mentions": { "type": "array", "required": true, "itemType": "string" },
             "organizationId": { "type": "string", "required": true, "format": "uuid" },
             "viewCount": { "type": "integer", "required": false, "minimum": 0 }
           },
@@ -1544,6 +1556,7 @@
           "convertedContentType": null,
           "size": "7202058",
           "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
+          "mentions": [],
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         }
       },
@@ -1622,7 +1635,8 @@
             "type": "object",
             "required": true,
             "properties": {
-              "name": { "type": "string", "required": false, "maxLength": 255 }
+              "name": { "type": "string", "required": false, "maxLength": 255 },
+              "description": { "type": "string", "required": false, "maxLength": 1000000 }
             }
           },
           "stx": {

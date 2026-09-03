@@ -2083,8 +2083,6 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
  * @param {updateNotificationPreferencesData} options
  * @param {boolean=} options.body.mentionEmail - `boolean` (optional)
  * @param {boolean=} options.body.commentEmail - `boolean` (optional)
- * @param {boolean=} options.body.replyEmail - `boolean` (optional)
- * @param {boolean=} options.body.editEmail - `boolean` (optional)
  * @param {enum=} options.body.digest - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */

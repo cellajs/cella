@@ -458,6 +458,7 @@ export const zAttachment = z.object({
     thumbnail: z.string().optional(),
     converted: z.string().optional(),
   }),
+  mentions: z.array(z.string()),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
 });
@@ -1043,7 +1044,7 @@ export const zGetNotificationsResponse = z.object({
     z.object({
       id: z.string(),
       createdAt: z.string(),
-      type: z.enum(['mention', 'comment', 'reply', 'edit']),
+      type: z.enum(['mention', 'comment', 'reply']),
       entityType: z.enum(['attachment']),
       subjectId: z.string(),
       contextId: z.string().nullable(),
@@ -1076,16 +1077,12 @@ export const zMarkNotificationsReadResponse = z.object({
 export const zGetNotificationPreferencesResponse = z.object({
   mentionEmail: z.boolean(),
   commentEmail: z.boolean(),
-  replyEmail: z.boolean(),
-  editEmail: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
 export const zUpdateNotificationPreferencesBody = z.object({
   mentionEmail: z.boolean().optional(),
   commentEmail: z.boolean().optional(),
-  replyEmail: z.boolean().optional(),
-  editEmail: z.boolean().optional(),
   digest: z.enum(['off', 'daily', 'weekly']).optional(),
 });
 
@@ -1095,14 +1092,12 @@ export const zUpdateNotificationPreferencesBody = z.object({
 export const zUpdateNotificationPreferencesResponse = z.object({
   mentionEmail: z.boolean(),
   commentEmail: z.boolean(),
-  replyEmail: z.boolean(),
-  editEmail: z.boolean(),
   digest: z.enum(['off', 'daily', 'weekly']),
 });
 
 export const zUnsubscribeNotificationsQuery = z.object({
   user: z.string().max(50),
-  category: z.enum(['digest', 'mention', 'comment', 'reply', 'edit']),
+  category: z.enum(['digest', 'mention', 'comment']),
   token: z.string(),
 });
 
@@ -1716,6 +1711,7 @@ export const zGetAttachmentResponse = zAttachment;
 export const zUpdateAttachmentBody = z.object({
   ops: z.object({
     name: z.string().max(255).optional(),
+    description: z.string().max(1000000).optional(),
   }),
   stx: zStxBase,
 });

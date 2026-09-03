@@ -13,7 +13,10 @@ import {
   type NotificationInsert,
 } from '../notification-queries';
 import { getNotificationSource } from '../notification-sources';
-import { mutedNotificationTypes, type NotificationType } from '../notification-types';
+import { type NotificationType, notificationTypes } from '../notification-types';
+
+/** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
+const mutedTypes = new Set<NotificationType>(notificationTypes.filter((type) => type !== 'mention'));
 
 type Candidate = { userId: string; type: NotificationType };
 
@@ -123,8 +126,8 @@ async function fanOutRow(
 /**
  * Keep only recipients who may actually read the row, then apply mute.
  *
- * Mute silences ambient channel activity but never a type addressed to one person, per the
- * type's `muted` policy.
+ * Mute silences ambient channel activity but never a direct mention, which is why `mutedTypes`
+ * excludes it.
  */
 async function filterByReadAccess(
   entityType: string,
@@ -145,7 +148,7 @@ async function filterByReadAccess(
 
   return candidates.filter((candidate, index) => {
     if (!decisions[index]?.allowed) return false;
-    if (!mutedNotificationTypes.has(candidate.type)) return true;
+    if (!mutedTypes.has(candidate.type)) return true;
 
     const muted = accessByUser
       .get(candidate.userId)
