@@ -21,7 +21,7 @@ export function UnreadCountBadge({ className }: { className?: string }) {
   );
 }
 
-/** Unread counter over the bell, mirroring `UnseenNavBadge`; the open sheet shows the count in its header instead. */
+/** Unread counter over the bell, mirroring `UnseenNavBadge`; hidden while the sheet is open, which shows the count in its header. */
 export function UnreadNavBadge({ isActive, className }: { isActive: boolean; className?: string }) {
   if (isActive) return null;
   return <UnreadCountBadge className={cn('absolute', className)} />;

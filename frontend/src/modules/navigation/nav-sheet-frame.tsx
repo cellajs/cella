@@ -5,7 +5,7 @@ import { cn } from '~/utils/cn';
 
 interface NavSheetFrameProps {
   children: ReactNode;
-  /** Sticky bottom panels (preferences etc.); sheets without them push the bridges to the bottom instead. */
+  /** Sticky bottom panels (preferences etc.); without them the bridges take `mt-auto` to stay at the bottom. */
   panels?: boolean;
   ref?: Ref<HTMLDivElement>;
   className?: string;
