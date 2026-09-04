@@ -8,7 +8,7 @@ import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
- * Classify tables for RLS setup (ownership, FORCE RLS, grants).
+ * Classify tables for RLS setup (ownership, enabled RLS, grants).
  * Policies are defined in Drizzle schema files using pgPolicy() - not generated here.
  * Exported so the verify block (99-verify) asserts against the exact same lists.
  */
@@ -65,11 +65,14 @@ async function run(): Promise<SideEffectBlock> {
   // Migration SQL
 
   const migrationSql = `-- RLS (Row-Level Security) Setup
--- Configures FORCE RLS, table ownership, and grants.
+-- Configures table ownership, enabled (not forced) RLS, and grants.
 -- Policies are defined in Drizzle schema files using pgPolicy().
+-- admin_role owns every RLS table and RLS is never forced, so the owner bypasses the policies
+-- natively (migrations, seeds, maintenance, CDC seq stamping) without the BYPASSRLS attribute,
+-- which managed providers such as Scaleway do not grant. runtime_role stays RLS-subject.
 -- RLS enforces tenant-level isolation only; org-level isolation is application-layer (orgGuard).
 -- Requires runtime_role and admin_role: a database migrated without them would run with no
--- ownership, no FORCE RLS and no grants, so their absence aborts the migration.
+-- ownership, no RLS and no grants, so their absence aborts the migration.
 
 DO $$
 BEGIN
@@ -79,11 +82,11 @@ BEGIN
   END IF;
 
   BEGIN
-    -- Table ownership and FORCE RLS
+    -- Table ownership and enabled (not forced) RLS
 ${rlsTables.map((t) => `    ALTER TABLE ${t} OWNER TO admin_role;`).join('\n')}
     ALTER TABLE activities OWNER TO admin_role;
 
-${rlsTables.map((t) => `    ALTER TABLE ${t} FORCE ROW LEVEL SECURITY;`).join('\n')}
+${rlsTables.map((t) => `    ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY;\n    ALTER TABLE ${t} NO FORCE ROW LEVEL SECURITY;`).join('\n')}
 
     -- Grants: runtime_role (subject to RLS)
 ${rlsTables.map((t) => `    GRANT SELECT, INSERT, UPDATE, DELETE ON ${t} TO runtime_role;`).join('\n')}
@@ -99,7 +102,7 @@ ${readOnlyTables.map((t) => `    GRANT SELECT ON ${t} TO runtime_role;`).join('\
 
     RAISE NOTICE 'RLS setup complete.';
   EXCEPTION WHEN OTHERS THEN
-    -- Fail LOUDLY: swallowing this rolled back ownership, FORCE RLS and every grant in
+    -- Fail LOUDLY: swallowing this rolled back ownership, RLS and every grant in
     -- one silent NOTICE: the app then boots with no table grants (every request 403s)
     -- or, worse, without enforced RLS.
     RAISE EXCEPTION 'RLS setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
@@ -109,7 +112,7 @@ END $$;
 
   return {
     tag: 'rls_setup',
-    title: 'RLS, ownership, FORCE RLS, grants',
+    title: 'RLS, ownership, enabled RLS, grants',
     sql: migrationSql,
     notes: [`RLS tables: ${rlsTables.join(', ')}`],
   };

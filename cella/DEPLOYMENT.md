@@ -73,6 +73,7 @@ Wave 2: ONE stack update provisions every remaining generation;
 Verify every public service serves the expected SHA
         ↓
 Publish frontend entry files (atomic flip) + smoke checks
+(degraded components warn with an annotation, unhealthy ones fail the run)
         ↓
 One final stack update reaps every displaced generation
 (CI passes `--defer-reap` and runs that update as a follow-up `reap` job)

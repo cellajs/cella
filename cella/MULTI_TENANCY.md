@@ -29,8 +29,9 @@ Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
 
 ## What RLS covers
 
-Cella applies `FORCE ROW LEVEL SECURITY` to product tables and to resources that hold tenant data.
-The template protects `attachments` and `yjs_documents`.
+Cella enables row-level security on product tables and on resources that hold tenant data, and never
+forces it: `admin_role` owns those tables, so it bypasses the policies as the owner while `runtime_role`
+is filtered. The template protects `attachments` and `yjs_documents`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
@@ -89,14 +90,16 @@ the shared engine, and a contextless insert passes RLS.
 | Role | RLS | Purpose |
 | --- | --- | --- |
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
-| `admin_role` | `BYPASSRLS` in the supported production setup | Migrations, seeds, maintenance, and CDC replication or stamping |
+| `admin_role` | Bypassed as table owner | Migrations, seeds, maintenance, and CDC replication or stamping |
 
 `admin_role` owns the RLS-protected tables and the activity log. Migrations grant `runtime_role` what
-the application needs, and refuse to run when either role is missing. Role creation falls back to an
-`admin_role` without `BYPASSRLS` on providers that refuse the attribute, with only a notice. The CDC
-worker probes its role at startup: a missing `BYPASSRLS` or `REPLICATION` is logged as an error and
-marks the CDC health component unhealthy, since seq stamping under `FORCE ROW LEVEL SECURITY` or the
-replication slot fails without it. An application system administrator is not `admin_role`. Their
+the application needs, and refuse to run when either role is missing. The bypass never depends on the
+`BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, so ownership of never-forced
+tables is the one bypass that works everywhere, and the dev and test roles are created without the
+attribute to mirror that. The CDC worker probes its effective capabilities at startup: an RLS table it
+cannot bypass (forced, or owned by another role) or a missing `REPLICATION` is logged as an error and
+marks the CDC health component unhealthy, since seq stamping would silently affect zero rows or the
+replication slot could not open. An application system administrator is not `admin_role`. Their
 requests use the runtime connection and normal request scope.
 
 The admin credential (`DATABASE_ADMIN_URL`) is optional for the request-serving API: `getAdminDb()`
@@ -107,8 +110,8 @@ cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a reque
 ## Verification
 
 - Builders and helpers: `backend/src/db/rls-helpers.ts`, `tenant-context.ts`, `immutability-triggers.ts`.
-- Migrations: `10-rls` (classification, ownership, forced RLS, grants) and `99-verify`, which asserts
-  owner, forced RLS, the four-policy contract per table (`rlsPolicyContract`), grants per
+- Migrations: `10-rls` (classification, ownership, enabled RLS, grants) and `99-verify`, which asserts
+  owner, RLS enabled and not forced, the four-policy contract per table (`rlsPolicyContract`), grants per
   classification, read-only tables without write privilege, and that `runtime_role` has no
   `BYPASSRLS`. A failed assertion rolls the migration back.
 - Tests: `backend/tests/integration/rls-security.test.ts` and `schema-verification.test.ts` inspect

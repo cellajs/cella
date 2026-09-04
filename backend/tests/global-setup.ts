@@ -38,8 +38,11 @@ export default async function globalSetup() {
 
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
 
-  // Roles first: the side-effect migration blocks apply ownership, FORCE RLS, grants and triggers
+  // Roles first: the side-effect migration blocks apply ownership, RLS, grants and triggers
   // only when the roles exist, and the verify block rejects a database without them.
+  // admin_role gets no BYPASSRLS on purpose: production providers (Scaleway) cannot grant it, so the
+  // suite proves the owner-bypass path the CDC worker and admin connection rely on. An older volume
+  // that created the role with the attribute is converged.
   await pool.query(`
     DO $$
     BEGIN
@@ -47,7 +50,9 @@ export default async function globalSetup() {
         CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
       END IF;
       IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-        CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
+        CREATE ROLE admin_role WITH LOGIN PASSWORD 'dev_password';
+      ELSE
+        ALTER ROLE admin_role NOBYPASSRLS;
       END IF;
       GRANT USAGE ON SCHEMA public TO runtime_role;
       GRANT ALL ON SCHEMA public TO admin_role;
@@ -71,14 +76,15 @@ export default async function globalSetup() {
 
   // A volume migrated before the roles existed keeps its degraded catalog (migrations do not
   // re-run) and RLS-dependent tests would pass vacuously on it, so the setup refuses such a volume.
-  const { rows } = await pool.query<{ forced: boolean; granted: boolean; owner: string }>(`
-    SELECT relforcerowsecurity AS forced,
+  const { rows } = await pool.query<{ enabled: boolean; forced: boolean; granted: boolean; owner: string }>(`
+    SELECT relrowsecurity AS enabled,
+           relforcerowsecurity AS forced,
            has_table_privilege('runtime_role', 'public.yjs_documents', 'SELECT') AS granted,
            pg_get_userbyid(relowner) AS owner
     FROM pg_class WHERE relname = 'yjs_documents' AND relnamespace = 'public'::regnamespace
   `);
   const state = rows[0];
-  if (!state?.forced || !state.granted || state.owner !== 'admin_role') {
+  if (!state?.enabled || state.forced || !state.granted || state.owner !== 'admin_role') {
     console.error(
       `\n${crossMark}  Test database was migrated without the RLS roles (yjs_documents: ${JSON.stringify(state)})`,
     );

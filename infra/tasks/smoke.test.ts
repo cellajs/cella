@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   type ComponentIssue,
-  extractEntryAsset,
+  componentSeverity,
   formatComponentIssues,
+  unhealthyComponents,
+} from '../lib/health-components';
+import {
+  extractEntryAsset,
   type HttpResponse,
   hasHashedAsset,
   isHtmlDocument,
@@ -11,7 +15,6 @@ import {
   parseArgs,
   runSmoke,
   SECURITY_HEADERS,
-  unhealthyComponents,
 } from './smoke';
 
 const SHA = 'abc1234';
@@ -123,6 +126,21 @@ describe('unhealthyComponents', () => {
   });
 });
 
+describe('componentSeverity', () => {
+  it('warns when every issue is merely degraded', () => {
+    expect(componentSeverity([{ name: 'cdc', status: 'degraded', reason: 'worker_report_stale' }])).toBe('warn');
+  });
+  it('errors when any issue is unhealthy or the body was malformed', () => {
+    expect(
+      componentSeverity([
+        { name: 'cdc', status: 'degraded' },
+        { name: 'yjs', status: 'unhealthy', reason: 'timeout' },
+      ]),
+    ).toBe('error');
+    expect(componentSeverity([{ name: '<body>', status: 'unparseable' }])).toBe('error');
+  });
+});
+
 describe('formatComponentIssues', () => {
   it('renders a compact name=status(reason) list', () => {
     const issues: ComponentIssue[] = [
@@ -153,7 +171,7 @@ describe('runSmoke', () => {
       get: healthyGet,
     });
     expect(results).toHaveLength(6);
-    expect(results.every((r) => r.ok)).toBe(true);
+    expect(results.every((r) => r.status === 'ok')).toBe(true);
   });
 
   it('asserts the served bundle references the freshly built hash when expectedAsset is set', async () => {
@@ -164,7 +182,7 @@ describe('runSmoke', () => {
       expectedAsset: '/assets/index-abc123.js',
       get: healthyGet,
     });
-    expect(pass.find((r) => r.name === 'index.html references freshly built bundle')?.ok).toBe(true);
+    expect(pass.find((r) => r.name === 'index.html references freshly built bundle')?.status).toBe('ok');
 
     const stale = await runSmoke({
       defaultRouteUrl: 'https://app',
@@ -174,7 +192,7 @@ describe('runSmoke', () => {
       get: healthyGet,
     });
     const check = stale.find((r) => r.name === 'index.html references freshly built bundle');
-    expect(check?.ok).toBe(false);
+    expect(check?.status).toBe('fail');
     expect(check?.detail).toContain('/assets/index-OLD.js');
   });
 
@@ -190,8 +208,8 @@ describe('runSmoke', () => {
       ],
       get: healthyGet,
     });
-    expect(results.find((r) => r.name === 'backend reports deployed SHA')?.ok).toBe(true);
-    expect(results.find((r) => r.name === 'frontend reports deployed SHA')?.ok).toBe(true);
+    expect(results.find((r) => r.name === 'backend reports deployed SHA')?.status).toBe('ok');
+    expect(results.find((r) => r.name === 'frontend reports deployed SHA')?.status).toBe('ok');
     expect(results.find((r) => r.name === 'cdc reports deployed SHA')).toBeUndefined();
   });
 
@@ -208,10 +226,10 @@ describe('runSmoke', () => {
     });
 
     const sha = results.find((r) => r.name === 'primary reports deployed SHA');
-    expect(sha?.ok).toBe(false);
+    expect(sha?.status).toBe('fail');
     expect(sha?.detail).toContain('old9999');
     // The other five still ran and passed.
-    expect(results.filter((r) => r.ok)).toHaveLength(5);
+    expect(results.filter((r) => r.status === 'ok')).toHaveLength(5);
   });
 
   it('reports missing security headers', async () => {
@@ -227,7 +245,7 @@ describe('runSmoke', () => {
     });
 
     const sec = results.find((r) => r.name === 'security headers present');
-    expect(sec?.ok).toBe(false);
+    expect(sec?.status).toBe('fail');
     expect(sec?.detail).toContain('X-Frame-Options');
   });
 
@@ -242,7 +260,7 @@ describe('runSmoke', () => {
     });
 
     const api = results.find((r) => r.name === 'primary /openapi.json reachable');
-    expect(api?.ok).toBe(false);
+    expect(api?.status).toBe('fail');
     expect(api?.detail).toBe('ECONNREFUSED');
   });
 
@@ -255,7 +273,7 @@ describe('runSmoke', () => {
       expectedSha: SHA,
       get,
     });
-    expect(results.find((r) => r.name === 'primary /openapi.json reachable')?.ok).toBe(false);
+    expect(results.find((r) => r.name === 'primary /openapi.json reachable')?.status).toBe('fail');
   });
 
   it('retries the component check and passes once the cdc worker reconnects', async () => {
@@ -285,7 +303,7 @@ describe('runSmoke', () => {
       componentsRetryDelayMs: 1,
     });
 
-    expect(results.find((r) => r.name === 'primary components healthy')?.ok).toBe(true);
+    expect(results.find((r) => r.name === 'primary components healthy')?.status).toBe('ok');
     expect(depthFullCalls).toBe(3);
     expect(sleep).toHaveBeenCalledTimes(2);
   });
@@ -315,10 +333,65 @@ describe('runSmoke', () => {
     });
 
     const components = results.find((r) => r.name === 'primary components healthy');
-    expect(components?.ok).toBe(false);
+    expect(components?.status).toBe('fail');
     expect(components?.detail).toContain('cdc=unhealthy(worker_disconnected)');
     expect(depthFullCalls).toBe(3);
     expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  const degradedOnly = JSON.stringify({
+    status: 'degraded',
+    components: { api: { status: 'healthy' }, cdc: { status: 'degraded', reason: 'worker_report_stale' } },
+  });
+  const getWith =
+    (body: string, status = 200) =>
+    (url: string) =>
+      url.includes('/health?depth=full') ? Promise.resolve(res({ status, ok: status < 400, body })) : healthyGet(url);
+
+  it('warns instead of failing when only degraded components remain after the retry budget', async () => {
+    const results = await runSmoke({
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get: getWith(degradedOnly),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      componentsRetryAttempts: 2,
+      componentsRetryDelayMs: 1,
+    });
+    const components = results.find((r) => r.name === 'primary components healthy');
+    expect(components?.status).toBe('warn');
+    expect(components?.detail).toBe('cdc=degraded(worker_report_stale)');
+  });
+
+  it('reads the component body of a 503 aggregate and fails on an unhealthy component', async () => {
+    const unhealthy = JSON.stringify({
+      status: 'unhealthy',
+      components: { api: { status: 'healthy' }, cdc: { status: 'unhealthy', reason: 'rls_bypass_missing' } },
+    });
+    const results = await runSmoke({
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get: getWith(unhealthy, 503),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      componentsRetryAttempts: 2,
+      componentsRetryDelayMs: 1,
+    });
+    const components = results.find((r) => r.name === 'primary components healthy');
+    expect(components?.status).toBe('fail');
+    expect(components?.detail).toBe('cdc=unhealthy(rls_bypass_missing)');
+  });
+
+  it('fails, not warns, when the aggregate answers a non-ok status with no component issues', async () => {
+    const results = await runSmoke({
+      primaryUrl: 'https://api',
+      expectedSha: SHA,
+      get: getWith(HEALTHY_COMPONENTS, 503),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      componentsRetryAttempts: 1,
+      componentsRetryDelayMs: 1,
+    });
+    const components = results.find((r) => r.name === 'primary components healthy');
+    expect(components?.status).toBe('fail');
+    expect(components?.detail).toBe('status=503');
   });
 });
 

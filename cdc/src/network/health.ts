@@ -53,9 +53,9 @@ export function getHealthResponse(): {
   if (replStatus === 'stopped') status = 'unhealthy';
   else if (replStatus === 'paused' || !wsConnected) status = 'degraded';
 
-  // Without BYPASSRLS every seq stamp under FORCE RLS fails; without REPLICATION the slot cannot be opened.
+  // Without an effective RLS bypass every seq stamp silently affects zero rows; without REPLICATION the slot cannot be opened.
   const role = getRoleCapabilities();
-  if (role && (!role.bypassRls || !role.replication)) status = 'unhealthy';
+  if (role && (!role.rlsBypass || !role.replication)) status = 'unhealthy';
 
   // WAL lag threshold for unhealthy status.
   const lagBytes = metrics.lagBytes;

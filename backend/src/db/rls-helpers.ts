@@ -44,7 +44,7 @@ export const rlsPolicyContract = (name: string) =>
 export const tenantSelectPolicy = (name: string, table: { tenantId: unknown }) =>
   pgPolicy(rlsPolicyContract(name).select.name, { for: 'select', using: tenantReadCondition(table) });
 
-/** FORCE RLS requires explicit write policies; guards, FKs, and triggers enforce write isolation. */
+/** Enabled RLS denies runtime_role writes without explicit write policies; guards, FKs, and triggers enforce write isolation. */
 export const writeThroughPolicies = (name: string) => {
   const { insert, update, delete: del } = rlsPolicyContract(name);
   return [

@@ -1,5 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { healthContract } from '../config/health.config';
+import {
+  type ComponentIssue,
+  componentSeverity,
+  formatComponentIssues,
+  unhealthyComponents,
+} from '../lib/health-components';
 import { sleep as defaultSleep } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { isMain } from '../lib/utils/is-main';
@@ -38,37 +44,6 @@ export function isHtmlDocument(body: string): boolean {
 /** Header names from SECURITY_HEADERS that are absent from the response. */
 export function missingSecurityHeaders(headers: Headers): string[] {
   return SECURITY_HEADERS.filter((h) => headers.get(h) === null);
-}
-
-/** A single non-healthy component found in a /health?depth=full body. */
-export interface ComponentIssue {
-  name: string;
-  status: string;
-  reason?: string;
-}
-
-/** Every non-healthy component in a deep health response. Degraded non-critical workers count as failures after rollout, and a malformed response yields a synthetic issue. */
-export function unhealthyComponents(body: string): ComponentIssue[] {
-  let parsed: { components?: Record<string, { status?: string; reason?: string }> };
-  try {
-    parsed = JSON.parse(body);
-  } catch {
-    return [{ name: '<body>', status: 'unparseable' }];
-  }
-  const components = parsed.components;
-  if (!components || typeof components !== 'object') return [{ name: '<components>', status: 'missing' }];
-
-  const issues: ComponentIssue[] = [];
-  for (const [name, component] of Object.entries(components)) {
-    if (component?.status !== 'healthy')
-      issues.push({ name, status: component?.status ?? 'unknown', reason: component?.reason });
-  }
-  return issues;
-}
-
-/** Render component issues as a compact `name=status(reason)` list for CI logs. */
-export function formatComponentIssues(issues: ComponentIssue[]): string {
-  return issues.map((i) => `${i.name}=${i.status}${i.reason ? `(${i.reason})` : ''}`).join(', ');
 }
 
 export interface HttpResponse {
@@ -139,11 +114,19 @@ export interface SmokeOptions {
 export const COMPONENTS_RETRY_ATTEMPTS = 15;
 export const COMPONENTS_RETRY_DELAY_MS = 8_000;
 
+/** `warn` surfaces as a CI annotation and keeps the run green; only `fail` makes the deploy red. */
+export type SmokeStatus = 'ok' | 'warn' | 'fail';
+
 export interface SmokeResult {
   name: string;
-  ok: boolean;
+  status: SmokeStatus;
   detail?: string;
 }
+
+type Verdict = { status: SmokeStatus; detail?: string };
+
+/** Pass/fail verdict for the binary checks. */
+const verdict = (ok: boolean, detail: string): Verdict => ({ status: ok ? 'ok' : 'fail', detail });
 
 /** Run all smoke checks, collecting every result (no short-circuit). */
 export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
@@ -154,12 +137,12 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   const results: SmokeResult[] = [];
 
   // The wrapper owns the try/catch and result collection, so no check can short-circuit the rest.
-  const check = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>): Promise<void> => {
+  const check = async (name: string, fn: () => Promise<Verdict>): Promise<void> => {
     try {
-      const { ok, detail } = await fn();
-      results.push(ok ? { name, ok: true } : { name, ok: false, detail });
+      const { status, detail } = await fn();
+      results.push(status === 'ok' ? { name, status } : { name, status, detail });
     } catch (err) {
-      results.push({ name, ok: false, detail: errorMessage(err) });
+      results.push({ name, status: 'fail', detail: errorMessage(err) });
     }
   };
 
@@ -176,13 +159,13 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
           : opts.expectedAsset
             ? `served does not reference ${opts.expectedAsset}`
             : 'no hashed entry asset found in served index.html';
-        return { ok: res.ok && matched, detail };
+        return verdict(res.ok && matched, detail);
       },
     );
 
   await check('primary /openapi.json reachable', async () => {
     const res = await get(`${primaryUrl}/openapi.json`);
-    return { ok: res.ok, detail: `status=${res.status}` };
+    return verdict(res.ok, `status=${res.status}`);
   });
 
   // Internal-only services have no health_url and are covered by the aggregate primary health.
@@ -193,40 +176,42 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     await check(`${service.service} reports deployed SHA`, async () => {
       const res = await get(`${service.health_url}${healthContract.path}`);
       const version = res.headers.get(healthContract.versionHeader) ?? undefined;
-      return {
-        ok: isHealthy({ status: res.status, version }, expectedSha),
-        detail: `served=${version ?? '<missing>'} expected=${expectedSha}`,
-      };
+      return verdict(
+        isHealthy({ status: res.status, version }, expectedSha),
+        `served=${version ?? '<missing>'} expected=${expectedSha}`,
+      );
     });
   }
 
   if (defaultRouteUrl)
     await check('SPA fallback returns HTML', async () => {
       const res = await get(`${defaultRouteUrl}/__smoke_${Date.now()}`);
-      return { ok: res.ok && isHtmlDocument(res.body), detail: `status=${res.status}` };
+      return verdict(res.ok && isHtmlDocument(res.body), `status=${res.status}`);
     });
 
   if (defaultRouteUrl)
     await check('security headers present', async () => {
       const res = await get(`${defaultRouteUrl}/`);
       const missing = missingSecurityHeaders(res.headers);
-      return { ok: missing.length === 0, detail: `missing: ${missing.join(', ')}` };
+      return verdict(missing.length === 0, `missing: ${missing.join(', ')}`);
     });
 
-  // Retry aggregate health across one worker reconnect interval after rollout: the first clean read passes, persistent failures exhaust the budget.
+  // Retry aggregate health across one worker reconnect interval after rollout: the first clean read passes and the
+  // budget absorbs transient issues. What is still wrong when it runs out decides the verdict through
+  // componentSeverity: only-degraded warns (slow, not down), anything unhealthy fails.
   await check('primary components healthy', async () => {
     let lastDetail = 'no response';
+    let lastIssues: ComponentIssue[] | undefined;
     const healthy = await pollUntil(
       async () => {
+        lastIssues = undefined;
         try {
+          // The aggregate answers 503 with the same JSON body when a component is unhealthy, so the body is read regardless of status.
           const res = await get(`${primaryUrl}${healthContract.path}?depth=full`);
-          if (!res.ok) {
-            lastDetail = `status=${res.status}`;
-            return undefined;
-          }
           const issues = unhealthyComponents(res.body);
-          if (issues.length === 0) return true;
-          lastDetail = formatComponentIssues(issues);
+          if (issues.length === 0 && res.ok) return true;
+          lastIssues = issues;
+          lastDetail = issues.length ? formatComponentIssues(issues) : `status=${res.status}`;
         } catch (err) {
           lastDetail = errorMessage(err);
         }
@@ -234,7 +219,9 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
       },
       { attempts: componentsRetryAttempts, intervalMs: componentsRetryDelayMs, sleep },
     );
-    return { ok: healthy === true, detail: lastDetail };
+    if (healthy === true) return { status: 'ok' };
+    const status: SmokeStatus = lastIssues?.length && componentSeverity(lastIssues) === 'warn' ? 'warn' : 'fail';
+    return { status, detail: lastDetail };
   });
 
   return results;
@@ -321,11 +308,17 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   });
 
   for (const r of results) {
-    if (r.ok) console.info(`✓ ${r.name}`);
-    else console.error(`::error::${r.name}${r.detail ? `: ${r.detail}` : ''}`);
+    const line = `${r.name}${r.detail ? `: ${r.detail}` : ''}`;
+    if (r.status === 'ok') console.info(`✓ ${r.name}`);
+    else if (r.status === 'warn') console.warn(`::warning::${line}`);
+    else console.error(`::error::${line}`);
   }
 
-  const failed = results.filter((r) => !r.ok);
+  // GitHub has no yellow job outcome: a warning is a green job carrying an annotation, so only failures throw.
+  const warned = results.filter((r) => r.status === 'warn');
+  if (warned.length > 0)
+    console.warn(`${warned.length} smoke check(s) warned (degraded components); deploy is not blocked`);
+  const failed = results.filter((r) => r.status === 'fail');
   if (failed.length > 0) throw new Error(`${failed.length} smoke check(s) failed`);
 }
 
