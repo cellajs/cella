@@ -31,27 +31,25 @@ export interface RlsPolicyContract {
 
 /**
  * The four policies every RLS table carries. The schema (`pgPolicy`) and the verify migration
- * derive from this list, so a policy that drifts from it fails the migration.
+ * derive from this object, so a policy that drifts from it fails the migration.
  */
-export const rlsPolicyContract = (name: string): RlsPolicyContract[] => [
-  { name: `${name}_select_policy`, command: 'r', expression: 'tenant' },
-  { name: `${name}_insert_policy`, command: 'a', expression: 'true' },
-  { name: `${name}_update_policy`, command: 'w', expression: 'true' },
-  { name: `${name}_delete_policy`, command: 'd', expression: 'true' },
-];
-
-const policyName = (name: string, command: RlsPolicyContract['command']): string => {
-  const entry = rlsPolicyContract(name).find((policy) => policy.command === command);
-  if (!entry) throw new Error(`rlsPolicyContract: no ${command} policy for ${name}`);
-  return entry.name;
-};
+export const rlsPolicyContract = (name: string) =>
+  ({
+    select: { name: `${name}_select_policy`, command: 'r', expression: 'tenant' },
+    insert: { name: `${name}_insert_policy`, command: 'a', expression: 'true' },
+    update: { name: `${name}_update_policy`, command: 'w', expression: 'true' },
+    delete: { name: `${name}_delete_policy`, command: 'd', expression: 'true' },
+  }) satisfies Record<string, RlsPolicyContract>;
 
 export const tenantSelectPolicy = (name: string, table: { tenantId: unknown }) =>
-  pgPolicy(policyName(name, 'r'), { for: 'select', using: tenantReadCondition(table) });
+  pgPolicy(rlsPolicyContract(name).select.name, { for: 'select', using: tenantReadCondition(table) });
 
 /** FORCE RLS requires explicit write policies; guards, FKs, and triggers enforce write isolation. */
-export const writeThroughPolicies = (name: string) => [
-  pgPolicy(policyName(name, 'a'), { for: 'insert', withCheck: sql`true` }),
-  pgPolicy(policyName(name, 'w'), { for: 'update', using: sql`true` }),
-  pgPolicy(policyName(name, 'd'), { for: 'delete', using: sql`true` }),
-];
+export const writeThroughPolicies = (name: string) => {
+  const { insert, update, delete: del } = rlsPolicyContract(name);
+  return [
+    pgPolicy(insert.name, { for: 'insert', withCheck: sql`true` }),
+    pgPolicy(update.name, { for: 'update', using: sql`true` }),
+    pgPolicy(del.name, { for: 'delete', using: sql`true` }),
+  ];
+};

@@ -14,7 +14,7 @@ import { partitionConfigs } from './10-partman.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { unloggedTables } from './10-unlogged.migration';
 
-const WRITE_PRIVILEGES = ['INSERT', 'UPDATE', 'DELETE'] as const;
+const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] as const;
 
 /**
  * Builds the final assertions for the combined side-effect migration, causing any missing
@@ -41,6 +41,7 @@ async function run(): Promise<SideEffectBlock> {
   ).length;
 
   const inPublic = (t: string) => `relname = '${t}' AND relnamespace = 'public'::regnamespace`;
+  const policyCount = Object.keys(rlsPolicyContract('x')).length;
 
   const triggerChecks = expectedTriggers
     .map(
@@ -87,7 +88,7 @@ async function run(): Promise<SideEffectBlock> {
   // mode, PUBLIC target and expression shape; a fifth policy or a drifted expression fails too.
   const policyChecks = rlsTables
     .flatMap((t) => {
-      const contract = rlsPolicyContract(t);
+      const contract = Object.values(rlsPolicyContract(t));
       const perPolicy = contract.map(({ name, command, expression }) => {
         const expressionCheck =
           expression === 'tenant'
@@ -105,25 +106,14 @@ async function run(): Promise<SideEffectBlock> {
     })
     .join('\n');
 
-  const crudGrantChecks = crudTables
-    .flatMap((t) =>
-      ['SELECT', ...WRITE_PRIVILEGES].map(
-        (priv) => `  IF NOT has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
-    missing := array_append(missing, 'grant:${t}:${priv}'); END IF;`,
-      ),
-    )
-    .join('\n');
-
-  const readOnlyGrantChecks = readOnlyTables
-    .flatMap((t) => [
-      `  IF NOT has_table_privilege('runtime_role', 'public.${t}', 'SELECT') THEN
-    missing := array_append(missing, 'grant:${t}:SELECT'); END IF;`,
-      ...WRITE_PRIVILEGES.map(
-        (priv) => `  IF has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
-    missing := array_append(missing, 'grant-excess:${t}:${priv}'); END IF;`,
-      ),
-    ])
-    .join('\n');
+  // CRUD tables hold every privilege; read-only tables hold SELECT and nothing else.
+  const grantCheck = (t: string, priv: string, expected: boolean) =>
+    `  IF ${expected ? 'NOT ' : ''}has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
+    missing := array_append(missing, '${expected ? 'grant' : 'grant-excess'}:${t}:${priv}'); END IF;`;
+  const grantChecks = [
+    ...crudTables.flatMap((t) => PRIVILEGES.map((priv) => grantCheck(t, priv, true))),
+    ...readOnlyTables.flatMap((t) => PRIVILEGES.map((priv) => grantCheck(t, priv, priv === 'SELECT'))),
+  ].join('\n');
 
   const unloggedChecks = unloggedTables
     .map(
@@ -163,13 +153,11 @@ ${ownerChecks}
 
 ${forceRlsChecks}
 
-  -- Policy contract (${rlsTables.length} tables x ${rlsPolicyContract('x').length} policies)
+  -- Policy contract (${rlsTables.length} tables x ${policyCount} policies)
 ${policyChecks}
 
   -- Grants per classification
-${crudGrantChecks}
-
-${readOnlyGrantChecks}
+${grantChecks}
 
   -- UNLOGGED
 ${unloggedChecks}
@@ -203,7 +191,7 @@ END $$;
     title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} FORCE-RLS tables, ${rlsTables.length * rlsPolicyContract('x').length} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} FORCE-RLS tables, ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
     ],
   };
 }

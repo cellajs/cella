@@ -1,6 +1,6 @@
 import { getTableName, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
 import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables } from '#/tables';
@@ -70,21 +70,11 @@ describe('Schema verification', () => {
     });
   });
 
-  // Migration-outcome checks: they inspect the schema the migration produced and never repair it.
+  // Migration-outcome checks: they inspect the schema the migration produced and never repair it
+  // (the global setup provisions the roles before migrating and refuses a degraded volume).
   describe('RLS runtime configuration', () => {
-    let rlsConfigured = false;
-
-    beforeAll(async () => {
-      const rows = getRows<{ exists: boolean }>(
-        await adminDb.execute(sql`SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') AS exists`),
-      );
-      rlsConfigured = rows[0]?.exists === true;
-      if (!rlsConfigured) throw new Error('runtime_role missing: the global setup provisions roles before migrating');
-    });
-
     describe('FORCE ROW LEVEL SECURITY', () => {
       it.each(rlsTableNames)('should have FORCE RLS enabled on %s', async (tableName) => {
-        if (!rlsConfigured) return;
         const rows = getRows<{ relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
             SELECT relforcerowsecurity
@@ -111,7 +101,6 @@ describe('Schema verification', () => {
 
     describe('Table ownership', () => {
       it.each(rlsTableNames)('should be owned by admin_role: %s', async (tableName) => {
-        if (!rlsConfigured) return;
         const rows = getRows<{ tableowner: string }>(
           await adminDb.execute(sql`
             SELECT tableowner
@@ -128,34 +117,6 @@ describe('Schema verification', () => {
   // ── RLS policies (schema-level, from Drizzle pgPolicy) ────────────────
 
   describe('RLS policies', () => {
-    it.each(rlsTableNames)('should have tenant select policy on %s', async (tableName) => {
-      const rows = getRows<{ polname: string }>(
-        await adminDb.execute(sql`
-          SELECT pol.polname
-          FROM pg_policy pol
-          JOIN pg_class c ON pol.polrelid = c.oid
-          WHERE c.relname = ${tableName}
-            AND pol.polname LIKE '%select_policy'
-        `),
-      );
-      expect(rows.length, `Missing select policy on ${tableName}`).toBeGreaterThanOrEqual(1);
-    });
-
-    it.each(rlsTableNames)('should have write-through policies on %s', async (tableName) => {
-      const rows = getRows<{ polname: string }>(
-        await adminDb.execute(sql`
-          SELECT pol.polname
-          FROM pg_policy pol
-          JOIN pg_class c ON pol.polrelid = c.oid
-          WHERE c.relname = ${tableName}
-            AND (pol.polname LIKE '%insert_policy'
-              OR pol.polname LIKE '%update_policy'
-              OR pol.polname LIKE '%delete_policy')
-        `),
-      );
-      expect(rows.length, `Missing write-through policies on ${tableName}`).toBeGreaterThanOrEqual(3);
-    });
-
     it.each(channelTables)('should NOT have RLS policies on %s', async (tableName) => {
       const rows = getRows<{ polname: string }>(
         await adminDb.execute(sql`
@@ -200,7 +161,7 @@ describe('Schema verification', () => {
           ORDER BY p.polname
         `),
       );
-      const contract = rlsPolicyContract(tableName);
+      const contract = Object.values(rlsPolicyContract(tableName));
       expect(rows.map((r) => r.polname).sort()).toEqual(contract.map((c) => c.name).sort());
       for (const policy of contract) {
         const row = rows.find((r) => r.polname === policy.name);
@@ -218,32 +179,28 @@ describe('Schema verification', () => {
 
   describe('Grants per classification', () => {
     const { fullCrudTables, readOnlyTables } = classifyRlsTables();
+    const privilegesOf = async (tableName: string) => {
+      const table = `public.${tableName}`;
+      const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
+        await adminDb.execute(sql`
+          SELECT has_table_privilege('runtime_role', ${table}, 'SELECT') AS s,
+                 has_table_privilege('runtime_role', ${table}, 'INSERT') AS i,
+                 has_table_privilege('runtime_role', ${table}, 'UPDATE') AS u,
+                 has_table_privilege('runtime_role', ${table}, 'DELETE') AS d
+        `),
+      );
+      return rows[0];
+    };
 
     it.each([...rlsTableNames, ...fullCrudTables])(
       'runtime_role has SELECT, INSERT, UPDATE, DELETE on %s',
-      async (tableName) => {
-        const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
-          await adminDb.execute(sql`
-          SELECT has_table_privilege('runtime_role', ${`public.${tableName}`}, 'SELECT') AS s,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'INSERT') AS i,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'UPDATE') AS u,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'DELETE') AS d
-        `),
-        );
-        expect(rows[0]).toEqual({ s: true, i: true, u: true, d: true });
+      async (t) => {
+        expect(await privilegesOf(t)).toEqual({ s: true, i: true, u: true, d: true });
       },
     );
 
-    it.each(readOnlyTables)('runtime_role has SELECT only on %s', async (tableName) => {
-      const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
-        await adminDb.execute(sql`
-          SELECT has_table_privilege('runtime_role', ${`public.${tableName}`}, 'SELECT') AS s,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'INSERT') AS i,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'UPDATE') AS u,
-                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'DELETE') AS d
-        `),
-      );
-      expect(rows[0]).toEqual({ s: true, i: false, u: false, d: false });
+    it.each(readOnlyTables)('runtime_role has SELECT only on %s', async (t) => {
+      expect(await privilegesOf(t)).toEqual({ s: true, i: false, u: false, d: false });
     });
   });
 

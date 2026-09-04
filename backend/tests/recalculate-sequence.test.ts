@@ -11,6 +11,8 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './secu
 import { createAppClient } from './test-client';
 import { mockFetchRequest, setTestConfig } from './test-utils';
 
+const seedDb = getSeedDb();
+
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
@@ -60,16 +62,14 @@ describe('recalculateCounters (sequence + frontier)', async () => {
             ancestor === 'organization' ? tenant.organization.id : (deeperAncestorIds[ancestor] ?? null),
           ]),
       );
-      await getSeedDb()
-        .insert(getEntityTable(type as ChannelEntityType))
-        .values({
-          id: deeperAncestorIds[type],
-          tenantId: tenant.tenantId,
-          ...ownAncestors,
-          name: `recalc ${type}`,
-          slug: `recalc-${type}-${deeperAncestorIds[type].slice(0, 8)}`,
-          createdBy: tenant.user.id,
-        } as never);
+      await seedDb.insert(getEntityTable(type as ChannelEntityType)).values({
+        id: deeperAncestorIds[type],
+        tenantId: tenant.tenantId,
+        ...ownAncestors,
+        name: `recalc ${type}`,
+        slug: `recalc-${type}-${deeperAncestorIds[type].slice(0, 8)}`,
+        createdBy: tenant.user.id,
+      } as never);
     }
 
     const base = (key: string, seq: number, extra: Record<string, unknown> = {}) =>
@@ -88,29 +88,27 @@ describe('recalculateCounters (sequence + frontier)', async () => {
         key,
       );
 
-    await getSeedDb()
-      .insert(attachmentsTable)
-      .values([
-        base('recalc:a1', 41) as never,
-        base('recalc:a2', 44) as never,
-        // Tombstone keeps its seq: counts exclude it, frontier includes it.
-        base('recalc:a3', 47, { deletedAt: '2026-07-10T00:00:00.000Z' }) as never,
-      ]);
+    await seedDb.insert(attachmentsTable).values([
+      base('recalc:a1', 41) as never,
+      base('recalc:a2', 44) as never,
+      // Tombstone keeps its seq: counts exclude it, frontier includes it.
+      base('recalc:a3', 47, { deletedAt: '2026-07-10T00:00:00.000Z' }) as never,
+    ]);
   });
 
   afterAll(async () => {
-    await getSeedDb().execute(sql`DELETE FROM attachments WHERE organization_id = ${tenant.organization.id}`);
-    await getSeedDb().execute(sql`DELETE FROM channel_counters WHERE channel_key = ${tenant.organization.id}`);
+    await seedDb.execute(sql`DELETE FROM attachments WHERE organization_id = ${tenant.organization.id}`);
+    await seedDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${tenant.organization.id}`);
     const home = homeChannelId();
     if (home !== tenant.organization.id) {
-      await getSeedDb().execute(sql`DELETE FROM channel_counters WHERE channel_key = ${home}`);
+      await seedDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${home}`);
     }
     await clearSecurityTestData();
   });
 
   it('rebuilds sequence, subtree and self-family counters from row state', async () => {
     // Recalculation is an admin path (seed and CDC recovery): it reads every RLS table without tenant context.
-    await recalculateCounters(getSeedDb());
+    await recalculateCounters(seedDb);
 
     const readCounts = async (channelKey: string) => {
       const [counterRow] = await db

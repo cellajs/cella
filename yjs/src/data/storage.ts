@@ -73,12 +73,6 @@ export interface StaleDocRow {
 /** Tenants swept concurrently by the startup sweep; bounds the startup query fan-out on large installs. */
 export const SWEEP_TENANT_CONCURRENCY = 4;
 
-/** Every tenant id. `tenants` sits outside RLS, so the runtime role lists it without context. */
-async function listTenantIds(): Promise<string[]> {
-  const rows = await db.select({ id: tenantsTable.id }).from(tenantsTable);
-  return rows.map((row) => row.id);
-}
-
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<StaleDocRow[]> {
   return withRlsTx(tenantId, '', async (tx) => {
     const rows = await tx
@@ -107,7 +101,8 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
  * number at a time; a contextless query on the fail-closed policy returns nothing.
  */
 export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
-  const tenantIds = await listTenantIds();
+  // `tenants` sits outside RLS, so the runtime role lists it without context.
+  const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
   const stale: StaleDocRow[] = [];
   for (let i = 0; i < tenantIds.length; i += SWEEP_TENANT_CONCURRENCY) {
     const batch = tenantIds.slice(i, i + SWEEP_TENANT_CONCURRENCY);

@@ -1251,7 +1251,6 @@ BEGIN
     missing := array_append(missing, 'grant:tenants:UPDATE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.tenants', 'DELETE') THEN
     missing := array_append(missing, 'grant:tenants:DELETE'); END IF;
-
   IF NOT has_table_privilege('runtime_role', 'public.system_roles', 'SELECT') THEN
     missing := array_append(missing, 'grant:system_roles:SELECT'); END IF;
   IF has_table_privilege('runtime_role', 'public.system_roles', 'INSERT') THEN

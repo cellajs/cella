@@ -196,28 +196,6 @@ async function checkRequiredTablesExist(): Promise<boolean> {
   return results.every(Boolean);
 }
 
-/**
- * Asserts the migration provisioned the RLS catalog (roles, ownership, FORCE RLS, grants); never
- * repairs it, since a repaired catalog would let these tests pass over a broken migration.
- */
-async function ensureRlsRoles() {
-  const rows = getRows<{ forced: boolean; owner: string; granted: boolean; bypass: boolean }>(
-    await adminDb.execute(sql`
-      SELECT relforcerowsecurity AS forced,
-             pg_get_userbyid(relowner) AS owner,
-             has_table_privilege('runtime_role', 'public.yjs_documents', 'SELECT') AS granted,
-             (SELECT rolbypassrls FROM pg_roles WHERE rolname = 'runtime_role') AS bypass
-      FROM pg_class WHERE relname = 'yjs_documents' AND relnamespace = 'public'::regnamespace
-    `),
-  );
-  const state = rows[0];
-  if (!state?.forced || state.owner !== 'admin_role' || !state.granted || state.bypass) {
-    throw new Error(
-      `RLS catalog not provisioned by the migration (${JSON.stringify(state)}); reset the test volume: pnpm docker:test:reset`,
-    );
-  }
-}
-
 /** Seed via adminDb (superuser) so RLS does not block the inserts. */
 async function setupTestData() {
   await adminDb.execute(sql`
@@ -451,7 +429,6 @@ const rlsSuiteReady = await (async () => {
       return;
     }
 
-    await ensureRlsRoles();
     rolesAvailable = await checkRolesExist();
 
     if (!rolesAvailable) {

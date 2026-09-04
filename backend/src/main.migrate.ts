@@ -2,17 +2,12 @@ import process from 'node:process';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
 import { getAdminDb, migrateConfig } from '#/db/db';
-import { env } from '#/env';
 import { timestamp } from '#/utils/console';
 import { createDbRoles } from '../scripts/db/create-db-roles';
 
-if (!env.DATABASE_ADMIN_URL) {
-  console.error(pc.red(`${timestamp()} [migrate] DATABASE_ADMIN_URL required for migrations`));
-  process.exit(1);
-}
-const migrationDb = getAdminDb('migrations');
-
 try {
+  const migrationDb = getAdminDb('migrations');
+
   console.info(`${timestamp()} [migrate] Ensuring DB roles...`);
   await createDbRoles();
 
