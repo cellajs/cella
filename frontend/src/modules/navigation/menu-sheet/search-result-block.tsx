@@ -1,5 +1,4 @@
 import { ChevronDownIcon, UserIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBase } from 'sdk';
 import { type ChannelEntityType, isChannel } from 'shared';
@@ -15,12 +14,20 @@ type SearchBlockProps = {
   entityType: ChannelEntityType | 'user';
   /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
+  /** Owned by the search dialog so it survives result reloads while typing. */
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 };
 
-export function SearchResultBlock({ results, entityType, hideSeparator = false }: SearchBlockProps) {
+export function SearchResultBlock({
+  results,
+  entityType,
+  hideSeparator = false,
+  collapsed,
+  onToggleCollapsed,
+}: SearchBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);
-  const [collapsed, setCollapsed] = useState(false);
 
   if (!results.length) return null;
 
@@ -31,7 +38,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false }
         <button
           type="button"
           className="sticky top-0 z-10 -ml-1 flex w-[calc(100%+0.5rem)] items-center bg-popover/70 px-3 py-2 font-medium text-muted-foreground text-sm backdrop-blur-sm hover:text-foreground"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={onToggleCollapsed}
         >
           {t(entityType)}
           {collapsed && <span className="ml-3 opacity-70">{results.length}</span>}

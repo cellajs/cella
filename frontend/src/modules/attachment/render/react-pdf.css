@@ -3,3 +3,10 @@
   margin-top: 100px;
   opacity: 0.5;
 }
+
+/* The page wrapper is a block with a white background; hug the canvas and center it so a page narrower than
+   the container never shows as a full-width white slab. */
+.react-pdf__Page {
+  width: fit-content;
+  margin-inline: auto;
+}

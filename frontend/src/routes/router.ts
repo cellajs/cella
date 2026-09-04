@@ -63,12 +63,6 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   const toLeafId = pendingMatches.at(-1)?.routeId;
   const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
-
-  useNavigationStore.getState().setNavLoading(true);
-});
-
-router.subscribe('onLoad', () => {
-  useNavigationStore.getState().setNavLoading(false);
 });
 
 // Type registration must live in the file that creates the router.

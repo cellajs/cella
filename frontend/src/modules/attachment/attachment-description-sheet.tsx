@@ -59,7 +59,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
 /** Opens the description editor in a sheet; the same entry point for the table column and the dialog caption. */
 export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRef: TriggerRef) {
   useSheeter.getState().create(
-    <div className="container w-full">
+    <div className="container w-full sm:pl-8">
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,
     {

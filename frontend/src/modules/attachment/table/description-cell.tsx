@@ -1,5 +1,4 @@
 import type { MouseEvent } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { textFromDocument } from 'shared/blocknote';
 import { openAttachmentDescriptionSheet } from '~/modules/attachment/attachment-description-sheet';
@@ -19,12 +18,11 @@ interface DescriptionCellProps {
   editable: boolean;
 }
 
-/** Plain text so it can be selected and copied in place; null when empty and read-only, for the column placeholder. */
+/** Plain text so it can be selected and copied in place; null when empty, so the column placeholder shows. */
 export function DescriptionCell({ row, editable }: DescriptionCellProps) {
-  const { t } = useTranslation();
   const text = textFromDocument(row.description);
 
-  if (!text && !editable) return null;
+  if (!text) return null;
 
   const onDoubleClick = editable
     ? undefined
@@ -32,12 +30,8 @@ export function DescriptionCell({ row, editable }: DescriptionCellProps) {
         openDescriptionSheetFromCell(row.id, event.currentTarget.closest<HTMLElement>('[role="gridcell"]'));
 
   return (
-    <span className="flex h-full w-full items-center" onDoubleClick={onDoubleClick}>
-      {text ? (
-        <span className="truncate">{text}</span>
-      ) : (
-        <span className="text-muted">{t('c:add_resource', { resource: t('c:description').toLowerCase() })}</span>
-      )}
+    <span className="flex h-full w-full items-center font-light" onDoubleClick={onDoubleClick}>
+      <span className="truncate">{text}</span>
     </span>
   );
 }
