@@ -6,7 +6,7 @@ const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}
 /** Minimal shape needed to run raw SQL, satisfied by both `baseDb` and the admin connection. */
 type ExecutableDb = { execute: (query: ReturnType<typeof sql>) => Promise<unknown> };
 
-/** Insert every intermediate context row the plan declares (root context is assumed to exist). */
+/** Insert every intermediate context row the plan declares (the organization row is assumed to exist). */
 export async function seedEntityHierarchy(
   db: ExecutableDb,
   plan: TestEntityHierarchyPlan,

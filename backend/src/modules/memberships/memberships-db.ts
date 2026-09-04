@@ -1,10 +1,10 @@
-import { boolean, doublePrecision, foreignKey, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { membershipChannelColumns, membershipChannelIndexes } from '#/db/utils/channel-relation-columns';
 import { tenantIdLength } from '#/db/utils/constraints';
+import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -12,7 +12,7 @@ const roleEnum = roles.all;
 
 /**
  * Active memberships of users in organizations and other channel entities. Each belongs to exactly one tenant (RLS
- * isolation boundary). Sub-root channel columns and their indexes come from the hierarchy, shared with inactive-memberships.
+ * isolation boundary). Sub-organization channel columns and their indexes come from the hierarchy, shared with inactive-memberships.
  */
 export const membershipsTable = snakeCase.table(
   'memberships',
@@ -27,7 +27,7 @@ export const membershipsTable = snakeCase.table(
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType)),
+    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     createdBy: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'set null' }),
@@ -50,10 +50,7 @@ export const membershipsTable = snakeCase.table(
     index('memberships_org_user_tenant_idx').on(table.organizationId, table.userId, table.tenantId),
     // One membership per user per entity
     unique('memberships_unique_channel').on(table.tenantId, table.userId, table.channelId),
-    foreignKey({
-      columns: [table.tenantId, table.organizationId],
-      foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
-    }).onDelete('cascade'),
+    organizationForeignKey(table),
   ],
 );
 

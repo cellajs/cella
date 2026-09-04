@@ -28,7 +28,7 @@ type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdCol
 const bodyChannelIdColumns = (): BodyChannelIdColumns => {
   const deepest = hierarchy
     .getOrderedAncestors('attachment')
-    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
   if (!deepest) return {} as BodyChannelIdColumns;
   const key = appConfig.entityIdColumnKeys[deepest];
   return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
@@ -46,7 +46,7 @@ describe('Permission enforcement via HTTP', async () => {
     tenant = await createTestTenant(call, 'perm-test');
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
-      rootChannelId: tenant.organization.id,
+      organizationId: tenant.organization.id,
       makeChannelId: () => generateId(),
     });
     await seedEntityHierarchy(db, plan, {
@@ -59,7 +59,7 @@ describe('Permission enforcement via HTTP', async () => {
       tenant.tenantId,
       tenant.organization.id,
       'perm-member',
-      hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+      hierarchy.getLeastPrivilegedRole('organization'),
     );
   });
 
@@ -129,19 +129,18 @@ describe('Permission enforcement via HTTP', async () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
 
     // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0
-    // rejects. The member only holds the root role, so the cell must also reach the row's home:
-    // the row is org-homed, or the root role is elevated (its grants cover the whole subtree).
-    const { rootChannelType } = hierarchy;
-    const memberRole = hierarchy.getLeastPrivilegedRole(rootChannelType);
+    // rejects. The member only holds the organization role, so the cell must also reach the row's home:
+    // the row is org-homed, or the organization role is elevated (its grants cover the whole subtree).
+    const memberRole = hierarchy.getLeastPrivilegedRole('organization');
     const memberAttachmentRead = getPolicyPermissions(
       getEntityPolicies('attachment', policyMatrix),
-      rootChannelType,
+      'organization',
       memberRole,
     )?.read;
     // Evaluated inside the test: the seeded plan only exists after the outer beforeAll has run.
     const memberSignsUnowned = () => {
       const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
-      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`${rootChannelType}:${memberRole}`);
+      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`organization:${memberRole}`);
       return memberAttachmentRead === 1 && rootGrantReachesRow;
     };
 

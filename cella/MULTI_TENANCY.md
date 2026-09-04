@@ -11,8 +11,10 @@ mistakes but is not the main access-control layer.
 
 ## Security contract
 
-Authorization must stay correct with RLS absent or misconfigured: API tests run as a role that
-bypasses RLS and must give the same allow or deny results as production.
+Authorization must stay correct with RLS absent or misconfigured. The API test suite runs as a
+superuser, so RLS is bypassed there; every entity lookup compares the row's tenant and organization
+ids with the request scope, so allow and deny results do not depend on RLS. No test yet runs the same
+suite under the RLS-subject runtime role to prove the two agree.
 
 | Situation | Expected result |
 | --- | --- |
@@ -74,10 +76,10 @@ the shared engine, and a contextless insert passes RLS.
 | Concern | Mechanism | Limit |
 | --- | --- | --- |
 | Actor may perform the action | Guards and shared permission engine | Must be called by every mutation path |
-| Initial tenant and root channel | Server derives identity from guarded context | A contextless SQL insert is outside this protection |
+| Initial tenant and organization | Server derives identity from guarded context | A contextless SQL insert is outside this protection |
 | Update or delete targets | Operation query uses guarded IDs and channel scope | RLS write policies add no predicates. SELECT-policy hiding of validation reads or `RETURNING` is not a write-security contract |
-| Tenant and root channel agree | Composite foreign key such as `(tenant_id, organization_id)` | Does not authorize the actor |
-| Product identity cannot move | Shared product trigger makes `tenant_id` and root channel immutable after insert | Does not validate the insert. Deeper ancestor IDs are not covered. |
+| Tenant and organization agree | Composite `(tenant_id, organization_id)` foreign key (`organizationForeignKey`) on every organization-bound table; tenant and organization are 1:1 | Does not authorize the actor |
+| Product identity cannot move | Shared product trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor IDs are not covered. |
 | Membership identity, activity log | Immutability triggers on membership identity columns. Activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits. `admin_role` can delete activities. |
 
 ## Database roles

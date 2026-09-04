@@ -115,7 +115,7 @@ const makeRlsProductFixture = (entityType: ProductEntityType): RlsProductFixture
   const rowName = `RLS ${entityType}`;
   const plan = buildTestEntityHierarchyPlan({
     entityType,
-    rootChannelId: TEST_ORG_A,
+    organizationId: TEST_ORG_A,
     makeChannelId: () => randomUUID(),
   });
   // Deepest seeded ancestor is where unseen counts roll up (the org itself when org-homed).

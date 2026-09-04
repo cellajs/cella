@@ -87,7 +87,7 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<
       senderName: 'John',
       senderThumbnailUrl: null,
       entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+      role: hierarchy.getLeastPrivilegedRole('organization'),
     },
     recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
   },

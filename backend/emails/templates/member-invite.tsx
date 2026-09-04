@@ -82,7 +82,7 @@ export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberI
       senderName: 'John',
       senderThumbnailUrl: null,
       entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+      role: hierarchy.getLeastPrivilegedRole('organization'),
     },
     recipient: { name: 'Emily', memberInviteLink: 'https://example.com/invite' },
   },

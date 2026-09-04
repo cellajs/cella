@@ -39,11 +39,11 @@ interface ChannelEntry<R extends string = string> {
   /** Non-ancestor channel entities referenced as optional denormalized columns. */
   relatedChannels?: readonly string[];
   /**
-   * Explicit root-membership escalation: the root-channel role each of this channel's roles
-   * materializes as when a membership here auto-creates the root context row. When declared, the
-   * map must cover every role of the channel; there is no implicit fallback.
+   * Explicit organization-membership escalation: the organization role each of this channel's
+   * roles materializes as when a membership here auto-creates the organization row. When declared,
+   * the map must cover every role of the channel; there is no implicit fallback.
    */
-  rootRoles?: Readonly<Record<string, string>>;
+  organizationRoles?: Readonly<Record<string, string>>;
   /**
    * Roles of THIS channel whose product grants cover the whole subtree below it, not only rows
    * homed at this level. Undeclared roles are home-scoped. Compiled into `elevatedGrants`.
@@ -64,7 +64,7 @@ export interface ChannelView<R extends string = string> {
   readonly parent: string | null;
   readonly roles: readonly R[];
   readonly relatedChannels?: readonly string[];
-  readonly rootRoles?: Readonly<Record<string, string>>;
+  readonly organizationRoles?: Readonly<Record<string, string>>;
   readonly elevated?: readonly string[];
 }
 
@@ -114,9 +114,47 @@ class EntityHierarchyBuilder<
     );
   }
 
+  /**
+   * The tenant-bound spine: required exactly once, before any other channel, and the only
+   * parentless entity. Every channel and product below it carries `organizationId`.
+   */
+  organization<const RO extends readonly RoleFromRegistry<TRoles>[]>(options: {
+    roles: RO;
+    /** Roles whose product grants cover the whole organization; see {@link channel}. */
+    elevated?: readonly RO[number][];
+  }): EntityHierarchyBuilder<
+    TRoles,
+    TChannels | 'organization',
+    TProducts,
+    TParentMap & { organization: null },
+    TRelatedMap,
+    TNullableMap
+  > {
+    this.validateName('organization');
+    this.validateRoles('organization', options.roles);
+    this.validateElevated('organization', options.roles, options.elevated);
+    return new EntityHierarchyBuilder<
+      TRoles,
+      TChannels | 'organization',
+      TProducts,
+      TParentMap & { organization: null },
+      TRelatedMap,
+      TNullableMap
+    >(
+      this.roles,
+      this.withEntity('organization', {
+        kind: 'channel',
+        parent: null,
+        roles: options.roles,
+        elevated: options.elevated,
+      }),
+    );
+  }
+
+  /** A channel below the organization (`parent` is the organization or a channel under it). */
   channel<
     N extends string,
-    P extends TChannels | null,
+    P extends TChannels,
     const RO extends readonly RoleFromRegistry<TRoles>[],
     const RC extends readonly TChannels[] = [],
   >(
@@ -126,12 +164,12 @@ class EntityHierarchyBuilder<
       roles: RO;
       relatedChannels?: RC;
       /**
-       * Root-channel role each of this channel's roles escalates to when a membership here
-       * auto-creates the root context row. Complete when declared (every role must be mapped,
-       * no implicit fallback), and only valid on non-root channels. A channel without the map
-       * cannot auto-create root memberships (insertMemberships throws).
+       * Organization role each of this channel's roles escalates to when a membership here
+       * auto-creates the organization membership row. Complete when declared (every role must be
+       * mapped, no implicit fallback). A channel without the map cannot auto-create organization
+       * memberships (insertMemberships throws).
        */
-      rootRoles?: Record<RO[number], RoleFromRegistry<TRoles>>;
+      organizationRoles?: Record<RO[number], RoleFromRegistry<TRoles>>;
       /**
        * Roles of this channel whose product grants cover its whole subtree; undeclared roles
        * grant only rows homed at this level. Read by the engine, the collection-scope SQL
@@ -148,11 +186,14 @@ class EntityHierarchyBuilder<
     TRelatedMap & { [K in N]: RC[number] },
     TNullableMap
   > {
+    if (name === 'organization') {
+      throw new Error('EntityHierarchy: "organization" is the spine, declare it with organization()');
+    }
     this.validateName(name);
     this.validateParent(name, options.parent, 'channel');
     this.validateRoles(name, options.roles);
     this.validateRelatedChannels(name, options.parent, options.relatedChannels);
-    this.validateRootRoles(name, options.parent, options.roles, options.rootRoles);
+    this.validateOrganizationRoles(name, options.roles, options.organizationRoles);
     this.validateElevated(name, options.roles, options.elevated);
     return new EntityHierarchyBuilder<
       TRoles,
@@ -168,7 +209,7 @@ class EntityHierarchyBuilder<
         parent: options.parent,
         roles: options.roles,
         relatedChannels: options.relatedChannels,
-        rootRoles: options.rootRoles as Readonly<Record<string, string>> | undefined,
+        organizationRoles: options.organizationRoles as Readonly<Record<string, string>> | undefined,
         elevated: options.elevated,
       }),
     );
@@ -186,46 +227,37 @@ class EntityHierarchyBuilder<
     }
   }
 
-  /** Keys must be this channel's own roles; values must be roles of the chain's root channel. */
-  private validateRootRoles(
+  /** Keys must be this channel's own roles; values must be organization roles. */
+  private validateOrganizationRoles(
     name: string,
-    parent: string | null,
     roles: readonly string[],
-    rootRoles?: Partial<Record<string, string>>,
+    organizationRoles?: Partial<Record<string, string>>,
   ): void {
-    if (!rootRoles) return;
-    if (parent === null) {
-      throw new Error(`EntityHierarchy: root channel "${name}" cannot declare rootRoles (it has no root above it)`);
-    }
+    if (!organizationRoles) return;
 
-    // Walk to the chain's root; parents are declared before children, so it already exists.
-    let rootName = parent;
-    let entry = this.entities.get(rootName);
-    while (entry && entry.kind === 'channel' && entry.parent !== null) {
-      rootName = entry.parent;
-      entry = this.entities.get(rootName);
-    }
-    const rootRolesVocabulary = entry?.kind === 'channel' ? entry.roles : [];
+    // organization() runs before any channel(), so the vocabulary is known here.
+    const organization = this.entities.get('organization');
+    const organizationVocabulary = organization?.kind === 'channel' ? organization.roles : [];
 
-    for (const [role, rootRole] of Object.entries(rootRoles)) {
+    for (const [role, organizationRole] of Object.entries(organizationRoles)) {
       if (!roles.includes(role)) {
         throw new Error(
-          `EntityHierarchy: channel "${name}" maps unknown role "${role}" in rootRoles. Own roles: ${roles.join(', ')}`,
+          `EntityHierarchy: channel "${name}" maps unknown role "${role}" in organizationRoles. Own roles: ${roles.join(', ')}`,
         );
       }
-      if (rootRole !== undefined && !rootRolesVocabulary.includes(rootRole)) {
+      if (organizationRole !== undefined && !organizationVocabulary.includes(organizationRole)) {
         throw new Error(
-          `EntityHierarchy: channel "${name}" maps role "${role}" to "${rootRole}", which is not a role of ` +
-            `root channel "${rootName}". Root roles: ${rootRolesVocabulary.join(', ')}`,
+          `EntityHierarchy: channel "${name}" maps role "${role}" to "${organizationRole}", which is not an ` +
+            `organization role. Organization roles: ${organizationVocabulary.join(', ')}`,
         );
       }
     }
 
     // Complete when declared: a partial map is a config error, caught here at build time.
-    const unmapped = roles.filter((role) => rootRoles[role] === undefined);
+    const unmapped = roles.filter((role) => organizationRoles[role] === undefined);
     if (unmapped.length > 0) {
       throw new Error(
-        `EntityHierarchy: channel "${name}" declares rootRoles but leaves ${unmapped.join(', ')} unmapped. ` +
+        `EntityHierarchy: channel "${name}" declares organizationRoles but leaves ${unmapped.join(', ')} unmapped. ` +
           'The map must cover every role — there is no implicit fallback.',
       );
     }
@@ -291,13 +323,10 @@ class EntityHierarchyBuilder<
 
   private validateParent(name: string, parent: string | null, kind: 'channel' | 'product'): void {
     if (parent === null) {
-      if (kind === 'product') {
-        throw new Error(
-          `EntityHierarchy: product "${name}" has no parent. ` +
-            'Every product needs a channel parent (its home) to derive permissions from.',
-        );
-      }
-      return;
+      throw new Error(
+        `EntityHierarchy: ${kind} "${name}" has no parent. ` +
+          'Only the organization is parentless; every other entity nests under it.',
+      );
     }
 
     const parentEntry = this.entities.get(parent);
@@ -376,8 +405,8 @@ class EntityHierarchyBuilder<
   }
 
   /**
-   * Each must be part of the strict ancestor chain, and the root must stay non-null: counters,
-   * seq scoping and permissions all need at least the root channel id.
+   * Each must be part of the strict ancestor chain, and the organization must stay non-null:
+   * counters, seq scoping and permissions all need at least the organization id.
    */
   private validateNullableAncestors(name: string, parent: string, nullableAncestors?: readonly string[]): void {
     if (!nullableAncestors?.length) return;
@@ -389,7 +418,6 @@ class EntityHierarchyBuilder<
       const entry = this.entities.get(current);
       current = entry && entry.kind !== 'user' ? entry.parent : null;
     }
-    const root = chain[chain.length - 1];
 
     const seen = new Set<string>();
     for (const ancestor of nullableAncestors) {
@@ -404,9 +432,9 @@ class EntityHierarchyBuilder<
             `Ancestor chain: ${chain.join(' > ')}.`,
         );
       }
-      if (ancestor === root) {
+      if (ancestor === 'organization') {
         throw new Error(
-          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is the chain root and must stay non-null.`,
+          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is the organization and must stay non-null.`,
         );
       }
     }
@@ -421,7 +449,7 @@ export class EntityHierarchy<
   TRelatedMap extends Record<string, string> = Record<string, string>,
   TNullableMap extends Record<string, string> = Record<string, string>,
 > {
-  /** Phantom carriers, type-only with no runtime value: strict parent (null = root), related
+  /** Phantom carriers, type-only with no runtime value: strict parent (null = organization), related
    * (non-ancestor) channel union, and per-product nullable-ancestor union. */
   declare readonly _parentMap: TParentMap;
   declare readonly _relatedMap: TRelatedMap;
@@ -434,8 +462,6 @@ export class EntityHierarchy<
   private readonly descendantsCache = new Map<string, readonly (TChannels | TProducts)[]>();
 
   readonly channelTypes: readonly TChannels[];
-  /** The parentless channel (`organization` in cella): the tenant boundary every other channel nests under. */
-  readonly rootChannelType: TChannels;
   readonly productTypes: readonly TProducts[];
   readonly allTypes: readonly ('user' | TChannels | TProducts)[];
   readonly relatableChannelTypes: readonly TChannels[];
@@ -457,14 +483,12 @@ export class EntityHierarchy<
     const all: ('user' | TChannels | TProducts)[] = [];
     const relatableChannels = new Set<TChannels>();
     const elevatedGrants = new Set<string>();
-    let rootChannelType: TChannels | undefined;
 
     for (const [name, entry] of entities) {
       all.push(name as 'user' | TChannels | TProducts);
 
       if (entry.kind === 'channel') {
         channels.push(name as TChannels);
-        if (entry.parent === null) rootChannelType ??= name as TChannels;
         for (const role of entry.elevated ?? []) elevatedGrants.add(`${name}:${role}`);
       } else if (entry.kind === 'product') {
         products.push(name as TProducts);
@@ -474,8 +498,6 @@ export class EntityHierarchy<
     this.elevatedGrants = Object.freeze(elevatedGrants);
 
     this.channelTypes = Object.freeze(channels);
-    if (!rootChannelType) throw new Error('Entity hierarchy declares no root channel (a channel with parent: null)');
-    this.rootChannelType = rootChannelType;
     this.productTypes = Object.freeze(products);
     this.allTypes = Object.freeze(all);
     this.relatableChannelTypes = Object.freeze([...relatableChannels]);
@@ -524,23 +546,23 @@ export class EntityHierarchy<
   };
 
   /**
-   * Explicit root-channel role a membership role escalates to when it auto-creates the root
-   * context row; undefined when the channel declares no mapping for it (insertMemberships treats
-   * that as a programming error and throws).
+   * Explicit organization role a membership role escalates to when it auto-creates the
+   * organization membership row; undefined when the channel declares no mapping for it
+   * (insertMemberships treats that as a programming error and throws).
    */
-  readonly getRootRole = (channelType: string, role: string): RoleFromRegistry<TRoles> | undefined => {
+  readonly getOrganizationRole = (channelType: string, role: string): RoleFromRegistry<TRoles> | undefined => {
     const entry = this.entities.get(channelType);
     if (entry?.kind !== 'channel') return undefined;
-    return entry.rootRoles?.[role] as RoleFromRegistry<TRoles> | undefined;
+    return entry.organizationRoles?.[role] as RoleFromRegistry<TRoles> | undefined;
   };
 
-  /** Always a channel; null for root entities and for user. */
+  /** Always a channel; null for the organization and for user. */
   readonly getParent = (entityType: string): TChannels | null => {
     const entry = this.entities.get(entityType);
     return entry && entry.kind !== 'user' ? (entry.parent as TChannels | null) : null;
   };
 
-  /** Most-specific to root: task gives ['project', 'organization']. */
+  /** Most-specific to organization: task gives ['project', 'organization']. */
   readonly getOrderedAncestors = (entityType: string): readonly TChannels[] => {
     const cached = this.ancestorCache.get(entityType);
     if (cached) return cached as readonly TChannels[];

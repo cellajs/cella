@@ -22,12 +22,12 @@ const attachmentC = randomUUID(); // tenantB / orgC
 
 const hierarchyA = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootChannelId: orgA,
+  organizationId: orgA,
   makeChannelId: () => randomUUID(),
 });
 const hierarchyC = buildTestEntityHierarchyPlan({
   entityType: 'attachment',
-  rootChannelId: orgC,
+  organizationId: orgC,
   makeChannelId: () => randomUUID(),
 });
 

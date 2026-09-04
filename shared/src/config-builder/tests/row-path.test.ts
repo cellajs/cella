@@ -25,7 +25,7 @@ describe('row-path (materialized id-path rule)', () => {
       expect(h.computeProductPath('item', { id: 'i1', organizationId: 'o1' })).toBe('o1');
     });
 
-    it('is null without the root ancestor id', () => {
+    it('is null without the organization id', () => {
       expect(h.computeProductPath('item', { id: 'i1', projectId: 'p1' })).toBeNull();
     });
 
@@ -44,7 +44,7 @@ describe('row-path (materialized id-path rule)', () => {
   });
 
   describe('computeChannelPath', () => {
-    it('root channel path is its own id', () => {
+    it('organization path is its own id', () => {
       expect(h.computeChannelPath('organization', { id: 'o1' })).toBe('o1');
     });
 
@@ -61,14 +61,14 @@ describe('row-path (materialized id-path rule)', () => {
       ).toBe('o1/p1');
     });
 
-    it('is null without the root ancestor or own id', () => {
+    it('is null without the organization or own id', () => {
       expect(h.computeChannelPath('course', { id: 'c1' })).toBeNull();
       expect(h.computeChannelPath('course', { organizationId: 'o1' })).toBeNull();
     });
   });
 
   describe('computeAncestorPath', () => {
-    it('is null for the root channel (no ancestors)', () => {
+    it('is null for the organization (no ancestors)', () => {
       expect(h.computeAncestorPath('organization', { id: 'o1' })).toBeNull();
     });
   });

@@ -135,7 +135,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     `,
     );
 
-    // Every non-root ancestor level with a FK column, matching CDC's frontierNodeKeys.
+    // Every sub-organization ancestor level with a FK column, matching CDC's frontierNodeKeys.
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
       if (ancestor === 'organization') continue;
       const col = entityIdColumnName(ancestor);

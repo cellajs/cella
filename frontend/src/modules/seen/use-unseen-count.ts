@@ -8,14 +8,14 @@ import { unseenCountsQueryOptions } from '~/modules/seen/query';
 const getMembershipChannelId = (m: MembershipBase) => m.channelId;
 
 /**
- * True when a non-root ancestor channel of this membership (e.g. the channel above a sub-channel) is in
- * `archivedChannelIds`. The root (org) membership row is an auto-created shell whose archived flag
+ * True when a sub-organization ancestor channel of this membership (e.g. the channel above a sub-channel) is in
+ * `archivedChannelIds`. The organization membership row is an auto-created shell whose archived flag
  * only tucks the org row into its own section's archived toggle; it must not hide subtree badges,
  * or the total would diverge from the sum of the section toggles.
  */
 const hasArchivedAncestor = (m: MembershipBase, archivedChannelIds: Set<string>) => {
   for (const ancestor of hierarchy.getOrderedAncestors(m.channelType)) {
-    if (hierarchy.getParent(ancestor) === null) continue;
+    if ((ancestor as string) === 'organization') continue;
     const idKey = appConfig.entityIdColumnKeys[ancestor as keyof typeof appConfig.entityIdColumnKeys];
     const ancestorId = (m as unknown as Record<string, string | null | undefined>)[idKey];
     if (ancestorId && archivedChannelIds.has(ancestorId)) return true;

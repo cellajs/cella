@@ -37,7 +37,7 @@ export function mockSeedNotification(
   const home =
     deepest && isChannel(deepest.type)
       ? { id: deepest.id, type: deepest.type }
-      : { id: subject.organizationId, type: hierarchy.rootChannelType };
+      : { id: subject.organizationId, type: 'organization' as const };
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,

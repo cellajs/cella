@@ -121,7 +121,7 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates[0].params).toEqual(expect.arrayContaining(['i1', 'i2']));
   });
 
-  it('groups candidates per root channel', async () => {
+  it('groups candidates per organization', async () => {
     await gc('task', [
       hostEvent({ ...base, items: [] }, { ...base, items: ['i1'] }),
       hostEvent(
@@ -142,7 +142,7 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates).toHaveLength(0);
   });
 
-  it('skips host rows missing the root channel id', async () => {
+  it('skips host rows missing the organization id', async () => {
     await gc('task', [hostEvent({ ...base, organizationId: null, items: [] }, { ...base, items: ['i1'] })]);
 
     expect(updates).toHaveLength(0);

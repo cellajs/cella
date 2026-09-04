@@ -32,23 +32,15 @@ export interface TestEntityHierarchyPlan {
 
 export interface BuildTestEntityHierarchyPlanOptions {
   entityType: EntityType;
-  rootChannelId: string;
-  rootChannelType?: ChannelEntityType;
+  organizationId: string;
   makeChannelId?: (channelType: ChannelEntityType, index: number) => string;
 }
 
-const rootChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) === null);
-
 export const buildTestEntityHierarchyPlan = ({
   entityType,
-  rootChannelId,
-  rootChannelType = rootChannelTypes[0],
+  organizationId,
   makeChannelId,
 }: BuildTestEntityHierarchyPlanOptions): TestEntityHierarchyPlan => {
-  if (!rootChannelType) {
-    throw new Error('Entity hierarchy has no root channel type');
-  }
-
   const ancestors = hierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
   const channelIdsByType: Partial<Record<ChannelEntityType, string>> = {};
   const setChannelId = (channelType: ChannelEntityType, id: string) => {
@@ -58,8 +50,8 @@ export const buildTestEntityHierarchyPlan = ({
   let generatedIndex = 0;
 
   for (const channelType of [...ancestors].reverse()) {
-    if (channelType === rootChannelType) {
-      setChannelId(channelType, rootChannelId);
+    if (channelType === 'organization') {
+      setChannelId(channelType, organizationId);
       continue;
     }
 
@@ -73,14 +65,14 @@ export const buildTestEntityHierarchyPlan = ({
       throw new Error(`Cannot seed ${channelType}: missing parent channel id for ${parentChannelType}`);
     }
     if (!makeChannelId) {
-      throw new Error(`Cannot seed ${channelType}: makeChannelId is required for non-root ancestors`);
+      throw new Error(`Cannot seed ${channelType}: makeChannelId is required for sub-organization ancestors`);
     }
 
     const id = makeChannelId(channelType, generatedIndex++);
     setChannelId(channelType, id);
 
     const parentIdKey = appConfig.entityIdColumnKeys[parentChannelType];
-    // Rows are seeded root-first, so every ancestor id is known. Deep hierarchies keep all
+    // Rows are seeded organization-first, so every ancestor id is known. Deep hierarchies keep all
     // ancestor id columns NOT NULL, so filling only the immediate parent breaks grandchildren.
     const ancestorColumns: TestChannelColumn[] = [];
     for (let cursor: ChannelEntityType | null = parentChannelType; cursor; ) {

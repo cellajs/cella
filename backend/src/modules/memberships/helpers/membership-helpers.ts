@@ -9,9 +9,6 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
 
-const rootChannelType = hierarchy.rootChannelType;
-const rootIdColumnKey = appConfig.entityIdColumnKeys[rootChannelType];
-
 /**
  * Role for an auto-created associated membership (menuStructure): the invited role carries over
  * when `carryRole` is set and valid, else the target vocabulary's least-privileged (last) role.
@@ -27,19 +24,19 @@ export const resolveAssociatedMembershipRole = (
 };
 
 /**
- * Role for the auto-created root context membership, from the source channel's `rootRoles` map.
- * No implicit fallback: a channel that auto-creates root rows must declare the complete map
- * (config-time validation makes a miss here a programming error, not a data-dependent one).
+ * Role for the auto-created organization membership, from the source channel's `organizationRoles`
+ * map. No implicit fallback: a channel that auto-creates organization rows must declare the complete
+ * map (config-time validation makes a miss here a programming error, not a data-dependent one).
  */
-export const resolveRootMembershipRole = (
+export const resolveOrganizationMembershipRole = (
   sourceChannelType: ChannelEntityType,
   invitedRole: MembershipModel['role'],
 ): MembershipModel['role'] => {
-  const explicit = hierarchy.getRootRole(sourceChannelType, invitedRole) as MembershipModel['role'] | undefined;
+  const explicit = hierarchy.getOrganizationRole(sourceChannelType, invitedRole) as MembershipModel['role'] | undefined;
   if (explicit === undefined) {
     throw new Error(
-      `insertMemberships: channel "${sourceChannelType}" declares no rootRoles mapping for role "${invitedRole}"; ` +
-        'explicit escalation is required to auto-create the root membership row.',
+      `insertMemberships: channel "${sourceChannelType}" declares no organizationRoles mapping for role "${invitedRole}"; ` +
+        'explicit escalation is required to auto-create the organization membership row.',
     );
   }
   return explicit;
@@ -81,7 +78,7 @@ export const getMembershipEntityIds = <T extends ChannelEntityType>(entity: Enti
 
 /**
  * Batch-inserts direct memberships for existing users; `items` must already be deduped, normalized and valid.
- * Root and associated parent memberships are upserted (unique constraint plus onConflictDoNothing), per-user `displayOrder`
+ * Organization and associated parent memberships are upserted (unique constraint plus onConflictDoNothing), per-user `displayOrder`
  * comes from one grouped query spaced by `orderGap`, and the inserted target memberships are returned.
  */
 export const insertMemberships = async <T extends BaseEntityModel>(
@@ -129,18 +126,18 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     return { targetEntitiesIdColumnKeys, baseMembership, entity, extraFields: info.extraFields };
   });
 
-  // Root context membership rows for non-root entities; unique constraint plus onConflictDoNothing makes this insert-if-missing.
-  const rootRows: InsertMembershipModel[] = prepared
-    .filter(({ entity }) => entity.entityType !== rootChannelType)
+  // Organization membership rows for sub-organization entities; unique constraint plus onConflictDoNothing makes this insert-if-missing.
+  const organizationRows: InsertMembershipModel[] = prepared
+    .filter(({ entity }) => entity.entityType !== 'organization')
     .map(({ baseMembership, targetEntitiesIdColumnKeys, entity }) => {
       return {
         ...baseMembership,
         tenantId: entity.tenantId,
-        // Explicit escalation via the source channel rootRoles map; a missing map throws
-        role: resolveRootMembershipRole(entity.entityType as ChannelEntityType, baseMembership.role),
-        [rootIdColumnKey]: targetEntitiesIdColumnKeys[rootIdColumnKey],
-        channelType: rootChannelType,
-        channelId: targetEntitiesIdColumnKeys[rootIdColumnKey],
+        // Explicit escalation via the source channel organizationRoles map; a missing map throws
+        role: resolveOrganizationMembershipRole(entity.entityType as ChannelEntityType, baseMembership.role),
+        organizationId: targetEntitiesIdColumnKeys.organizationId,
+        channelType: 'organization',
+        channelId: targetEntitiesIdColumnKeys.organizationId,
       } as InsertMembershipModel;
     });
 
@@ -155,7 +152,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
       const associatedField = targetEntitiesIdColumnKeys[appConfig.entityIdColumnKeys[associatedType]];
       if (!associatedField) return null;
 
-      // Get the target entity's ID field to exclude it, but always preserve the root context ID
+      // Get the target entity's ID field to exclude it, but always preserve the organization ID
       const targetEntityIdColumnKey = appConfig.entityIdColumnKeys[entity.entityType];
       const { [targetEntityIdColumnKey]: _, ...remainingIdColumnKeys } = targetEntitiesIdColumnKeys;
 
@@ -190,7 +187,9 @@ export const insertMemberships = async <T extends BaseEntityModel>(
   const [insertedTarget] = await Promise.all([
     db.insert(membershipsTable).values(targetRows).returning(membershipBaseSelect),
 
-    rootRows.length ? db.insert(membershipsTable).values(rootRows).onConflictDoNothing() : Promise.resolve(),
+    organizationRows.length
+      ? db.insert(membershipsTable).values(organizationRows).onConflictDoNothing()
+      : Promise.resolve(),
     associatedRows.length
       ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()
       : Promise.resolve(),

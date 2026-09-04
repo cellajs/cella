@@ -127,7 +127,6 @@ export type {
   RelatableChannelEntityType,
   RelatedChannelType,
   ResourceType,
-  RootChannelType,
   SeenTrackedProductType,
   Severity,
   SystemRole,

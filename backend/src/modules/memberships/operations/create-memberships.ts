@@ -21,8 +21,6 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
-const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
-
 interface CreateMembershipsInput {
   emails: string[];
   role: EntityRole;
@@ -56,11 +54,11 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
   const deferDispatch = channelIsDraft && role !== hierarchy.getRoles(entityType)[0];
 
   const currentOrgMemberships = await countMembershipsByChannel(ctx, {
-    channelType: rootChannelType,
+    channelType: 'organization',
     channelId: organization.id,
   });
   const pendingInvites = await countPendingInvitesByChannel(ctx, {
-    channelType: rootChannelType,
+    channelType: 'organization',
     channelId: organization.id,
   });
 
@@ -131,7 +129,7 @@ export async function createMembershipsOp(ctx: AuthContext, input: CreateMembers
       if (isAdminInvitingSelf) {
         existingUsersToDirectAdd.push({ userId: userRow.userId, email });
       } else {
-        const hasActiveOrgMembership = entityType !== rootChannelType && !!rows.find((r) => r.orgMembershipId);
+        const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
 
         // Draft context: existing users are deferred too, with no membership, nav entry, or email.
         if (hasActiveOrgMembership && !deferDispatch) {

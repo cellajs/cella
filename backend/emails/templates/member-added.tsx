@@ -71,7 +71,7 @@ export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAdd
       senderName: 'John',
       senderThumbnailUrl: null,
       entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+      role: hierarchy.getLeastPrivilegedRole('organization'),
     },
     recipient: { name: 'Emily', entityLink: 'https://example.com/acme' },
   },

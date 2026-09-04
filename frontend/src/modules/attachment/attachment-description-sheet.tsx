@@ -26,7 +26,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   const [deepest] = hierarchy.resolveNonNullAncestors('attachment', attachment);
   const home = deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : null;
   const homeId = home?.id ?? organizationId;
-  const homeType = home?.type ?? hierarchy.rootChannelType;
+  const homeType = home?.type ?? 'organization';
 
   const resolveCan = useResolveCan();
   const channel = findInCache<EnrichedChannel>(homeType, homeId);

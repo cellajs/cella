@@ -6,7 +6,7 @@ import { queryClient } from '~/query/query-client';
 import { deriveGrantBoundaryViews } from '~/query/realtime/views';
 import { syncStore } from './sync-store';
 
-/** Sub-organization channel types: every channel below the root carries a server-computed `path`. */
+/** Sub-organization channel types: every channel below the organization carries a server-computed `path`. */
 const nestedChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) !== null);
 
 /**

@@ -10,7 +10,6 @@ import {
   type NullableAncestorType,
   type ProductEntityType,
   type RelatedChannelType,
-  type RootChannelType,
 } from 'shared';
 import { channelTables } from '#/db/channel-tables';
 
@@ -19,10 +18,10 @@ type NullableUuid = ReturnType<typeof uuid>;
 export type ChannelTable = AnyPgTable & { id: PgColumn };
 
 /**
- * Non-root ancestors and related channels reference their table through the pinned
+ * Sub-organization ancestors and related channels reference their table through the pinned
  * `channel-tables.ts` map, read lazily inside `references` so the import cycle between a channel
- * table and its products is harmless. The root channel is not referenced here; product tables keep
- * their composite `(tenant_id, <root>_id)` foreign key.
+ * table and its products is harmless. The organization is not referenced here; organization-bound
+ * tables declare `organizationForeignKey` (the composite `(tenant_id, organization_id)` key).
  */
 const referencedChannelId = (channelType: string): PgColumn =>
   channelTables[channelType as keyof typeof channelTables]().id;
@@ -39,9 +38,9 @@ export type ChannelRelationColumns<E extends string> = EntityIdColumns<
 export type ActivityChannelColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, NullableUuid>;
 
 /**
- * From hierarchy config. Non-root ancestor columns cascade-delete with their channel row and
- * related-channel columns null out; table definitions still declare the root's composite foreign
- * key and their own indexes (see {@link channelRelationIndexes}).
+ * From hierarchy config. Sub-organization ancestor columns cascade-delete with their channel row
+ * and related-channel columns null out; table definitions add `organizationForeignKey` and their
+ * own indexes (see {@link channelRelationIndexes}).
  */
 export const channelRelationColumns = <E extends ProductEntityType>(entityType: E): ChannelRelationColumns<E> => {
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
@@ -49,7 +48,7 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
     const column =
-      ancestor === hierarchy.rootChannelType
+      ancestor === 'organization'
         ? uuid()
         : uuid().references(() => referencedChannelId(ancestor), { onDelete: 'cascade' });
     columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? column : column.notNull();
@@ -64,8 +63,8 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
 };
 
 /**
- * One index per non-root ancestor and related-channel column, named `<table>_<column>_index`, for
- * a product table's index list. Empty for org-homed products, so cella's own tables are unchanged.
+ * One index per sub-organization ancestor and related-channel column, named `<table>_<column>_index`,
+ * for a product table's index list. Empty for org-homed products, so cella's own tables are unchanged.
  */
 export const channelRelationIndexes = (
   tableName: string,
@@ -73,28 +72,29 @@ export const channelRelationIndexes = (
   entityType: ProductEntityType,
 ) =>
   [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
-    .filter((type) => type !== hierarchy.rootChannelType)
+    .filter((type) => type !== 'organization')
     .map((type) => {
       const column = table[appConfig.entityIdColumnKeys[type]] as PgColumn;
       return index(`${tableName}_${entityIdColumnName(type)}_index`).on(column);
     });
 
-/** One nullable id column per non-root channel type: the channels a membership can be held at below the root. */
+/** One nullable id column per sub-organization channel type: the channels a membership can be held at below the organization. */
 export type MembershipChannelColumns = EntityIdColumns<
-  Exclude<ChannelEntityType, RootChannelType> & EntityType,
+  Exclude<ChannelEntityType, 'organization'> & EntityType,
   NullableUuid
 >;
 
 /**
- * Sub-root channel columns shared by the membership tables, from hierarchy config: one nullable
- * `<channel>Id` per non-root channel type, cascade-deleting with its channel row. Fresh builders per
- * call, so the two membership tables never share instances; empty for a root-only hierarchy.
+ * Sub-organization channel columns shared by the membership tables, from hierarchy config: one
+ * nullable `<channel>Id` per sub-organization channel type, cascade-deleting with its channel row.
+ * Fresh builders per call, so the two membership tables never share instances; empty for an
+ * organization-only hierarchy.
  */
 export const membershipChannelColumns = (): MembershipChannelColumns => {
   const columns = {} as Record<string, NullableUuid>;
 
   for (const channelType of appConfig.channelEntityTypes) {
-    if (channelType === hierarchy.rootChannelType) continue;
+    if (channelType === 'organization') continue;
     columns[appConfig.entityIdColumnKeys[channelType]] = uuid().references(() => referencedChannelId(channelType), {
       onDelete: 'cascade',
     });
@@ -104,13 +104,13 @@ export const membershipChannelColumns = (): MembershipChannelColumns => {
 };
 
 /**
- * One `(<channel>_id, user_id, archived)` index per non-root channel, named
- * `<table>_<channel>_user_archived_idx`, for member lookups scoped to a channel. Empty for a
- * root-only hierarchy, so cella's own tables are unchanged.
+ * One `(<channel>_id, user_id, archived)` index per sub-organization channel, named
+ * `<table>_<channel>_user_archived_idx`, for member lookups scoped to a channel. Empty for an
+ * organization-only hierarchy, so cella's own tables are unchanged.
  */
 export const membershipChannelIndexes = (tableName: string, table: Record<string, unknown>) =>
   appConfig.channelEntityTypes
-    .filter((channelType) => channelType !== hierarchy.rootChannelType)
+    .filter((channelType) => channelType !== 'organization')
     .map((channelType) => {
       const column = table[appConfig.entityIdColumnKeys[channelType]] as PgColumn;
       const channel = entityIdColumnName(channelType).replace(/_id$/, '');

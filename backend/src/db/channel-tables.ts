@@ -3,7 +3,7 @@ import type { ChannelTable } from '#/db/utils/channel-relation-columns';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
 /**
- * Channel tables by type (pinned; apps list theirs). Product tables reference their non-root
+ * Channel tables by type (pinned; apps list theirs). Product tables reference their sub-organization
  * ancestors through it: `channelRelationColumns` resolves `references` lazily, so this map is read
  * only when drizzle serializes a table, never at module load, and the getters keep import cycles
  * between a channel table and its products harmless. Listed here, not registered at runtime,

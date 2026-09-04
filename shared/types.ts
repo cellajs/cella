@@ -115,14 +115,6 @@ export type AncestorChannelType<E extends string> = E extends keyof HierarchyPar
     : never
   : never;
 
-/**
- * The parentless channel, `'organization'` here. Derived from the hierarchy, so an app that
- * renames the root needs no code change. Its id key is `EntityIdColumnKey<RootChannelType>`.
- */
-export type RootChannelType = {
-  [K in ChannelEntityType]: [AncestorChannelType<K>] extends [never] ? K : never;
-}[ChannelEntityType];
-
 /** Non-ancestor channels declared via `relatedChannels`. */
 export type RelatedChannelType<E extends string> = E extends keyof HierarchyRelatedMap ? HierarchyRelatedMap[E] : never;
 
