@@ -31,7 +31,8 @@
     "test:full": "cross-env TEST_MODE=full vitest run",
     "seed:production": "node dist/seeds-bundle.js",
     "geoip:download": "tsx scripts/download-geoip.ts",
-    "s3:cors": "tsx scripts/set-bucket-cors.ts"
+    "s3:cors": "tsx scripts/set-bucket-cors.ts",
+    "seed:assets": "tsx scripts/upload-seed-assets.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
