@@ -45,12 +45,12 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 
 | Concept | Meaning | Template example |
 | --- | --- | --- |
-| **Tenant** | Top-level isolation and billing boundary; a resource, not an entity | tenant |
+| **Tenant** | Top-level isolation and billing boundary. A resource, not an entity | tenant |
 | **Channel entity** | A place that owns memberships and roles | organization |
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names: `ChannelEntityType`, `ProductEntityType`; `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch; frontend and backend features live in matching modules. Recipe: [New entity](./ADD_ENTITY.md).
+Code names: `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Recipe: [New entity](./ADD_ENTITY.md).
 
 ## Selective sync engine
 
@@ -67,13 +67,13 @@ Authentication supports magic links, passkeys, OAuth, and optional time-based on
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
 
-The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model; the frontend only shapes the interface with it, the backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
+The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Contracts and operations
 
-Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples; shared mocks serve docs, seeds, tests, and load tests.
+Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
 
-Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)); CDC and Yjs are independent workers with health and shutdown contracts; Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC and Yjs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 

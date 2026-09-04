@@ -49,9 +49,9 @@ pnpm offline
 
 1. Set your app identity in `shared/config/config.default.ts`.
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
-3. Update root `package.json`; `.env` lists the secrets each feature needs (e.g. email).
+3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
 4. Read the [architecture](./ARCHITECTURE.md) in your repo or on the cella docs site.
-5. The [MDX files](../frontend/src/content/docs) mention cella documentation; change or remove them.
+5. The [MDX files](../frontend/src/content/docs) mention cella documentation. Change or remove them.
 
 Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cella).
 

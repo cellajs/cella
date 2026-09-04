@@ -45,17 +45,17 @@ sent back to clients.
 
 ## Add a worker
 
-Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTTP, a health endpoint; CDC is the reference:
+Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTTP, a health endpoint. CDC is the reference:
 
 | File | Role | What to know |
 | --- | --- | --- |
-| [tracing.ts](../cdc/src/lib/tracing.ts) | `createOtelSDK()` from `shared/otel`: `serviceName` (`appConfig.slug` plus worker suffix), `mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY`, `autoInstrumentations: false` | `autoInstrumentations: true` only for HTTP servers; add a `SpanStoreProcessor` to `spanProcessors` for local span debugging. |
-| [pino.ts](../cdc/src/lib/pino.ts) | `createWorkerLog('<worker>', env)` from `shared/pino`, which calls `createLogger()` with `enableOtelTransport: true` and the same key and service name | With a key, logs also ship to Maple via `pino-opentelemetry-transport` in dev and production alike; the console keeps `pino-pretty` in dev and raw JSON in production. |
-| [index.ts](../cdc/src/index.ts) | `otel.start()`, then `setupGracefulShutdown({ name, log, cleanup })` from `shared/utils/worker-lifecycle` | `cleanup` closes servers and connections and awaits `otel.shutdown()`; handles SIGINT/SIGTERM, double-signal force exit, a timeout (default 10s), and uncaught exceptions. |
+| [tracing.ts](../cdc/src/lib/tracing.ts) | `createOtelSDK()` from `shared/otel`: `serviceName` (`appConfig.slug` plus worker suffix), `mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY`, `autoInstrumentations: false` | `autoInstrumentations: true` only for HTTP servers. Add a `SpanStoreProcessor` to `spanProcessors` for local span debugging. |
+| [pino.ts](../cdc/src/lib/pino.ts) | `createWorkerLog('<worker>', env)` from `shared/pino`, which calls `createLogger()` with `enableOtelTransport: true` and the same key and service name | With a key, logs also ship to Maple via `pino-opentelemetry-transport` in dev and production alike. The console keeps `pino-pretty` in dev and raw JSON in production. |
+| [index.ts](../cdc/src/index.ts) | `otel.start()`, then `setupGracefulShutdown({ name, log, cleanup })` from `shared/utils/worker-lifecycle` | `cleanup` closes servers and connections and awaits `otel.shutdown()`. It handles SIGINT/SIGTERM, double-signal force exit, a timeout (default 10s), and uncaught exceptions. |
 
 ### Health endpoint (if HTTP)
 
-Serve `createHealthApp({ version, full })` from `shared/health-app`; `full()` returns at least `status` and `uptime`.
+Serve `createHealthApp({ version, full })` from `shared/health-app`. `full()` returns at least `status` and `uptime`.
 
 ### Metrics
 
@@ -69,18 +69,18 @@ Use `@opentelemetry/api` directly in any service with OTel initialized: `tracer.
 
 ### Span names and attributes
 
-Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix (`cdc.*`, `sync.*`); never inline strings. The shared tracing module also exports attribute builders (`cdcAttrs`, `activityAttrs`, `eventAttrs`); add a helper when a group of spans shares attributes.
+Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix (`cdc.*`, `sync.*`). Never inline strings. The shared tracing module also exports attribute builders (`cdcAttrs`, `activityAttrs`, `eventAttrs`). Add a helper when a group of spans shares attributes.
 
 ## Trace correlation
 
 1. **Frontend**: `FetchInstrumentation` injects `traceparent` on API calls.
 2. **Backend**: auto-instrumentation picks up `traceparent` and creates child spans.
 3. **CDC**: stamps `_trace` (`traceId`, `spanId`, `cdcTimestamp`) on activity payloads sent to the backend over WebSocket.
-4. **Backend → Frontend**: SSE notifications carry `_trace`; the frontend computes `e2e_latency_ms = now - cdcTimestamp`.
+4. **Backend → Frontend**: SSE notifications carry `_trace`. The frontend computes `e2e_latency_ms = now - cdcTimestamp`.
 
 ## Data model
 
-**SpanStore** is an in-memory ring buffer of finished spans (default 500) with pub/sub and prefix filtering, fed by **SpanStoreProcessor** on span end; the frontend devtools and CDC debug logging read it.
+**SpanStore** is an in-memory ring buffer of finished spans (default 500) with pub/sub and prefix filtering, fed by **SpanStoreProcessor** on span end. The frontend devtools and CDC debug logging read it.
 
 ## Health endpoints
 
@@ -90,4 +90,4 @@ Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts)
 | CDC | `GET /health` | Status, uptime, replication state, WebSocket connection, circuit breakers |
 | YJS | `GET /health` | Status, uptime, connection/document/client counts |
 
-All default to **shallow** 204 for load balancers and liveness probes; `?depth=full` returns JSON. Backend health is `unhealthy` when the database probe fails and `degraded` on lesser component trouble such as event-loop lag; CDC is `degraded` when replication is paused or the WebSocket is disconnected, `unhealthy` when replication is stopped or WAL lag passes its limit.
+All default to **shallow** 204 for load balancers and liveness probes. `?depth=full` returns JSON. Backend health is `unhealthy` when the database probe fails and `degraded` on lesser component trouble such as event-loop lag. CDC is `degraded` when replication is paused or the WebSocket is disconnected, `unhealthy` when replication is stopped or WAL lag passes its limit.
