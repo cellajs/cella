@@ -804,6 +804,29 @@
     "pnpm test:core"
    ],
    "summary": "The hierarchy builder declares the organization with organization({ roles, elevated }) as the only parentless entity and channel() requires a parent; hierarchy.rootChannelType, RootChannelType, rootRoles/getRootRole (now organizationRoles/getOrganizationRole), resolveRootMembershipRole (now resolveOrganizationMembershipRole) and the rootChannelId test-plan option (now organizationId) are gone, and every root-detection idiom becomes the literal 'organization'. Organization-bound tables declare organizationForeignKey(table). getValidProduct requires tenant + organization scope on the request context (500 otherwise) and reads wrong-tenant, wrong-organization, deleted, draft and missing rows as one 404 before the engine; getValidChannel compares whichever of the two the context set. No DB or wire change."
+  },
+  {
+   "id": "20260904T0846-rls-defense-in-depth",
+   "version": "next",
+   "title": "RLS defense in depth: explicit request scope, lazy admin credential, verified catalog, runtime-role parity run",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/scripts",
+    "backend/tests",
+    "yjs/src",
+    ".github/workflows"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check",
+    "pnpm test:core",
+    "pnpm test:core:runtime"
+   ],
+   "summary": "requestScopeWhere(ctx, table) adds the guarded tenant + organization predicate to every organization-bound product query and splitByPermission rejects unknown and out-of-scope ids, so removing RLS broadens no application query. The admin pool is lazy (getAdminDb(purpose), getSeedDb(); migrationDb, unsafeInternalAdminDb and seedDb are gone) and DATABASE_ADMIN_URL is optional for the request-serving API. The RLS and verify side-effect blocks refuse to run without runtime_role and admin_role; the verifier asserts owner, the four-policy contract (rlsPolicyContract), grants per classification and that runtime_role has no BYPASSRLS. Test global setup creates roles before migrating and refuses a degraded volume; verification tests inspect the catalog without repairing it. The backend suite also runs as runtime_role (test:core:runtime, CI step). The Yjs startup sweep lists and deletes per tenant inside tenant-scoped transactions; deleteStaleDoc takes the row."
   }
  ]
 }

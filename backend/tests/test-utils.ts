@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { appConfig } from 'shared';
 import { vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
 
@@ -49,12 +49,12 @@ export function mockFetchRequest() {
   );
 }
 
-/** TRUNCATE CASCADE, plus a mock-enforcer reset so unique values do not conflict across tests. */
+/** TRUNCATE CASCADE on the admin connection (runtime_role holds no TRUNCATE), plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
   resetUserMockEnforcers();
   resetOrganizationMockEnforcers();
 
-  await db.execute(sql`TRUNCATE TABLE 
+  await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE 
     sessions, tokens, passkeys, oauth_accounts, emails, users 
     CASCADE`);
 }

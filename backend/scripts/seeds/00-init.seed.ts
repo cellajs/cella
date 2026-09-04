@@ -1,5 +1,5 @@
 import type { SeedScript } from '../types';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -18,7 +18,7 @@ setMockContext('script');
 const isProduction = appConfig.mode === 'production';
 
 // Seed scripts use admin connection for privileged operations
-const db = seedDb;
+const db = getSeedDb();
 
 const isUserSeeded = async () => {
   const usersInTable = await db

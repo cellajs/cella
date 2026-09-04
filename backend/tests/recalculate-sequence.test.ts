@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, seedDb } from '#/db/db';
+import { baseDb as db, getSeedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -60,14 +60,16 @@ describe('recalculateCounters (sequence + frontier)', async () => {
             ancestor === 'organization' ? tenant.organization.id : (deeperAncestorIds[ancestor] ?? null),
           ]),
       );
-      await seedDb.insert(getEntityTable(type as ChannelEntityType)).values({
-        id: deeperAncestorIds[type],
-        tenantId: tenant.tenantId,
-        ...ownAncestors,
-        name: `recalc ${type}`,
-        slug: `recalc-${type}-${deeperAncestorIds[type].slice(0, 8)}`,
-        createdBy: tenant.user.id,
-      } as never);
+      await getSeedDb()
+        .insert(getEntityTable(type as ChannelEntityType))
+        .values({
+          id: deeperAncestorIds[type],
+          tenantId: tenant.tenantId,
+          ...ownAncestors,
+          name: `recalc ${type}`,
+          slug: `recalc-${type}-${deeperAncestorIds[type].slice(0, 8)}`,
+          createdBy: tenant.user.id,
+        } as never);
     }
 
     const base = (key: string, seq: number, extra: Record<string, unknown> = {}) =>
@@ -86,26 +88,29 @@ describe('recalculateCounters (sequence + frontier)', async () => {
         key,
       );
 
-    await seedDb.insert(attachmentsTable).values([
-      base('recalc:a1', 41) as never,
-      base('recalc:a2', 44) as never,
-      // Tombstone keeps its seq: counts exclude it, frontier includes it.
-      base('recalc:a3', 47, { deletedAt: '2026-07-10T00:00:00.000Z' }) as never,
-    ]);
+    await getSeedDb()
+      .insert(attachmentsTable)
+      .values([
+        base('recalc:a1', 41) as never,
+        base('recalc:a2', 44) as never,
+        // Tombstone keeps its seq: counts exclude it, frontier includes it.
+        base('recalc:a3', 47, { deletedAt: '2026-07-10T00:00:00.000Z' }) as never,
+      ]);
   });
 
   afterAll(async () => {
-    await seedDb.execute(sql`DELETE FROM attachments WHERE organization_id = ${tenant.organization.id}`);
-    await seedDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${tenant.organization.id}`);
+    await getSeedDb().execute(sql`DELETE FROM attachments WHERE organization_id = ${tenant.organization.id}`);
+    await getSeedDb().execute(sql`DELETE FROM channel_counters WHERE channel_key = ${tenant.organization.id}`);
     const home = homeChannelId();
     if (home !== tenant.organization.id) {
-      await seedDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${home}`);
+      await getSeedDb().execute(sql`DELETE FROM channel_counters WHERE channel_key = ${home}`);
     }
     await clearSecurityTestData();
   });
 
   it('rebuilds sequence, subtree and self-family counters from row state', async () => {
-    await recalculateCounters(db);
+    // Recalculation is an admin path (seed and CDC recovery): it reads every RLS table without tenant context.
+    await recalculateCounters(getSeedDb());
 
     const readCounts = async (channelKey: string) => {
       const [counterRow] = await db

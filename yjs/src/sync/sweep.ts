@@ -3,7 +3,11 @@ import { deleteStaleDoc, listStaleDocs } from '../data/storage';
 import { log } from '../lib/pino';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
-/** Persists edited Y.Doc state from stale sessions before deleting them; unedited rows delete directly and retryable failures are left for a later boot. */
+/**
+ * Persists edited Y.Doc state from stale sessions before deleting them; unedited rows delete
+ * directly and retryable failures are left for a later boot. Listing and deleting run per tenant
+ * inside tenant-scoped transactions, so the sweep sees rows under the RLS-subject runtime role.
+ */
 export async function runStartupSweep(): Promise<void> {
   let stale: Awaited<ReturnType<typeof listStaleDocs>>;
   try {
@@ -38,7 +42,7 @@ export async function runStartupSweep(): Promise<void> {
     }
 
     try {
-      await deleteStaleDoc(doc.entityType, doc.entityId);
+      await deleteStaleDoc(doc);
     } catch (err) {
       log.warn(`Startup sweep: failed to delete ${doc.entityType}:${doc.entityId}`, { err });
     }

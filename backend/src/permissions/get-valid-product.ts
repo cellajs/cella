@@ -3,6 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
+import { requestScope } from '#/db/utils/request-scope';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
@@ -26,13 +27,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductResult<K>> => {
   // Product routes run behind tenantGuard + orgGuard; a route wired without them is a bug, not a request error.
-  const { tenantId, organizationId } = ctx.var;
-  if (!tenantId || !organizationId) {
-    throw new AppError(500, 'server_error', 'error', {
-      entityType,
-      meta: { reason: 'Product route without tenant and organization scope' },
-    });
-  }
+  const { tenantId, organizationId } = requestScope(ctx, entityType);
 
   // Bare baseDb carries no RLS session context, so the read runs inside a tenant transaction.
   const entity =

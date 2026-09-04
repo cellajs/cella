@@ -1,12 +1,9 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
-import { migrateConfig, migrationDb } from '#/db/db';
+import { getAdminDb, migrateConfig } from '#/db/db';
 import { createDbRoles } from './db/create-db-roles';
 
-if (!migrationDb) {
-  console.error(pc.red('DATABASE_ADMIN_URL required for migrations'));
-  process.exit(1);
-}
+const migrationDb = getAdminDb('migrations');
 
 await createDbRoles();
 await migrate(migrationDb, migrateConfig);

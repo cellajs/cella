@@ -2,7 +2,9 @@ import { getTableName, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
+import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables } from '#/tables';
+import { classifyRlsTables } from '../../scripts/migrations/10-rls.migration';
 
 /** Product entities with a parent org (tasks, labels, attachments) have RLS and composite FK. */
 const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
@@ -68,38 +70,16 @@ describe('Schema verification', () => {
     });
   });
 
-  // Requires the RLS migration; the beforeAll re-applies roles and FORCE RLS.
-
+  // Migration-outcome checks: they inspect the schema the migration produced and never repair it.
   describe('RLS runtime configuration', () => {
     let rlsConfigured = false;
 
     beforeAll(async () => {
-      try {
-        await adminDb.execute(sql`
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
-              CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-              CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
-            END IF;
-
-            GRANT USAGE ON SCHEMA public TO runtime_role;
-            GRANT ALL ON SCHEMA public TO admin_role;
-          END $$;
-        `);
-
-        for (const tableName of rlsTableNames) {
-          await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} OWNER TO admin_role`));
-          await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} FORCE ROW LEVEL SECURITY`));
-          await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${tableName} TO runtime_role`));
-        }
-
-        rlsConfigured = true;
-      } catch {
-        console.warn('Could not configure RLS roles: skipping RLS runtime tests');
-      }
+      const rows = getRows<{ exists: boolean }>(
+        await adminDb.execute(sql`SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') AS exists`),
+      );
+      rlsConfigured = rows[0]?.exists === true;
+      if (!rlsConfigured) throw new Error('runtime_role missing: the global setup provisions roles before migrating');
     });
 
     describe('FORCE ROW LEVEL SECURITY', () => {
@@ -186,6 +166,84 @@ describe('Schema verification', () => {
           `),
       );
       expect(rows.length, `Unexpected RLS policies on ${tableName}: ${rows.map((r) => r.polname).join(', ')}`).toBe(0);
+    });
+  });
+
+  // ── Migration verifier contract (same sources as 99-verify) ───────────
+
+  describe('Runtime role stays RLS-subject', () => {
+    it('runtime_role has neither BYPASSRLS nor SUPERUSER', async () => {
+      const rows = getRows<{ rolbypassrls: boolean; rolsuper: boolean }>(
+        await adminDb.execute(sql`SELECT rolbypassrls, rolsuper FROM pg_roles WHERE rolname = 'runtime_role'`),
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].rolbypassrls).toBe(false);
+      expect(rows[0].rolsuper).toBe(false);
+    });
+  });
+
+  describe('Policy contract', () => {
+    it.each(rlsTableNames)('%s carries exactly the four contract policies', async (tableName) => {
+      const rows = getRows<{
+        polname: string;
+        polcmd: string;
+        polpermissive: boolean;
+        using: string | null;
+        check: string | null;
+      }>(
+        await adminDb.execute(sql`
+          SELECT p.polname, p.polcmd, p.polpermissive,
+                 pg_get_expr(p.polqual, p.polrelid) AS using,
+                 pg_get_expr(p.polwithcheck, p.polrelid) AS check
+          FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+          WHERE c.relname = ${tableName} AND c.relnamespace = 'public'::regnamespace
+          ORDER BY p.polname
+        `),
+      );
+      const contract = rlsPolicyContract(tableName);
+      expect(rows.map((r) => r.polname).sort()).toEqual(contract.map((c) => c.name).sort());
+      for (const policy of contract) {
+        const row = rows.find((r) => r.polname === policy.name);
+        expect(row?.polcmd, policy.name).toBe(policy.command);
+        expect(row?.polpermissive, policy.name).toBe(true);
+        if (policy.expression === 'tenant') {
+          expect(row?.using, policy.name).toContain('app.tenant_id');
+          expect(row?.using, policy.name).toContain('tenant_id)::text = current_setting');
+        } else {
+          expect(row?.check ?? row?.using, policy.name).toBe('true');
+        }
+      }
+    });
+  });
+
+  describe('Grants per classification', () => {
+    const { fullCrudTables, readOnlyTables } = classifyRlsTables();
+
+    it.each([...rlsTableNames, ...fullCrudTables])(
+      'runtime_role has SELECT, INSERT, UPDATE, DELETE on %s',
+      async (tableName) => {
+        const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
+          await adminDb.execute(sql`
+          SELECT has_table_privilege('runtime_role', ${`public.${tableName}`}, 'SELECT') AS s,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'INSERT') AS i,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'UPDATE') AS u,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'DELETE') AS d
+        `),
+        );
+        expect(rows[0]).toEqual({ s: true, i: true, u: true, d: true });
+      },
+    );
+
+    it.each(readOnlyTables)('runtime_role has SELECT only on %s', async (tableName) => {
+      const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
+        await adminDb.execute(sql`
+          SELECT has_table_privilege('runtime_role', ${`public.${tableName}`}, 'SELECT') AS s,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'INSERT') AS i,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'UPDATE') AS u,
+                 has_table_privilege('runtime_role', ${`public.${tableName}`}, 'DELETE') AS d
+        `),
+      );
+      expect(rows[0]).toEqual({ s: true, i: false, u: false, d: false });
     });
   });
 

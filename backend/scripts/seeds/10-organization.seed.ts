@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { domainsTable } from '#/modules/domains/domains-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
@@ -22,7 +22,7 @@ import { toBatches } from './seed-volume';
 setMockContext('script');
 
 // Seed scripts use admin connection for privileged operations
-const db = seedDb;
+const db = getSeedDb();
 
 // 1 tenant = 1 organization. One org per tenant; keep ~100 orgs by using 100 tenants.
 const TENANTS_COUNT = 100;

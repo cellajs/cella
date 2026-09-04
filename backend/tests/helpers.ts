@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -130,7 +130,8 @@ export async function verifyUserEmail(email: string) {
 export async function createSystemAdminUser(email: string, verified = true) {
   const user = await createTestUser(email, verified);
 
-  await db.insert(systemRolesTable).values({
+  // system_roles is admin-only (read-only grant + admin-only write trigger for runtime_role).
+  await getAdminDb('test setup').insert(systemRolesTable).values({
     id: user.id,
     userId: user.id,
     role: 'admin',

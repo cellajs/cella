@@ -8,8 +8,21 @@ import { checkAccessBatch } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 
+type ScopedRow = { id: string; tenantId?: string; organizationId?: string | null };
+
+/** A row is in scope when it matches every id the guard chain set; the organization row itself carries no `organizationId`. */
+const inRequestScope = (ctx: AuthContext, row: ScopedRow): boolean => {
+  const { tenantId, organizationId } = ctx.var;
+  if (tenantId && 'tenantId' in row && row.tenantId !== tenantId) return false;
+  if (organizationId && 'organizationId' in row && row.organizationId !== organizationId) return false;
+  return true;
+};
+
 /**
  * Resolves `ids` and splits them into `allowedIds` / `rejectedIds` by whether the user may `action`.
+ * Ids that do not resolve, or resolve outside the request's tenant or organization, are rejected
+ * before the permission batch runs, so a bulk call never acts on a foreign row and never reveals
+ * whether it exists.
  * @param entityType - The type of entity (channel or product, not user).
  * @throws {AppError} 403 if no entities are allowed.
  */
@@ -20,10 +33,12 @@ export const splitByPermission = async (
   ids: string[],
 ) => {
   // Resolve entities (createdBy included for the owner relation); auto-wrap in tenantRead outside an RLS context.
-  const entities =
+  const resolved =
     ctx.var.db === baseDb
       ? await tenantRead(ctx, (readCtx) => resolveEntities(readCtx, { entityType, ids }))
       : await resolveEntities(ctx, { entityType, ids });
+  const entities = resolved.filter((entity) => inRequestScope(ctx, entity as ScopedRow));
+  const candidateIds = new Set(entities.map((entity) => entity.id));
 
   // Each entity doubles as `row`, so row conditions and public read grants evaluate from real row data.
   const subjects = entities.map((entity) =>
@@ -32,7 +47,7 @@ export const splitByPermission = async (
   const { results } = checkAccessBatch(accessFrom(ctx), action, subjects);
 
   const allowedIds: string[] = [];
-  const rejectedIds: string[] = [];
+  const rejectedIds: string[] = ids.filter((id) => !candidateIds.has(id));
 
   for (const entity of entities) {
     const result = results.get(entity.id);

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { migrationDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { timestamp } from '#/utils/console';
 import pc from 'picocolors';
@@ -107,7 +107,7 @@ const requiredRoles = ['runtime_role', 'admin_role'] as const;
  * Returns true if setup can be skipped (avoids catalog writes on hot-reload).
  */
 async function rolesExist(): Promise<boolean> {
-const result = await migrationDb!.execute(
+const result = await getAdminDb('role setup').execute(
   sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
 );
 return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
@@ -118,15 +118,13 @@ return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
  * If so, roles are Scaleway-managed and we only need to ensure grants.
  */
 async function isRoleManagedExternally(): Promise<boolean> {
-  const result = await migrationDb!.execute(sql.raw('SELECT CURRENT_USER AS cu'));
+  const result = await getAdminDb('role setup').execute(sql.raw('SELECT CURRENT_USER AS cu'));
   const currentUser = (result.rows[0] as { cu: string }).cu;
   return requiredRoles.includes(currentUser as typeof requiredRoles[number]);
 }
 
 export async function createDbRoles() {
-  if (!migrationDb) {
-    throw new Error('DATABASE_ADMIN_URL required for role setup');
-  }
+  const migrationDb = getAdminDb('role setup');
 
   // If we're connected as one of the application roles, they're managed externally
   // (e.g., Scaleway-managed users). Only ensure grants are in place.

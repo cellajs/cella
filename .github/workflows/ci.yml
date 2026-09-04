@@ -153,6 +153,11 @@ jobs:
       - name: Run tests (full mode)
         run: pnpm test:full
 
+      # RLS parity: the backend core suite again as the RLS-subject runtime_role. Allow and deny
+      # results must match the superuser run above, proving authorization does not lean on RLS.
+      - name: Run backend tests as runtime_role
+        run: pnpm test:core:runtime
+
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
     # Same-repo branch only: release-please pushes its branch into this repo, so a

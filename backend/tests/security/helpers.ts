@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { type EntityRole, hierarchy } from 'shared';
-import { baseDb as db } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import type { createAppClient } from '../test-client';
 
@@ -53,9 +53,9 @@ export async function createOrgUser(
   return { id: user.id, email, sessionCookie };
 }
 
-/** Truncates tenant-scoped and auth tables. */
+/** Truncates tenant-scoped and auth tables on the admin connection (runtime_role holds no TRUNCATE). */
 export async function clearSecurityTestData() {
-  await db.execute(sql`TRUNCATE TABLE
+  await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE
     sessions, tokens, passkeys, oauth_accounts, emails,
     memberships, inactive_memberships, organizations, tenants, users
     CASCADE`);

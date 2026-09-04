@@ -5,6 +5,7 @@ import {
   allImmutabilityTables,
   immutableKeysTriggerName,
 } from '#/db/immutability-triggers';
+import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
@@ -13,14 +14,18 @@ import { partitionConfigs } from './10-partman.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { unloggedTables } from './10-unlogged.migration';
 
+const WRITE_PRIVILEGES = ['INSERT', 'UPDATE', 'DELETE'] as const;
+
 /**
  * Builds the final assertions for the combined side-effect migration, causing any missing
  * end state to roll back the transaction. Assertions share producer preconditions and
- * derive expected state from the same TypeScript sources.
+ * derive expected state from the same TypeScript sources: table classification from
+ * `10-rls`, the policy set from `rls-helpers`, triggers from `immutability-triggers`.
  */
 async function run(): Promise<SideEffectBlock> {
   const { rlsTables, fullCrudTables, readOnlyTables } = classifyRlsTables();
-  const grantTables = [...rlsTables, ...fullCrudTables, ...readOnlyTables];
+  const crudTables = [...rlsTables, ...fullCrudTables];
+  const ownedTables = [...rlsTables, 'activities'];
   const expectedTriggers = [
     ...allImmutabilityTables.map(({ tableName }) => ({ tableName, triggerName: immutableKeysTriggerName(tableName) })),
     ...allAdminOnlyWriteTables.map(({ tableName }) => ({ tableName, triggerName: adminOnlyWriteTriggerName(tableName) })),
@@ -34,6 +39,8 @@ async function run(): Promise<SideEffectBlock> {
   const rowFilteredCount = Object.entries(entityTables).filter(([entityType, table]) =>
     publicationRowFilter(entityType, table),
   ).length;
+
+  const inPublic = (t: string) => `relname = '${t}' AND relnamespace = 'public'::regnamespace`;
 
   const triggerChecks = expectedTriggers
     .map(
@@ -63,24 +70,65 @@ async function run(): Promise<SideEffectBlock> {
 
   const forceRlsChecks = rlsTables
     .map(
-      (t) => `    IF NOT EXISTS (
-      SELECT 1 FROM pg_class WHERE relname = '${t}' AND relnamespace = 'public'::regnamespace
-        AND relrowsecurity AND relforcerowsecurity
-    ) THEN missing := array_append(missing, 'force-rls:${t}'); END IF;`,
+      (t) => `  IF NOT EXISTS (
+    SELECT 1 FROM pg_class WHERE ${inPublic(t)} AND relrowsecurity AND relforcerowsecurity
+  ) THEN missing := array_append(missing, 'force-rls:${t}'); END IF;`,
     )
     .join('\n');
 
-  const grantChecks = grantTables
+  const ownerChecks = ownedTables
     .map(
-      (t) => `    IF NOT has_table_privilege('runtime_role', 'public.${t}', 'SELECT') THEN
-      missing := array_append(missing, 'grant:${t}'); END IF;`,
+      (t) => `  IF (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'admin_role' THEN
+    missing := array_append(missing, 'owner:${t}'); END IF;`,
     )
+    .join('\n');
+
+  // Every policy on an RLS table must be one of the contract's four, with its command, permissive
+  // mode, PUBLIC target and expression shape; a fifth policy or a drifted expression fails too.
+  const policyChecks = rlsTables
+    .flatMap((t) => {
+      const contract = rlsPolicyContract(t);
+      const perPolicy = contract.map(({ name, command, expression }) => {
+        const expressionCheck =
+          expression === 'tenant'
+            ? `pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%' AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = current_setting%'`
+            : `COALESCE(pg_get_expr(p.polwithcheck, p.polrelid), pg_get_expr(p.polqual, p.polrelid)) = 'true'`;
+        return `  IF NOT EXISTS (
+    SELECT 1 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+    WHERE c.${inPublic(t)} AND p.polname = '${name}' AND p.polcmd = '${command}'
+      AND p.polpermissive AND p.polroles = '{0}'::oid[] AND ${expressionCheck}
+  ) THEN missing := array_append(missing, 'policy:${name}'); END IF;`;
+      });
+      const count = `  IF (SELECT count(*) FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.${inPublic(t)}) <> ${contract.length} THEN
+    missing := array_append(missing, 'policy-count:${t}'); END IF;`;
+      return [...perPolicy, count];
+    })
+    .join('\n');
+
+  const crudGrantChecks = crudTables
+    .flatMap((t) =>
+      ['SELECT', ...WRITE_PRIVILEGES].map(
+        (priv) => `  IF NOT has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
+    missing := array_append(missing, 'grant:${t}:${priv}'); END IF;`,
+      ),
+    )
+    .join('\n');
+
+  const readOnlyGrantChecks = readOnlyTables
+    .flatMap((t) => [
+      `  IF NOT has_table_privilege('runtime_role', 'public.${t}', 'SELECT') THEN
+    missing := array_append(missing, 'grant:${t}:SELECT'); END IF;`,
+      ...WRITE_PRIVILEGES.map(
+        (priv) => `  IF has_table_privilege('runtime_role', 'public.${t}', '${priv}') THEN
+    missing := array_append(missing, 'grant-excess:${t}:${priv}'); END IF;`,
+      ),
+    ])
     .join('\n');
 
   const unloggedChecks = unloggedTables
     .map(
-      (t) => `    IF (SELECT relpersistence FROM pg_class WHERE relname = '${t}' AND relnamespace = 'public'::regnamespace) IS DISTINCT FROM 'u' THEN
-      missing := array_append(missing, 'unlogged:${t}'); END IF;`,
+      (t) => `  IF (SELECT relpersistence FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'u' THEN
+    missing := array_append(missing, 'unlogged:${t}'); END IF;`,
     )
     .join('\n');
 
@@ -92,24 +140,39 @@ DO $$
 DECLARE
   missing text[] := '{}';
 BEGIN
+  -- Roles are a hard precondition: without them the RLS, trigger and grant blocks could not
+  -- have run, and a database that skipped them must never pass verification.
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'admin_role') THEN
+    RAISE EXCEPTION 'verify: runtime_role and admin_role must exist before migrations run (create-db-roles, or provider-managed users)';
+  END IF;
+
+  -- The runtime role must stay RLS-subject.
+  IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role' AND (rolbypassrls OR rolsuper)) THEN
+    missing := array_append(missing, 'role:runtime_role:bypasses-rls');
+  END IF;
+
   -- Functions (created unconditionally by their blocks)
 ${functionChecks}
 
-  -- Immutability triggers + RLS + grants + UNLOGGED (same precondition as their blocks: roles exist)
-  IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
-${triggerChecks
-  .split('\n')
-  .map((l) => `  ${l}`)
-  .join('\n')}
+  -- Immutability triggers
+${triggerChecks}
+
+  -- Ownership and FORCE RLS
+${ownerChecks}
 
 ${forceRlsChecks}
 
-${grantChecks}
+  -- Policy contract (${rlsTables.length} tables x ${rlsPolicyContract('x').length} policies)
+${policyChecks}
 
+  -- Grants per classification
+${crudGrantChecks}
+
+${readOnlyGrantChecks}
+
+  -- UNLOGGED
 ${unloggedChecks}
-  ELSE
-    RAISE NOTICE 'verify: roles not available - skipping trigger/RLS/grant/unlogged assertions.';
-  END IF;
 
   -- Partitioning (same precondition as the partman block: extension installed)
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_partman') THEN
@@ -140,7 +203,7 @@ END $$;
     title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${rlsTables.length} FORCE-RLS tables, ${grantTables.length} grants, ${unloggedTables.length} unlogged, 1 publication`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} FORCE-RLS tables, ${rlsTables.length * rlsPolicyContract('x').length} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
     ],
   };
 }

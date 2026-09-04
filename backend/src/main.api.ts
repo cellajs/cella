@@ -6,7 +6,7 @@ import { appConfig } from 'shared';
 import { renderAscii } from 'shared/utils/ascii';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { registerOpenApiDocs } from '#/core/openapi-registration';
-import { migrateConfig, migrationDb } from '#/db/db';
+import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
@@ -32,20 +32,17 @@ const main = async () => {
   const port = Number(env.PORT ?? '4000');
   console.info(`${timestamp()} [startup] mode=${appConfig.mode} nodb=${env.NODB} port=${port}`);
 
-  if (!migrationDb) {
-    throw new Error('DATABASE_ADMIN_URL required for migrations');
-  }
-
   try {
-    await migrationDb.execute(sql`SELECT 1`);
+    if (!env.NODB) await baseDb.execute(sql`SELECT 1`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(`Could not connect to PostgreSQL. Is Docker running? Try: pnpm docker\n  Original error: ${msg}`);
   }
 
-  const { createDbRoles } = await import('../scripts/db/create-db-roles');
-
   if (env.RUN_MIGRATIONS_ON_BOOT) {
+    // The only API path that touches the admin credential; production runs migrations as MODE=migrate.
+    const migrationDb = getAdminDb('boot-time migrations (RUN_MIGRATIONS_ON_BOOT)');
+    const { createDbRoles } = await import('../scripts/db/create-db-roles');
     await createDbRoles();
 
     console.info(`${timestamp()} [startup] Running migrations...`);

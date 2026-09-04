@@ -68,13 +68,14 @@ async function run(): Promise<SideEffectBlock> {
 -- Configures FORCE RLS, table ownership, and grants.
 -- Policies are defined in Drizzle schema files using pgPolicy().
 -- RLS enforces tenant-level isolation only; org-level isolation is application-layer (orgGuard).
--- Gracefully skips if required roles are not yet created.
+-- Requires runtime_role and admin_role: a database migrated without them would run with no
+-- ownership, no FORCE RLS and no grants, so their absence aborts the migration.
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
-    RAISE NOTICE 'Roles not available - skipping RLS setup.';
-    RETURN;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role')
+     OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'admin_role') THEN
+    RAISE EXCEPTION 'RLS setup: runtime_role and admin_role must exist before migrations run (create-db-roles, or provider-managed users)';
   END IF;
 
   BEGIN

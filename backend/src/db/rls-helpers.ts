@@ -21,12 +21,37 @@ export const tenantReadCondition = (t: { tenantId: unknown; deletedAt?: unknown 
   `;
 };
 
+export interface RlsPolicyContract {
+  name: string;
+  /** `pg_policy.polcmd`: r = select, a = insert, w = update, d = delete. */
+  command: 'r' | 'a' | 'w' | 'd';
+  /** `tenant`: the fail-closed tenant match; `true`: write-through. */
+  expression: 'tenant' | 'true';
+}
+
+/**
+ * The four policies every RLS table carries. The schema (`pgPolicy`) and the verify migration
+ * derive from this list, so a policy that drifts from it fails the migration.
+ */
+export const rlsPolicyContract = (name: string): RlsPolicyContract[] => [
+  { name: `${name}_select_policy`, command: 'r', expression: 'tenant' },
+  { name: `${name}_insert_policy`, command: 'a', expression: 'true' },
+  { name: `${name}_update_policy`, command: 'w', expression: 'true' },
+  { name: `${name}_delete_policy`, command: 'd', expression: 'true' },
+];
+
+const policyName = (name: string, command: RlsPolicyContract['command']): string => {
+  const entry = rlsPolicyContract(name).find((policy) => policy.command === command);
+  if (!entry) throw new Error(`rlsPolicyContract: no ${command} policy for ${name}`);
+  return entry.name;
+};
+
 export const tenantSelectPolicy = (name: string, table: { tenantId: unknown }) =>
-  pgPolicy(`${name}_select_policy`, { for: 'select', using: tenantReadCondition(table) });
+  pgPolicy(policyName(name, 'r'), { for: 'select', using: tenantReadCondition(table) });
 
 /** FORCE RLS requires explicit write policies; guards, FKs, and triggers enforce write isolation. */
 export const writeThroughPolicies = (name: string) => [
-  pgPolicy(`${name}_insert_policy`, { for: 'insert', withCheck: sql`true` }),
-  pgPolicy(`${name}_update_policy`, { for: 'update', using: sql`true` }),
-  pgPolicy(`${name}_delete_policy`, { for: 'delete', using: sql`true` }),
+  pgPolicy(policyName(name, 'a'), { for: 'insert', withCheck: sql`true` }),
+  pgPolicy(policyName(name, 'w'), { for: 'update', using: sql`true` }),
+  pgPolicy(policyName(name, 'd'), { for: 'delete', using: sql`true` }),
 ];

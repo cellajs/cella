@@ -196,51 +196,26 @@ async function checkRequiredTablesExist(): Promise<boolean> {
   return results.every(Boolean);
 }
 
-/** Create the RLS roles if missing and re-apply FORCE RLS, ownership and grants. Idempotent. */
+/**
+ * Asserts the migration provisioned the RLS catalog (roles, ownership, FORCE RLS, grants); never
+ * repairs it, since a repaired catalog would let these tests pass over a broken migration.
+ */
 async function ensureRlsRoles() {
-  await adminDb.execute(sql`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
-        CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
-      END IF;
-      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-        CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
-      END IF;
-    END $$;
-  `);
-
-  await adminDb.execute(sql`GRANT USAGE ON SCHEMA public TO runtime_role`);
-  await adminDb.execute(sql`GRANT ALL ON SCHEMA public TO admin_role`);
-
-  // RLS-subject tables (FORCE RLS), org-scoped product entities + yjs_documents.
-  const rlsSubjectTables = [
-    'yjs_documents',
-    ...rlsProductTypes.map((t) => getTableName(entityTables[t as keyof typeof entityTables])),
-  ];
-  for (const table of rlsSubjectTables) {
-    if (!(await tableExists(table))) continue;
-    await adminDb.execute(sql.raw(`ALTER TABLE ${table} OWNER TO admin_role`));
-    await adminDb.execute(sql.raw(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`));
-    await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO runtime_role`));
+  const rows = getRows<{ forced: boolean; owner: string; granted: boolean; bypass: boolean }>(
+    await adminDb.execute(sql`
+      SELECT relforcerowsecurity AS forced,
+             pg_get_userbyid(relowner) AS owner,
+             has_table_privilege('runtime_role', 'public.yjs_documents', 'SELECT') AS granted,
+             (SELECT rolbypassrls FROM pg_roles WHERE rolname = 'runtime_role') AS bypass
+      FROM pg_class WHERE relname = 'yjs_documents' AND relnamespace = 'public'::regnamespace
+    `),
+  );
+  const state = rows[0];
+  if (!state?.forced || state.owner !== 'admin_role' || !state.granted || state.bypass) {
+    throw new Error(
+      `RLS catalog not provisioned by the migration (${JSON.stringify(state)}); reset the test volume: pnpm docker:test:reset`,
+    );
   }
-
-  // Non-RLS channel and seen tables: writes are enforced by application guards, not policies.
-  const channelTableNames = appConfig.channelEntityTypes
-    .map((type) => entityTables[type as keyof typeof entityTables])
-    .filter(Boolean)
-    .map((table) => getTableName(table));
-  const nonRlsTables = [...channelTableNames, 'memberships', 'inactive_memberships', 'users', 'tenants', 'seen_by'];
-  for (const table of nonRlsTables) {
-    if (!(await tableExists(table))) continue;
-    const priv = table === 'tenants' ? 'SELECT' : 'SELECT, INSERT, UPDATE, DELETE';
-    await adminDb.execute(sql.raw(`GRANT ${priv} ON ${table} TO runtime_role`));
-  }
-
-  // Admin gets full access; pg_catalog for JSONB operators.
-  await adminDb.execute(sql`GRANT ALL ON ALL TABLES IN SCHEMA public TO admin_role`);
-  await adminDb.execute(sql`GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO admin_role`);
-  await adminDb.execute(sql`GRANT USAGE ON SCHEMA pg_catalog TO runtime_role`);
 }
 
 /** Seed via adminDb (superuser) so RLS does not block the inserts. */

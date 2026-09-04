@@ -2,7 +2,9 @@ import { sql } from 'drizzle-orm';
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { deepHierarchy as deepH } from 'shared/testing/deep-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
+
+const seedDb = getSeedDb();
 
 /** The generated-column SQL rule and the JS rule must produce identical paths for every row shape. */
 const roles = createRoleRegistry(['admin', 'member'] as const);

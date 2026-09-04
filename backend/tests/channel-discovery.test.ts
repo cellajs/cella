@@ -4,7 +4,7 @@ import type { Actor, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatri
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
   buildChannelListReadWhere,
@@ -62,12 +62,14 @@ let rowCounter = 0;
 
 const insertChannel = async (opts: { courseId?: string | null; published?: boolean } = {}) => {
   const id = `ch-${++rowCounter}`;
-  await seedDb.insert(channelsTable).values({
-    id,
-    organizationId: ORG_ID,
-    courseId: opts.courseId ?? null,
-    publishedAt: opts.published === false ? null : PUBLISHED_AT,
-  });
+  await getSeedDb()
+    .insert(channelsTable)
+    .values({
+      id,
+      organizationId: ORG_ID,
+      courseId: opts.courseId ?? null,
+      publishedAt: opts.published === false ? null : PUBLISHED_AT,
+    });
   return id;
 };
 
@@ -78,15 +80,17 @@ const insertMembership = async (
   role: string,
   opts: { archived?: boolean; organizationId?: string } = {},
 ) => {
-  await seedDb.insert(membershipsTable).values({
-    id: `mem-${++rowCounter}`,
-    userId,
-    channelType,
-    channelId,
-    organizationId: opts.organizationId ?? ORG_ID,
-    role,
-    archived: opts.archived ?? false,
-  });
+  await getSeedDb()
+    .insert(membershipsTable)
+    .values({
+      id: `mem-${++rowCounter}`,
+      userId,
+      channelType,
+      channelId,
+      organizationId: opts.organizationId ?? ORG_ID,
+      role,
+      archived: opts.archived ?? false,
+    });
 };
 
 interface ListOpts {
@@ -104,7 +108,7 @@ interface ListedRow {
 /** The list query as a consumer wires it: LEFT join for discovery, INNER join (filters in ON) once a role filter narrows to memberships. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
   const actor: Actor = { userId, isSystemAdmin: opts.isSystemAdmin ?? false };
-  const memberships = (await seedDb
+  const memberships = (await getSeedDb()
     .select()
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId))) as unknown as MembershipBaseModel[]; // scratch rows carry the base shape
@@ -147,7 +151,9 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     ...(discoveryScope ? [excludeArchivedWhere(readColumns)].filter((c): c is SQL => c !== undefined) : []),
   ];
 
-  const source = seedDb.select({ id: channelsTable.id, membershipRole: membershipsTable.role }).from(channelsTable);
+  const source = getSeedDb()
+    .select({ id: channelsTable.id, membershipRole: membershipsTable.role })
+    .from(channelsTable);
   const joined = discoveryScope
     ? source.leftJoin(membershipsTable, membershipKeyOn)
     : source.innerJoin(membershipsTable, and(membershipKeyOn, membershipFilterOn));
@@ -157,9 +163,9 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
 const idsOf = (rows: ListedRow[]) => rows.map(({ id }) => id).sort();
 
 beforeAll(async () => {
-  await seedDb.execute(sql`drop table if exists test_channel_discovery_rows`);
-  await seedDb.execute(sql`drop table if exists test_channel_discovery_memberships`);
-  await seedDb.execute(sql`
+  await getSeedDb().execute(sql`drop table if exists test_channel_discovery_rows`);
+  await getSeedDb().execute(sql`drop table if exists test_channel_discovery_memberships`);
+  await getSeedDb().execute(sql`
     create table test_channel_discovery_rows (
       id varchar primary key,
       organization_id varchar not null,
@@ -167,7 +173,7 @@ beforeAll(async () => {
       published_at varchar
     )
   `);
-  await seedDb.execute(sql`
+  await getSeedDb().execute(sql`
     create table test_channel_discovery_memberships (
       id varchar primary key,
       user_id varchar not null,
@@ -181,13 +187,13 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-  await seedDb.delete(channelsTable);
-  await seedDb.delete(membershipsTable);
+  await getSeedDb().delete(channelsTable);
+  await getSeedDb().delete(membershipsTable);
 });
 
 afterAll(async () => {
-  await seedDb.execute(sql`drop table if exists test_channel_discovery_rows`);
-  await seedDb.execute(sql`drop table if exists test_channel_discovery_memberships`);
+  await getSeedDb().execute(sql`drop table if exists test_channel_discovery_rows`);
+  await getSeedDb().execute(sql`drop table if exists test_channel_discovery_memberships`);
 });
 
 describe('Channel list discovery rows', () => {
