@@ -177,7 +177,7 @@ export const MarketingNav = () => {
                 />
               }
             >
-              {t('c:home')}
+              {t('c:about')}
             </Button>
             {renderNavItems()}
             {appConfig.company.githubUrl && (
