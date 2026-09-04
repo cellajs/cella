@@ -63,7 +63,8 @@ function DialogContent({
           !container && [
             'fixed inset-0 in-[.sheeter-open]:z-125 z-115',
             outsideScroll
-              ? // Outside scroll: the viewport scrolls; the popup grows past the edges (my-auto centers it, p-4 keeps a gap).
+              ? // Outside scroll: the viewport scrolls; the popup grows past the edges (my-auto centers it, p-4 keeps a gap,
+                // max-w-full on the popup keeps 95vw inside that gap on narrow screens).
                 'flex flex-col items-center overflow-y-auto p-4'
               : // Inside scroll: the viewport only centers; the popup is capped and scrolls internally.
                 'grid place-items-center overflow-hidden',
@@ -75,7 +76,7 @@ function DialogContent({
           initialFocus={initialFocus}
           finalFocus={finalFocus}
           className={cn(
-            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto grid w-[95vw] starting:scale-95 grid-cols-[minmax(0,1fr)] gap-4 overflow-x-clip rounded-lg bg-background p-4 starting:opacity-0 shadow-lg duration-200 focus-visible:outline-none data-starting-style:scale-95 data-closed:animate-out data-open:animate-in data-starting-style:opacity-0',
+            'data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 relative in-[.sheeter-open]:z-126 z-116 mx-auto grid w-[95vw] max-w-full starting:scale-95 grid-cols-[minmax(0,1fr)] gap-4 overflow-x-clip rounded-lg bg-background p-4 starting:opacity-0 shadow-lg duration-200 focus-visible:outline-none data-starting-style:scale-95 data-closed:animate-out data-open:animate-in data-starting-style:opacity-0',
             // Skipped inside a container, which owns its own scroll; inside scroll keeps a screen-edge gap via max-height.
             container ? 'mt-4 overflow-y-clip' : outsideScroll ? 'my-auto' : 'max-h-[calc(100%-2rem)] overflow-y-auto',
             className,
