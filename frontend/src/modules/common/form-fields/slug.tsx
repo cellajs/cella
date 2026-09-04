@@ -1,7 +1,7 @@
 import { Field } from '@base-ui/react/field';
 import { useMutation } from '@tanstack/react-query';
 import { UndoIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type FieldValues, type Path, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation; single-use validator hook scoped to this form field.
@@ -47,12 +47,16 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
+  // Availability responses for a value the user has since replaced are ignored.
+  const latestSlugRef = useRef('');
 
   const prefix = customPrefix;
 
-  const inputClassName = `${isSlugAvailable !== 'blank' && 'ring-2 sm:focus-visible:ring-2'}
-                          ${isSlugAvailable === 'available' && 'ring-green-500 focus-visible:ring-green-500'}
-                          ${isSlugAvailable === 'notAvailable' && 'ring-red-500 focus-visible:ring-red-500'}`;
+  const inputClassName = cn({
+    'ring-2 sm:focus-visible:ring-2': isSlugAvailable !== 'blank',
+    'ring-green-500 focus-visible:ring-green-500': isSlugAvailable === 'available',
+    'ring-red-500 focus-visible:ring-red-500': isSlugAvailable === 'notAvailable',
+  });
 
   const form = useFormContext<{ slug: string }>();
 
@@ -64,33 +68,37 @@ export function SlugFormField<TFieldValues extends FieldValues>({
       if (!tenantId) return;
       return await checkSlug({ path: { tenantId }, body });
     },
-    onSuccess: () => {
-      if (!isValidSlug(slug)) return;
-      form.clearErrors(name);
+    onSuccess: (_, variables) => {
+      if (variables.slug !== latestSlugRef.current) return;
+      // Only the manual availability error is ours to clear; resolver errors on the value stay.
+      if (form.getFieldState(name).error?.type === 'manual') form.clearErrors(name);
       setSlugAvailable('available');
     },
-    onError: () => {
+    onError: (error, variables) => {
+      if (variables.slug !== latestSlugRef.current) return;
+      if (error.status !== 409) return setSlugAvailable('blank');
       form.setError(name, { type: 'manual', message: t('error:slug_exists') });
       setSlugAvailable('notAvailable');
     },
   });
 
+  // Same shape as validSlugSchema on the backend and the generated client zod.
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
-    return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
+    return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
   };
 
   useEffect(() => {
-    if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug))
-      return setSlugAvailable('blank');
-    if (isValidSlug(slug)) {
-      if (!isOnline) return;
-      // Skip availability check for user slugs (globally unique, handled by update API)
-      if (entityType === 'user' || !tenantId) return;
+    const value = slug ?? '';
+    latestSlugRef.current = value;
 
-      return checkAvailability({ slug, entityType });
-    }
-    if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
+    if (value.length < 2 || value === previousSlug) return setSlugAvailable('blank');
+    if (!isValidSlug(value)) return setSlugAvailable('notAvailable');
+
+    // Valid: neutral until a check answers; user slugs are globally unique and checked by the update API.
+    setSlugAvailable('blank');
+    if (!isOnline || entityType === 'user' || !tenantId) return;
+    checkAvailability({ slug: value, entityType });
   }, [slug]);
 
   // Create forms derive the slug from the name until the user edits it
