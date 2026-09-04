@@ -1,4 +1,5 @@
 import { useIsFetching } from '@tanstack/react-query';
+import { useRouterState } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -18,14 +19,10 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
     return () => clearTimeout(timeout);
   }, []);
 
-  const isFetching = useIsFetching({
-    predicate: (query) => {
-      if (query.meta === undefined || !('offlinePrefetch' in query.meta) || !query.meta.offlinePrefetch) return true;
-      return false;
-    },
-  });
+  const isFetching = useIsFetching();
 
-  const navLoading = useNavigationStore((state) => state.navLoading);
+  // The router owns this flag and resets it on every load outcome, including aborted and superseded ones.
+  const navLoading = useRouterState({ select: (state) => state.status === 'pending' });
   const isLoadingRaw = isFetching > 0 || navLoading;
 
   // Delays showing the spinner, hides it instantly.

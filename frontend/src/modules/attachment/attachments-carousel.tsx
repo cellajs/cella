@@ -1,12 +1,12 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import i18n from 'i18next';
-import { DownloadIcon, ExternalLinkIcon } from 'lucide-react';
+import { ChevronUpIcon, DownloadIcon, ExternalLinkIcon, InfoIcon } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
+import { textFromDocument } from 'shared/blocknote';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
-import { AttachmentDescriptionTrigger } from '~/modules/attachment/attachment-description-trigger';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { ATTACHMENT_DIALOG_PARAM, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
@@ -72,8 +72,11 @@ export function AttachmentsCarousel({
 
   const nextButtonRef = useRef(null);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
 
   const currentItem = items.find((item) => item.id === attachmentDialogId) ?? items[itemIndex] ?? null;
+  // Editing lives in the attachments table; the dialog only shows the text, so the toggle needs something to show.
+  const descriptionText = textFromDocument(currentItem?.description);
 
   const currentItemIndex = (() => {
     const index = items.findIndex((item) => item.id === currentItem?.id);
@@ -129,52 +132,97 @@ export function AttachmentsCarousel({
       setApi={handleSetApi}
     >
       {currentItem && isDialog && (
-        <div className="fixed top-0 left-0 z-10 flex w-full gap-2 bg-background/60 p-3 text-center backdrop-blur-xs sm:text-left">
-          {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
-          {currentItem.name ? (
-            <DialogTitle className="ml-1 flex h-6 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
-              {currentItem.contentType && (
-                <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />
-              )}
-              <span className="truncate">{currentItem.name}</span>
-            </DialogTitle>
-          ) : (
-            <DialogTitle className="sr-only">{currentItem.filename || i18n.t('c:attachment')}</DialogTitle>
-          )}
-          <div className="grow" />
-          {isCDNUrl(currentItem.url) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="-my-1 size-8 opacity-70 hover:opacity-100"
-              onClick={() => window.open(currentItem.url, '_blank')}
-            >
-              <ExternalLinkIcon className="h-5 w-5" strokeWidth={1.5} />
-            </Button>
-          )}
+        <div className="fixed top-0 left-0 z-10 flex w-full flex-col bg-background/60 p-3 backdrop-blur-xs">
+          <div className="flex w-full gap-2 text-center sm:text-left">
+            {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
+            {currentItem.name ? (
+              <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
+                {currentItem.contentType && (
+                  <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />
+                )}
+                <span className="truncate">{currentItem.name}</span>
+              </DialogTitle>
+            ) : (
+              <DialogTitle className="sr-only">{currentItem.filename || i18n.t('c:attachment')}</DialogTitle>
+            )}
+            {descriptionText && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-expanded={descriptionOpen}
+                aria-label={i18n.t('c:description')}
+                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100 active:translate-y-0!"
+                onClick={() => setDescriptionOpen(!descriptionOpen)}
+              >
+                <span className="relative size-5">
+                  <InfoIcon
+                    className={cn(
+                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      descriptionOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
+                    )}
+                    strokeWidth={1.5}
+                  />
+                  <ChevronUpIcon
+                    className={cn(
+                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      descriptionOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
+                    )}
+                    strokeWidth={1.5}
+                  />
+                </span>
+              </Button>
+            )}
+            <div className="grow" />
+            {isCDNUrl(currentItem.url) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="-my-1 size-8 opacity-70 hover:opacity-100"
+                onClick={() => window.open(currentItem.url, '_blank')}
+              >
+                <ExternalLinkIcon className="h-5 w-5" strokeWidth={1.5} />
+              </Button>
+            )}
 
-          {/* Download also handles blob URLs; open-in-new-tab stays CDN-only since top-level blob navigation is browser-dependent. */}
-          {(isCDNUrl(currentItem.url) || currentItem.isLocal) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isInProgress}
-              className="-my-1 size-8 opacity-70 hover:opacity-100"
-              onClick={() => download(currentItem.url, currentItem.filename || 'file')}
-            >
-              {isInProgress ? (
-                <Spinner className="size-5 text-foreground/80" noDelay />
-              ) : (
-                <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />
-              )}
-            </Button>
-          )}
+            {/* Download also handles blob URLs; open-in-new-tab stays CDN-only since top-level blob navigation is browser-dependent. */}
+            {(isCDNUrl(currentItem.url) || currentItem.isLocal) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isInProgress}
+                className="-my-1 size-8 opacity-70 hover:opacity-100"
+                onClick={() => download(currentItem.url, currentItem.filename || 'file')}
+              >
+                {isInProgress ? (
+                  <Spinner className="size-5 text-foreground/80" noDelay />
+                ) : (
+                  <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />
+                )}
+              </Button>
+            )}
 
-          <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
+            <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
+          </div>
+          {/* Collapsed by default; expands like a form label's help text. */}
+          {descriptionText && (
+            <div
+              className={cn(
+                'grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none',
+                descriptionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+              )}
+            >
+              <div
+                className={cn(
+                  'overflow-hidden transition-opacity duration-200 motion-reduce:transition-none',
+                  descriptionOpen ? 'opacity-100' : 'opacity-0',
+                )}
+              >
+                <p className="mt-2 ml-1 max-w-3xl text-sm opacity-80 max-sm:mx-auto">{descriptionText}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {isDialog && <DialogCaption item={currentItem} />}
 
       <CarouselContent className="h-full">
         {items.map(({ id, url, filename, contentType = 'image', convertedContentType }, idx) => {
@@ -217,24 +265,5 @@ export function AttachmentsCarousel({
       )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
     </BaseCarousel>
-  );
-}
-
-/** Description under the dialog chrome; local (unsynced) items have no row to edit. */
-function DialogCaption({ item }: { item: CarouselItemData }) {
-  const removeDialog = useDialoger((state) => state.remove);
-  if (item.isLocal) return null;
-
-  return (
-    <div className="fixed bottom-0 left-0 z-10 flex w-full justify-center bg-background/60 p-2 backdrop-blur-xs">
-      <AttachmentDescriptionTrigger
-        attachmentId={item.id}
-        description={item.description}
-        variant="ghost"
-        size="sm"
-        className="max-w-3xl truncate font-normal opacity-80 hover:opacity-100"
-        beforeOpen={removeDialog}
-      />
-    </div>
   );
 }

@@ -61,6 +61,10 @@ export function AppSearch() {
   const [searchValue, setSearchValue] = useState('');
   // Debounced so a request does not fire on every keystroke.
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
+  // Group collapse state lives here so it persists across reloads while typing; it resets with the dialog.
+  const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<string, boolean>>>({});
+  const toggleCollapsed = (entityType: string) =>
+    setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
   const { recentSearches } = useNavigationStore();
 
@@ -113,8 +117,12 @@ export function AppSearch() {
   const notFound = users.length === 0 && Object.values(channelData).every((items) => items.length === 0);
   // The debounce gap counts as loading, so the skeleton shows in place of the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
-  // The gap is included here too, keeping the input spinner visible while typing.
-  const isFetching = isDebouncePending || userQ.isFetching || Object.values(channelResults).some((q) => q.isFetching);
+  // The gap is included here too, keeping the input spinner visible while typing. Query activity only counts
+  // while there is a query: an empty q shares its cache key with default list pages, whose refetches would
+  // otherwise keep the spinner alive after the input is cleared.
+  const hasQuery = debouncedSearchValue.length > 0;
+  const isQueryFetching = hasQuery && (userQ.isFetching || Object.values(channelResults).some((q) => q.isFetching));
+  const isFetching = isDebouncePending || isQueryFetching;
   const isLoading =
     searchValue.length > 0 &&
     (isDebouncePending || userQ.isLoading || Object.values(channelResults).some((q) => q.isLoading));
@@ -147,12 +155,10 @@ export function AppSearch() {
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => {
-        const historyIndexes = recentSearches.map((_, index) => index);
-        if (historyIndexes.includes(Number.parseInt(value, 10))) {
-          setSearchValue(recentSearches[+value]);
-          return;
-        }
-        setSearchValue(value);
+        // A bare index picks a history entry, but only while the history list is showing (input was empty).
+        // Otherwise backspacing a value down to a leading digit would swap in an old search.
+        const isHistoryPick = searchValue === '' && /^\d+$/.test(value) && Number(value) < recentSearches.length;
+        setSearchValue(isHistoryPick ? recentSearches[Number(value)] : value);
       }}
       filter={() => true}
     >
@@ -223,6 +229,8 @@ export function AppSearch() {
                       results={data[entityType] ?? []}
                       entityType={entityType}
                       hideSeparator={entityType === firstWithResults}
+                      collapsed={!!collapsedTypes[entityType]}
+                      onToggleCollapsed={() => toggleCollapsed(entityType)}
                     />
                   ));
                 })()}

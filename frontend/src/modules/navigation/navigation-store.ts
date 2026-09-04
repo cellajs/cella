@@ -31,9 +31,6 @@ interface NavigationStoreState {
   floatingNavActive: boolean; // Floating nav is visible, which hides the bottom bar
   setFloatingNavActive: (status: boolean) => void;
 
-  navLoading: boolean;
-  setNavLoading: (status: boolean) => void;
-
   reset: () => void; // Called on sign-out
 }
 
@@ -43,7 +40,6 @@ interface InitStore
     | 'recentSearches'
     | 'keepNavOpen'
     | 'detailedMenu'
-    | 'navLoading'
     | 'activeSections'
     | 'navSheetOpen'
     | 'keepOpenPreference'
@@ -58,7 +54,6 @@ const initStore: InitStore = {
   keepOpenPreference: false,
   detailedMenu: false,
   floatingNavActive: false,
-  navLoading: false,
   activeSections: null,
   menuSheetPanel: null,
 };
@@ -98,11 +93,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setFloatingNavActive: (status) => {
             set((state) => {
               state.floatingNavActive = status;
-            });
-          },
-          setNavLoading: (status) => {
-            set((state) => {
-              state.navLoading = status;
             });
           },
           toggleSection: (section) => {

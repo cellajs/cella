@@ -146,7 +146,7 @@ function DocsLayout() {
           />
         </aside>
       )}
-      <main className={cn('pt-12 pb-[70vh]', !focusView && 'ml-(--docs-sidebar-width)')}>
+      <main className={cn('pb-[70vh]', !focusView && 'ml-(--docs-sidebar-width)')}>
         <Outlet />
       </main>
     </div>

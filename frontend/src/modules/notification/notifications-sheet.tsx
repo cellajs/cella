@@ -70,9 +70,10 @@ function NotificationRow({
   const route = getNotificationRoute(notification);
 
   const onActivate = () => {
-    // Like the account sheet: a pinned nav sheet stays open beside the content. The nav owns the sheet under this id.
+    // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
+    // `nav-sheet` from the bars but stacks over the menu sheet from the floating-nav menu header.
     if (!useNavigationStore.getState().keepNavOpen) {
-      useSheeter.getState().remove('nav-sheet');
+      useSheeter.getState().remove();
       useNavigationStore.getState().setNavSheetOpen(null);
     }
     if (!notification.readAt) onOpen({ ids: [notification.id] });
