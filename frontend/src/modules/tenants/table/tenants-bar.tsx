@@ -34,7 +34,7 @@ export function TenantsTableBar({ queryKey, searchVars, setSearch, columns, setC
   };
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={48}>
+    <TableBarContainer searchVars={searchVars}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           <TableCount count={total} label="c:tenant" isFiltered={isFiltered} onResetFilters={onResetFilters} />

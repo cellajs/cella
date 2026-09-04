@@ -77,7 +77,7 @@ export function OperationsTableBar({
   ];
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={0}>
+    <TableBarContainer searchVars={searchVars}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           <ViewModeToggle />

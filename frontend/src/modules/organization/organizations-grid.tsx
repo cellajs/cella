@@ -48,7 +48,6 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
           roleFilter={false}
           alwaysShow
           setSearch={setSearch}
-          isSheet={!focusView}
           focusView={focusView}
         />
       )}

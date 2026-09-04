@@ -86,7 +86,7 @@ export function AttachmentsTableBar({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars} offsetTop={48}>
+      <TableBarContainer searchVars={searchVars}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {showUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />}

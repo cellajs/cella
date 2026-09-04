@@ -43,7 +43,6 @@ type Props = {
   entityType: ChannelEntityType;
   searchVars: EntityGridBarSearch;
   setSearch: (search: EntityGridBarSearch) => void;
-  isSheet?: boolean;
   focusView?: boolean;
   /** Sort options shown in the bar; defaults to alphabetical + created date. */
   sortOptions?: readonly EntityGridSortOption[];
@@ -66,7 +65,6 @@ export function EntityGridBar({
   entityType,
   searchVars,
   setSearch,
-  isSheet,
   focusView,
   sortOptions = entityGridSortOptions,
   actions,
@@ -93,7 +91,7 @@ export function EntityGridBar({
   const onResetFilters = () => setSearch({ q: '' });
 
   return (
-    <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 48}>
+    <TableBarContainer searchVars={searchVars}>
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {!isFiltered && actions}

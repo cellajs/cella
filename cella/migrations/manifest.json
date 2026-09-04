@@ -847,6 +847,22 @@
     "pnpm check"
    ],
    "summary": "RLS tables are ENABLE (never FORCE) so admin_role bypasses as owner; Scaleway cannot grant BYPASSRLS (found by the 0.10.0 smoke failure). create-db-roles and the test setup create admin_role without BYPASSRLS; verify asserts enabled-not-forced. CDC worker probes effective bypass per table (rlsBypass/rlsBlockedTables, health reason rls_bypass_missing replaces role_missing_bypassrls). Smoke results are ok/warn/fail (degraded warns via ::warning::, unhealthy fails); infra status gains live.components on the shared lib/health-components.ts."
+  },
+  {
+   "id": "20260904T1349-table-bar-sticky-cleanup",
+   "version": "next",
+   "title": "Table filter bars drop the dead sticky wiring",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "TableBarContainer no longer wraps filter rows in StickyBox: enableSticky defaulted to false and no bar ever set it, so offsetTop, enableSticky, the focusView subscription and the group/sticky classes were dead. The container is now a plain flex row plus the search-vars scroll reset, and EntityGridBar drops its isSheet prop (it only fed offsetTop). App-owned bars remove offsetTop from <TableBarContainer> and isSheet from <EntityGridBar>. StickyBox itself is untouched."
   }
  ]
 }

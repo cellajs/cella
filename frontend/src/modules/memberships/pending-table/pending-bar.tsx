@@ -7,7 +7,7 @@ export function PendingMembershipsTableBar({ queryKey }: { queryKey: QueryKey })
   const total = useListQueryTotal(queryKey);
 
   return (
-    <TableBarContainer offsetTop={0}>
+    <TableBarContainer>
       <TableCount count={total} label="c:pending_invitation" />
     </TableBarContainer>
   );
