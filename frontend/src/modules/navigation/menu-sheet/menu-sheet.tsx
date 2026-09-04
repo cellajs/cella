@@ -6,11 +6,10 @@ import { appConfig } from 'shared';
 import { menuSectionsSchema } from '~/menu-config';
 import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
-import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
+import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
@@ -77,17 +76,9 @@ export function MenuSheet() {
     .filter((el) => el !== null);
 
   return (
-    <div className="group/menu flex min-h-dvh w-full flex-col bg-card">
-      <FocusTarget target="sheet" />
-
+    <NavSheetFrame panels>
       <MenuSheetHeader />
       {renderedSections}
-      <span className="mt-10" />
-      <MenuSheetPanels />
-      <div className="flex flex-col focus-within:p-3">
-        <FocusBridge direction="to-content" className="focus:relative" />
-        <FocusBridge direction="to-sidebar" className="focus:relative" />
-      </div>
-    </div>
+    </NavSheetFrame>
   );
 }

@@ -68,7 +68,6 @@ export function AppNav() {
   useHotkeys([
     ['Shift + A', () => triggerNavItem('account')],
     ['Shift + F', () => triggerNavItem('search')],
-    ['Shift + H', () => triggerNavItem('home')],
     ['Shift + M', () => triggerNavItem('menu')],
   ]);
 

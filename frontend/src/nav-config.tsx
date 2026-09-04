@@ -1,4 +1,4 @@
-import { BellIcon, HouseIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
+import { BellIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
 import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
@@ -15,8 +15,15 @@ import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
  * the button; both are plain components, so apps can swap or drop them here.
  */
 export const navItems = [
-  { id: 'menu', type: 'base', icon: MenuIcon, sheet: () => <MenuSheet />, badgeSlot: UnseenNavBadge },
-  { id: 'home', type: 'base', icon: HouseIcon, href: '/home', iconSlot: AppNavLoader },
+  // Home lives in the menu sheet header, so the menu button also carries the brand intro and the loading spinner.
+  {
+    id: 'menu',
+    type: 'base',
+    icon: MenuIcon,
+    sheet: () => <MenuSheet />,
+    iconSlot: AppNavLoader,
+    badgeSlot: UnseenNavBadge,
+  },
   { id: 'search', type: 'base', icon: SearchIcon, action: startSearchAction },
   // Mentions and addressed activity; ambient posts stay on the menu badge above.
   { id: 'notifications', type: 'base', icon: BellIcon, sheet: () => <NotificationsSheet />, badgeSlot: UnreadNavBadge },
