@@ -98,7 +98,7 @@ export const config = {
     frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
     backend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com/api' },
     cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean, publicUrl: 'wss://www.cellajs.com/yjs' },
+    yjs: { enabled: true as boolean, publicUrl: 'wss://www.cellajs.com/yjs' },
     mcp: { enabled: false as boolean, publicUrl: 'https://www.cellajs.com/mcp' },
   },
 

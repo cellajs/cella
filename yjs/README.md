@@ -56,7 +56,7 @@ When no `yjs_documents` row exists, the relay loads the entity's `description` w
 
 Updates are broadcast to peers, then merged into pending state. A three-second debounce yields one save per document, overwriting its single `yjs_documents` row. A failed save merges back into pending state for the next window.
 
-After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content. On change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, sanitizes media URLs, and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers none, so materialization returns `4xx` until an app registers one through `defineBackendModule({ yjsMaterializer })`.
+After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content. On change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, sanitizes media URLs, and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `4xx` for a product without one.
 
 | Result | Behavior |
 | --- | --- |
