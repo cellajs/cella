@@ -10,8 +10,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
-import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
+import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
@@ -75,8 +74,7 @@ export function AccountSheet() {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="group/menu flex min-h-dvh w-full flex-col bg-card">
-      <FocusTarget target="sheet" />
+    <NavSheetFrame ref={buttonWrapper} panels>
       <div className="flex items-center justify-between px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
@@ -148,14 +146,6 @@ export function AccountSheet() {
           action="/auth/sign-out"
         />
       </div>
-
-      <span className="mt-10" />
-      <MenuSheetPanels />
-
-      <div className="flex flex-col focus-within:p-3">
-        <FocusBridge direction="to-content" className="focus:relative" />
-        <FocusBridge direction="to-sidebar" className="focus:relative" />
-      </div>
-    </div>
+    </NavSheetFrame>
   );
 }

@@ -1,11 +1,11 @@
-import { UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { useUserStore } from '~/modules/user/user-store';
 
-export function AccountNavIcon({ className }: { className?: string }) {
+export function AccountNavIcon({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
   const { user } = useUserStore();
 
-  if (!user) return <UserIcon className={className} strokeWidth={1.8} />;
+  if (!user) return <Icon className={className} strokeWidth={1.8} />;
 
   return (
     <EntityAvatar

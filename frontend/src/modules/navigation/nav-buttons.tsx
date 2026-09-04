@@ -19,7 +19,7 @@ function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: stri
 
   if (navItem.iconSlot) {
     const IconSlot = navItem.iconSlot;
-    return <IconSlot className={iconClass} />;
+    return <IconSlot className={iconClass} icon={navItem.icon} />;
   }
 
   const NavItemIcon = navItem.icon;
