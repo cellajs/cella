@@ -11,7 +11,12 @@ import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/syn
 import { queryClient } from '~/query/query-client';
 import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import { enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
+import {
+  attachPendingPropagation,
+  enqueueCatchupRange,
+  flushChannelViewNow,
+  resetFetchPrioritizer,
+} from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
@@ -125,10 +130,13 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
     }
 
-    // Propagation AFTER delta fetches so fresh source data is in cache.
+    // Propagation runs after the delta fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.
     if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
-        propagateEmbeddings(hint);
+        const embeddedProduct = hint.embeddedProduct as ProductEntityType;
+        const pending =
+          hasEntityQueryKeys(embeddedProduct) && attachPendingPropagation(embeddedProduct, organizationId, hint);
+        if (!pending) propagateEmbeddings(hint);
       }
     }
   }

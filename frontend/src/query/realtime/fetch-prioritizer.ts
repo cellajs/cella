@@ -132,6 +132,18 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
   armTimer();
 }
 
+/** Attach a catchup propagation hint to the pending org range of the hint's embedded product, so it runs after the fetch that ingests the fresh embedded rows. False when nothing is pending for that scope; the caller then propagates at once. */
+export function attachPendingPropagation(
+  entityType: ProductEntityType,
+  organizationId: string,
+  propagation: NonNullable<AppStreamNotification['propagation']>,
+): boolean {
+  const entry = dirty.get(entryKey(entityType, organizationId, null));
+  if (!entry) return false;
+  entry.propagations.push(propagation);
+  return true;
+}
+
 /** Flush every dirty scope now (tab hiding, tests). */
 export function flushAllNow(): Promise<void> {
   for (const entry of dirty.values()) entry.dueAt = 0;

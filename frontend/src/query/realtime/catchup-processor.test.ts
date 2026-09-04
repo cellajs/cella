@@ -38,6 +38,19 @@ vi.mock('~/query/offline', () => ({
   sourceId: 'test-source',
 }));
 
+// Real propagation, observed: the deferral tests assert when it runs relative to the delta fetch.
+const propagateEmbeddingsSpy = vi.fn();
+vi.mock('./propagation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./propagation')>();
+  return {
+    ...actual,
+    propagateEmbeddings: (hint: Parameters<typeof actual.propagateEmbeddings>[0]) => {
+      propagateEmbeddingsSpy(hint);
+      return actual.propagateEmbeddings(hint);
+    },
+  };
+});
+
 vi.mock('./membership-ops', () => ({
   invalidateChannelList: vi.fn(),
   invalidateMemberQueries: vi.fn(),
@@ -414,6 +427,64 @@ describe('catchup → fetch prioritizer fold', () => {
     await flushAllNow();
     expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
+  });
+
+  it('defers a background org propagation hint to the flush that ingests the fresh embedded rows', async () => {
+    const { getSyncTier } = await import('./sync-priority');
+    vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
+
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+
+    const hint = {
+      embeddedProduct: 'attachment',
+      hostProduct: 'attachment',
+      hostColumn: 'labels',
+      update: ['host-1'],
+      remove: [],
+    };
+    const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
+    await processAppCatchup(response);
+
+    // The hint waits for the range that carries the fresh embedded rows.
+    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(propagateEmbeddingsSpy).not.toHaveBeenCalled();
+
+    await flushAllNow();
+    expect(deltaFetch).toHaveBeenCalledTimes(1);
+    expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
+    expect(propagateEmbeddingsSpy).toHaveBeenCalledWith(hint);
+  });
+
+  it('propagates at once for a viewing org, whose delta fetch was awaited inline', async () => {
+    const { getSyncTier } = await import('./sync-priority');
+    vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
+
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
+
+    const hint = {
+      embeddedProduct: 'attachment',
+      hostProduct: 'attachment',
+      hostColumn: 'labels',
+      update: ['host-1'],
+      remove: [],
+    };
+    const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
+    await processAppCatchup(response);
+
+    expect(deltaFetch).toHaveBeenCalledTimes(1);
+    expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
   });
 
   it('still reconciles viewing orgs inline through the fetch prioritizer flush (mutation-replay gate)', async () => {
