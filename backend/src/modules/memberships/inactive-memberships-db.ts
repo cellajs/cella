@@ -1,10 +1,10 @@
-import { foreignKey, index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -24,7 +24,7 @@ export const inactiveMembershipsTable = snakeCase.table(
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
     tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
-    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType)),
+    role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     rejectedAt: timestamp({ mode: 'string' }),
     remindedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
@@ -40,10 +40,7 @@ export const inactiveMembershipsTable = snakeCase.table(
     index('inactive_memberships_email_idx').on(table.email),
     index('inactive_memberships_org_pending_idx').on(table.organizationId, table.rejectedAt),
     unique('inactive_memberships_tenant_email_ctx').on(table.tenantId, table.email, table.channelId),
-    foreignKey({
-      columns: [table.tenantId, table.organizationId],
-      foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
-    }).onDelete('cascade'),
+    organizationForeignKey(table),
   ],
 );
 

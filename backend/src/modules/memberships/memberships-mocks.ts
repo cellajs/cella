@@ -25,10 +25,6 @@ type ChannelRef = { id: string; tenantId: string } & Partial<MembershipChannelId
 type MembershipChannelIdColumns = EntityIdColumns<ChannelEntityType, string | null>;
 type ChannelIdOverrides = Partial<MembershipChannelIdColumns>;
 
-const rootChannelType = hierarchy.channelTypes.find(
-  (channelType) => hierarchy.getParent(channelType) === null,
-) as ChannelEntityType;
-
 /**
  * Membership location columns for wire mocks: contexts start null, ancestors get invented UUIDs, and the target column
  * always equals the denormalized `channelId`. Never use for database rows: invented ancestor IDs violate FKs.
@@ -83,7 +79,7 @@ export type MockMembershipBaseOptions = {
 
 /** Seedless membership-base fragment shared by stored and response mocks. */
 const generateMembershipBase = (options: MockMembershipBaseOptions = {}): MembershipBase => {
-  const channelType = options.channelType ?? rootChannelType;
+  const channelType = options.channelType ?? 'organization';
   const channelId = options.channelId ?? mockUuid();
   return {
     id: mockUuid(),

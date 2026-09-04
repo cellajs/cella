@@ -1,5 +1,4 @@
 import { and, eq } from 'drizzle-orm';
-import { hierarchy } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -9,8 +8,6 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { findInactiveMembershipForUser } from '#/modules/memberships/memberships-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
-
-const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null)!;
 
 export async function handleMembershipInvitationOp(
   ctx: AuthContext,
@@ -54,14 +51,14 @@ export async function handleMembershipInvitationOp(
     }
   });
 
-  const rootEntityId = inactiveMembership.organizationId;
-  if (!rootEntityId) throw new AppError(500, 'server_error', 'error', { entityType: rootChannelType });
+  const organizationId = inactiveMembership.organizationId;
+  if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });
 
   const entity = await resolveEntity(
     { var: { db: baseDb } },
-    { entityType: rootChannelType, identifier: rootEntityId },
+    { entityType: 'organization', identifier: organizationId },
   );
-  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: rootChannelType });
+  if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: 'organization' });
 
   return entity;
 }

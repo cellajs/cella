@@ -4,8 +4,8 @@ import { configurePolicyMatrix } from '../../testing/policies.ts';
 import { getAllDecisions } from './check.ts';
 import type { SubjectForPermission } from './types.ts';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 type TestMembership = {
   id: string;

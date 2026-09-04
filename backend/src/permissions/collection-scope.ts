@@ -81,11 +81,10 @@ const resolveScopes = (
   entityType: ProductEntityType,
   organizationId: string,
   elevatedGrants: ReadonlySet<string> | undefined,
-  ancestors: readonly ChannelEntityType[], // most-specific → root, e.g. [project, course, organization]
+  ancestors: readonly ChannelEntityType[], // most-specific → organization, e.g. [project, course, organization]
   publicGrants: PublicReadGrants | undefined,
 ): ScopeAccumulator => {
-  const rootChannel = ancestors.at(-1) ?? null;
-  const homeChannelType = ancestors.find((channel) => channel !== rootChannel) ?? null;
+  const homeChannelType = ancestors.find((channel) => channel !== 'organization') ?? null;
 
   // With elevatedGrants configured, a non-elevated grant speaks only for rows HOMED at its
   // level; deepest-level grants are home-exact already, so only higher levels carry the mark.
@@ -136,20 +135,20 @@ const resolveScopes = (
   };
 
   for (const membership of memberships) {
-    // Root-channel grant: org-wide scope, or org-homed rows only for non-elevated roles.
-    if (rootChannel && membership.channelType === rootChannel && membership.channelId === organizationId) {
-      const value = roleReadValue(policies, entityType, rootChannel, membership.role);
-      if (value === 1) addUnconditional(rootChannel, membership.role, null);
+    // Organization grant: org-wide scope, or org-homed rows only for non-elevated roles.
+    if (membership.channelType === 'organization' && membership.channelId === organizationId) {
+      const value = roleReadValue(policies, entityType, 'organization', membership.role);
+      if (value === 1) addUnconditional('organization', membership.role, null);
       else if (isRowCondition(value))
-        addConditional(value, null, undefined, isHomeScopedGrant(rootChannel, membership.role));
+        addConditional(value, null, undefined, isHomeScopedGrant('organization', membership.role));
       continue;
     }
 
-    // Non-root grants scope by their own denormalized ancestor id column, covering every physically nested row.
+    // Sub-organization grants scope by their own denormalized ancestor id column, covering every physically nested row.
     if (
       membership.organizationId === organizationId &&
       membership.channelId &&
-      membership.channelType !== rootChannel &&
+      membership.channelType !== 'organization' &&
       ancestors.includes(membership.channelType)
     ) {
       const grantLevel = membership.channelType as ChannelEntityType;
@@ -331,8 +330,7 @@ export const resolveCollectionReadFilterForPolicies = ({
     publicGrants,
   );
   const conditionalScopes = toConditionalScopes(acc, orderedChannels);
-  const rootChannel = orderedChannels.at(-1) ?? null;
-  const homeChannel = orderedChannels.find((channel) => channel !== rootChannel) ?? null;
+  const homeChannel = orderedChannels.find((channel) => channel !== 'organization') ?? null;
   const intermediateScopes = toIntermediateScopes(acc);
   const homeScopes = toHomeScopes(acc, orderedChannels);
 
@@ -349,7 +347,7 @@ export const resolveCollectionReadFilterForPolicies = ({
 
   const unconditionallyReadable = (id: string): boolean => acc.unconditionalOrgWide || acc.unconditionalIds.has(id);
   const isIntermediate = (channelType: ChannelEntityType | undefined): boolean =>
-    channelType !== undefined && channelType !== homeChannel && channelType !== rootChannel;
+    channelType !== undefined && channelType !== homeChannel && channelType !== 'organization';
 
   // Restrict requested ids only at home level; intermediate grants could otherwise widen the set.
   const conditionalScopesFor = (ids: string[]): ConditionalScope[] => {

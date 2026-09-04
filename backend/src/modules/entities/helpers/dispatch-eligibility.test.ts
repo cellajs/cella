@@ -9,8 +9,8 @@ import {
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /**
  * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto

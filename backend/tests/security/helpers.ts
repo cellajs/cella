@@ -42,7 +42,7 @@ export async function createOrgUser(
   tenantId: string,
   organizationId: string,
   label: string,
-  role: EntityRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType),
+  role: EntityRole = hierarchy.getLeastPrivilegedRole('organization'),
 ) {
   const email = `${label}-user@security-test.com`;
 

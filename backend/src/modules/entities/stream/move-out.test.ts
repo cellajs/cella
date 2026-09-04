@@ -8,8 +8,8 @@ import type { StreamNotification } from '#/schemas';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /**
  * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates

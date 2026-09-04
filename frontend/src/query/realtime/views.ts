@@ -49,10 +49,9 @@ export function deriveGrantBoundaryViews({
 
   for (const entityType of entityTypes) {
     const entityPolicies = getEntityPolicies(entityType, policies);
-    // Ancestors are most-specific → root; the home level is the first non-root one.
+    // Ancestors are most-specific → organization; the home level is the first one below it.
     const ancestors = hierarchy.getOrderedAncestors(entityType);
-    const root = ancestors[ancestors.length - 1];
-    const homeLevel = ancestors.find((a) => a !== root) ?? root;
+    const homeLevel = ancestors.find((a) => a !== 'organization') ?? 'organization';
     // Mirrors the engine's isHomeScopedGrant; the hierarchy-compiled set is always present.
     const isSubtreeGrant = (channelType: string, role: string) =>
       channelType === homeLevel || elevatedGrants.has(`${channelType}:${role}`);
@@ -62,7 +61,7 @@ export function deriveGrantBoundaryViews({
       if (getPolicyPermissions(entityPolicies, m.channelType, m.role)?.read !== 1) continue;
 
       const depth: DerivedSyncView['depth'] = isSubtreeGrant(m.channelType, m.role) ? 'subtree' : 'self';
-      const prefix = m.channelType === root ? m.organizationId : resolvePath(m.channelType, m.channelId);
+      const prefix = m.channelType === 'organization' ? m.organizationId : resolvePath(m.channelType, m.channelId);
       if (!prefix) continue;
 
       // Merge per (org, entityType, depth): home-level grants become one prefix-set view.

@@ -1,6 +1,6 @@
 import { and, eq, getColumns, inArray, isNull, sql } from 'drizzle-orm';
 import type { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
-import { appConfig, hierarchy, type ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
@@ -21,7 +21,7 @@ interface ResolvedOwnedEmbedding {
   hostColumn: AnyPgColumn;
   hostColumnName: string;
   hostScopeColumn: AnyPgColumn;
-  /** Root channel id column both sides carry, e.g. `organizationId`. */
+  /** Organization id column both sides carry. */
   scopeColumnName: string;
 }
 
@@ -46,12 +46,8 @@ function resolveOwnedEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedOwnedE
         throw new Error(`owned embedding: column "${required}" not found on "${embeddedProduct}" table`);
     }
 
-    // Refcounting is scoped to the root channel, so a host in a sibling subtree still spares the row.
-    const rootChannel = hierarchy.getOrderedAncestors(embeddedProduct).at(-1);
-    if (!rootChannel)
-      throw new Error(`owned embedding: "${embeddedProduct}" has no channel ancestor to scope garbage collection by`);
-
-    const scopeColumnName = appConfig.entityIdColumnKeys[rootChannel];
+    // Refcounting is scoped to the organization, so a host in a sibling subtree still spares the row.
+    const scopeColumnName = appConfig.entityIdColumnKeys.organization;
     const hostScopeColumn = hostColumns[scopeColumnName];
     const embeddedScopeColumn = embeddedColumns[scopeColumnName];
     if (!hostScopeColumn)
@@ -94,7 +90,7 @@ interface ScopeCandidates {
  * Garbage-collects owned embedded rows after their host arrays shrink. Call only for update batches
  * of a registered owned-embedding host. Candidates are ids observed leaving a host array (a
  * soft-deleted host surrenders its whole array), and a candidate is soft-deleted only when no live
- * host row in the same root channel still references it, so rows never referenced stay exempt. The
+ * host row in the same organization still references it, so rows never referenced stay exempt. The
  * soft-delete is a plain product UPDATE and flows through the normal pipeline.
  */
 export async function gcOwnedEmbeddedRows(
@@ -108,7 +104,7 @@ export async function gcOwnedEmbeddedRows(
     const { embeddedProduct, embeddedTable, embeddedColumns, embeddedScopeColumn } = embedding;
     const { hostTable, hostColumn, hostColumnName, hostScopeColumn, scopeColumnName } = embedding;
 
-    // Root channel is the GC scope boundary.
+    // The organization is the GC scope boundary.
     const byScope = new Map<string, ScopeCandidates>();
 
     for (const { result } of events) {

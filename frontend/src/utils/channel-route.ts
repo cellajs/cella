@@ -73,14 +73,13 @@ export const getNearestAncestorRoute = (
 ): EntityRoute => {
   const { tenantId, organizationId } = channel;
   const params = { tenantId, organizationSlug: orgSlugParam(organizationId, tenantId) };
-  // Widened so a single-channel hierarchy does not narrow `ancestor` to never after the root check.
-  const rootChannelType: string = hierarchy.rootChannelType;
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    if (ancestor === rootChannelType) break;
+    // Compared as string so a single-channel hierarchy does not narrow `ancestor` to never.
+    if ((ancestor as string) === 'organization') break;
     const id = channel[appConfig.entityIdColumnKeys[ancestor]];
     if (typeof id !== 'string') continue;
     const config = channelRouteConfig[ancestor];
     return { to: config.path, params: { ...params, [config.paramName]: id }, search: {} };
   }
-  return { to: channelRouteConfig[hierarchy.rootChannelType].path, params, search: {} };
+  return { to: channelRouteConfig.organization.path, params, search: {} };
 };

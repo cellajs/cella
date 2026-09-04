@@ -31,7 +31,7 @@ const attachmentSubject = (
 // that fails for apps customizing roles or re-parenting products in a config file they own.
 describe('hierarchy guards (wide fixture)', () => {
   describe('hierarchy.getOrderedAncestors', () => {
-    it('returns empty array for root channel', () => {
+    it('returns empty array for the organization', () => {
       const ancestors = wideHierarchy.getOrderedAncestors('organization');
       expect(ancestors).toEqual([]);
     });

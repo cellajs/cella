@@ -64,7 +64,6 @@ export const findMembershipAwareRows = async (
 ) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
-  const rootChannelType = 'organization' as const;
 
   return db
     .select({
@@ -105,7 +104,7 @@ export const findMembershipAwareRows = async (
       orgMemberships,
       and(
         eq(orgMemberships.userId, usersTable.id),
-        eq(orgMemberships.channelType, rootChannelType),
+        eq(orgMemberships.channelType, 'organization'),
         eq(orgMemberships.channelId, organizationId),
       ),
     )

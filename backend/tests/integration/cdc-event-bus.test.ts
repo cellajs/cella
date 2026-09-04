@@ -99,7 +99,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     // Strict sub-organization ancestor columns carry foreign keys, so their rows must exist.
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
-      rootChannelId: testOrg.id,
+      organizationId: testOrg.id,
       makeChannelId: () => crypto.randomUUID(),
     });
     await seedEntityHierarchy(db, plan, { tenantId: testOrg.tenantId, createdBy: testUser.id, slugPrefix: 'cdc-seq' });

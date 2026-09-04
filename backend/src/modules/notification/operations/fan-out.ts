@@ -163,5 +163,5 @@ function resolveChannel(
 ): { id: string; type: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(entityType, row);
   if (deepest && isChannel(deepest.type)) return { id: deepest.id, type: deepest.type };
-  return { id: row.organizationId, type: hierarchy.rootChannelType };
+  return { id: row.organizationId, type: 'organization' };
 }

@@ -14,8 +14,10 @@ export interface ValidProductResult<K extends ProductEntityType> {
 }
 
 /**
- * Checks whether the user may perform `action` on a product entity resolved by `id` (system-admin
- * bypass sits inside `checkAccess`); throws 404 if not found, 403 if not allowed.
+ * Checks whether the user may perform `action` on a product entity resolved by `id`; throws 404
+ * if not found, 403 if not allowed. Every product carries `tenantId` and `organizationId`, and the
+ * row must match the request scope set by the guard chain, so the answer is the same with RLS
+ * bypassed. System-admin bypass sits inside `checkAccess` and never widens that scope.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
   ctx: AuthContext,
@@ -23,15 +25,26 @@ export const getValidProduct = async <K extends ProductEntityType>(
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
 ): Promise<ValidProductResult<K>> => {
-  // Auto-wrap in tenantRead outside an RLS context (bare baseDb); tenant-less entities (e.g. pages) skip it.
+  // Product routes run behind tenantGuard + orgGuard; a route wired without them is a bug, not a request error.
+  const { tenantId, organizationId } = ctx.var;
+  if (!tenantId || !organizationId) {
+    throw new AppError(500, 'server_error', 'error', {
+      entityType,
+      meta: { reason: 'Product route without tenant and organization scope' },
+    });
+  }
+
+  // Bare baseDb carries no RLS session context, so the read runs inside a tenant transaction.
   const entity =
-    ctx.var.db === baseDb && ctx.var.tenantId
+    ctx.var.db === baseDb
       ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id }))
       : await resolveEntity(ctx, { entityType, identifier: id });
-  if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
-  // Unpublished drafts (publishedAt null) read as absent to everyone but their author, with the
-  // same 404 shape as a soft-deleted row, so a draft's existence is never revealed.
+  // Missing, soft-deleted, foreign-tenant, foreign-organization and invisible-draft rows all read
+  // as the same 404, so a row's existence is never revealed outside its scope.
+  if (!entity || entity.tenantId !== tenantId || entity.organizationId !== organizationId) {
+    throw new AppError(404, 'not_found', 'warn', { entityType });
+  }
   if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.userId)) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
@@ -39,19 +52,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   // The entity doubles as `row`, so 'own' row conditions and public read grants evaluate from real row data.
   const subject = buildSubjectFromEntity(entityType, entity);
   const { allowed } = checkAccess(accessFrom(ctx), action, subject);
-
-  if (!allowed) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
-  }
-
-  if (
-    ctx.var.organizationId &&
-    typeof entity === 'object' &&
-    'organizationId' in entity &&
-    entity.organizationId !== ctx.var.organizationId
-  ) {
-    throw new AppError(404, 'not_found', 'warn', { entityType });
-  }
+  if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
 
   return { entity };
 };

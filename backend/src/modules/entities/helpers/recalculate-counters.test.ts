@@ -8,7 +8,7 @@ describe('deepestAncestorExpr', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);
     const h = createEntityHierarchy(roles)
       .user()
-      .channel('organization', { parent: null, roles: roles.all })
+      .organization({ roles: roles.all })
       .channel('project', { parent: 'organization', roles: roles.all })
       .product('task', { parent: 'project' })
       .build();
@@ -16,7 +16,7 @@ describe('deepestAncestorExpr', () => {
     expect(deepestAncestorExpr('task', 't', h)).toBe('COALESCE(t.project_id, t.organization_id)');
   });
 
-  it('root context has no grouping expression (organization is guaranteed present in every hierarchy)', () => {
+  it('organization has no grouping expression (it is present in every hierarchy)', () => {
     expect(deepestAncestorExpr('organization', 't')).toBeNull();
   });
 
@@ -24,7 +24,7 @@ describe('deepestAncestorExpr', () => {
     const roles = createRoleRegistry(['admin', 'member'] as const);
     const h = createEntityHierarchy(roles)
       .user()
-      .channel('organization', { parent: null, roles: roles.all })
+      .organization({ roles: roles.all })
       .channel('course', { parent: 'organization', roles: roles.all })
       .channel('courseSection', { parent: 'course', roles: roles.all })
       .channel('project', { parent: 'courseSection', roles: roles.all })

@@ -12,7 +12,7 @@ import { getAllDecisions } from './engine/index.ts';
 import { configurePermissions } from './policy-matrix.ts';
 
 /** The wide fixture's root floor role; the callbacks below configure `wideOverrides`, not the app hierarchy. */
-const memberRole = wideHierarchy.getLeastPrivilegedRole(wideHierarchy.rootChannelType);
+const memberRole = wideHierarchy.getLeastPrivilegedRole('organization');
 
 describe('missing policy rows', () => {
   it('denies every action instead of requiring explicit all-zero rows', () => {

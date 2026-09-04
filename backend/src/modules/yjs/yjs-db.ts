@@ -1,7 +1,7 @@
-import { customType, foreignKey, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { customType, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { tenantIdLength } from '#/db/utils/constraints';
-import { organizationsTable } from '#/modules/organization/organization-db';
+import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 // Custom bytea type for raw Y.Doc binary storage
@@ -30,10 +30,7 @@ export const yjsDocumentsTable = snakeCase.table(
     primaryKey({ columns: [table.entityType, table.entityId] }),
     index('idx_yjs_docs_tenant').on(table.tenantId),
     index('idx_yjs_docs_org').on(table.organizationId),
-    foreignKey({
-      columns: [table.tenantId, table.organizationId],
-      foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
-    }).onDelete('cascade'),
+    organizationForeignKey(table),
     tenantSelectPolicy('yjs_documents', table),
     ...writeThroughPolicies('yjs_documents'),
   ],

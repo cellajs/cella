@@ -1,10 +1,10 @@
-import { boolean, foreignKey, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
+import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { mentionableColumns, productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
-import { organizationsTable } from '#/modules/organization/organization-db';
 
 /** Each attachment belongs to exactly one tenant and organization: the RLS isolation boundary. */
 export const attachmentsTable = snakeCase.table(
@@ -41,10 +41,7 @@ export const attachmentsTable = snakeCase.table(
     index('attachments_group_id_index').on(table.groupId),
     // Placement seam: an index per sub-organization ancestor column; none for org-homed rows.
     ...channelRelationIndexes('attachments', table, 'attachment'),
-    foreignKey({
-      columns: [table.tenantId, table.organizationId],
-      foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
-    }).onDelete('cascade'),
+    organizationForeignKey(table),
     tenantSelectPolicy('attachments', table),
     ...writeThroughPolicies('attachments'),
   ],

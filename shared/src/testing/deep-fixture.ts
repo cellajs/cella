@@ -33,7 +33,7 @@ export const makeDeepHierarchy = (
 ) =>
   createEntityHierarchy(deepRoles)
     .user()
-    .channel('organization', { parent: null, roles: deepChannelRoles.organization })
+    .organization({ roles: deepChannelRoles.organization })
     .channel('course', { parent: 'organization', roles: deepChannelRoles.course })
     .channel('courseSection', { parent: 'course', roles: deepChannelRoles.courseSection })
     .channel('project', { parent: 'courseSection', roles: deepChannelRoles.project })

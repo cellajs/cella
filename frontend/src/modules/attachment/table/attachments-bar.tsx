@@ -2,7 +2,7 @@ import { InfoIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
@@ -39,10 +39,13 @@ export function AttachmentsTableBar({
   const createDialog = useDialoger((state) => state.create);
   // Placement seam: a sub-organization channel homes its uploads on itself; the organization row is the
   // org. Publication is row-local, so the channel's `publicAt` is only the default a new row starts with.
-  const isRoot = channel.entityType === hierarchy.rootChannelType;
-  const organizationId = !isRoot && 'organizationId' in channel ? String(channel.organizationId) : channel.id;
+  const isOrganization = channel.entityType === 'organization';
+  const organizationId = !isOrganization && 'organizationId' in channel ? String(channel.organizationId) : channel.id;
   const publicAt = 'publicAt' in channel && typeof channel.publicAt === 'string' ? channel.publicAt : null;
-  const placement = { ...(isRoot ? {} : { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), publicAt };
+  const placement = {
+    ...(isOrganization ? {} : { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }),
+    publicAt,
+  };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
   const resolveCan = useResolveCan();
 

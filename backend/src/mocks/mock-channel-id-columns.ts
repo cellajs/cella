@@ -2,13 +2,11 @@ import {
   type AncestorChannelType,
   appConfig,
   type ChannelEntityType,
-  type EntityIdColumnKey,
   type EntityIdColumns,
   type EntityType,
   hierarchy,
   type ProductEntityType,
   type RelatedChannelType,
-  type RootChannelType,
 } from 'shared';
 import { mockUuid } from './mock-nanoid';
 
@@ -47,19 +45,16 @@ export const generateMockActivityChannelIdColumns = (): MockActivityChannelIdCol
     new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType))),
   ) as MockActivityChannelIdColumns;
 
-/** The root channel entity type (parentless context, e.g. 'organization'), supplied by the route path. */
-const rootChannelType = hierarchy.channelTypes.find((t) => hierarchy.getParent(t) === null) as ChannelEntityType;
-
-/** Non-root ancestor and related-channel IDs for create-body mocks; the route supplies the root ID. */
+/** Sub-organization ancestor and related-channel IDs for create-body mocks; the route supplies the organization ID. */
 export const generateMockEntityBodyChannelIdColumns = <E extends ProductEntityType>(
   entityType: E,
-): Omit<MockEntityChannelIdColumns<E>, EntityIdColumnKey<RootChannelType>> => {
+): Omit<MockEntityChannelIdColumns<E>, 'organizationId'> => {
   // Nullable ancestors are optional placement resolved from real rows server-side, so a
   // create-body mock carries only the required ones; an invented id would never resolve.
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
   return mockIdColumns(
     [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)].filter(
-      (channelType) => channelType !== rootChannelType && !nullableAncestors.has(channelType),
+      (channelType) => channelType !== 'organization' && !nullableAncestors.has(channelType),
     ),
-  ) as Omit<MockEntityChannelIdColumns<E>, EntityIdColumnKey<RootChannelType>>;
+  ) as Omit<MockEntityChannelIdColumns<E>, 'organizationId'>;
 };

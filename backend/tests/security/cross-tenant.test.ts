@@ -28,7 +28,7 @@ type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdCol
 const bodyChannelIdColumns = (): BodyChannelIdColumns => {
   const deepest = hierarchy
     .getOrderedAncestors('attachment')
-    .find((type) => type !== hierarchy.rootChannelType && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
   if (!deepest) return {} as BodyChannelIdColumns;
   const key = appConfig.entityIdColumnKeys[deepest];
   return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
@@ -58,7 +58,7 @@ describe('Cross-tenant API isolation', async () => {
     tenantB = await createTestTenant(call, 'tenant-b');
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
-      rootChannelId: tenantA.organization.id,
+      organizationId: tenantA.organization.id,
       makeChannelId: () => generateId(),
     });
     await seedEntityHierarchy(db, plan, {

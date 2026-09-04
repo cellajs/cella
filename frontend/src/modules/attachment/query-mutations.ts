@@ -1,6 +1,6 @@
 import type { Attachment, CreateAttachmentsData, StxBase, UpdateAttachmentData } from 'sdk';
 import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
-import { type AncestorChannelType, appConfig, type EntityIdColumnKey, hierarchy, type RootChannelType } from 'shared';
+import { type AncestorChannelType, appConfig, type EntityIdColumnKey, hierarchy } from 'shared';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import type { QueryOrgContext } from '~/query/types';
 
@@ -10,10 +10,10 @@ type CreateAttachmentItem = CreateAttachmentsData['body'][number];
  * cella). Cached rows carry them nullable, so creates accept them as-is and omit null (org-homed)
  * from the wire body; optimistic `Attachment` rows thus remain valid create input.
  */
-type PlacementKey = EntityIdColumnKey<Exclude<AncestorChannelType<'attachment'>, RootChannelType>>;
+type PlacementKey = EntityIdColumnKey<Exclude<AncestorChannelType<'attachment'>, 'organization'>>;
 const placementKeys = hierarchy
   .getOrderedAncestors('attachment')
-  .filter((type) => type !== hierarchy.rootChannelType)
+  .filter((type) => type !== 'organization')
   .map((type) => appConfig.entityIdColumnKeys[type]) as readonly string[];
 
 // Placement keys keep the row's own nullability: a strict ancestor stays `string`, so an optimistic row validates.

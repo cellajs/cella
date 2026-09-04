@@ -1,12 +1,12 @@
 import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel.ts';
 
-/** Root-first path from the populated ancestor ids. Null when the root ancestor id is missing. */
+/** Organization-first path from the populated ancestor ids. Null when the organization id is missing. */
 export function computeAncestorPath(
   hierarchy: AncestorSource,
   entityType: string,
   row: Record<string, unknown>,
 ): string | null {
-  // getOrderedAncestors is most-specific → root; paths are root-first.
+  // getOrderedAncestors is most-specific → organization; paths are organization-first.
   const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();
   if (root === undefined) return null;
 
@@ -15,7 +15,7 @@ export function computeAncestorPath(
     const id = row[entityIdColumnKey(type)];
     if (typeof id === 'string' && id) segments.push(id);
   }
-  // A row without the root organization id has no addressable subtree.
+  // A row without the organization id has no addressable subtree.
   const rootId = row[entityIdColumnKey(root)];
   if (typeof rootId !== 'string' || !rootId) return null;
   return segments.join('/');
@@ -30,7 +30,7 @@ export function computeProductPath(
   return computeAncestorPath(hierarchy, entityType, row);
 }
 
-/** A channel row's ancestor chain plus its own id; for the root channel, just its own id. */
+/** A channel row's ancestor chain plus its own id; for the organization, just its own id. */
 export function computeChannelPath(
   hierarchy: AncestorSource,
   entityType: string,
@@ -64,7 +64,7 @@ export function pathHomeId(path: string): string {
  * identical by the path parity tests. Produces the generated-column expression
  * `"organization_id"::text || COALESCE('/' || "course_id"::text, '') || ...`, appending
  * `'/' || "id"::text` when `appendOwnId` (channel entities). It updates atomically on
- * reparenting, skips nullable intermediate ancestors, and requires a non-null root organization.
+ * reparenting, skips nullable intermediate ancestors, and requires a non-null organization.
  */
 export function pathColumnSql(hierarchy: AncestorSource, entityType: string, appendOwnId: boolean): string {
   const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();

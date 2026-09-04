@@ -62,14 +62,14 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
     if (!ancestors.includes(membership.channelType as ChannelEntityType)) continue;
 
     const grantLevel = membership.channelType as ChannelEntityType;
-    const isRoot = grantLevel === 'organization';
-    if (isRoot && membership.channelId !== organizationId) continue;
+    const isOrganization = grantLevel === 'organization';
+    if (isOrganization && membership.channelId !== organizationId) continue;
 
     const permissions = getPolicyPermissions(policies, grantLevel, membership.role);
     if (permissions?.read !== 1) continue;
     const managed = permissions.update === 1;
 
-    if (isRoot) {
+    if (isOrganization) {
       if (managed) orgWide = 'all';
       else orgWide ??= 'published';
       continue;

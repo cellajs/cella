@@ -22,11 +22,11 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │  │                               │  │                                     │  │
 │  │ createEntityHierarchy(roles)  │  │ configurePermissions(types, cb)     │  │
 │  │   .user()                     │  │   entity × channel × role → cell    │  │
-│  │   .channel(name, {parent,     │  │   cell = 0 | 1 | 'own'              │  │
-│  │     roles, elevated,          │  │   publicRead()                      │  │
-│  │     rootRoles})               │  │                                     │  │
+│  │   .organization({roles,       │  │   cell = 0 | 1 | 'own'              │  │
+│  │     elevated})                │  │   publicRead()                      │  │
+│  │   .channel(name, {parent,     │  │                                     │  │
+│  │     roles, organizationRoles})│  │                                     │  │
 │  │   .product(name, {parent})    │  │                                     │  │
-│  │                               │  │                                     │  │
 │  │ kinds, ancestor chains, roles │  │ → policyMatrix, publicReadGrants    │  │
 │  └──────────────┬────────────────┘  └────────────────┬────────────────────┘  │
 │                 │                                    │                       │
@@ -37,7 +37,7 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │      │                                                          │            │
 │      │  getAllDecisions(policies, memberships, subject, opts)   │            │
 │      │                                                          │            │
-│      │  1. order channels   most-specific → root                │            │
+│      │  1. order channels   most-specific → organization        │            │
 │      │       channel entity → [self, ...ancestors]              │            │
 │      │       product entity → [...ancestors]                    │            │
 │      │  2. system admin?    allow every action, short-circuit   │            │
@@ -71,7 +71,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 
 | Term | Meaning |
 | --- | --- |
-| **Channel** | Owns roles and memberships (`organization` in the template). Orders as `[self, ...ancestors]`. |
+| **Channel** | Owns roles and memberships. `organization` is the fixed spine every channel nests under. Orders as `[self, ...ancestors]`. |
 | **Product** | Owns no roles and inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
 | **User entity** | Carries no policies. `configurePermissions` filters it out. |
 | **Membership** | Explicit `user → channel` relation. The engine reads only `{ channelType, channelId, role }` (`AccessMembership`). |
@@ -101,7 +101,7 @@ export const roles = createRoleRegistry(["admin", "member"] as const);
 
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  .channel("organization", { parent: null, roles: roles.all, elevated: roles.all })
+  .organization({ roles: roles.all, elevated: roles.all })
   .product("attachment", { parent: "organization" })
   .build();
 ```
@@ -171,7 +171,7 @@ Two row columns sit beside the engine: drafts (`publishedAt`) are visible to the
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
 | Guard chain | `authGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member or tenant creator), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler |
-| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, passes it as `subject.row`, runs the engine | 403, or 404 for a non-author on a draft |
+| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |
 | Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying |

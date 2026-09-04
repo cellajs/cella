@@ -20,22 +20,37 @@ describe('EntityHierarchyBuilder', () => {
   describe('builder validation', () => {
     it('throws if user() not called before build()', () => {
       expect(() => {
-        createEntityHierarchy(roles).channel('organization', { parent: null, roles: roles.all }).build();
+        createEntityHierarchy(roles).organization({ roles: roles.all }).build();
       }).toThrow('user() must be called before build()');
     });
 
     it('throws if organization channel is missing', () => {
       expect(() => {
-        createEntityHierarchy(roles).user().channel('workspace', { parent: null, roles: roles.all }).build();
+        createEntityHierarchy(roles).user().build();
       }).toThrow('organization channel is required');
+    });
+
+    it('throws when a channel is declared before the organization', () => {
+      expect(() => {
+        createEntityHierarchy(roles)
+          .user()
+          // @ts-expect-error - Testing runtime validation (no channel exists to parent under yet)
+          .channel('workspace', { parent: 'organization', roles: roles.all });
+      }).toThrow('references unknown parent "organization"');
+    });
+
+    it('throws when the organization is declared through channel()', () => {
+      expect(() => {
+        createEntityHierarchy(roles)
+          .user()
+          .organization({ roles: roles.all })
+          .channel('organization', { parent: 'organization', roles: roles.all });
+      }).toThrow('declare it with organization()');
     });
 
     it('throws on duplicate entity name', () => {
       expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .channel('organization', { parent: null, roles: roles.all })
-          .channel('organization', { parent: null, roles: roles.all });
+        createEntityHierarchy(roles).user().organization({ roles: roles.all }).organization({ roles: roles.all });
       }).toThrow('entity "organization" already defined');
     });
 
@@ -43,7 +58,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .channel('organization', { parent: null, roles: roles.all })
+          .organization({ roles: roles.all })
           // @ts-expect-error - Testing runtime validation
           .product('task', { parent: 'project' });
       }).toThrow('references unknown parent "project"');
@@ -53,7 +68,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .channel('organization', { parent: null, roles: roles.all })
+          .organization({ roles: roles.all })
           .product('attachment', { parent: 'organization' })
           // @ts-expect-error - Testing runtime validation
           .product('file', { parent: 'attachment' });
@@ -65,13 +80,13 @@ describe('EntityHierarchyBuilder', () => {
         createEntityHierarchy(roles)
           .user()
           // @ts-expect-error - Testing runtime validation
-          .channel('organization', { parent: null, roles: ['admin', 'superuser'] });
+          .organization({ roles: ['admin', 'superuser'] });
       }).toThrow('invalid role "superuser"');
     });
 
     it('throws on empty roles array', () => {
       expect(() => {
-        createEntityHierarchy(roles).user().channel('organization', { parent: null, roles: [] });
+        createEntityHierarchy(roles).user().organization({ roles: [] });
       }).toThrow('must have at least one role');
     });
 
@@ -79,7 +94,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() => {
         createEntityHierarchy(roles)
           .user()
-          .channel('organization', { parent: null, roles: roles.all })
+          .organization({ roles: roles.all })
           // @ts-expect-error - Testing runtime validation (parent is required at the type level)
           .product('page', { parent: null });
       }).toThrow('has no parent');
@@ -87,11 +102,11 @@ describe('EntityHierarchyBuilder', () => {
   });
 
   describe('hierarchy queries (raak-like model)', () => {
-    // Model organization as root; workspace and project as its channels.
+    // Organization is the spine; workspace and project are its channels.
     // Task, label, and attachment are project products inheriting organization permissions.
     const hierarchy = createEntityHierarchy(roles)
       .user()
-      .channel('organization', { parent: null, roles: [roles.admin, roles.member] })
+      .organization({ roles: [roles.admin, roles.member] })
       .channel('workspace', { parent: 'organization', roles: roles.all })
       .channel('project', { parent: 'organization', roles: roles.all })
       .product('task', { parent: 'project' })
@@ -180,7 +195,7 @@ describe('EntityHierarchyBuilder', () => {
     const deep = () =>
       createEntityHierarchy(roles)
         .user()
-        .channel('organization', { parent: null, roles: roles.all })
+        .organization({ roles: roles.all })
         .channel('course', { parent: 'organization', roles: roles.all })
         .channel('courseSection', { parent: 'course', roles: roles.all })
         .channel('project', { parent: 'courseSection', roles: roles.all });
@@ -203,16 +218,16 @@ describe('EntityHierarchyBuilder', () => {
       expect(() =>
         createEntityHierarchy(roles)
           .user()
-          .channel('organization', { parent: null, roles: roles.all })
+          .organization({ roles: roles.all })
           .channel('workspace', { parent: 'organization', roles: roles.all })
           .channel('project', { parent: 'organization', roles: roles.all })
           .product('task', { parent: 'project', nullableAncestors: ['workspace'] }),
       ).toThrow('is not an ancestor');
     });
 
-    it('throws when the chain root is declared nullable', () => {
+    it('throws when the organization is declared nullable', () => {
       expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['organization'] })).toThrow(
-        'chain root and must stay non-null',
+        'organization and must stay non-null',
       );
     });
 
@@ -223,35 +238,27 @@ describe('EntityHierarchyBuilder', () => {
     });
   });
 
-  describe('rootRoles', () => {
-    const base = () => createEntityHierarchy(roles).user().channel('organization', { parent: null, roles: roles.all });
+  describe('organizationRoles', () => {
+    const base = () => createEntityHierarchy(roles).user().organization({ roles: roles.all });
 
-    it('exposes the declared escalation map via getRootRole', () => {
+    it('exposes the declared escalation map via getOrganizationRole', () => {
       const h = base()
         .channel('workspace', {
           parent: 'organization',
           roles: ['member', 'guest'],
-          rootRoles: { member: 'member', guest: 'guest' },
+          organizationRoles: { member: 'member', guest: 'guest' },
         })
         .build();
-      expect(h.getRootRole('workspace', 'member')).toBe('member');
-      expect(h.getRootRole('workspace', 'guest')).toBe('guest');
+      expect(h.getOrganizationRole('workspace', 'member')).toBe('member');
+      expect(h.getOrganizationRole('workspace', 'guest')).toBe('guest');
     });
 
     it('returns undefined for a channel without a map and for roles outside it', () => {
       const h = base()
         .channel('workspace', { parent: 'organization', roles: ['member'] })
         .build();
-      expect(h.getRootRole('workspace', 'member')).toBeUndefined();
-      expect(h.getRootRole('organization', 'admin')).toBeUndefined();
-    });
-
-    it('throws when the root channel declares a map (it has no root above it)', () => {
-      expect(() =>
-        createEntityHierarchy(roles)
-          .user()
-          .channel('organization', { parent: null, roles: roles.all, rootRoles: { admin: 'admin' } as never }),
-      ).toThrow('cannot declare rootRoles');
+      expect(h.getOrganizationRole('workspace', 'member')).toBeUndefined();
+      expect(h.getOrganizationRole('organization', 'admin')).toBeUndefined();
     });
 
     it('throws when a declared map leaves one of the channel roles unmapped', () => {
@@ -259,19 +266,19 @@ describe('EntityHierarchyBuilder', () => {
         base().channel('workspace', {
           parent: 'organization',
           roles: ['member', 'guest'],
-          rootRoles: { member: 'member' } as any,
+          organizationRoles: { member: 'member' } as any,
         }),
       ).toThrow('leaves guest unmapped');
     });
 
-    it('throws when a mapped value is not a role of the chain root', () => {
+    it('throws when a mapped value is not an organization role', () => {
       expect(() =>
         base().channel('workspace', {
           parent: 'organization',
           roles: ['guest'],
-          rootRoles: { guest: 'owner' } as any,
+          organizationRoles: { guest: 'owner' } as any,
         }),
-      ).toThrow('not a role of');
+      ).toThrow('not an organization role');
     });
   });
 
@@ -279,14 +286,14 @@ describe('EntityHierarchyBuilder', () => {
     it('compiles channel-qualified keys from each channel elevated list', () => {
       const h = createEntityHierarchy(roles)
         .user()
-        .channel('organization', { parent: null, roles: roles.all, elevated: ['admin'] })
+        .organization({ roles: roles.all, elevated: ['admin'] })
         .channel('workspace', { parent: 'organization', roles: ['member', 'guest'], elevated: ['member'] })
         .build();
       expect(h.elevatedGrants).toEqual(new Set(['organization:admin', 'workspace:member']));
     });
 
     it('compiles an empty set when no channel declares elevation', () => {
-      const h = createEntityHierarchy(roles).user().channel('organization', { parent: null, roles: roles.all }).build();
+      const h = createEntityHierarchy(roles).user().organization({ roles: roles.all }).build();
       expect(h.elevatedGrants.size).toBe(0);
     });
 
@@ -294,7 +301,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(() =>
         createEntityHierarchy(roles)
           .user()
-          .channel('organization', { parent: null, roles: ['admin'], elevated: ['owner'] as any }),
+          .organization({ roles: ['admin'], elevated: ['owner'] as any }),
       ).toThrow('elevates unknown role');
     });
   });

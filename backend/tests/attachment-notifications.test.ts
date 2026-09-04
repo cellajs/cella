@@ -106,7 +106,7 @@ describe('Attachment mentions (template notification source)', async () => {
 
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
-      rootChannelId: tenant.organization.id,
+      organizationId: tenant.organization.id,
       makeChannelId: () => generateId(),
     });
     await seedEntityHierarchy(db, plan, {

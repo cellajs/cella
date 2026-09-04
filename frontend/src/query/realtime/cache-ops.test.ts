@@ -10,7 +10,7 @@ vi.mock('shared', async (importOriginal) => {
   const hierarchy = actual
     .createEntityHierarchy(roles)
     .user()
-    .channel('organization', { parent: null, roles: roles.all })
+    .organization({ roles: roles.all })
     .channel('project', { parent: 'organization', roles: roles.all })
     .product('task', { parent: 'project' })
     .build();

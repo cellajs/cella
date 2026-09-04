@@ -9,8 +9,8 @@ import type { StreamNotification } from '#/schemas';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent } from './types';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
 const ORG_A = 'org-dispatch-a';

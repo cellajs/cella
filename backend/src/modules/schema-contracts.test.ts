@@ -4,8 +4,8 @@ import { activityListQuerySchema } from '#/modules/activities/activities-schema'
 import { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { sendNewsletterBodySchema } from '#/modules/system/system-schema';
 
-/** The root vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole(hierarchy.rootChannelType);
+/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 const firstId = '00000000-0000-4000-8000-000000000001';
 const secondId = '00000000-0000-4000-8000-000000000002';

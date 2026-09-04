@@ -26,7 +26,7 @@ export const wideRoles = createRoleRegistry(['admin', 'member', 'guest'] as cons
 /** Configuration-independent hierarchy with sibling channels, deep products, and guest roles. */
 export const wideHierarchy = createEntityHierarchy(wideRoles)
   .user()
-  .channel('organization', { parent: null, roles: ['admin', 'member'] })
+  .organization({ roles: ['admin', 'member'] })
   .channel('workspace', { parent: 'organization', roles: wideRoles.all })
   .channel('project', { parent: 'organization', roles: wideRoles.all })
   .product('task', { parent: 'project' })
