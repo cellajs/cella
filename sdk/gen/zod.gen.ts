@@ -93,6 +93,7 @@ export const zStxBase = z.object({
   mutationId: z.string().max(36),
   sourceId: z.string().max(64),
   fieldTimestamps: z.record(z.string(), z.string()),
+  replayed: z.boolean().optional(),
 });
 
 /**
