@@ -1,8 +1,8 @@
 import { and, count, getColumns, gt, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { SeenTrackedProductType } from 'shared';
-import { appConfig, hierarchy } from 'shared';
 import type { DbContext } from '#/core/context';
+import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { getEntityTable } from '#/tables';
 
@@ -34,14 +34,7 @@ export const findUnseenCountsByUser = async (
     const orgTable = entityTable as OrgScopedEntityTable;
     const columns = getColumns(entityTable) as Record<string, PgColumn | undefined>;
 
-    // Home context id: deepest non-null ancestor, falling back to org (matches mark-seen).
-    const ancestorColumns = hierarchy
-      .getOrderedAncestors(productType)
-      .map((ancestor) => columns[appConfig.entityIdColumnKeys[ancestor]])
-      .filter((column): column is PgColumn => Boolean(column));
-    const channelIdColumn: SQL<string> = ancestorColumns.length
-      ? sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`
-      : sql<string>`${orgTable.organizationId}`;
+    const channelIdColumn = homeChannelIdSql(productType, entityTable);
 
     // Recency key: publish time on draft-lifecycle tables, createdAt elsewhere.
     const recencyColumn: SQL<string> = columns.publishedAt

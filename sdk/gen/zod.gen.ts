@@ -1048,10 +1048,13 @@ export const zGetNotificationsResponse = z.object({
       subjectId: z.string(),
       contextId: z.string().nullable(),
       channelId: z.string(),
-      channelType: z.string(),
+      channelType: z.enum(['organization']),
       organizationId: z.string(),
       tenantId: z.string(),
       actorId: z.string().nullable(),
+      actor: zUserMinimalBase.nullable(),
+      channelName: z.string(),
+      subjectTitle: z.string(),
       readAt: z.string().nullable(),
     }),
   ),
@@ -1710,6 +1713,7 @@ export const zGetAttachmentResponse = zAttachment;
 export const zUpdateAttachmentBody = z.object({
   ops: z.object({
     name: z.string().max(255).optional(),
+    description: z.string().max(1000000).optional(),
   }),
   stx: zStxBase,
 });

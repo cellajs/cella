@@ -17,3 +17,10 @@ export const setupConfigSchema = z.object({});
  * field inference for SDK generation.
  */
 export const appChannelCountFields = (_entityType: ChannelEntityType) => ({});
+
+/**
+ * App notification types beyond the template's `mention`, `comment` and `reply`
+ * (`modules/notification/notification-types.ts`), e.g. `['assigned']`. Each needs a
+ * `notification.<type>` label in `app.json` and, for its digest line, `email.digest_line.<type>`.
+ */
+export const appNotificationTypes = [] as const;

@@ -34,13 +34,25 @@
                     "required": true
                   },
                   "channelId": { "type": "string", "required": true },
-                  "channelType": { "type": "string", "required": true },
+                  "channelType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["organization"]
+                  },
                   "organizationId": { "type": "string", "required": true },
                   "tenantId": { "type": "string", "required": true },
                   "actorId": {
                     "type": ["string", "null"],
                     "required": true
                   },
+                  "actor": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/UserMinimalBase",
+                    "refDescription": "Minimal user data for references."
+                  },
+                  "channelName": { "type": "string", "required": true },
+                  "subjectTitle": { "type": "string", "required": true },
                   "readAt": {
                     "type": ["string", "null"],
                     "required": true

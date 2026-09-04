@@ -1,4 +1,5 @@
-import { bigint, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { bigint, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
@@ -20,3 +21,11 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
   /** Org sequence driving delta sync. Stamped post-commit by the CDC worker; rows hold the default 0 until then. */
   seq: bigint('seq', { mode: 'number' }).notNull().default(0),
 });
+
+/**
+ * Server-derived user ids mentioned in `description`. Its presence on a product table switches
+ * on mention derivation and mention fan-out for that product's notification source.
+ */
+export const mentionableColumns = {
+  mentions: text().array().notNull().default(sql`'{}'::text[]`),
+};

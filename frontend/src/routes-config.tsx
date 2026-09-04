@@ -24,5 +24,8 @@ export const channelRouteConfig = {
     path: '/$tenantId/$organizationSlug/organization',
     paramName: 'organizationSlug',
     defaultTabId: 'attachments',
+    // The attachments tab reads `attachmentDialogId` and opens that attachment's dialog on top of the grid.
+    notificationSearch: ({ entityType, subjectId }): Record<string, string> =>
+      entityType === 'attachment' ? { attachmentDialogId: subjectId } : {},
   },
 } as const satisfies Record<ChannelEntityType, ChannelRouteEntry>;

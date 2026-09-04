@@ -144,3 +144,20 @@ export const getSearchableTextFromBlock = (block: Block): string => {
 
 export const getSearchableTextFromBlocks = (blocks: Block[]): string =>
   blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
+
+/** Blocks of a stored document (`description` as composer output); null for absent, legacy HTML or malformed input. */
+export const parseBlocks = (description: string | null | undefined): Block[] | null => {
+  if (!description) return null;
+  try {
+    const parsed: unknown = JSON.parse(description);
+    return Array.isArray(parsed) ? (parsed as Block[]) : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Plain text of a stored block document, for captions and excerpts; null when the input is not a block document. */
+export const textFromDocument = (description: string | null | undefined): string | null => {
+  const blocks = parseBlocks(description);
+  return blocks ? blocks.map(getTextFromBlock).filter(Boolean).join(' ') : null;
+};

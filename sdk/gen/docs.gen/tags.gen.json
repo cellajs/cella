@@ -1,7 +1,7 @@
 [
   {
     "name": "attachments",
-    "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities.",
+    "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities. The description is edited collaboratively\n    and is a notification source for mentions.",
     "count": 6,
     "kind": "module"
   },

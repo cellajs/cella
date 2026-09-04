@@ -3,6 +3,7 @@ import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
+import { dispatchMutation } from '#/lib/mutation-bus';
 import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
@@ -67,9 +68,12 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
     attachmentsToInsert.push(attachment);
   }
 
-  const createdAttachments = await tenantContext(ctx, (txCtx) =>
-    insertAttachments(txCtx, { attachments: attachmentsToInsert }),
-  );
+  const createdAttachments = await tenantContext(ctx, async (txCtx) => {
+    const rows = await insertAttachments(txCtx, { attachments: attachmentsToInsert });
+    // Inside the transaction, so handlers such as mention derivation join the write.
+    await dispatchMutation(txCtx, 'attachment.created', { after: rows });
+    return rows;
+  });
 
   log.info('Attachments created', { count: createdAttachments.length });
 

@@ -4,6 +4,7 @@ import { type ModuleConfig, registerModule } from 'shared/module-registry';
 import type { Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
+import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
 /** A periodic in-process job. `start` schedules it and returns the stop handle called on shutdown. */
@@ -43,40 +44,47 @@ export interface NotificationSubjectRow {
   [key: string]: unknown;
 }
 
-/** One would-be inbox row; `type` must be one of the notification module's `notificationTypes`. */
+/** One would-be inbox row, typed by the notification vocabulary (template types plus `appNotificationTypes`). */
 export interface NotificationCandidate {
   userId: string;
-  type: string;
+  type: NotificationType;
 }
 
 /**
- * Per-module notification source declaration, indexed by the notification module. Declaring it
- * turns the module's product writes into inbox rows: mentions generically (when `mentionable`),
- * app-specific recipients via `resolveRecipients`. Requires `productEntity`.
+ * Notification source declaration for a product module (`notifications: true` declares nothing).
+ * Each reader below is used when given, else the notification module reads the product table
+ * (`notification-sources.ts`): live rows are the non-deleted, published ones; a `mentions` column
+ * (`mentionableColumns`) switches mention derivation and mention fan-out on; previews and digest
+ * lines read `name` and `description`; `deriveFrom` is `both` when the module registers a
+ * `yjsMaterializer`. Apps typically declare only `resolveRecipients` and `resolveContextId`.
+ *
+ * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
+ * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |
+ * '<type>.updated', { before, after })` inside the write transaction (`serverOrigin: true` for
+ * Yjs materialization); see the attachment ops for the shape. Deep links need no declaration:
+ * emails and push carry the subject's location for the frontend `/n` route.
  */
 export interface ModuleNotifications {
-  /** Enables server-side mention derivation and mention fan-out; the module's rows must carry `description` and a `mentions` column. */
+  /** Server-side mention derivation and mention fan-out; defaults to whether the table has a `mentions` column. */
   mentionable?: boolean;
+  /**
+   * Which writes mention derivation reads: `client` skips Yjs materialization so a collaborative
+   * re-write cannot resurrect a mention edited away in a client-owned body; `materialized` for
+   * bodies whose Yjs document is the source of truth; `both` when either path edits.
+   */
+  deriveFrom?: 'client' | 'materialized' | 'both';
   /** Batch-load audience-bearing subject rows for the given ids; drop drafts and deleted rows here. */
-  loadRows: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
-  /** Persist the server-derived mention set for one row (required with `mentionable`). */
+  loadRows?: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
+  /** Persist the server-derived mention set for one row. */
   writeMentions?: (tx: DbOrTx, id: string, mentions: string[]) => Promise<void>;
   /** Recipients beyond mentions (thread participants, assignees, ...) with their notification type. */
   resolveRecipients?: (tx: DbOrTx, row: NotificationSubjectRow) => Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
   resolveContextId?: (row: NotificationSubjectRow) => string | null;
-  /** Title and body for instant emails; read inside a tenant transaction. */
+  /** Title and plain-text body for instant emails; read inside a tenant transaction. */
   loadPreview?: (tx: DbOrTx, subjectId: string) => Promise<{ title: string; body: string } | null>;
   /** Display names for context ids in digest lines; read inside a tenant transaction. */
   loadContextNames?: (tx: DbOrTx, ids: string[]) => Promise<Map<string, string>>;
-  /** Absolute deep link for one notification's email; defaults to the app root. A tenant-scoped permalink needs the tenant and channel ids the pending row carries. */
-  resolveEmailLink?: (notification: {
-    subjectId: string;
-    contextId: string | null;
-    tenantId: string;
-    channelId: string;
-    entityType: string;
-  }) => string;
 }
 
 /** Shared module metadata plus backend-only capabilities, indexed by subsystems via {@link onBackendModuleRegister}. */
@@ -89,8 +97,8 @@ export interface BackendModule extends ModuleConfig {
   onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
   /** Scheduled jobs; the API entrypoint starts them on the migration-owning instance only, so exactly one process runs each. */
   jobs?: BackendJob[];
-  /** Notification source declaration for `productEntity` (indexed by the notification module). */
-  notifications?: ModuleNotifications;
+  /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
+  notifications?: true | ModuleNotifications;
   /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
   routes?: BackendRoute[];
 }

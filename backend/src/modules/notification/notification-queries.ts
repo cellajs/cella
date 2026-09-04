@@ -3,13 +3,10 @@ import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { usersTable } from '#/modules/user/user-db';
-import {
-  type DigestFrequency,
-  type NotificationType,
-  notificationPreferencesTable,
-  notificationsTable,
-} from './notification-db';
+import { type DigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
+import type { NotificationType } from './notification-types';
 
 // ── Inbox reads ──────────────────────────────────────────────────────────────
 
@@ -189,7 +186,11 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
 
 // ── Instant email ────────────────────────────────────────────────────────────
 
-/** Unmailed mention notifications for recipients who still want the email. */
+/**
+ * Unmailed mention notifications for recipients who still want the email. The preferences row is
+ * created on first read of the settings, so a missing row means the default (on), hence the
+ * left join.
+ */
 export async function findPendingMentionEmails(organizationId: string, limit: number) {
   return baseDb
     .select({
@@ -199,18 +200,20 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
       entityType: notificationsTable.entityType,
       contextId: notificationsTable.contextId,
       tenantId: notificationsTable.tenantId,
+      organizationId: notificationsTable.organizationId,
       actorId: notificationsTable.actorId,
       channelId: notificationsTable.channelId,
+      channelType: notificationsTable.channelType,
     })
     .from(notificationsTable)
-    .innerJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, notificationsTable.userId))
+    .leftJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, notificationsTable.userId))
     .where(
       and(
         eq(notificationsTable.organizationId, organizationId),
         eq(notificationsTable.type, 'mention'),
         isNull(notificationsTable.emailedAt),
         isNull(notificationsTable.readAt),
-        eq(notificationPreferencesTable.mentionEmail, true),
+        or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true)),
       ),
     )
     .limit(limit);
@@ -231,6 +234,18 @@ export async function findVerifiedRecipients(userIds: string[]) {
     .innerJoin(emailsTable, and(eq(emailsTable.userId, usersTable.id), eq(emailsTable.verified, true)))
     .where(inArray(usersTable.id, userIds))
     .orderBy(usersTable.id);
+}
+
+/** Minimal user objects for actors, keyed by id; a deleted actor is simply absent. */
+export async function findUsersMinimal(userIds: string[]) {
+  if (userIds.length === 0) return new Map<string, UserMinimalBase>();
+
+  const rows = await baseDb
+    .select({ id: usersTable.id, name: usersTable.name, slug: usersTable.slug, thumbnailUrl: usersTable.thumbnailUrl })
+    .from(usersTable)
+    .where(inArray(usersTable.id, userIds));
+
+  return new Map(rows.map((row) => [row.id, toUserMinimalBase(row)]));
 }
 
 export async function findUserNames(userIds: string[]): Promise<Map<string, string>> {

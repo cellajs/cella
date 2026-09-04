@@ -4,8 +4,8 @@ import { BellIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GetNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
-import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -16,13 +16,6 @@ import { getNotificationRoute } from './notification-link';
 import { notificationsQueryOptions, useMarkNotificationsRead } from './query';
 
 type Notification = GetNotificationsResponse['items'][number];
-
-/** Explicit map: template-literal keys do not narrow to `TKey`, and each type reads differently. */
-const labelByType = {
-  mention: 'c:notification.mention',
-  comment: 'c:notification.comment',
-  reply: 'c:notification.reply',
-} as const satisfies Record<Notification['type'], TKey>;
 
 /** Mentions and addressed activity only: ambient posts are covered by the menu sheet's unseen badges. */
 export function NotificationsSheet() {
@@ -75,18 +68,33 @@ function NotificationRow({
     if (!notification.readAt) onOpen({ ids: [notification.id] });
   };
 
+  const { actor, channelName, subjectTitle } = notification;
   const body = (
     <>
-      {!notification.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-      <span className="flex flex-col gap-0.5">
-        <span className="text-sm">{t(labelByType[notification.type])}</span>
+      <EntityAvatar
+        type="user"
+        className="h-8 w-8 shrink-0"
+        id={actor?.id ?? 'unknown'}
+        name={actor?.name ?? ''}
+        url={actor?.thumbnailUrl ?? null}
+      />
+      <span className="flex min-w-0 flex-col gap-0.5">
+        {/* One `c:notification.<type>` sentence per vocabulary type, interpolating actor, subject and channel; apps add theirs to app.json */}
+        <span className={cn('text-sm', !notification.readAt && 'font-medium')}>
+          {t(`c:notification.${notification.type}`, {
+            actor: actor?.name || t('c:someone'),
+            subject: subjectTitle || t('c:unknown'),
+            channel: channelName || t('c:unknown'),
+          })}
+        </span>
         <span className="text-muted-foreground text-xs">{relativeDate}</span>
       </span>
+      {!notification.readAt && <span className="mt-1.5 ml-auto h-2 w-2 shrink-0 rounded-full bg-primary" />}
     </>
   );
 
   const className = cn(
-    'flex w-full items-start gap-2 rounded-md px-2 py-2 text-left hover:bg-accent/50',
+    'flex w-full items-start gap-3 rounded-md px-2 py-2 text-left hover:bg-accent/50',
     !notification.readAt && 'bg-accent/30',
   );
 

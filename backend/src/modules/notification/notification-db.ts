@@ -4,16 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
-
-/**
- * Notification vocabulary, shared by the table enum, the fan-out and the preference schema.
- *
- * `mention` outranks the activity types when one event would produce both: a mention is addressed
- * to you personally, so it survives a muted channel and defaults to email-on, while ambient
- * activity does neither.
- */
-export const notificationTypes = ['mention', 'comment', 'reply'] as const;
-export type NotificationType = (typeof notificationTypes)[number];
+import { notificationTypes } from './notification-types';
 
 /** Digest cadence options for `notification_preferences.digest`. */
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
@@ -46,7 +37,7 @@ export const notificationsTable = snakeCase.table(
     contextId: uuid(),
     /** Deepest non-null ancestor, org as fallback. Must match `getSeenChannelId` or badges disagree. */
     channelId: uuid().notNull(),
-    channelType: varchar({ length: maxLength.field }).notNull(),
+    channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),
     organizationId: uuid().notNull(),
     tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),
     /** CDC activity id: the dedupe key for at-least-once delivery. */

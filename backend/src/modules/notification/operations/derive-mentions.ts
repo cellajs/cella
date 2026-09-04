@@ -1,69 +1,62 @@
-import type { ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
-import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
-import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
-import { checkAccessFanout } from '#/permissions';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import type { NotificationSubjectRow } from '#/lib/module';
+import type { MutationPayload } from '#/lib/mutation-bus';
 import { log } from '#/utils/logger';
-import { accessForUserIds } from '../helpers/access-for-users';
 import { extractMentionIds } from '../helpers/extract-mentions';
+import { readableAccess } from '../helpers/readable-access';
+import { type NotificationSource, writeSubjectMentions } from '../notification-sources';
 
 /**
- * Mutation handler that re-derives `mentions` from the stored body, inside the writing
- * transaction, for one mentionable notification source (registered per source by
- * notification-sources.ts).
+ * Re-derives `mentions` from the stored body, inside the writing transaction, for the writes the
+ * source's `deriveFrom` counts (registered per mentionable source by notification-sources.ts).
  *
  * Deriving client-side and storing whatever the client sends would let a hand-crafted request
  * notify anyone, including users with no access to the row. Deriving server-side and filtering by
  * read permission makes the column trustworthy, which is what the fan-out relies on.
- *
- * Yjs materialisation re-writes rows without a user intent behind them; those are skipped so a
- * collaborative save cannot resurrect a mention that was edited away.
  */
-export function deriveMentionsFor(entityType: string, source: ModuleNotifications): MutationHandler {
-  return async (ctx: AuthContext, payload: MutationPayload): Promise<void> => {
-    if (payload.serverOrigin) return;
-    if (!source.writeMentions) {
-      log.error('Mentionable notification source lacks writeMentions; derivation skipped', { entityType });
+export async function deriveMentions(
+  ctx: AuthContext,
+  payload: MutationPayload,
+  source: NotificationSource,
+): Promise<void> {
+  if (!derivesFrom(source.deriveFrom, payload)) return;
+
+  const rows = (payload.after ?? []) as unknown as NotificationSubjectRow[];
+
+  for (const [index, row] of rows.entries()) {
+    // `before`/`after` are index-aligned; an edit that left the body alone changes no mentions.
+    const before = payload.before?.[index];
+    if (before && before.description === row.description) continue;
+
+    const mentioned = extractMentionIds(row.description);
+    // A mention must never leak a row's existence to someone who may not read it.
+    const readable = await readableAccess(source.entityType, row, mentioned);
+    const allowed = mentioned.filter((userId) => readable.has(userId));
+
+    // Only write when the derived set actually differs, so an unrelated edit is a no-op.
+    if (sameSet(allowed, row.mentions ?? [])) continue;
+
+    const written = await writeSubjectMentions(source, ctx.var.db, row.id, allowed);
+    if (!written) {
+      log.error('Mentionable notification source cannot write mentions; derivation skipped', {
+        entityType: source.entityType,
+      });
       return;
     }
 
-    const rows = (payload.after ?? []) as unknown as NotificationSubjectRow[];
-    if (rows.length === 0) return;
-
-    for (const row of rows) {
-      const mentioned = extractMentionIds(row.description);
-      const allowed = mentioned.length ? await filterReadable(entityType, row, mentioned) : [];
-
-      // Only write when the derived set actually differs, so an unrelated edit is a no-op.
-      if (sameSet(allowed, row.mentions ?? [])) continue;
-
-      await source.writeMentions(ctx.var.db, row.id, allowed);
-
-      if (allowed.length !== mentioned.length) {
-        log.debug('Dropped mentions the user cannot read', {
-          entityType,
-          subjectId: row.id,
-          dropped: mentioned.length - allowed.length,
-        });
-      }
+    if (allowed.length !== mentioned.length) {
+      log.debug('Dropped mentions the user cannot read', {
+        entityType: source.entityType,
+        subjectId: row.id,
+        dropped: mentioned.length - allowed.length,
+      });
     }
-  };
+  }
 }
 
-/** Drop mentioned users who may not read the row; a mention must never leak its existence. */
-async function filterReadable(entityType: string, row: NotificationSubjectRow, userIds: string[]): Promise<string[]> {
-  const accessByUser = await accessForUserIds(userIds);
-  const subject = buildSubjectFromEntity(
-    entityType as ProductEntityType,
-    row as unknown as { id: string; createdBy?: string | null },
-  );
-
-  const accesses = userIds.map((userId) => accessByUser.get(userId)).filter((access) => access !== undefined);
-  if (accesses.length !== userIds.length) return [];
-
-  const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
-  return userIds.filter((_, index) => decisions[index]?.allowed);
+function derivesFrom(mode: NotificationSource['deriveFrom'], payload: MutationPayload): boolean {
+  if (mode === 'both') return true;
+  return payload.serverOrigin ? mode === 'materialized' : mode === 'client';
 }
 
 function sameSet(a: string[], b: string[]): boolean {

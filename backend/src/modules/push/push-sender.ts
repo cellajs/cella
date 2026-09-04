@@ -15,6 +15,8 @@ export interface NotificationPushPayload {
   activityId: string;
   channelId: string;
   type: string;
+  /** Self-describing `/n` link to the subject (ids only); the click handler opens it. */
+  url?: string;
 }
 
 /** Parallel sends per batch; push services rate-limit aggressively above small bursts. */

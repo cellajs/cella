@@ -2,7 +2,7 @@ import { boolean, foreignKey, index, jsonb, snakeCase, uuid, varchar } from 'dri
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
-import { productColumns } from '#/db/utils/product-columns';
+import { mentionableColumns, productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 import { organizationsTable } from '#/modules/organization/organization-db';
 
@@ -27,6 +27,7 @@ export const attachmentsTable = snakeCase.table(
       .$type<AttachmentKeys>()
       .notNull()
       .default({} as AttachmentKeys),
+    ...mentionableColumns,
     ...channelRelationColumns('attachment'),
   },
   (table) => [

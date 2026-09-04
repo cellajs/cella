@@ -38,9 +38,12 @@ const attachmentSelectSchema = describeFields(
   attachmentFieldDescriptions,
 );
 
+// `mentions` is server-owned input to the notification fan-out; the client never reads it.
+const { mentions: _mentions, ...attachmentWireShape } = attachmentSelectSchema.shape;
+
 export const attachmentSchema = z
   .object({
-    ...attachmentSelectSchema.shape,
+    ...attachmentWireShape,
     createdBy: nullableUserMinimalBaseSchema,
     updatedBy: nullableUserMinimalBaseSchema,
     stx: stxBaseSchema,
@@ -80,6 +83,8 @@ export const attachmentContract = evolutionContract.product('attachment', {
   createItem: attachmentCreateBodySchema,
   updateOps: {
     name: z.string().max(maxLength.field),
+    /** BlockNote blocks JSON; the collaborative editor persists it through the Yjs materializer. */
+    description: z.string().max(maxLength.html),
   },
 });
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { resolveCan, seenWindowMs } from 'shared';
 import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
+import { DescriptionCell } from '~/modules/attachment/table/description-cell';
 import { EditCellInput } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -68,6 +69,14 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
             <EditCellInput value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
           ),
         }),
+      },
+      {
+        key: 'description',
+        name: t('c:description'),
+        minBreakpoint: 'md',
+        resizable: true,
+        minWidth: 200,
+        renderCell: ({ row, tabIndex }) => <DescriptionCell row={row} tabIndex={tabIndex} />,
       },
       {
         key: 'download',

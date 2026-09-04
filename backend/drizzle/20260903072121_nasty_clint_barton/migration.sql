@@ -1,0 +1,1 @@
+ALTER TABLE "attachments" ADD COLUMN "mentions" text[] DEFAULT '{}'::text[] NOT NULL;

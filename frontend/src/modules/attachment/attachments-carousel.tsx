@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
+import { AttachmentDescriptionTrigger } from '~/modules/attachment/attachment-description-trigger';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { ATTACHMENT_DIALOG_PARAM, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
@@ -36,6 +37,8 @@ export type CarouselItemData = {
   convertedContentType?: string | null;
   /** URL is a local blob object URL, which fails the CDN check the toolbar buttons rely on. */
   isLocal?: boolean;
+  /** Stored description blocks; the dialog shows its text as a caption. */
+  description?: string | null;
 };
 
 interface CarouselPropsBase {
@@ -171,6 +174,8 @@ export function AttachmentsCarousel({
         </div>
       )}
 
+      {isDialog && <DialogCaption item={currentItem} />}
+
       <CarouselContent className="h-full">
         {items.map(({ id, url, filename, contentType = 'image', convertedContentType }, idx) => {
           return (
@@ -212,5 +217,24 @@ export function AttachmentsCarousel({
       )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
     </BaseCarousel>
+  );
+}
+
+/** Description under the dialog chrome; local (unsynced) items have no row to edit. */
+function DialogCaption({ item }: { item: CarouselItemData }) {
+  const removeDialog = useDialoger((state) => state.remove);
+  if (item.isLocal) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 z-10 flex w-full justify-center bg-background/60 p-2 backdrop-blur-xs">
+      <AttachmentDescriptionTrigger
+        attachmentId={item.id}
+        description={item.description}
+        variant="ghost"
+        size="sm"
+        className="max-w-3xl truncate font-normal opacity-80 hover:opacity-100"
+        beforeOpen={removeDialog}
+      />
+    </div>
   );
 }
