@@ -90,7 +90,7 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `queries` and `meta` | Persisted query records, paused mutations, version stamps |
 | `blobs` | Attachment bytes: uploads pending sync and cached downloads |
 | `downloadQueue` | Background download work |
-| `failedSync` | Mutations quarantined after a 4xx error, for export and manual repair |
+| `failedSync` | Replayed offline mutations quarantined after a 4xx error, for export and manual repair |
 
 The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in.
 

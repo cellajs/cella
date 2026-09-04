@@ -8,7 +8,13 @@ import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 import '~/query/local-user-storage';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
-import { markCacheRestored, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import {
+  markCacheRestored,
+  markReplayingMutations,
+  queryClient,
+  silentRevalidateOnReconnect,
+  updateStaleTime,
+} from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
@@ -115,7 +121,10 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       onSuccess={() => {
         markCacheRestored();
         // Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup.
-        waitForActiveCatchup().then(() => queryClient.resumePausedMutations());
+        waitForActiveCatchup().then(() => {
+          markReplayingMutations();
+          return queryClient.resumePausedMutations();
+        });
       }}
     >
       {children}

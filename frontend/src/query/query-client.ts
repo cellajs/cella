@@ -18,15 +18,31 @@ const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
   import('~/query/on-error').then((m) => m.onError(error, meta));
 const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
 
-/** Quarantines a mutation that fails replay with a 4xx so no offline edit is lost after a cache bust. Best-effort, lazy-imported to avoid cycles. */
+/** stx mutations carry stx.mutationId on the variables (single or batch shape). */
+function mutationIdOf(vars: unknown): string | undefined {
+  const variables = vars as { stx?: { mutationId?: string } } | Array<{ stx?: { mutationId?: string } }> | undefined;
+  return Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
+}
+
+/** Mutation ids restored from the persisted cache and replaying now. Only these quarantine on a 4xx: a live edit's failure reaches the user through the toast and needs no salvage. */
+const replayingMutationIds = new Set<string>();
+
+/** Record every paused mutation as replaying; call right before `resumePausedMutations`. */
+export function markReplayingMutations(): void {
+  for (const mutation of queryClient.getMutationCache().getAll()) {
+    if (!mutation.state.isPaused) continue;
+    const mutationId = mutationIdOf(mutation.state.variables);
+    if (mutationId) replayingMutationIds.add(mutationId);
+  }
+}
+
+/** Quarantines a replayed mutation that fails with a 4xx so no offline edit is lost after a cache bust. Best-effort, lazy-imported to avoid cycles. */
 function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
+  const mutationId = mutationIdOf(vars);
+  if (!mutationId || !replayingMutationIds.delete(mutationId)) return;
+
   const status = error?.status;
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
-
-  // stx mutations carry stx.mutationId on the variables (single or batch shape).
-  const variables = vars as { stx?: { mutationId?: string } } | Array<{ stx?: { mutationId?: string } }> | undefined;
-  const mutationId = Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
-  if (!mutationId) return;
 
   const entityType = entityTypeOf(mutationKey);
   import('~/query/offline/failed-sync')
@@ -53,7 +69,11 @@ const mutationCacheConfig = {
     quarantineOnClientError(error, vars, mutation.options?.mutationKey);
     return handleError(error, mutation.meta);
   },
-  onSuccess: handleSuccess,
+  onSuccess: (_data: unknown, vars: unknown) => {
+    const mutationId = mutationIdOf(vars);
+    if (mutationId) replayingMutationIds.delete(mutationId);
+    return handleSuccess();
+  },
 };
 
 const queryCacheConfig = {
