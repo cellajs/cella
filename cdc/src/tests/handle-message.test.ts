@@ -98,6 +98,18 @@ describe('handleDataMessage: seeded entity filtering', () => {
     expect(mocked).not.toHaveBeenCalled();
   });
 
+  it('records a skipped seeded insert as the last acknowledged LSN for heartbeat replies', async () => {
+    const acknowledge = vi.fn(async () => {});
+    replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
+    replicationState.updateLag(15_000);
+
+    const msg = mockDmlMessage('insert', '00000000-1234-4abc-8def-123456789abc');
+    await handleDataMessage('0/7', msg);
+
+    expect(acknowledge).toHaveBeenCalledWith('0/7');
+    expect(replicationState.lastAckedLsn).toBe('0/7');
+  });
+
   it('processes inserts of non-gen entities during catch-up', async () => {
     replicationState.updateLag(15_000);
     expect(replicationState.catchingUp).toBe(true);
