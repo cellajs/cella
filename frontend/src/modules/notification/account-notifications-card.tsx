@@ -51,7 +51,7 @@ export function AccountNotificationsCard() {
           </div>
         )}
 
-        <div className="flex flex-col gap-1.5">
+        <div className="mt-3 flex flex-col gap-1.5">
           <Label htmlFor="digest">{t('c:notifications.digest')}</Label>
           <Select value={data.digest} onValueChange={(digest) => mutate({ digest: digest as DigestFrequency })}>
             <SelectTrigger id="digest" className="w-56">
