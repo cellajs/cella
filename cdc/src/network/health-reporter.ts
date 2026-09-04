@@ -20,7 +20,7 @@ function push(): void {
       lagBytes: metrics.lagBytes,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
       catchingUp: replicationState.catchingUp,
-      roleBypassRls: role?.bypassRls ?? null,
+      rlsBypass: role?.rlsBypass ?? null,
       roleReplication: role?.replication ?? null,
     },
   });

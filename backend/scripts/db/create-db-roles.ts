@@ -42,19 +42,21 @@ ELSE
 END IF;
 
 -- admin_role: Migrations, seeds, system admin, CDC worker.
--- Needs BYPASSRLS (for CDC seq stamping under FORCE RLS) and REPLICATION (for the CDC slot).
--- Try with both first; fall back without them on managed providers that forbid these attributes.
+-- Needs REPLICATION (for the CDC slot). It bypasses RLS as the owner of every RLS table (RLS is
+-- enabled, never forced), so BYPASSRLS is deliberately not requested: managed providers such as
+-- Scaleway cannot grant it and dev should mirror that shape.
+-- Try with REPLICATION first; fall back without it on managed providers that forbid the attribute.
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-    CREATE ROLE admin_role WITH LOGIN BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role with BYPASSRLS + REPLICATION';
+    CREATE ROLE admin_role WITH LOGIN REPLICATION PASSWORD '${escSql(adminPassword)}';
+    RAISE NOTICE 'Created role admin_role with REPLICATION';
   ELSE
-    ALTER ROLE admin_role WITH BYPASSRLS REPLICATION PASSWORD '${escSql(adminPassword)}';
+    ALTER ROLE admin_role WITH REPLICATION PASSWORD '${escSql(adminPassword)}';
   END IF;
 EXCEPTION WHEN OTHERS THEN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
     CREATE ROLE admin_role WITH LOGIN PASSWORD '${escSql(adminPassword)}';
-    RAISE NOTICE 'Created role admin_role without BYPASSRLS/REPLICATION (managed provider)';
+    RAISE NOTICE 'Created role admin_role without REPLICATION (managed provider)';
   ELSE
     ALTER ROLE admin_role WITH PASSWORD '${escSql(adminPassword)}';
   END IF;

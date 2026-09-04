@@ -6,7 +6,7 @@ export type PostgresRole = 'admin' | 'runtime' | 'cdc';
 
 /** Configuration for a managed Scaleway PostgreSQL store. */
 export interface PostgresManagedConfig {
-  /** Roles to provision, all three by default: `admin` has BYPASSRLS and REPLICATION, `runtime` is RLS-subject, and `cdc` reuses admin credentials for the replication slot. */
+  /** Roles to provision, all three by default: `admin` has REPLICATION and owns the RLS tables (Scaleway grants no BYPASSRLS), `runtime` is RLS-subject, and `cdc` reuses admin credentials for the replication slot. */
   roles?: readonly PostgresRole[];
   /** Enable PostgreSQL logical replication via instance settings and expose the cdc connection string. Defaults to true. */
   logicalReplication?: boolean;
@@ -61,7 +61,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           id: 'databaseUrlAdmin',
           secretName: 'database-url-admin',
           envVar: 'DATABASE_ADMIN_URL',
-          description: 'PostgreSQL admin_role connection string (migrations, seeds, BYPASSRLS)',
+          description: 'PostgreSQL admin_role connection string (migrations, seeds, owner of the RLS tables)',
           required: true,
           valueSource: 'pulumi',
           services: consumers.admin,
@@ -173,13 +173,14 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         region,
       });
 
-      // One user per role: admin_role runs migrations, seeds, system jobs and CDC (isAdmin gives BYPASSRLS and REPLICATION); runtime_role serves app requests under RLS.
+      // One user per role: admin_role runs migrations, seeds, system jobs and CDC; runtime_role serves app requests under RLS.
+      // Scaleway's isAdmin grants REPLICATION but not BYPASSRLS (verified on production, 2026-09-04): admin_role bypasses RLS only as the owner of RLS-enabled, never-forced tables.
 
       const adminUser = new scaleway.databases.User('admin-user', {
         instanceId: instance.id,
         name: 'admin_role',
         password: adminPassword,
-        isAdmin: true, // grants BYPASSRLS + REPLICATION at Scaleway level
+        isAdmin: true, // grants REPLICATION (not BYPASSRLS) at Scaleway level
         region,
       });
 
@@ -235,7 +236,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           .apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db));
       }
 
-      // Admin connection for migrations, seeds, system jobs (BYPASSRLS).
+      // Admin connection for migrations, seeds, system jobs (owner bypass of RLS).
       const connectionStringAdmin = buildConnectionString(adminUser.name, adminPassword);
       // Runtime connection for backend API requests (subject to RLS).
       const connectionStringRuntime = buildConnectionString(runtimeUser.name, runtimePassword);

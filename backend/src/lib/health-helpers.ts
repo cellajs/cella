@@ -127,10 +127,10 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
     status = worstStatus(status, 'degraded');
     reasons.push('wal_lag_high');
   }
-  // A role the provider created without these attributes cannot stamp seq under FORCE RLS or hold the slot: the data plane is down, not merely slow.
-  if (worker?.roleBypassRls === false) {
+  // A role that RLS filters (a forced or foreign-owned table) stamps seq into zero rows, and one without REPLICATION cannot hold the slot: the data plane is down, not merely slow.
+  if (worker?.rlsBypass === false) {
     status = worstStatus(status, 'unhealthy');
-    reasons.push('role_missing_bypassrls');
+    reasons.push('rls_bypass_missing');
   }
   if (worker?.roleReplication === false) {
     status = worstStatus(status, 'unhealthy');
@@ -150,7 +150,7 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
       lastLsn: worker?.lastLsn ?? null,
       lastEventAt: worker?.lastEventAt ?? null,
       catchingUp: worker?.catchingUp ?? null,
-      roleBypassRls: worker?.roleBypassRls ?? null,
+      rlsBypass: worker?.rlsBypass ?? null,
       roleReplication: worker?.roleReplication ?? null,
       messages: socket.messagesReceived,
       messagesSent: worker?.messagesSent ?? null,

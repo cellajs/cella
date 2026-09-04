@@ -49,7 +49,7 @@ export async function markSeenOp(ctx: AuthContext, entityIds: string[], productT
 
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 
-  // Use tenantContext to set RLS session vars; entity tables have FORCE ROW LEVEL SECURITY.
+  // Use tenantContext to set RLS session vars; entity tables have row-level security.
   const { validIds, newCount } = await tenantContext(ctx, async (txCtx) => {
     const db = txCtx.var.db;
     const validEntities: { id: string; channelId: string }[] = await db

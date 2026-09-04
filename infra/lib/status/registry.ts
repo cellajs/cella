@@ -1,3 +1,4 @@
+import { componentsProvider } from './providers/components';
 import { dnsProvider } from './providers/dns';
 import { githubProvider } from './providers/github';
 import { liveProvider } from './providers/live';
@@ -19,6 +20,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   stateProvider,
   secretsProvider,
   liveProvider,
+  componentsProvider,
   dnsProvider,
   storesProvider,
 ];

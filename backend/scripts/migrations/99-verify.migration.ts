@@ -69,11 +69,13 @@ async function run(): Promise<SideEffectBlock> {
     )
     .join('\n');
 
-  const forceRlsChecks = rlsTables
+  // Enabled but never forced: the owner (admin_role) bypasses the policies natively, which is the
+  // only bypass a managed provider can give the CDC worker and the admin connection.
+  const rlsEnabledChecks = rlsTables
     .map(
       (t) => `  IF NOT EXISTS (
-    SELECT 1 FROM pg_class WHERE ${inPublic(t)} AND relrowsecurity AND relforcerowsecurity
-  ) THEN missing := array_append(missing, 'force-rls:${t}'); END IF;`,
+    SELECT 1 FROM pg_class WHERE ${inPublic(t)} AND relrowsecurity AND NOT relforcerowsecurity
+  ) THEN missing := array_append(missing, 'rls-enabled-not-forced:${t}'); END IF;`,
     )
     .join('\n');
 
@@ -148,10 +150,10 @@ ${functionChecks}
   -- Immutability triggers
 ${triggerChecks}
 
-  -- Ownership and FORCE RLS
+  -- Ownership and enabled (not forced) RLS
 ${ownerChecks}
 
-${forceRlsChecks}
+${rlsEnabledChecks}
 
   -- Policy contract (${rlsTables.length} tables x ${policyCount} policies)
 ${policyChecks}
@@ -191,7 +193,7 @@ END $$;
     title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} FORCE-RLS tables, ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} RLS tables (enabled, not forced), ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
     ],
   };
 }

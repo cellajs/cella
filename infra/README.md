@@ -89,7 +89,7 @@ Each check reports `ok | warn | missing | error | unknown`. `unknown` means "cou
 }
 ```
 
-Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `dns.zone`, `stores.<storeId>`. Providers: `lib/status/providers/`; registered stores add `validate()` checks.
+Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `live.components`, `dns.zone`, `stores.<storeId>`. `live.components` reads the primary service's `/health?depth=full` with the smoke step's verdict rule (`lib/health-components.ts`): only-degraded components warn, an unhealthy one errors. Providers: `lib/status/providers/`; registered stores add `validate()` checks.
 
 ## Credentials files
 

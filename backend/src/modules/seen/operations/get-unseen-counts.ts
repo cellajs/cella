@@ -36,7 +36,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
   // Any tracked type with no parent groups by org → org ids join the context id set.
   const needsOrgFallback = trackedProductTypes.some((t) => !hierarchy.getParent(t));
 
-  // Read scopes are org-scoped, so counts run per org, and inside tenantRead because entity tables have FORCE ROW LEVEL SECURITY.
+  // Read scopes are org-scoped, so counts run per org, and inside tenantRead because entity tables have row-level security.
   const orgGroups = new Map<string, { tenantId: string; channelIds: Set<string> }>();
   for (const m of memberships) {
     const group = orgGroups.get(m.organizationId) ?? { tenantId: m.tenantId, channelIds: new Set<string>() };

@@ -810,7 +810,7 @@ const rlsSuiteReady = await (async () => {
 
   // The notification fan-out is a worker path off the activity bus: it reads product rows on a tenant-scoped runtime
   // transaction (tenantReadById), never on the admin connection. This pins that the runtime read sees exactly the rows
-  // admin_role sees under BYPASSRLS, and nothing without tenant context, so the fan-out can never notify from a partial view.
+  // admin_role sees everything as the table owner (RLS enabled, not forced), and nothing without tenant context, so the fan-out can never notify from a partial view.
   describe('Notification fan-out subject reads (worker path, runtime_role vs admin_role)', () => {
     let adminRoleDb: NodePgDatabase;
 
@@ -838,15 +838,16 @@ const rlsSuiteReady = await (async () => {
           loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]),
         );
 
-        expect(ids(asAdmin), 'admin_role must see the fixture row (BYPASSRLS)').toEqual([fixture.rowId]);
+        expect(ids(asAdmin), 'admin_role must see the fixture row (owner bypass)').toEqual([fixture.rowId]);
         expect(ids(asRuntime), 'tenant-scoped runtime read must match the admin read').toEqual(ids(asAdmin));
         expect(withoutContext, 'no tenant context must fail closed').toEqual([]);
       },
     );
   });
 
-  // CDC stamps seq as `admin_role` with no tenant context, so BYPASSRLS must cover FORCE RLS.
-  describe('CDC seq stamping (admin_role under FORCE RLS)', () => {
+  // CDC stamps seq as `admin_role` with no tenant context. The role has no BYPASSRLS (managed providers
+  // cannot grant it); it bypasses because it owns the RLS tables and RLS is never forced.
+  describe('CDC seq stamping (admin_role as owner, RLS enabled and not forced)', () => {
     let adminRoleDb: NodePgDatabase;
 
     beforeAll(async () => {
@@ -857,11 +858,23 @@ const rlsSuiteReady = await (async () => {
       });
     });
 
-    it('admin_role has BYPASSRLS attribute', async () => {
-      const rows = getRows<{ bypass: boolean }>(
+    it('admin_role owns every RLS table without forced RLS, and holds no BYPASSRLS attribute', async () => {
+      const role = getRows<{ bypass: boolean }>(
         await adminDb.execute(sql`SELECT rolbypassrls AS bypass FROM pg_roles WHERE rolname = 'admin_role'`),
       );
-      expect(rows[0]?.bypass).toBe(true);
+      expect(role[0]?.bypass, 'the suite must prove owner bypass, not the attribute').toBe(false);
+
+      const blocked = getRows<{ relname: string }>(
+        await adminDb.execute(sql`
+          SELECT relname FROM pg_class
+          WHERE relnamespace = 'public'::regnamespace AND relkind = 'r' AND relrowsecurity
+            AND (relforcerowsecurity OR pg_get_userbyid(relowner) <> 'admin_role')
+        `),
+      );
+      expect(
+        blocked.map((r) => r.relname),
+        'RLS tables admin_role cannot bypass',
+      ).toEqual([]);
     });
 
     it.skipIf(iterableRlsProducts.length === 0)(
@@ -871,7 +884,7 @@ const rlsSuiteReady = await (async () => {
         const before = getRows<{ seq: string | number }>(
           await adminRoleDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
         );
-        expect(before, 'admin_role must see the product row (BYPASSRLS)').toHaveLength(1);
+        expect(before, 'admin_role must see the product row (owner bypass)').toHaveLength(1);
 
         // bigint columns come back as strings from node-pg; coerce
         const newSeq = Number(before[0].seq ?? 0) + 1;

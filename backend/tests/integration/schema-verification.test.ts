@@ -19,7 +19,7 @@ const allProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
-/** Tables that should have FORCE RLS (org-scoped product entities + yjs_documents) */
+/** Tables with RLS enabled, never forced (org-scoped product entities + yjs_documents) */
 const rlsTableNames = [...orgScopedProductTables, 'yjs_documents'];
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
@@ -73,20 +73,23 @@ describe('Schema verification', () => {
   // Migration-outcome checks: they inspect the schema the migration produced and never repair it
   // (the global setup provisions the roles before migrating and refuses a degraded volume).
   describe('RLS runtime configuration', () => {
-    describe('FORCE ROW LEVEL SECURITY', () => {
-      it.each(rlsTableNames)('should have FORCE RLS enabled on %s', async (tableName) => {
-        const rows = getRows<{ relforcerowsecurity: boolean }>(
+    // Enabled, not forced: the owner (admin_role) bypasses the policies natively, so the CDC worker and
+    // the admin connection need no BYPASSRLS attribute (managed providers cannot grant it).
+    describe('ROW LEVEL SECURITY enabled, not forced', () => {
+      it.each(rlsTableNames)('should have RLS enabled and not forced on %s', async (tableName) => {
+        const rows = getRows<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
-            SELECT relforcerowsecurity
+            SELECT relrowsecurity, relforcerowsecurity
             FROM pg_class
             WHERE relname = ${tableName}
           `),
         );
         expect(rows.length, `Table ${tableName} not found in pg_class`).toBe(1);
-        expect(rows[0].relforcerowsecurity, `FORCE RLS not enabled on ${tableName}`).toBe(true);
+        expect(rows[0].relrowsecurity, `RLS not enabled on ${tableName}`).toBe(true);
+        expect(rows[0].relforcerowsecurity, `RLS must not be forced on ${tableName} (owner bypass)`).toBe(false);
       });
 
-      it.each(channelTables)('should NOT have FORCE RLS on %s (app-layer isolation)', async (tableName) => {
+      it.each(channelTables)('should NOT have forced RLS on %s (app-layer isolation)', async (tableName) => {
         const rows = getRows<{ relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
               SELECT relforcerowsecurity

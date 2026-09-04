@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ComponentsFact } from './providers/components';
 import type { GithubFacts } from './providers/github';
 import type { LiveServiceFact } from './providers/live';
 import type { IdentityFacts } from './providers/stack';
@@ -20,6 +21,7 @@ interface Facts {
   state?: ScalewayFacts;
   secrets?: string[];
   live?: LiveServiceFact[];
+  components?: ComponentsFact;
   dns?: { host: string; resolvedIps?: string[] };
   stores?: StoreValidationFact[];
 }
@@ -53,6 +55,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
         expectedSha: 'abc123def456',
       },
     ],
+    components: { slug: 'backend', url: 'https://api.example.com/health?depth=full', httpStatus: 200, issues: [] },
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
     stores: [{ id: 'primary', kind: 'postgres-managed' }],
     ...overrides,
@@ -82,6 +85,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     state: facts.state,
     secrets: facts.secrets,
     live: facts.live,
+    components: facts.components,
     dns: facts.dns,
     stores: facts.stores,
   };
@@ -244,6 +248,54 @@ describe('live service checks', () => {
   it('a service that was not probed is unknown', () => {
     const report = reportFor(base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health' }] }));
     expect(find(report.checks, 'live.backend')?.status).toBe('unknown');
+  });
+});
+
+describe('primary components check (same verdict rule as the smoke step)', () => {
+  const at = (overrides: Partial<ComponentsFact>): ComponentsFact => ({
+    slug: 'backend',
+    url: 'https://api.example.com/health?depth=full',
+    httpStatus: 200,
+    issues: [],
+    ...overrides,
+  });
+
+  it('all healthy is ok', () => {
+    expect(find(reportFor(base()).checks, 'live.components')?.status).toBe('ok');
+  });
+
+  it('only-degraded components warn without an action', () => {
+    const report = reportFor(
+      base({ components: at({ issues: [{ name: 'cdc', status: 'degraded', reason: 'worker_report_stale' }] }) }),
+    );
+    const check = find(report.checks, 'live.components');
+    expect(check?.status).toBe('warn');
+    expect(check?.detail).toBe('cdc=degraded(worker_report_stale)');
+    expect(check?.nextAction).toBeUndefined();
+  });
+
+  it('an unhealthy component (503 body) is an error pointing at diagnostics', () => {
+    const report = reportFor(
+      base({
+        components: at({
+          httpStatus: 503,
+          issues: [{ name: 'cdc', status: 'unhealthy', reason: 'rls_bypass_missing' }],
+        }),
+      }),
+    );
+    const check = find(report.checks, 'live.components');
+    expect(check?.status).toBe('error');
+    expect(check?.detail).toBe('cdc=unhealthy(rls_bypass_missing)');
+    expect(check?.nextAction?.command).toContain('diag');
+  });
+
+  it('an unreachable aggregate is missing', () => {
+    const report = reportFor(base({ components: at({ httpStatus: undefined, issues: undefined }) }));
+    expect(find(report.checks, 'live.components')?.status).toBe('missing');
+  });
+
+  it('is omitted when no primary endpoint could be derived', () => {
+    expect(find(reportFor(base({ components: undefined })).checks, 'live.components')).toBeUndefined();
   });
 });
 

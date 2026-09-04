@@ -405,7 +405,7 @@
     "pnpm check",
     "pnpm test"
    ],
-   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization — enforcement belongs to permissions/quotas."
+   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
   },
   {
    "id": "20260811T0905-ts-import-extensions",
@@ -495,7 +495,7 @@
     "pnpm sdk",
     "pnpm check"
    ],
-   "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration — a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
+   "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration \u2014 a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
   },
   {
    "id": "20260817T1447-remove-filter-tab-ids",
@@ -827,6 +827,26 @@
     "pnpm test:core:runtime"
    ],
    "summary": "requestScopeWhere(ctx, table) adds the guarded tenant + organization predicate to every organization-bound product query and splitByPermission rejects unknown and out-of-scope ids, so removing RLS broadens no application query. The admin pool is lazy (getAdminDb(purpose), getSeedDb(); migrationDb, unsafeInternalAdminDb and seedDb are gone) and DATABASE_ADMIN_URL is optional for the request-serving API. The RLS and verify side-effect blocks refuse to run without runtime_role and admin_role; the verifier asserts owner, the four-policy contract (rlsPolicyContract), grants per classification and that runtime_role has no BYPASSRLS. Test global setup creates roles before migrating and refuses a degraded volume; verification tests inspect the catalog without repairing it. The backend suite also runs as runtime_role (test:core:runtime, CI step). The Yjs startup sweep lists and deletes per tenant inside tenant-scoped transactions; deleteStaleDoc takes the row."
+  },
+  {
+   "id": "20260904T0947-rls-owner-bypass",
+   "version": "next",
+   "title": "RLS owner bypass replaces BYPASSRLS: NO FORCE RLS, effective CDC role probe, smoke warnings",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/scripts",
+    "backend/tests",
+    "cdc/src",
+    "infra"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "RLS tables are ENABLE (never FORCE) so admin_role bypasses as owner; Scaleway cannot grant BYPASSRLS (found by the 0.10.0 smoke failure). create-db-roles and the test setup create admin_role without BYPASSRLS; verify asserts enabled-not-forced. CDC worker probes effective bypass per table (rlsBypass/rlsBlockedTables, health reason rls_bypass_missing replaces role_missing_bypassrls). Smoke results are ok/warn/fail (degraded warns via ::warning::, unhealthy fails); infra status gains live.components on the shared lib/health-components.ts."
   }
  ]
 }
