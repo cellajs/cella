@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.10.1](https://github.com/cellajs/cella/compare/0.10.0...0.10.1) (2026-09-04)
+
+
+### 🎉 New features
+
+* **account:** email digest label, spacing, radio group with help popover ([#1145](https://github.com/cellajs/cella/issues/1145)) ([b1504fd](https://github.com/cellajs/cella/commit/b1504fd187e8ae7f0b60b0145c7ce661a77ff6c1))
+* **attachments:** description cell edits like other cells; mention names in flattened text ([#1141](https://github.com/cellajs/cella/issues/1141)) ([1e743fb](https://github.com/cellajs/cella/commit/1e743fba8c04604c3f6698eb2f01c1620be65272))
+* **nav:** notifications sheet tuning, drop home nav button, shared nav sheet frame ([#1142](https://github.com/cellajs/cella/issues/1142)) ([d2cd3ee](https://github.com/cellajs/cella/commit/d2cd3eeccc88d4409d17d6112786c7545e54d781))
+* **rls:** parity run, explicit request scope, per-tenant Yjs sweep, verified catalog, lazy admin credential ([#1137](https://github.com/cellajs/cella/issues/1137)) ([34d6d7a](https://github.com/cellajs/cella/commit/34d6d7ad72bce3c7d6510547865a4aee14f59c70))
+* **ui:** UI/UX improvements: attachment dialog description, nav loader, search polish ([#1149](https://github.com/cellajs/cella/issues/1149)) ([51c5921](https://github.com/cellajs/cella/commit/51c5921f87d3298d5510e375edbf51a397768c50))
+
+
+### 🐞 Bug fixes
+
+* **account:** drop bare id on notifications card that broke scroll spy ([#1144](https://github.com/cellajs/cella/issues/1144)) ([285d654](https://github.com/cellajs/cella/commit/285d6541fca0058d96293d6ed66143bf2bf071a6))
+* **form:** slug field ring resets on every value change and ignores stale checks ([#1148](https://github.com/cellajs/cella/issues/1148)) ([80b645c](https://github.com/cellajs/cella/commit/80b645c61e1bdf536bdc2597f9d04222ff3ed6e4))
+* **marketing:** mobile drawer says About, not Home ([#1143](https://github.com/cellajs/cella/issues/1143)) ([d98c19e](https://github.com/cellajs/cella/commit/d98c19e741205aa994083b803ab896dd1a77aaf7))
+* **mobile:** docs render-mode labels, dialog overflow, breakpoint flip, floating nav inset ([#1139](https://github.com/cellajs/cella/issues/1139)) ([245efe2](https://github.com/cellajs/cella/commit/245efe297ef9bd13681ee3e00d7a17d0e571e4fc))
+* **rls:** owner bypass replaces BYPASSRLS, smoke warn tier, status components check ([#1140](https://github.com/cellajs/cella/issues/1140)) ([972d8b6](https://github.com/cellajs/cella/commit/972d8b65d81a6597a128a2cfe2ed7f1972b9be17))
+
+
+### 🔧 Small improvements
+
+* **table:** drop dead sticky wiring from table filter bars ([#1147](https://github.com/cellajs/cella/issues/1147)) ([9cfd566](https://github.com/cellajs/cella/commit/9cfd5662368037d780ca83b90589d329d763815f))
+
 ## [0.10.0](https://github.com/cellajs/cella/compare/0.9.8...0.10.0) (2026-09-04)
 
 
