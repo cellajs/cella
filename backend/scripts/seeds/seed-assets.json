@@ -1,0 +1,56 @@
+[
+  {
+    "filename": "cella-members.csv",
+    "contentType": "text/csv",
+    "convertedContentType": null,
+    "size": "497",
+    "keys": {
+      "original": "seed/v1/cella-members/original.csv"
+    }
+  },
+  {
+    "filename": "cella-notes.txt",
+    "contentType": "text/plain",
+    "convertedContentType": "application/pdf",
+    "size": "751",
+    "keys": {
+      "original": "seed/v1/cella-notes/original.txt",
+      "preview": "seed/v1/cella-notes/preview.png",
+      "converted": "seed/v1/cella-notes/converted.pdf"
+    }
+  },
+  {
+    "filename": "cella-notes-pdf.pdf",
+    "contentType": "application/pdf",
+    "convertedContentType": null,
+    "size": "18314",
+    "keys": {
+      "original": "seed/v1/cella-notes-pdf/original.pdf",
+      "preview": "seed/v1/cella-notes-pdf/preview.png"
+    }
+  },
+  {
+    "filename": "cella-org-page.webp",
+    "contentType": "image/webp",
+    "convertedContentType": "image/webp",
+    "size": "48790",
+    "keys": {
+      "original": "seed/v1/cella-org-page/original.webp",
+      "thumbnail": "seed/v1/cella-org-page/thumbnail.webp",
+      "preview": "seed/v1/cella-org-page/preview.webp",
+      "converted": "seed/v1/cella-org-page/converted.webp"
+    }
+  },
+  {
+    "filename": "cella-readme.jpg",
+    "contentType": "image/jpeg",
+    "convertedContentType": "image/webp",
+    "size": "77068",
+    "keys": {
+      "original": "seed/v1/cella-readme/original.jpg",
+      "thumbnail": "seed/v1/cella-readme/thumbnail.webp",
+      "preview": "seed/v1/cella-readme/preview.webp",
+      "converted": "seed/v1/cella-readme/converted.webp"
+    }
+  }
+]

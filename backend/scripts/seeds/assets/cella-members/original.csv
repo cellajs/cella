@@ -1,0 +1,9 @@
+name,email,role,joined_at,status
+Ada Lovelace,ada@example.com,admin,2026-01-12,active
+Grace Hopper,grace@example.com,member,2026-02-03,active
+Linus Torvalds,linus@example.com,member,2026-02-18,invited
+Margaret Hamilton,margaret@example.com,admin,2026-03-01,active
+Ken Thompson,ken@example.com,member,2026-03-22,active
+Barbara Liskov,barbara@example.com,member,2026-04-09,inactive
+Dennis Ritchie,dennis@example.com,member,2026-04-30,active
+Radia Perlman,radia@example.com,member,2026-05-15,invited

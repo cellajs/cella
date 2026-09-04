@@ -3,13 +3,11 @@ import { appConfig } from 'shared';
 import { env } from '#/env';
 import { checkMark, crossMark, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
-// Origins to authorize. Accept a comma-separated CLI arg, else fall back to the
-// configured frontend URL (e.g. http://localhost:3000 in development).
+// Origins to authorize. Accept a comma-separated CLI arg, else the configured frontend URL plus
+// port 3001, which a second local vite instance (a worktree) picks.
 const originArg = process.argv[2];
-const allowedOrigins = (originArg ?? appConfig.frontendUrl)
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+const defaultOrigins = [appConfig.frontendUrl, 'http://localhost:3001'];
+const allowedOrigins = [...new Set((originArg?.split(',') ?? defaultOrigins).map((o) => o.trim()).filter(Boolean))];
 
 // Buckets to configure: the two shared development buckets.
 const buckets = [appConfig.s3.publicBucket, appConfig.s3.privateBucket];
