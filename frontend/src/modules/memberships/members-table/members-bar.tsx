@@ -135,7 +135,7 @@ export function MembersTableBar({
 
   return (
     <>
-      <TableBarContainer searchVars={searchVars} offsetTop={isSheet ? 0 : 48}>
+      <TableBarContainer searchVars={searchVars}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {!isFiltered && canUpdate && (
