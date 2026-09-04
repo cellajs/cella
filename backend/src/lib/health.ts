@@ -46,7 +46,7 @@ function buildCdcComponent(): HealthComponent {
         ageMs: Date.now() - report.receivedAt.getTime(),
       }
     : null;
-  return mapCdcComponent(
+  const component = mapCdcComponent(
     {
       cdcConnected: socket.cdcConnected,
       lastMessageAt: socket.lastMessageAt,
@@ -55,6 +55,8 @@ function buildCdcComponent(): HealthComponent {
     },
     worker,
   );
+  const lagAlert = cdcWebSocketServer.getLastLagAlert();
+  return lagAlert ? { ...component, details: { ...component.details, lagAlert } } : component;
 }
 
 /** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */

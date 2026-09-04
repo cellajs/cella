@@ -8,6 +8,7 @@ import * as Y from 'yjs';
 import { create } from 'zustand';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
+import { queryClient } from '~/query/query-client';
 
 const GRACE_PERIOD_MS = 30_000;
 const MAX_BACKOFF_MS = 30_000;
@@ -92,9 +93,10 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   const handleConnectionClose = (event: CloseEvent | null) => {
     if (!event || event.code === 1000) return;
 
-    // TOKEN_INVALID is recoverable: backoff gives the refresher time to push a fresh token, so give up only after MAX_TOKEN_FAILURES.
+    // TOKEN_INVALID is recoverable: the relay closes after the handshake so this code arrives; refetching the token updates the provider params before y-websocket's backoff reconnects, so give up only after MAX_TOKEN_FAILURES.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
       tokenFailures++;
+      void queryClient.invalidateQueries({ queryKey: ['yjs', 'token', entityType, tenantId] });
       if (tokenFailures < MAX_TOKEN_FAILURES) return;
       console.warn(`[yjs] Circuit breaker: ${tokenFailures} consecutive token failures for ${editSessionId}`);
     }

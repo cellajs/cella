@@ -5,11 +5,14 @@ import { deleteState, loadState, saveState } from '../data/storage';
 import { log } from '../lib/pino';
 import { materializeState } from './materialize';
 
-interface CollabSession {
+export interface CollabSession {
   ctx: DocContext;
   clients: Set<WebSocket>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   saveTimer?: ReturnType<typeof setTimeout>;
+  /** Bounded retry of a materialization the backend could not take; a new save window supersedes it. */
+  materializeRetryTimer?: ReturnType<typeof setTimeout>;
+  materializeAttempts?: number;
   pendingState?: Uint8Array;
   /** Tracks an in-flight saveState call so cleanup can await it before deleting. */
   savingPromise?: Promise<void>;
@@ -74,6 +77,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
     const cleanup = async () => {
       if (collab.clients.size > 0) return;
       if (collab.saveTimer) clearTimeout(collab.saveTimer);
+      if (collab.materializeRetryTimer) clearTimeout(collab.materializeRetryTimer);
 
       if (collab.savingPromise) {
         try {

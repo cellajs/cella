@@ -1,4 +1,4 @@
-import type { ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import type { AuthContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 import type { StxBase } from '#/schemas';
@@ -19,4 +19,13 @@ onBackendModuleRegister((module) => {
 
 export function getYjsMaterializer(entityType: ProductEntityType): YjsMaterializer | undefined {
   return materializers.get(entityType);
+}
+
+/** Yjs enabled with no module declaring `yjsMaterializer` means every materialize call is rejected and collaborative content never reaches the entity row. */
+export function warnWhenNoYjsMaterializer(): void {
+  if (appConfig.services.yjs.enabled && materializers.size === 0) {
+    console.warn(
+      '[yjs] services.yjs.enabled is true but no backend module declares a yjsMaterializer: collaborative descriptions will not be materialized',
+    );
+  }
 }

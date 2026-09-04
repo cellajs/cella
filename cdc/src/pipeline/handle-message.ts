@@ -37,10 +37,16 @@ function isSeededInsert(msg: DmlMessage): boolean {
   return typeof id === 'string' && (id.startsWith('00000000-') || id.startsWith('gen-'));
 }
 
+/** Sends the standby status update and records it, so heartbeats can repeat the last flushed position. */
+async function sendAck(lsn: string): Promise<void> {
+  await replicationState.service?.acknowledge(lsn);
+  replicationState.lastAckedLsn = lsn;
+}
+
 /** Acknowledgment is held while the WebSocket is disconnected. */
 async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
-    await replicationState.service?.acknowledge(lsn);
+    await sendAck(lsn);
   } else {
     log.debug('Holding LSN acknowledgment - WebSocket disconnected', { lsn });
   }
@@ -91,7 +97,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
   const tableName = msg.relation?.name;
 
   if (isSeededInsert(msg)) {
-    if (wsClient.isConnected()) await replicationState.service?.acknowledge(lsn);
+    if (wsClient.isConnected()) await sendAck(lsn);
     return;
   }
 

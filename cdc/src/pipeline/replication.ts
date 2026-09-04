@@ -51,8 +51,9 @@ export function createReplicationService(): LogicalReplicationService {
 
   service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
     log.trace('Heartbeat received', { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
+    // Reply with the last flushed position, never the keepalive's: acknowledging its LSN would move confirmed_flush_lsn past events still in the flush buffer or held while the API is down. Before the first ack, 0/0 leaves the slot untouched.
     if (shouldRespond) {
-      await service.acknowledge(lsn);
+      await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
     }
   });
 

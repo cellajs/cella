@@ -12,7 +12,7 @@ import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 
-/** Rejects at the HTTP level, without completing the handshake: a completed handshake fires the client `onopen`, resets its backoff, and starts a ~100ms retry loop. */
+/** Rejects at the HTTP level for malformed requests, mismatched tokens and rate limits. A browser cannot read the body or code of a failed upgrade and sees close 1006, so anything the client must react to (an expired token) closes after the handshake. */
 function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   if (socket.destroyed) return;
   const body = JSON.stringify({ code, reason });
@@ -80,7 +80,9 @@ export function setupUpgradeHandler(
       } else {
         log.warn('WS token verification failed', { entityType: rawEntityType, reason: result.reason });
       }
-      rejectUpgrade(socket, 4001, 'Invalid or expired token');
+      // Closed after the handshake so the browser sees 4001, refreshes its token and reconnects; y-websocket 3 counts every closed connection towards its backoff, so no tight loop.
+      if (socket.destroyed) return;
+      server.handleUpgrade(req, socket, head, (ws) => ws.close(4001, 'Invalid or expired token'));
       return;
     }
     const payload = result.payload;

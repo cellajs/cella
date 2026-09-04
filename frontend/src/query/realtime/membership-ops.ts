@@ -29,7 +29,11 @@ export function invalidateMemberQueries(organizationId: string | null): void {
   if (organizationId) {
     queryClient.invalidateQueries({
       queryKey: memberQueryKeys.list.base,
-      predicate: (query) => query.queryKey.some((k) => typeof k === 'object' && k !== null && 'organizationId' in k),
+      predicate: (query) =>
+        query.queryKey.some(
+          (k) =>
+            typeof k === 'object' && k !== null && (k as { organizationId?: string }).organizationId === organizationId,
+        ),
       refetchType: 'active',
     });
   } else {

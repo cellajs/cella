@@ -91,6 +91,16 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
 }
 
 /** Self-reported CDC worker health payload pushed over the WS control channel. */
+/** WAL lag alert from the worker's `wal_lag_alert` control message. */
+export interface CdcLagAlert {
+  severity: 'wal_lag_warn' | 'wal_lag_unhealthy';
+  lagBytes: number | null;
+  warnThreshold: number | null;
+  unhealthyThreshold: number | null;
+  slotStatus: string | null;
+  receivedAt: string;
+}
+
 export interface CdcWorkerHealth {
   replicationStatus: string;
   lastLsn: string | null;
@@ -103,6 +113,10 @@ export interface CdcWorkerHealth {
   lastEventAt?: string | null;
   /** Whether the worker is currently replaying backlogged WAL. */
   catchingUp?: boolean;
+  /** Whether the worker's database role can bypass RLS (needed to stamp seq under FORCE RLS); null until probed. */
+  roleBypassRls?: boolean | null;
+  /** Whether the worker's database role may open a replication slot; null until probed. */
+  roleReplication?: boolean | null;
 }
 
 /** Internal CDC worker channel: shared secret plus allowed source, one live connection, idle peers closed. */
@@ -118,6 +132,7 @@ class CdcWebSocketServer {
   private _messagesReceived = 0;
   private _parseErrors = 0;
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
+  private _lastLagAlert: CdcLagAlert | null = null;
 
   /** Attach to an existing HTTP server and authenticate upgrade requests to /internal/cdc. */
   attachToServer(server: ServerType): void {
@@ -301,6 +316,23 @@ class CdcWebSocketServer {
       return;
     }
 
+    if (message._control === 'wal_lag_alert') {
+      const { severity, lagBytes, warnThreshold, unhealthyThreshold, slotStatus } = message as Partial<CdcLagAlert>;
+      const alert: CdcLagAlert = {
+        severity: severity === 'wal_lag_unhealthy' ? 'wal_lag_unhealthy' : 'wal_lag_warn',
+        lagBytes: typeof lagBytes === 'number' ? lagBytes : null,
+        warnThreshold: typeof warnThreshold === 'number' ? warnThreshold : null,
+        unhealthyThreshold: typeof unhealthyThreshold === 'number' ? unhealthyThreshold : null,
+        slotStatus: typeof slotStatus === 'string' ? slotStatus : null,
+        receivedAt: new Date().toISOString(),
+      };
+      this._lastLagAlert = alert;
+      if (alert.severity === 'wal_lag_unhealthy')
+        log.error('CDC WAL lag exceeded the backpressure limit', { ...alert });
+      else log.warn('CDC WAL lag above warning threshold', { ...alert });
+      return;
+    }
+
     log.warn('Unknown CDC control message', { control: message._control });
   }
 
@@ -335,11 +367,17 @@ class CdcWebSocketServer {
     this.currentConnection = null;
     this._cdcConnected = false;
     this._workerHealth = null;
+    this._lastLagAlert = null;
   }
 
   /** Latest CDC worker self-report received over the WS control channel. */
   getWorkerHealth(): { payload: CdcWorkerHealth; receivedAt: Date } | null {
     return this._workerHealth;
+  }
+
+  /** Last `wal_lag_alert` the worker sent; cleared with the worker's health on disconnect. */
+  getLastLagAlert(): CdcLagAlert | null {
+    return this._lastLagAlert;
   }
 
   getHealthStatus(): {

@@ -5,6 +5,7 @@ import { startHealthReporter, stopHealthReporter } from '../network/health-repor
 import { wsClient } from '../network/websocket-client';
 import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
+import { probeRoleCapabilities } from '../services/role-capabilities';
 import { drainBuffers } from './handle-message';
 import { createReplicationService, setupBackpressure, subscribeWithReconnect } from './replication';
 
@@ -14,6 +15,8 @@ export async function startCdcWorker(): Promise<void> {
     publicationName: CDC_PUBLICATION_NAME,
     slotName: CDC_SLOT_NAME,
   });
+
+  await probeRoleCapabilities();
 
   const service = createReplicationService();
   replicationState.service = service;

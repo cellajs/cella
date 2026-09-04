@@ -9,6 +9,7 @@ type ReplicationState = 'active' | 'paused' | 'stopped';
 class ReplicationStateManager {
   private _replicationState: ReplicationState = 'stopped';
   private _lastLsn: string | null = null;
+  private _lastAckedLsn: string | null = null;
   private _service: LogicalReplicationService | null = null;
   private _replicationPausedAt: Date | null = null;
 
@@ -35,6 +36,15 @@ class ReplicationStateManager {
 
   set lastLsn(lsn: string | null) {
     this._lastLsn = lsn;
+  }
+
+  /** Last LSN reported to Postgres as flushed. Heartbeats repeat it, so the slot never advances past data still buffered or held. */
+  get lastAckedLsn(): string | null {
+    return this._lastAckedLsn;
+  }
+
+  set lastAckedLsn(lsn: string | null) {
+    this._lastAckedLsn = lsn;
   }
 
   get service(): LogicalReplicationService | null {
@@ -159,6 +169,7 @@ class ReplicationStateManager {
   reset(): void {
     this._replicationState = 'stopped';
     this._lastLsn = null;
+    this._lastAckedLsn = null;
     this._service = null;
     this._replicationPausedAt = null;
     this._catchingUp = false;
