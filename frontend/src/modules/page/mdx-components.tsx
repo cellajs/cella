@@ -47,9 +47,19 @@ function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
   );
 }
 
+/** Tables scroll inside their own container so a wide table never widens the page. */
+function MdxTable(props: ComponentProps<'table'>) {
+  return (
+    <div className="overflow-x-auto">
+      <table {...props} />
+    </div>
+  );
+}
+
 /** MDX overrides for docs bodies, provided via MDXProvider so they apply inside imported repo docs too. */
 export const mdxComponents = {
   a: MdxLink,
   h2: MdxHeading,
   pre: CodeBlock,
+  table: MdxTable,
 };

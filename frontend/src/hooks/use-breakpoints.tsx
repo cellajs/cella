@@ -6,13 +6,25 @@ const sortedBreakpoints = Object.keys(breakpoints).sort(
   (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
 );
 
-// Largest breakpoint whose threshold is ≤ current width, matching CSS min-width media queries.
+// One media query per breakpoint, so JS agrees with the CSS `md:` variants. `window.innerWidth` does not: on
+// mobile it can follow the visual viewport (pinch zoom, overflowing content) and flip layouts the CSS never flips.
+// jsdom has no matchMedia; tests fall back to innerWidth there.
+const mediaQueries = new Map(
+  sortedBreakpoints.map((bp) => [bp, window.matchMedia?.(`(min-width: ${breakpoints[bp]})`) ?? null] as const),
+);
+
+function matchesBreakpoint(bp: string) {
+  const mql = mediaQueries.get(bp);
+  if (mql) return mql.matches;
+  return window.innerWidth >= Number.parseInt(breakpoints[bp], 10);
+}
+
+// Largest breakpoint whose min-width query matches; below the smallest threshold, the smallest (`xs`).
 function getMatchedBreakpoints() {
-  const width = window.innerWidth;
   let matched = sortedBreakpoints[0];
 
   for (const bp of sortedBreakpoints) {
-    if (width >= Number.parseInt(breakpoints[bp], 10)) {
+    if (matchesBreakpoint(bp)) {
       matched = bp;
     } else {
       break;
@@ -34,8 +46,11 @@ function updateGlobalBreakpoint() {
   }
 }
 
-// Attach the listener once per app lifecycle
-window.addEventListener('resize', updateGlobalBreakpoint);
+// Attach the listeners once per app lifecycle
+for (const mql of mediaQueries.values()) {
+  mql?.addEventListener('change', updateGlobalBreakpoint);
+}
+if (!window.matchMedia) window.addEventListener('resize', updateGlobalBreakpoint);
 
 /** Subscribe to breakpoint changes; works outside React components. Returns an unsubscribe fn. */
 export function subscribeToBreakpointChanges(callback: () => void) {
@@ -68,12 +83,6 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
     getSnapshot,
     getServerSnapshot,
   );
-  // `xs` is not in screenSizes: derive it below the `sm` threshold.
-  const smIndex = sortedBreakpoints.indexOf('sm');
-  const currentIndex = sortedBreakpoints.indexOf(breakpointState);
-  if (currentIndex <= smIndex && window.innerWidth < Number.parseInt(breakpoints.sm, 10)) {
-    return 'xs';
-  }
   return breakpointState as BreakpointKey;
 }
 

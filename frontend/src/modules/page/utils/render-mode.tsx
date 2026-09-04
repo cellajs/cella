@@ -9,7 +9,14 @@ export const renderModeIcons: Record<DocRenderMode, IconComponent> = {
   nodeOnly: WorkflowIcon,
 };
 
-export const renderModeLabelKey = (mode: string) => `c:render_mode.${mode === 'nodeOnly' ? 'node_only' : mode}` as TKey;
+/** Literal keys (not a template literal) so the typed-key check and the dead-key sweep both see them. */
+const renderModeLabelKeys = {
+  default: 'c:render_mode.default',
+  overview: 'c:render_mode.overview',
+  nodeOnly: 'c:render_mode.node_only',
+} as const satisfies Record<DocRenderMode, TKey>;
+
+export const renderModeLabelKey = (mode: DocRenderMode): TKey => renderModeLabelKeys[mode];
 
 interface RenderModeLabelProps {
   mode: DocRenderMode;
