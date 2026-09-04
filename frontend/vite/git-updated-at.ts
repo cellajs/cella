@@ -12,11 +12,12 @@ function laterIso(a: string | undefined, b: string | undefined): string | undefi
 
 export type UpdatedAtResolver = {
   /**
-   * Newest "updated" ISO date across `files` (a page plus its imported docs),
-   * or `pinned` when the page frontmatter sets one explicitly. `undefined` only
-   * when nothing resolves (no pin, no existing files).
+   * Newest "updated" ISO date across `files` (a page plus its imported docs) and
+   * the frontmatter `stamped` date, if any. A stamp is what the dev editor writes on
+   * an edit; a later commit touching the page or an imported doc overtakes it.
+   * `undefined` only when nothing resolves (no stamp, no existing files).
    */
-  resolve(files: string[], pinned?: string): string | undefined;
+  resolve(files: string[], stamped?: string): string | undefined;
   /** Absolute git work-tree root, or null when not inside a repo (probed once). */
   readonly repoRoot: string | null;
 };
@@ -61,10 +62,8 @@ export function createUpdatedAtResolver(fromDir: string): UpdatedAtResolver {
 
   return {
     repoRoot,
-    resolve(files, pinned) {
-      if (typeof pinned === 'string' && pinned.trim()) return pinned;
-
-      let newest: string | undefined;
+    resolve(files, stamped) {
+      let newest = stamped && Number.isFinite(Date.parse(stamped)) ? stamped : undefined;
       for (const file of files) {
         const mtime = mtimeMs(file);
         if (mtime === undefined) continue;
