@@ -19,7 +19,7 @@ export function AccountNotificationsCard() {
   const push = usePushSubscription();
 
   return (
-    <ToolCard label="c:notifications" description={t('c:notifications.text')} id="notifications" className={cardClass}>
+    <ToolCard label="c:notifications" description={t('c:notifications.text')} className={cardClass}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <Switch
