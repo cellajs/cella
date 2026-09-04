@@ -89,7 +89,9 @@ the shared engine, and a contextless insert passes RLS.
 
 `admin_role` owns the RLS-protected tables and the activity log. Migrations grant `runtime_role` what
 the application needs. Role creation falls back to an `admin_role` without `BYPASSRLS` on providers
-that refuse the attribute, with only a notice, so check the role on a new provider. An application
+that refuse the attribute, with only a notice. The CDC worker probes its role at startup: a missing
+`BYPASSRLS` or `REPLICATION` is logged as an error and marks the CDC health component unhealthy, since
+seq stamping under `FORCE ROW LEVEL SECURITY` or the replication slot fails without it. An application
 system administrator is not `admin_role`. Their requests use the runtime connection and normal
 request scope. Never use the admin connection in a request handler. It removes the RLS backstop.
 

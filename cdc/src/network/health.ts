@@ -4,6 +4,7 @@ import { RESOURCE_LIMITS } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
 import { circuitBreaker } from '../services/circuit-breaker';
 import { replicationState } from '../services/replication-state';
+import { getRoleCapabilities, type RoleCapabilities } from '../services/role-capabilities';
 import { wsClient } from './websocket-client';
 
 const { unhealthyBytes } = RESOURCE_LIMITS.walLag;
@@ -22,6 +23,8 @@ interface HealthResponse {
     slotStatus: string | null;
     lagBytes: number | null;
     lastEventAt: string | null;
+    /** Null until the startup probe ran or when it failed. */
+    role: RoleCapabilities | null;
   };
   catchup: {
     active: boolean;
@@ -50,6 +53,10 @@ export function getHealthResponse(): {
   if (replStatus === 'stopped') status = 'unhealthy';
   else if (replStatus === 'paused' || !wsConnected) status = 'degraded';
 
+  // Without BYPASSRLS every seq stamp under FORCE RLS fails; without REPLICATION the slot cannot be opened.
+  const role = getRoleCapabilities();
+  if (role && (!role.bypassRls || !role.replication)) status = 'unhealthy';
+
   // WAL lag threshold for unhealthy status.
   const lagBytes = metrics.lagBytes;
   if (lagBytes !== null && lagBytes >= unhealthyBytes && status !== 'unhealthy') {
@@ -77,6 +84,7 @@ export function getHealthResponse(): {
       slotStatus: metrics.slotStatus,
       lagBytes: metrics.lagBytes,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
+      role,
     },
     catchup: replicationState.catchingUp
       ? {

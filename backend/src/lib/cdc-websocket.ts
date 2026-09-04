@@ -113,6 +113,10 @@ export interface CdcWorkerHealth {
   lastEventAt?: string | null;
   /** Whether the worker is currently replaying backlogged WAL. */
   catchingUp?: boolean;
+  /** Whether the worker's database role can bypass RLS (needed to stamp seq under FORCE RLS); null until probed. */
+  roleBypassRls?: boolean | null;
+  /** Whether the worker's database role may open a replication slot; null until probed. */
+  roleReplication?: boolean | null;
 }
 
 /** Internal CDC worker channel: shared secret plus allowed source, one live connection, idle peers closed. */

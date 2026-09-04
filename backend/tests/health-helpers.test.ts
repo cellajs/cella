@@ -130,6 +130,21 @@ describe('mapCdcComponent', () => {
     expect(c.status).toBe('degraded');
     expect(c.reason).toContain('wal_lag_high');
   });
+
+  it('is unhealthy when the worker role lacks BYPASSRLS or REPLICATION', () => {
+    const noBypass = mapCdcComponent(connectedSocket, worker({ roleBypassRls: false, roleReplication: true }));
+    expect(noBypass.status).toBe('unhealthy');
+    expect(noBypass.reason).toContain('role_missing_bypassrls');
+
+    const noReplication = mapCdcComponent(connectedSocket, worker({ roleBypassRls: true, roleReplication: false }));
+    expect(noReplication.status).toBe('unhealthy');
+    expect(noReplication.reason).toContain('role_missing_replication');
+  });
+
+  it('treats unprobed role flags (null) as unknown, not missing', () => {
+    const c = mapCdcComponent(connectedSocket, worker({ roleBypassRls: null, roleReplication: null }));
+    expect(c.status).toBe('healthy');
+  });
 });
 
 describe('mapProbeComponent', () => {
