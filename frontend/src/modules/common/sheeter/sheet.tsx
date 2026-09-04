@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -76,7 +75,8 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
     } else closeSheet();
   };
 
-  const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
+  // Resolved at close time: a trigger inside a grid is replaced by a new node once cell edit mode ends.
+  const finalFocus = triggerRef ? () => triggerRef.current ?? true : undefined;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal} disablePointerDismissal={disablePointerDismissal}>
@@ -88,7 +88,7 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
         container={containerElement}
         className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
         initialFocus={isMobile ? false : undefined}
-        finalFocus={triggerRef?.current ? finalFocusRef : undefined}
+        finalFocus={finalFocus}
         autoScrollOnDrag={autoScrollOnDrag}
       >
         <SheetHeader sticky className={cn(headerClassName, !(title || description) && 'hidden')}>

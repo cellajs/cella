@@ -2,7 +2,8 @@ import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+/** Element focus returns to on close; read when the sheet closes, so a ref may resolve to a later DOM node. */
+export type TriggerRef = RefObject<HTMLElement | null>;
 
 type SheetContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;

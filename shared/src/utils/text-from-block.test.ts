@@ -1,6 +1,11 @@
 import type { Block } from '@blocknote/core';
 import { describe, expect, it } from 'vitest';
-import { getSearchableTextFromBlock, getSearchableTextFromUrl } from './text-from-block.ts';
+import {
+  getSearchableTextFromBlock,
+  getSearchableTextFromUrl,
+  getTextFromBlock,
+  textFromDocument,
+} from './text-from-block.ts';
 
 describe('getSearchableTextFromUrl', () => {
   it('extracts host and path tokens but skips query strings and fragments', () => {
@@ -58,5 +63,42 @@ describe('getSearchableTextFromBlock', () => {
 
     expect(text).toContain('SSD haptic diagram.pdf');
     expect(text).not.toContain('attachments/private');
+  });
+});
+
+const mentionParagraph = {
+  type: 'paragraph',
+  props: {},
+  content: [
+    { type: 'text', text: 'Ask', styles: {} },
+    { type: 'mention', props: { id: 'u1', slug: 'ada', name: 'Ada Lovelace' } },
+    { type: 'text', text: 'about the', styles: {} },
+    { type: 'link', href: 'https://example.com/specs/haptics', content: [{ type: 'text', text: 'spec', styles: {} }] },
+  ],
+  children: [],
+} as unknown as Block;
+
+describe('getTextFromBlock', () => {
+  it('renders mentions as @name and keeps link text', () => {
+    expect(getTextFromBlock(mentionParagraph)).toBe('Ask @Ada Lovelace about the spec');
+  });
+
+  it('indexes the mention name for search too', () => {
+    const text = getSearchableTextFromBlock(mentionParagraph);
+
+    expect(text).toContain('@Ada Lovelace');
+    expect(text).toContain('spec');
+    expect(text).toContain('example.com');
+  });
+});
+
+describe('textFromDocument', () => {
+  it('flattens a stored block document with mentions', () => {
+    expect(textFromDocument(JSON.stringify([mentionParagraph]))).toBe('Ask @Ada Lovelace about the spec');
+  });
+
+  it('is null for legacy html and absent input', () => {
+    expect(textFromDocument('<p>hi</p>')).toBeNull();
+    expect(textFromDocument(null)).toBeNull();
   });
 });

@@ -1,20 +1,43 @@
+import type { MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { AttachmentDescriptionTrigger } from '~/modules/attachment/attachment-description-trigger';
+import { textFromDocument } from 'shared/blocknote';
+import { openAttachmentDescriptionSheet } from '~/modules/attachment/attachment-description-sheet';
+import { findAttachmentInCache } from '~/modules/attachment/query';
+import { liveCellRef } from '~/modules/common/data-grid/cell-renderers';
+
+/** Opens the description sheet for a table cell; a row not in the cache (unsynced upload) has nothing to edit yet. */
+export function openDescriptionSheetFromCell(attachmentId: string, cell: HTMLElement | null) {
+  const attachment = findAttachmentInCache(attachmentId);
+  if (!attachment) return;
+  openAttachmentDescriptionSheet(attachment, liveCellRef(cell));
+}
 
 interface DescriptionCellProps {
   row: Attachment;
-  tabIndex: number;
+  /** Editors reach the sheet through the grid's edit mode; viewers double-click the text. */
+  editable: boolean;
 }
 
-export function DescriptionCell({ row, tabIndex }: DescriptionCellProps) {
+/** Plain text so it can be selected and copied in place; null when empty and read-only, for the column placeholder. */
+export function DescriptionCell({ row, editable }: DescriptionCellProps) {
+  const { t } = useTranslation();
+  const text = textFromDocument(row.description);
+
+  if (!text && !editable) return null;
+
+  const onDoubleClick = editable
+    ? undefined
+    : (event: MouseEvent<HTMLSpanElement>) =>
+        openDescriptionSheetFromCell(row.id, event.currentTarget.closest<HTMLElement>('[role="gridcell"]'));
+
   return (
-    <AttachmentDescriptionTrigger
-      attachmentId={row.id}
-      description={row.description}
-      variant="cell"
-      size="cell"
-      tabIndex={tabIndex}
-      className="w-full justify-start truncate font-normal"
-    />
+    <span className="flex h-full w-full items-center" onDoubleClick={onDoubleClick}>
+      {text ? (
+        <span className="truncate">{text}</span>
+      ) : (
+        <span className="text-muted">{t('c:add_resource', { resource: t('c:description').toLowerCase() })}</span>
+      )}
+    </span>
   );
 }

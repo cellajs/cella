@@ -7,6 +7,7 @@ type InlineContentLike = {
   text?: unknown;
   href?: unknown;
   content?: unknown;
+  props?: unknown;
 };
 
 const COMMON_HOST_SUFFIXES = new Set(['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'ai', 'nl']);
@@ -51,60 +52,73 @@ export const getSearchableTextFromUrl = (rawUrl: string): string => {
   return [hostname, ...hostParts, decodedPath].filter(Boolean).join(' ');
 };
 
+const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+/**
+ * Visible text of one inline item. Styled text carries `text`, a link keeps its words in nested
+ * `content`, and a mention has only props: it reads as the editor renders it, `@name`.
+ */
+const inlineText = (item: unknown): string => {
+  const inline = item as InlineContentLike;
+
+  if (typeof inline.text === 'string') return inline.text;
+  if (inline.type === 'mention') {
+    const props = inline.props as { name?: unknown } | undefined;
+    return typeof props?.name === 'string' ? `@${props.name}` : '';
+  }
+  if (Array.isArray(inline.content)) return inlineContentText(inline.content);
+  return '';
+};
+
+const inlineContentText = (content: unknown[]): string => collapseWhitespace(content.map(inlineText).join(' '));
+
+/** Text of inline content, or of every cell when the block holds a table. */
+const contentText = (content: Block['content']): string => {
+  if (Array.isArray(content)) return inlineContentText(content);
+  if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
+    return collapseWhitespace(
+      content.rows
+        .flatMap((row) =>
+          row.cells.map((cell) =>
+            'content' in cell && Array.isArray(cell.content) ? inlineContentText(cell.content) : '',
+          ),
+        )
+        .join(' '),
+    );
+  }
+  return '';
+};
+
 /** Covers inline content, table content, file-based blocks and children. */
 export const getTextFromBlock = (block: Block): string => {
   const { content, children } = block;
 
-  let text = '';
-
-  if (Array.isArray(content)) {
-    text += content
-      .map((item) => ('text' in item && typeof item.text === 'string' ? item.text : ''))
-      .join(' ')
-      .trim();
-  } else if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
-    text += content.rows
-      .flatMap((row) =>
-        row.cells.flatMap((cell) =>
-          'content' in cell && Array.isArray(cell.content)
-            ? cell.content.map((item) => ('text' in item && typeof item.text === 'string' ? item.text : '')).join(' ')
-            : '',
-        ),
-      )
-      .join(' ')
-      .trim();
-  } else if (mediaBlockTypes.has(block.type) && 'name' in block.props && typeof block.props.name === 'string') {
-    text += block.props.name;
-  }
+  // Media blocks carry no inline content; their file name stands in.
+  const mediaName =
+    mediaBlockTypes.has(block.type) && 'name' in block.props && typeof block.props.name === 'string'
+      ? block.props.name
+      : '';
+  let text = contentText(content) || mediaName;
 
   if (Array.isArray(children)) {
-    const childrenText = children
-      .map(getTextFromBlock)
-      .filter((t) => t.trim().length > 0)
-      .join(' ')
-      .trim();
-
+    const childrenText = children.map(getTextFromBlock).filter(Boolean).join(' ');
     if (childrenText) text += (text ? ' ' : '') + childrenText;
   }
 
   return text.trim();
 };
 
+/** `inlineText` plus link URL metadata, so the domain and slug of a link are searchable too. */
 const getSearchableTextFromInlineContent = (content: unknown[]): string => {
-  return content
-    .map((item) => {
-      const inline = item as InlineContentLike;
-      const parts: string[] = [];
-
-      if (typeof inline.text === 'string') parts.push(inline.text);
-      if (typeof inline.href === 'string') parts.push(getSearchableTextFromUrl(inline.href));
-      if (Array.isArray(inline.content)) parts.push(getSearchableTextFromInlineContent(inline.content));
-
-      return parts.filter(Boolean).join(' ');
-    })
-    .filter((text) => text.trim().length > 0)
-    .join(' ')
-    .trim();
+  return collapseWhitespace(
+    content
+      .map((item) => {
+        const inline = item as InlineContentLike;
+        const href = typeof inline.href === 'string' ? getSearchableTextFromUrl(inline.href) : '';
+        return [inlineText(item), href].filter(Boolean).join(' ');
+      })
+      .join(' '),
+  );
 };
 
 /** For search indexing: adds URL metadata from link and media URLs to `getTextFromBlock`. */
