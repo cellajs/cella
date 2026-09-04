@@ -25,23 +25,14 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Parentless public products rely on `sysAdminGuard`; they are outside RLS.
-  // Include only existing configured tables because one missing grant target rolls back the block.
-  const noRlsCandidates = ['pages'];
-  const noRlsProductNames = noRlsCandidates.filter((name) => (entityTableNames as string[]).includes(name));
-
-  // Only product entity tables + yjs_documents still use RLS (excluding pages)
+  // Product entity tables + yjs_documents use RLS.
   const additionalRlsTables = [getTableName(yjsDocumentsTable)];
-  const rlsTables = [
-    ...entityTableNames.filter((t) => !channelTableNames.includes(t) && !noRlsProductNames.includes(t)),
-    ...additionalRlsTables,
-  ];
+  const rlsTables = [...entityTableNames.filter((t) => !channelTableNames.includes(t)), ...additionalRlsTables];
 
-  // Tables without RLS but needing grants (auth, system, channel entities, memberships, pages, etc.)
+  // Tables without RLS but needing grants (auth, system, channel entities, memberships, etc.)
   const fullCrudTables = [
     ...channelTableNames,
     ...membershipTableNames,
-    ...noRlsProductNames,
     'users',
     'sessions',
     'user_counters',

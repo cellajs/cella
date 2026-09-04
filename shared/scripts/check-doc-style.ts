@@ -10,6 +10,8 @@ const defaultRepoRoot = join(here, '..', '..');
 const docExtensions = new Set(['.md', '.mdx']);
 const disallowedTerm = /\binvariants?\b/gi;
 const alternatives = 'rule, constraint, guarantee, requirement, contract, precondition, or assumption';
+const emDash = /\u2014/g;
+const emDashAdvice = 'split the sentence, use a colon, or drop the clause';
 const agentVocabularyExcludedPrefixes = ['cella/migrations/', 'infra/', 'sdk/gen/'];
 const agentVocabularyExcludedFiles = new Set(['cella/CHANGELOG.md']);
 
@@ -18,6 +20,12 @@ interface DocStyleViolation {
   line: number;
   column: number;
   term: string;
+}
+
+interface EmDashViolation {
+  file: string;
+  line: number;
+  column: number;
 }
 
 export interface AgentVocabularyFinding {
@@ -43,6 +51,21 @@ export function findDocStyleViolations(file: string, source: string): DocStyleVi
       column: offset - lastLineBreak,
       term: match[0],
     });
+  }
+
+  return violations;
+}
+
+/** Em dashes in prose; inline and fenced code are masked so a rule may quote the character. */
+export function findEmDashViolations(file: string, source: string): EmDashViolation[] {
+  const violations: EmDashViolation[] = [];
+  const prose = maskMarkdownCode(source);
+
+  for (const match of prose.matchAll(emDash)) {
+    const offset = match.index;
+    const before = prose.slice(0, offset);
+    const lastLineBreak = before.lastIndexOf('\n');
+    violations.push({ file, line: before.split('\n').length, column: offset - lastLineBreak });
   }
 
   return violations;
@@ -101,6 +124,10 @@ export function formatDocStyleViolation(violation: DocStyleViolation): string {
   return `${location} replace "${violation.term}" with a precise ${alternatives}`;
 }
 
+export function formatEmDashViolation(violation: EmDashViolation): string {
+  return `${violation.file}:${violation.line}:${violation.column} em dash (U+2014): ${emDashAdvice}`;
+}
+
 export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): string {
   const location = `${finding.file}:${finding.line}:${finding.column}`;
   return `${location} [${finding.rule}] "${finding.term}": ${finding.message}`;
@@ -117,6 +144,11 @@ function trackedDocs(repoRoot: string): string[] {
     .sort();
 }
 
+/** Changelogs are generated from commit messages, not authored. */
+function checksEmDash(file: string): boolean {
+  return !file.endsWith('CHANGELOG.md');
+}
+
 function checksAgentVocabulary(file: string): boolean {
   return (
     !agentVocabularyExcludedFiles.has(file) &&
@@ -128,6 +160,9 @@ function checksAgentVocabulary(file: string): boolean {
 export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): number {
   const docs = trackedDocs(repoRoot);
   const violations = docs.flatMap((file) => findDocStyleViolations(file, readFileSync(join(repoRoot, file), 'utf8')));
+  const emDashes = docs
+    .filter(checksEmDash)
+    .flatMap((file) => findEmDashViolations(file, readFileSync(join(repoRoot, file), 'utf8')));
   const vocabularyDocs = docs.filter(checksAgentVocabulary);
   const requiredVocabulary = vocabularyDocs.flatMap((file) =>
     findAgentVocabularyFindings(file, readFileSync(join(repoRoot, file), 'utf8')),
@@ -138,13 +173,20 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): num
       )
     : [];
 
-  if (violations.length === 0 && requiredVocabulary.length === 0) {
+  const failed = violations.length > 0 || emDashes.length > 0 || requiredVocabulary.length > 0;
+  if (!failed) {
     console.log('[docs:style] OK, documentation uses concrete language.');
   } else {
     if (violations.length > 0) {
       console.error(`[docs:style] ${violations.length} concrete-language violation(s):`);
       for (const violation of violations) {
         console.error(`  ${formatDocStyleViolation(violation)}`);
+      }
+    }
+    if (emDashes.length > 0) {
+      console.error(`[docs:style] ${emDashes.length} em dash(es):`);
+      for (const violation of emDashes) {
+        console.error(`  ${formatEmDashViolation(violation)}`);
       }
     }
     if (requiredVocabulary.length > 0) {
@@ -162,7 +204,7 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): num
     }
   }
 
-  return violations.length === 0 && requiredVocabulary.length === 0 ? 0 : 1;
+  return failed ? 1 : 0;
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';

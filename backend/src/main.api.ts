@@ -90,6 +90,7 @@ const main = async () => {
           });
         }
         if (appConfig.services.yjs.enabled) await (await import('yjs-worker')).startYjsWorker();
+        (await import('#/modules/yjs/yjs-materializers')).warnWhenNoYjsMaterializer();
         if (appConfig.services.mcp.enabled)
           await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker();
       }

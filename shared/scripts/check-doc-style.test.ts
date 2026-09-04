@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   findAgentVocabularyFindings,
   findDocStyleViolations,
+  findEmDashViolations,
   formatAgentVocabularyFinding,
   formatDocStyleViolation,
+  formatEmDashViolation,
 } from './check-doc-style.ts';
 
 const singular = ['invar', 'iant'].join('');
@@ -36,6 +38,26 @@ describe('findDocStyleViolations', () => {
 
   it('does not match longer neighboring words', () => {
     expect(findDocStyleViolations('guide.mdx', 'invariance and invariantly')).toEqual([]);
+  });
+});
+
+describe('findEmDashViolations', () => {
+  const dash = '\u2014';
+
+  it('reports em dashes in prose with an actionable location', () => {
+    const source = ['# Title', '', `Sync is lazy ${dash} rows arrive on demand.`].join('\n');
+    const violations = findEmDashViolations('guide.md', source);
+
+    expect(violations).toEqual([{ file: 'guide.md', line: 3, column: 14 }]);
+    expect(formatEmDashViolation(violations[0]!)).toBe(
+      'guide.md:3:14 em dash (U+2014): split the sentence, use a colon, or drop the clause',
+    );
+  });
+
+  it('ignores inline and fenced code so a rule may quote the character', () => {
+    const source = [`Never use \`${dash}\` in text.`, '', '```', `a ${dash} b`, '```'].join('\n');
+
+    expect(findEmDashViolations('guide.md', source)).toEqual([]);
   });
 });
 
