@@ -13,7 +13,7 @@ Each run is saved and compared with the previous one: read results as trends, no
 Start these first (bench checks they are reachable and exits with guidance if not):
 
 - **Postgres** seeded with app data (`pnpm docker` + `pnpm seed`)
-- **Services** running via `pnpm dev` (backend, cdc, yjs). CDC throughput is measured only with `DEV_MODE=full` (default).
+- **Services** running via `pnpm dev`
 
 ## Commands
 
@@ -27,13 +27,13 @@ Start these first (bench checks they are reachable and exits with guidance if no
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data (baselines are kept) |
 
-`--all` adds a short cooldown between scenarios; a single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
+`--all` adds a short cooldown between scenarios. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
 
 ## Interpreting results
 
 Bench measures the live dev stack. Before calling a result a regression:
 
-- **Cache warm-up.** The auth guard caches sessions in-process (1 min TTL) and memberships separately (5 min TTL); runs shorter than the session TTL include cold-cache `validateSession` hits.
+- **Cache warm-up.** The auth guard caches sessions in-process (1 min TTL) and memberships separately (5 min TTL). Runs shorter than the session TTL include cold-cache `validateSession` hits.
 - **Per-mutation RLS transactions.** Each write wraps permission check + update in one short transaction that also sets tenant/user GUCs. The write ceiling is pool size (`DATABASE_POOL_MAX`) and DB round-trip latency, not handler CPU alone.
 - **Rate limiting is effectively off.** The seeded bench tenant has a very high `apiPointsPerHour`, and the points limiter has an in-process fast path.
 - **Telemetry is off without a key.** OpenTelemetry exports only when `MAPLE_SECRET_INGEST_KEY` is set.

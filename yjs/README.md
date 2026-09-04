@@ -28,7 +28,7 @@ entity description + derived fields
 Postgres → CDC → SSE → non-editing viewers
 ```
 
-Keystrokes merge at character level and reach peers immediately; once per save window the relay persists the merged document and the backend updates description, summary, checkbox counts, keywords, and sync metadata through its normal update pipeline.
+Keystrokes merge at character level and reach peers immediately. Once per save window the relay persists the merged document and the backend writes the description, plus whatever the entity's registered materializer derives, through its normal update pipeline.
 
 ## Connection and auth
 
@@ -36,66 +36,60 @@ Keystrokes merge at character level and reach peers immediately; once per save w
 ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 ```
 
-Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit; failed upgrades get a raw HTTP rejection so the client's reconnect backoff survives.
+Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit. A failure is an HTTP 400 with a JSON `{ code, reason }` body, so the client's reconnect backoff survives and the browser sees close code 1006.
 
-Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync messages wait behind it (up to 100 messages or about 200 KB); awareness is not buffered.
+Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Up to 100 sync messages wait behind it and later ones are dropped. Awareness is not buffered.
 
 | Close code | Meaning |
 | --- | --- |
-| `4001` | Invalid or expired token |
-| `4003` | Token scope mismatch or entity access denied |
+| `4003` | Entity access denied |
 | `4400` | Missing or invalid entity scope |
-| `4429` | Connection rate exceeded |
 | `4503` | Authorization unavailable |
 
 ## Session lifecycle
 
 ### State and seeding
 
-Rooms are keyed by `{entityType}:{entityId}` and held in process memory as raw binary updates (`Y.mergeUpdates`, `Y.diffUpdate`, `Y.encodeStateAsUpdate`); short-lived `Y.Doc` instances exist only for Yjs/BlockNote conversion. Sync step 1 diffs against the client's state vector, or sends full state if the stored update is corrupt.
-
-When no `yjs_documents` row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the canonical seed. Concurrent first connections race; `ON CONFLICT DO NOTHING` plus a reload picks one winner. The seed is the materialization baseline, so opening an untouched document does not update the entity.
+When no `yjs_documents` row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the canonical seed. Concurrent first connections race, and `ON CONFLICT DO NOTHING` plus a reload picks one winner. The seed is the materialization baseline, so opening an untouched document does not update the entity.
 
 ### Relay, save, and materialize
 
-Updates are broadcast to peers, then merged into pending state; a three-second debounce yields one save per document, overwriting its single `yjs_documents` row. A failed save merges back into pending state for the next window.
+Updates are broadcast to peers, then merged into pending state. A three-second debounce yields one save per document, overwriting its single `yjs_documents` row. A failed save merges back into pending state for the next window.
 
-After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content; on change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, rechecks update permission, sanitizes media URLs, derives fields, and applies a server HLC.
+After saving, the relay compares the snapshot's BlockNote JSON with the last materialized content. On change it sends one secret-authenticated request to `/yjs/materialize`. The backend acts for the last editor in the window, sanitizes media URLs, and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers none, so materialization returns `4xx` until an app registers one through `defineBackendModule({ yjsMaterializer })`.
 
 | Result | Behavior |
 | --- | --- |
 | `2xx` | Mark the snapshot materialized |
-| `4xx` | Permanent: entity deleted, access revoked, or no materializer |
+| `4xx` | Permanent: entity deleted, access revoked, or no materializer registered |
 | `5xx` or network failure | Keep the session row and retry |
 | Unparseable stored state | Permanent, so corrupt data cannot block cleanup |
 
 ### Disconnect and recovery
 
-After the last client disconnects, the room stays warm for five minutes (a reconnect reuses pending state); then cleanup flushes remaining updates, runs a final materialization, and deletes the `yjs_documents` row, or reschedules on a retryable failure.
+After the last client disconnects, the room stays warm for five minutes (a reconnect reuses pending state). Then cleanup flushes remaining updates, runs a final materialization, and deletes the `yjs_documents` row, or reschedules on a retryable failure.
 
-A startup sweep handles rows orphaned by a crash: rows with `last_edited_by` and non-empty state are materialized before deletion, seed-only rows deleted directly, retryable failures left for a later boot. Duplicate materialization is harmless: unchanged content is a no-op and HLC ordering resolves concurrent writes.
+A startup sweep handles rows older than the grace period that a crash orphaned: rows with `last_edited_by` and non-empty state are materialized before deletion, seed-only rows deleted directly, retryable failures left for a later boot. Duplicate materialization is harmless because unchanged content is a no-op.
 
 ## Durability and failure
 
-Clients need no unload handlers or final flush; the only loss window is the three-second debounce, and only if the relay and every connected client disappear within it.
+Clients need no unload handlers or final flush. The only loss window is the three-second debounce, and only if the relay and every connected client disappear within it.
 
 | Failure | Outcome |
 | --- | --- |
-| Tab closes right after typing | The relay still saves and materializes the received update |
-| A client loses its connection | Client falls back to solo REST/offline; the relay materializes what it has |
-| The backend is unavailable | Materialization retries; cleanup keeps the session row until the backend recovers |
-| The relay restarts | Clients reconnect with complete documents; the startup sweep recovers orphaned sessions |
-| Entity deleted or access revoked | Permanent materialization failure; cleanup does not resurrect the entity |
+| A client loses its connection | Client falls back to solo REST/offline. The relay materializes what it has. |
+| The backend is unavailable | Materialization is retried on the next save window or at cleanup, which keeps the session row until the backend recovers |
+| The relay restarts | Clients reconnect with complete documents. The startup sweep recovers orphaned sessions. |
+| Entity deleted or access revoked | Permanent materialization failure. Cleanup does not resurrect the entity. |
 | SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
-| A solo-mode edit during a collaborative session | Known conflict: the next collaborative materialization can supersede the solo description, which never enters the shared document |
 
 ## Operational constraints
 
 - **Live collaboration is process-local.** Clients editing one entity must reach the same relay instance (single instance or entity-affinity routing), or updates are not shared and snapshots collide.
-- **No server-side edit history**: the database holds a merged snapshot; undo, redo, and per-edit history live in clients.
+- **No server-side edit history**: the database holds a merged snapshot. Undo, redo, and per-edit history live in clients.
 - **Fragment and schema must stay aligned.** The `document-store` fragment and React-free shared BlockNote schema must match the frontend binding (custom blocks have round-trip tests).
 - **Seeds are server-generated and never merged.**
-- **RLS differs by path.** Normal operations set tenant and user context; the startup sweep runs across all tenants without RLS context, so a role that enforces RLS makes it a no-op.
+- **RLS differs by path.** Normal operations set tenant and user context. The startup sweep runs across all tenants without RLS context, so a role that enforces RLS makes it a no-op.
 - **Materialization is eventual**: the entity row can lag the live document by the save window plus retry delay, and only product entities with a registered materializer persist collaborative content.
 
 ## Health and configuration
@@ -103,31 +97,20 @@ Clients need no unload handlers or final flush; the only loss window is the thre
 | Endpoint | Response |
 | --- | --- |
 | `GET /health` on `YJS_PORT` | 204 |
-| `GET /health?depth=full` | JSON: version, uptime, connection, document, client, and event-loop-lag data; degraded at 100 ms lag, unhealthy at 1 second |
+| `GET /health?depth=full` | JSON: version, uptime, connection, document, client, and event-loop-lag data. Degraded at 100 ms lag, unhealthy at 1 second. |
 | Any other path | 404 |
-
-The HTTP server starts before backend readiness checks, so the port is visible immediately.
-
-| Setting | Default | Location |
-| --- | --- | --- |
-| Save and materialize debounce | 3 seconds | `src/constants.ts` |
-| Grace period and cleanup retry | 5 minutes | `src/constants.ts` |
-| Awareness rate | 2 per second per client | `src/constants.ts` |
-| Connection rate | 20 per user per 60 seconds | `src/server/rate-limiter.ts` |
-| Maximum WebSocket payload | 2 MB | `src/server/ws-server.ts` |
-| Pre-authorization buffer | 100 messages | `src/sync/relay.ts` |
 
 Environment, validated in `src/env.ts` (loads the backend's `.env`):
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | RLS-scoped reads and session writes |
-| `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS; required in production |
-| `YJS_SECRET` | HMAC and internal materialization secret; minimum 16 characters |
-| `YJS_PORT` | WebSocket and health port; defaults to the configured Yjs URL or 4002 |
-| `YJS_DB_POOL_MAX` | PostgreSQL pool size; default 20 |
+| `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production unless `NODB` |
+| `YJS_SECRET` | HMAC and internal materialization secret, minimum 16 characters |
+| `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |
+| `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 20 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
-| `NODB` | Disable database paths; in-memory rate limiter |
+| `NODB` | In-memory connection limiter and no TLS CA requirement. Database reads still open lazily. |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
 
-The backend counterpart in `backend/src/modules/yjs/` issues tokens, exposes `/yjs/materialize`, sanitizes media URLs, and registers per-entity materializers in `yjs-materializers.ts`.
+The backend counterpart in `backend/src/modules/yjs/` issues tokens, exposes `/yjs/materialize`, sanitizes media URLs, and indexes the materializers modules register.

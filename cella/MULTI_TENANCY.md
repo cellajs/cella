@@ -11,8 +11,8 @@ mistakes but is not the main access-control layer.
 
 ## Security contract
 
-Authorization must stay correct with RLS absent or misconfigured: every API or worker path gives
-the same allow or deny result through a test role that bypasses RLS.
+Authorization must stay correct with RLS absent or misconfigured: API tests run as a role that
+bypasses RLS and must give the same allow or deny results as production.
 
 | Situation | Expected result |
 | --- | --- |
@@ -25,21 +25,20 @@ Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
 
 ## What RLS covers
 
-Cella applies `FORCE ROW LEVEL SECURITY` to tenant-scoped product tables and registered support
-tables; the template protects `attachments` and `yjs_documents`.
+Cella applies `FORCE ROW LEVEL SECURITY` to product tables and to resources that hold tenant data.
+The template protects `attachments` and `yjs_documents`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
-| RLS-classified product entities | Tenant-scoped SELECT; permissive writes | Guards, scoped queries, and permissions |
-| Registered tenant support tables | Same RLS shape; `yjs_documents` is the default | Owning module and guards |
+| Product entities | Tenant-scoped SELECT, permissive writes | Guards, scoped queries, and permissions |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
-| Ordinary resources | No RLS unless explicitly registered | Owning route or module |
+| Resources | RLS only when they hold tenant data and the migration lists them (`yjs_documents`), none otherwise | Owning module and guards |
 
-The migration classifier takes registered entity tables, removes `user`, configured channel types,
-and explicit exclusions such as `pages`, then adds configured support tables, so a registered product
-entity is protected automatically. Channel-entity and membership queries use `baseDb`; protected
-product reads must enter a tenant helper.
+Every product entity has a tenant and a home channel by construction (the hierarchy rejects a
+product without a channel parent), so the RLS migration protects every registered product table
+without per-table opt-in. Channel-entity and membership queries use `baseDb`. Product reads must
+enter a tenant helper.
 
 ## Product reads
 
@@ -48,9 +47,9 @@ variables before product queries:
 
 | Variable | Current RLS effect |
 | --- | --- |
-| `app.tenant_id` | Required tenant match for protected SELECTs; missing or empty fails closed |
+| `app.tenant_id` | Required tenant match for protected SELECTs. Missing or empty fails closed. |
 | `app.include_deleted` | Makes soft-deleted rows visible to explicit tombstone and delta reads |
-| `app.user_id` | Available to the transaction; current RLS policies do not consult it |
+| `app.user_id` | Available to the transaction. Current RLS policies do not consult it |
 
 ### Transaction helpers
 
@@ -60,9 +59,11 @@ variables before product queries:
 | `tenantReadIncludingDeleted(ctx, fn)` | Read only, includes tombstones | Delta and recovery reads |
 | `tenantContext(ctx, fn)` | Read/write, live rows | Creates and ordinary updates |
 | `tenantContextIncludingDeleted(ctx, fn)` | Read/write, includes tombstones | Soft-delete and restore flows |
+| `tenantReadAs(ctx, tenantId, fn)` | Read only, explicit tenant | Cross-tenant routes |
+| `tenantReadById(tenantId, fn)` | Read only, no request context | Background work such as notification fan-out |
 
-Each helper passes a cloned request context whose `db` is the transaction; database work stays
-inside the callback.
+Helpers that take a request context pass a clone whose `db` is the transaction. `tenantReadById`
+passes the raw transaction. Database work stays inside the callback.
 
 ## Write-through policies
 
@@ -74,12 +75,10 @@ the shared engine, and a contextless insert passes RLS.
 | --- | --- | --- |
 | Actor may perform the action | Guards and shared permission engine | Must be called by every mutation path |
 | Initial tenant and root channel | Server derives identity from guarded context | A contextless SQL insert is outside this protection |
-| Update or delete targets | Operation query uses guarded IDs and channel scope | RLS write policies add no predicates; SELECT-policy hiding of validation reads or `RETURNING` is not a write-security contract |
+| Update or delete targets | Operation query uses guarded IDs and channel scope | RLS write policies add no predicates. SELECT-policy hiding of validation reads or `RETURNING` is not a write-security contract |
 | Tenant and root channel agree | Composite foreign key such as `(tenant_id, organization_id)` | Does not authorize the actor |
-| Product identity cannot move | Shared product trigger makes `tenant_id` and root channel immutable after insert | Does not validate the insert; deeper ancestor IDs not covered |
-| Membership identity, activity log | Immutability triggers on membership identity columns; append-only activity log | Same limits |
-| Duplicate identity is rejected | Primary keys and unique constraints | Does not establish tenant ownership |
-| Support tables such as `yjs_documents` | Owning module's foreign keys, query scope, update privileges, constraints | No automatic product triggers |
+| Product identity cannot move | Shared product trigger makes `tenant_id` and root channel immutable after insert | Does not validate the insert. Deeper ancestor IDs are not covered. |
+| Membership identity, activity log | Immutability triggers on membership identity columns. Activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits. `admin_role` can delete activities. |
 
 ## Database roles
 
@@ -88,30 +87,14 @@ the shared engine, and a contextless insert passes RLS.
 | `runtime_role` | Enforced | API requests and enabled workers using the runtime connection |
 | `admin_role` | `BYPASSRLS` in the supported production setup | Migrations, seeds, maintenance, and CDC replication or stamping |
 
-`admin_role` owns tables; migrations grant `runtime_role` what the application needs. An application
-system administrator is not `admin_role`; their requests use the runtime connection and normal
-request scope. Never use the admin connection in a request handler; it removes the RLS backstop.
-
-## Failure modes
-
-| Symptom | Likely boundary |
-| --- | --- |
-| A protected product query unexpectedly returns `[]` | The code used `baseDb`, omitted a tenant helper, or selected the wrong tenant |
-| A request cannot enter a tenant or channel | Guard or membership validation failed before the operation |
-| The request enters the channel but cannot perform an action | The permission engine denied it |
-| A row combines a tenant with another tenant's root channel | The composite foreign key rejects it |
-| A mutation changes `tenant_id` or the root channel | The immutability trigger rejects it |
+`admin_role` owns the RLS-protected tables and the activity log. Migrations grant `runtime_role` what
+the application needs. Role creation falls back to an `admin_role` without `BYPASSRLS` on providers
+that refuse the attribute, with only a notice, so check the role on a new provider. An application
+system administrator is not `admin_role`. Their requests use the runtime connection and normal
+request scope. Never use the admin connection in a request handler. It removes the RLS backstop.
 
 ## Verification
 
-| Location | Current responsibility |
-| --- | --- |
-| `backend/src/db/rls-helpers.ts` | Tenant SELECT and write-through policy builders |
-| `backend/src/db/tenant-context.ts` | Scoped transactions and session variables |
-| `backend/scripts/migrations/10-rls.migration.ts` | Table classification, ownership, forced RLS, and grants |
-| `backend/scripts/migrations/99-verify.migration.ts` | Generated checks for triggers, forced RLS, and runtime SELECT grants |
-| `backend/src/db/immutability-triggers.ts` | Protected identity columns and append-only rules |
-| `backend/tests/integration/rls-security.test.ts` | Runtime-role read isolation, write-through behavior, and structural backstops |
-| `backend/tests/integration/schema-verification.test.ts` | Catalog checks under the integration-test role setup |
-| `backend/tests/security/cross-tenant.test.ts` | Normal API tenant-guard behavior |
-| `backend/tests/security/cross-org.test.ts` | Normal API channel and permission behavior |
+- Builders and helpers: `backend/src/db/rls-helpers.ts`, `tenant-context.ts`, `immutability-triggers.ts`.
+- Migrations: `10-rls` (classification, ownership, forced RLS, grants) and `99-verify` (generated checks).
+- Tests: `backend/tests/integration/rls-security.test.ts`, `schema-verification.test.ts`, `backend/tests/security/cross-tenant.test.ts`, `cross-org.test.ts`.
