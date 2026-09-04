@@ -52,7 +52,7 @@ Each entity module registers its query keys and delta fetch once in its `query.t
 
 Cache subscribers, not extra stores:
 
-- **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map for interface affordances, and `ancestorSlugs` for URLs. It never replaces backend permission checks.
+- **Enrichment** adds to every cached channel row the current user's `membership`, a `can` map of which actions they may perform (used to show or hide controls), and `ancestorSlugs` for URLs. It never replaces backend permission checks.
 - **Unseen counts**: sync-delivered rows bump badge counts; an exact server recount replaces the estimate on staleness and after catchup.
 
 ## Mutations

@@ -56,7 +56,7 @@ Creator-only rules compare the user with the row's `createdBy` value.
 │   │ routes     │ │              │ │               │ │                │       │
 │   │ single row │ │ per event    │ │ WS upgrade,   │ │ computeCan →   │       │
 │   │ + compiled │ │ row, class-  │ │ no backend    │ │ can-map, drives│       │
-│   │ SQL for    │ │ collapsed    │ │ round-trip    │ │ UI affordances │       │
+│   │ SQL for    │ │ collapsed    │ │ round-trip    │ │ UI controls    │       │
 │   │ list reads │ │ fan-out      │ │               │ │ (never trusted)│       │
 │   └────────────┘ └──────────────┘ └───────────────┘ └────────────────┘       │
 │                                                                              │
