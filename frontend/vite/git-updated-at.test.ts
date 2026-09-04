@@ -10,17 +10,26 @@ describe('createUpdatedAtResolver', () => {
 
   const asMs = (iso: string | undefined) => (iso ? Date.parse(iso) : Number.NaN);
 
-  it('returns an author-pinned date verbatim, ignoring the files', () => {
-    const pin = '2020-01-02T03:04:05.000Z';
-    expect(resolver.resolve([existing, alsoExisting], pin)).toBe(pin);
-    // A pin wins even when no file exists at all.
-    expect(resolver.resolve([missing], pin)).toBe(pin);
+  it('lets a newer commit overtake an older frontmatter stamp', () => {
+    const stale = '2020-01-02T03:04:05.000Z';
+    const result = resolver.resolve([existing, alsoExisting], stale);
+    expect(result).not.toBe(stale);
+    expect(asMs(result)).toBe(asMs(resolver.resolve([existing, alsoExisting])));
   });
 
-  it('ignores a blank pin and derives from the file instead', () => {
-    const result = resolver.resolve([existing], '   ');
-    expect(result).not.toBe('   ');
-    expect(Number.isNaN(asMs(result))).toBe(false);
+  it('keeps a stamp that is newer than every file date', () => {
+    const future = '2999-01-02T03:04:05.000Z';
+    expect(resolver.resolve([existing, alsoExisting], future)).toBe(future);
+    // With no existing file the stamp is the only candidate.
+    expect(resolver.resolve([missing], future)).toBe(future);
+  });
+
+  it('ignores a blank or unparsable stamp and derives from the file instead', () => {
+    for (const bad of ['   ', 'not-a-date']) {
+      const result = resolver.resolve([existing], bad);
+      expect(result).not.toBe(bad);
+      expect(Number.isNaN(asMs(result))).toBe(false);
+    }
   });
 
   it('derives a valid ISO date for an existing file (git date, else mtime)', () => {
@@ -29,7 +38,7 @@ describe('createUpdatedAtResolver', () => {
     expect(Number.isNaN(asMs(result))).toBe(false);
   });
 
-  it('returns undefined when nothing resolves (no pin, no existing files)', () => {
+  it('returns undefined when nothing resolves (no stamp, no existing files)', () => {
     expect(resolver.resolve([missing])).toBeUndefined();
     expect(resolver.resolve([])).toBeUndefined();
   });

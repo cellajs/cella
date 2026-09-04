@@ -140,11 +140,11 @@ function parseFrontmatter(source: string): unknown {
   return match ? parse(match[1]) : {};
 }
 
-/** Derive unpinned page `updatedAt` from the newest Git date across its imported documents. */
+/** Page `updatedAt`: newest of the frontmatter stamp and the Git dates of the page and its imported documents. */
 function withUpdatedAt(frontmatter: unknown, files: string[], resolver: UpdatedAtResolver): unknown {
   const record = frontmatter && typeof frontmatter === 'object' ? (frontmatter as Record<string, unknown>) : {};
-  const pinned = typeof record.updatedAt === 'string' ? record.updatedAt : undefined;
-  const updatedAt = resolver.resolve(files, pinned);
+  const stamped = typeof record.updatedAt === 'string' ? record.updatedAt : undefined;
+  const updatedAt = resolver.resolve(files, stamped);
   return updatedAt ? { ...record, updatedAt } : frontmatter;
 }
 
