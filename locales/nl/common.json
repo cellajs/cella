@@ -41,6 +41,7 @@
   "notification.reply": "{{actor}} antwoordde je op '{{subject}}' in {{channel}}",
   "notifications.comment_email": "E-mail bij reacties op mijn berichten",
   "notifications.digest": "E-mailoverzicht",
+  "notifications.digest.text": "Een periodieke e-mail met meldingen die je nog niet hebt gelezen en waarover je nog geen e-mail kreeg. Dagelijkse overzichten gaan elke ochtend uit, wekelijkse op vrijdagochtend. Zonder nieuws wordt er niets verstuurd.",
   "notifications.digest_daily": "Dagelijks",
   "notifications.digest_off": "Uit",
   "notifications.digest_weekly": "Wekelijks",
