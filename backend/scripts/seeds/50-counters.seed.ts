@@ -1,11 +1,11 @@
 import { sql } from 'drizzle-orm';
 import type { SeedScript } from '../types';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
 // Seed scripts use the admin connection for privileged operations.
-const db = seedDb;
+const db = getSeedDb();
 
 const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 const CDC_CATCHUP_TIMEOUT_MS = 30_000;

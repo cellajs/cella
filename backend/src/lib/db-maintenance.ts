@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { type PgDB, unsafeInternalAdminDb } from '#/db/db';
+import { getAdminDb, hasAdminDb, type PgDB } from '#/db/db';
 import { type BackendJob, registerBackendJob } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
 
@@ -20,11 +20,11 @@ async function isPgPartmanAvailable(db: PgDB): Promise<boolean> {
  * @param log - Optional log sink (defaults to console.info). Throws on failure.
  */
 export async function runDbMaintenance(log: (msg: string) => void = console.info): Promise<void> {
-  const db = unsafeInternalAdminDb;
-  if (!db) {
-    log('no admin db connection - skipping maintenance');
+  if (!hasAdminDb()) {
+    log('no DATABASE_ADMIN_URL in this process - skipping maintenance');
     return;
   }
+  const db = getAdminDb('db maintenance');
 
   if (!(await isPgPartmanAvailable(db))) {
     log('pg_partman not installed - skipping maintenance (partitioned tables will not be reaped)');

@@ -1,5 +1,5 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { migrateConfig, migrationDb } from '#/db/db';
+import { getAdminDb, migrateConfig } from '#/db/db';
 import { appConfig } from 'shared';
 import { createDbRoles } from './db/create-db-roles';
 import type { SeedScript } from './types';
@@ -11,10 +11,7 @@ const seedScripts: SeedScript[] = [initSeed];
 
 const isProduction = appConfig.mode === 'production';
 
-if (!migrationDb) {
-  console.error('DATABASE_ADMIN_URL required for migrations');
-  process.exit(1);
-}
+const migrationDb = getAdminDb('migrations');
 
 // Create db roles before applying migrations.
 await createDbRoles();

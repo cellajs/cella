@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { defineProject } from 'vitest/config';
-import { testDatabaseUrl } from 'shared/test-db';
+import { testRuntimeDatabaseUrl } from 'shared/test-db';
 
 const testMode = process.env.TEST_MODE || 'core';
 
@@ -26,7 +26,8 @@ export default defineProject({
     env: {
       NODE_ENV: 'test',
       YJS_SECRET: 'test-yjs-secret-for-unit-tests',
-      DATABASE_URL: testDatabaseUrl,
+      // The relay connects as the RLS-subject runtime role in production; integration tests do the same.
+      DATABASE_URL: testRuntimeDatabaseUrl,
       YJS_PORT: '0',
     },
   },

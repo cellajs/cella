@@ -1,9 +1,11 @@
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { answerCatchupViews } from './app-catchup';
+
+const seedDb = getSeedDb();
 
 /** Authorization via resolveViewReadStatus, summaries from channel_counters f:/e: rollups. */
 

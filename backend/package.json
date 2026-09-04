@@ -26,6 +26,7 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "test": "cross-env TEST_MODE=core vitest run",
+    "test:runtime": "cross-env TEST_MODE=core TEST_DB_ROLE=runtime vitest run",
     "manual-migration": "tsx scripts/manual-migration.ts",
     "test:full": "cross-env TEST_MODE=full vitest run",
     "seed:production": "node dist/seeds-bundle.js",

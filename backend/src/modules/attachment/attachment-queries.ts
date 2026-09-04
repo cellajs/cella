@@ -1,6 +1,10 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { AuthContext, DbContext } from '#/core/context';
+import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+
+// Every read and write below carries the request's tenant + organization predicate, so the
+// result is the same with RLS bypassed; the RLS transaction wrappers stay the backstop.
 
 interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;
@@ -10,16 +14,11 @@ export const findAttachmentsByStxMutationId = async (
   ctx: AuthContext,
   { mutationId }: FindAttachmentsByStxMutationIdOpts,
 ) => {
-  const { db, organizationId } = ctx.var;
+  const { db } = ctx.var;
   return db
     .select()
     .from(attachmentsTable)
-    .where(
-      and(
-        sql`${attachmentsTable.stx}->>'mutationId' = ${mutationId}`,
-        eq(attachmentsTable.organizationId, organizationId),
-      ),
-    );
+    .where(and(sql`${attachmentsTable.stx}->>'mutationId' = ${mutationId}`, requestScopeWhere(ctx, attachmentsTable)));
 };
 
 export const insertAttachments = async (
@@ -36,11 +35,11 @@ interface UpdateAttachmentOpts {
 }
 
 export const updateAttachment = async (ctx: AuthContext, { id, values }: UpdateAttachmentOpts) => {
-  const { db, organizationId } = ctx.var;
+  const { db } = ctx.var;
   const [updated] = await db
     .update(attachmentsTable)
     .set(values)
-    .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organizationId)))
+    .where(and(eq(attachmentsTable.id, id), requestScopeWhere(ctx, attachmentsTable)))
     .returning();
   return updated;
 };
@@ -55,14 +54,14 @@ export const deleteAttachmentsByIds = async (
   ctx: AuthContext,
   { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
 ) => {
-  const { db, organizationId } = ctx.var;
+  const { db } = ctx.var;
   return db
     .update(attachmentsTable)
     .set({ deletedAt, deletedBy, updatedAt: deletedAt, updatedBy: deletedBy })
     .where(
       and(
         inArray(attachmentsTable.id, ids),
-        eq(attachmentsTable.organizationId, organizationId),
+        requestScopeWhere(ctx, attachmentsTable),
         isNull(attachmentsTable.deletedAt),
       ),
     );
@@ -72,11 +71,17 @@ interface FindAttachmentsByIdsOpts {
   ids: string[];
 }
 
-/** Tenant-scoped via RLS from `tenantRead`: unknown, deleted and cross-tenant ids are absent. */
-export const findAttachmentsByIds = async (ctx: DbContext, { ids }: FindAttachmentsByIdsOpts) => {
+/** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
+export const findAttachmentsByIds = async (ctx: AuthContext, { ids }: FindAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
   return db
     .select()
     .from(attachmentsTable)
-    .where(and(inArray(attachmentsTable.id, ids), isNull(attachmentsTable.deletedAt)));
+    .where(
+      and(
+        inArray(attachmentsTable.id, ids),
+        requestScopeWhere(ctx, attachmentsTable),
+        isNull(attachmentsTable.deletedAt),
+      ),
+    );
 };

@@ -11,10 +11,12 @@ mistakes but is not the main access-control layer.
 
 ## Security contract
 
-Authorization must stay correct with RLS absent or misconfigured. The API test suite runs as a
-superuser, so RLS is bypassed there; every entity lookup compares the row's tenant and organization
-ids with the request scope, so allow and deny results do not depend on RLS. No test yet runs the same
-suite under the RLS-subject runtime role to prove the two agree.
+Authorization must stay correct with RLS absent or misconfigured. The backend suite runs twice:
+as a superuser (RLS bypassed) and as the RLS-subject `runtime_role` (`pnpm test:core:runtime`),
+with identical expectations. Every entity lookup compares the row's tenant and organization ids
+with the request scope (`getValidProduct`, `getValidChannel`), and every organization-bound product
+query carries `requestScopeWhere` (tenant + organization predicate), so removing RLS broadens no
+application query.
 
 | Situation | Expected result |
 | --- | --- |
@@ -90,15 +92,26 @@ the shared engine, and a contextless insert passes RLS.
 | `admin_role` | `BYPASSRLS` in the supported production setup | Migrations, seeds, maintenance, and CDC replication or stamping |
 
 `admin_role` owns the RLS-protected tables and the activity log. Migrations grant `runtime_role` what
-the application needs. Role creation falls back to an `admin_role` without `BYPASSRLS` on providers
-that refuse the attribute, with only a notice. The CDC worker probes its role at startup: a missing
-`BYPASSRLS` or `REPLICATION` is logged as an error and marks the CDC health component unhealthy, since
-seq stamping under `FORCE ROW LEVEL SECURITY` or the replication slot fails without it. An application
-system administrator is not `admin_role`. Their requests use the runtime connection and normal
-request scope. Never use the admin connection in a request handler. It removes the RLS backstop.
+the application needs, and refuse to run when either role is missing. Role creation falls back to an
+`admin_role` without `BYPASSRLS` on providers that refuse the attribute, with only a notice. The CDC
+worker probes its role at startup: a missing `BYPASSRLS` or `REPLICATION` is logged as an error and
+marks the CDC health component unhealthy, since seq stamping under `FORCE ROW LEVEL SECURITY` or the
+replication slot fails without it. An application system administrator is not `admin_role`. Their
+requests use the runtime connection and normal request scope.
+
+The admin credential (`DATABASE_ADMIN_URL`) is optional for the request-serving API: `getAdminDb()`
+opens the pool on first use, only the migrate, seed, maintenance and mcp-queue paths call it, and
+each fails with a clear error when the credential is absent. A process never given the credential
+cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
 ## Verification
 
 - Builders and helpers: `backend/src/db/rls-helpers.ts`, `tenant-context.ts`, `immutability-triggers.ts`.
-- Migrations: `10-rls` (classification, ownership, forced RLS, grants) and `99-verify` (generated checks).
-- Tests: `backend/tests/integration/rls-security.test.ts`, `schema-verification.test.ts`, `backend/tests/security/cross-tenant.test.ts`, `cross-org.test.ts`.
+- Migrations: `10-rls` (classification, ownership, forced RLS, grants) and `99-verify`, which asserts
+  owner, forced RLS, the four-policy contract per table (`rlsPolicyContract`), grants per
+  classification, read-only tables without write privilege, and that `runtime_role` has no
+  `BYPASSRLS`. A failed assertion rolls the migration back.
+- Tests: `backend/tests/integration/rls-security.test.ts` and `schema-verification.test.ts` inspect
+  the migrated catalog and never repair it (the global setup provisions roles before migrating and
+  refuses a volume migrated without them: `pnpm docker:test:reset`). `backend/tests/security/cross-tenant.test.ts`,
+  `cross-org.test.ts`; `pnpm test:core:runtime` for the runtime-role parity run.

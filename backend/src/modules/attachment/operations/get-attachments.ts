@@ -4,6 +4,7 @@ import type { AuthContext } from '#/core/context';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
+import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { attachmentHomeColumnKey, resolveAttachmentHomeScope } from '#/modules/attachment/helpers/attachment-placement';
@@ -49,7 +50,8 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
     return { items: [], total: 0 };
   }
 
-  const filters: SQL[] = [eq(attachmentsTable.organizationId, organizationId)];
+  // Trusted tenant + organization predicate from guarded context, independent of RLS.
+  const filters: SQL[] = [requestScopeWhere(ctx, attachmentsTable, 'attachment')];
 
   // Restrict to the caller's readable scope unless org-wide (kind 'all').
   if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);

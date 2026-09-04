@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
-import { testDatabaseUrl } from 'shared/test-db';
+import { testDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 
 const testMode = process.env.TEST_MODE || 'core';
+// `runtime` runs the same suite as the RLS-subject runtime_role: the parity proof that
+// application authorization does not depend on RLS (the default superuser run bypasses it).
+const dbRole = process.env.TEST_DB_ROLE === 'runtime' ? 'runtime' : 'admin';
 
 const includePatterns = ['src/**/*.test.ts', 'tests/**/*.test.ts'];
 const excludePatterns = ['**/node_modules/**'];
@@ -17,7 +20,7 @@ export default defineConfig({
   },
   logLevel: 'error',
   test: {
-    name: 'backend',
+    name: dbRole === 'runtime' ? 'backend-runtime' : 'backend',
     globalSetup: './tests/global-setup.ts',
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 30000,
@@ -40,8 +43,8 @@ export default defineConfig({
       // Set here so tests never depend on the S3 keys a developer happens to have in .env.
       S3_ACCESS_KEY_ID: 'test-s3-access-key-id',
       S3_ACCESS_KEY_SECRET: 'test-s3-access-key-secret',
-      DATABASE_URL: testDatabaseUrl,
-      // Public routes read via the admin connection (tenant-less); point it at the test DB
+      DATABASE_URL: dbRole === 'runtime' ? testRuntimeDatabaseUrl : testDatabaseUrl,
+      // Seeds and admin-only paths use the superuser in both roles; point it at the test DB
       DATABASE_ADMIN_URL: testDatabaseUrl,
     },
   },

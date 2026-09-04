@@ -25,13 +25,15 @@ import {
 import { elevateAcross } from 'shared/testing/elevate';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccess } from './check-access';
 import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
+
+const seedDb = getSeedDb();
 
 // attachment's ancestor chain, most-specific → root. raak: [project, organization]; cella: [organization].
 const CHAIN = hierarchy.getOrderedAncestors('attachment') as ChannelEntityType[];

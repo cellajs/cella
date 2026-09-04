@@ -4,7 +4,7 @@ import type { Actor, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatri
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
   buildChannelListReadWhere,
@@ -12,6 +12,8 @@ import {
   excludeArchivedWhere,
   resolveChannelCollectionReadScopeForPolicies,
 } from '#/permissions/channel-collection-scope';
+
+const seedDb = getSeedDb();
 
 /**
  * Aggregate channel lists return readable non-membered "discovery" rows next to membered rows.

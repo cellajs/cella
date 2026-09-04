@@ -30,21 +30,8 @@ const createNoDbStub = (): DB =>
     },
   });
 
-const initConnections = (): { db: DB; migrationDb?: PgDB; adminDb?: PgDB } => {
-  if (env.NODB) {
-    return { db: createNoDbStub() };
-  }
-
-  return {
-    db: connect(env.DATABASE_URL, env.DATABASE_POOL_MAX),
-    migrationDb: connect(env.DATABASE_ADMIN_URL, 5),
-    adminDb: connect(env.DATABASE_ADMIN_URL, 5),
-  };
-};
-
-const connections = initConnections();
-
-export const baseDb: DB = connections.db;
+/** The runtime pool (RLS-subject `runtime_role`): every request handler and worker query goes through this. */
+export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX);
 
 /** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). Feeds the sync spread window. */
 export const dbPoolPressure = (): number => {
@@ -56,7 +43,24 @@ export const dbPoolPressure = (): number => {
   if (!max || typeof waitingCount !== 'number') return 0;
   return waitingCount / max;
 };
-export const migrationDb: PgDB | undefined = connections.migrationDb;
-export const unsafeInternalAdminDb: PgDB | undefined = connections.adminDb;
 
-export const seedDb: DB = (connections.adminDb ?? connections.db) as DB;
+let adminConnection: PgDB | undefined;
+
+/** True when this process was handed the admin credential (migrate, seed and maintenance paths). */
+export const hasAdminDb = (): boolean => !env.NODB && !!env.DATABASE_ADMIN_URL;
+
+/**
+ * The admin pool (table owner, BYPASSRLS), opened on first use and never at import. The API
+ * serves without `DATABASE_ADMIN_URL` when it owns neither migrations nor in-process jobs, and a
+ * request handler cannot reach an RLS-bypassing connection in a process that was never given one.
+ * @param purpose - Names the caller in the error thrown when the credential is absent.
+ */
+export const getAdminDb = (purpose: string): PgDB => {
+  if (env.NODB) throw new Error(`Admin database access (${purpose}) attempted while NODB is set.`);
+  if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required for ${purpose}`);
+  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5);
+  return adminConnection;
+};
+
+/** Seeds write as admin so RLS never hides what they insert; the same lazy pool as {@link getAdminDb}. */
+export const getSeedDb = (): DB => getAdminDb('seeds') as DB;

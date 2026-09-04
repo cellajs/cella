@@ -1,32 +1,36 @@
 import { and, eq, lt, sql } from 'drizzle-orm';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
 import type { DocContext } from '../constants';
 import { db, withRlsTx } from './db';
 
-// Per-document reads and writes run inside `withRlsTx` (tenant + user scoped); the crash-orphan sweep runs system-scope on `db` directly.
+// Every read and write runs inside `withRlsTx` (tenant + user scoped) and carries the row's
+// tenant id as a predicate, so the result is the same with RLS bypassed. `yjs_documents` is
+// fail-closed under RLS: a contextless query on the runtime role returns zero rows, silently.
 
-export async function loadState({ entityType, entityId, tenantId, userId }: DocContext): Promise<Uint8Array | null> {
-  return withRlsTx(tenantId, userId, async (tx) => {
-    const rows = await tx
-      .select({ state: yjsDocumentsTable.state })
-      .from(yjsDocumentsTable)
-      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
+/** `(entity_type, entity_id)` within the document's own tenant. */
+const docWhere = ({ entityType, entityId, tenantId }: Pick<DocContext, 'entityType' | 'entityId' | 'tenantId'>) =>
+  and(
+    eq(yjsDocumentsTable.entityType, entityType),
+    eq(yjsDocumentsTable.entityId, entityId),
+    eq(yjsDocumentsTable.tenantId, tenantId),
+  );
+
+export async function loadState(ctx: DocContext): Promise<Uint8Array | null> {
+  return withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
+    const rows = await tx.select({ state: yjsDocumentsTable.state }).from(yjsDocumentsTable).where(docWhere(ctx));
     if (rows.length === 0) return null;
     return new Uint8Array(rows[0].state);
   });
 }
 
 /** Overwrites the stored Y.Doc state on debounced save; `lastEditedBy` attributes a crash-orphaned session persisted by the startup sweep. */
-export async function saveState(
-  { entityType, entityId, tenantId, userId }: DocContext,
-  state: Uint8Array,
-  lastEditedBy: string | null = null,
-): Promise<void> {
-  await withRlsTx(tenantId, userId, async (tx) => {
+export async function saveState(ctx: DocContext, state: Uint8Array, lastEditedBy: string | null = null): Promise<void> {
+  await withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
     await tx
       .update(yjsDocumentsTable)
       .set({ state: Buffer.from(state), lastEditedBy, updatedAt: sql`now()` })
-      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
+      .where(docWhere(ctx));
   });
 }
 
@@ -51,11 +55,9 @@ export async function createDoc(
 }
 
 /** Removes the document row after the cleanup grace period following the last disconnect. */
-export async function deleteState({ entityType, entityId, tenantId, userId }: DocContext): Promise<void> {
-  await withRlsTx(tenantId, userId, async (tx) => {
-    await tx
-      .delete(yjsDocumentsTable)
-      .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
+export async function deleteState(ctx: DocContext): Promise<void> {
+  await withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
+    await tx.delete(yjsDocumentsTable).where(docWhere(ctx));
   });
 }
 
@@ -68,32 +70,51 @@ export interface StaleDocRow {
   lastEditedBy: string | null;
 }
 
-/** Rows untouched longer than the cleanup grace: orphans from a relay crash. Cross-tenant by design, so it runs system-scope on `db`; under an RLS-enforcing role it returns no rows. */
-export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
-  const rows = await db
-    .select({
-      entityType: yjsDocumentsTable.entityType,
-      entityId: yjsDocumentsTable.entityId,
-      tenantId: yjsDocumentsTable.tenantId,
-      organizationId: yjsDocumentsTable.organizationId,
-      state: yjsDocumentsTable.state,
-      lastEditedBy: yjsDocumentsTable.lastEditedBy,
-    })
-    .from(yjsDocumentsTable)
-    .where(lt(yjsDocumentsTable.updatedAt, sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`));
-  return rows.map((row) => ({
-    entityType: row.entityType,
-    entityId: row.entityId,
-    tenantId: row.tenantId,
-    organizationId: row.organizationId,
-    state: new Uint8Array(row.state),
-    lastEditedBy: row.lastEditedBy,
-  }));
+/** Tenants swept concurrently by the startup sweep; bounds the startup query fan-out on large installs. */
+export const SWEEP_TENANT_CONCURRENCY = 4;
+
+async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<StaleDocRow[]> {
+  return withRlsTx(tenantId, '', async (tx) => {
+    const rows = await tx
+      .select({
+        entityType: yjsDocumentsTable.entityType,
+        entityId: yjsDocumentsTable.entityId,
+        tenantId: yjsDocumentsTable.tenantId,
+        organizationId: yjsDocumentsTable.organizationId,
+        state: yjsDocumentsTable.state,
+        lastEditedBy: yjsDocumentsTable.lastEditedBy,
+      })
+      .from(yjsDocumentsTable)
+      .where(
+        and(
+          eq(yjsDocumentsTable.tenantId, tenantId),
+          lt(yjsDocumentsTable.updatedAt, sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`),
+        ),
+      );
+    return rows.map((row) => ({ ...row, state: new Uint8Array(row.state) }));
+  });
 }
 
-/** Delete a swept orphan row (system-scope on `db`, same cross-tenant caveat as {@link listStaleDocs}). */
-export async function deleteStaleDoc(entityType: string, entityId: string): Promise<void> {
-  await db
-    .delete(yjsDocumentsTable)
-    .where(and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId)));
+/**
+ * Rows untouched longer than the cleanup grace: orphans from a relay crash. Cross-tenant by
+ * design, so the sweep visits every tenant through its own tenant-scoped transaction, a bounded
+ * number at a time; a contextless query on the fail-closed policy returns nothing.
+ */
+export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
+  // `tenants` sits outside RLS, so the runtime role lists it without context.
+  const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
+  const stale: StaleDocRow[] = [];
+  for (let i = 0; i < tenantIds.length; i += SWEEP_TENANT_CONCURRENCY) {
+    const batch = tenantIds.slice(i, i + SWEEP_TENANT_CONCURRENCY);
+    const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));
+    for (const rows of perTenant) stale.push(...rows);
+  }
+  return stale;
+}
+
+/** Delete a swept orphan row inside its own tenant scope. */
+export async function deleteStaleDoc(doc: Pick<StaleDocRow, 'entityType' | 'entityId' | 'tenantId'>): Promise<void> {
+  await withRlsTx(doc.tenantId, '', async (tx) => {
+    await tx.delete(yjsDocumentsTable).where(docWhere(doc));
+  });
 }

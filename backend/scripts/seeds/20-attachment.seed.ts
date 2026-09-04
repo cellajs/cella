@@ -2,7 +2,7 @@ import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -10,7 +10,7 @@ import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use admin connection for privileged operations
-const db = seedDb;
+const db = getSeedDb();
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');

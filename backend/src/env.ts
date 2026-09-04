@@ -26,7 +26,8 @@ export const env = createEnv({
       .default('false')
       .transform((v) => v === 'true'),
     DATABASE_URL: z.url(),
-    DATABASE_ADMIN_URL: z.url(),
+    // Admin credential (table owner, BYPASSRLS): only the migrate, seed, maintenance and mcp paths need it; the request-serving API boots without it.
+    DATABASE_ADMIN_URL: z.url().optional(),
     DATABASE_POOL_MAX: z.coerce.number().default(80),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),

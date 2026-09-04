@@ -1,8 +1,10 @@
 import { getTableName, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { baseDb as adminDb } from '#/db/db';
+import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables } from '#/tables';
+import { classifyRlsTables } from '../../scripts/migrations/10-rls.migration';
 
 /** Product entities with a parent org (tasks, labels, attachments) have RLS and composite FK. */
 const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
@@ -68,43 +70,11 @@ describe('Schema verification', () => {
     });
   });
 
-  // Requires the RLS migration; the beforeAll re-applies roles and FORCE RLS.
-
+  // Migration-outcome checks: they inspect the schema the migration produced and never repair it
+  // (the global setup provisions the roles before migrating and refuses a degraded volume).
   describe('RLS runtime configuration', () => {
-    let rlsConfigured = false;
-
-    beforeAll(async () => {
-      try {
-        await adminDb.execute(sql`
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'runtime_role') THEN
-              CREATE ROLE runtime_role WITH LOGIN PASSWORD 'dev_password';
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-              CREATE ROLE admin_role WITH LOGIN BYPASSRLS PASSWORD 'dev_password';
-            END IF;
-
-            GRANT USAGE ON SCHEMA public TO runtime_role;
-            GRANT ALL ON SCHEMA public TO admin_role;
-          END $$;
-        `);
-
-        for (const tableName of rlsTableNames) {
-          await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} OWNER TO admin_role`));
-          await adminDb.execute(sql.raw(`ALTER TABLE ${tableName} FORCE ROW LEVEL SECURITY`));
-          await adminDb.execute(sql.raw(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${tableName} TO runtime_role`));
-        }
-
-        rlsConfigured = true;
-      } catch {
-        console.warn('Could not configure RLS roles: skipping RLS runtime tests');
-      }
-    });
-
     describe('FORCE ROW LEVEL SECURITY', () => {
       it.each(rlsTableNames)('should have FORCE RLS enabled on %s', async (tableName) => {
-        if (!rlsConfigured) return;
         const rows = getRows<{ relforcerowsecurity: boolean }>(
           await adminDb.execute(sql`
             SELECT relforcerowsecurity
@@ -131,7 +101,6 @@ describe('Schema verification', () => {
 
     describe('Table ownership', () => {
       it.each(rlsTableNames)('should be owned by admin_role: %s', async (tableName) => {
-        if (!rlsConfigured) return;
         const rows = getRows<{ tableowner: string }>(
           await adminDb.execute(sql`
             SELECT tableowner
@@ -148,34 +117,6 @@ describe('Schema verification', () => {
   // ── RLS policies (schema-level, from Drizzle pgPolicy) ────────────────
 
   describe('RLS policies', () => {
-    it.each(rlsTableNames)('should have tenant select policy on %s', async (tableName) => {
-      const rows = getRows<{ polname: string }>(
-        await adminDb.execute(sql`
-          SELECT pol.polname
-          FROM pg_policy pol
-          JOIN pg_class c ON pol.polrelid = c.oid
-          WHERE c.relname = ${tableName}
-            AND pol.polname LIKE '%select_policy'
-        `),
-      );
-      expect(rows.length, `Missing select policy on ${tableName}`).toBeGreaterThanOrEqual(1);
-    });
-
-    it.each(rlsTableNames)('should have write-through policies on %s', async (tableName) => {
-      const rows = getRows<{ polname: string }>(
-        await adminDb.execute(sql`
-          SELECT pol.polname
-          FROM pg_policy pol
-          JOIN pg_class c ON pol.polrelid = c.oid
-          WHERE c.relname = ${tableName}
-            AND (pol.polname LIKE '%insert_policy'
-              OR pol.polname LIKE '%update_policy'
-              OR pol.polname LIKE '%delete_policy')
-        `),
-      );
-      expect(rows.length, `Missing write-through policies on ${tableName}`).toBeGreaterThanOrEqual(3);
-    });
-
     it.each(channelTables)('should NOT have RLS policies on %s', async (tableName) => {
       const rows = getRows<{ polname: string }>(
         await adminDb.execute(sql`
@@ -186,6 +127,80 @@ describe('Schema verification', () => {
           `),
       );
       expect(rows.length, `Unexpected RLS policies on ${tableName}: ${rows.map((r) => r.polname).join(', ')}`).toBe(0);
+    });
+  });
+
+  // ── Migration verifier contract (same sources as 99-verify) ───────────
+
+  describe('Runtime role stays RLS-subject', () => {
+    it('runtime_role has neither BYPASSRLS nor SUPERUSER', async () => {
+      const rows = getRows<{ rolbypassrls: boolean; rolsuper: boolean }>(
+        await adminDb.execute(sql`SELECT rolbypassrls, rolsuper FROM pg_roles WHERE rolname = 'runtime_role'`),
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].rolbypassrls).toBe(false);
+      expect(rows[0].rolsuper).toBe(false);
+    });
+  });
+
+  describe('Policy contract', () => {
+    it.each(rlsTableNames)('%s carries exactly the four contract policies', async (tableName) => {
+      const rows = getRows<{
+        polname: string;
+        polcmd: string;
+        polpermissive: boolean;
+        using: string | null;
+        check: string | null;
+      }>(
+        await adminDb.execute(sql`
+          SELECT p.polname, p.polcmd, p.polpermissive,
+                 pg_get_expr(p.polqual, p.polrelid) AS using,
+                 pg_get_expr(p.polwithcheck, p.polrelid) AS check
+          FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+          WHERE c.relname = ${tableName} AND c.relnamespace = 'public'::regnamespace
+          ORDER BY p.polname
+        `),
+      );
+      const contract = Object.values(rlsPolicyContract(tableName));
+      expect(rows.map((r) => r.polname).sort()).toEqual(contract.map((c) => c.name).sort());
+      for (const policy of contract) {
+        const row = rows.find((r) => r.polname === policy.name);
+        expect(row?.polcmd, policy.name).toBe(policy.command);
+        expect(row?.polpermissive, policy.name).toBe(true);
+        if (policy.expression === 'tenant') {
+          expect(row?.using, policy.name).toContain('app.tenant_id');
+          expect(row?.using, policy.name).toContain('tenant_id)::text = current_setting');
+        } else {
+          expect(row?.check ?? row?.using, policy.name).toBe('true');
+        }
+      }
+    });
+  });
+
+  describe('Grants per classification', () => {
+    const { fullCrudTables, readOnlyTables } = classifyRlsTables();
+    const privilegesOf = async (tableName: string) => {
+      const table = `public.${tableName}`;
+      const rows = getRows<{ s: boolean; i: boolean; u: boolean; d: boolean }>(
+        await adminDb.execute(sql`
+          SELECT has_table_privilege('runtime_role', ${table}, 'SELECT') AS s,
+                 has_table_privilege('runtime_role', ${table}, 'INSERT') AS i,
+                 has_table_privilege('runtime_role', ${table}, 'UPDATE') AS u,
+                 has_table_privilege('runtime_role', ${table}, 'DELETE') AS d
+        `),
+      );
+      return rows[0];
+    };
+
+    it.each([...rlsTableNames, ...fullCrudTables])(
+      'runtime_role has SELECT, INSERT, UPDATE, DELETE on %s',
+      async (t) => {
+        expect(await privilegesOf(t)).toEqual({ s: true, i: true, u: true, d: true });
+      },
+    );
+
+    it.each(readOnlyTables)('runtime_role has SELECT only on %s', async (t) => {
+      expect(await privilegesOf(t)).toEqual({ s: true, i: false, u: false, d: false });
     });
   });
 

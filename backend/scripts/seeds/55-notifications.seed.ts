@@ -2,7 +2,7 @@ import type { SeedScript } from '../types';
 import { and, eq, like, ne } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
-import { seedDb } from '#/db/db';
+import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { type InsertNotificationModel, notificationsTable } from '#/modules/notification/notification-db';
@@ -11,7 +11,7 @@ import { usersTable } from '#/modules/user/user-db';
 import { defaultAdminUser } from '../fixtures';
 
 // Seed scripts use the admin connection for privileged operations.
-const db = seedDb;
+const db = getSeedDb();
 
 /** Attachments per organization that mention the admin in their description. */
 const MENTIONS_PER_ORGANIZATION = 2;

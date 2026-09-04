@@ -38,7 +38,9 @@ describe('runStartupSweep', () => {
       'user-1',
       '[{"type":"paragraph"}]',
     );
-    expect(deleteStaleDoc).toHaveBeenCalledWith('task', 'entity-1');
+    expect(deleteStaleDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ entityType: 'task', entityId: 'entity-1', tenantId: 'tenant-1' }),
+    );
   });
 
   it('deletes seed-only rows (no lastEditedBy) without materializing', async () => {
@@ -47,7 +49,7 @@ describe('runStartupSweep', () => {
     await runStartupSweep();
 
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(deleteStaleDoc).toHaveBeenCalledWith('task', 'entity-1');
+    expect(deleteStaleDoc).toHaveBeenCalledWith(expect.objectContaining({ entityType: 'task', entityId: 'entity-1' }));
   });
 
   it('keeps the row when materialization is retry-class (backend down)', async () => {
