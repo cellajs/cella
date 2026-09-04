@@ -3,13 +3,13 @@ import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
-import { YJS_AWARENESS_RATE_LIMIT, YJS_SAVE_DEBOUNCE_MS } from '../constants';
+import { YJS_AWARENESS_RATE_LIMIT, YJS_MATERIALIZE_RETRY_MS, YJS_SAVE_DEBOUNCE_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { createDoc, loadState, saveState } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
-import { materializeState, stateToBlocksJson } from './materialize';
-import { broadcastToCollab, getCollab } from './session-manager';
+import { type MaterializeResult, materializeState, stateToBlocksJson } from './materialize';
+import { broadcastToCollab, type CollabSession, getCollab } from './session-manager';
 
 const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
@@ -160,6 +160,36 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
   }
 }
 
+/**
+ * A retryable failure schedules a bounded retry, so quiet editors do not wait for the next update or the cleanup grace period.
+ * Any outcome cancels the previous retry; a save window in progress owns materialization and the retry stands down.
+ */
+function settleMaterialization(collab: CollabSession, snapshot: Uint8Array, result: MaterializeResult): void {
+  if (collab.materializeRetryTimer) clearTimeout(collab.materializeRetryTimer);
+  collab.materializeRetryTimer = undefined;
+  if (result !== 'retry') {
+    collab.materializeAttempts = 0;
+    return;
+  }
+
+  const attempt = collab.materializeAttempts ?? 0;
+  const delay = YJS_MATERIALIZE_RETRY_MS[attempt];
+  if (delay === undefined) {
+    log.warn(
+      `Materialize retries exhausted for ${collab.ctx.entityType}:${collab.ctx.entityId}; the next save or cleanup retries`,
+    );
+    collab.materializeAttempts = 0;
+    return;
+  }
+
+  collab.materializeAttempts = attempt + 1;
+  collab.materializeRetryTimer = setTimeout(async () => {
+    collab.materializeRetryTimer = undefined;
+    if (collab.saveTimer || collab.savingPromise) return;
+    settleMaterialization(collab, snapshot, await materializeState(collab, snapshot));
+  }, delay);
+}
+
 /** Merges a client update into stored state, broadcasts it to peers, and debounces the save. */
 async function handleSyncUpdate(
   ctx: DocContext,
@@ -187,6 +217,7 @@ async function handleSyncUpdate(
 
   if (collab.saveTimer) clearTimeout(collab.saveTimer);
   collab.saveTimer = setTimeout(async () => {
+    collab.saveTimer = undefined;
     if (!collab.pendingState) return;
     const snapshotToSave = collab.pendingState;
     collab.pendingState = undefined;
@@ -197,7 +228,7 @@ async function handleSyncUpdate(
     try {
       await savePromise;
       // Runs once per document per save window; a failure leaves the baseline stale so the next save converges it.
-      await materializeState(collab, snapshotToSave);
+      settleMaterialization(collab, snapshotToSave, await materializeState(collab, snapshotToSave));
     } catch (err) {
       log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });
       // Merge the failed snapshot with any new updates that arrived during the await

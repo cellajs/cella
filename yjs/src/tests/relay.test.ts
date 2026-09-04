@@ -386,6 +386,56 @@ describe('debounced save', () => {
     expect(saveState).toHaveBeenCalledWith(ctx, update, ctx.userId);
   });
 
+  it('2.2.1c a retryable materialization failure is retried after backoff without a new update', async () => {
+    vi.mocked(loadState).mockResolvedValue(null);
+    vi.mocked(materializeState).mockResolvedValueOnce('retry').mockResolvedValueOnce('ok');
+    const ws = mockWebSocket();
+    joinCollab(ctx);
+
+    const doc = new Y.Doc();
+    doc.getMap('test').set('key', 'value');
+    const update = Y.encodeStateAsUpdate(doc);
+    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
+
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(materializeState).toHaveBeenCalledTimes(1);
+
+    // First backoff step, with the same snapshot: editors went quiet.
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(materializeState).toHaveBeenCalledTimes(2);
+    expect(materializeState).toHaveBeenLastCalledWith(getCollab(ctx.entityType, ctx.entityId), update);
+
+    // Success ends the retries.
+    await vi.advanceTimersByTimeAsync(200_000);
+    expect(materializeState).toHaveBeenCalledTimes(2);
+  });
+
+  it('2.2.1d materialization retries are bounded and a new save window supersedes them', async () => {
+    vi.mocked(loadState).mockResolvedValue(null);
+    vi.mocked(materializeState).mockResolvedValue('retry');
+    const ws = mockWebSocket();
+    joinCollab(ctx);
+
+    const doc = new Y.Doc();
+    doc.getMap('test').set('key', 'value');
+    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
+
+    // Save window, then the three backoff steps: 4 attempts in total, then silence.
+    await vi.advanceTimersByTimeAsync(3000 + 5000 + 30_000 + 120_000);
+    expect(materializeState).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(materializeState).toHaveBeenCalledTimes(4);
+
+    // A new update opens a save window whose own materialization takes over.
+    vi.mocked(materializeState).mockResolvedValue('ok');
+    doc.getMap('test').set('key', 'value-2');
+    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(materializeState).toHaveBeenCalledTimes(5);
+    await vi.advanceTimersByTimeAsync(300_000);
+    expect(materializeState).toHaveBeenCalledTimes(5);
+  });
+
   it('2.2.2 rapid updates reset debounce: single save', async () => {
     vi.mocked(loadState).mockResolvedValue(null);
     const ws = mockWebSocket();
