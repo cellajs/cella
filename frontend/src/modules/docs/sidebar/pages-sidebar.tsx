@@ -20,7 +20,7 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
   const activeMatch = location.pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
   const activePageId = activeMatch ? decodeURIComponent(activeMatch) : undefined;
 
-  const pageTree = buildPageNodeTree(pages);
+  const pageTree = useMemo(() => buildPageNodeTree(pages), [pages]);
 
   // Ancestor chain of the active page: seeds expansion on route change.
   const activeAncestorIds = useMemo(() => computeAncestorIds(pages, activePageId), [pages, activePageId]);
@@ -38,8 +38,15 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
     next.add(id);
   };
 
-  // Ancestors are seeded per route change (accordion-pruned per level); later collapses stick
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  // Ancestors of the active page are open on first render, so the sheet opens with the tree already expanded
+  // and Base UI skips the mount keyframe. Later route changes seed via the effect (accordion-pruned per
+  // level); later collapses stick.
+  const seedExpanded = () => {
+    const next = new Set<string>();
+    for (const id of activeAncestorIds) expandExclusive(next, id);
+    return next;
+  };
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(seedExpanded);
   useEffect(() => {
     if (activeAncestorIds.size === 0) return;
     setExpandedIds((prev) => {
