@@ -1,6 +1,6 @@
 # Deployment
 
-This document explains how a cella app deploys to European cloud provider [Scaleway](https://www.scaleway.com/): the resources that get provisioned, the release pipeline, and the operational tasks around it. The code lives in the [infra](../infra/) package; see its [README](../infra/README.md) for the product view and the shared [vocabulary](../infra/README.md#vocabulary).
+This document explains how a cella app deploys to European cloud provider [Scaleway](https://www.scaleway.com/) using the the [Infra CLI](../infra/README.md).
 
 ### TL;DR
 
