@@ -69,6 +69,10 @@ function resolvePreparedOps<T extends Record<string, unknown>>(
 /**
  * Lens normalization, no-op filtering, HLC conflicts and AWSet deltas. Keys and expand-window twins are
  * canonicalized before conflict logic; returns unchanged when no operation survives.
+ *
+ * An online write is ordered by server arrival: its client timestamps are replaced by one server HLC, so a
+ * device clock behind the stored value can never have its edit silently dropped. Only a replayed offline
+ * write (`stx.replayed`) keeps its client timestamps, the intent time that lets it lose to a later edit.
  */
 export function resolveUpdateOps<T extends Record<string, unknown>>(
   entityType: ProductEntityType,
@@ -76,17 +80,22 @@ export function resolveUpdateOps<T extends Record<string, unknown>>(
   rawOps: T,
   rawStx: StxBase,
 ): UpdateResult<T> {
+  if (!rawStx.replayed) return resolveServerUpdateOps(entityType, entity, rawOps, rawStx);
   const { ops, stx } = normalizeOps(entityType, rawOps, rawStx);
   return resolvePreparedOps<T>(entity, prepareOps(entity, ops), stx);
 }
 
-/** Resolve a trusted server update after assigning one causally-new HLC to all changed scalar fields. */
+/**
+ * Resolve an update after assigning one causally-new server HLC to all changed scalar fields. `baseStx`
+ * keeps a client's mutation and source ids for idempotency and echo recognition; server-origin writes omit it.
+ */
 export function resolveServerUpdateOps<T extends Record<string, unknown>>(
   entityType: ProductEntityType,
   entity: Record<string, unknown> & { stx: StxBase },
   rawOps: T,
+  baseStx: StxBase = createServerStx(),
 ): UpdateResult<T> {
-  const { ops, stx } = normalizeOps(entityType, rawOps, createServerStx());
+  const { ops, stx } = normalizeOps(entityType, rawOps, baseStx);
   const prepared = prepareOps(entity, ops);
   const scalarFieldNames = Object.keys(prepared.scalarOps);
 

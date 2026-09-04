@@ -11,6 +11,10 @@ export const stxBaseSchema = z
     fieldTimestamps: z
       .record(z.string(), z.string().refine(isValidHLC, 'Invalid HLC timestamp'))
       .describe('Per-field HLC timestamps for scalar fields being changed'),
+    replayed: z
+      .boolean()
+      .optional()
+      .describe('Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time'),
   })
   .openapi('StxBase', {
     description:

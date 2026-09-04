@@ -18,6 +18,19 @@ export function isPending(mutation: MutationLike): boolean {
   return mutation.state.status === 'pending';
 }
 
+/** Mutation ids that paused offline at least once, in this session or restored from the persisted cache. */
+const pausedMutationIds = new Set<string>();
+
+/** Records a mutation as having paused; the mutation cache subscription in the query client calls it. */
+export function recordPausedMutation(mutationId: string): void {
+  pausedMutationIds.add(mutationId);
+}
+
+/** True for a mutation that reaches the server as a replay rather than a live edit. */
+export function hasPaused(mutationId: string): boolean {
+  return pausedMutationIds.has(mutationId);
+}
+
 /** Only offline-paused mutations may be coalesced or cancelled; online intent stays separate and scope-serialized for backend idempotency and LWW handling. */
 export function canCoalesce(): boolean {
   return !onlineManager.isOnline();

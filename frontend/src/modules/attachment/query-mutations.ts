@@ -1,7 +1,7 @@
 import type { Attachment, CreateAttachmentsData, StxBase, UpdateAttachmentData } from 'sdk';
 import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
 import { type AncestorChannelType, appConfig, type EntityIdColumnKey, hierarchy } from 'shared';
-import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
+import { createStxForCreate, createStxForDelete, createStxForUpdate, withReplayFlag } from '~/query/offline/stx-utils';
 import type { QueryOrgContext } from '~/query/types';
 
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
@@ -38,7 +38,7 @@ export async function createAttachmentsMutationFn({ tenantId, organizationId, da
 
 export async function updateAttachmentMutationFn({ tenantId, organizationId, id, ops, stx }: UpdateAttachmentFullVars) {
   const scalarFieldNames = ops ? Object.keys(ops) : [];
-  const effectiveStx = stx ?? createStxForUpdate(scalarFieldNames);
+  const effectiveStx = withReplayFlag(stx ?? createStxForUpdate(scalarFieldNames));
   return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx: effectiveStx } });
 }
 
