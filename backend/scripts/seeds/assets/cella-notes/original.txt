@@ -1,0 +1,16 @@
+Cella seed notes
+
+These notes are seed data. They exist so a development environment has attachments
+with real files behind them: an image, a photo, a PDF, a text file and a spreadsheet.
+
+Every file lives in the shared public development bucket under the seed/v1/ prefix.
+The rows that point at them are created by `pnpm seed`, and the objects themselves are
+published once by a maintainer with `pnpm seed:assets`.
+
+Things you can try with this file:
+- open it in the attachment sheet
+- edit its description and mention a member
+- download it and check the size matches what the table shows
+
+Nothing here is confidential. Edit, delete and re-upload as much as you like; a reseed
+brings the rows back and the objects are never removed from the bucket.
