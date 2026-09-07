@@ -7,7 +7,9 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
+import { keywordsFromDocument } from '#/utils/description-document';
 import { defaultAdminUser } from '../fixtures';
+import { textDocument } from './description-document';
 import { seedAssets } from './seed-assets';
 
 // Seed scripts use admin connection for privileged operations
@@ -15,6 +17,19 @@ const db = getSeedDb();
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');
+
+/**
+ * Stored descriptions by seed filename, one paragraph per string. Assets missing here seed with a
+ * null description on purpose, so both the empty and the filled editor states are seeded.
+ */
+const seedDescriptions: Record<string, string[]> = {
+  'cella-members.csv': [
+    'Member export from the organization settings page, used to check the CSV import round trip.',
+    'Columns: name, email, role, joined. The header row is required by the importer.',
+  ],
+  'cella-notes.txt': ['Release notes draft for the next minor. Keep the plain-text version until the changelog is generated.'],
+  'cella-org-page.webp': ['Screenshot of the organization page in the light theme, taken at 1440 px wide.'],
+};
 
 const isAttachmentSeeded = async () => {
   const rows = await db.select().from(attachmentsTable).limit(1);
@@ -71,6 +86,8 @@ export const attachmentsSeed = async () => {
       withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
         const createdAt = faker.date.recent({ days: 30 }).toISOString();
         const extIndex = asset.filename.lastIndexOf('.');
+        const paragraphs = seedDescriptions[asset.filename];
+        const description = paragraphs ? textDocument(...paragraphs) : null;
         return {
           id: mockUuid(),
           entityType: 'attachment' as const,
@@ -82,8 +99,9 @@ export const attachmentsSeed = async () => {
           createdBy: defaultAdminUser.id,
           updatedBy: defaultAdminUser.id,
           stx: mockStx(),
-          description: null,
-          keywords: faker.lorem.words(3),
+          description,
+          // The update op derives keywords from the document; a row without one keeps filler search text.
+          keywords: description ? keywordsFromDocument(description) : faker.lorem.words(3),
           filename: asset.filename,
           name: extIndex > 0 ? asset.filename.slice(0, extIndex) : asset.filename,
           contentType: asset.contentType,
