@@ -7,6 +7,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = join(here, '..', '..');
 const disallowedTerm = /fork/gi;
+/** The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>` and the css/md forms. */
+const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->/gi;
 
 /** Files and path prefixes (repo-root relative) exempt from the check. */
 export interface VocabularyAllowlist {
@@ -67,9 +69,11 @@ export function findAppVocabularyFindings(
     });
   }
 
+  // Blank the markers to same-length whitespace so line and column numbers of real findings hold.
+  const scanned = source.replace(markerComment, (marker) => marker.replace(/[^\n]/g, ' '));
   const contentPattern = new RegExp(disallowedTerm.source, disallowedTerm.flags);
-  for (const match of source.matchAll(contentPattern)) {
-    const before = source.slice(0, match.index);
+  for (const match of scanned.matchAll(contentPattern)) {
+    const before = scanned.slice(0, match.index);
     const lastLineBreak = before.lastIndexOf('\n');
     findings.push({
       file,

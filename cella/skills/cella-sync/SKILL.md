@@ -59,8 +59,10 @@ the marked lines survived; CI stays green until typecheck when one is dropped.
 
 1. `pnpm generate` if any `*-db.ts` changed (drive the drizzle TTY prompt with expect; verify
    RENAME vs DROP+ADD in the generated SQL).
-2. Before trusting typecheck, delete stale caches: `find . -name "*.tsbuildinfo" -not -path "*/node_modules/*" -delete`.
-3. `pnpm check` until clean, then the test files touched by the merge plus the module suites of
+2. `pnpm generate:routes` if the sync added, moved or removed a route file: `routeTree.gen.ts` is
+   app-owned and only regenerates from Vite or this script.
+3. Before trusting typecheck, delete stale caches: `find . -name "*.tsbuildinfo" -not -path "*/node_modules/*" -delete`.
+4. `pnpm check` until clean, then the test files touched by the merge plus the module suites of
    every area the sync altered.
 
 ## 5. Migration bookkeeping

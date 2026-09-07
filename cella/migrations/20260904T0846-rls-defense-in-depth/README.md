@@ -25,7 +25,7 @@ No script: manual.
 
 ## Manual steps
 
-1. Replace `seedDb` with `getSeedDb()` (call it once per module: `const db = getSeedDb();`), `migrationDb` with `getAdminDb('migrations')` and `unsafeInternalAdminDb` with `getAdminDb('<purpose>')`; drop `if (!migrationDb)` guards, the getter throws.
+1. Replace `seedDb` with `getSeedDb()` (call it once per module: `const db = getSeedDb();`), `migrationDb` with `getAdminDb('migrations')` and `unsafeInternalAdminDb` with `getAdminDb('<purpose>')`; drop `if (!migrationDb)` guards, the getter throws. Call `getAdminDb` inside the function that uses it: `unsafeInternalAdminDb` was `undefined` until used, whereas the getter throws (or opens the pool) when it runs, so a module-scope `const db = getAdminDb(...)` crashes the process at import.
 2. App product queries (lists, counts, updates, soft-deletes, bulk predicates) add `requestScopeWhere(ctx, table)` next to their id predicate; `findAttachmentsByIds`-style helpers take `AuthContext`.
 3. Any test that truncates, seeds RLS tables, inserts `system_roles` or calls `recalculateCounters` uses `getAdminDb('test setup')` / `getSeedDb()`, never the runtime connection.
 4. Test global setup creates `runtime_role` and `admin_role` before `migrate()`; stop re-applying triggers, ownership or grants after it. Reset a test volume migrated without roles: `pnpm docker:test:reset`.

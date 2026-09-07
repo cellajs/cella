@@ -11,7 +11,7 @@ export type ChannelRouteEntry = {
   defaultTabId?: string;
   /** When shown as a subitem, navigate to a parent entity's route. */
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
-  /** Search params a notification link on this channel opens with, e.g. a product's sheet id keyed by its entity type. */
+  /** Search params a notification link on this channel opens with, e.g. a product's sheet id keyed by its entity type; the target route's `validateSearch` must declare them or the router strips them. */
   notificationSearch?: (notification: { entityType: string; subjectId: string }) => Record<string, string>;
 };
 

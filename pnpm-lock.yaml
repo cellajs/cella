@@ -829,6 +829,9 @@ importers:
       '@tanstack/router-core':
         specifier: ^1.171.27
         version: 1.171.27
+      '@tanstack/router-generator':
+        specifier: ^1.167.33
+        version: 1.167.33
       '@tanstack/router-plugin':
         specifier: ^1.168.35
         version: 1.168.35(@tanstack/react-router@1.170.32(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.60.4)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))

@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { type GetNotificationsResponse, getNotifications, updateAttachment } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -105,7 +105,14 @@ describe('Attachment mentions (template notification source)', async () => {
   beforeAll(async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-mentions');
-    member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'attachment-mentions-member');
+    // The role that reads every attachment under any app's permission matrix; the stranger id covers the drop path.
+    member = await createOrgUser(
+      call,
+      tenant.tenantId,
+      tenant.organization.id,
+      'attachment-mentions-member',
+      hierarchy.getMostPrivilegedRole('organization'),
+    );
 
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
