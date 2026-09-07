@@ -1,9 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
+import { Suspense } from 'react';
 import type { Attachment } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
 import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { CollaborativeBlockNote } from '~/modules/common/blocknote/collaborative-blocknote';
+import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
 import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -40,6 +42,23 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
   const updateData = useDescriptionUpdate('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
 
+  // Faded, inert render of the stored description while the relay syncs: the live editor replaces it
+  // at the same height, so the swap does not reflow. Without a description the box only holds the height.
+  const waitingFallback = (
+    <div className="pointer-events-none min-h-40 select-none opacity-50">
+      {attachment.description && (
+        <Suspense fallback={null}>
+          <BlockNoteFullHtml
+            id={`blocknote-${attachment.id}-preview`}
+            defaultValue={attachment.description}
+            tenantId={tenantId}
+            organizationId={organizationId}
+          />
+        </Suspense>
+      )}
+    </div>
+  );
+
   return (
     <CollaborativeBlockNote
       entityType="attachment"
@@ -51,6 +70,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
       updateData={updateData}
       members={members}
       autoFocus={canEdit}
+      waitingFallback={waitingFallback}
       className="min-h-40"
     />
   );
