@@ -75,6 +75,7 @@ export async function getAttachmentsOp(ctx: AuthContext, input: GetAttachmentsIn
         ilike(attachmentsTable.name, queryToken),
         ilike(attachmentsTable.filename, queryToken),
         ilike(attachmentsTable.contentType, queryToken),
+        ilike(attachmentsTable.keywords, queryToken),
       ) as SQL,
     );
   }

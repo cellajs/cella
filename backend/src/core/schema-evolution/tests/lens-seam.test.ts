@@ -38,7 +38,13 @@ import { applyArrayDelta, arrayDeltaSchema } from '#/core/stx/array-delta';
 import { _resetHLC, compareHLC } from '#/core/stx/hlc';
 import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 
-const stx = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm1', sourceId: 's1', fieldTimestamps });
+// Replayed writes keep their client timestamps, which is what the lens expectations below observe.
+const stx = (fieldTimestamps: Record<string, string>) => ({
+  mutationId: 'm1',
+  sourceId: 's1',
+  fieldTimestamps,
+  replayed: true,
+});
 const hlc = '100:0001:aaaaa';
 
 afterEach(() => _resetHLC());

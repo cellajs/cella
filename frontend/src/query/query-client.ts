@@ -2,6 +2,7 @@ import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack
 import { appConfig, type ProductEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
+import { recordPausedMutation } from '~/query/offline/mutation-queue';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -96,6 +97,16 @@ if (!import.meta.hot?.data?.listenersAttached) {
   handleOnlineStatus();
 }
 
+/** Marks every mutation that pauses offline, whether it pauses live or is restored paused from the persisted cache, so its eventual request is sent as a replay. */
+function trackPausedMutations(client: QueryClient): void {
+  client.getMutationCache().subscribe((event) => {
+    if (event.type !== 'added' && event.type !== 'updated') return;
+    if (!event.mutation.state.isPaused) return;
+    const mutationId = mutationIdOf(event.mutation.state.variables);
+    if (mutationId) recordPausedMutation(mutationId);
+  });
+}
+
 /**
  * QueryClient instance preserved across HMR to keep the cache intact.
  *
@@ -125,6 +136,9 @@ export const queryClient: QueryClient =
       },
     },
   });
+
+// Subscribed once per page load; the HMR-preserved client keeps its subscription.
+if (!import.meta.hot?.data?.listenersAttached) trackPausedMutations(queryClient);
 
 let resolveCacheRestored: () => void;
 /** Resolves once PersistQueryClientProvider has restored the IDB cache. */

@@ -37,6 +37,14 @@ const paragraphWithMentions = (ids: string[]) => ({
   children: [],
 });
 
+const paragraphWithText = (text: string) => ({
+  id: generateId(),
+  type: 'paragraph',
+  props: {},
+  content: [{ type: 'text', text, styles: {} }],
+  children: [],
+});
+
 const updateStx = () => ({
   ...mockStxBase(`stx:${generateId()}`),
   fieldTimestamps: { description: generateServerHLC('test-client') },
@@ -70,6 +78,14 @@ describe('Attachment mentions (template notification source)', async () => {
       .from(attachmentsTable)
       .where(eq(attachmentsTable.id, attachmentId));
     return row.mentions;
+  };
+
+  const storedKeywords = async () => {
+    const [row] = await db
+      .select({ keywords: attachmentsTable.keywords })
+      .from(attachmentsTable)
+      .where(eq(attachmentsTable.id, attachmentId));
+    return row.keywords;
   };
 
   const notificationsFor = (userId: string) =>
@@ -158,6 +174,26 @@ describe('Attachment mentions (template notification source)', async () => {
     const result = await putDescription(JSON.stringify([paragraphWithMentions([])]));
     expect(result.response.status).toBe(200);
     expect(await storedMentions()).toEqual([]);
+  });
+
+  it('re-derives the keywords search column from the description on both write paths', async () => {
+    const result = await putDescription(
+      JSON.stringify([paragraphWithText('quarterly budget'), paragraphWithMentions([member.id])]),
+    );
+    expect(result.response.status).toBe(200);
+    expect(await storedKeywords()).toContain('quarterly budget');
+
+    await materializeDescriptionOp({
+      entityType: 'attachment',
+      entityId: attachmentId,
+      tenantId: tenant.tenantId,
+      organizationId: tenant.organization.id,
+      description: JSON.stringify([paragraphWithText('signed contract')]),
+      editedBy: tenant.user.id,
+    });
+    const keywords = await storedKeywords();
+    expect(keywords).toContain('signed contract');
+    expect(keywords).not.toContain('quarterly budget');
   });
 
   it('derives from Yjs materialization too, the write path of the collaborative editor', async () => {

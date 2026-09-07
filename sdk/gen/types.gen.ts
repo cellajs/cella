@@ -106,6 +106,10 @@ export type StxBase = {
   fieldTimestamps: {
     [key: string]: string;
   };
+  /**
+   * Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time
+   */
+  replayed?: boolean;
 };
 
 /**

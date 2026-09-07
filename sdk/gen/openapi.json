@@ -706,6 +706,10 @@
               "type": "string"
             },
             "description": "Per-field HLC timestamps for scalar fields being changed"
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time"
           }
         },
         "required": ["mutationId", "sourceId", "fieldTimestamps"],

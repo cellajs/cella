@@ -16,7 +16,7 @@ interface UseEditorKeyboardArgs {
   /** Called on Escape and Cmd/Ctrl+Enter, after the data has been committed. */
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
-  /** Commits the editor's current document (parent decides what "commit" means). */
+  /** Commits the editor's current document (parent decides what "commit" means, including whether an empty one counts). */
   commit: () => void;
 }
 
@@ -54,13 +54,13 @@ export function useEditorKeyboard({
     event.preventDefault();
 
     if (isEscape) {
-      if (!editor.isEmpty) commit();
+      commit();
       onEscapeClick?.();
       return;
     }
 
     event.stopPropagation();
     onEnterClick?.();
-    if (!editor.isEmpty) commit();
+    commit();
   };
 }

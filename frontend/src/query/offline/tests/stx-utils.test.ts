@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from '../stx-utils';
+import { recordPausedMutation } from '../mutation-queue';
+import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId, withReplayFlag } from '../stx-utils';
 
 // Covers stx metadata shape for create, update, delete, and source identity.
 describe('sourceId', () => {
@@ -62,5 +63,20 @@ describe('createStxForDelete', () => {
     expect(stx.fieldTimestamps).toEqual({});
     expect(stx.sourceId).toBe(sourceId);
     expect(stx.mutationId).toBeTruthy();
+  });
+});
+
+describe('withReplayFlag', () => {
+  it('leaves a live edit unflagged, so the server orders it by arrival', () => {
+    const stx = createStxForUpdate(['name']);
+    expect(withReplayFlag(stx).replayed).toBeUndefined();
+  });
+
+  it('flags a mutation that paused offline, so the server arbitrates it by its intent-time timestamps', () => {
+    const stx = createStxForUpdate(['name']);
+    recordPausedMutation(stx.mutationId);
+    const flagged = withReplayFlag(stx);
+    expect(flagged.replayed).toBe(true);
+    expect(flagged.fieldTimestamps).toEqual(stx.fieldTimestamps);
   });
 });
