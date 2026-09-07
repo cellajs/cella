@@ -239,6 +239,16 @@ function BlockNote({
     commit: commitDocument,
   });
 
+  // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
+  // no blur fires; the cleanup commits what blur would have. Standalone only: the relay owns
+  // collaborative writes. lastCommittedRef keeps a blur that did fire from committing twice.
+  const commitDocumentRef = useRef(commitDocument);
+  commitDocumentRef.current = commitDocument;
+  useEffect(() => {
+    if (!editable || commitOnEveryChange || collaborative) return;
+    return () => commitDocumentRef.current();
+  }, [editable, commitOnEveryChange, collaborative]);
+
   const handleOnBeforeLoad = () => onBeforeLoad?.(editor);
 
   const renderUppyFilePanel = useCallback(
