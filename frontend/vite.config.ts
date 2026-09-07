@@ -25,6 +25,7 @@ import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
+import { routerOptions } from './vite/router-options.ts';
 import { sdkWatch } from './vite/sdk-watch.ts';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
@@ -321,14 +322,7 @@ const viteConfig = {
   clearScreen: false,
   plugins: [
     // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
-    tanstackRouter({
-      target: 'react',
-      autoCodeSplitting: true,
-      routesDirectory: 'src/routes',
-      generatedRouteTree: 'src/routes/routeTree.gen.ts',
-      // Non-route helper files living in src/routes (router instance, shared utils, types, generated tree)
-      routeFileIgnorePattern: '(router\\.ts|route-utils\\.tsx|types\\.ts|routeTree\\.gen\\.ts)$',
-    }),
+    tanstackRouter(routerOptions),
     // Compile content and repository Markdown to React plus frontmatter before the React plugin.
     // Thin MDX pages can therefore import canonical repository docs.
     {

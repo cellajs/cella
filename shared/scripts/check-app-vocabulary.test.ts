@@ -23,6 +23,19 @@ describe('findAppVocabularyFindings', () => {
     ]);
   });
 
+  it('skips the sync marker comments but not the term elsewhere on the same lines', () => {
+    const source = [
+      `const a = 1; // ${legacyTerm}: keeps the app's default`,
+      `/* ${legacyTerm}: multi`,
+      `   line */ const ${legacyTerm}Config = {};`,
+      `<!-- ${legacyTerm}: app copy -->`,
+    ].join('\n');
+
+    expect(
+      findAppVocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term })),
+    ).toEqual([{ line: 3, column: 18, term: legacyTerm }]);
+  });
+
   it('finds the term in a file path', () => {
     const findings = findAppVocabularyFindings(`src/${legacyTerm}-config.ts`, 'export {};');
 

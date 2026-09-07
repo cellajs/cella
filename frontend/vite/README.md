@@ -10,4 +10,6 @@ Development builds add `docs-editor.ts`, which lets the pages table rewrite fron
 
 `remark-link-repo-paths.ts` links inline repository paths and relative links in imported repository documents to GitHub, validating every target against the repository root first. Content-root documents keep their authored application routes.
 
+`router-options.ts` holds the file-based routing options for the TanStack Router plugin, and `generate-routes.ts` (`pnpm gen:routes`) runs the same generator on them without a build or dev server.
+
 `locales-plugin.ts` is separate from the docs pipeline: it builds and serves the merged locale namespaces (`../../locales/README.md`) and sends `i18next-hmr:update` on locale changes so the client reloads resources without a full refresh.

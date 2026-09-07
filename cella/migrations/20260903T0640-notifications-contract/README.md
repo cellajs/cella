@@ -54,7 +54,10 @@ No script: manual.
 7. Give every channel in `channelRouteConfig` a `notificationSearch` mapping your subject types to
    the search param that opens them (projectcampus: item and comment ids on the feed); without it
    a notification lands on the channel's default tab, which is why item links opened the
-   organization's courses tab. Rewrite your `notification.<type>` keys as sentences with `actor`,
+   organization's courses tab. The target route's `validateSearch` schema must declare that param
+   (cella: `attachmentDialogId` in `attachmentsRouteSearchParamsSchema`); the router strips
+   undeclared search params, so the link opens the route with nothing selected and no error.
+   Rewrite your `notification.<type>` keys as sentences with `actor`,
    `subject` and `channel`, and add `someone` to `app.json` if you override it.
 8. Port your notifications seed onto `mockSeedNotification` (projectcampus's `55-notifications.seed.ts`).
 

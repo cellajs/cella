@@ -863,6 +863,26 @@
     "pnpm check"
    ],
    "summary": "TableBarContainer no longer wraps filter rows in StickyBox: enableSticky defaulted to false and no bar ever set it, so offsetTop, enableSticky, the focusView subscription and the group/sticky classes were dead. The container is now a plain flex row plus the search-vars scroll reset, and EntityGridBar drops its isSheet prop (it only fed offsetTop). App-owned bars remove offsetTop from <TableBarContainer> and isSheet from <EntityGridBar>. StickyBox itself is untouched."
+  },
+  {
+   "id": "20260907T0619-route-tree-generation-script",
+   "version": "next",
+   "title": "Route tree generation script",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "package.json",
+    "frontend/package.json",
+    "frontend/vite.config.ts"
+   ],
+   "requires": [
+    "pnpm install",
+    "pnpm generate:routes",
+    "pnpm check"
+   ],
+   "summary": "pnpm generate:routes (root) and pnpm gen:routes (frontend) regenerate frontend/src/routes/routeTree.gen.ts via frontend/vite/generate-routes.ts and @tanstack/router-generator, using the router options vite.config.ts now imports from frontend/vite/router-options.ts. The generated tree is app-owned and never syncs, so a sync that adds a route file failed typecheck until a Vite build or dev server ran. Apps add the two scripts and the dev dependency by hand; the vite/ files arrive with the sync."
   }
  ]
 }

@@ -27,6 +27,7 @@
     "docker:test:reset": "docker compose -f backend/compose.yaml --profile test down -v",
     "stop": "pnpm -r --parallel --stream stop",
     "generate": "pnpm --filter backend generate",
+    "generate:routes": "pnpm --filter frontend gen:routes",
     "sdk": "pnpm --filter backend generate:openapi && pnpm --filter sdk generate:sdk",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm run clean && cross-env pnpm --reporter=append-only -r --parallel --stream dev",

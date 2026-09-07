@@ -53,6 +53,7 @@ export const hasAdminDb = (): boolean => !env.NODB && !!env.DATABASE_ADMIN_URL;
  * The admin pool (table owner, BYPASSRLS), opened on first use and never at import. The API
  * serves without `DATABASE_ADMIN_URL` when it owns neither migrations nor in-process jobs, and a
  * request handler cannot reach an RLS-bypassing connection in a process that was never given one.
+ * Call it where the connection is used: at module scope it throws or opens the pool at import.
  * @param purpose - Names the caller in the error thrown when the credential is absent.
  */
 export const getAdminDb = (purpose: string): PgDB => {
