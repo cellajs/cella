@@ -26,7 +26,7 @@ export function recordPausedMutation(mutationId: string): void {
   pausedMutationIds.add(mutationId);
 }
 
-/** True for a mutation that reaches the server as a replay rather than a live edit. */
+/** True for a mutation that paused while offline; the server treats its write as a replay. */
 export function hasPaused(mutationId: string): boolean {
   return pausedMutationIds.has(mutationId);
 }
