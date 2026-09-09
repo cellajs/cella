@@ -241,7 +241,7 @@
   "sync_diagram.part_2.label": "Part 2",
   "sync_diagram.part_2.text": "The <strong>sync engine</strong> has a <strong>notify-then-fetch</strong> pattern: The CDC (Change Data Capture) worker subscribes to a WAL (Write-Ahead Log), processes the logs & stores activities in db, and sends changes back to the API → API sends an SSE to notify the client about a change → client then does a normal API request.",
   "sync_diagram.part_3.label": "Part 3",
-  "sync_diagram.part_3.text": "For <strong>collaborative editing & online presence</strong>, the <strong>Yjs</strong> worker sends live changes to clients. Permission is verified directly against the DB, where it persists the merged document state. Those not editing, still receive an SSE notification every few seconds.",
+  "sync_diagram.part_3.text": "For <strong>collaborative editing & online presence</strong>, the <strong>Yjs</strong> worker logs every edit as it arrives and relays it to clients. Permission is verified directly against the DB, and the log is compacted into the document a few seconds after the last edit. Those not editing receive that write as an SSE notification.",
   "showcase.title": "Build something real, launch faster",
   "showcase.text": "A showcase of real-world products built with Cella.",
   "showcase.url": "https://raak.dev",

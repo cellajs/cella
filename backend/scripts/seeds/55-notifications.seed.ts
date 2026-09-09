@@ -1,6 +1,5 @@
 import type { SeedScript } from '../types';
 import { and, eq, like, ne } from 'drizzle-orm';
-import { generateId } from 'shared/utils/entity-id';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -9,27 +8,13 @@ import { type InsertNotificationModel, notificationsTable } from '#/modules/noti
 import { mockSeedNotification } from '#/modules/notification/notification-mocks';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultAdminUser } from '../fixtures';
+import { mentionDocument } from './description-document';
 
 // Seed scripts use the admin connection for privileged operations.
 const db = getSeedDb();
 
 /** Attachments per organization that mention the admin in their description. */
 const MENTIONS_PER_ORGANIZATION = 2;
-
-/** A block document with one paragraph mentioning `user`, as the composer stores it. */
-const mentionDocument = (user: { id: string; name: string; slug: string }, text: string) =>
-  JSON.stringify([
-    {
-      id: generateId(),
-      type: 'paragraph',
-      props: {},
-      content: [
-        { type: 'mention', props: { id: user.id, name: user.name, slug: user.slug } },
-        { type: 'text', text: ` ${text}`, styles: {} },
-      ],
-      children: [],
-    },
-  ]);
 
 const isNotificationsSeeded = async () => {
   const rows = await db

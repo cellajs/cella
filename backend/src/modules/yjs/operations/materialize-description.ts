@@ -16,7 +16,7 @@ export interface MaterializeDescriptionInput {
   tenantId: string;
   organizationId: string | null;
   description: string;
-  /** Last editor in the relay's save window, becomes `updatedBy` and the permission subject. */
+  /** Last editor whose update was in the compacted log; becomes `updatedBy` and the permission subject. */
   editedBy: string;
 }
 

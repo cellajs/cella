@@ -3,10 +3,11 @@ import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
 import { MissingScopeError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
-import type { DocContext } from '../constants';
+import { type DocContext, YJS_PENDING_QUEUE_CAP } from '../constants';
 import { canEditEntity } from '../data/permissions';
 import { log } from '../lib/pino';
-import { discardPendingBuffer, handleMessage, releaseBufferedMessages } from '../sync/relay';
+import { createSerialQueue } from '../lib/serial-queue';
+import { handleMessage, peekMessageType, YMessage } from '../sync/relay';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
@@ -21,19 +22,20 @@ function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
   );
 }
 
+/** Per-socket verification, awaited as the first task of the socket's queue so no sync frame runs before it settles. */
+const verifications = new WeakMap<WebSocket, Promise<void>>();
+
 function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): void {
   if (allowed) {
     ctx.verified = true;
-    releaseBufferedMessages(ws);
     log.debug(`Entity verified for ${ctx.entityType}:${ctx.entityId}`, { userId: ctx.userId });
   } else {
     log.warn(`Entity access denied for ${ctx.entityType}:${ctx.entityId}`);
-    discardPendingBuffer(ws);
     ws.close(4003, 'Access denied');
   }
 }
 
-/** Verifies entity access after the connection is established, locally through the shared permission engine; on failure the client is disconnected and queued writes are discarded. */
+/** Verifies entity access after the connection is established, locally through the shared permission engine; on failure the client is disconnected and its queued sync frames never run. */
 async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> {
   try {
     const allowed = await canEditEntity(ctx);
@@ -41,7 +43,6 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
     applyVerifyResult(ws, ctx, allowed);
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;
-    discardPendingBuffer(ws);
     if (err instanceof MissingScopeError) {
       log.warn(`Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
         missingChannel: err.missingChannel,
@@ -55,7 +56,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
   }
 }
 
-/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync messages buffer. */
+/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync frames wait in the socket's queue. */
 export function setupUpgradeHandler(
   server: WebSocketServer,
 ): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
@@ -114,7 +115,7 @@ export function setupUpgradeHandler(
 
     if (socket.destroyed) return;
 
-    // Accepted optimistically: sync messages buffer until entity access is verified.
+    // Accepted optimistically: sync frames queue on the socket until entity access is verified.
     const ctx: DocContext = {
       entityType: rawEntityType,
       entityId,
@@ -126,28 +127,50 @@ export function setupUpgradeHandler(
 
     log.info(`Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
+      verifications.set(ws, verifyEntityAsync(ws, ctx));
       server.emit('connection', ws, ctx);
-      verifyEntityAsync(ws, ctx);
     });
   };
 }
 
+/**
+ * Sync frames from one socket run one at a time in arrival order through a serial queue whose
+ * first task is the socket's entity verification: nothing is applied before access is known, and
+ * a burst of keystrokes can never interleave. Awareness bypasses the queue (ephemeral, allowed
+ * before verification). Closing drops whatever has not started.
+ */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: DocContext) => {
     joinCollab(ctx, ws);
 
+    const queue = createSerialQueue((err) => {
+      log.error(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, { err });
+    });
+    const verification = verifications.get(ws);
+    if (verification) {
+      void queue.enqueue(async () => {
+        await verification;
+        // Denied or failed: the socket is closing; frames queued meanwhile must never apply.
+        if (!ctx.verified) queue.close();
+      });
+    }
+
     const cleanup = () => {
-      discardPendingBuffer(ws);
+      queue.close();
       leaveCollab(ctx.entityType, ctx.entityId, ws);
     };
 
-    ws.on('message', async (rawData: Buffer) => {
+    ws.on('message', (rawData: Buffer) => {
       const data = new Uint8Array(rawData);
-      try {
-        await handleMessage(ctx, ws, data);
-      } catch (err) {
-        log.error(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
+      if (peekMessageType(data) === YMessage.Awareness) {
+        handleMessage(ctx, ws, data).catch((err) => {
+          log.error(`Error handling awareness for ${ctx.entityType}:${ctx.entityId}`, { err });
+        });
+        return;
       }
+      // Bounds memory while a slow verification holds the queue; a verified socket is not capped.
+      if (!ctx.verified && queue.size >= YJS_PENDING_QUEUE_CAP) return;
+      void queue.enqueue(() => handleMessage(ctx, ws, data));
     });
 
     ws.on('close', cleanup);

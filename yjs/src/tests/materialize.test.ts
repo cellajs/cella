@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
-import type { MaterializableSession } from '../sync/materialize';
-import { materializeState, postMaterialize, stateToBlocksJson } from '../sync/materialize';
+import { postMaterialize, stateToBlocksJson } from '../sync/materialize';
 import { mockDocContext } from './helpers';
 
 const ctx = mockDocContext({ verified: true });
@@ -54,45 +53,10 @@ describe('postMaterialize', () => {
   });
 });
 
-describe('materializeState', () => {
-  it('skips the POST when content matches the baseline', async () => {
-    const collab: MaterializableSession = { ctx, lastMaterializedJson: stateToBlocksJson(state)! };
-
-    expect(await materializeState(collab, state)).toBe('ok');
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('POSTs changed content, attributes the last editor, and advances the baseline', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: true, status: 200 });
-    const collab: MaterializableSession = { ctx, lastEditor: mockDocContext({ userId: 'editor-2' }) };
-
-    expect(await materializeState(collab, state)).toBe('ok');
-
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).editedBy).toBe('editor-2');
-    expect(collab.lastMaterializedJson).toBe(stateToBlocksJson(state));
-
-    // Same content again → baseline hit, no second POST
-    expect(await materializeState(collab, state)).toBe('ok');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('advances the baseline on permanent failure (never re-posts unconvergeable content)', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
-    const collab: MaterializableSession = { ctx };
-
-    expect(await materializeState(collab, state)).toBe('permanent');
-    expect(collab.lastMaterializedJson).toBe(stateToBlocksJson(state));
-  });
-
-  it('keeps the baseline stale on retry so the next window tries again', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 503 });
-    const collab: MaterializableSession = { ctx };
-
-    expect(await materializeState(collab, state)).toBe('retry');
-    expect(collab.lastMaterializedJson).toBeUndefined();
-
-    fetchMock.mockResolvedValueOnce({ ok: true, status: 200 });
-    expect(await materializeState(collab, state)).toBe('ok');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+describe('stateToBlocksJson', () => {
+  it('converts a seeded state back to the stored blocks and returns null for garbage', () => {
+    const blocks = JSON.parse(stateToBlocksJson(state)!) as { content: { text: string }[] }[];
+    expect(blocks[0].content[0].text).toBe('hello');
+    expect(stateToBlocksJson(new Uint8Array([255, 1, 2]))).toBeNull();
   });
 });

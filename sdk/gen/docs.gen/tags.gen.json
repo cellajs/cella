@@ -91,8 +91,8 @@
   },
   {
     "name": "yjs",
-    "description": "Endpoints for Yjs collaborative editing support. They provide auth tokens for the Yjs relay worker\n    and accept client-computed derived fields from collaborative editing sessions.",
-    "count": 0,
+    "description": "Endpoints for Yjs collaborative editing support: auth tokens for the Yjs relay worker, and the\n    relay's secret-gated materialize route that writes a compacted collaborative document to its entity.",
+    "count": 1,
     "kind": "module"
   }
 ]

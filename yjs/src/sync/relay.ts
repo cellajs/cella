@@ -3,57 +3,24 @@ import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
-import { YJS_AWARENESS_RATE_LIMIT, YJS_MATERIALIZE_RETRY_MS, YJS_SAVE_DEBOUNCE_MS } from '../constants';
+import { YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
-import { createDoc, loadState, saveState } from '../data/storage';
+import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
-import { type MaterializeResult, materializeState, stateToBlocksJson } from './materialize';
-import { broadcastToCollab, type CollabSession, getCollab } from './session-manager';
+import { type CompactionResult, compactDocument } from './compaction';
+import { isEmptyUpdate, mergeState } from './document-state';
+import { broadcastToCollab, type CollabSession, getCollab, withDocLock } from './session-manager';
 
-const YMessage = { Sync: 0, Awareness: 1 } as const;
+export const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
-/** Sync messages queued per client while entity verification is pending: replayed once verified, dropped if denied. */
-const pendingBuffers = new WeakMap<WebSocket, { ctx: DocContext; messages: Uint8Array[] }>();
-
-function bufferMessage(ws: WebSocket, ctx: DocContext, rawMessage: Uint8Array): void {
-  let buf = pendingBuffers.get(ws);
-  if (!buf) {
-    buf = { ctx, messages: [] };
-    pendingBuffers.set(ws, buf);
-  }
-  // Cap the queue to bound memory per connection.
-  if (buf.messages.length < 100) {
-    buf.messages.push(rawMessage);
-  }
-}
-
-export function releaseBufferedMessages(ws: WebSocket): void {
-  const buf = pendingBuffers.get(ws);
-  if (!buf || buf.messages.length === 0) {
-    pendingBuffers.delete(ws);
-    return;
-  }
-
-  const { ctx, messages } = buf;
-  pendingBuffers.delete(ws);
-
-  for (const raw of messages) {
-    handleMessage(ctx, ws, raw).catch((err) => {
-      log.error(`Failed to apply buffered message for ${ctx.entityType}:${ctx.entityId}`, { err: err });
-    });
-  }
-}
-
-export function discardPendingBuffer(ws: WebSocket): void {
-  const buf = pendingBuffers.get(ws);
-  if (buf) {
-    log.debug(`Discarding ${buf.messages.length} buffered messages for ${buf.ctx.entityType}:${buf.ctx.entityId}`);
-  }
-  pendingBuffers.delete(ws);
+/** Message type of a raw frame, without decoding the rest; null for a frame too short to carry one. */
+export function peekMessageType(data: Uint8Array): number | null {
+  if (data.length < 2) return null;
+  return decoding.readVarUint(decoding.createDecoder(data));
 }
 
 function encodeSyncStep2(update: Uint8Array): Uint8Array {
@@ -64,16 +31,19 @@ function encodeSyncStep2(update: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Falls back to the new update when the merge throws on corrupted state. */
-function safeMerge(existing: Uint8Array, update: Uint8Array): Uint8Array {
-  try {
-    return Y.mergeUpdates([existing, update]);
-  } catch {
-    return update;
-  }
+function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, YMessage.Sync);
+  encoding.writeVarUint(encoder, YSync.Step1);
+  encoding.writeVarUint8Array(encoder, stateVector);
+  return encoding.toUint8Array(encoder);
 }
 
-/** Sync messages are gated on ctx.verified and buffered until entity verification completes; awareness is ephemeral and always allowed. */
+/**
+ * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
+ * verification, so they run in arrival order; awareness is ephemeral, allowed before verification
+ * and rate limited per client.
+ */
 export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
 
@@ -81,10 +51,7 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
   const messageType = decoding.readVarUint(decoder);
 
   if (messageType === YMessage.Sync) {
-    if (!ctx.verified) {
-      bufferMessage(ws, ctx, data);
-      return;
-    }
+    if (!ctx.verified) return;
 
     const syncType = decoding.readVarUint(decoder);
 
@@ -106,137 +73,79 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
   }
 }
 
-/** Answers a client state vector with the missing updates, diffed without instantiating a Y.Doc. */
+/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update, merged once. */
+async function loadDocumentState(ctx: DocContext): Promise<Uint8Array | null> {
+  let base = await loadBase(ctx);
+  if (base === null) {
+    // Fresh session: the server seeds from the stored description, so clients never seed it.
+    base = await ensureDoc(ctx, descriptionToYUpdate(await loadEntityDescription(ctx)));
+  }
+  const rows = await readLog(ctx);
+  return mergeState(
+    base,
+    rows.map((row) => row.payload),
+  );
+}
+
+/**
+ * Answers a client state vector with what it lacks, then asks for what the relay lacks: y-websocket
+ * answers a Step1 with a Step2 on its own, so structs the client holds and the relay never received
+ * (a lost frame, a reconnect) are uploaded and logged like any update.
+ */
 async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
-  const storedState = await loadState(ctx);
-
-  // Merge un-flushed pendingState so a connecting client does not miss edits inside the debounce window.
   const collab = getCollab(ctx.entityType, ctx.entityId);
-  const pending = collab?.pendingState;
+  const state = collab ? await withDocLock(collab, () => loadDocumentState(ctx)) : await loadDocumentState(ctx);
 
-  let fullState: Uint8Array | null = null;
-  if (storedState && storedState.length > 0 && pending && pending.length > 0) {
-    fullState = safeMerge(storedState, pending);
-  } else if (pending && pending.length > 0) {
-    fullState = pending;
-  } else if (storedState && storedState.length > 0) {
-    fullState = storedState;
-  }
-
-  // The durable entity description anchors both the fresh-session seed and the materialize baseline below.
-  let durableDescription: string | null | undefined;
-  const getDurableDescription = async () => {
-    if (durableDescription === undefined) durableDescription = await loadEntityDescription(ctx);
-    return durableDescription;
-  };
-
-  // Fresh session: the server seeds the doc from the stored description so clients never seed it.
-  if (!fullState && storedState === null) {
-    const seed = descriptionToYUpdate(await getDurableDescription());
-    await createDoc(ctx, seed);
-    // A concurrent connector may have won the insert; adopt its row, since merging two seeds duplicates content.
-    const canonical = await loadState(ctx);
-    if (canonical && canonical.length > 0) fullState = canonical;
-  }
-
-  // Anchor the materialize baseline on the durable description, never on yjs_documents.state: the two stores can diverge, and a Y.Doc-anchored baseline would suppress the corrective write forever.
-  const collabForBaseline = getCollab(ctx.entityType, ctx.entityId);
-  if (collabForBaseline && !collabForBaseline.lastMaterializedJson) {
-    const durableState = descriptionToYUpdate(await getDurableDescription());
-    if (durableState) collabForBaseline.lastMaterializedJson = stateToBlocksJson(durableState) ?? undefined;
-  }
-
-  if (!fullState) {
+  if (!state) {
     ws.send(encodeSyncStep2(Y.encodeStateAsUpdate(new Y.Doc())));
+    ws.send(encodeSyncStep1(Y.encodeStateVector(new Y.Doc())));
     return;
   }
 
   try {
-    const diff = Y.diffUpdate(fullState, clientStateVector);
-    ws.send(encodeSyncStep2(diff));
+    ws.send(encodeSyncStep2(Y.diffUpdate(state, clientStateVector)));
+    ws.send(encodeSyncStep1(Y.encodeStateVectorFromUpdate(state)));
   } catch {
-    // Corrupted state: fall back to the full state.
-    ws.send(encodeSyncStep2(fullState));
+    // Corrupted state: fall back to the full state and skip the pull.
+    ws.send(encodeSyncStep2(state));
   }
 }
 
-/**
- * A retryable failure schedules a bounded retry, so quiet editors do not wait for the next update or the cleanup grace period.
- * Any outcome cancels the previous retry; a save window in progress owns materialization and the retry stands down.
- */
-function settleMaterialization(collab: CollabSession, snapshot: Uint8Array, result: MaterializeResult): void {
-  if (collab.materializeRetryTimer) clearTimeout(collab.materializeRetryTimer);
-  collab.materializeRetryTimer = undefined;
-  if (result !== 'retry') {
-    collab.materializeAttempts = 0;
-    return;
-  }
-
-  const attempt = collab.materializeAttempts ?? 0;
-  const delay = YJS_MATERIALIZE_RETRY_MS[attempt];
-  if (delay === undefined) {
-    log.warn(
-      `Materialize retries exhausted for ${collab.ctx.entityType}:${collab.ctx.entityId}; the next save or cleanup retries`,
-    );
-    collab.materializeAttempts = 0;
-    return;
-  }
-
-  collab.materializeAttempts = attempt + 1;
-  collab.materializeRetryTimer = setTimeout(async () => {
-    collab.materializeRetryTimer = undefined;
-    if (collab.saveTimer || collab.savingPromise) return;
-    settleMaterialization(collab, snapshot, await materializeState(collab, snapshot));
-  }, delay);
-}
-
-/** Merges a client update into stored state, broadcasts it to peers, and debounces the save. */
+/** Logs the update durably, then broadcasts it to peers and schedules compaction. */
 async function handleSyncUpdate(
   ctx: DocContext,
   ws: WebSocket,
   update: Uint8Array,
   rawMessage: Uint8Array,
 ): Promise<void> {
-  broadcastToCollab(ctx.entityType, ctx.entityId, rawMessage, ws);
+  // A client's Step2 reply carries nothing when it holds nothing the relay lacks.
+  if (isEmptyUpdate(update)) return;
 
   const collab = getCollab(ctx.entityType, ctx.entityId);
   if (!collab) return;
 
-  // The last writer in the save window supplies the user id for the durable entity update.
-  collab.lastEditor = ctx;
+  await appendUpdate(ctx, update);
+  broadcastToCollab(ctx.entityType, ctx.entityId, rawMessage, ws);
+  scheduleCompaction(collab);
+}
 
-  if (collab.pendingState && collab.pendingState.length > 0) {
-    collab.pendingState = safeMerge(collab.pendingState, update);
-  } else {
-    if (collab.cachedDbState === undefined) {
-      collab.cachedDbState = await loadState(ctx);
-    }
-    const dbState = collab.cachedDbState;
-    collab.pendingState = dbState && dbState.length > 0 ? safeMerge(dbState, update) : update;
-  }
+/** One compaction per quiet window; a new update restarts the wait. */
+export function scheduleCompaction(collab: CollabSession): void {
+  if (collab.compactTimer) clearTimeout(collab.compactTimer);
+  collab.compactTimer = setTimeout(() => {
+    collab.compactTimer = undefined;
+    void runCompaction(collab);
+  }, YJS_COMPACT_DEBOUNCE_MS);
+}
 
-  if (collab.saveTimer) clearTimeout(collab.saveTimer);
-  collab.saveTimer = setTimeout(async () => {
-    collab.saveTimer = undefined;
-    if (!collab.pendingState) return;
-    const snapshotToSave = collab.pendingState;
-    collab.pendingState = undefined;
-    collab.cachedDbState = undefined;
-
-    const savePromise = saveState(ctx, snapshotToSave, collab.lastEditor?.userId ?? null);
-    collab.savingPromise = savePromise;
+/** Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. */
+export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
+  return withDocLock(collab, async () => {
     try {
-      await savePromise;
-      // Runs once per document per save window; a failure leaves the baseline stale so the next save converges it.
-      settleMaterialization(collab, snapshotToSave, await materializeState(collab, snapshotToSave));
+      return await compactDocument(collab.ctx);
     } catch (err) {
-      log.error(`Failed to save state for ${ctx.entityType}:${ctx.entityId}`, { err: err });
-      // Merge the failed snapshot with any new updates that arrived during the await
-      collab.pendingState = collab.pendingState ? safeMerge(snapshotToSave, collab.pendingState) : snapshotToSave;
-    } finally {
-      if (collab.savingPromise === savePromise) {
-        collab.savingPromise = undefined;
-      }
+      log.error(`Compaction failed for ${collab.ctx.entityType}:${collab.ctx.entityId}`, { err });
+      return 'retry';
     }
-  }, YJS_SAVE_DEBOUNCE_MS);
+  });
 }

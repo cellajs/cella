@@ -4,7 +4,7 @@ import { appFullCrudTables, appReadOnlyTables } from '#/db/product-tables';
 import { entityTables } from '#/tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { yjsDocumentsTable } from '#/modules/yjs/yjs-db';
+import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
@@ -25,8 +25,8 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
   });
   const membershipTableNames = [getTableName(membershipsTable), getTableName(inactiveMembershipsTable)];
 
-  // Product entity tables + yjs_documents use RLS.
-  const additionalRlsTables = [getTableName(yjsDocumentsTable)];
+  // Product entity tables + the Yjs session and update-log tables use RLS.
+  const additionalRlsTables = [getTableName(yjsDocumentsTable), getTableName(yjsUpdatesTable)];
   const rlsTables = [...entityTableNames.filter((t) => !channelTableNames.includes(t)), ...additionalRlsTables];
 
   // Tables without RLS but needing grants (auth, system, channel entities, memberships, etc.)

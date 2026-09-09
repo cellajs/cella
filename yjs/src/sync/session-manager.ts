@@ -1,27 +1,17 @@
 import type { WebSocket } from 'ws';
 import type { DocContext } from '../constants';
 import { YJS_CLEANUP_DELAY_MS } from '../constants';
-import { deleteState, loadState, saveState } from '../data/storage';
+import { deleteDoc } from '../data/storage';
 import { log } from '../lib/pino';
-import { materializeState } from './materialize';
+import { compactDocument } from './compaction';
 
 export interface CollabSession {
   ctx: DocContext;
   clients: Set<WebSocket>;
+  /** Document lock: seeding, compaction and cleanup run one at a time through this chain. */
+  chain: Promise<unknown>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
-  saveTimer?: ReturnType<typeof setTimeout>;
-  /** Bounded retry of a materialization the backend could not take; a new save window supersedes it. */
-  materializeRetryTimer?: ReturnType<typeof setTimeout>;
-  materializeAttempts?: number;
-  pendingState?: Uint8Array;
-  /** Tracks an in-flight saveState call so cleanup can await it before deleting. */
-  savingPromise?: Promise<void>;
-  /** Cached DB state from the first loadState call within a debounce window. */
-  cachedDbState?: Uint8Array | null;
-  /** Last blocks JSON accepted by the backend or loaded as the seed; enables skipping unchanged writes. */
-  lastMaterializedJson?: string;
-  /** Last client's context, which supplies the user id for the durable entity update. */
-  lastEditor?: DocContext;
+  compactTimer?: ReturnType<typeof setTimeout>;
 }
 
 const collabSessions = new Map<string, CollabSession>();
@@ -46,6 +36,16 @@ export function getActiveClientCount(): number {
   return count;
 }
 
+/** Runs `fn` after every earlier locked task on the document has settled; a failed task releases the lock like a successful one. */
+export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Promise<T> {
+  const run = collab.chain.then(fn, fn);
+  collab.chain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 /** Registers a client for a document and cancels pending cleanup when reconnecting. */
 export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
   const key = collabKey(ctx.entityType, ctx.entityId);
@@ -60,71 +60,59 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
     return collab;
   }
 
-  collab = { ctx, clients: new Set([ws]) };
+  collab = { ctx, clients: new Set([ws]), chain: Promise.resolve() };
   collabSessions.set(key, collab);
   return collab;
 }
 
-/** When the last client leaves, a grace period runs before the stored state is deleted. */
+/** When the last client leaves, a grace period runs before the log is compacted and the session rows are deleted. */
 export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
   const key = collabKey(entityType, entityId);
   const collab = collabSessions.get(key);
   if (!collab) return;
 
   collab.clients.delete(ws);
+  if (collab.clients.size > 0) return;
 
-  if (collab.clients.size === 0) {
-    const cleanup = async () => {
-      if (collab.clients.size > 0) return;
-      if (collab.saveTimer) clearTimeout(collab.saveTimer);
-      if (collab.materializeRetryTimer) clearTimeout(collab.materializeRetryTimer);
+  const cleanup = async () => {
+    collab.cleanupTimer = undefined;
+    if (collab.clients.size > 0) return;
+    if (collab.compactTimer) {
+      clearTimeout(collab.compactTimer);
+      collab.compactTimer = undefined;
+    }
 
-      if (collab.savingPromise) {
-        try {
-          await collab.savingPromise;
-        } catch {
-          // Save failed: continue to flush + delete
-        }
+    const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'done'> => {
+      if (collab.clients.size > 0) return 'rejoined';
+
+      let result: Awaited<ReturnType<typeof compactDocument>>;
+      try {
+        result = await compactDocument(collab.ctx);
+      } catch (err) {
+        log.error(`Cleanup compaction failed for ${key}`, { err });
+        result = 'retry';
       }
-
-      // Flush any un-saved pendingState before deleting the DB row
-      let finalState = collab.pendingState;
-      if (finalState && finalState.length > 0) {
-        try {
-          await saveState(collab.ctx, finalState, collab.lastEditor?.userId ?? null);
-        } catch (err) {
-          log.error(`Failed to flush pending state for ${key}`, { err: err });
-        }
-        collab.pendingState = undefined;
-      } else {
-        try {
-          finalState = (await loadState(collab.ctx)) ?? undefined;
-        } catch {
-          finalState = undefined;
-        }
-      }
-
-      // Deletion waits for the final blocks to persist; a transient backend failure keeps the session row and retries.
-      if (finalState && finalState.length > 0) {
-        const result = await materializeState(collab, finalState);
-        if (result === 'retry') {
-          log.warn(`Materialize unavailable for ${key}: keeping session row, retrying cleanup`);
-          collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
-          return;
-        }
-      }
+      // A transient backend failure keeps the rows: the log is durable, so the retry loses nothing.
+      if (result === 'retry') return 'retry';
 
       try {
-        await deleteState(collab.ctx);
+        await deleteDoc(collab.ctx);
       } catch (err) {
-        log.error(`Failed to delete state for ${key}`, { err: err });
+        log.error(`Failed to delete session rows for ${key}`, { err });
       }
+      return 'done';
+    });
 
-      collabSessions.delete(key);
-    };
+    if (outcome === 'rejoined') return;
+    if (outcome === 'retry') {
+      log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
+      collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+      return;
+    }
+    collabSessions.delete(key);
+  };
 
-    collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
-  }
+  collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
 }
 
 export function broadcastToCollab(

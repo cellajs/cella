@@ -19,8 +19,8 @@ const allProductTables = appConfig.productEntityTypes.map((t) =>
   getTableName(entityTables[t as keyof typeof entityTables]),
 );
 
-/** Tables with RLS enabled, never forced (org-scoped product entities + yjs_documents) */
-const rlsTableNames = [...orgScopedProductTables, 'yjs_documents'];
+/** Tables with RLS enabled, never forced (org-scoped product entities + the Yjs session and log tables) */
+const rlsTableNames = [...orgScopedProductTables, 'yjs_documents', 'yjs_updates'];
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
   if (Array.isArray(result)) return result;

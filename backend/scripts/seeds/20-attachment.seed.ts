@@ -7,7 +7,10 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
+import { keywordsFromDocument } from '#/utils/description-document';
 import { defaultAdminUser } from '../fixtures';
+import { textDocument } from './description-document';
+import { seedAssets } from './seed-assets';
 
 // Seed scripts use admin connection for privileged operations
 const db = getSeedDb();
@@ -16,25 +19,40 @@ const db = getSeedDb();
 setMockContext('script');
 
 /**
- * Known S3 files that should exist in the dev bucket under the `seed/` prefix.
- * Each placement the seam returns (one per organization by default) gets one attachment per file.
+ * Stored descriptions by seed filename, one paragraph per string. Assets missing here seed with a
+ * null description on purpose, so both the empty and the filled editor states are seeded.
  */
-const SEED_FILES = [
-  { filename: 'sample-image.webp', contentType: 'image/webp', size: '24500', originalKey: 'seed/sample-image.webp', public: true },
-  { filename: 'sample-document.pdf', contentType: 'application/pdf', size: '145000', originalKey: 'seed/sample-document.pdf', public: false },
-  { filename: 'sample-text.txt', contentType: 'text/plain', size: '1200', originalKey: 'seed/sample-text.txt', public: false },
-  { filename: 'sample-photo.jpg', contentType: 'image/jpeg', size: '89000', originalKey: 'seed/sample-photo.jpg', public: true },
-  { filename: 'sample-spreadsheet.csv', contentType: 'text/csv', size: '3400', originalKey: 'seed/sample-spreadsheet.csv', public: false },
-];
+const seedDescriptions: Record<string, string[]> = {
+  'cella-members.csv': [
+    'Member export from the organization settings page, used to check the CSV import round trip.',
+    'Columns: name, email, role, joined. The header row is required by the importer.',
+  ],
+  'cella-notes.txt': ['Release notes draft for the next minor. Keep the plain-text version until the changelog is generated.'],
+  'cella-org-page.webp': ['Screenshot of the organization page in the light theme, taken at 1440 px wide.'],
+};
 
 const isAttachmentSeeded = async () => {
   const rows = await db.select().from(attachmentsTable).limit(1);
   return rows.length > 0;
 };
 
+/** Anonymous HEAD on the first asset; a warning only, so an offline seed still completes. */
+const warnWhenAssetsUnreachable = async () => {
+  const key = seedAssets[0]?.keys.original;
+  if (!key) return;
+  const url = `${appConfig.s3.publicCDNUrl}/${key}`;
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+    if (!res.ok) warnSpinner(`Seed assets not reachable (HTTP ${res.status} on ${url}); run pnpm seed:assets --check`);
+  } catch {
+    warnSpinner(`Seed assets not reachable (${url}); attachments will not render until the bucket is`);
+  }
+};
+
 /**
- * Seeds the database with attachment records for each seeded organization.
- * Records reference pre-existing files in the dev S3 bucket under `seed/`.
+ * Seeds attachment rows for each placement the seam returns (one per organization by default),
+ * one row per published seed asset. Every row is a public-bucket row, so it renders in any
+ * development environment without S3 credentials.
  */
 export const attachmentsSeed = async () => {
   const spinner = startSpinner('Seeding attachments...');
@@ -59,12 +77,17 @@ export const attachmentsSeed = async () => {
     return;
   }
 
+  await warnWhenAssetsUnreachable();
+
   let totalCreated = 0;
 
   for (const { organizationId, tenantId, placement } of placements) {
-    const records = SEED_FILES.map((file, i) =>
+    const records = seedAssets.map((asset, i) =>
       withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
         const createdAt = faker.date.recent({ days: 30 }).toISOString();
+        const extIndex = asset.filename.lastIndexOf('.');
+        const paragraphs = seedDescriptions[asset.filename];
+        const description = paragraphs ? textDocument(...paragraphs) : null;
         return {
           id: mockUuid(),
           entityType: 'attachment' as const,
@@ -76,15 +99,17 @@ export const attachmentsSeed = async () => {
           createdBy: defaultAdminUser.id,
           updatedBy: defaultAdminUser.id,
           stx: mockStx(),
-          description: null,
-          keywords: faker.lorem.words(3),
-          filename: file.filename,
-          name: file.filename,
-          contentType: file.contentType,
-          size: file.size,
-          keys: { original: file.originalKey },
-          public: file.public,
-          bucketName: file.public ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+          description,
+          // The update op derives keywords from the document; a row without one keeps filler search text.
+          keywords: description ? keywordsFromDocument(description) : faker.lorem.words(3),
+          filename: asset.filename,
+          name: extIndex > 0 ? asset.filename.slice(0, extIndex) : asset.filename,
+          contentType: asset.contentType,
+          convertedContentType: asset.convertedContentType,
+          size: asset.size,
+          keys: asset.keys,
+          publicBucket: true,
+          bucketName: appConfig.s3.publicBucket,
         };
       }),
     );
