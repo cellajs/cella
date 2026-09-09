@@ -38,7 +38,6 @@ function AttachmentDialogHandlerBase() {
           },
           // Open state lives in the URL: remove on ESC/outside-press so the search param clears before a re-open can flash.
           instantClose: true,
-          headerClassName: 'hidden',
         }),
       );
     });
