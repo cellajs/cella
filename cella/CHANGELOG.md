@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.2](https://github.com/cellajs/cella/compare/0.10.1...0.10.2) (2026-09-09)
+
+
+### 🎉 New features
+
+* attachment and yjs refactoring ([#1146](https://github.com/cellajs/cella/issues/1146)) ([4e83dfe](https://github.com/cellajs/cella/commit/4e83dfe8863b22fed6a9aa62cca42768f3e8c910))
+
+
+### 🐞 Bug fixes
+
+* **attachment:** dialog image fits between the chrome, one zoom clamp for wheel, pinch and buttons ([#1153](https://github.com/cellajs/cella/issues/1153)) ([a826b1f](https://github.com/cellajs/cella/commit/a826b1f6222b70def29d7ccfc1b603f9a6e1c86d))
+* **attachments:** description edits survive stale clocks, emptied documents and sheet dismissal; keywords derived on update ([#1152](https://github.com/cellajs/cella/issues/1152)) ([8870467](https://github.com/cellajs/cella/commit/88704673fc1777cdabda6bae40c97646d6c94b54))
+* **sync:** act on app sync feedback: marker-aware vocabulary gate, route tree script, portable mention fixture ([#1150](https://github.com/cellajs/cella/issues/1150)) ([45923f2](https://github.com/cellajs/cella/commit/45923f2c259d439c01064c118587da791a756fa9))
+* **test:** exclude the storybook browser project from root vitest runs ([#1155](https://github.com/cellajs/cella/issues/1155)) ([b682f78](https://github.com/cellajs/cella/commit/b682f780523d1c7db478d57b895923c6258c839c))
+
+
+### 🧹 Chores
+
+* update dependencies ([#1154](https://github.com/cellajs/cella/issues/1154)) ([17d7838](https://github.com/cellajs/cella/commit/17d7838ab046a5bbe7dad69720ac484c6cdfeb10))
+
 ## [0.10.1](https://github.com/cellajs/cella/compare/0.10.0...0.10.1) (2026-09-04)
 
 
