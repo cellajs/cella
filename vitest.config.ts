@@ -9,6 +9,11 @@ const coverageReporters =
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    // Vitest 5 recurses into nested projects, so the frontend's Storybook browser
+    // project would run here too and needs Playwright browsers plus a Storybook
+    // server. It only runs on its own via `pnpm test:storybook`. A CLI `--project`
+    // replaces this list.
+    project: ['!frontend (storybook)'],
     projects: [
       'backend',
       'bench',

@@ -9,7 +9,7 @@ export default defineConfig({
     __DEV_TOOLS__: 'true',
   },
   // Top-level alias so this config also works when invoked as a single project
-  // from the root vitest config (which flattens nested `projects`).
+  // from the root vitest config.
   resolve: {
     alias: {
       '~': path.resolve(import.meta.dirname, './src'),
@@ -18,12 +18,12 @@ export default defineConfig({
   },
   test: {
     passWithNoTests: true,
-    // Applies when this config is flattened into a single `frontend` project by
-    // the root vitest config (which ignores the nested `projects` below). Keeps
-    // console noise silenced in both the root and standalone test runs. Env stays
-    // node (most src tests stub their own window); DOM tests opt in per-file with
-    // `// @vitest-environment jsdom`.
+    // Keeps console noise silenced in both the root and standalone test runs. Env
+    // stays node (most src tests stub their own window); DOM tests opt in per-file
+    // with `// @vitest-environment jsdom`.
     setupFiles: ['./vitest.setup.ts'],
+    // The root vitest config runs the node and unit projects; the storybook browser
+    // project is excluded there and runs via `pnpm test:storybook`.
     projects: [
       // Node-side tests (vite plugins, helpers, etc.)
       {
