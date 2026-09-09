@@ -1174,7 +1174,7 @@ export type CreatePasskeyData = {
         clientDataJSON: string;
         attestationObject: string;
         authenticatorData?: string;
-        transports?: Array<'ble' | 'cable' | 'hybrid' | 'internal' | 'nfc' | 'smart-card' | 'usb'>;
+        transports?: Array<string>;
         publicKeyAlgorithm?: number;
         publicKey?: string;
       };

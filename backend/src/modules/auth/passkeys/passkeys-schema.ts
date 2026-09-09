@@ -12,8 +12,6 @@ export const passkeySchema = createSelectSchema(passkeysTable).omit({
   counter: true,
 });
 
-const transportSchema = z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']);
-
 /** WebAuthn registration response (`RegistrationResponseJSON`); binary fields are base64url strings. */
 export const webAuthnAttestationSchema = z.object({
   id: z.string(),
@@ -22,7 +20,8 @@ export const webAuthnAttestationSchema = z.object({
     clientDataJSON: z.string(),
     attestationObject: z.string(),
     authenticatorData: z.string().optional(),
-    transports: z.array(transportSchema).optional(),
+    /** Open string set: the spec lets authenticators report transports the enum has not caught up with. */
+    transports: z.array(z.string()).optional(),
     publicKeyAlgorithm: z.number().optional(),
     publicKey: z.string().optional(),
   }),

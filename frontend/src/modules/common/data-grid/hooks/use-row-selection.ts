@@ -10,8 +10,7 @@ export const RowSelectionContext = createContext<RowSelectionContextValue | unde
 
 export const RowSelectionChangeContext = createContext<
   // biome-ignore lint/suspicious/noExplicitAny: row-shape agnostic context shared across grids.
-  ((selectRowEvent: SelectRowEvent<any>) => void) | undefined
->(undefined);
+  ((selectRowEvent: SelectRowEvent<any>) => void) | undefined>(undefined);
 
 export function useRowSelection() {
   const rowSelectionContext = useContext(RowSelectionContext);

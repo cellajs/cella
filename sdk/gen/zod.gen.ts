@@ -598,7 +598,7 @@ export const zCreatePasskeyBody = z.object({
       clientDataJSON: z.string(),
       attestationObject: z.string(),
       authenticatorData: z.string().optional(),
-      transports: z.array(z.enum(['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])).optional(),
+      transports: z.array(z.string()).optional(),
       publicKeyAlgorithm: z.number().optional(),
       publicKey: z.string().optional(),
     }),

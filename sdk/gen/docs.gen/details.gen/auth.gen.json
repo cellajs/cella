@@ -882,12 +882,7 @@
                   "clientDataJSON": { "type": "string", "required": true },
                   "attestationObject": { "type": "string", "required": true },
                   "authenticatorData": { "type": "string", "required": false },
-                  "transports": {
-                    "type": "array",
-                    "required": false,
-                    "itemType": "string",
-                    "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
-                  },
+                  "transports": { "type": "array", "required": false, "itemType": "string" },
                   "publicKeyAlgorithm": { "type": "number", "required": false },
                   "publicKey": { "type": "string", "required": false }
                 }
