@@ -6,6 +6,7 @@ import { toWsUrl } from 'shared/utils/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
+import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -32,6 +33,8 @@ interface YjsConnection {
   graceTimer?: ReturnType<typeof setTimeout>;
   unsubOnline?: () => void;
   unsubToken?: () => void;
+  /** Stops the parked-structs watch that resyncs a document stuck on a lost update. */
+  stopResyncWatch?: () => void;
 }
 
 /** Module-level connection map; mutations happen outside React render. */
@@ -124,7 +127,9 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   };
   provider.on('connection-close', handleConnectionClose);
 
-  const conn: YjsConnection = { yDoc, provider, fragment, refCount: 1, unsubOnline, unsubToken };
+  const stopResyncWatch = watchPendingStructs(yDoc, provider);
+
+  const conn: YjsConnection = { yDoc, provider, fragment, refCount: 1, unsubOnline, unsubToken, stopResyncWatch };
   connections.set(editSessionId, conn);
 
   const handleSync = (isSynced: boolean) => {
@@ -151,6 +156,7 @@ function releaseConnection(editSessionId: string) {
     conn.graceTimer = setTimeout(() => {
       conn.unsubOnline?.();
       conn.unsubToken?.();
+      conn.stopResyncWatch?.();
       conn.provider.destroy();
       conn.yDoc.destroy();
       connections.delete(editSessionId);
