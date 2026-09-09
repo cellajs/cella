@@ -19,7 +19,6 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
       triggerRef: triggerRef || {
         current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
       },
-      headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
     }),
   );
 };

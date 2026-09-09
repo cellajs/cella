@@ -3,6 +3,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageViewer } from '~/modules/attachment/render/image-viewer';
+import { clampZoom, ZOOM_STEP } from '~/modules/attachment/render/image-zoom';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -51,7 +52,9 @@ export function ReactPanZoom({
   const [dx, setDx] = useState(0);
   const [dy, setDy] = useState(0);
 
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoomState] = useState(1);
+  // Every input (buttons, wheel, trackpad pinch) goes through the same clamp.
+  const setZoom = (next: number) => setZoomState(clampZoom(next));
   const [rotation, setRotation] = useState(0);
   // On by default when no onPanStateToggle is passed.
   const [panState, setPanState] = useState(!onPanStateToggle);
@@ -64,8 +67,8 @@ export function ReactPanZoom({
     setRotation(0);
   };
 
-  const zoomIn = () => setZoom((prevZoom) => prevZoom + 0.2);
-  const zoomOut = () => setZoom((prevZoom) => (prevZoom >= 0.4 ? prevZoom - 0.2 : prevZoom));
+  const zoomIn = () => setZoom(zoom + ZOOM_STEP);
+  const zoomOut = () => setZoom(zoom - ZOOM_STEP);
   const rotateRight = () => setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
 
   const onPan = (dx: number, dy: number) => {
@@ -76,7 +79,7 @@ export function ReactPanZoom({
   return (
     <>
       {showButtons && (
-        <div className="absolute bottom-3 left-[calc(50vw-6.5rem)] z-20 flex items-center justify-center gap-0 rounded-md bg-transparent text-sm shadow-xs ring-offset-background">
+        <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-0 rounded-md bg-transparent text-sm shadow-xs ring-offset-background">
           <ControlButton
             tooltipContent={t('c:zoom_in')}
             onClick={zoomIn}
@@ -118,7 +121,7 @@ export function ReactPanZoom({
       )}
 
       <ImageViewer
-        className={cn('z-10 flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
+        className={cn('flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
         zoom={zoom}
         setZoom={setZoom}
         enablePan={panState}

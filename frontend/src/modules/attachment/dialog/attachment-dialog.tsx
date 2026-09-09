@@ -4,6 +4,7 @@ import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
+import { attachmentDialogContentClassName } from '~/modules/attachment/dialog/params';
 import { useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
 import { attachmentQueryOptions, useGroupAttachments } from '~/modules/attachment/query';
 import { CloseButton } from '~/modules/common/close-button';
@@ -66,7 +67,7 @@ export function AttachmentDialog() {
   if (!resolvedItems.length || (hasErrors && errorIds.includes(initialAttachmentId))) {
     return (
       <>
-        <div className="fixed top-0 left-0 z-10 flex w-full gap-2 bg-background/60 p-3 backdrop-blur-xs">
+        <div className="fixed top-0 left-0 z-20 flex w-full gap-2 bg-background/60 p-3 backdrop-blur-xs">
           <div className="grow" />
           <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
         </div>
@@ -81,7 +82,7 @@ export function AttachmentDialog() {
 
   hasRenderedRef.current = true;
   return (
-    <div className="relative -z-1 flex h-dvh grow flex-wrap justify-center p-2">
+    <div className={attachmentDialogContentClassName}>
       <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />
     </div>
   );

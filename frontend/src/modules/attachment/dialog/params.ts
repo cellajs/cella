@@ -13,6 +13,13 @@ export const attachmentDialogClassName = 'min-w-full h-dvh max-h-dvh border-0 p-
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
 export const attachmentDialogContentClassName = 'relative -z-1 flex h-dvh grow flex-wrap justify-center p-2';
 
+/**
+ * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom
+ * viewer renders them, the zoom controls (3.25rem from the bottom). Zoomed-in content still slides under the
+ * translucent chrome because overflow clips at the padding edge.
+ */
+export const attachmentDialogStageClassName = 'pt-12 sm:pb-14';
+
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
   return (prev: Record<string, unknown>) => ({
     ...prev,
@@ -37,7 +44,7 @@ export const clearAttachmentDialogSearchParams = () => {
   });
 };
 
-/** Dialoger options shared by both entry points; `headerClassName` differs per caller. */
+/** Dialoger options shared by both entry points. */
 export function attachmentDialogOptions(overrides: DialogData): DialogData {
   return {
     drawerOnMobile: false,

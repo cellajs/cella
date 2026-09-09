@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { WHEEL_ZOOM_SENSITIVITY } from '~/modules/attachment/render/image-zoom';
 
 interface ImageDragData {
   x: number;
@@ -211,10 +212,11 @@ export class ImageViewer extends React.PureComponent<ImageViewerProps, ImageView
     this.updateMousePosition(e.pageX, e.pageY);
   };
 
+  // A trackpad pinch arrives as a ctrlKey wheel with small deltas: the exponential step keeps pinch and mouse wheel
+  // continuous, and the parent's clamp sets the floor and ceiling.
   private onWheel = (e: React.WheelEvent<EventTarget>) => {
-    Math.sign(e.deltaY) < 0
-      ? this.props.setZoom((this.props.zoom || 0) + 0.1)
-      : (this.props.zoom || 0) > 1 && this.props.setZoom((this.props.zoom || 0) - 0.1);
+    const deltaY = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * 16 : e.deltaY;
+    this.props.setZoom((this.props.zoom || 1) * Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY));
   };
 
   private onMouseEnter = () => {

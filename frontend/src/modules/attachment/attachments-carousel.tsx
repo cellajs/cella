@@ -8,7 +8,11 @@ import { textFromDocument } from 'shared/blocknote';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import { ATTACHMENT_DIALOG_PARAM, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
+import {
+  ATTACHMENT_DIALOG_PARAM,
+  attachmentDialogStageClassName,
+  clearAttachmentDialogSearchParams,
+} from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
@@ -131,8 +135,9 @@ export function AttachmentsCarousel({
       className="group h-full w-full"
       setApi={handleSetApi}
     >
+      {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
       {currentItem && isDialog && (
-        <div className="fixed top-0 left-0 z-10 flex w-full flex-col bg-background/60 p-3 backdrop-blur-xs">
+        <div className="fixed top-0 left-0 z-20 flex w-full flex-col bg-background/60 p-3 backdrop-blur-xs">
           <div className="flex w-full gap-2 text-center sm:text-left">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
@@ -237,6 +242,7 @@ export function AttachmentsCarousel({
               <AttachmentRender
                 containerClassName={cn(
                   'relative flex h-full items-center justify-center overflow-hidden',
+                  isDialog && attachmentDialogStageClassName,
                   classNameContainer,
                 )}
                 itemClassName={isDialog ? 'object-contain' : ''}
