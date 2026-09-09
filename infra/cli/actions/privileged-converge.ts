@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
 import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
+import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -71,6 +72,8 @@ export async function runPrivilegedConverge(
     passphrase,
     ...stateOverride,
   });
+  // Marks the `pulumi up` child as bootstrap-keyed: bootstrap-owned resources (VM IAM policy rules) reconcile under this marker.
+  env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
