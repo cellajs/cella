@@ -900,6 +900,27 @@
     "pnpm check"
    ],
    "summary": "backend/scripts/seeds/description-document.ts is the one seed block builder (paragraphBlock, textDocument, mentionDocument) with explicit default props in BlockNote's key order so seeded documents round-trip the relay seed and the editor's on-load comparison; attachment and notifications seeds use it, apps drop local builders (raak createDescription, both mentionDocument). Attachment description sheet renders a faded BlockNoteFullHtml as waitingFallback. Apps compose patchCollaborativeDescription/persistStandaloneDescription in their description-update hooks (pc material hook is the reference; raak task hook and pc item hook still carry copies). 20-attachment.seed.ts conflicts on sync after cella#1146."
+  },
+  {
+   "id": "20260909T0740-yjs-update-log",
+   "version": "next",
+   "title": "Yjs relay: append-only update log, per-socket ordering, compaction",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "yjs/src",
+    "backend/src/modules/yjs",
+    "backend/scripts/migrations",
+    "backend/tests",
+    "frontend/src/modules/common/blocknote"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "The relay lost the first update of a burst (in-memory merge across awaits, no ordering). New yjs_updates table: every frame is appended before broadcast, each socket's frames run in order through a serial queue, compaction merges the log into yjs_documents.state under a per-document lock and deletes exactly the rows it read; last_edited_by dropped in favor of per-row user_id. Server sends its own Step1 so clients upload what the relay lacks; client watches pendingStructs and resyncs. Storage API renamed (loadBase/ensureDoc/appendUpdate/readLog/compactState/deleteDoc), materializeState folded into compactDocument, YJS_SAVE_DEBOUNCE_MS -> YJS_COMPACT_DEBOUNCE_MS, retry timers removed. Apps run pnpm generate and add yjs_updates to any RLS table list of their own."
   }
  ]
 }
