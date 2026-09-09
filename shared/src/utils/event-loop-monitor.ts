@@ -1,8 +1,8 @@
-import { type IntervalHistogram, monitorEventLoopDelay } from 'node:perf_hooks';
+import { type ELDHistogram, monitorEventLoopDelay } from 'node:perf_hooks';
 
-let histogram: IntervalHistogram | null = null;
+let histogram: ELDHistogram | null = null;
 
-function ensureStarted(): IntervalHistogram {
+function ensureStarted(): ELDHistogram {
   if (!histogram) {
     histogram = monitorEventLoopDelay({ resolution: 20 });
     histogram.enable();
