@@ -153,6 +153,8 @@ Most config changes ship through a normal CI deploy. **Bootstrap-owned** resourc
 3. Runs `pulumi up` against the bootstrapped stack without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place.
 4. Reminds you to revoke the bootstrap key.
 
+The VM IAM policies are bootstrap-owned too: a CI deploy never rewrites their rules. Toggling a co-hosted or collocated service (for example `appConfig.services.yjs.enabled` under `singleVM`) changes the host VM's secret-path condition, so run **Apply infra change** before the next release deploy or its "Verify VM IAM grants" step fails on the stale condition.
+
 ## Fresh installation
 
 `pnpm infra` launches the CLI ([cli/infra-cli.ts](../infra/cli/infra-cli.ts)). Without a local `Pulumi.<stack>.yaml` it runs the install wizard. A fresh install defaults to **staging**. Production is the same wizard via `pnpm infra --mode production`. `--defaults` takes every optional default and prompts only for required inputs (bootstrap key, admin email). `INFRA_NON_INTERACTIVE=1` also takes the defaults but fails on a required input with no environment value. `pnpm --filter infra status` shows the current state and next action.
