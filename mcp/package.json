@@ -17,7 +17,7 @@
     "shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "26.4.0",
+    "@types/node": "26.5.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "cross-env": "^10.1.0",
     "tsx": "^4.23.13",

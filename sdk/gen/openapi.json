@@ -3159,8 +3159,7 @@
                           "transports": {
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "enum": ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]
+                              "type": "string"
                             }
                           },
                           "publicKeyAlgorithm": {
