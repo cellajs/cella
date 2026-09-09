@@ -72,7 +72,7 @@ export async function runPrivilegedConverge(
     passphrase,
     ...stateOverride,
   });
-  // Marks the `pulumi up` child as bootstrap-keyed so bootstrap-owned resources (VM IAM policy rules) reconcile instead of being ignored as on CI ups.
+  // Marks the `pulumi up` child as bootstrap-keyed: bootstrap-owned resources (VM IAM policy rules) reconcile under this marker.
   env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
