@@ -31,14 +31,14 @@ Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
 
 Cella enables row-level security on product tables and on resources that hold tenant data, and never
 forces it: `admin_role` owns those tables, so it bypasses the policies as the owner while `runtime_role`
-is filtered. The template protects `attachments` and `yjs_documents`.
+is filtered. The template protects `attachments`, `yjs_documents` and `yjs_updates`.
 
 | Table category | RLS behavior | Primary authorization |
 | --- | --- | --- |
 | Product entities | Tenant-scoped SELECT, permissive writes | Guards, scoped queries, and permissions |
 | Channel entities | No RLS | Channel and organization guards plus permissions |
 | Memberships | No RLS | Membership operations and permissions |
-| Resources | RLS only when they hold tenant data and the migration lists them (`yjs_documents`), none otherwise | Owning module and guards |
+| Resources | RLS only when they hold tenant data and the migration lists them (`yjs_documents`, `yjs_updates`), none otherwise | Owning module and guards |
 
 Every product entity has a tenant and a home channel by construction (the hierarchy rejects a
 product without a channel parent), so the RLS migration protects every registered product table

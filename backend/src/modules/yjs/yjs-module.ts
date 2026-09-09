@@ -5,7 +5,7 @@ defineBackendModule({
   name: 'yjs',
   owner: 'cella',
   scope: ['backend'],
-  description: `Endpoints for Yjs collaborative editing support. They provide auth tokens for the Yjs relay worker
-    and accept client-computed derived fields from collaborative editing sessions.`,
+  description: `Endpoints for Yjs collaborative editing support: auth tokens for the Yjs relay worker, and the
+    relay's secret-gated materialize route that writes a compacted collaborative document to its entity.`,
   routes: [{ path: '/yjs', app: yjsHandlers }],
 });

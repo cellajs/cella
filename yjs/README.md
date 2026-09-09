@@ -38,7 +38,7 @@ ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 
 Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit. Malformed requests, scope mismatches and rate limits fail as an HTTP 400 with a JSON `{ code, reason }` body, which a browser sees as close code 1006. An invalid or expired token closes after the handshake with code 4001, so the client can refetch its token and reconnect with backoff.
 
-Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Up to 100 sync messages wait behind it and later ones are dropped. Awareness is not buffered.
+Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync frames wait in the socket's serial queue behind it, up to 100, and later ones are dropped; a denied socket's queued frames never run. Awareness bypasses the queue.
 
 | Close code | Meaning |
 | --- | --- |

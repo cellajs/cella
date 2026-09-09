@@ -197,7 +197,7 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 
 ### Yjs
 
-Yjs collaboration is disabled in the template. Relay, single-writer, and materialization semantics: [Yjs worker](../yjs/README.md).
+The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`); an app adds a product by registering a `yjsMaterializer`. Relay, update log, compaction and materialization semantics: [Yjs worker](../yjs/README.md).
 
 ## Reference
 

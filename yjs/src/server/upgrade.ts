@@ -56,7 +56,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
   }
 }
 
-/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync messages buffer. */
+/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync frames wait in the socket's queue. */
 export function setupUpgradeHandler(
   server: WebSocketServer,
 ): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {

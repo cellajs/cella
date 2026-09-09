@@ -46,7 +46,7 @@ pnpm vitest run backend/tests/health.test.ts # one file
 pnpm vitest run -t 'rate limiter'            # by test name
 ```
 
-Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker.
+Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) run without Docker. The `yjs` and `cdc` integration tests expect a test database the `backend` project has already migrated: on a fresh volume run one backend test file first.
 
 ## Conventions
 
