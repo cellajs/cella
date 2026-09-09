@@ -1,16 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
+import type { DocContext } from '../constants';
 import {
   buildAwarenessMessage,
   buildSyncStep1,
   buildSyncUpdate,
+  decodeSyncStep1,
   decodeSyncStep2,
+  deferred,
+  fakeStorage,
+  flushMicrotasks,
+  mapUpdate,
   mockDocContext,
   mockWebSocket,
-  storageMock,
+  readMap,
 } from './helpers';
 
-vi.mock('../data/storage', () => storageMock());
+// Real append/read/compact semantics in memory, with per-call gates so tests can interleave.
+const gates = new Map<string, Promise<void>>();
+const storage = fakeStorage((call) => gates.get(call));
+vi.mock('../data/storage', () => storage);
 
 // No entity description by default: individual tests override to exercise seeding, and the pg pool in data/db stays uninstantiated.
 vi.mock('../data/entity-content', () => ({
@@ -18,526 +27,315 @@ vi.mock('../data/entity-content', () => ({
 }));
 
 vi.mock('../sync/materialize', () => ({
-  materializeState: vi.fn().mockResolvedValue('ok'),
   postMaterialize: vi.fn().mockResolvedValue('ok'),
   stateToBlocksJson: vi.fn(() => '[]'),
 }));
 
-vi.mock('../sync/session-manager', () => {
-  const collabs = new Map<string, any>();
-  return {
-    getCollab: vi.fn((entityType: string, entityId: string) => collabs.get(`${entityType}:${entityId}`)),
-    broadcastToCollab: vi.fn(),
-    joinCollab: vi.fn((ctx: any) => {
-      const key = `${ctx.entityType}:${ctx.entityId}`;
-      if (!collabs.has(key)) {
-        collabs.set(key, { ctx, clients: new Set(), pendingState: undefined, saveTimer: undefined });
-      }
-      return collabs.get(key);
-    }),
-    leaveCollab: vi.fn(),
-    _collabs: collabs,
-  };
-});
-
-const { handleMessage } = await import('../sync/relay');
-const { loadState, saveState, createDoc } = await import('../data/storage');
+const { handleMessage, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
-const { materializeState } = await import('../sync/materialize');
+const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
-const { broadcastToCollab, getCollab, joinCollab, _collabs } = (await import('../sync/session-manager')) as any;
+const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 
 const unverifiedCtx = mockDocContext();
 const ctx = mockDocContext({ verified: true });
 
+/** Decodes the frames a socket received: [Step2 update, Step1 state vector, ...]. */
+function decodeFrames(sent: Uint8Array[]) {
+  return sent.map((frame) => ({ sync: frame[1], payload: frame.subarray(3) }));
+}
+
+let counter = 0;
+/** A session for a fresh document so the module-level session map never leaks between tests. */
+function session(overrides: Partial<ReturnType<typeof mockDocContext>> = {}) {
+  const c = mockDocContext({ verified: true, entityId: `entity-${++counter}`, ...overrides });
+  const ws = mockWebSocket();
+  joinCollab(c, ws as never);
+  return { ctx: c, ws, collab: getCollab(c.entityType, c.entityId)! };
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
-  _collabs.clear();
+  gates.clear();
+  storage.bases.clear();
+  storage.logs.clear();
 });
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('handleMessage: pre-verification buffering', () => {
-  it('sync step 1 is buffered when unverified', async () => {
+describe('handleMessage: gating and validation', () => {
+  it('drops sync frames from an unverified context (the socket queue holds them until verification)', async () => {
     const ws = mockWebSocket();
-    await handleMessage(unverifiedCtx, ws as any, buildSyncStep1(new Uint8Array([])));
-
+    await handleMessage(unverifiedCtx, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(unverifiedCtx, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
     expect(ws.sent).toHaveLength(0);
-    expect(loadState).not.toHaveBeenCalled();
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
 
-  it('sync update is buffered when unverified', async () => {
+  it('messages < 2 bytes and unknown message types are silently dropped', async () => {
     const ws = mockWebSocket();
-    joinCollab(unverifiedCtx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(unverifiedCtx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    expect(broadcastToCollab).not.toHaveBeenCalled();
-  });
-
-  it('awareness is allowed when unverified', async () => {
-    const ws = mockWebSocket();
-    const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
-
-    await handleMessage(unverifiedCtx, ws as any, awarenessData);
-
-    expect(broadcastToCollab).toHaveBeenCalledTimes(1);
+    await handleMessage(ctx, ws as never, new Uint8Array([0]));
+    await handleMessage(ctx, ws as never, new Uint8Array([9, 0, 0]));
+    expect(ws.sent).toHaveLength(0);
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
 });
 
 describe('handleMessage: sync step 1', () => {
-  it('2.1.1 first connection without entity content: creates empty doc', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    const ws = mockWebSocket();
+  it('first connection without entity content: seeds an empty doc and answers with an empty Step2 plus a Step1', async () => {
+    const { ctx: c, ws } = session();
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
-
-    expect(createDoc).toHaveBeenCalledWith(ctx, null);
-    expect(ws.sent).toHaveLength(1);
-    const update = decodeSyncStep2(ws.sent[0]);
-    expect(update.length).toBeGreaterThan(0);
+    expect(storage.ensureDoc).toHaveBeenCalledWith(c, null);
+    const frames = decodeFrames(ws.sent);
+    expect(frames.map((f) => f.sync)).toEqual([1, 0]);
+    expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({});
   });
 
-  it('2.1.1c first connection with entity content: seeds the doc server-side', async () => {
-    // Once-queued mocks only: persistent overrides leak past clearAllMocks.
-    let stored: Uint8Array | null = null;
-    vi.mocked(createDoc).mockImplementationOnce(async (_ctx, initialState?: Uint8Array | null) => {
-      stored = initialState ?? new Uint8Array(0);
-    });
-    vi.mocked(loadState)
-      .mockResolvedValueOnce(null) // storedState: no row yet
-      .mockImplementationOnce(async () => stored); // canonical re-load after createDoc
+  it('first connection with entity content: seeds the doc server-side from the stored description', async () => {
     const description = JSON.stringify([
       { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'seeded', styles: {} }], children: [] },
-      { id: 'b2', type: 'checklistItem', props: { checkboxId: 'cb-1', checked: true }, content: [], children: [] },
     ]);
     vi.mocked(loadEntityDescription).mockResolvedValueOnce(description);
-    const ws = mockWebSocket();
+    const { ctx: c, ws } = session();
 
-    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(ws.sent).toHaveLength(1);
-    const update = decodeSyncStep2(ws.sent[0]);
-    const blocks = yUpdateToBlocks(update);
-    expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'checklistItem']);
-    expect(blocks[1].props).toMatchObject({ checkboxId: 'cb-1', checked: true });
+    const seed = storage.ensureDoc.mock.calls[0][1] as Uint8Array;
+    expect(seed).not.toBeNull();
+    const blocks = yUpdateToBlocks(decodeSyncStep2(ws.sent[0])) as { content: { text: string }[] }[];
+    expect(blocks[0].content[0].text).toBe('seeded');
+    // Seeding writes nothing to the log, so a session that only opened the document never materializes.
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
 
-  it('2.1.1d concurrent seeders converge on the canonical row', async () => {
-    // The second connector's insert loses on ON CONFLICT DO NOTHING and must adopt the winner's seed.
-    const winner = new TextEncoder().encode('winner-seed-state');
-    vi.mocked(loadState)
-      .mockResolvedValueOnce(null) // storedState: no row yet
-      .mockResolvedValueOnce(winner as Uint8Array); // re-load after createDoc: winner's row
-    vi.mocked(loadEntityDescription).mockResolvedValueOnce(
-      JSON.stringify([{ id: 'b1', type: 'paragraph', props: {}, content: [], children: [] }]),
-    );
-    const ws = mockWebSocket();
+  it('concurrent Step1s from two sockets seed once, through the document lock', async () => {
+    const gate = deferred();
+    gates.set('ensureDoc', gate.promise);
+    const { ctx: c, ws: ws1, collab } = session();
+    const ws2 = mockWebSocket();
+    joinCollab(c, ws2 as never);
 
-    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
+    const first = handleMessage(c, ws1 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    const second = handleMessage(c, ws2 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await flushMicrotasks();
+    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
+    gate.release();
+    await Promise.all([first, second]);
 
-    expect(ws.sent).toHaveLength(1);
-    expect(decodeSyncStep2(ws.sent[0])).toEqual(winner);
+    // The second Step1 saw the row the first one created.
+    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
+    expect(storage.loadBase).toHaveBeenCalledTimes(2);
+    expect(ws1.sent).toHaveLength(2);
+    expect(ws2.sent).toHaveLength(2);
+    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, ws2 as never);
   });
 
-  it('2.1.1b existing row with empty state: skips createDoc', async () => {
-    vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array(0));
-    const ws = mockWebSocket();
+  it('existing base plus log: answers with the diff of the merged document and asks for the rest', async () => {
+    const { ctx: c, ws } = session();
+    storage.bases.set(`${c.entityType}:${c.entityId}`, mapUpdate('base', true));
+    await storage.appendUpdate(c, mapUpdate('logged', 1));
 
-    await handleMessage(ctx, ws as any, buildSyncStep1(new Uint8Array([])));
+    const client = new Y.Doc();
+    client.getMap('data').set('mine', 'x');
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(client)));
 
-    expect(createDoc).not.toHaveBeenCalled();
-    expect(ws.sent).toHaveLength(1);
+    expect(storage.ensureDoc).not.toHaveBeenCalled();
+    Y.applyUpdate(client, decodeSyncStep2(ws.sent[0]));
+    expect(client.getMap('data').toJSON()).toEqual({ base: true, logged: 1, mine: 'x' });
+    // The Step1 carries the merged state vector, so the client's reply would contain only `mine`.
+    expect(decodeFrames(ws.sent)[1].sync).toBe(0);
+    const serverVector = Y.decodeStateVector(decodeSyncStep1(ws.sent[1]));
+    expect(serverVector.size).toBe(2);
   });
 
-  it('2.1.2 existing state: sends diff', async () => {
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const storedState = Y.encodeStateAsUpdate(doc);
-    vi.mocked(loadState).mockResolvedValueOnce(storedState);
-    const ws = mockWebSocket();
-
-    const emptyVector = Y.encodeStateVector(new Y.Doc());
-    await handleMessage(ctx, ws as any, buildSyncStep1(emptyVector));
-
+  it('corrupted stored state: falls back to sending the full state without a pull', async () => {
+    const { ctx: c, ws } = session();
+    storage.bases.set(`${c.entityType}:${c.entityId}`, new Uint8Array([1, 2, 3]));
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     expect(ws.sent).toHaveLength(1);
-    const clientDoc = new Y.Doc();
-    const responseUpdate = decodeSyncStep2(ws.sent[0]);
-    Y.applyUpdate(clientDoc, responseUpdate);
-    expect(clientDoc.getMap('test').get('key')).toBe('value');
-  });
-
-  it('2.1.2b existing row: seeds the materialize baseline from the durable description, not the Y.Doc', async () => {
-    // The Y.Doc row and the durable description can diverge, so the baseline anchors on the description and a later materialize of the diverged Y.Doc is not skipped.
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    vi.mocked(loadState).mockResolvedValueOnce(Y.encodeStateAsUpdate(doc));
-    vi.mocked(loadEntityDescription).mockResolvedValueOnce(
-      JSON.stringify([{ id: 'd', type: 'paragraph', props: {}, content: [], children: [] }]),
-    );
-    const collab = joinCollab(ctx);
-    const ws = mockWebSocket();
-
-    await handleMessage(ctx, ws as any, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
-
-    expect(loadEntityDescription).toHaveBeenCalledWith(ctx);
-    expect(collab.lastMaterializedJson).toBeDefined();
-  });
-
-  it('2.1.3 corrupted state: falls back to full state', async () => {
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const storedState = Y.encodeStateAsUpdate(doc);
-    vi.mocked(loadState).mockResolvedValueOnce(storedState);
-    const ws = mockWebSocket();
-
-    const garbageVector = new Uint8Array([255, 255, 255, 255]);
-    await handleMessage(ctx, ws as any, buildSyncStep1(garbageVector));
-
-    expect(ws.sent).toHaveLength(1);
-    const clientDoc = new Y.Doc();
-    const responseUpdate = decodeSyncStep2(ws.sent[0]);
-    Y.applyUpdate(clientDoc, responseUpdate);
-    expect(clientDoc.getMap('test').get('key')).toBe('value');
+    expect(decodeSyncStep2(ws.sent[0])).toEqual(new Uint8Array([1, 2, 3]));
   });
 });
 
 describe('handleMessage: sync update', () => {
-  it('2.1.4 first update, no DB state: pendingState is raw update', async () => {
-    vi.mocked(loadState).mockResolvedValueOnce(null);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
+  it('appends the update to the log before broadcasting it to peers', async () => {
+    const { ctx: c, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(c, peer as never);
+    const gate = deferred();
+    gates.set('appendUpdate', gate.promise);
 
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const update = Y.encodeStateAsUpdate(doc);
+    const raw = buildSyncUpdate(mapUpdate('k', 1));
+    const done = handleMessage(c, ws as never, raw);
+    await flushMicrotasks();
+    expect(peer.sent).toHaveLength(0);
+    gate.release();
+    await done;
 
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.pendingState).toBeDefined();
-    expect(collab.pendingState.length).toBeGreaterThan(0);
-  });
-
-  it('2.1.5 first update with DB state: merges', async () => {
-    const existingDoc = new Y.Doc();
-    existingDoc.getMap('test').set('existing', true);
-    vi.mocked(loadState).mockResolvedValueOnce(Y.encodeStateAsUpdate(existingDoc));
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const newDoc = new Y.Doc();
-    newDoc.getMap('test').set('new', true);
-    const update = Y.encodeStateAsUpdate(newDoc);
-
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    const verifyDoc = new Y.Doc();
-    Y.applyUpdate(verifyDoc, collab.pendingState);
-    expect(verifyDoc.getMap('test').get('existing')).toBe(true);
-    expect(verifyDoc.getMap('test').get('new')).toBe(true);
-  });
-
-  it('2.1.6 subsequent update: merges with pending', async () => {
-    const ws = mockWebSocket();
-    const collab = joinCollab(ctx);
-
-    const doc1 = new Y.Doc();
-    doc1.getMap('test').set('first', true);
-    collab.pendingState = Y.encodeStateAsUpdate(doc1);
-
-    const doc2 = new Y.Doc();
-    doc2.getMap('test').set('second', true);
-    const update = Y.encodeStateAsUpdate(doc2);
-
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
-
-    const verifyDoc = new Y.Doc();
-    Y.applyUpdate(verifyDoc, collab.pendingState);
-    expect(verifyDoc.getMap('test').get('first')).toBe(true);
-    expect(verifyDoc.getMap('test').get('second')).toBe(true);
-  });
-
-  it('2.1.8 merge failure with DB state: falls back to raw update', async () => {
-    vi.mocked(loadState).mockResolvedValueOnce(new Uint8Array([255, 255, 255]));
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const update = Y.encodeStateAsUpdate(doc);
-
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.pendingState).toBeDefined();
-    const verifyDoc = new Y.Doc();
-    Y.applyUpdate(verifyDoc, collab.pendingState);
-    expect(verifyDoc.getMap('test').get('key')).toBe('value');
-  });
-
-  it('2.1.9 broadcasts raw message to peers', async () => {
-    vi.mocked(loadState).mockResolvedValueOnce(null);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const rawMessage = buildSyncUpdate(Y.encodeStateAsUpdate(doc));
-
-    await handleMessage(ctx, ws as any, rawMessage);
-
-    expect(broadcastToCollab).toHaveBeenCalledWith(ctx.entityType, ctx.entityId, rawMessage, ws);
-  });
-});
-
-describe('handleMessage: input validation', () => {
-  it('2.1.9 messages < 2 bytes are silently dropped', async () => {
-    const ws = mockWebSocket();
-    await handleMessage(ctx, ws as any, new Uint8Array([0]));
-    await handleMessage(ctx, ws as any, new Uint8Array([]));
+    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
+    expect(peer.sent[0]).toEqual(raw);
     expect(ws.sent).toHaveLength(0);
-    expect(loadState).not.toHaveBeenCalled();
+    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
   });
 
-  it('2.1.10 unknown message type is silently dropped', async () => {
-    const ws = mockWebSocket();
-    const data = new Uint8Array([99, 0, 0]);
-    await handleMessage(ctx, ws as any, data);
-    expect(ws.sent).toHaveLength(0);
-    expect(loadState).not.toHaveBeenCalled();
+  it('accepts a client Step2 as an update and skips an empty one', async () => {
+    const { ctx: c, ws } = session();
+    const empty = Y.encodeStateAsUpdate(new Y.Doc());
+    const step2 = new Uint8Array([0, 1, ...encodeVarUint8Array(empty)]);
+    await handleMessage(c, ws as never, step2);
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+
+    const full = new Uint8Array([0, 1, ...encodeVarUint8Array(mapUpdate('k', 1))]);
+    await handleMessage(c, ws as never, full);
+    expect(storage.appendUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('a burst of dependent updates dispatched without awaiting all reach the log, and one compaction merges them', async () => {
+    const { ctx: c, ws, collab } = session();
+    // The first append is slow; the others overtake it.
+    const gate = deferred();
+    let slowed = false;
+    gates.set('appendUpdate', gate.promise);
+    storage.appendUpdate.mockImplementationOnce(async (_ctx: DocContext, payload: Uint8Array) => {
+      slowed = true;
+      await gate.promise;
+      gates.delete('appendUpdate');
+      const list = storage.logs.get(`${c.entityType}:${c.entityId}`) ?? [];
+      list.push({ id: 1000, payload, userId: c.userId });
+      storage.logs.set(`${c.entityType}:${c.entityId}`, list);
+    });
+
+    const doc = new Y.Doc();
+    const updates: Uint8Array[] = [];
+    doc.on('update', (u: Uint8Array) => updates.push(u));
+    doc.getText('t').insert(0, 'c');
+    doc.getText('t').insert(0, 'b');
+    doc.getText('t').insert(0, 'a');
+
+    const dispatched = updates.map((u) => handleMessage(c, ws as never, buildSyncUpdate(u)));
+    await flushMicrotasks();
+    expect(slowed).toBe(true);
+    gate.release();
+    await Promise.all(dispatched);
+
+    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(3);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(storage.compactState).toHaveBeenCalledTimes(1);
+    const merged = storage.bases.get(`${c.entityType}:${c.entityId}`)!;
+    const verify = new Y.Doc();
+    Y.applyUpdate(verify, merged);
+    expect(verify.getText('t').toString()).toBe('abc');
+    expect(collab.compactTimer).toBeUndefined();
   });
 });
 
 describe('handleMessage: awareness', () => {
-  it('3.1.4 awareness is broadcast to peers', async () => {
-    const ws = mockWebSocket();
-    const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
+  it('is broadcast to peers, allowed before verification, and rate limited per client', async () => {
+    const { ctx: c, ws, collab } = session({ verified: false });
+    const peer = mockWebSocket();
+    joinCollab(c, peer as never);
 
-    await handleMessage(ctx, ws as any, awarenessData);
+    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([1])));
+    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([2])));
+    expect(peer.sent).toHaveLength(1);
 
-    expect(broadcastToCollab).toHaveBeenCalledWith(ctx.entityType, ctx.entityId, awarenessData, ws);
-  });
+    const other = mockWebSocket();
+    joinCollab(c, other as never);
+    await handleMessage(c, other as never, buildAwarenessMessage(new Uint8Array([3])));
+    expect(peer.sent).toHaveLength(2);
 
-  it('3.1.5 awareness rate limit enforced', async () => {
-    const ws = mockWebSocket();
-    const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
-
-    for (let i = 0; i < 20; i++) {
-      await handleMessage(ctx, ws as any, awarenessData);
-    }
-
-    expect(broadcastToCollab).toHaveBeenCalledTimes(1);
-  });
-
-  it('3.1.6 awareness rate limit is per-client', async () => {
-    const ws1 = mockWebSocket();
-    const ws2 = mockWebSocket();
-    const awarenessData = buildAwarenessMessage(new Uint8Array([1, 2, 3]));
-
-    await handleMessage(ctx, ws1 as any, awarenessData);
-    await handleMessage(ctx, ws2 as any, awarenessData);
-
-    expect(broadcastToCollab).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(600);
+    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([4])));
+    expect(peer.sent).toHaveLength(3);
+    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
+    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, other as never);
   });
 });
 
-describe('debounced save', () => {
-  it('2.2.1 save fires after debounce period', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
+describe('compaction', () => {
+  it('runs once after the debounce, credits the last editor, and deletes exactly the rows it read', async () => {
+    const { ctx: c, ws, collab } = session();
+    const editor2 = mockDocContext({ verified: true, entityId: c.entityId, userId: 'user-2' });
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
+    vi.advanceTimersByTime(2000);
+    await handleMessage(editor2, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
+    vi.advanceTimersByTime(2000);
+    expect(postMaterialize).not.toHaveBeenCalled();
 
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
+    await vi.advanceTimersByTimeAsync(1000);
 
-    expect(saveState).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    expect(saveState).toHaveBeenCalledTimes(1);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    expect(postMaterialize).toHaveBeenCalledWith(collab.ctx, 'user-2', '[]');
+    const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
+    expect(readMap(merged)).toEqual({ a: 1, b: 2 });
+    expect(ids).toHaveLength(2);
+    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
   });
 
-  it('2.2.1b materialization runs once per save window with the saved state and last editor', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    const ws = mockWebSocket();
-    const collab = joinCollab(ctx);
+  it('an update appended during an in-flight materialize survives compaction', async () => {
+    const { ctx: c, ws, collab } = session();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const update = Y.encodeStateAsUpdate(doc);
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
+    const gate = deferred();
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      await gate.promise;
+      return 'ok';
+    });
+    const compaction = runCompaction(collab);
+    await flushMicrotasks();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('late', true)));
+    gate.release();
+    expect(await compaction).toBe('ok');
 
-    expect(materializeState).not.toHaveBeenCalled();
-    expect(collab.lastEditor).toBe(ctx);
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    expect(materializeState).toHaveBeenCalledTimes(1);
-    expect(materializeState).toHaveBeenCalledWith(collab, update);
-    // saveState carries the last editor for crash-orphan attribution
-    expect(saveState).toHaveBeenCalledWith(ctx, update, ctx.userId);
+    const remaining = storage.logs.get(`${c.entityType}:${c.entityId}`)!;
+    expect(remaining).toHaveLength(1);
+    expect(readMap(remaining[0].payload)).toEqual({ late: true });
+    expect(readMap(storage.bases.get(`${c.entityType}:${c.entityId}`)!)).toEqual({ a: 1 });
   });
 
-  it('2.2.1c a retryable materialization failure is retried after backoff without a new update', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(materializeState).mockResolvedValueOnce('retry').mockResolvedValueOnce('ok');
-    const ws = mockWebSocket();
-    joinCollab(ctx);
+  it('retry keeps the log for the next window; permanent and unparseable compact without a re-post', async () => {
+    const { ctx: c, ws, collab } = session();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    const update = Y.encodeStateAsUpdate(doc);
-    await handleMessage(ctx, ws as any, buildSyncUpdate(update));
+    vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
+    expect(await runCompaction(collab)).toBe('retry');
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
 
-    await vi.advanceTimersByTimeAsync(3000);
-    expect(materializeState).toHaveBeenCalledTimes(1);
+    vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
+    expect(await runCompaction(collab)).toBe('permanent');
+    expect(storage.compactState).toHaveBeenCalledTimes(1);
+    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
 
-    // First backoff step, with the same snapshot: editors went quiet.
-    await vi.advanceTimersByTimeAsync(5000);
-    expect(materializeState).toHaveBeenCalledTimes(2);
-    expect(materializeState).toHaveBeenLastCalledWith(getCollab(ctx.entityType, ctx.entityId), update);
-
-    // Success ends the retries.
-    await vi.advanceTimersByTimeAsync(200_000);
-    expect(materializeState).toHaveBeenCalledTimes(2);
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
+    vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
+    expect(await runCompaction(collab)).toBe('permanent');
+    expect(postMaterialize).toHaveBeenCalledTimes(2);
+    expect(storage.compactState).toHaveBeenCalledTimes(2);
   });
 
-  it('2.2.1d materialization retries are bounded and a new save window supersedes them', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(materializeState).mockResolvedValue('retry');
-    const ws = mockWebSocket();
-    joinCollab(ctx);
+  it('nothing logged means nothing written, and a thrown storage error counts as retry', async () => {
+    const { collab } = session();
+    expect(await runCompaction(collab)).toBe('empty');
+    expect(postMaterialize).not.toHaveBeenCalled();
 
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    // Save window, then the three backoff steps: 4 attempts in total, then silence.
-    await vi.advanceTimersByTimeAsync(3000 + 5000 + 30_000 + 120_000);
-    expect(materializeState).toHaveBeenCalledTimes(4);
-    await vi.advanceTimersByTimeAsync(300_000);
-    expect(materializeState).toHaveBeenCalledTimes(4);
-
-    // A new update opens a save window whose own materialization takes over.
-    vi.mocked(materializeState).mockResolvedValue('ok');
-    doc.getMap('test').set('key', 'value-2');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-    await vi.advanceTimersByTimeAsync(3000);
-    expect(materializeState).toHaveBeenCalledTimes(5);
-    await vi.advanceTimersByTimeAsync(300_000);
-    expect(materializeState).toHaveBeenCalledTimes(5);
-  });
-
-  it('2.2.2 rapid updates reset debounce: single save', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    for (let i = 0; i < 5; i++) {
-      const doc = new Y.Doc();
-      doc.getMap('test').set(`key-${i}`, i);
-      await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-      await vi.advanceTimersByTimeAsync(500); // within 3000ms debounce
-    }
-
-    expect(saveState).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    expect(saveState).toHaveBeenCalledTimes(1);
-  });
-
-  it('2.2.3 save failure restores pending state', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(saveState).mockRejectedValueOnce(new Error('DB error'));
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    expect(saveState).toHaveBeenCalledTimes(1);
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.pendingState).toBeDefined();
-  });
-
-  it('2.2.4 save clears pending state on success', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(saveState).mockResolvedValue(undefined);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.pendingState).toBeUndefined();
-  });
-
-  it('2.2.5 save sets and clears savingPromise', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(saveState).mockResolvedValue(undefined);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    await vi.advanceTimersByTimeAsync(3000);
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.savingPromise).toBeUndefined();
-  });
-
-  it('2.2.6 DB state is cached within debounce window: single loadState call', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    // Three updates inside one debounce window: the first sets pendingState, the rest merge into it, so loadState runs once.
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    expect(loadState).toHaveBeenCalledTimes(1);
-
-    doc.getMap('test').set('key2', 'value2');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-    doc.getMap('test').set('key3', 'value3');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    expect(loadState).toHaveBeenCalledTimes(1);
-  });
-
-  it('2.2.7 DB state cache is cleared after save completes', async () => {
-    vi.mocked(loadState).mockResolvedValue(null);
-    vi.mocked(saveState).mockResolvedValue(undefined);
-    const ws = mockWebSocket();
-    joinCollab(ctx);
-
-    const doc = new Y.Doc();
-    doc.getMap('test').set('key', 'value');
-    await handleMessage(ctx, ws as any, buildSyncUpdate(Y.encodeStateAsUpdate(doc)));
-
-    await vi.advanceTimersByTimeAsync(3000);
-    expect(saveState).toHaveBeenCalledTimes(1);
-
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    expect(collab.cachedDbState).toBeUndefined();
+    storage.readLog.mockRejectedValueOnce(new Error('db down'));
+    expect(await runCompaction(collab)).toBe('retry');
   });
 });
+
+/** lib0 varUint8Array framing for a raw Step2/Update payload. */
+function encodeVarUint8Array(payload: Uint8Array): number[] {
+  const len: number[] = [];
+  let n = payload.length;
+  while (n >= 0x80) {
+    len.push((n & 0x7f) | 0x80);
+    n >>>= 7;
+  }
+  len.push(n);
+  return [...len, ...payload];
+}

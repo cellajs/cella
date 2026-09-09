@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import { vi } from 'vitest';
+import * as Y from 'yjs';
 import type { DocContext } from '../constants';
 
 const DELIMITER = '.';
@@ -86,6 +87,18 @@ export function decodeSyncStep2(message: Uint8Array): Uint8Array {
   return decoding.readVarUint8Array(decoder);
 }
 
+export function decodeSyncStep1(message: Uint8Array): Uint8Array {
+  const decoder = decoding.createDecoder(message);
+  decoding.readVarUint(decoder); // MESSAGE_SYNC
+  decoding.readVarUint(decoder); // SYNC_STEP_1
+  return decoding.readVarUint8Array(decoder);
+}
+
+/** Lets chained promises (locks, fake storage gates) advance without moving timers. */
+export async function flushMicrotasks(rounds = 50): Promise<void> {
+  for (let i = 0; i < rounds; i++) await Promise.resolve();
+}
+
 /** Minimal fake WebSocket for unit tests. */
 export function mockWebSocket(overrides?: { readyState?: number }): MockWebSocket {
   return {
@@ -107,10 +120,88 @@ export interface MockWebSocket {
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
-  loadState: vi.fn().mockResolvedValue(null),
-  saveState: vi.fn().mockResolvedValue(undefined),
-  createDoc: vi.fn().mockResolvedValue(undefined),
-  deleteState: vi.fn().mockResolvedValue(undefined),
+  loadBase: vi.fn().mockResolvedValue(null),
+  ensureDoc: vi.fn().mockResolvedValue(new Uint8Array()),
+  appendUpdate: vi.fn().mockResolvedValue(undefined),
+  readLog: vi.fn().mockResolvedValue([]),
+  compactState: vi.fn().mockResolvedValue(undefined),
+  deleteDoc: vi.fn().mockResolvedValue(undefined),
   listStaleDocs: vi.fn().mockResolvedValue([]),
-  deleteStaleDoc: vi.fn().mockResolvedValue(undefined),
 });
+
+/**
+ * In-memory stand-in for the storage module with the real append/read/compact semantics, so relay
+ * tests exercise ordering and durability. `delay` (a promise factory per call name) lets a test
+ * hold one call open to interleave another.
+ */
+export function fakeStorage(delay?: (call: string) => Promise<void> | undefined) {
+  const bases = new Map<string, Uint8Array>();
+  const logs = new Map<string, { id: number; payload: Uint8Array; userId: string | null }[]>();
+  let nextId = 1;
+  const key = (ctx: DocContext) => `${ctx.entityType}:${ctx.entityId}`;
+  const wait = async (call: string) => {
+    const p = delay?.(call);
+    if (p) await p;
+  };
+  const store = {
+    bases,
+    logs,
+    loadBase: vi.fn(async (ctx: DocContext) => {
+      await wait('loadBase');
+      return bases.get(key(ctx)) ?? null;
+    }),
+    ensureDoc: vi.fn(async (ctx: DocContext, seed: Uint8Array | null) => {
+      await wait('ensureDoc');
+      if (!bases.has(key(ctx))) bases.set(key(ctx), seed ?? new Uint8Array());
+      return bases.get(key(ctx))!;
+    }),
+    appendUpdate: vi.fn(async (ctx: DocContext, payload: Uint8Array) => {
+      await wait('appendUpdate');
+      const list = logs.get(key(ctx)) ?? [];
+      list.push({ id: nextId++, payload, userId: ctx.userId || null });
+      logs.set(key(ctx), list);
+    }),
+    readLog: vi.fn(async (ctx: DocContext) => {
+      await wait('readLog');
+      return [...(logs.get(key(ctx)) ?? [])];
+    }),
+    compactState: vi.fn(async (ctx: DocContext, merged: Uint8Array, ids: number[]) => {
+      await wait('compactState');
+      bases.set(key(ctx), merged);
+      logs.set(
+        key(ctx),
+        (logs.get(key(ctx)) ?? []).filter((row) => !ids.includes(row.id)),
+      );
+    }),
+    deleteDoc: vi.fn(async (ctx: DocContext) => {
+      await wait('deleteDoc');
+      bases.delete(key(ctx));
+      logs.delete(key(ctx));
+    }),
+    listStaleDocs: vi.fn(async () => []),
+  };
+  return store;
+}
+
+/** A one-shot gate: `release()` lets a held call continue. */
+export function deferred(): { promise: Promise<void>; release: () => void } {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, release };
+}
+
+/** A Y.Doc update that sets `key` on the `data` map, from a fresh client. */
+export function mapUpdate(key: string, value: unknown): Uint8Array {
+  const doc = new Y.Doc();
+  doc.getMap('data').set(key, value);
+  return Y.encodeStateAsUpdate(doc);
+}
+
+/** Applies a state to a fresh doc and reads the `data` map. */
+export function readMap(state: Uint8Array): Record<string, unknown> {
+  const doc = new Y.Doc();
+  Y.applyUpdate(doc, state);
+  return doc.getMap('data').toJSON();
+}

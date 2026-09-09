@@ -5,18 +5,13 @@ import { yUpdateToBlocks } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 
 /**
- * `ok`: persisted, or content unchanged.
- * `permanent`: backend rejected it (4xx). Do not retry the same content; cleanup may proceed.
- * `retry`: backend unavailable (5xx or fetch error). Cleanup must keep the session row.
+ * Outcome of one materialize attempt.
+ * - `ok`: durable, safe to compact.
+ * - `permanent`: the backend refused (4xx: entity gone, access revoked, no materializer); retrying
+ *   cannot converge, so the log compacts without a re-post.
+ * - `retry`: backend unavailable; the log stays so the next window, cleanup or sweep tries again.
  */
 export type MaterializeResult = 'ok' | 'permanent' | 'retry';
-
-/** Minimal session shape read and updated by materializeState; matches CollabSession. */
-export interface MaterializableSession {
-  ctx: DocContext;
-  lastMaterializedJson?: string;
-  lastEditor?: DocContext;
-}
 
 /** POST blocks JSON to the backend's secret-gated materialize endpoint. */
 export async function postMaterialize(
@@ -56,18 +51,4 @@ export function stateToBlocksJson(state: Uint8Array): string | null {
     log.error('Failed to convert Y.Doc state to blocks', { err });
     return null;
   }
-}
-
-/** Compares blocks JSON with `lastMaterializedJson` to skip unchanged save windows; on `retry` the stored JSON is left unchanged so the next window tries again. */
-export async function materializeState(collab: MaterializableSession, state: Uint8Array): Promise<MaterializeResult> {
-  const json = stateToBlocksJson(state);
-  // Unparseable state can never converge, so cleanup is not blocked on it.
-  if (json === null) return 'permanent';
-
-  if (json === collab.lastMaterializedJson) return 'ok';
-
-  const editedBy = collab.lastEditor?.userId ?? collab.ctx.userId;
-  const result = await postMaterialize(collab.ctx, editedBy, json);
-  if (result !== 'retry') collab.lastMaterializedJson = json;
-  return result;
 }
