@@ -12,7 +12,8 @@ import {
   appStorageNeeds,
   deployedServices,
   enabledServices,
-  secretScopeSlugs,
+  principalSecretScopeSlugs,
+  principalServices,
   serviceEndpoints,
 } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
@@ -106,16 +107,18 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     // One assertion row per principal (exact sets + exact condition, built by
     // the same shared builders the Pulumi program uses so the deploy's
     // assert-vm-grants step compares strings, not semantics), consumed by the
-    // deploy's grant-verification step.
+    // deploy's grant-verification step. Principals follow the registry; a
+    // registry service outside the deployed set is dormant and must hold no key.
     vm_assert_json: JSON.stringify([
-      ...deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => ({
+      ...principalServices(appConfig.singleVM ?? false).map((svc) => ({
         app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),
         sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
         condition: serviceKeyCondition(
           appConfig.slug,
           appConfig.mode,
-          secretScopeSlugs(appConfig.services, appConfig.singleVM ?? false, svc.slug),
+          principalSecretScopeSlugs(appConfig.singleVM ?? false, svc.slug),
         ),
+        dormant: !deployedSlugs.has(svc.slug),
       })),
       {
         app: principalNames(appConfig.slug, appConfig.mode).boot,

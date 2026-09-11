@@ -26,9 +26,11 @@ export interface MintGenerationKeysOptions {
   region: string;
   projectId: string;
   organizationId: string;
-  /** Deployed service slugs. */
+  /** Deployed service slugs: the principals that receive a fresh key. */
   services: readonly string[];
-  /** CI secret key: holds the conditioned IAMApplicationManager grant. */
+  /** Registry principals outside the deployed set. They must hold no key, so every key found on them is deleted after staging. */
+  dormantServices?: readonly string[];
+  /** CI secret key: holds the unconditioned org-wide IAMApplicationManager grant (the boundary is the absent IAMPolicyManager). */
   callerSecretKey: string;
   /** Where the JSON result lands (read by the Pulumi program via INFRA_GENERATION_KEYS_FILE). */
   outFile: string;
@@ -81,8 +83,23 @@ async function pruneStaleKeys(
   }
 }
 
+/** Delete every key on a dormant principal: a registry service outside the deployed set has no VM to hand a key to, so any key on it is an unmonitored credential. */
+async function purgeDormantKeys(
+  auth: IamAuth,
+  organizationId: string,
+  appId: string,
+  label: string,
+  log: (msg: string) => void,
+): Promise<void> {
+  for (const key of await listApiKeys(auth, organizationId, appId)) {
+    await deleteApiKey(auth, key.access_key);
+    log(`  ~ purged dormant ${label} key ${key.access_key}`);
+  }
+}
+
 /**
- * Per-deploy credential mint (D3/REQ-7/REQ-10), run as CI under the conditioned IAMApplicationManager grant: key CRUD on exactly the service and boot apps, no app or policy creation.
+ * Per-deploy credential mint (D3/REQ-7/REQ-10), run as CI under the unconditioned org-wide IAMApplicationManager grant: key CRUD on the registry's service and boot apps, no app or policy creation.
+ *  0. Dormant principals (registry services outside the deployed set) get every key deleted last; a missing dormant application only logs, since the deploy's grant assertion reports it with guidance.
  *  1. Mint a fresh boot-fetcher key (registry pull and handoff-read only, baked into cloud-init) and prune stale ones.
  *  2. Per service: mint a fresh service key, stage it as a SINGLE-ACCESS secret under /handoff/<service>/ so a VM whose read fails knows the bundle was
  *     intercepted and halts, then prune older handoff bundles and stale service keys.
@@ -146,6 +163,15 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     const appId = serviceAppIds.get(service);
     if (appId) await pruneStaleKeys(auth, opts.organizationId, appId, names.vmService(service), log);
   }
+  for (const service of opts.dormantServices ?? []) {
+    const appName = names.vmService(service);
+    const appId = await resolveApplicationIdByName(auth, opts.organizationId, appName);
+    if (!appId) {
+      log(`  ~ dormant application ${appName} not found (run "Apply infra change")`);
+      continue;
+    }
+    await purgeDormantKeys(auth, opts.organizationId, appId, appName, log);
+  }
 
   const result: GenerationKeys = {
     bootAccessKey: bootKey.access_key,
@@ -170,9 +196,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
-  // VM-bearing services only (singleVM folds co-hosted/collocated into the host).
-  const { deployedServices } = await import('../lib/services');
-  const services = deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => svc.slug);
+  // Keys go to VM-bearing enabled services (singleVM folds co-hosted/collocated into the host); the rest of the registry's principals are dormant.
+  const { deployedServices, principalServices } = await import('../lib/services');
+  const singleVM = appConfig.singleVM ?? false;
+  const services = deployedServices(appConfig.services, singleVM).map((svc) => svc.slug);
+  const dormantServices = principalServices(singleVM)
+    .map((svc) => svc.slug)
+    .filter((slug) => !services.includes(slug));
   await mintGenerationKeys({
     slug: appConfig.slug,
     mode: appConfig.mode,
@@ -181,6 +211,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     projectId,
     organizationId,
     services,
+    dormantServices,
     callerSecretKey: secretKey,
     outFile,
   });

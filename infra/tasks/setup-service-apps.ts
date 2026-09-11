@@ -1,9 +1,10 @@
 import { type ProvisionScopedKeyOptions, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
+import { principalServices } from '../lib/services';
 
 export interface SetupServiceAppsOptions extends ProvisionScopedKeyOptions {
   /** Deploy mode; service apps are always per-mode. */
   mode: string;
-  /** Deployed service slugs (from the services registry). */
+  /** Registry principal slugs (see `principalServices`). */
   services: readonly string[];
 }
 
@@ -12,7 +13,7 @@ export interface ServiceAppsResult {
   serviceAppIds: Record<string, string>;
   /** The boot fetcher application id. */
   bootAppId: string;
-  /** Every created/reused application id (services + boot), for the CI key-mint condition. */
+  /** Every created/reused application id (services + boot); their presence gates the CI key-mint rule. */
   allAppIds: string[];
 }
 
@@ -21,9 +22,10 @@ export interface ServiceAppsResult {
  * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
  * their POLICIES are Pulumi-managed (resources/vm-iam.ts, bootstrap-owned) and
  * their KEYS are minted per deploy by CI (tasks/mint-generation-keys.ts) under
- * the conditioned IAMApplicationManager grant. Runs during bootstrap/migration
- * with an IAMManager-capable key; the returned ids feed the CI policy's
- * key-mint condition, so this MUST run before setup-ci-key.
+ * the unconditioned org-wide IAMApplicationManager grant (the boundary is the
+ * absent IAMPolicyManager). Runs with an IAMManager-capable key; the returned
+ * ids gate the presence of the CI key-mint rule, so bootstrap runs this before
+ * setup-ci-key. Idempotent: an existing application is reused by name.
  */
 export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<ServiceAppsResult> {
   const serviceAppIds: Record<string, string> = {};
@@ -50,4 +52,12 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
     bootAppId: boot.applicationId,
     allAppIds: [...Object.values(serviceAppIds), boot.applicationId],
   };
+}
+
+/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Bootstrap and "Apply infra change" share it, so a registry change converges in one privileged run. */
+export async function ensureRegistryPrincipals(
+  opts: Omit<SetupServiceAppsOptions, 'services'> & { singleVM: boolean },
+): Promise<ServiceAppsResult> {
+  const { singleVM, ...rest } = opts;
+  return setupServiceApps({ ...rest, services: principalServices(singleVM).map((svc) => svc.slug) });
 }

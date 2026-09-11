@@ -146,14 +146,15 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 ## Changing infrastructure
 
-Most config changes ship through a normal CI deploy. **Bootstrap-owned** resources (database, VPC) can only be mutated with a temporary bootstrap key: `pnpm infra` → **Apply infra change**, which:
+Most config changes ship through a normal CI deploy, including toggling `appConfig.services.<slug>.enabled`. **Bootstrap-owned** resources (database, VPC, the VM IAM principals and policies) can only be mutated with a temporary bootstrap key: `pnpm infra` → **Apply infra change**, which:
 
-1. Reads the Pulumi passphrase and a fresh bootstrap key from `PULUMI_CONFIG_PASSPHRASE` and `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY`, prompting for whatever is missing ([Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)).
-2. Passes the key to the Scaleway provider via `SCW_*` env. It is never written to stack config.
-3. Runs `pulumi up` against the bootstrapped stack without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place.
-4. Reminds you to revoke the bootstrap key.
+1. Reads the Pulumi passphrase and a fresh bootstrap key from `PULUMI_CONFIG_PASSPHRASE` and `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY`, prompting for whatever is missing ([Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)). The state bucket admits only the CI deploy and admin applications, so also set `SCW_STATE_ACCESS_KEY` / `SCW_STATE_SECRET_KEY` to a key of the `<slug>-<mode>-ci-deploy` application (mint one in the console for the run, delete it after).
+2. Passes the bootstrap key to the Scaleway provider via `SCW_*` env. It is never written to stack config.
+3. Creates any missing VM IAM application (`<slug>-<mode>-vm-<service>`, `<slug>-<mode>-boot`) for the service registry.
+4. Runs `pulumi up` against the bootstrapped stack without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place. This run also reconciles the VM policy rules, which a CI deploy leaves untouched.
+5. Reminds you to revoke the bootstrap key.
 
-The VM IAM policies are bootstrap-owned too: a CI deploy never rewrites their rules. Toggling a co-hosted or collocated service (for example `appConfig.services.yjs.enabled` under `singleVM`) changes the host VM's secret-path condition, so run **Apply infra change** before the next release deploy or its "Verify VM IAM grants" step fails on the stale condition.
+VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service, or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
 
 ## Fresh installation
 

@@ -246,8 +246,13 @@ export async function runDeploy(
       await fx.update(stack);
     });
     await step('Verify VM IAM grants', async () => {
-      // One assertion per principal: exact sets AND exact path condition.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
+      // One assertion per principal: exact sets AND exact path condition; a dormant principal must also hold no key.
+      const rows = JSON.parse(env.vm_assert_json) as Array<{
+        app: string;
+        sets: string[];
+        condition: string;
+        dormant?: boolean;
+      }>;
       for (const row of rows) {
         await fx.task('assert-vm-grants', [
           '--application-name',
@@ -260,6 +265,7 @@ export async function runDeploy(
           process.env.SCW_DEFAULT_PROJECT_ID ?? '',
           '--organization-id',
           process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
+          ...(row.dormant ? ['--dormant'] : []),
         ]);
       }
     });

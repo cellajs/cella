@@ -28,7 +28,7 @@ import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
-import { setupServiceApps } from '../../tasks/setup-service-apps';
+import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { CliMode, InfraContext } from '../shared';
 import {
@@ -562,16 +562,14 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // Identities: per-service + boot apps, CI deploy key, admin app. Service apps come FIRST: their ids feed the CI policy's key-mint rule.
   let serviceAppIds: readonly string[] = [];
   if (needsCiKey) {
-    console.info('\n→ Service VM applications (per-service principals; keys minted per deploy)');
+    console.info('\n→ Service VM applications (registry principals; keys minted per deploy)');
     try {
-      const { deployedServices } = await import('../../lib/services');
-      const deployed = deployedServices(appConfig.services, appConfig.singleVM ?? false).map((svc) => svc.slug);
-      const apps = await setupServiceApps({
+      const apps = await ensureRegistryPrincipals({
         callerSecretKey: ctx.secretKey,
         projectId: ctx.projectId,
         slug: appConfig.slug,
         mode: context.environment,
-        services: deployed,
+        singleVM: appConfig.singleVM ?? false,
       });
       serviceAppIds = apps.allAppIds;
     } catch (error) {

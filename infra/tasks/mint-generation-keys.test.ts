@@ -16,15 +16,18 @@ vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({ createSecretManagerC
 let ops: string[];
 let mintCount: number;
 let failStagingFor: string | undefined;
+let missingApps: Set<string>;
 
 function installMocks(): void {
   ops = [];
   mintCount = 0;
   failStagingFor = undefined;
+  missingApps = new Set();
 
   vi.mocked(scwFetch).mockImplementation(async (_auth, method, url: string) => {
     if (method === 'GET' && url.includes('/applications?name=')) {
       const name = decodeURIComponent(new URL(url).searchParams.get('name') ?? '');
+      if (missingApps.has(name)) return { applications: [] } as never;
       return { applications: [{ id: `id-${name}`, name }] } as never;
     }
     if (method === 'POST' && url.endsWith('/api-keys')) {
@@ -104,6 +107,32 @@ describe('mintGenerationKeys', () => {
     // 3 apps (boot + 2 services) × 2 stale keys each; the newest 2 survive.
     expect(keyDeletes).toHaveLength(6);
     expect(new Set(keyDeletes)).toEqual(new Set(['delete:ak-old-1', 'delete:ak-old-2']));
+  });
+
+  it('purges every key on a dormant principal, after all bundles are staged', async () => {
+    const result = await mintGenerationKeys({ ...options(join(outDir, 'dormant.json')), dormantServices: ['yjs'] });
+
+    const lastStage = ops.map((op) => op.startsWith('stage:')).lastIndexOf(true);
+    const keyDeletes = ops.filter((op) => op.startsWith('delete:ak-'));
+    // 6 stale-prune deletes on the live apps plus all 4 keys on the dormant app.
+    expect(keyDeletes).toHaveLength(10);
+    expect(keyDeletes.slice(-4)).toEqual(['delete:ak-old-1', 'delete:ak-old-2', 'delete:ak-live', 'delete:ak-fresh-x']);
+    expect(ops.findIndex((op) => op.startsWith('delete:ak-'))).toBeGreaterThan(lastStage);
+    expect(Object.keys(result.handoffSecretIds)).toEqual(['backend', 'frontend']);
+  });
+
+  it('a missing dormant application only logs; the live principals still mint', async () => {
+    missingApps.add('cella-production-vm-mcp');
+    const logs: string[] = [];
+    const result = await mintGenerationKeys({
+      ...options(join(outDir, 'dormant-missing.json')),
+      dormantServices: ['mcp'],
+      log: (msg) => logs.push(msg),
+    });
+
+    expect(result.bootAccessKey).toBe('ak-fresh-1');
+    expect(ops.filter((op) => op.startsWith('delete:ak-'))).toHaveLength(6);
+    expect(logs.some((line) => line.includes('dormant application cella-production-vm-mcp not found'))).toBe(true);
   });
 
   it('a staging failure aborts with ZERO api keys pruned (old generation keeps its credentials)', async () => {
