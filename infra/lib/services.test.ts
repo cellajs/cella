@@ -5,7 +5,11 @@ import {
   collocatedServices,
   deployedServices,
   enabledServices,
+  placeServices,
+  principalSecretScopeSlugs,
+  principalServices,
   type ServiceDefinition,
+  secretScopeSlugs,
   services,
 } from './services';
 
@@ -81,6 +85,54 @@ describe('service registry: singleVM (deployedServices / coHostedServices)', () 
     const cfg = { yjs: { enabled: false }, mcp: { enabled: true } };
     expect(coHostedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
     expect(deployedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
+  });
+});
+
+describe('placeServices (placement is independent of enablement)', () => {
+  it('split-VM places every given service on its own VM and folds nothing', () => {
+    const placed = placeServices(services, false);
+    expect(placed.vm).toEqual(services);
+    expect(placed.coHosted).toEqual([]);
+    expect(placed.collocated).toEqual([]);
+  });
+
+  it('singleVM keeps the host, folds co-hosted workers, collocates placement-host containers', () => {
+    const placed = placeServices(services, true);
+    expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
+    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'yjs', 'mcp']);
+    expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
+  });
+
+  it('applies the same placement to a narrower list (the enabled set)', () => {
+    const placed = placeServices(enabledServices(allOff), true);
+    expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
+    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc']);
+    expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
+  });
+});
+
+describe('registry view: bootstrap-owned IAM ignores enablement', () => {
+  it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
+    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'frontend']);
+  });
+
+  it('singleVM: only the host owns a principal', () => {
+    expect(principalServices(true).map((s) => s.slug)).toEqual(['backend']);
+  });
+
+  it('singleVM host scope unions every registry worker and collocated container, enabled or not', () => {
+    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'frontend']);
+  });
+
+  it('a non-host principal reads only its own folder', () => {
+    expect(principalSecretScopeSlugs(true, 'cdc')).toEqual(['cdc']);
+    expect(principalSecretScopeSlugs(false, 'backend')).toEqual(['backend']);
+    expect(principalSecretScopeSlugs(false, 'yjs')).toEqual(['yjs']);
+  });
+
+  it('secretScopeSlugs over the enabled set still narrows to what is enabled', () => {
+    expect(secretScopeSlugs(enabledServices(allOff), true, 'backend')).toEqual(['backend', 'cdc', 'frontend']);
+    expect(secretScopeSlugs(services, true, 'backend')).toEqual(principalSecretScopeSlugs(true, 'backend'));
   });
 });
 

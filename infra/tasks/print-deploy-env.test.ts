@@ -6,7 +6,7 @@ import {
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import { deployedServices } from '../lib/services';
+import { principalSecretScopeSlugs, principalServices } from '../lib/services';
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 
 const fakeAppConfig = {
@@ -44,10 +44,11 @@ describe('buildDeployEnv', () => {
       frontend_bucket: 'cella-frontend',
       state_bucket: 'cella-pulumi-state',
       vm_assert_json: JSON.stringify([
-        ...deployedServices(fakeAppConfig.services, false).map((svc) => ({
+        ...principalServices(false).map((svc) => ({
           app: `cella-production-vm-${svc.slug}`,
           sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
           condition: serviceKeyCondition('cella', 'production', svc.slug),
+          dormant: !['backend', 'cdc', 'frontend'].includes(svc.slug),
         })),
         {
           app: 'cella-production-boot',
@@ -100,6 +101,44 @@ describe('buildDeployEnv', () => {
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     });
+  });
+
+  it('singleVM: one host principal whose condition covers every registry worker, enabled or not', () => {
+    const rows = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).vm_assert_json) as Array<{
+      app: string;
+      condition: string;
+      dormant?: boolean;
+    }>;
+    const serviceRows = rows.filter((row) => row.app.includes('-vm-'));
+    expect(serviceRows.map((row) => row.app)).toEqual(['cella-production-vm-backend']);
+    expect(serviceRows[0]?.condition).toBe(
+      serviceKeyCondition('cella', 'production', principalSecretScopeSlugs(true, 'backend')),
+    );
+    expect(serviceRows[0]?.condition).toContain('/cella-production/yjs/');
+    expect(serviceRows[0]?.condition).toContain('/cella-production/mcp/');
+    expect(serviceRows[0]?.dormant).toBe(false);
+  });
+
+  it('toggling enabled never changes a principal row, only its dormant flag', () => {
+    type Row = { app: string; sets: string[]; condition: string; dormant?: boolean };
+    const allOn = {
+      ...fakeAppConfig.services,
+      yjs: { enabled: true, publicUrl: 'https://yjs.cella.example' },
+      mcp: { enabled: true, publicUrl: 'https://mcp.cella.example' },
+    };
+    for (const singleVM of [false, true]) {
+      const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).vm_assert_json) as Row[];
+      const on = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM, services: allOn }).vm_assert_json) as Row[];
+      const strip = (rows: Row[]) => rows.map(({ dormant: _dormant, ...rest }) => rest);
+      expect(strip(on)).toEqual(strip(off));
+      expect(on.filter((row) => row.dormant)).toEqual([]);
+      if (!singleVM) {
+        expect(off.filter((row) => row.dormant).map((row) => row.app)).toEqual([
+          'cella-production-vm-yjs',
+          'cella-production-vm-mcp',
+        ]);
+      }
+    }
   });
 
   it('strips hyphens from registry_ns', () => {

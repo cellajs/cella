@@ -7,6 +7,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
@@ -99,6 +100,23 @@ export async function runPrivilegedConverge(
       env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
     } catch (error) {
       console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
+    }
+
+    // Registry principals are bootstrap-owned like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
+    console.info(pc.dim('\n→ Ensuring registry IAM principals (vm-<service> + boot applications)…'));
+    try {
+      await ensureRegistryPrincipals({
+        callerSecretKey: bootSecret,
+        projectId,
+        slug: appConfig.slug,
+        mode: context.environment,
+        organizationId: env.SCW_DEFAULT_ORGANIZATION_ID,
+        singleVM: appConfig.singleVM ?? false,
+      });
+    } catch (error) {
+      console.warn(
+        `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
+      );
     }
 
     // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.

@@ -4,11 +4,15 @@ import type { InfraContext } from '../shared';
 import { printRevokeReminder, runPrivilegedConverge } from './privileged-converge';
 
 /**
- * One-shot `pulumi up` with a freshly-supplied bootstrap key in SCW_* env, for changes to bootstrap-owned resources (DB / VPC / private network) the read-only CI key cannot make.
+ * One-shot `pulumi up` with a freshly-supplied bootstrap key in SCW_* env, for changes to bootstrap-owned resources (registry IAM principals and policies, DB, VPC, private network) the read-only CI key cannot make.
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
-  console.info(pc.dim('\nApply infra change: run pulumi up with a bootstrap key (supplied via env).\n'));
+  console.info(
+    pc.dim(
+      '\nApply infra change: ensure registry IAM principals, then pulumi up with a bootstrap key (supplied via env).\n',
+    ),
+  );
 
   if (
     !(await confirm({

@@ -24,32 +24,20 @@ export function enabledServices(serviceConfig: Record<string, EngineServiceEndpo
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);
 }
 
-/** Services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
-export function deployedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
-  const enabled = enabledServices(serviceConfig);
-  if (!singleVM) return enabled;
-  return enabled.filter((s) => !s.coHosted && s.placement !== 'host');
+/** A service list split by singleVM placement: `vm` owns VMs and IAM principals, `coHosted` folds into the host process, `collocated` runs as a container beside the host. Without singleVM everything is `vm`. */
+export interface PlacedServices {
+  vm: readonly ServiceDefinition[];
+  coHosted: readonly ServiceDefinition[];
+  collocated: readonly ServiceDefinition[];
 }
 
-/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a co-hosted `exclusive` worker forces an exclusive host cutover. */
-export function coHostedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
-  if (!singleVM) return [];
-  return enabledServices(serviceConfig).filter((s) => s.coHosted);
-}
-
-/** Enabled `placement: 'host'` containers the boot runner starts beside the host container under singleVM. Their LB pools follow the host cutover, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
-export function collocatedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
-  if (!singleVM) return [];
-  const collocated = enabledServices(serviceConfig).filter((s) => s.placement === 'host');
+/**
+ * Apply singleVM placement to any service list: the enabled set for compute, LB and key minting; the full registry for bootstrap-owned IAM.
+ * Bootstrap-owned IAM (principals, policies, conditions) follows the registry, so an `enabled` toggle changes compute only and needs no privileged up.
+ */
+export function placeServices(definitions: readonly ServiceDefinition[], singleVM: boolean): PlacedServices {
+  if (!singleVM) return { vm: definitions, coHosted: [], collocated: [] };
+  const collocated = definitions.filter((s) => s.placement === 'host');
   for (const svc of collocated) {
     if (svc.primaryRollout)
       throw new Error(
@@ -60,7 +48,35 @@ export function collocatedServices(
         `services: '${svc.slug}' cannot set both coHosted and placement 'host': in-process fold and container collocation are mutually exclusive.`,
       );
   }
-  return collocated;
+  return {
+    vm: definitions.filter((s) => !s.coHosted && s.placement !== 'host'),
+    coHosted: definitions.filter((s) => s.coHosted),
+    collocated,
+  };
+}
+
+/** Enabled services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
+export function deployedServices(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  return placeServices(enabledServices(serviceConfig), singleVM).vm;
+}
+
+/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a co-hosted `exclusive` worker forces an exclusive host cutover. */
+export function coHostedServices(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  return placeServices(enabledServices(serviceConfig), singleVM).coHosted;
+}
+
+/** Enabled `placement: 'host'` containers the boot runner starts beside the host container under singleVM. Their LB pools follow the host cutover, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
+export function collocatedServices(
+  serviceConfig: Record<string, EngineServiceEndpoint>,
+  singleVM: boolean,
+): readonly ServiceDefinition[] {
+  return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
 
 /** Resolve the VM replacement strategy. A singleVM host folding a stop-first worker must cut over stop-first too, so two replication-slot consumers never run at once. */
@@ -82,19 +98,26 @@ export function effectiveStrategy(
   return svc.replacementStrategy;
 }
 
-/** Secret folders a service's VMs must read: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
+/** Secret folders `service`'s VMs read, over `definitions`: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
 export function secretScopeSlugs(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
+  definitions: readonly ServiceDefinition[],
   singleVM: boolean,
   service: ServiceName,
 ): readonly ServiceName[] {
-  const host = deployedServices(serviceConfig, singleVM).find((s) => s.primaryRollout)?.slug;
+  const placed = placeServices(definitions, singleVM);
+  const host = placed.vm.find((s) => s.primaryRollout)?.slug;
   if (!singleVM || service !== host) return [service];
-  return [
-    service,
-    ...coHostedServices(serviceConfig, singleVM).map((s) => s.slug),
-    ...collocatedServices(serviceConfig, singleVM).map((s) => s.slug),
-  ];
+  return [service, ...placed.coHosted.map((s) => s.slug), ...placed.collocated.map((s) => s.slug)];
+}
+
+/** Services owning an IAM principal and policy: every registry service under split-VM, only the host under singleVM. Registry-derived on purpose, so `enabled` never touches bootstrap-owned IAM; a registry service outside the deployed set is a dormant principal that must hold no key. */
+export function principalServices(singleVM: boolean): readonly ServiceDefinition[] {
+  return placeServices(services, singleVM).vm;
+}
+
+/** Secret scope of a principal's policy condition, over the full registry. Feeds both the Pulumi program and the deploy's grant assertion, which compare the resulting condition as a string. */
+export function principalSecretScopeSlugs(singleVM: boolean, service: ServiceName): readonly ServiceName[] {
+  return secretScopeSlugs(services, singleVM, service);
 }
 
 /**

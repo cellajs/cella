@@ -921,6 +921,23 @@
     "pnpm check"
    ],
    "summary": "The relay lost the first update of a burst (in-memory merge across awaits, no ordering). New yjs_updates table: every frame is appended before broadcast, each socket's frames run in order through a serial queue, compaction merges the log into yjs_documents.state under a per-document lock and deletes exactly the rows it read; last_edited_by dropped in favor of per-row user_id. Server sends its own Step1 so clients upload what the relay lacks; client watches pendingStructs and resyncs. Storage API renamed (loadBase/ensureDoc/appendUpdate/readLog/compactState/deleteDoc), materializeState folded into compactDocument, YJS_SAVE_DEBOUNCE_MS -> YJS_COMPACT_DEBOUNCE_MS, retry timers removed. Apps run pnpm generate and add yjs_updates to any RLS table list of their own."
+  },
+  {
+   "id": "20260911T0759-registry-owned-iam-principals",
+   "version": "next",
+   "title": "VM IAM principals and policies follow the service registry",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "infra"
+   ],
+   "requires": [
+    "pnpm --filter infra exec vitest run",
+    "pnpm check"
+   ],
+   "summary": "Bootstrap-owned IAM (vm-<service> applications, their path-conditioned policies, the singleVM host condition) derives from the service registry; compute, LB and key minting keep deriving from the enabled set. Toggling appConfig.services.<slug>.enabled needs no Apply infra change; adding a registry service or flipping singleVM does, and Apply creates the missing applications itself. Dormant principals must hold zero API keys: the deploy asserts it and the key mint purges them. One Apply infra change per bootstrapped stack after syncing (cella: host condition gains /mcp/; raak: new vm-yjs and vm-mcp principals)."
   }
  ]
 }

@@ -26,6 +26,12 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
         condition: 'resource.name.startsWith("/cella-production/backend/")',
       },
       {
+        app: 'cella-production-vm-yjs',
+        sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
+        condition: 'resource.name.startsWith("/cella-production/yjs/")',
+        dormant: true,
+      },
+      {
         app: 'cella-production-boot',
         sets: ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'],
         condition: 'resource.name.startsWith("/cella-production/handoff/")',
@@ -52,6 +58,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
 function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateFails?: boolean } = {}) {
   const ops: string[] = [];
   const rolloutArgs: string[][] = [];
+  const grantArgs: string[][] = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init');
@@ -61,6 +68,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
+      if (name === 'assert-vm-grants') grantArgs.push([...argv]);
     },
     exec: async (cmd, args, execOpts) => {
       ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
@@ -88,7 +96,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs };
+  return { fx, ops, rolloutArgs, grantArgs };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
@@ -211,6 +219,20 @@ describe('runDeploy sequencing', () => {
     const waitIndex = ops.indexOf('task:wait-for-images');
     expect(bakeIndex).toBeGreaterThan(-1);
     expect(waitIndex).toBeGreaterThan(bakeIndex);
+  });
+
+  it('asserts every principal, flagging only the dormant one', async () => {
+    const { fx, grantArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
+    expect([...byApp.keys()]).toEqual([
+      'cella-production-vm-backend',
+      'cella-production-vm-yjs',
+      'cella-production-boot',
+    ]);
+    expect(byApp.get('cella-production-vm-yjs')).toContain('--dormant');
+    expect(byApp.get('cella-production-vm-backend')).not.toContain('--dormant');
+    expect(byApp.get('cella-production-boot')).not.toContain('--dormant');
   });
 
   it('passes --skip-reap to the rollout only with deferReap', async () => {

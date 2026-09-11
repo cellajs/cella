@@ -181,7 +181,7 @@ export function pulumiLoginAndSelect(
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). Check the state-bucket credentials (AWS_* env).`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the CI deploy and admin applications: a bootstrap key needs SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY set to a key of one of those.`,
     );
     process.exit(login.status ?? 1);
   }

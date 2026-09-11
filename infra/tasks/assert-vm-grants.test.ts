@@ -223,6 +223,54 @@ describe('assertVmGrants', () => {
     expect(calls.some((u) => u.includes('organization_id=org-resolved'))).toBe(true);
   });
 
+  it('a dormant principal holding an API key fails the check', async () => {
+    const fetchImpl = makeFetch([
+      NO_GROUPS,
+      { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'p', application_id: 'vm-app' }] } },
+      { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: [{ permission_set_names: [...REQUIRED] }] } },
+      { match: '/iam/v1alpha1/api-keys?', body: { api_keys: [{ access_key: 'ak-1' }, { access_key: 'ak-2' }] } },
+    ]);
+
+    const result = await assertVmGrants({ ...baseOpts, dormant: true, fetchImpl });
+
+    expect(result.ok).toBe(false);
+    expect(result.dormantKeys).toEqual(['ak-1', 'ak-2']);
+    expect(result.missing).toEqual([]);
+  });
+
+  it('a dormant principal with no keys passes', async () => {
+    const fetchImpl = makeFetch([
+      NO_GROUPS,
+      { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'p', application_id: 'vm-app' }] } },
+      { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: [{ permission_set_names: [...REQUIRED] }] } },
+      { match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
+    ]);
+
+    const result = await assertVmGrants({ ...baseOpts, dormant: true, fetchImpl });
+
+    expect(result.ok).toBe(true);
+    expect(result.dormantKeys).toEqual([]);
+  });
+
+  it('a live principal is never asked for its keys', async () => {
+    const fetchImpl = makeFetch([
+      NO_GROUPS,
+      { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'p', application_id: 'vm-app' }] } },
+      { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: [{ permission_set_names: [...REQUIRED] }] } },
+    ]);
+    const calls: string[] = [];
+    const tracking: FetchLike = async (url, init) => {
+      calls.push(url);
+      return fetchImpl(url, init);
+    };
+
+    const result = await assertVmGrants({ ...baseOpts, fetchImpl: tracking });
+
+    expect(result.ok).toBe(true);
+    expect(result.dormantKeys).toEqual([]);
+    expect(calls.some((u) => u.includes('/api-keys'))).toBe(false);
+  });
+
   it('throws a useful error on a Scaleway error response', async () => {
     const fetchImpl = makeFetch([
       NO_GROUPS,
