@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.3](https://github.com/cellajs/cella/compare/0.10.2...0.10.3) (2026-09-11)
+
+
+### 🎉 New features
+
+* **infra:** derive VM IAM principals and policies from the service registry ([#1158](https://github.com/cellajs/cella/issues/1158)) ([6f8e694](https://github.com/cellajs/cella/commit/6f8e694022c67f0a696a05ae5cd30a266cf5c8c3))
+
+
+### 🐞 Bug fixes
+
+* **infra:** reconcile VM IAM policy rules on a privileged up ([#1156](https://github.com/cellajs/cella/issues/1156)) ([cfcaf57](https://github.com/cellajs/cella/commit/cfcaf5797be547e1b14ad025718f6f3470836788))
+
 ## [0.10.2](https://github.com/cellajs/cella/compare/0.10.1...0.10.2) (2026-09-09)
 
 
