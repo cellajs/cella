@@ -93,7 +93,7 @@ Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `
 
 ## Credentials files
 
-Operator credentials load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. A bare `infra/.env` is never read, and the CLI says so when it finds one. Day-2 only: privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete temporary env files afterwards.
+Operator credentials load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. The key to put there is the admin application's (`<slug>-<mode>-admin`): every read-only set plus the state bucket, enough for status, Preview and the state side of a privileged run. A bare `infra/.env` is never read, and the CLI says so when it finds one. Day-2 only: privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete temporary env files afterwards.
 
 ## Extending
 

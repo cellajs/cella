@@ -198,7 +198,8 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
       {
         name: 'Preview',
         value: 'preview',
-        description: 'Dry run of an Apply infra change or a CI deploy. Read-only, makes no changes.',
+        description:
+          'Dry run of an Apply infra change (a CI deploy applies the same minus VM policy rules). Read-only.',
       },
       {
         name: 'Resume',
