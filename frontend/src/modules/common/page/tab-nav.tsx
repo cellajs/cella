@@ -15,11 +15,9 @@ import {
   type PlacementOverrides,
   resolvePlacementList,
 } from '~/lib/placements';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { type TabNavAvatar, TabNavShell } from '~/modules/common/page/tab-nav-shell';
 import { useScrollReset } from '~/modules/common/scroll-reset';
-import { StickyBox } from '~/modules/common/sticky-box';
 import { getRouter } from '~/routes/-router-instance';
-import { cn } from '~/utils/cn';
 import { truncateMiddle } from '~/utils/truncate-middle';
 
 export type PageTab = {
@@ -212,11 +210,7 @@ interface Props {
   pairs?: readonly ContextRole[];
   slotConfig?: SlotToolsConfig;
   title?: string;
-  avatar?: {
-    id: string;
-    thumbnailUrl?: string | null;
-    name: string;
-  };
+  avatar?: TabNavAvatar;
   fallbackToFirst?: boolean;
   className?: string;
 }
@@ -258,71 +252,52 @@ export function PageTabNav({
   };
 
   return (
-    <StickyBox
-      publishVar="--sticky-stack-nav"
-      className={cn('group/sticky z-80 block gap-1 border-b bg-background/75 text-center backdrop-blur-xs', className)}
-    >
-      <div className="absolute left-0 hidden h-full items-center sm:group-data-[sticky=true]/sticky:flex">
-        {avatar && (
-          <EntityAvatar
-            className="m-3 h-5 w-5 text-xs"
-            type="organization"
-            id={avatar.id}
-            name={avatar.name}
-            url={avatar.thumbnailUrl}
-          />
-        )}
-        {title && <div className="max-w-42 truncate font-semibold text-sm leading-5 sm:block">{title}</div>}
-      </div>
-      <div className="scrollbar-none max-w-screen overflow-x-auto [&::-webkit-scrollbar]:hidden">
-        <div className="inline-flex min-w-max gap-1 px-1 sm:flex sm:justify-center">
-          {tabs.map(
-            (
-              { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
-              index,
-            ) => (
-              <Link
-                key={id}
-                id={`tab-${id}`}
-                ref={(el) => {
-                  if (el) tabRefs.current[id] = el;
-                }}
-                resetScroll={false}
-                className="focus-effect group relative rounded-sm px-2 py-3 font-medium opacity-70 ring-inset ring-offset-0 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4"
-                to={path}
-                draggable={false}
-                data-active={fallbackToFirst && index === 0 ? true : undefined}
-                params={params}
-                search={search}
-                activeOptions={activeOptions}
-                activeProps={{ 'data-active': true }}
-                onClick={scrollToReset}
-              >
-                {({ isActive }) => {
-                  const showAsActive = isActive || (fallbackToFirst && index === 0);
-                  if (showAsActive) scrollTabIntoView(id);
+    <TabNavShell title={title} avatar={avatar} className={className}>
+      {tabs.map(
+        (
+          { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
+          index,
+        ) => (
+          <Link
+            key={id}
+            id={`tab-${id}`}
+            ref={(el) => {
+              if (el) tabRefs.current[id] = el;
+            }}
+            resetScroll={false}
+            className="focus-effect group relative rounded-sm px-2 py-3 font-medium opacity-70 ring-inset ring-offset-0 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4"
+            to={path}
+            draggable={false}
+            data-active={fallbackToFirst && index === 0 ? true : undefined}
+            params={params}
+            search={search}
+            activeOptions={activeOptions}
+            activeProps={{ 'data-active': true }}
+            onClick={scrollToReset}
+          >
+            {({ isActive }) => {
+              const showAsActive = isActive || (fallbackToFirst && index === 0);
+              if (showAsActive) scrollTabIntoView(id);
 
-                  return (
-                    <>
-                      <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
-                      {showAsActive && hasStarted && (
-                        <motion.span
-                          layoutId={layoutId}
-                          transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                          className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
-                        />
-                      )}
-                      {showAsActive && !hasStarted && (
-                        <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />
-                      )}
-                    </>
-                  );
-                }}
-              </Link>
-            ),
-          )}
-        </div>
-      </div>
-    </StickyBox>
+              return (
+                <>
+                  <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
+                  {showAsActive && hasStarted && (
+                    <motion.span
+                      layoutId={layoutId}
+                      transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                      className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
+                    />
+                  )}
+                  {showAsActive && !hasStarted && (
+                    <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />
+                  )}
+                </>
+              );
+            }}
+          </Link>
+        ),
+      )}
+    </TabNavShell>
   );
 }
