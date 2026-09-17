@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { findInactiveMembershipById, findInvitationToken } from '#/modules/auth/auth-queries';
+import { findInvitationToken } from '#/modules/auth/auth-queries';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 /**

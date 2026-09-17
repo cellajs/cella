@@ -148,16 +148,6 @@ export const insertInvitationToken = async (ctx: DbContext, { values }: InsertIn
   return db.insert(tokensTable).values(values);
 };
 
-interface FindInactiveMembershipByIdOpts {
-  id: string;
-}
-
-export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
-  const { db } = ctx.var;
-  const [membership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
-  return membership;
-};
-
 interface DeleteSessionOpts {
   sessionId: string;
   userId: string;

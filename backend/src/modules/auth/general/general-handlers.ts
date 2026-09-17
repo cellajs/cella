@@ -9,7 +9,6 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   bindInactiveMembershipToUser,
   deleteSession,
-  findInactiveMembershipById,
   findInvitationToken,
   findLatestSessionByUser,
   linkTokenToUser,
@@ -25,6 +24,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';

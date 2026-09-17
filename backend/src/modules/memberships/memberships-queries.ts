@@ -240,6 +240,16 @@ export const insertInactiveMemberships = async (ctx: DbContext, { memberships }:
   });
 };
 
+interface FindInactiveMembershipByIdOpts {
+  id: string;
+}
+
+export const findInactiveMembershipById = async (ctx: DbContext, { id }: FindInactiveMembershipByIdOpts) => {
+  const { db } = ctx.var;
+  const [membership] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
+  return membership;
+};
+
 interface FindInactiveMembershipForUserOpts {
   id: string;
 }
