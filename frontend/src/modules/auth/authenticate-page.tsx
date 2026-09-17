@@ -40,7 +40,7 @@ export function AuthenticatePage() {
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { lastUser } = useUserStore();
-  const { step, setStep, restrictedMode, setRestrictedMode, signedIn } = useAuthStore();
+  const { step, setStep, restrictedMode, setRestrictedMode, signedIn, inviteOtherAccount } = useAuthStore();
 
   const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId);
 
@@ -83,14 +83,15 @@ export function AuthenticatePage() {
 
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
 
-    if (!tokenData?.email) {
+    // An invitation pins the flow to signing up on the invited address, unless the visitor chose another account.
+    if (!tokenData?.email || inviteOtherAccount) {
       if (restrictedMode && step === 'checkEmail') {
         setStep('signIn', '');
       }
       return;
     }
     setStep('signUp', tokenData.email);
-  }, [tokenData, lastUser, restrictedMode, step]);
+  }, [tokenData, lastUser, restrictedMode, step, inviteOtherAccount]);
 
   // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
   const nothingToConfirm = !!signedInUser && !!tokenId && !isLoading && !tokenData?.inactiveMembershipId;

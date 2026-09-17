@@ -2,7 +2,9 @@ import { useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
+import { useAuthStore } from '~/modules/auth/auth-store';
 import type { AuthStep } from '~/modules/auth/types';
+import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -24,6 +26,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
+  const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
 
@@ -39,7 +42,12 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       // Only forward an explicit deep link: a default reads as explicit server-side and skips the welcome page for new users.
       if (redirect?.startsWith('/')) params.set('redirectAfter', redirect);
 
-      if (tokenId) {
+      if (tokenId && inviteOtherAccount) {
+        // Another account than the invited address: a plain sign-in that returns to confirm the invitation.
+        // The invite flow would refuse it, since it requires the provider address to match the invited one.
+        params.set('type', 'auth');
+        params.set('redirectAfter', invitationResumePath(tokenId));
+      } else if (tokenId) {
         params.set('tokenId', tokenId);
         params.set('type', 'invite');
       } else params.set('type', 'auth');

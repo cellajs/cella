@@ -252,6 +252,7 @@
   "invite_other_address.text": "This invitation was sent to {{invitedEmail}}. You are signed in as {{accountEmail}} and will join with that account.",
   "invite_others": "Invite others",
   "invite_sign_in": "Sign in to proceed with invitation",
+  "invite_use_existing_account": "Accept with an existing account",
   "invite_users.text": "Invited users will receive an email to accept the invitation.",
   "invited_at": "Invited",
   "invited_by": "Invited by",

@@ -12,8 +12,9 @@ import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import type { TokenData } from '~/modules/auth/types';
+import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { SubmitButton } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -28,8 +29,9 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
-  const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode } = useAuthStore();
-  const { redirect } = useSearch({ strict: false });
+  const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode, inviteOtherAccount, setInviteOtherAccount } =
+    useAuthStore();
+  const { redirect, tokenId } = useSearch({ strict: false });
 
   const isMobile = window.innerWidth < 640;
 
@@ -39,7 +41,14 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   });
 
   const { mutate: sendMagic, isPending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email') || email, redirect } }),
+    mutationFn: () => {
+      const signUpEmail = form.getValues('email') || email;
+      // Signing up on another address than the invited one: the invitation is not claimed at sign-up, so return to confirm it.
+      const resumeInvitation = tokenId && tokenData && signUpEmail !== tokenData.email;
+      return sendMagicLink({
+        body: { email: signUpEmail, redirect: resumeInvitation ? invitationResumePath(tokenId) : redirect },
+      });
+    },
     onSuccess: () => {
       setMagicLinkMode('signup');
       setStep('magicLinkSent', form.getValues('email') || email);
@@ -97,6 +106,20 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
             {t('c:magic_link_send_signup')}
           </SubmitButton>
         </form>
+      )}
+
+      {tokenData?.inactiveMembershipId && !inviteOtherAccount && (
+        <Button
+          type="button"
+          variant="link"
+          className="w-full"
+          onClick={() => {
+            setInviteOtherAccount(true);
+            setStep('checkEmail', '');
+          }}
+        >
+          {t('c:invite_use_existing_account')}
+        </Button>
       )}
     </Form>
   );

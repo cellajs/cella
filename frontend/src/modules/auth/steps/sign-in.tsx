@@ -32,7 +32,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } =
+    useAuthStore();
 
   const { lastUser, reset: clearUserStore } = useUserStore();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
@@ -154,7 +155,12 @@ export function SignInStep() {
       ) : (
         <h1 className="text-center text-2xl">
           {getTitle()} <br />
-          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId} className="mt-2" />
+          <AuthEmailButton
+            email={email}
+            onClick={resetAuth}
+            disabled={!!tokenId && !inviteOtherAccount}
+            className="mt-2"
+          />
         </h1>
       )}
 

@@ -183,6 +183,22 @@ describe('Magic link authentication', async () => {
         `${appConfig.slug}-session-${appConfig.cookieVersion}=`,
       );
     });
+    it('should carry an invitation resume path through the MFA challenge, query string intact', async () => {
+      const user = await createUser(signUpUser.email);
+      await enableMFAForUser(user.id);
+      const resumePath = '/auth/authenticate?tokenId=00000000-0000-4000-8000-000000000001';
+      const rawToken = await createMagicToken(user, resumePath);
+
+      const { response: res } = await call(invokeToken, {
+        path: { type: 'magic', token: rawToken },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(302);
+      const location = new URL(res.headers.get('location') ?? '');
+      expect(location.pathname).toBe('/auth/mfa');
+      expect(location.searchParams.get('redirect')).toBe(resumePath);
+    });
   });
 
   describe('Invoke token type restriction', () => {
