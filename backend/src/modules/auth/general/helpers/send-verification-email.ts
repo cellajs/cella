@@ -4,6 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
+import { deleteVerificationTokens } from '#/modules/auth/auth-queries';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -18,6 +19,7 @@ interface Props {
   redirectPath?: string;
 }
 
+/** No caller since password sign-up was removed; removal is tracked in cella#1167 (it changes the app-owned `tokenTypes`). */
 export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
@@ -32,7 +34,7 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
     throw new AppError(422, 'email_already_verified', 'warn', { entityType: 'user' });
   }
 
-  await deleteVerificationTokens(user.id, 'email-verification');
+  await deleteVerificationTokens({ var: { db } }, { userId: user.id, type: 'email-verification' });
 
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
@@ -75,22 +77,4 @@ export const sendVerificationEmail = async ({ userId, redirectPath }: Props) => 
   }
 
   log.info('Verification email sent', { userId: user.id });
-};
-
-export const deleteVerificationTokens = async (
-  userId: string,
-  type: Extract<(typeof appConfig.tokenTypes)[number], 'email-verification' | 'oauth-verification'>,
-  oauthAccountId?: string,
-) => {
-  return await db
-    .delete(tokensTable)
-    .where(
-      and(
-        ...[
-          eq(tokensTable.userId, userId),
-          eq(tokensTable.type, type),
-          ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
-        ],
-      ),
-    );
 };

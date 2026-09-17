@@ -1,4 +1,5 @@
 import { and, desc, eq, getColumns, type SQL } from 'drizzle-orm';
+import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -148,4 +149,27 @@ export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpt
   const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);
   const [newPasskey] = await db.insert(passkeysTable).values(values).returning(passkeySelect);
   return newPasskey;
+};
+
+interface DeleteVerificationTokensOpts {
+  userId: string;
+  type: Extract<TokenType, 'email-verification' | 'oauth-verification'>;
+  oauthAccountId?: string;
+}
+
+/** A fresh verification mail replaces the user's earlier ones of that type (per OAuth account, when given). */
+export const deleteVerificationTokens = async (
+  ctx: DbContext,
+  { userId, type, oauthAccountId }: DeleteVerificationTokensOpts,
+) => {
+  const { db } = ctx.var;
+  return db
+    .delete(tokensTable)
+    .where(
+      and(
+        eq(tokensTable.userId, userId),
+        eq(tokensTable.type, type),
+        ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
+      ),
+    );
 };
