@@ -22,6 +22,12 @@ export function loadBaseEnvFiles(): void {
 
 /** Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key and Pulumi passphrase, so it is tightened to 0600 on sight. */
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): void {
+  // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
+  const strayEnvPath = resolve(infraDir, '.env');
+  if (existsSync(strayEnvPath))
+    log(
+      `${strayEnvPath} is not read: mode-scoped credentials live in infra/.env.${mode} (infra/README.md, Credentials files).`,
+    );
   const modeEnvPath = resolve(infraDir, `.env.${mode}`);
   if (!existsSync(modeEnvPath)) return;
   const fileMode = statSync(modeEnvPath).mode;

@@ -1,4 +1,5 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
+import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
 import { DNS_PERMISSION_SETS } from './permissions';
 import { principalNames, principalTags } from './principals';
 import { scwFetch, scwSend } from './scw-fetch';
@@ -75,8 +76,8 @@ export interface ScopedKeyResult {
 
 /** Resolve the organization id from a project id via the Account API. Throws with guidance when it cannot be resolved. */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  // Env-provided id wins: a project-scoped bootstrap key may lack the Account read the API fallback needs.
-  const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim();
+  // Env-provided id wins (either variable name): a project-scoped bootstrap key may lack the Account read the API fallback needs.
+  const fromEnv = resolveOrganizationIdFromEnv();
   if (fromEnv) return fromEnv;
   // GET /account/v3/projects/{id} returns the Project object directly, not wrapped in { project: ... }.
   const project = await scwFetch<{ organization_id?: string }>(

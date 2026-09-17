@@ -95,11 +95,15 @@ export async function runPrivilegedConverge(
 
   let completed = false;
   try {
-    // Resolve the organization id for the program's IAM resources; failure is non-fatal because the program can derive it at runtime.
+    // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API. Without it the up is a guaranteed failure, so stop before spending the lock on it.
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
     } catch (error) {
-      console.warn(`${warningMark} Could not resolve organization id (${errorMessage(error)}); continuing without it.`);
+      await releaseLock();
+      console.error(
+        `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
+      );
+      process.exit(1);
     }
 
     // Registry principals are bootstrap-owned like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.

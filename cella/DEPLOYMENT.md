@@ -154,6 +154,8 @@ Most config changes ship through a normal CI deploy, including toggling `appConf
 4. Runs `pulumi up` against the bootstrapped stack without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place. This run also reconciles the VM policy rules, which a CI deploy leaves untouched.
 5. Reminds you to revoke the bootstrap key.
 
+**Preview** in the same menu is the read-only dry run of either an Apply infra change or a CI deploy. It uses the same key setup (a bootstrap key needs the state-key pair, a CI deploy key needs nothing extra) and resolves the organization id from `SCW_ORGANIZATION_ID` in `backend/.env`, so run it before an Apply to see exactly what will change.
+
 VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service, or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
 
 ## Fresh installation
