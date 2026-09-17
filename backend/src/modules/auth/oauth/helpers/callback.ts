@@ -12,11 +12,11 @@ import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oa
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { type OAuthAccountModel, oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
-import { emailsTable } from '#/modules/user/emails-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 import { userSelect } from '#/modules/user/helpers/select';
 import type { UserModel } from '#/modules/user/user-db';
 import { usersTable } from '#/modules/user/user-db';
+import { findUserByEmail } from '#/modules/user/user-queries';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
@@ -112,17 +112,9 @@ const authCallbackFlow = async ({
     return { type: 'unverified', oauthAccount, reason: type };
   }
 
-  const users = await db
-    .select({ userId: usersTable.id })
-    .from(emailsTable)
-    .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, providerUser.email))
-    .limit(2);
-
-  if (users.length > 1) throw new AppError(409, 'oauth_conflict', 'error');
-
   // Existing user (by email) found -> suggest sign in and connect
-  if (users.length === 1) throw new AppError(409, 'oauth_email_exists', 'warn');
+  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   if (!appConfig.has.selfRegistration) {
     throw new AppError(403, 'sign_up_restricted', 'info');
@@ -163,14 +155,8 @@ const connectCallbackFlow = async ({
   }
 
   // New OAuth account connection → validate email isn't used by another user
-  const users = await db
-    .select(userSelect)
-    .from(usersTable)
-    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, providerUser.email));
-  if (users.some((u) => u.id !== connectUserId)) {
-    throw new AppError(409, 'oauth_conflict', 'error');
-  }
+  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'error');
 
   const newOAuthAccount = await createOAuthAccount(db, connectUserId, providerUser.id, provider, providerUser.email);
   return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'connect' };
@@ -192,12 +178,8 @@ const inviteCallbackFlow = async ({
   if (oauthAccount) throw new AppError(409, 'oauth_conflict', 'error');
 
   // Email already in use by an existing user (checks both the emails and users tables)
-  const usersWithVerifiedEmail = await db
-    .select(userSelect)
-    .from(usersTable)
-    .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, providerUser.email));
-  if (usersWithVerifiedEmail.length) throw new AppError(409, 'oauth_email_exists', 'error');
+  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // User may have signed up via another method (e.g. OAuth) but hasn't verified email yet
   const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, providerUser.email));
