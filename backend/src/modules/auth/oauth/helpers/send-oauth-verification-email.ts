@@ -4,7 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { deleteVerificationTokens } from '#/modules/auth/auth-queries';
+import { deleteOAuthVerificationTokens } from '#/modules/auth/auth-queries';
 import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
@@ -42,7 +42,7 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
-  await deleteVerificationTokens({ var: { db } }, { userId: user.id, type: 'oauth-verification', oauthAccountId });
+  await deleteOAuthVerificationTokens({ var: { db } }, { userId: user.id, oauthAccountId });
 
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);

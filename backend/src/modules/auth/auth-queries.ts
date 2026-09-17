@@ -1,5 +1,4 @@
 import { and, desc, eq, getColumns, type SQL } from 'drizzle-orm';
-import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -151,16 +150,15 @@ export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpt
   return newPasskey;
 };
 
-interface DeleteVerificationTokensOpts {
+interface DeleteOAuthVerificationTokensOpts {
   userId: string;
-  type: Extract<TokenType, 'email-verification' | 'oauth-verification'>;
-  oauthAccountId?: string;
+  oauthAccountId: string;
 }
 
-/** A fresh verification mail replaces the user's earlier ones of that type (per OAuth account, when given). */
-export const deleteVerificationTokens = async (
+/** A fresh verification mail replaces the user's earlier ones for that OAuth account. */
+export const deleteOAuthVerificationTokens = async (
   ctx: DbContext,
-  { userId, type, oauthAccountId }: DeleteVerificationTokensOpts,
+  { userId, oauthAccountId }: DeleteOAuthVerificationTokensOpts,
 ) => {
   const { db } = ctx.var;
   return db
@@ -168,8 +166,8 @@ export const deleteVerificationTokens = async (
     .where(
       and(
         eq(tokensTable.userId, userId),
-        eq(tokensTable.type, type),
-        ...(oauthAccountId ? [eq(tokensTable.oauthAccountId, oauthAccountId)] : []),
+        eq(tokensTable.type, 'oauth-verification'),
+        eq(tokensTable.oauthAccountId, oauthAccountId),
       ),
     );
 };

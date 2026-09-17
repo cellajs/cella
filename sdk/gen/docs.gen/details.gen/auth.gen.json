@@ -176,7 +176,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+            "enum": ["oauth-verification", "invitation", "magic"]
           },
           "token": { "type": "string", "required": true }
         }
@@ -268,7 +268,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+            "enum": ["oauth-verification", "invitation", "magic"]
           },
           "id": { "type": "string", "required": true, "maxLength": 50 }
         }

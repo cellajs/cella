@@ -501,12 +501,12 @@ export const zCheckEmailBody = z.object({
 export const zCheckEmailResponse = z.void();
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic']),
   token: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['email-verification', 'oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic']),
   id: z.string().max(50),
 });
 

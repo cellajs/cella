@@ -50,7 +50,7 @@ Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Auth
 
-Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, verification emails), `magic/`, `oauth/`, `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/`, `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
 
 ## Permissions
 

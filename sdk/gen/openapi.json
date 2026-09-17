@@ -2506,7 +2506,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2568,7 +2568,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",

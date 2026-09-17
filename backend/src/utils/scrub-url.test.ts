@@ -8,7 +8,7 @@ describe('scrubUrl', () => {
     });
 
     it('redacts the token segment for every token type', () => {
-      for (const type of ['magic', 'invitation', 'email-verification', 'oauth-verification']) {
+      for (const type of ['magic', 'invitation', 'oauth-verification']) {
         expect(scrubUrl(`/auth/invoke-token/${type}/abc123`)).toBe(`/auth/invoke-token/${type}/[REDACTED]`);
       }
     });

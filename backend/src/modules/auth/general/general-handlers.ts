@@ -9,7 +9,6 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { deleteSession, findInvitationToken, findLatestSessionByUser } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { handleEmailVerification } from '#/modules/auth/general/helpers/handle-email-verification';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -63,8 +62,6 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
       // Cookie named by token type, holding the single use token, expiring in 5 minutes or on use.
       await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
     }
-
-    if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
 
