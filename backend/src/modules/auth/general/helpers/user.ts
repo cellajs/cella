@@ -2,6 +2,7 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { extractPgError } from '#/lib/error';
 import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -10,13 +11,16 @@ import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 
+/** Unique constraints on a user's address: `users.email` and `emails.email`. */
+const addressConstraints = new Set(['users_email_key', 'emails_email_key']);
+
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
   inactiveMembershipId?: string | null;
   emailVerified?: boolean;
 }
 
-/** Creates a user (also the OAuth sign-up path): user, unsubscribe token and email row, linking pending invitation tokens to their inactive memberships. Throws 409 if the email exists. */
+/** Creates a user (also the OAuth sign-up path): user, unsubscribe token and email row, linking pending invitation tokens to their inactive memberships. Throws 409 `email_exists` when the address is taken. */
 export const handleCreateUser = async (
   ctx: DbContext,
   { newUser, emailVerified }: HandleCreateUserProps,
@@ -55,6 +59,12 @@ export const handleCreateUser = async (
 
     return user;
   } catch (error) {
-    throw new AppError(409, 'email_exists', 'warn');
+    // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input)
+    // surfaces as what it is.
+    const pgError = extractPgError(error);
+    if (pgError?.code === '23505' && addressConstraints.has(pgError.constraint ?? '')) {
+      throw new AppError(409, 'email_exists', 'warn');
+    }
+    throw error;
   }
 };

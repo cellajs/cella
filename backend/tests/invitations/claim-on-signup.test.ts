@@ -93,4 +93,25 @@ describe('Pending invitations claimed at sign-up', async () => {
     const tokens = await db.select().from(tokensTable).where(eq(tokensTable.email, invitedEmail));
     expect(tokens).toHaveLength(1);
   });
+
+  it('names a taken address as email_exists', async () => {
+    const newUser = { email: 'taken@example.com', slug: 'taken', name: 'Taken', firstName: 'Taken' };
+    await handleCreateUser({ var: { db } }, { newUser });
+
+    await expect(handleCreateUser({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' } })).rejects.toMatchObject(
+      {
+        status: 409,
+        type: 'email_exists',
+      },
+    );
+  });
+
+  it('does not disguise another failure as a taken address', async () => {
+    const newUser = { email: 'fresh@example.com', slug: 'fresh', name: 'x'.repeat(2000), firstName: 'Fresh' };
+
+    const failure = await handleCreateUser({ var: { db } }, { newUser }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as { type?: string }).type).not.toBe('email_exists');
+  });
 });
