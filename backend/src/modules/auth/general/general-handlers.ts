@@ -1,4 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { OpenAPIHono, type z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
@@ -9,11 +9,13 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   bindInactiveMembershipToUser,
   deleteSession,
+  findInactiveMembershipById,
   findInvitationToken,
   findLatestSessionByUser,
   linkTokenToUser,
 } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
+import type { tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleEmailVerification } from '#/modules/auth/general/helpers/handle-email-verification';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
@@ -22,12 +24,15 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { resolveEntity } from '#/modules/entities/entities-queries';
+import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { getValidToken } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
+import { slugFromEmail } from '#/utils/slug-from-email';
 import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -101,13 +106,29 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
 
   if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
-  const tokenResponse = {
+  const tokenResponse: z.infer<typeof tokenWithDataSchema> = {
     email: tokenRecord.email,
     userId: tokenRecord.userId || '',
     inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
   };
 
   if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
+
+  const inactiveMembership = await findInactiveMembershipById(ctx, { id: tokenRecord.inactiveMembershipId });
+  if (inactiveMembership) {
+    const [entity, inviter] = await Promise.all([
+      resolveEntity(ctx, { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId }),
+      findUserById(ctx, { id: inactiveMembership.createdBy }),
+    ]);
+    if (entity) {
+      tokenResponse.invitation = {
+        entityType: inactiveMembership.channelType,
+        entityName: entity.name,
+        role: inactiveMembership.role,
+        inviterName: inviter?.name ?? '',
+      };
+    }
+  }
 
   // Membership invitation: a user may have been created since the invite was sent, without verifying email
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
@@ -119,6 +140,42 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   }
 
   return ctx.json(tokenResponse, 200);
+});
+
+app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
+  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
+  if (!tokenRecord.inactiveMembershipId) throw new AppError(400, 'invalid_request', 'warn');
+
+  const user = ctx.var.user;
+
+  // A token already linked to a user is that user's alone; possession of the link changes nothing.
+  if (tokenRecord.userId && tokenRecord.userId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
+
+  const entity = await handleMembershipInvitationOp(ctx, tokenRecord.inactiveMembershipId, 'accept', {
+    viaToken: true,
+  });
+
+  deleteAuthCookie(ctx, 'invitation');
+  invalidateCache.user(user.id);
+
+  // Accepted by an account on another address than the one invited: tell the invited inbox, since it may not be theirs.
+  if (tokenRecord.email !== user.email) {
+    log.warn('Invitation accepted by an account on another address', {
+      tokenId: tokenRecord.id,
+      invitedEmail: tokenRecord.email,
+      userId: user.id,
+    });
+    sendAccountSecurityEmail(
+      { email: tokenRecord.email, name: slugFromEmail(tokenRecord.email) },
+      'invitation-accepted-elsewhere',
+      {
+        entityName: entity.name,
+        accountEmail: user.email,
+      },
+    );
+  }
+
+  return ctx.json(entity, 200);
 });
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {

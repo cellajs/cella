@@ -736,10 +736,61 @@ export type GetTokenDataResponses = {
     email: string;
     userId?: string;
     inactiveMembershipId?: string;
+    invitation?: {
+      entityType: 'organization';
+      entityName: string;
+      role: 'admin' | 'member';
+      inviterName: string;
+    };
   };
 };
 
 export type GetTokenDataResponse = GetTokenDataResponses[keyof GetTokenDataResponses];
+
+export type AcceptInvitationTokenData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/invitation-token/accept';
+};
+
+export type AcceptInvitationTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type AcceptInvitationTokenError = AcceptInvitationTokenErrors[keyof AcceptInvitationTokenErrors];
+
+export type AcceptInvitationTokenResponses = {
+  /**
+   * Invitation was accepted
+   */
+  200: ChannelBase;
+};
+
+export type AcceptInvitationTokenResponse = AcceptInvitationTokenResponses[keyof AcceptInvitationTokenResponses];
 
 export type StartImpersonationData = {
   body: {

@@ -92,6 +92,29 @@
     }
   },
   {
+    "id": "acceptInvitationToken",
+    "hash": "tag/auth/POST/auth/invitation-token/accept",
+    "method": "post",
+    "path": "/auth/invitation-token/accept",
+    "tags": ["auth"],
+    "summary": "Accept invitation token as current user",
+    "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "crossTenantGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "startImpersonation",
     "hash": "tag/auth/POST/auth/impersonation/start",
     "method": "post",

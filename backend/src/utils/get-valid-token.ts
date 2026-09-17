@@ -33,13 +33,15 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
 
   if (!tokenRecord) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
-  // Abort when the token belongs to a different user than the existing session.
+  // Abort when the token belongs to a different user than the existing session. An invitation not yet bound to
+  // a user is the one exception: whoever holds it may open it while signed in and accept it as their own account.
+  const isUnboundInvitation = tokenRecord.type === 'invitation' && tokenRecord.userId === null;
   let existingSessionToken: string | null = null;
   try {
     const { sessionToken } = await getParsedSessionCookie(ctx);
     existingSessionToken = sessionToken;
   } catch (err) {}
-  if (existingSessionToken) {
+  if (existingSessionToken && !isUnboundInvitation) {
     const { user } = await validateSession(existingSessionToken);
     if (user?.id && tokenRecord.userId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
   }

@@ -195,7 +195,25 @@
           "properties": {
             "email": { "type": "string", "required": true, "format": "email" },
             "userId": { "type": "string", "required": false },
-            "inactiveMembershipId": { "type": "string", "required": false }
+            "inactiveMembershipId": { "type": "string", "required": false },
+            "invitation": {
+              "type": "object",
+              "required": false,
+              "properties": {
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["organization"]
+                },
+                "entityName": { "type": "string", "required": true },
+                "role": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["admin", "member"]
+                },
+                "inviterName": { "type": "string", "required": true }
+              }
+            }
           },
           "contentType": "application/json"
         },
@@ -256,6 +274,101 @@
         }
       }
     }
+  },
+  {
+    "operationId": "acceptInvitationToken",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Invitation was accepted",
+        "name": "ChannelBase",
+        "ref": "#/components/schemas/ChannelBase",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "Base schema for entities with memberships (e.g. organization).",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "tenantId": { "type": "string", "required": true },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["organization"]
+            },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "bannerUrl": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/ChannelBase",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
+          "createdAt": "2024-11-30T08:11:29.841Z",
+          "updatedAt": "2024-12-25T20:49:14.328Z",
+          "tenantId": "fux7yivt59ywq1bpokswyyxl",
+          "name": "Hamill - Price",
+          "entityType": "organization",
+          "slug": "hamill---price",
+          "thumbnailUrl": null,
+          "bannerUrl": null
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
   },
   {
     "operationId": "startImpersonation",

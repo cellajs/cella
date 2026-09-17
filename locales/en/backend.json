@@ -28,6 +28,8 @@
   "email.account_security.system-role-changed.title": "System role changed",
   "email.account_security.system-role-revoked.text": "System role <strong>{{role}}</strong> was revoked from {{userEmail}} on {{appName}} at {{timestamp}}.",
   "email.account_security.system-role-revoked.title": "System role revoked",
+  "email.account_security.invitation-accepted-elsewhere.text": "Your invitation to <strong>{{entityName}}</strong> on {{appName}} was accepted by an account signed in as {{accountEmail}}. If that was not you, reply to the person who invited you so they can remove that member.",
+  "email.account_security.invitation-accepted-elsewhere.title": "Your invitation was accepted",
   "email.author_email": "Message the author",
   "email.contact_request.text": "Thanks for reaching out to {{appName}}. Our team will get back to you as soon as possible.",
   "email.contact_request.title": "Our team has your request",

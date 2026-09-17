@@ -254,6 +254,22 @@ export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: Fi
   return membership;
 };
 
+/** Token path: the invitation is answerable while it is unbound, or already bound to this same user. */
+export const findClaimableInactiveMembership = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
+  const { db, userId } = ctx.var;
+  const [membership] = await db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(
+      and(
+        eq(inactiveMembershipsTable.id, id),
+        or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)),
+      ),
+    )
+    .limit(1);
+  return membership;
+};
+
 interface FindMembersPaginatedOpts {
   organizationId: string;
   entityId: string;

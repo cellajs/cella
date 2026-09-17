@@ -517,7 +517,20 @@ export const zGetTokenDataResponse = z.object({
   email: z.email(),
   userId: z.string().optional(),
   inactiveMembershipId: z.string().optional(),
+  invitation: z
+    .object({
+      entityType: z.enum(['organization']),
+      entityName: z.string(),
+      role: z.enum(['admin', 'member']),
+      inviterName: z.string(),
+    })
+    .optional(),
 });
+
+/**
+ * Invitation was accepted
+ */
+export const zAcceptInvitationTokenResponse = zChannelBase;
 
 export const zStartImpersonationBody = z.object({
   targetUserId: z.string().max(50),
