@@ -1,14 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { select } from '@inquirer/prompts';
 import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
-import { isPrivilegedUp, PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
+import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
-  autoAcceptDefaults,
   envOr,
   type InfraContext,
   promptRequiredInput,
@@ -17,35 +15,11 @@ import {
   resolveVerifiedPassphrase,
 } from '../shared';
 
-/** Which run the preview simulates. The Pulumi program diffs bootstrap-owned VM policy rules only under the privileged marker, so the two runs can differ exactly there. */
-type PreviewRun = 'operator' | 'ci';
-
-/** A marker already in the environment decides; otherwise prompt, defaulting to the operator run, the diff an Apply infra change would apply. */
-async function choosePreviewRun(): Promise<PreviewRun> {
-  if (process.env[PRIVILEGED_UP_ENV] !== undefined) return isPrivilegedUp() ? 'operator' : 'ci';
-  if (autoAcceptDefaults()) return 'operator';
-  return select<PreviewRun>({
-    message: 'Which run should the preview simulate?',
-    loop: false,
-    choices: [
-      {
-        name: 'Apply infra change',
-        value: 'operator',
-        description: 'Bootstrap-keyed run: VM IAM policy rules are reconciled, so a registry change shows as ~rules.',
-      },
-      {
-        name: 'CI deploy',
-        value: 'ci',
-        description: 'CI-keyed run: policy rules are ignored, matching what a release deploy applies.',
-      },
-    ],
-  });
-}
-
 /**
- * Read-only `pulumi preview`, authenticating the provider from SCW_* env, not stack config, so it also validates that env-based auth resolves.
- * Any key with read access works, and nothing is mutated. It builds the same environment as the privileged converge (organization id, split state
- * identity, privileged marker), so what it shows is what that run would apply.
+ * Read-only `pulumi preview` of what "Apply infra change" would apply, authenticating the provider from SCW_* env, not stack config, so it also
+ * validates that env-based auth resolves. The standing admin key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
+ * It builds the same environment as the privileged converge (organization id, state identity, privileged marker). A CI deploy applies the same
+ * diff except the VM policy rules, which only a privileged run reconciles, so one simulation covers both.
  */
 export async function runPreview(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
@@ -68,7 +42,6 @@ export async function runPreview(context: InfraContext): Promise<void> {
   const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
 
   const targetStack = await promptStackName(context);
-  const run = await choosePreviewRun();
 
   // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API.
   let organizationId: string;
@@ -81,7 +54,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  // Same split identity as Apply: the state bucket admits only the CI deploy and admin applications, so a bootstrap key previews with SCW_STATE_* on the state side.
+  // Same split identity as Apply when SCW_STATE_* is set; otherwise the supplied key serves both sides, which the standing admin key can.
   const previewEnv = buildProviderEnv(infraDir, {
     accessKey,
     secretKey,
@@ -90,11 +63,13 @@ export async function runPreview(context: InfraContext): Promise<void> {
     organizationId,
     ...stateKeyOverrideFromEnv(),
   });
-  previewEnv[PRIVILEGED_UP_ENV] = run === 'operator' ? '1' : '0';
+  // The program diffs VM policy rules only under this marker, and that diff is the one an operator is here to see.
+  previewEnv[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);
 
-  const runLabel = run === 'operator' ? 'an Apply infra change' : 'a CI deploy';
-  console.info(`\n→ pulumi preview (simulating ${runLabel})\n  $ pulumi preview --stack ${targetStack} --diff`);
+  console.info(
+    `\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff`,
+  );
   const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff'], {
     cwd: infraDir,
     env: previewEnv,
@@ -107,6 +82,6 @@ export async function runPreview(context: InfraContext): Promise<void> {
     process.exit(preview.status ?? 1);
   }
   console.info(
-    `\n${pc.dim(`Provider auth resolved from SCW_* env (see the "Using: Environment variable" lines above). A clean "no changes" result means the stack matches code for ${runLabel}; any diff is what that run would apply.`)}`,
+    `\n${pc.dim('Provider auth resolved from SCW_* env (see the "Using: Environment variable" lines above). A clean "no changes" result means the stack matches code; any diff is what "Apply infra change" would apply (a CI deploy applies the same minus VM policy rules).')}`,
   );
 }

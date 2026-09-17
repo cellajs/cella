@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
-import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { buildProviderEnv, stateKeyForPrivilegedRun } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -64,8 +64,8 @@ export async function runPrivilegedConverge(
   );
   const stack = await promptStackName(context);
 
-  // The state-identity override applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
-  const stateOverride = stateKeyOverrideFromEnv();
+  // The state identity (explicit SCW_STATE_*, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
+  const stateOverride = stateKeyForPrivilegedRun();
   const env = buildProviderEnv(infraDir, {
     accessKey: bootAccess,
     secretKey: bootSecret,

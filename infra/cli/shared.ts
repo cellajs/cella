@@ -181,7 +181,7 @@ export function pulumiLoginAndSelect(
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the CI deploy and admin applications: a bootstrap key needs SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY set to a key of one of those.`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ACCESS_KEY / SCW_SECRET_KEY, or set SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY to a key of one of those.`,
     );
     process.exit(login.status ?? 1);
   }
