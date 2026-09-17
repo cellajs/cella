@@ -7,6 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import { createUser } from '../helpers';
@@ -263,6 +264,66 @@ describe('OAuth Authentication', async () => {
 
       expect(res.status).toBe(409);
       expect((error as { type: string }).type).toBe('oauth_email_exists');
+    });
+  });
+
+  describe('Connect flow', () => {
+    const state = 'mock-state-connect';
+    const providerEmail = 'github-user@example.com';
+
+    const connectCallback = (connectUserId?: string) => {
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect', connectUserId }));
+      return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+    };
+
+    it('links a provider account on another address without making that address a user email', async () => {
+      const user = await createUser('local-account@example.com');
+
+      const { response: res } = await connectCallback(user.id);
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification/connect');
+
+      const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+      expect(oauthAccount).toMatchObject({ provider: 'github', email: providerEmail, verified: false });
+
+      // Identity is the provider subject: the provider address stays on the OAuth account.
+      expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
+    });
+
+    it('refuses when another user holds the provider address', async () => {
+      const user = await createUser('local-account@example.com');
+      await createUser(providerEmail);
+
+      const { response: res, error } = await connectCallback(user.id);
+
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_conflict');
+      expect(await db.select().from(oauthAccountsTable)).toHaveLength(0);
+    });
+
+    it('refuses a provider account already linked to another user', async () => {
+      const user = await createUser('local-account@example.com');
+      const other = await createUser('other-account@example.com');
+      await db.insert(oauthAccountsTable).values({
+        userId: other.id,
+        provider: 'github' as const,
+        providerUserId: 'github-user-id',
+        email: providerEmail,
+        verified: true,
+        createdAt: mockPastIsoDate(),
+      });
+
+      const { response: res, error } = await connectCallback(user.id);
+
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_conflict');
+    });
+
+    it('requires the connecting user pinned at initiation', async () => {
+      const { response: res } = await connectCallback(undefined);
+
+      expect(res.status).toBe(401);
     });
   });
 
