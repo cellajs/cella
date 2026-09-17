@@ -38,6 +38,7 @@ function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data
   return {
     queryHash: hash,
     queryKey: [entityType, 'list', 'org-1'] as unknown[],
+    dehydratedAt: dataUpdatedAt,
     state: {
       data,
       dataUpdatedAt,

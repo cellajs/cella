@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "shared": "workspace:*",
-    "zod": "^4.5.4"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",

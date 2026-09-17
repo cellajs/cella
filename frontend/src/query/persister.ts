@@ -335,6 +335,7 @@ export function createIDBPersister(scope = 'rq') {
             queryHash: q.queryHash,
             queryKey: q.queryKey,
             state: q.state,
+            dehydratedAt: q.dataUpdatedAt,
           })),
           ...(meta.channelQueries ?? []),
         ];
