@@ -28,7 +28,7 @@ export function AcceptInvitationStep({ tokenData, user }: Props) {
 
   const { invitation, email: invitedEmail } = tokenData;
   const otherAddress = invitedEmail !== user.email;
-  // Linked to another account: the backend refuses it, so say so instead of offering a button that fails.
+  // Linked to another account: the backend refuses it, so the step says so and offers no accept button.
   const boundToOther = !!tokenData.userId && tokenData.userId !== user.id;
 
   const leave = () => navigate({ to: appConfig.defaultRedirectPath, replace: true });

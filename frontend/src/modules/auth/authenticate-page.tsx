@@ -115,7 +115,7 @@ export function AuthenticatePage() {
     );
   }
 
-  // Signed in and holding a membership invitation: confirm it as this account instead of signing up on the invited address.
+  // Signed in and holding a membership invitation: the confirm step accepts it as this account.
   if (signedInUser && tokenData?.inactiveMembershipId) {
     return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
   }
