@@ -1,11 +1,10 @@
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
@@ -44,25 +43,7 @@ export const handleCreateUser = async (
       .insert(unsubscribeTokensTable)
       .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
-    const existingTokens = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNotNull(tokensTable.inactiveMembershipId),
-        ),
-      )
-      .limit(1);
-
-    if (existingTokens.length > 0) {
-      await handleSetUserOnInactiveMemberships(ctx, {
-        userId: user.id,
-        inactiveMembershipIds: existingTokens.map((t) => t.inactiveMembershipId!),
-      });
-    }
+    await claimEmailForUser(ctx, { userId: user.id, email: normalizedEmail });
 
     // Delete any unverified email under a different user
     await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
@@ -79,18 +60,4 @@ export const handleCreateUser = async (
   } catch (error) {
     throw new AppError(409, 'email_exists', 'warn');
   }
-};
-
-/** Sets the new user's ID on their inactive memberships, then deletes the associated tokens. */
-export const handleSetUserOnInactiveMemberships = async (
-  ctx: DbContext,
-  { userId, inactiveMembershipIds }: { userId: string; inactiveMembershipIds: string[] },
-) => {
-  const { db } = ctx.var;
-  await db
-    .update(inactiveMembershipsTable)
-    .set({ userId })
-    .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
-
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
