@@ -7,7 +7,7 @@ import { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
-import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
+import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -21,7 +21,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
 
-  const redirectPath = usePostAuthRedirect();
+  const navigateAfterAuth = useNavigateAfterAuth();
 
   const { mutate: passkeyAuth } = useMutation<
     SignInWithPasskeyResponse,
@@ -34,7 +34,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
     },
     onSuccess: () => {
       useAuthStore.getState().setSignedIn(true);
-      navigate({ to: redirectPath, replace: true });
+      navigateAfterAuth();
     },
     onError: (error) => {
       if (type === 'mfa' && error instanceof ApiError) {

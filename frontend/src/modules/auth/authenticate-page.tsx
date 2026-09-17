@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { appConfig } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import {
+  AcceptInvitationStep,
   CheckEmailStep,
   InviteOnlyStep,
   MagicLinkSentStep,
@@ -17,6 +18,8 @@ import {
 } from '~/modules/auth/steps';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
+import { toaster } from '~/modules/common/toaster/toaster';
+import { meQueryOptions } from '~/modules/me/query';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUserStore } from '~/modules/user/user-store';
 
@@ -32,13 +35,17 @@ function shouldShowDivider(): boolean {
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
   const { lastUser } = useUserStore();
   const { step, setStep, restrictedMode, setRestrictedMode, signedIn } = useAuthStore();
 
-  const { data: tokenData, isLoading } = useGetTokenData('invitation', tokenId, !!tokenId);
+  const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId);
+
+  // Cache-only: the route guard probes the session whenever a tokenId is present.
+  const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
 
   const {
     data: healthData,
@@ -85,6 +92,14 @@ export function AuthenticatePage() {
     setStep('signUp', tokenData.email);
   }, [tokenData, lastUser, restrictedMode, step]);
 
+  // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
+  const nothingToConfirm = !!signedInUser && !!tokenId && !isLoading && !tokenData?.inactiveMembershipId;
+  useEffect(() => {
+    if (!nothingToConfirm) return;
+    if (isTokenError) toaster.info(t('c:invite_link_spent'));
+    navigate({ to: appConfig.defaultRedirectPath, replace: true });
+  }, [nothingToConfirm]);
+
   if (isLoading || isHealthLoading || signedIn) {
     return (
       <>
@@ -98,6 +113,11 @@ export function AuthenticatePage() {
         )}
       </>
     );
+  }
+
+  // Signed in and holding a membership invitation: confirm it as this account instead of signing up on the invited address.
+  if (signedInUser && tokenData?.inactiveMembershipId) {
+    return <AcceptInvitationStep tokenData={tokenData} user={signedInUser} />;
   }
 
   return (
