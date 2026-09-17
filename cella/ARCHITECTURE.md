@@ -58,7 +58,7 @@ Channel entities stay conventional CRUD. Product entities get live updates and o
 
 ## Trust boundaries
 
-Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Cella has a layered approach to balance defense in depth, maintainability and performance.
+Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. An account is identified by its sign-in credentials, not by an email address: an invitation sent to any address can be accepted by whoever opens its link, as the account they are signed in to. Cella has a layered approach to balance defense in depth, maintainability and performance.
 
 | Layer | Responsibility |
 | --- | --- |
