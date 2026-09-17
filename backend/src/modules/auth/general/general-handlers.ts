@@ -6,6 +6,7 @@ import { AppError, type ErrorKey } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
+import { authEvents } from '#/modules/auth/auth-events';
 import {
   deleteSession,
   findInvitationToken,
@@ -192,6 +193,7 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   await deleteSession(ctx, { sessionId: currentSession.id, userId: currentSession.userId });
 
   invalidateCache.user(currentSession.userId);
+  authEvents.emit('session.deleted', { userId: currentSession.userId, sessionIds: [currentSession.id] });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);

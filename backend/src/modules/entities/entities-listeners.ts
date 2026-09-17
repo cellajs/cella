@@ -1,5 +1,6 @@
 import { appConfig } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
+import { authEvents } from '#/modules/auth/auth-events';
 import {
   type AppStreamSubscriber,
   dispatchMoveOuts,
@@ -7,7 +8,7 @@ import {
 } from '#/modules/entities/helpers/dispatch-to-stream';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
-import { streamSubscriberManager } from './stream';
+import { streamSubscriberManager, writeError } from './stream';
 import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 // Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
@@ -25,6 +26,24 @@ for (const entityType of appConfig.productEntityTypes) {
     });
   }
 }
+
+// Closes the streams bound to a deleted session; without this they stay live until the client reconnects.
+// The client treats the `unauthorized` code as permanent and opens its circuit.
+authEvents.on('session.deleted', async ({ userId, sessionIds }) => {
+  const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
+  for (const subscriber of subscribers) {
+    if (!sessionIds.includes(subscriber.sessionId)) continue;
+    try {
+      await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session ended' });
+    } catch (error) {
+      log.debug('Failed to write session-ended error to stream', { error, subscriberId: subscriber.id });
+    }
+    streamSubscriberManager.unregister(subscriber.id);
+    // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
+    subscriber.stream.abort();
+    await subscriber.stream.close();
+  }
+});
 
 for (const action of ['created', 'updated', 'deleted'] as const) {
   activityBus.on(`membership.${action}`, async (event) => {

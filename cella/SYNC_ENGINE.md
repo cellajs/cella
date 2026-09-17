@@ -203,7 +203,7 @@ The template collaborates on attachment descriptions through the Yjs relay (`ser
 
 ### SSE wire
 
-Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting.
+Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream is deleted (sign-out, or termination from the sessions list).
 
 ```typescript
 interface StreamNotification {

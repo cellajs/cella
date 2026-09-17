@@ -22,7 +22,8 @@ export function SignOut() {
 
     const handleSignOut = async () => {
       try {
-        teardownUserState();
+        // `force` means the account or session is already gone server-side, so skip the steps that need it.
+        await teardownUserState({ wipe: true, sessionAlive: !force });
         if (!force) await signOut();
         toaster.success(t('c:success.signed_out'));
       } catch (error) {

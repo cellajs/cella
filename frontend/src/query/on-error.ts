@@ -102,8 +102,8 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         redirectOptions.search = { redirect: redirectPath };
       }
 
-      // `false` keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
-      teardownUserState(false);
+      // No wipe keeps the localUserDb and its unsynced offline work on disk: a 401 is involuntary and the same user usually re-auths and recovers it.
+      teardownUserState({ wipe: false, sessionAlive: false });
       // Dynamic import breaks the cycle query-client -> on-error -> router -> route tree -> query-client.
       import('~/routes/router').then(({ router: r }) => r.navigate(redirectOptions));
     }

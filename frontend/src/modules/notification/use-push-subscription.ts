@@ -17,6 +17,20 @@ const pushSupported = () =>
   'Notification' in window;
 
 /**
+ * Drops this browser's push subscription on the server and in the push service; no-op without support, a registered
+ * worker, or a subscription. The server half needs the session, so sign-out runs it before ending the session.
+ * Reads `getRegistration`, since `ready` never resolves while no worker is registered (dev).
+ */
+export async function disablePushSubscription(): Promise<void> {
+  if (!pushSupported()) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
+  await removePushSubscription(subscription.endpoint);
+  await subscription.unsubscribe();
+}
+
+/**
  * Web Push subscription state for this browser installation, driving the settings toggle.
  * `supported` is false when the config flag is off, the browser lacks the APIs, or the deployment
  * serves no VAPID key; `enable` runs the permission prompt, so call it from a user gesture only.
@@ -72,12 +86,7 @@ export function usePushSubscription() {
   const disable = useCallback(async () => {
     setBusy(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await removePushSubscription(subscription.endpoint);
-        await subscription.unsubscribe();
-      }
+      await disablePushSubscription();
       setEnabled(false);
     } finally {
       setBusy(false);

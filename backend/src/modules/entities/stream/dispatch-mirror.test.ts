@@ -45,6 +45,7 @@ const fakeSubscriber = (
     channel: `org:${channelOrg}`,
     stream,
     userId,
+    sessionId: `session-${userId}`,
     organizationIds: new Set(organizationIds),
     isSystemAdmin: false,
     memberships,

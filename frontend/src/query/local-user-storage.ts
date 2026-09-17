@@ -6,7 +6,7 @@ import { seenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import { bindLocalUserDb, closeLocalUserDb } from '~/query/local-user-db';
+import { bindLocalUserDb, closeLocalUserDb, subscribeLocalUserDbDeletedElsewhere } from '~/query/local-user-db';
 import { resetPersisters } from '~/query/persister';
 import { syncStore } from '~/query/realtime/sync-store';
 
@@ -83,3 +83,12 @@ export function localUserStorageReady(): Promise<void> {
 userStore.subscribe(syncOwner);
 useUIStore.subscribe(syncOwner);
 syncOwner();
+
+// Another tab's hard sign-out deleted this user's database: mirror it here without the session-bound steps (the cookie is
+// already gone), then leave the app. Lazy imports keep the router and teardown out of this module's importer graph.
+subscribeLocalUserDbDeletedElsewhere(() => {
+  void import('~/utils/teardown-user-state')
+    .then(({ teardownUserState }) => teardownUserState({ wipe: true, sessionAlive: false }))
+    .then(() => import('~/routes/router'))
+    .then(({ router }) => router.navigate({ to: '/auth/authenticate', replace: true }));
+});

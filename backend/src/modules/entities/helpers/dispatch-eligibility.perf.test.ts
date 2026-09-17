@@ -39,6 +39,7 @@ const makeSubscribers = (count: number, organizationId: string): AppStreamSubscr
       channel: `org:${organizationId}`,
       stream: null as never,
       userId,
+      sessionId: `session-${userId}`,
       organizationIds: new Set([organizationId, ...OTHER_ORGS]),
       isSystemAdmin: false,
       memberships: [

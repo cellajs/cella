@@ -48,9 +48,9 @@ export async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {
   await stream.write(': ping\n\n');
 }
 
-/** Runs until the stream is aborted. */
+/** Runs until the client aborts or the server closes the stream; `write` swallows errors, so the flags are the only exit. */
 export async function keepAlive(stream: SSEStreamingApi, intervalMs = 30000): Promise<void> {
-  while (true) {
+  while (!stream.closed && !stream.aborted) {
     await writeHeartbeat(stream);
     await stream.sleep(intervalMs);
   }

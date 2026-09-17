@@ -63,7 +63,7 @@ vi.mock('~/modules/common/form-draft/draft-store', () => ({
 }));
 
 vi.mock('~/modules/seen/seen-store', () => ({
-  seenStore: { getState: () => ({ clear: vi.fn() }) },
+  seenStore: { getState: () => ({ clear: vi.fn(), flush: vi.fn().mockResolvedValue(undefined) }) },
 }));
 
 vi.mock('~/modules/ui/ui-store', () => ({

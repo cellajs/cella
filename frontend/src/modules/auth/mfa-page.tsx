@@ -9,12 +9,13 @@ import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore } from '~/modules/user/user-store';
+import { teardownUserState } from '~/utils/teardown-user-state';
 
 export function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { lastUser, reset: clearUserStore } = useUserStore();
+  const { lastUser } = useUserStore();
   const signedIn = useAuthStore((state) => state.signedIn);
 
   const [isActive, setIsActive] = useState(false);
@@ -26,7 +27,8 @@ export function MfaPage() {
     } catch (error) {
       console.error('Failed to retrieve data:', error);
     } finally {
-      clearUserStore();
+      // No signed-in session exists yet at this point, so nothing session-bound to flush.
+      await teardownUserState({ wipe: true, sessionAlive: false });
       navigate({ to: '/auth/authenticate', replace: true });
     }
   };
