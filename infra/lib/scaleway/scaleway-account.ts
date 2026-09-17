@@ -1,3 +1,4 @@
+import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
 import { resolveOrganizationId } from './scaleway-iam';
 import { scwFetch } from './scw-fetch';
 
@@ -15,10 +16,10 @@ export interface ScwProject {
  * Resolve the organization id from a bare API key, before any project id is
  * known. Every API key carries a `default_project_id` (a personal key gets the
  * organization's default project), which the Account API maps to its
- * organization. SCW_DEFAULT_ORGANIZATION_ID in the environment wins.
+ * organization. SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID in the environment win.
  */
 export async function resolveOrganizationIdFromKey(secretKey: string, accessKey: string): Promise<string> {
-  const fromEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim();
+  const fromEnv = resolveOrganizationIdFromEnv();
   if (fromEnv) return fromEnv;
   const key = await scwFetch<{ default_project_id?: string }>(
     { secretKey },

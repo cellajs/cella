@@ -20,15 +20,18 @@ function makeFetch(routes: Array<{ method: string; match: string; body: unknown;
   return { fn, calls };
 }
 
-const savedOrgEnv = process.env.SCW_DEFAULT_ORGANIZATION_ID;
+const ORG_ENV_NAMES = ['SCW_DEFAULT_ORGANIZATION_ID', 'SCW_ORGANIZATION_ID'] as const;
+const savedOrgEnv = Object.fromEntries(ORG_ENV_NAMES.map((name) => [name, process.env[name]]));
 
 beforeEach(() => {
-  delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+  for (const name of ORG_ENV_NAMES) delete process.env[name];
 });
 
 afterEach(() => {
-  if (savedOrgEnv === undefined) delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
-  else process.env.SCW_DEFAULT_ORGANIZATION_ID = savedOrgEnv;
+  for (const name of ORG_ENV_NAMES) {
+    if (savedOrgEnv[name] === undefined) delete process.env[name];
+    else process.env[name] = savedOrgEnv[name];
+  }
   vi.unstubAllGlobals();
 });
 
@@ -38,6 +41,14 @@ describe('resolveOrganizationIdFromKey', () => {
     const { fn } = makeFetch([]);
     vi.stubGlobal('fetch', fn);
     await expect(resolveOrganizationIdFromKey('secret', 'SCWKEY')).resolves.toBe('org-env');
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('accepts the repository name SCW_ORGANIZATION_ID too (backend/.env)', async () => {
+    process.env.SCW_ORGANIZATION_ID = 'org-repo';
+    const { fn } = makeFetch([]);
+    vi.stubGlobal('fetch', fn);
+    await expect(resolveOrganizationIdFromKey('secret', 'SCWKEY')).resolves.toBe('org-repo');
     expect(fn).not.toHaveBeenCalled();
   });
 

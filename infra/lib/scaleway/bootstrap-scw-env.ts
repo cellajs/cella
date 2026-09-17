@@ -15,6 +15,21 @@ export function resolveProjectId(): string | undefined {
   return repo ?? ecosystem;
 }
 
+/**
+ * Resolve the repository (`SCW_ORGANIZATION_ID`, the name backend/.env and the GitHub Environment use) and Scaleway-native
+ * (`SCW_DEFAULT_ORGANIZATION_ID`, the name the provider and the Pulumi program read) organization id variables to one value. Both present must match.
+ */
+export function resolveOrganizationIdFromEnv(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const repo = env.SCW_ORGANIZATION_ID?.trim() || undefined;
+  const ecosystem = env.SCW_DEFAULT_ORGANIZATION_ID?.trim() || undefined;
+  if (repo && ecosystem && repo !== ecosystem) {
+    throw new Error(
+      `SCW_ORGANIZATION_ID (${repo}) and SCW_DEFAULT_ORGANIZATION_ID (${ecosystem}) disagree: unset one so they match.`,
+    );
+  }
+  return ecosystem ?? repo;
+}
+
 /** Inputs for {@link buildProviderEnv}. */
 export interface ProviderEnvInput {
   /** Scaleway provider credentials (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY`). */

@@ -46,12 +46,9 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
     if (session.stackState !== 'bootstrapped') return undefined;
     if (!session.credentialsAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
-      // `SCW_ORGANIZATION_ID` is the name the env files and GitHub Environment use; accept it before falling back to the
-      // Account API, which no engine principal is granted (an unresolvable org degrades the check to unknown, never an error).
-      const organizationId =
-        process.env.SCW_DEFAULT_ORGANIZATION_ID?.trim() ||
-        process.env.SCW_ORGANIZATION_ID?.trim() ||
-        (await resolveOrganizationId(session.secretKey, session.projectId));
+      // The resolver reads SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID before falling back to the Account API, which no
+      // engine principal is granted (an unresolvable org degrades the check to unknown, never an error).
+      const organizationId = await resolveOrganizationId(session.secretKey, session.projectId);
       const name = principalNames(session.appConfig.slug, session.mode).admin;
       return { adminAppId: (await findApplicationIdByName(session.secretKey, organizationId, name)) ?? null };
     } catch {

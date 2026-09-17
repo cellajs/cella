@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { provisionScopedKey, type ScopedKeyConfig } from './scaleway-iam';
 
+/** Both organization-id names the resolver reads; cleared per test so the API fallback under test is not short-circuited by the ambient env. */
+const ORG_ENV_NAMES = ['SCW_DEFAULT_ORGANIZATION_ID', 'SCW_ORGANIZATION_ID'] as const;
+const savedOrgEnv = Object.fromEntries(ORG_ENV_NAMES.map((name) => [name, process.env[name]]));
+
 type FetchArgs = { url: string; init: RequestInit };
 
 /**
@@ -42,11 +46,16 @@ const config: ScopedKeyConfig = {
 };
 
 beforeEach(() => {
+  for (const name of ORG_ENV_NAMES) delete process.env[name];
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-05-22T00:00:00Z'));
 });
 
 afterEach(() => {
+  for (const name of ORG_ENV_NAMES) {
+    if (savedOrgEnv[name] === undefined) delete process.env[name];
+    else process.env[name] = savedOrgEnv[name];
+  }
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
