@@ -6,7 +6,9 @@ import { mockPastIsoDate } from '#/mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { singleUseWindow } from '#/utils/get-valid-token';
 import { hashToken } from '#/utils/hash-token';
+import { createDate } from '#/utils/time-span';
 
 interface CreateInvitationOpts {
   organization: { id: string; tenantId: string };
@@ -62,12 +64,12 @@ export async function createInvitation({
       createdBy,
       inactiveMembershipId,
       createdAt: mockPastIsoDate(),
-      // Opening the link swaps the week-long lifetime for the five-minute single-use window.
+      // Opening the link swaps the week-long lifetime for the single-use window.
       ...(invoked
         ? {
             singleUseToken: hashToken(rawSingleUseToken),
             invokedAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+            expiresAt: createDate(singleUseWindow('invitation')),
           }
         : { expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }),
     })

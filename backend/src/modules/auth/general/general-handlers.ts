@@ -20,7 +20,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
-import { getValidToken } from '#/utils/get-valid-token';
+import { getValidToken, singleUseWindow } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
@@ -57,10 +57,10 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   try {
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
 
-    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the 5-minute cookie stays valid.
+    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the existing cookie stays valid.
     if (tokenRecord.singleUseToken) {
-      // Cookie named by token type, holding the single use token, expiring in 5 minutes or on use.
-      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+      // Cookie named by token type, holding the single use token, expiring with the token's single-use window or on use.
+      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, singleUseWindow(tokenRecord.type));
     }
 
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);

@@ -250,6 +250,36 @@ describe('Opening a token link while signed in', async () => {
     expect(response.headers.get('location')).toContain(`${appConfig.frontendUrl}/auth/authenticate?tokenId=`);
   });
 
+  it('keeps an opened invitation usable long enough to sign in to another account', async () => {
+    const { rawToken, token } = await freshInvitation({ email: invitedEmail });
+
+    await call(invokeToken, { path: { type: 'invitation', token: rawToken }, headers: defaultHeaders });
+
+    const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.id, token.id));
+    const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
+    // A magic link lives 15 minutes; the invitation must outlast that round trip.
+    expect(minutesLeft).toBeGreaterThan(25);
+    expect(minutesLeft).toBeLessThanOrEqual(30);
+  });
+
+  it('keeps the short window for other token types', async () => {
+    const owner = await createTestUser('owner@example.com');
+    const raw = nanoid(40);
+    await db.insert(tokensTable).values({
+      secret: hashToken(raw),
+      type: 'magic',
+      email: owner.email,
+      userId: owner.id,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    });
+
+    await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+
+    const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.email, owner.email));
+    const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
+    expect(minutesLeft).toBeLessThanOrEqual(5);
+  });
+
   it('still refuses an invitation linked to another user', async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
