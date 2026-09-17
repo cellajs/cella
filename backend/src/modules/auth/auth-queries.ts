@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, type SQL } from 'drizzle-orm';
+import { and, desc, eq, getColumns, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -87,6 +87,25 @@ interface LinkTokenToUserOpts {
 export const linkTokenToUser = async (ctx: DbContext, { tokenId, userId }: LinkTokenToUserOpts) => {
   const { db } = ctx.var;
   return db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId));
+};
+
+interface BindInactiveMembershipToUserOpts {
+  id: string;
+  userId: string;
+}
+
+/** Binds an unbound invitation to a user. Returns no row when it was already bound, so callers can tell a lost race from a win. */
+export const bindInactiveMembershipToUser = async (
+  ctx: DbContext,
+  { id, userId }: BindInactiveMembershipToUserOpts,
+) => {
+  const { db } = ctx.var;
+  const [bound] = await db
+    .update(inactiveMembershipsTable)
+    .set({ userId })
+    .where(and(eq(inactiveMembershipsTable.id, id), isNull(inactiveMembershipsTable.userId)))
+    .returning();
+  return bound;
 };
 
 interface FindLatestSessionByUserOpts {

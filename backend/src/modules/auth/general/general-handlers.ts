@@ -7,6 +7,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  bindInactiveMembershipToUser,
   deleteSession,
   findInvitationToken,
   findLatestSessionByUser,
@@ -112,6 +113,8 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
   if (!tokenRecord.userId && existingUser) {
     await linkTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
+    // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
+    await bindInactiveMembershipToUser(ctx, { id: tokenRecord.inactiveMembershipId, userId: existingUser.id });
     tokenResponse.userId = existingUser.id;
   }
 
