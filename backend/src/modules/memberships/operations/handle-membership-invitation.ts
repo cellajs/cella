@@ -1,12 +1,13 @@
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { AuthContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import {
+  bindInactiveMemberships,
+  deleteInvitationTokens,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
 } from '#/modules/memberships/memberships-queries';
@@ -42,16 +43,7 @@ export async function handleMembershipInvitationOp(
     if (acceptOrReject === 'accept') {
       if (viaToken) {
         // Bind before activating: of two accounts racing for the same unbound invitation, exactly one wins.
-        const [bound] = await tx
-          .update(inactiveMembershipsTable)
-          .set({ userId })
-          .where(
-            and(
-              eq(inactiveMembershipsTable.id, inactiveMembership.id),
-              or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)),
-            ),
-          )
-          .returning({ id: inactiveMembershipsTable.id });
+        const [bound] = await bindInactiveMemberships({ var: { db: tx } }, { ids: [inactiveMembership.id], userId });
         if (!bound) throw new AppError(409, 'user_mismatch', 'warn', { meta: { id: inactiveMembership.id } });
       }
 
@@ -73,7 +65,7 @@ export async function handleMembershipInvitationOp(
 
       await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
       // The emailed link has no further use once the invitation is answered.
-      await tx.delete(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id));
+      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
 
       log.info('Membership accepted', { ids: activatedMemberships.map((m) => m.id), viaToken, alreadyMember });
     }

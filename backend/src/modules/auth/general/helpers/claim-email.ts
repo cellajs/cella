@@ -1,7 +1,7 @@
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { tokensTable } from '#/modules/auth/tokens-db';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { bindInactiveMemberships, deleteInvitationTokens } from '#/modules/memberships/memberships-queries';
 
 interface ClaimEmailForUserOpts {
   userId: string;
@@ -30,13 +30,8 @@ export const claimEmailForUser = async (ctx: DbContext, { userId, email }: Claim
   const inactiveMembershipIds = [...new Set(pendingTokens.flatMap((t) => t.inactiveMembershipId ?? []))];
   if (!inactiveMembershipIds.length) return [];
 
-  // Unbound rows only: an invitation already bound to a user is never re-bound.
-  await db
-    .update(inactiveMembershipsTable)
-    .set({ userId })
-    .where(and(inArray(inactiveMembershipsTable.id, inactiveMembershipIds), isNull(inactiveMembershipsTable.userId)));
-
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
+  await bindInactiveMemberships(ctx, { ids: inactiveMembershipIds, userId });
+  await deleteInvitationTokens(ctx, { inactiveMembershipIds });
 
   return inactiveMembershipIds;
 };

@@ -7,7 +7,6 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
-  bindInactiveMembershipToUser,
   deleteSession,
   findInvitationToken,
   findLatestSessionByUser,
@@ -24,7 +23,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
+import { bindInactiveMemberships, findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -135,7 +134,7 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   if (!tokenRecord.userId && existingUser) {
     await linkTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
     // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
-    await bindInactiveMembershipToUser(ctx, { id: tokenRecord.inactiveMembershipId, userId: existingUser.id });
+    await bindInactiveMemberships(ctx, { ids: [tokenRecord.inactiveMembershipId], userId: existingUser.id });
     tokenResponse.userId = existingUser.id;
   }
 

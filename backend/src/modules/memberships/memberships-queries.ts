@@ -264,20 +264,50 @@ export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: Fi
   return membership;
 };
 
-/** Token path: the invitation is answerable while it is unbound, or already bound to this same user. */
+/**
+ * An invitation is claimable by a user while it is unbound, or already bound to that same user. Every write that
+ * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3).
+ */
+const claimableBy = (userId: string) =>
+  or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId));
+
+/** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(
-      and(
-        eq(inactiveMembershipsTable.id, id),
-        or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)),
-      ),
-    )
+    .where(and(eq(inactiveMembershipsTable.id, id), claimableBy(userId)))
     .limit(1);
   return membership;
+};
+
+interface BindInactiveMembershipsOpts {
+  ids: string[];
+  userId: string;
+}
+
+/** Binds claimable invitations to the user and returns the ids it bound; an id missing from the result lost a race or belongs to someone else. */
+export const bindInactiveMemberships = async (ctx: DbContext, { ids, userId }: BindInactiveMembershipsOpts) => {
+  if (!ids.length) return [];
+  const { db } = ctx.var;
+  const bound = await db
+    .update(inactiveMembershipsTable)
+    .set({ userId })
+    .where(and(inArray(inactiveMembershipsTable.id, ids), claimableBy(userId)))
+    .returning({ id: inactiveMembershipsTable.id });
+  return bound.map((row) => row.id);
+};
+
+interface DeleteInvitationTokensOpts {
+  inactiveMembershipIds: string[];
+}
+
+/** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
+export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: DeleteInvitationTokensOpts) => {
+  if (!inactiveMembershipIds.length) return;
+  const { db } = ctx.var;
+  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
 interface FindMembersPaginatedOpts {
