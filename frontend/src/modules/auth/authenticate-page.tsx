@@ -42,10 +42,15 @@ export function AuthenticatePage() {
   const { lastUser } = useUserStore();
   const { step, setStep, restrictedMode, setRestrictedMode, signedIn, inviteOtherAccount } = useAuthStore();
 
-  const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId);
-
   // Cache-only: the route guard probes the session whenever a tokenId is present.
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
+
+  // A signed-in visitor gets this page's own notice for a spent token, so the global toast stays quiet for them.
+  const {
+    data: tokenData,
+    isLoading,
+    isError: isTokenError,
+  } = useGetTokenData('invitation', tokenId, !!tokenId, !!signedInUser);
 
   const {
     data: healthData,

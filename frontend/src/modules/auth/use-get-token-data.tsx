@@ -7,8 +7,11 @@ export const useGetTokenData = (
   type: GetTokenDataData['path']['type'],
   tokenId?: string,
   enabled = true,
+  /** The caller reports a failed token itself, so the global error toast would say it twice. */
+  suppressErrorToast = false,
 ): UseQueryResult<TokenData | undefined, ApiError> => {
   return useQuery({
+    meta: { suppressGlobalErrorToast: suppressErrorToast },
     queryKey: [],
     queryFn: async () => {
       if (!tokenId) throw new Error('Token ID is required');
