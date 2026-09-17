@@ -60,7 +60,7 @@ interface FindUserByEmailOpts {
   email: string;
 }
 
-/** Resolves through emailsTable, since a user can have multiple emails. */
+/** Resolves through emailsTable, the owner of address uniqueness and verification state. */
 export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
   const { db } = ctx.var;
   const [user] = await db

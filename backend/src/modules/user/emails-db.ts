@@ -4,7 +4,10 @@ import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Users can have multiple emails. tokenId has no FK constraint (tokens is partitioned). */
+/**
+ * Verification state of a user's address: one row per user today, written at sign-up. Addresses from OAuth providers
+ * stay on `oauth_accounts`, since identity is the provider subject. tokenId has no FK constraint (tokens is partitioned).
+ */
 export const emailsTable = snakeCase.table(
   'emails',
   {

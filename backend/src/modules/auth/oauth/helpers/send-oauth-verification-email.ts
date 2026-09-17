@@ -30,10 +30,13 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId));
   if (!oauthAccount) throw new AppError(404, 'not_found', 'warn');
 
+  // The address under verification is the provider's, which may differ from the account's own.
+  const email = oauthAccount.email;
+
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
     .from(emailsTable)
-    .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+    .where(and(eq(emailsTable.email, email), eq(emailsTable.verified, true)));
 
   if (emailInUse && oauthAccount.verified) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
@@ -43,7 +46,6 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
 
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
-  const email = oauthAccount?.email ?? user.email;
 
   const [tokenRecord] = await db
     .insert(tokensTable)

@@ -1,4 +1,3 @@
-import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
@@ -45,10 +44,8 @@ export const handleCreateUser = async (
 
     await claimEmailForUser(ctx, { userId: user.id, email: normalizedEmail });
 
-    // Delete any unverified email under a different user
-    await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
-
-    // Create the email row with verification state from the sign-up strategy.
+    // The account's one email row, with verification state from the sign-up strategy. A taken address never gets here:
+    // the users insert above already failed on its unique email.
     await db.insert(emailsTable).values({
       email: normalizedEmail,
       userId: user.id,
