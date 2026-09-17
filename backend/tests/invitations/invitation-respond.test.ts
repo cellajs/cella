@@ -9,7 +9,7 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-import { createMembershipInvitationToken } from './helpers';
+import { createInvitation } from './helpers';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
@@ -46,12 +46,13 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(
-      invitedUser,
-      organization.id,
-      memberRole,
-      organization.tenantId,
-    );
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
     const sessionCookie = await createTestSession(invitedUser);
 
     const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
@@ -74,12 +75,13 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(
-      invitedUser,
-      organization.id,
-      'admin',
-      organization.tenantId,
-    );
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: 'admin',
+    });
     const sessionCookie = await createTestSession(invitedUser);
 
     const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);
@@ -95,12 +97,13 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(
-      invitedUser,
-      organization.id,
-      memberRole,
-      organization.tenantId,
-    );
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
     const sessionCookie = await createTestSession(invitedUser);
 
     const { response: res } = await respondToInvitation(inactiveMembership.id!, 'reject', sessionCookie);
@@ -140,12 +143,13 @@ describe('Invitation response', async () => {
     const invitedUser = await createTestUser('invited@example.com');
     const attacker = await createTestUser('attacker@example.com');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(
-      invitedUser,
-      organization.id,
-      memberRole,
-      organization.tenantId,
-    );
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
     const attackerSession = await createTestSession(attacker);
 
     // GHSA-fmh4-wcc4-5jm3: invitation acceptance is bound to the invited user id,
@@ -171,12 +175,13 @@ describe('Invitation response', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
 
-    const { inactiveMembership } = await createMembershipInvitationToken(
-      invitedUser,
-      organization.id,
-      memberRole,
-      organization.tenantId,
-    );
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
     const sessionCookie = await createTestSession(invitedUser);
 
     const { response: firstRes } = await respondToInvitation(inactiveMembership.id!, 'accept', sessionCookie);

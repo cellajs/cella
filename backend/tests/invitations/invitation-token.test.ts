@@ -8,7 +8,7 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-import { createInvokedInvitationToken } from './helpers';
+import { createInvitation } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
@@ -24,7 +24,8 @@ describe('Invitation token data', async () => {
   it('binds the invitation to a user created after the invite was sent', async () => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvokedInvitationToken({
+    const { token, inactiveMembership, invitationCookie } = await createInvitation({
+      token: 'invoked',
       email: 'late@example.com',
       organization,
       createdBy: inviter.id,
@@ -61,7 +62,8 @@ describe('Invitation token data', async () => {
   it('leaves the invitation unbound when no user owns the address', async () => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvokedInvitationToken({
+    const { token, inactiveMembership, invitationCookie } = await createInvitation({
+      token: 'invoked',
       email: 'nobody@example.com',
       organization,
       createdBy: inviter.id,

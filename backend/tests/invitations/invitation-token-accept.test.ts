@@ -13,7 +13,7 @@ import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-import { createInvokedInvitationToken } from './helpers';
+import { createInvitation } from './helpers';
 
 vi.mock('#/lib/mailer', () => ({
   mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
@@ -37,10 +37,11 @@ describe('Accept an invitation token as the signed-in user', async () => {
   const call = await createAppClient();
 
   /** An organization, its inviter, and an opened invitation for an address nobody has an account on. */
-  const setup = async (opts: { userId?: string | null } = {}) => {
+  const setup = async (opts: { boundTo?: string | null } = {}) => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const invitation = await createInvokedInvitationToken({
+    const invitation = await createInvitation({
+      token: 'invoked',
       email: invitedEmail,
       organization,
       createdBy: inviter.id,
@@ -102,7 +103,8 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const owner = await createTestUser('owner@example.com');
     const organization = await createTestOrganization();
     // The row is bound to its owner while the token was never linked: possession of the link must not be enough.
-    const { inactiveMembership, invitationCookie } = await createInvokedInvitationToken({
+    const { inactiveMembership, invitationCookie } = await createInvitation({
+      token: 'invoked',
       email: invitedEmail,
       organization,
       createdBy: owner.id,
@@ -126,7 +128,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
   it('refuses a token already linked to another user', async () => {
     const owner = await createTestUser('owner@example.com');
-    const { invitationCookie } = await setup({ userId: owner.id });
+    const { invitationCookie } = await setup({ boundTo: owner.id });
 
     const attacker = await createTestUser('attacker@example.com');
     const { response } = await accept([await createTestSession(attacker), invitationCookie]);
@@ -137,7 +139,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
   it('accepts without a notice when the invitation is bound to the accepting user', async () => {
     const me = await createTestUser(invitedEmail);
-    const { invitationCookie } = await setup({ userId: me.id });
+    const { invitationCookie } = await setup({ boundTo: me.id });
 
     const { response } = await accept([await createTestSession(me), invitationCookie]);
 
@@ -206,7 +208,8 @@ describe('Accept an invitation token as the signed-in user', async () => {
       true,
       organization.tenantId,
     );
-    const { inactiveMembership, invitationCookie } = await createInvokedInvitationToken({
+    const { inactiveMembership, invitationCookie } = await createInvitation({
+      token: 'invoked',
       email: invitedEmail,
       organization,
       createdBy: me.id,
@@ -227,19 +230,16 @@ describe('Accept an invitation token as the signed-in user', async () => {
 describe('Opening a token link while signed in', async () => {
   const call = await createAppClient();
 
-  const insertToken = async (values: { type: 'invitation' | 'magic'; email: string; userId: string | null }) => {
-    const raw = nanoid(40);
-    await db.insert(tokensTable).values({
-      secret: hashToken(raw),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      ...values,
-    });
-    return raw;
+  /** An unopened invitation link, for an organization of its own. */
+  const freshInvitation = async (opts: { email: string; boundTo?: string | null }) => {
+    const organization = await createTestOrganization();
+    const inviter = await createTestUser('inviter@example.com');
+    return createInvitation({ organization, createdBy: inviter.id, ...opts });
   };
 
   it('lets a signed-in user open an invitation that is not bound to anyone', async () => {
     const me = await createTestUser('my-account@example.com');
-    const raw = await insertToken({ type: 'invitation', email: invitedEmail, userId: null });
+    const { rawToken: raw } = await freshInvitation({ email: invitedEmail });
 
     const { response } = await call(invokeToken, {
       path: { type: 'invitation', token: raw },
@@ -253,7 +253,7 @@ describe('Opening a token link while signed in', async () => {
   it('still refuses an invitation linked to another user', async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
-    const raw = await insertToken({ type: 'invitation', email: owner.email, userId: owner.id });
+    const { rawToken: raw } = await freshInvitation({ email: owner.email, boundTo: owner.id });
 
     const { response } = await call(invokeToken, {
       path: { type: 'invitation', token: raw },
@@ -266,7 +266,14 @@ describe('Opening a token link while signed in', async () => {
   it("still refuses another user's magic link", async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
-    const raw = await insertToken({ type: 'magic', email: owner.email, userId: owner.id });
+    const raw = nanoid(40);
+    await db.insert(tokensTable).values({
+      secret: hashToken(raw),
+      type: 'magic',
+      email: owner.email,
+      userId: owner.id,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    });
 
     const { response } = await call(invokeToken, {
       path: { type: 'magic', token: raw },
