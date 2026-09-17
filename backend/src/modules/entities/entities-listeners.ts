@@ -33,11 +33,7 @@ authEvents.on('session.deleted', async ({ userId, sessionIds }) => {
   const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
   for (const subscriber of subscribers) {
     if (!sessionIds.includes(subscriber.sessionId)) continue;
-    try {
-      await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session ended' });
-    } catch (error) {
-      log.debug('Failed to write session-ended error to stream', { error, subscriberId: subscriber.id });
-    }
+    await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session ended' });
     streamSubscriberManager.unregister(subscriber.id);
     // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
     subscriber.stream.abort();

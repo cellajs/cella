@@ -16,11 +16,7 @@ const pushSupported = () =>
   'PushManager' in window &&
   'Notification' in window;
 
-/**
- * Drops this browser's push subscription on the server and in the push service; no-op without support, a registered
- * worker, or a subscription. The server half needs the session, so sign-out runs it before ending the session.
- * Reads `getRegistration`, since `ready` never resolves while no worker is registered (dev).
- */
+/** Drops this browser's push subscription on the server (needs the session) and in the push service. `ready` never resolves without a registered worker (dev), hence `getRegistration`. */
 export async function disablePushSubscription(): Promise<void> {
   if (!pushSupported()) return;
   const registration = await navigator.serviceWorker.getRegistration();

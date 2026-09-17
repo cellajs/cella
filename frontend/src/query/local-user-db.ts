@@ -43,14 +43,8 @@ export interface PersistedMetaRecord {
 let currentDb: LocalUserDatabase | null = null;
 let currentOwnerId: string | null = null;
 
-/** Listeners for a delete request from another tab (its hard sign-out), run after this tab closed and unbound the database. */
-const deletedElsewhereListeners = new Set<() => void>();
-
-/** Fires after another tab's delete closed and unbound the current database, so this tab can finish its own sign-out. */
-export function subscribeLocalUserDbDeletedElsewhere(listener: () => void): () => void {
-  deletedElsewhereListeners.add(listener);
-  return () => deletedElsewhereListeners.delete(listener);
-}
+/** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
+export const deletedElsewhereListeners = new Set<() => void>();
 
 /** All tables share one version ladder: bump the single `version(n)` here, which means concurrent PRs changing it must serialize. */
 export class LocalUserDatabase extends Dexie {
