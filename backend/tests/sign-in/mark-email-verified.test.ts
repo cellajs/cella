@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
+import { markEmailVerified, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { emailsTable } from '#/modules/user/emails-db';
 import { createTestUser } from '../helpers';
 import { clearDatabase } from '../test-utils';
@@ -41,5 +41,14 @@ describe('markEmailVerified', () => {
     // Another account's address is never touched.
     expect(await markEmailVerified(db, { userId: user.id, email: other.email })).toBe(false);
     expect((await emailRow(other.email)).verified).toBe(false);
+  });
+
+  it('fails a verification flow on an address the account does not hold', async () => {
+    const user = await createTestUser('owner@example.com');
+
+    await expect(requireEmailVerified(db, { userId: user.id, email: 'nobody@example.com' })).rejects.toMatchObject({
+      status: 500,
+    });
+    await expect(requireEmailVerified(db, { userId: user.id, email: user.email })).resolves.toBeUndefined();
   });
 });

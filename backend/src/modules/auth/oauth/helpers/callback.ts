@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
-import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
+import { requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
@@ -251,12 +251,7 @@ const verifyCallbackFlow = async ({
     // Only the account's own address has an email row. A provider address that differs from it lives on the OAuth
     // account alone (identity is the provider subject, not the address), so its proof is the flag set above.
     if (verifyToken.email === user.email) {
-      const verified = await markEmailVerified(tx, { userId: user.id, email: verifyToken.email });
-      if (!verified) {
-        throw new AppError(500, 'server_error', 'error', {
-          meta: { reason: 'verified_address_not_on_account', userId: user.id },
-        });
-      }
+      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email });
     }
   });
 

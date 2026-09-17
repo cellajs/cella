@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { AppError } from '#/core/error';
 import type { DbOrTx } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -25,4 +26,12 @@ export const markEmailVerified = async (db: DbOrTx, { userId, email }: MarkEmail
   // Nothing updated: either verified earlier (fine) or no such row (drift).
   const [existing] = await db.select({ id: emailsTable.id }).from(emailsTable).where(ownRow).limit(1);
   return !!existing;
+};
+
+/** For flows whose whole purpose is verification: an address the account does not hold fails the request. */
+export const requireEmailVerified = async (db: DbOrTx, opts: MarkEmailVerifiedOpts): Promise<void> => {
+  if (await markEmailVerified(db, opts)) return;
+  throw new AppError(500, 'server_error', 'error', {
+    meta: { reason: 'verified_address_not_on_account', userId: opts.userId },
+  });
 };
