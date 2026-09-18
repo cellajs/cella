@@ -15,7 +15,7 @@ interface OnboardingStep extends StepItem {
 const isFounder = ({ hasOrganizations, hasInvitations }: OnboardingContext) => !hasOrganizations && !hasInvitations;
 
 /**
- * The steps that fit this user: an invited user answers invitations instead of creating an organization.
+ * The steps that fit this user: an invited user answers invitations, a founder creates an organization.
  * Call at render time: the labels use `i18n.t`, which returns undefined until i18next has loaded its namespaces.
  */
 export function getOnboardingSteps(ctx: OnboardingContext): StepItem[] {
