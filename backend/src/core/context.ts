@@ -29,6 +29,8 @@ export type Env = {
     organizationId: string;
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     sessionToken: string;
+    /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */
+    sessionId: string;
     requestId: string;
     db: DbOrTx;
     tenantId: string;

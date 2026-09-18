@@ -40,6 +40,12 @@ export interface PersistedMetaRecord {
   channelQueries: DehydratedQuery[];
 }
 
+let currentDb: LocalUserDatabase | null = null;
+let currentOwnerId: string | null = null;
+
+/** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
+export const deletedElsewhereListeners = new Set<() => void>();
+
 /** All tables share one version ladder: bump the single `version(n)` here, which means concurrent PRs changing it must serialize. */
 export class LocalUserDatabase extends Dexie {
   kv!: Dexie.Table<KvRecord, string>;
@@ -62,11 +68,20 @@ export class LocalUserDatabase extends Dexie {
       downloadQueue: '&id, organizationId, [organizationId+status]',
       failedSync: '++id, mutationId, entityType, createdAt',
     });
+
+    // A delete from another connection is a hard sign-out in another tab: close for good and unbind, so a late write
+    // here cannot recreate the database (Dexie's default handler keeps auto-open). Upgrades keep the default.
+    this.on('versionchange', (event) => {
+      if (event.newVersion !== null) return;
+      this.close();
+      if (currentDb !== this) return false;
+      currentDb = null;
+      currentOwnerId = null;
+      for (const listener of deletedElsewhereListeners) listener();
+      return false;
+    });
   }
 }
-
-let currentDb: LocalUserDatabase | null = null;
-let currentOwnerId: string | null = null;
 
 /** The currently bound per-user DB, or `null` while signed out. */
 export function getLocalUserDb(): LocalUserDatabase | null {

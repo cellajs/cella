@@ -26,7 +26,7 @@ const MAX_STREAMS_PER_USER = 10;
 const MAX_STREAM_SUBSCRIBERS = 5000;
 
 app.openapi(entityRoutes.appStream, async (ctx) => {
-  const { user, memberships, isSystemAdmin } = ctx.var;
+  const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
 
   if (
     streamSubscriberManager.size >= MAX_STREAM_SUBSCRIBERS ||
@@ -48,6 +48,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       channel: orgChannels[0] ?? '',
       stream,
       userId: user.id,
+      sessionId,
       organizationIds,
       isSystemAdmin,
       memberships,

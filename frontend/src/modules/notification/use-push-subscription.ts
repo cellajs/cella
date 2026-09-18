@@ -16,6 +16,16 @@ const pushSupported = () =>
   'PushManager' in window &&
   'Notification' in window;
 
+/** Drops this browser's push subscription on the server (needs the session) and in the push service. `ready` never resolves without a registered worker (dev), hence `getRegistration`. */
+export async function disablePushSubscription(): Promise<void> {
+  if (!pushSupported()) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
+  await removePushSubscription(subscription.endpoint);
+  await subscription.unsubscribe();
+}
+
 /**
  * Web Push subscription state for this browser installation, driving the settings toggle.
  * `supported` is false when the config flag is off, the browser lacks the APIs, or the deployment
@@ -72,12 +82,7 @@ export function usePushSubscription() {
   const disable = useCallback(async () => {
     setBusy(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await removePushSubscription(subscription.endpoint);
-        await subscription.unsubscribe();
-      }
+      await disablePushSubscription();
       setEnabled(false);
     } finally {
       setBusy(false);

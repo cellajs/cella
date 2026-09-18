@@ -7,7 +7,10 @@ import { queryClient } from '~/query/query-client';
 export const teardownUserState = async (wipe = true): Promise<void> => {
   queryClient.clear();
 
-  // Hard sign-out only: destroy all per-user persisted data while the owner is still known.
+  // The badge belongs to the service worker, which outlives this page.
+  if (typeof navigator !== 'undefined' && 'clearAppBadge' in navigator) void navigator.clearAppBadge().catch(() => {});
+
+  // Hard sign-out only: destroy all per-user persisted data while the owner is still known. Other tabs see the delete and sign out too.
   if (wipe) await deleteLocalUserDb();
 
   // Reset the bootstrap UI session flags (impersonation, offline access); theme/mode persist.

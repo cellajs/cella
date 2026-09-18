@@ -4,6 +4,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { authEvents } from '#/modules/auth/auth-events';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -101,6 +102,8 @@ app.openapi(meRoutes.deleteMySessions, async (ctx) => {
 
     const deletedIds = deleted.map((s) => s.id);
     const rejectedIds = sessionIds.filter((id) => !deletedIds.includes(id));
+
+    if (deletedIds.length > 0) authEvents.emit('session.deleted', { userId: user.id, sessionIds: deletedIds });
 
     return ctx.json({ data: [] as never[], rejectedIds }, 200);
   } catch {

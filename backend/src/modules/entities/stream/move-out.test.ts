@@ -40,6 +40,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
     channel: `org:${ORG}`,
     stream,
     userId,
+    sessionId: `session-${userId}`,
     organizationIds: new Set([ORG]),
     isSystemAdmin: false,
     memberships,
