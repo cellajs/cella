@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper/stepper';
-import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
@@ -14,7 +13,7 @@ interface StepperFooterProps {
 
 /** Skipping the organization step asks for confirmation; other optional steps skip straight through. */
 export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
-  const { nextStep, isOptionalStep, activeStep, hasCompletedAllSteps } = useStepper();
+  const { nextStep, isOptionalStep, currentStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
 
   const skipButtonRef = useRef(null);
@@ -25,7 +24,7 @@ export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
 
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (getOnboardingSteps()[activeStep].id === 'organization') {
+    if (currentStep?.id === 'organization') {
       useDialoger.getState().create(<SkipOrganization setOnboardingState={setOnboardingState} />, {
         id: 'skip-org-creation',
         triggerRef: skipButtonRef,
