@@ -8,7 +8,6 @@ import { usersTable } from '#/modules/user/user-db';
  * The inboxes proven to belong to an account: the sign-up address, plus any address whose verification link was clicked
  * (an OAuth connect on another address). A row is written only by such a proof, never on a provider's word alone, and
  * never deleted as a side effect. Every row is a magic-link sign-in identifier. `users.email` stays the primary.
- * tokenId has no FK constraint (tokens is partitioned).
  */
 export const emailsTable = snakeCase.table(
   'emails',
@@ -17,7 +16,6 @@ export const emailsTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     email: varchar({ length: maxLength.field }).notNull().unique(),
     verified: boolean().notNull().default(false),
-    tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),

@@ -1,6 +1,5 @@
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { findUnboundInvitationTokensByEmail } from '#/modules/auth/auth-queries';
 import { bindInactiveMemberships, deleteInvitationTokens } from '#/modules/memberships/memberships-queries';
 
 interface ClaimEmailForUserOpts {
@@ -13,19 +12,7 @@ interface ClaimEmailForUserOpts {
  * a bound invitation is answered in-app, so the emailed link has no further use. Idempotent.
  */
 export const claimEmailForUser = async (ctx: DbContext, { userId, email }: ClaimEmailForUserOpts) => {
-  const { db } = ctx.var;
-
-  const pendingTokens = await db
-    .select({ inactiveMembershipId: tokensTable.inactiveMembershipId })
-    .from(tokensTable)
-    .where(
-      and(
-        eq(tokensTable.email, email),
-        eq(tokensTable.type, 'invitation'),
-        isNull(tokensTable.userId),
-        isNotNull(tokensTable.inactiveMembershipId),
-      ),
-    );
+  const pendingTokens = await findUnboundInvitationTokensByEmail(ctx, { email });
 
   const inactiveMembershipIds = [...new Set(pendingTokens.flatMap((t) => t.inactiveMembershipId ?? []))];
   if (!inactiveMembershipIds.length) return [];

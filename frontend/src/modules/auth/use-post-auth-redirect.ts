@@ -13,14 +13,9 @@ export function resolvePostAuthRedirect(redirect: string | undefined, tokenId?: 
   return redirect?.startsWith('/') && !redirect.startsWith('//') ? redirect : appConfig.defaultRedirectPath;
 }
 
-export function usePostAuthRedirect() {
-  const { redirect, tokenId } = useSearch({ strict: false });
-  return resolvePostAuthRedirect(redirect, tokenId);
-}
-
 /** Leaves the auth steps after an in-page sign-in. */
 export function useNavigateAfterAuth() {
   const navigate = useNavigate();
-  const to = usePostAuthRedirect();
-  return () => navigate({ to, replace: true });
+  const { redirect, tokenId } = useSearch({ strict: false });
+  return () => navigate({ to: resolvePostAuthRedirect(redirect, tokenId), replace: true });
 }

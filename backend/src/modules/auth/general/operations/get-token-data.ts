@@ -35,9 +35,11 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenModel): P
     }
   }
 
+  if (tokenRecord.userId) return tokenData;
+
   // A user may have been created since the invite was sent, without verifying email.
   const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
-  if (!tokenRecord.userId && existingUser) {
+  if (existingUser) {
     await linkTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
     // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.
     await bindInactiveMemberships(ctx, { ids: [tokenRecord.inactiveMembershipId], userId: existingUser.id });

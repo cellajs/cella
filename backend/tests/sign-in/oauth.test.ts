@@ -5,7 +5,6 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPastIsoDate } from '#/mocks';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -13,7 +12,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createUser } from '../helpers';
+import { createUser, linkIdentity } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -134,15 +133,7 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      const oauthAccount = {
-        userId: user.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: userEmail,
-        verified: true,
-        createdAt: mockPastIsoDate(),
-      };
-      await db.insert(identitiesTable).values(oauthAccount);
+      await linkIdentity(user);
 
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
@@ -160,17 +151,7 @@ describe('OAuth Authentication', async () => {
 
     it('finds the identity by provider subject when the provider address changed, and refreshes the snapshot', async () => {
       const user = await createUser('local-account@example.com');
-      const [identity] = await db
-        .insert(identitiesTable)
-        .values({
-          userId: user.id,
-          provider: 'github' as const,
-          providerUserId: 'github-user-id',
-          email: 'old-address@example.com',
-          verified: true,
-          createdAt: mockPastIsoDate(),
-        })
-        .returning();
+      const identity = await linkIdentity(user, { email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
@@ -199,15 +180,7 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      const oauthAccount = {
-        userId: user.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: userEmail,
-        verified: false,
-        createdAt: mockPastIsoDate(),
-      };
-      await db.insert(identitiesTable).values(oauthAccount);
+      await linkIdentity(user, { verified: false });
 
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
@@ -342,14 +315,7 @@ describe('OAuth Authentication', async () => {
     it('refuses a provider account already linked to another user', async () => {
       const user = await createUser('local-account@example.com');
       const other = await createUser('other-account@example.com');
-      await db.insert(identitiesTable).values({
-        userId: other.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: providerEmail,
-        verified: true,
-        createdAt: mockPastIsoDate(),
-      });
+      await linkIdentity(other, { email: providerEmail });
 
       const { response: res, error } = await connectCallback(user.id);
 
@@ -371,17 +337,7 @@ describe('OAuth Authentication', async () => {
     /** A connected-but-unverified GitHub account on another address, with the mailed single-use token in hand. */
     const connectedUnverified = async () => {
       const user = await createUser('local-account@example.com');
-      const [oauthAccount] = await db
-        .insert(identitiesTable)
-        .values({
-          userId: user.id,
-          provider: 'github' as const,
-          providerUserId: 'github-user-id',
-          email: providerEmail,
-          verified: false,
-          createdAt: mockPastIsoDate(),
-        })
-        .returning();
+      const oauthAccount = await linkIdentity(user, { verified: false, email: providerEmail });
 
       const rawSingleUse = nanoid(40);
       const [token] = await db
@@ -483,14 +439,7 @@ describe('OAuth Authentication', async () => {
     const linkVerifiedAccount = async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
-      await db.insert(identitiesTable).values({
-        userId: user.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: userEmail,
-        verified: true,
-        createdAt: mockPastIsoDate(),
-      });
+      await linkIdentity(user);
       return user;
     };
 
@@ -541,15 +490,7 @@ describe('OAuth Authentication', async () => {
       const user = await createUser(userEmail);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      const oauthAccount = {
-        userId: user.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: userEmail,
-        verified: true,
-        createdAt: mockPastIsoDate(),
-      };
-      await db.insert(identitiesTable).values(oauthAccount);
+      await linkIdentity(user);
 
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
@@ -572,15 +513,7 @@ describe('OAuth Authentication', async () => {
       const userEmail = 'github-user@example.com';
       const user = await createUser(userEmail);
 
-      const oauthAccount = {
-        userId: user.id,
-        provider: 'github' as const,
-        providerUserId: 'github-user-id',
-        email: userEmail,
-        verified: true,
-        createdAt: mockPastIsoDate(),
-      };
-      await db.insert(identitiesTable).values(oauthAccount);
+      await linkIdentity(user);
 
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));

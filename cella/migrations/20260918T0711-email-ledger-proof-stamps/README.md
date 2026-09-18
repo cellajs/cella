@@ -7,11 +7,13 @@
 stamped on every proof; `verified` and `verifiedAt` only on the first. The click on an OAuth
 connect's verification mail now adds a differing provider address to the ledger (`addProvenEmail`),
 so a magic link for it signs in to the same account and invitations to it bind directly.
-`markEmailVerified` takes `by`.
+`markEmailVerified` takes `by`. The write-only `emails.tokenId` column is dropped: its one reader went with
+the email-verification path.
 
 ## Blast radius
 
-Not sync-breaking, no cache bump. Adds two nullable columns to `emails`: apps run `pnpm generate`.
+Not sync-breaking, no cache bump. Adds two nullable columns to `emails` and drops `token_id`: apps run
+`pnpm generate`.
 An app that calls `markEmailVerified` passes `by`. Apps with their own address writes should route
 them through `addProvenEmail` so the stamps stay truthful. Nothing is deleted as a side effect.
 
@@ -23,6 +25,7 @@ No script: manual.
 
 1. `pnpm generate` for the two `emails` columns; keep the generated backfill (`last_verified_by = 'magic'` for rows already verified) if the app has verified rows.
 2. Add `by: 'magic' | <provider>` to any app call of `markEmailVerified` or `requireEmailVerified`.
+3. Remove `tokenId` from any app insert or update on `emails`.
 
 ## Verify
 

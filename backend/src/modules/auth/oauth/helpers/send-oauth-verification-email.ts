@@ -62,14 +62,6 @@ export const sendOAuthVerificationEmail = async ({ userId, identityId, redirectP
     })
     .returning();
 
-  // Link token to existing email row (only if not already verified by another flow)
-  if (!emailInUse) {
-    await db
-      .update(emailsTable)
-      .set({ tokenId: tokenRecord.id })
-      .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, user.id), eq(emailsTable.verified, false)));
-  }
-
   const lng = user.language;
 
   const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);

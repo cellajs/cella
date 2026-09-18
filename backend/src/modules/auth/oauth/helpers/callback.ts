@@ -8,15 +8,12 @@ import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-db';
-import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
-import { userSelect } from '#/modules/user/helpers/select';
 import type { UserModel } from '#/modules/user/user-db';
-import { usersTable } from '#/modules/user/user-db';
-import { findUserByEmail } from '#/modules/user/user-queries';
+import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
@@ -96,14 +93,14 @@ const authCallbackFlow = async ({
   identity = null,
 }: BaseCallbackProps): Promise<OAuthFlowResult> => {
   if (identity?.verified) {
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
+    const user = await findUserById({ var: { db } }, { id: identity.userId });
     await touchIdentity(identity, providerUser);
     return { type: 'verified', user, identity };
   }
 
   // User has an unverified OAuth account → prompt oauth (re-)verification
   if (identity) {
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
+    const user = await findUserById({ var: { db } }, { id: identity.userId });
     const type = user.lastSignInAt ? 'connect' : 'signup';
     return { type: 'unverified', identity, reason: type };
   }
@@ -119,7 +116,12 @@ const authCallbackFlow = async ({
   // No user match → create a new user and OAuth account atomically
   const newIdentity = await db.transaction(async (tx) => {
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createIdentity(tx, user.id, providerUser.id, provider, providerUser.email);
+    return createIdentity(tx, {
+      userId: user.id,
+      providerUserId: providerUser.id,
+      provider,
+      email: providerUser.email,
+    });
   });
 
   return { type: 'unverified', identity: newIdentity, reason: 'signup' };
@@ -137,7 +139,7 @@ const connectCallbackFlow = async ({
 }: { connectUserId?: string } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   if (!connectUserId) throw new AppError(401, 'unauthorized', 'warn');
 
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, connectUserId));
+  const user = await findUserById({ var: { db } }, { id: connectUserId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   if (identity) {
@@ -157,7 +159,12 @@ const connectCallbackFlow = async ({
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'error');
 
-  const newIdentity = await createIdentity(db, connectUserId, providerUser.id, provider, providerUser.email);
+  const newIdentity = await createIdentity(db, {
+    userId: connectUserId,
+    providerUserId: providerUser.id,
+    provider,
+    email: providerUser.email,
+  });
   return { type: 'unverified', identity: newIdentity, reason: 'connect' };
 };
 
@@ -176,18 +183,19 @@ const inviteCallbackFlow = async ({
 
   if (identity) throw new AppError(409, 'oauth_conflict', 'error');
 
-  // Email already in use by an existing user (checks both the emails and users tables)
+  // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'error');
-
-  // User may have signed up via another method (e.g. OAuth) but hasn't verified email yet
-  const [existingUser] = await db.select(userSelect).from(usersTable).where(eq(usersTable.email, providerUser.email));
-  if (existingUser) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // No user match → create a new user and OAuth account atomically
   const newIdentity = await db.transaction(async (tx) => {
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createIdentity(tx, user.id, providerUser.id, provider, providerUser.email);
+    return createIdentity(tx, {
+      userId: user.id,
+      providerUserId: providerUser.id,
+      provider,
+      email: providerUser.email,
+    });
   });
 
   return { type: 'unverified', identity: newIdentity, reason: 'invite' };
@@ -212,15 +220,16 @@ const verifyCallbackFlow = async ({
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
+  const user = await findUserById({ var: { db } }, { id: identity.userId });
 
   if (identity.verified) return { type: 'verified', user, identity };
 
   // Verify the identity and the address atomically
+  const now = getIsoDate();
   await db.transaction(async (tx) => {
     await tx
       .update(identitiesTable)
-      .set({ verified: true, verifiedAt: getIsoDate(), lastUsedAt: getIsoDate() })
+      .set({ verified: true, verifiedAt: now, lastUsedAt: now })
       .where(and(eq(identitiesTable.id, identity.id), eq(identitiesTable.userId, user.id)));
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
@@ -235,16 +244,12 @@ const verifyCallbackFlow = async ({
   return { type: 'verified', user, identity };
 };
 
-const createIdentity = async (
-  dbOrTx: DbOrTx,
-  userId: IdentityModel['userId'],
-  providerUserId: Provider['userId'],
-  provider: Provider['id'],
-  email: UserModel['email'],
-): Promise<IdentityModel> => {
+type NewIdentity = Pick<IdentityModel, 'userId' | 'providerUserId' | 'provider'> & { email: UserModel['email'] };
+
+const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity): Promise<IdentityModel> => {
   const [identity] = await dbOrTx
     .insert(identitiesTable)
-    .values({ userId, providerUserId, provider, email, verified: false })
+    .values({ ...values, verified: false })
     .returning();
 
   return identity;

@@ -37,8 +37,6 @@ export async function handleMembershipInvitationOp(
   if (!inactiveMembership)
     throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
 
-  const entityFieldId = inactiveMembership.channelId;
-
   await baseDb.transaction(async (tx) => {
     if (acceptOrReject === 'accept') {
       if (viaToken) {
@@ -49,7 +47,7 @@ export async function handleMembershipInvitationOp(
 
       const entity = await resolveEntity(
         { var: { db: tx } },
-        { entityType: inactiveMembership.channelType, identifier: entityFieldId },
+        { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId },
       );
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.channelType });
 
