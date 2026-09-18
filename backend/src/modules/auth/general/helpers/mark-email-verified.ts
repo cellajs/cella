@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import type { EnabledOAuthProvider } from 'shared';
 import { AppError } from '#/core/error';
 import type { DbOrTx } from '#/db/db';
+import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
 import { emailsTable } from '#/modules/user/emails-db';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -23,7 +24,7 @@ const proofStamps = (by: EmailProof, now: string) => ({
 });
 
 /**
- * Records an inbox proof on the user's address. Returns false when the user has no row for the address: the caller
+ * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user has no row for the address: the caller
  * proved ownership of an address the account does not hold, which is drift to surface, never to ignore.
  */
 export const markEmailVerified = async (db: DbOrTx, { userId, email, by }: EmailProofOpts): Promise<boolean> => {
@@ -32,7 +33,11 @@ export const markEmailVerified = async (db: DbOrTx, { userId, email, by }: Email
     .set(proofStamps(by, getIsoDate()))
     .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, userId)))
     .returning({ id: emailsTable.id });
-  return !!stamped;
+  if (!stamped) return false;
+
+  // The inbox is proven, so the invitations waiting for this address are this user's. Idempotent, one cheap lookup.
+  await claimEmailForUser({ var: { db } }, { userId, email });
+  return true;
 };
 
 /** For flows whose whole purpose is verification: an address the account does not hold fails the request. */
@@ -61,4 +66,6 @@ export const addProvenEmail = async (db: DbOrTx, { userId, email, by }: EmailPro
     .returning({ id: emailsTable.id });
 
   if (!row) throw new AppError(409, 'oauth_conflict', 'error');
+
+  await claimEmailForUser({ var: { db } }, { userId, email });
 };

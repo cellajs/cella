@@ -9,7 +9,8 @@ interface ClaimEmailForUserOpts {
 
 /**
  * Binds every pending invitation addressed to `email` to the user, then deletes the invitation tokens:
- * a bound invitation is answered in-app, so the emailed link has no further use. Idempotent.
+ * a bound invitation is answered in-app, so the emailed link has no further use. Idempotent. Call it only once the
+ * user has proven the inbox; an unproven claim would let anyone capture another person's invitations.
  */
 export const claimEmailForUser = async (ctx: DbContext, { userId, email }: ClaimEmailForUserOpts) => {
   const pendingTokens = await findUnboundInvitationTokensByEmail(ctx, { email });

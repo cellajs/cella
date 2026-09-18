@@ -3,6 +3,7 @@ import { membershipInvite } from 'sdk';
 import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -22,7 +23,7 @@ beforeAll(async () => {
 
 afterEach(async () => await clearDatabase());
 
-describe('Pending invitations claimed at sign-up', async () => {
+describe('Pending invitations are claimed by an inbox proof', async () => {
   const call = await createAppClient();
 
   /** Invites `invitedEmail` to a fresh organization through the API, as that organization's admin. */
@@ -48,50 +49,48 @@ describe('Pending invitations claimed at sign-up', async () => {
     return organization;
   };
 
-  it('binds every pending invitation for the address, not just one', async () => {
+  const pendingFor = (email: string) =>
+    db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const tokensFor = (email: string) => db.select().from(tokensTable).where(eq(tokensTable.email, email));
+  const newcomer = { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', firstName: 'Newcomer' };
+
+  it('claims nothing at sign-up: typing an address proves nothing', async () => {
+    await inviteToNewOrganization(1);
+    await inviteToNewOrganization(2);
+
+    await handleCreateUser({ var: { db } }, { newUser: newcomer });
+
+    // Anyone could have created this account, so the invitations stay unbound and their emailed links stay alive.
+    const pending = await pendingFor(invitedEmail);
+    expect(pending).toHaveLength(2);
+    expect(pending.every((m) => m.userId === null)).toBe(true);
+    expect(await tokensFor(invitedEmail)).toHaveLength(2);
+  });
+
+  it('binds every pending invitation at the first inbox proof, not just one', async () => {
     await inviteToNewOrganization(1);
     await inviteToNewOrganization(2);
     await inviteToNewOrganization(3);
+    const user = await handleCreateUser({ var: { db } }, { newUser: newcomer });
 
-    const before = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.email, invitedEmail));
-    expect(before).toHaveLength(3);
-    expect(before.every((m) => m.userId === null)).toBe(true);
+    expect(await markEmailVerified(db, { userId: user.id, email: invitedEmail, by: 'magic' })).toBe(true);
 
-    const user = await handleCreateUser(
-      { var: { db } },
-      { newUser: { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', firstName: 'Newcomer' } },
-    );
-
-    const after = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.email, invitedEmail));
-    expect(after).toHaveLength(3);
-    expect(after.every((m) => m.userId === user.id)).toBe(true);
-
-    const remainingTokens = await db.select().from(tokensTable).where(eq(tokensTable.email, invitedEmail));
-    expect(remainingTokens).toHaveLength(0);
+    const pending = await pendingFor(invitedEmail);
+    expect(pending).toHaveLength(3);
+    expect(pending.every((m) => m.userId === user.id)).toBe(true);
+    expect(await tokensFor(invitedEmail)).toHaveLength(0);
   });
 
   it('leaves invitations for other addresses untouched', async () => {
     await inviteToNewOrganization(1);
+    const someone = { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', firstName: 'Someone' };
+    const user = await handleCreateUser({ var: { db } }, { newUser: someone });
 
-    await handleCreateUser(
-      { var: { db } },
-      { newUser: { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', firstName: 'Someone' } },
-    );
+    await markEmailVerified(db, { userId: user.id, email: someone.email, by: 'magic' });
 
-    const [untouched] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.email, invitedEmail));
+    const [untouched] = await pendingFor(invitedEmail);
     expect(untouched.userId).toBeNull();
-
-    const tokens = await db.select().from(tokensTable).where(eq(tokensTable.email, invitedEmail));
-    expect(tokens).toHaveLength(1);
+    expect(await tokensFor(invitedEmail)).toHaveLength(1);
   });
 
   it('names a taken address as email_exists', async () => {

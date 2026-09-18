@@ -58,16 +58,18 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
 
 interface FindUserByEmailOpts {
   email: string;
+  /** Only a holder who has proven the inbox. An unverified row is a claim anyone could have typed. */
+  verifiedOnly?: boolean;
 }
 
 /** Resolves through emailsTable, the owner of address uniqueness and verification state. */
-export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
+export const findUserByEmail = async (ctx: DbContext, { email, verifiedOnly = false }: FindUserByEmailOpts) => {
   const { db } = ctx.var;
   const [user] = await db
     .select(userSelect)
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, email))
+    .where(and(eq(emailsTable.email, email), verifiedOnly ? eq(emailsTable.verified, true) : undefined))
     .limit(1);
   return user;
 };

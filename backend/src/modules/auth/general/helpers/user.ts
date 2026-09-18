@@ -3,7 +3,6 @@ import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { extractPgError } from '#/lib/error';
-import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { emailsTable } from '#/modules/user/emails-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
@@ -20,7 +19,11 @@ interface HandleCreateUserProps {
   emailVerified?: boolean;
 }
 
-/** Creates a user (also the OAuth sign-up path): user, unsubscribe token and email row, linking pending invitation tokens to their inactive memberships. Throws 409 `email_exists` when the address is taken. */
+/**
+ * Creates a user (also the OAuth sign-up path): user, unsubscribe token and an unverified email row. Pending invitations
+ * for the address are claimed at the first inbox proof, never here: typing someone's address into sign-up proves nothing.
+ * Throws 409 `email_exists` when the address is taken.
+ */
 export const handleCreateUser = async (
   ctx: DbContext,
   { newUser, emailVerified }: HandleCreateUserProps,
@@ -45,8 +48,6 @@ export const handleCreateUser = async (
     await db
       .insert(unsubscribeTokensTable)
       .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
-
-    await claimEmailForUser(ctx, { userId: user.id, email: normalizedEmail });
 
     // The account's one email row, with verification state from the sign-up strategy. A taken address never gets here:
     // the users insert above already failed on its unique email.
