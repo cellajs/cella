@@ -17,7 +17,8 @@ type AccountSecurityType =
   | 'tenant-created'
   | 'system-role-granted'
   | 'system-role-changed'
-  | 'system-role-revoked';
+  | 'system-role-revoked'
+  | 'invitation-accepted-elsewhere';
 
 interface AccountSecurityStatic {
   name: string;

@@ -4,8 +4,8 @@ import { nanoid } from 'shared/utils/nanoid';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { deleteVerificationTokens } from '#/modules/auth/general/helpers/send-verification-email';
-import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { deleteOAuthVerificationTokens } from '#/modules/auth/auth-queries';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -17,33 +17,35 @@ import { oauthVerificationEmail } from '../../../../../emails';
 
 interface Props {
   userId: string;
-  oauthAccountId: string;
+  identityId: string;
   redirectPath?: string | null;
 }
 
 /** Email verification for an OAuth account, proving the OAuth account holder also owns the email address. */
-export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redirectPath }: Props) => {
+export const sendOAuthVerificationEmail = async ({ userId, identityId, redirectPath }: Props) => {
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
-  const [oauthAccount] = await db.select().from(oauthAccountsTable).where(eq(oauthAccountsTable.id, oauthAccountId));
-  if (!oauthAccount) throw new AppError(404, 'not_found', 'warn');
+  const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identityId));
+  if (!identity) throw new AppError(404, 'not_found', 'warn');
+
+  // The address under verification is the provider's, which may differ from the account's own.
+  const email = identity.email ?? user.email;
 
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
     .from(emailsTable)
-    .where(and(eq(emailsTable.email, user.email), eq(emailsTable.verified, true)));
+    .where(and(eq(emailsTable.email, email), eq(emailsTable.verified, true)));
 
-  if (emailInUse && oauthAccount.verified) {
+  if (emailInUse && identity.verified) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
-  await deleteVerificationTokens(user.id, 'oauth-verification', oauthAccountId);
+  await deleteOAuthVerificationTokens({ var: { db } }, { userId: user.id, identityId });
 
   const newToken = nanoid(40);
   const hashedToken = hashToken(newToken);
-  const email = oauthAccount?.email ?? user.email;
 
   const [tokenRecord] = await db
     .insert(tokensTable)
@@ -53,20 +55,12 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
       userId: user.id,
       email,
       createdBy: user.id,
-      ...(oauthAccountId && { oauthAccountId: oauthAccountId }),
+      identityId,
       // Kept on the token row (not the emailed URL) so the deep link doesn't leak into email bodies
       redirectPath: redirectPath || null,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     })
     .returning();
-
-  // Link token to existing email row (only if not already verified by another flow)
-  if (!emailInUse) {
-    await db
-      .update(emailsTable)
-      .set({ tokenId: tokenRecord.id })
-      .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, user.id), eq(emailsTable.verified, false)));
-  }
 
   const lng = user.language;
 
@@ -75,8 +69,8 @@ export const sendOAuthVerificationEmail = async ({ userId, oauthAccountId, redir
   const staticProps = {
     verificationLink: verificationURL.toString(),
     name: user.name,
-    providerEmail: oauthAccount.email,
-    providerName: oauthAccount.provider,
+    providerEmail: email,
+    providerName: identity.provider,
   };
   const recipients = [{ email, lng }];
 

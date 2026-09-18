@@ -6,6 +6,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -205,4 +206,21 @@ export async function createTestSession(user: { id: string }) {
 
   const cookieContent = `${hashedSessionToken}.${sessionId}.`;
   return `${authCookieName('session')}=${cookieContent}`;
+}
+
+/** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
+export async function linkIdentity(user: { id: string; email: string }, overrides: Partial<InsertIdentityModel> = {}) {
+  const [identity] = await db
+    .insert(identitiesTable)
+    .values({
+      userId: user.id,
+      provider: 'github',
+      providerUserId: 'github-user-id',
+      email: user.email,
+      verified: true,
+      createdAt: mockPastIsoDate(),
+      ...overrides,
+    })
+    .returning();
+  return identity;
 }

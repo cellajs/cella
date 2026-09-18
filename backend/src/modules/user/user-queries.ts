@@ -1,6 +1,10 @@
-import { and, count, eq, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, lt, notExists, type SQL, sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
+import { identitiesTable } from '#/modules/auth/identities-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { memberSelect, userSelect } from '#/modules/user/helpers/select';
@@ -58,18 +62,66 @@ export const findUsersPaginated = async (ctx: DbContext, opts: FindUsersPaginate
 
 interface FindUserByEmailOpts {
   email: string;
+  /** Only a holder who has proven the inbox. An unverified row is a claim anyone could have typed. */
+  verifiedOnly?: boolean;
 }
 
-/** Resolves through emailsTable, since a user can have multiple emails. */
-export const findUserByEmail = async (ctx: DbContext, { email }: FindUserByEmailOpts) => {
+/** Resolves through emailsTable, the owner of address uniqueness and verification state. */
+export const findUserByEmail = async (ctx: DbContext, { email, verifiedOnly = false }: FindUserByEmailOpts) => {
   const { db } = ctx.var;
   const [user] = await db
     .select(userSelect)
     .from(usersTable)
     .leftJoin(emailsTable, eq(usersTable.id, emailsTable.userId))
-    .where(eq(emailsTable.email, email))
+    .where(and(eq(emailsTable.email, email), verifiedOnly ? eq(emailsTable.verified, true) : undefined))
     .limit(1);
   return user;
+};
+
+interface FindUnprovenUserIdsOpts {
+  createdBefore: string;
+  limit: number;
+}
+
+/**
+ * Accounts nobody ever proved or used: no verified address, no verified identity, never signed in, no session, no
+ * membership, no system role. They come from sign-ups whose link was never clicked, and hold their address hostage.
+ */
+export const findUnprovenUserIds = async (ctx: DbContext, { createdBefore, limit }: FindUnprovenUserIdsOpts) => {
+  const { db } = ctx.var;
+  const ownedBy = (userIdColumn: AnyPgColumn) => eq(userIdColumn, usersTable.id);
+
+  const rows = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(
+      and(
+        lt(usersTable.createdAt, createdBefore),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(emailsTable)
+            .where(and(ownedBy(emailsTable.userId), eq(emailsTable.verified, true))),
+        ),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(identitiesTable)
+            .where(and(ownedBy(identitiesTable.userId), eq(identitiesTable.verified, true))),
+        ),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(userCountersTable)
+            .where(and(ownedBy(userCountersTable.userId), isNotNull(userCountersTable.lastSignInAt))),
+        ),
+        notExists(db.select({ one: sql`1` }).from(sessionsTable).where(ownedBy(sessionsTable.userId))),
+        notExists(db.select({ one: sql`1` }).from(membershipsTable).where(ownedBy(membershipsTable.userId))),
+        notExists(db.select({ one: sql`1` }).from(systemRolesTable).where(ownedBy(systemRolesTable.userId))),
+      ),
+    )
+    .limit(limit);
+  return rows.map((row) => row.id);
 };
 
 interface FindUserByIdOpts {

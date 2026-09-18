@@ -2506,7 +2506,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2568,7 +2568,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["email-verification", "oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic"]
             },
             "required": true,
             "name": "type",
@@ -2605,9 +2605,86 @@
                     },
                     "inactiveMembershipId": {
                       "type": "string"
+                    },
+                    "invitation": {
+                      "type": "object",
+                      "properties": {
+                        "entityType": {
+                          "type": "string",
+                          "enum": ["organization"]
+                        },
+                        "entityName": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": ["admin", "member"]
+                        },
+                        "inviterName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["entityType", "entityName", "role", "inviterName"]
                     }
                   },
                   "required": ["email"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/invitation-token/accept": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "acceptInvitationToken",
+        "tags": ["auth", "cella"],
+        "summary": "Accept invitation token as current user",
+        "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
+        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Invitation was accepted",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
+                  "createdAt": "2024-11-30T08:11:29.841Z",
+                  "updatedAt": "2024-12-25T20:49:14.328Z",
+                  "tenantId": "fux7yivt59ywq1bpokswyyxl",
+                  "name": "Hamill - Price",
+                  "entityType": "organization",
+                  "slug": "hamill---price",
+                  "thumbnailUrl": null,
+                  "bannerUrl": null
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelBase"
                 }
               }
             }

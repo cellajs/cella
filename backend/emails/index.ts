@@ -1,5 +1,4 @@
 export { accountSecurityEmail } from './templates/account-security';
-export { emailVerificationEmail } from './templates/email-verification';
 export { magicLinkEmail } from './templates/magic-link';
 export { memberAddedEmail } from './templates/member-added';
 export { memberInviteEmail } from './templates/member-invite';

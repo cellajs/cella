@@ -73,7 +73,6 @@ type Story = StoryObj<typeof meta>;
 const makeEmailStory = (name: string): Story => ({ args: { name } });
 
 export const AccountSecurity = makeEmailStory('account-security');
-export const EmailVerification = makeEmailStory('email-verification');
 export const OauthVerification = makeEmailStory('oauth-verification');
 export const MagicLink = makeEmailStory('magic-link');
 export const SystemInvite = makeEmailStory('system-invite');

@@ -11,6 +11,9 @@ import type {
 } from './client';
 import { client } from './client.gen';
 import type {
+  AcceptInvitationTokenData,
+  AcceptInvitationTokenErrors,
+  AcceptInvitationTokenResponses,
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
@@ -259,6 +262,7 @@ import type {
   VerifyDomainResponses,
 } from './types.gen';
 import {
+  zAcceptInvitationTokenResponse,
   zCheckEmailBody,
   zCheckEmailResponse,
   zCheckSlugBody,
@@ -564,6 +568,41 @@ export const getTokenData = <ThrowOnError extends boolean = true>(
     responseValidator: async (data) => await zGetTokenDataResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/auth/token/{type}/{id}',
+    ...options,
+  });
+
+/**
+ * Accept invitation token as current user
+ *
+ * Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.
+ *
+ * **POST /auth/invitation-token/accept** ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/invitation-token/accept) ·· [acceptInvitationToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/invitation-token/accept) ·· _auth_cella_
+ *
+ * @param {acceptInvitationTokenData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
+  options?: Options<AcceptInvitationTokenData, ThrowOnError>,
+): RequestResult<AcceptInvitationTokenResponses, AcceptInvitationTokenErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<AcceptInvitationTokenResponses, AcceptInvitationTokenErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zAcceptInvitationTokenResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/invitation-token/accept',
     ...options,
   });
 

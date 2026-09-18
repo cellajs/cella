@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -15,7 +15,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
-import { usePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
+import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem } from '~/modules/ui/field';
@@ -32,12 +32,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode } = useAuthStore();
+  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } =
+    useAuthStore();
 
   const { lastUser, reset: clearUserStore } = useUserStore();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
-  const redirectPath = usePostAuthRedirect();
+  const navigateAfterAuth = useNavigateAfterAuth();
 
   const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
@@ -66,7 +66,7 @@ export function SignInStep() {
         const body: NonNullable<SignInWithPasskeyData['body']> = data;
         await signInWithPasskey({ body });
         setSignedIn(true);
-        navigate({ to: redirectPath, replace: true });
+        navigateAfterAuth();
       } catch {
         toaster.error(t('error:passkey_verification_failed'));
       }
@@ -105,7 +105,11 @@ export function SignInStep() {
   });
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
-    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect } }),
+    // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
+    mutationFn: () =>
+      sendMagicLink({
+        body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect },
+      }),
     onSuccess: () => {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', form.getValues('email'));
@@ -151,7 +155,12 @@ export function SignInStep() {
       ) : (
         <h1 className="text-center text-2xl">
           {getTitle()} <br />
-          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId} className="mt-2" />
+          <AuthEmailButton
+            email={email}
+            onClick={resetAuth}
+            disabled={!!tokenId && !inviteOtherAccount}
+            className="mt-2"
+          />
         </h1>
       )}
 

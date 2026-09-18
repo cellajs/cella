@@ -3,6 +3,7 @@ import { membershipInvite } from 'sdk';
 import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
@@ -117,6 +118,27 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships).toHaveLength(1);
     expect(inactiveMemberships[0].userId).toBe(existingUser.id);
     expect(inactiveMemberships[0].role).toBe('admin');
+  });
+
+  it('binds an invitation sent to a proven secondary address of an existing user', async () => {
+    const { organization, sessionCookie } = await createOrgAndAdmin();
+    const existingUser = await createTestUser('primary@example.com');
+    await addProvenEmail(db, { userId: existingUser.id, email: 'work@example.com', by: 'github' });
+
+    const { response: res, data } = await makeInviteRequest(
+      organization.tenantId,
+      organization.id,
+      { emails: ['work@example.com'], role: memberRole },
+      sessionCookie,
+    );
+
+    expect(res.status).toBe(200);
+    expect((data as { invitesSentCount: number }).invitesSentCount).toBe(1);
+
+    const [invitation] = await getInactiveMemberships(organization.id);
+    expect(invitation.userId).toBe(existingUser.id);
+    // Known address, so no token: the invitation is answered in-app.
+    expect(invitation.tokenId).toBeNull();
   });
 
   it('should handle mixed existing and new users', async () => {

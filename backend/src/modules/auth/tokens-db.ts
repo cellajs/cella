@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
@@ -18,7 +18,7 @@ export const tokensTable = snakeCase.table(
     type: varchar({ enum: tokenTypeEnum }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
-    oauthAccountId: uuid().references(() => oauthAccountsTable.id, { onDelete: 'cascade' }),
+    identityId: uuid().references(() => identitiesTable.id, { onDelete: 'cascade' }),
     inactiveMembershipId: uuid(),
     redirectPath: varchar({ length: maxLength.field }),
     createdBy: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),

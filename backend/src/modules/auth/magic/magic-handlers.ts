@@ -6,6 +6,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
+import { hasPendingInvitation } from '#/modules/auth/auth-queries';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -38,8 +39,10 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   let user: { id: string; name: string; language: string };
 
   if (!existingUser) {
-    // If self-registration is disabled, return 204 to prevent email enumeration
-    if (!appConfig.has.selfRegistration) {
+    // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
+    // as a real request, to prevent email enumeration.
+    const mayRegister = appConfig.has.selfRegistration || (await hasPendingInvitation(ctx, { email: normalizedEmail }));
+    if (!mayRegister) {
       log.info('Magic link requested for unknown email', { email: normalizedEmail });
       return ctx.body(null, 204);
     }

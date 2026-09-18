@@ -1,11 +1,13 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
+import { authGuard, crossTenantGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
+import { channelBaseSchema } from '#/schemas/entity-base';
+import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
 const authGeneralRoutes = {
   health: createXRoute({
@@ -126,6 +128,26 @@ const authGeneralRoutes = {
       200: {
         description: 'Token is valid',
         content: { 'application/json': { schema: tokenWithDataSchema, example: mockTokenDataResponse() } },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  acceptInvitationToken: createXRoute({
+    operationId: 'acceptInvitationToken',
+    method: 'post',
+    path: '/invitation-token/accept',
+    xGuard: [authGuard, crossTenantGuard],
+    xRateLimiter: [tokenLimiter('token')],
+    middleware: isNoBot,
+    tags: ['auth', 'cella'],
+    summary: 'Accept invitation token as current user',
+    description:
+      'Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.',
+    request: {},
+    responses: {
+      200: {
+        description: 'Invitation was accepted',
+        content: { 'application/json': { schema: channelBaseSchema, example: mockChannelBase() } },
       },
       ...errorResponseRefs,
     },

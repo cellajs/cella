@@ -1,3 +1,4 @@
+export { AcceptInvitationStep } from './accept-invitation';
 export { CheckEmailStep } from './check-email';
 export { InviteOnlyStep } from './invite-only';
 export { MagicLinkSentStep } from './magic-link-sent';

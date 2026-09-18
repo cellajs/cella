@@ -7,25 +7,21 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { authEvents } from '#/modules/auth/auth-events';
-import {
-  deleteSession,
-  findInvitationToken,
-  findLatestSessionByUser,
-  linkTokenToUser,
-} from '#/modules/auth/auth-queries';
+import { deleteSession, findInvitationToken, findLatestSessionByUser } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { handleEmailVerification } from '#/modules/auth/general/helpers/handle-email-verification';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
+import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
-import { getValidToken } from '#/utils/get-valid-token';
+import { getValidToken, singleUseWindow } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
@@ -62,13 +58,11 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   try {
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
 
-    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the 5-minute cookie stays valid.
+    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the existing cookie stays valid.
     if (tokenRecord.singleUseToken) {
-      // Cookie named by token type, holding the single use token, expiring in 5 minutes or on use.
-      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, new TimeSpan(5, 'm'));
+      // Cookie named by token type, holding the single use token, expiring with the token's single-use window or on use.
+      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, singleUseWindow(tokenRecord.type));
     }
-
-    if (tokenRecord.type === 'email-verification') return handleEmailVerification(ctx, tokenRecord);
 
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
 
@@ -98,25 +92,18 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
   const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
-
   if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
-  const tokenResponse = {
-    email: tokenRecord.email,
-    userId: tokenRecord.userId || '',
-    inactiveMembershipId: tokenRecord.inactiveMembershipId || '',
-  };
+  return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
+});
 
-  if (!tokenRecord.inactiveMembershipId) return ctx.json(tokenResponse, 200);
+app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
+  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
 
-  // Membership invitation: a user may have been created since the invite was sent, without verifying email
-  const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
-  if (!tokenRecord.userId && existingUser) {
-    await linkTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
-    tokenResponse.userId = existingUser.id;
-  }
+  const entity = await acceptInvitationTokenOp(ctx, tokenRecord);
+  deleteAuthCookie(ctx, 'invitation');
 
-  return ctx.json(tokenResponse, 200);
+  return ctx.json(entity, 200);
 });
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {

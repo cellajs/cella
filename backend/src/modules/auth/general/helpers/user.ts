@@ -1,16 +1,20 @@
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { extractPgError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
+
+/**
+ * A unique violation on a user's address, on `users.email` or `emails.email`. Matched on the table and column part of
+ * the constraint name, since the suffix differs between databases (`_key` from Postgres, `_unique` from older schemas).
+ */
+const isAddressConstraint = (constraint = '') => /^(users|emails)_email_/.test(constraint);
 
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
@@ -18,7 +22,11 @@ interface HandleCreateUserProps {
   emailVerified?: boolean;
 }
 
-/** Creates a user (also the OAuth sign-up path): user, unsubscribe token and email row, linking pending invitation tokens to their inactive memberships. Throws 409 if the email exists. */
+/**
+ * Creates a user (also the OAuth sign-up path): user, unsubscribe token and an unverified email row. Pending invitations
+ * for the address are claimed at the first inbox proof, never here: typing someone's address into sign-up proves nothing.
+ * Throws 409 `email_exists` when the address is taken.
+ */
 export const handleCreateUser = async (
   ctx: DbContext,
   { newUser, emailVerified }: HandleCreateUserProps,
@@ -44,30 +52,8 @@ export const handleCreateUser = async (
       .insert(unsubscribeTokensTable)
       .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
 
-    const existingTokens = await db
-      .select()
-      .from(tokensTable)
-      .where(
-        and(
-          eq(tokensTable.email, normalizedEmail),
-          eq(tokensTable.type, 'invitation'),
-          isNull(tokensTable.userId),
-          isNotNull(tokensTable.inactiveMembershipId),
-        ),
-      )
-      .limit(1);
-
-    if (existingTokens.length > 0) {
-      await handleSetUserOnInactiveMemberships(ctx, {
-        userId: user.id,
-        inactiveMembershipIds: existingTokens.map((t) => t.inactiveMembershipId!),
-      });
-    }
-
-    // Delete any unverified email under a different user
-    await db.delete(emailsTable).where(and(eq(emailsTable.email, normalizedEmail), eq(emailsTable.verified, false)));
-
-    // Create the email row with verification state from the sign-up strategy.
+    // The account's one email row, with verification state from the sign-up strategy. A taken address never gets here:
+    // the users insert above already failed on its unique email.
     await db.insert(emailsTable).values({
       email: normalizedEmail,
       userId: user.id,
@@ -77,20 +63,12 @@ export const handleCreateUser = async (
 
     return user;
   } catch (error) {
-    throw new AppError(409, 'email_exists', 'warn');
+    // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input)
+    // surfaces as what it is.
+    const pgError = extractPgError(error);
+    if (pgError?.code === '23505' && isAddressConstraint(pgError.constraint)) {
+      throw new AppError(409, 'email_exists', 'warn');
+    }
+    throw error;
   }
-};
-
-/** Sets the new user's ID on their inactive memberships, then deletes the associated tokens. */
-export const handleSetUserOnInactiveMemberships = async (
-  ctx: DbContext,
-  { userId, inactiveMembershipIds }: { userId: string; inactiveMembershipIds: string[] },
-) => {
-  const { db } = ctx.var;
-  await db
-    .update(inactiveMembershipsTable)
-    .set({ userId })
-    .where(inArray(inactiveMembershipsTable.id, inactiveMembershipIds));
-
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };

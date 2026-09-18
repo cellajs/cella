@@ -18,9 +18,6 @@ import {
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
-vi.mock('#/modules/auth/general/helpers/send-verification-email', () => ({
-  sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
-}));
 vi.mock('#/modules/auth/totps/helpers/totps', () => ({
   validateTOTP: vi.fn().mockResolvedValue(true),
   signInWithTotp: vi.fn().mockReturnValue(true),

@@ -1,6 +1,7 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type {
+  AcceptInvitationTokenResponse,
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
@@ -12,6 +13,7 @@ import type {
   User,
 } from 'sdk';
 import {
+  acceptInvitationToken,
   createPasskey,
   deletePasskey,
   deleteTotp,
@@ -49,6 +51,7 @@ export const meKeys = {
     totp: ['me', 'delete', 'totp'] as const,
   },
   handleInvitation: ['me', 'handle-invitation'] as const,
+  acceptInvitationToken: ['me', 'accept-invitation-token'] as const,
 };
 
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
@@ -168,20 +171,30 @@ export const myMembershipsQueryOptions = () =>
     staleTime: 0,
   });
 
-/** Accepting or rejecting drops the settled invite from cache and refreshes the menu. */
+/** Once an invitation is answered: refresh memberships so the menu rebuilds, drop the invite from cache, and say so. */
+const onInvitationSettled = async (settledEntity: { id: string }, action: 'accept' | 'reject') => {
+  await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
+
+  queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
+    if (!oldData) return oldData;
+    return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
+  });
+
+  toaster.success(t('c:invitation_settled', { action: action === 'accept' ? 'accepted' : 'rejected' }));
+};
+
+/** Answers an invitation listed in-app, by its id. */
 export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
     mutationKey: meKeys.handleInvitation,
     mutationFn: ({ path }) => handleMembershipInvitation({ path }),
-    onSuccess: async (settledEntity, { path: { acceptOrReject } }) => {
-      // Invalidate memberships + entity lists so useMenu reactively rebuilds
-      await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
+    onSuccess: (settledEntity, { path: { acceptOrReject } }) => onInvitationSettled(settledEntity, acceptOrReject),
+  });
 
-      queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, items: oldData.items.filter((invite) => invite.entity.id !== settledEntity.id) };
-      });
-
-      toaster.success(t('c:invitation_settled', { action: acceptOrReject === 'accept' ? 'accepted' : 'rejected' }));
-    },
+/** Accepts the invitation behind the single-use token cookie, as the signed-in account. */
+export const useAcceptInvitationTokenMutation = () =>
+  useMutation<AcceptInvitationTokenResponse, ApiError, void>({
+    mutationKey: meKeys.acceptInvitationToken,
+    mutationFn: () => acceptInvitationToken(),
+    onSuccess: (settledEntity) => onInvitationSettled(settledEntity, 'accept'),
   });

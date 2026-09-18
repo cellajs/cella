@@ -22,7 +22,7 @@ export async function createInviteOp(ctx: AuthContext, emails: string[]) {
 
   const now = new Date();
 
-  // Emails already belonging to a verified user (a user can have multiple emails)
+  // Emails already belonging to a verified user
   const existingEmailRecords = await findVerifiedEmails(ctx, { emails: normalizedEmails });
   const existingEmails = new Set(existingEmailRecords.map((r) => r.email));
 

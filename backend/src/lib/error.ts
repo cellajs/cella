@@ -33,7 +33,7 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
-function extractPgError(err: unknown): PgErrorInfo | null {
+export function extractPgError(err: unknown): PgErrorInfo | null {
   // Direct PG error (e.g., raw pg client)
   if (err instanceof Error && 'code' in err && typeof (err as { code: unknown }).code === 'string') {
     return err as Error & PgErrorInfo;

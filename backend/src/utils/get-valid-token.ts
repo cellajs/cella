@@ -11,6 +11,14 @@ import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
+/**
+ * How long an opened token stays usable through its single-use cookie. An invitation gets longer: answering it can
+ * include signing in to another account by magic link (a 15-minute link) and a two-factor challenge, and a shorter
+ * window would expire the invitation in the middle of that.
+ */
+export const singleUseWindow = (tokenType: TokenModel['type']) =>
+  new TimeSpan(tokenType === 'invitation' ? 30 : 5, 'm');
+
 type BaseProps = {
   ctx: Context<Env>;
   token: string;
@@ -18,7 +26,7 @@ type BaseProps = {
   invokeToken?: boolean;
 };
 /**
- * @param invokeToken When true, mints a fresh single-use token after consuming the primary `token`.
+ * @param invokeToken When true, mints a fresh single-use token after consuming the primary `token`, valid for {@link singleUseWindow}.
  * @throws AppError if the token is not found, expired, or of an invalid type.
  */
 export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true }: BaseProps): Promise<TokenModel> => {
@@ -33,13 +41,15 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
 
   if (!tokenRecord) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
-  // Abort when the token belongs to a different user than the existing session.
+  // Abort when the token belongs to a different user than the existing session. An invitation not yet bound to
+  // a user is the one exception: whoever holds it may open it while signed in and accept it as their own account.
+  const isUnboundInvitation = tokenRecord.type === 'invitation' && tokenRecord.userId === null;
   let existingSessionToken: string | null = null;
   try {
     const { sessionToken } = await getParsedSessionCookie(ctx);
     existingSessionToken = sessionToken;
   } catch (err) {}
-  if (existingSessionToken) {
+  if (existingSessionToken && !isUnboundInvitation) {
     const { user } = await validateSession(existingSessionToken);
     if (user?.id && tokenRecord.userId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
   }
@@ -63,7 +73,7 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
         // Hash at rest: the raw value lives only in the caller's short-lived cookie.
         singleUseToken: hashToken(rawSingleUseToken),
         invokedAt: new Date().toISOString(),
-        expiresAt: createDate(new TimeSpan(5, 'm')),
+        expiresAt: createDate(singleUseWindow(tokenRecord.type)),
       })
       .where(and(eq(tokensTable.id, tokenRecord.id), isNull(tokensTable.invokedAt)))
       .returning();

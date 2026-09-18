@@ -405,7 +405,7 @@
     "pnpm check",
     "pnpm test"
    ],
-   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization \u2014 enforcement belongs to permissions/quotas."
+   "summary": "Settings-slot resolution moves into useChannelSettingsSections (grants, context-role pairs, overrides, stored toolsConfig); ChannelSettingsPage is a presentation-only map and a ChannelSettingsSheet reference consumer ships upstream. channelSettingsTools factory removed: spread generalToolBase/detailsToolBase/tabsToolBase/dangerToolBase(channelType, resource) and render full cards (DeleteToolCard exported; general now requires 'update'). getTools applies the section default order 50 (getSlotDescriptors stays raw for tabs); getChannelSettingsTools + ChannelSettingsToolFor removed. Surface trims: SlotToolsConfig.settings key dropped (no reader; stored config = order + hidden), PlacementOverride narrowed to hidden/order, heldContextRoles loses its unused entity-less overload; prefer requires over visibleTo (grants inherit down the ancestor chain). Backend mergeJsonbShallow util replaces inlined jsonb || merge fragments. Supersedes the channelSettingsTools guidance in 20260730T0858 step 5. No DB change, no cache bump. Arrangement UI pivots to tabs: ToolsArrangementCard deleted, TabsArrangementCard (flat data grid, row drag + visibility switches, writes toolsConfig['<channelType>.tabs']) demoed on organization settings via getNavTabCandidates (new ungated export from tab-nav); organization settings navTab now locked. toolsConfig is UI visibility only, never authorization — enforcement belongs to permissions/quotas."
   },
   {
    "id": "20260811T0905-ts-import-extensions",
@@ -495,7 +495,7 @@
     "pnpm sdk",
     "pnpm check"
    ],
-   "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration \u2014 a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
+   "summary": "The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill). CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local declaration — a leftover explicit key after the spread silently wins with no TS error. Supersedes the hand-copy instruction in 20260730T0858."
   },
   {
    "id": "20260817T1447-remove-filter-tab-ids",
@@ -956,6 +956,61 @@
     "pnpm check"
    ],
    "summary": "The sign-out route flushes seen batches and drops the push subscription before the session ends; teardownUserState clears the app badge. LocalUserDatabase closes for good on a delete from another tab and runs deletedElsewhereListeners, so every tab of the user signs out with the deleting one instead of recreating the database. Backend: ctx.var.sessionId and AppStreamSubscriber.sessionId; sign-out and session termination emit authEvents session.deleted, and the entities listeners close the matching SSE streams with the unauthorized error; keepAlive now exits on closed or aborted streams."
+  },
+  {
+   "id": "20260917T2101-email-verification-token-removed",
+   "version": "next",
+   "title": "The email-verification token type is removed",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "shared/config",
+    "locales"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "sendVerificationEmail had no caller since password sign-up was removed, so the whole path goes: the sender, handleEmailVerification, the email-verification template and invokeToken branch, the 'email-verification' entry in tokenTypes, and its error and email locale keys. deleteVerificationTokens became deleteOAuthVerificationTokens (identityId since 20260918T0831); the OAuth mail subject moved to email.oauth_verification.subject. No database change (tokens.type is an unconstrained varchar). Apps remove 'email-verification' from their own tokenTypes and drop the locale keys; the /auth/email-verification page stays for the OAuth flows."
+  },
+  {
+   "id": "20260918T0711-email-ledger-proof-stamps",
+   "version": "next",
+   "title": "The emails table records inbox proofs",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "emails becomes the ledger of inboxes proven per account: lastVerifiedBy ('magic' or the OAuth provider whose verification mail was clicked) and lastVerifiedAt are stamped on every proof, verified/verifiedAt on the first. The OAuth verify click adds a differing provider address to the ledger through addProvenEmail (409 oauth_conflict when another account holds it), so a magic link for that address signs in to the same account and invitations to it bind directly. markEmailVerified takes by. Two nullable columns added and the write-only emails.tokenId dropped: apps run pnpm generate. Nothing is deleted as a side effect."
+  },
+  {
+   "id": "20260918T0831-identities-table",
+   "version": "next",
+   "title": "oauth_accounts becomes identities, keyed on the provider subject",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "oauth_accounts is renamed to identities, the one table for every external identity of a user (social OAuth now, SSO and LTI later). Identity is (provider, providerUserId, issuer) through a unique expression index; the asserted email is a nullable display snapshot, out of the key and out of the callback lookup, refreshed with lastUsedAt on every sign-in. New nullable columns kind (default 'oauth'), issuer, connectionId, data. tokens.oauthAccountId becomes tokens.identityId; deleteOAuthVerificationTokens takes identityId. Apps run pnpm generate with the rename hints from the README so rows survive, swap the import, and rename the token column in their own code."
   }
  ]
 }

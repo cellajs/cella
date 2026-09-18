@@ -28,7 +28,7 @@ export const oauthVerificationEmail = defineEmailTemplate<
 >()({
   translate(lng, { name, verificationLink, providerEmail, providerName }) {
     return {
-      subject: i18n.t('backend:email.email_verification.subject', { lng, appName }),
+      subject: i18n.t('backend:email.oauth_verification.subject', { lng, appName }),
       previewText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
       headerText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name }) : '',
