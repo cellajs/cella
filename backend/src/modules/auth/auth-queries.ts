@@ -1,12 +1,14 @@
-import { and, desc, eq, getColumns, isNotNull, isNull, type SQL } from 'drizzle-orm';
+import { and, desc, eq, getColumns, gt, isNotNull, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
+import { getIsoDate } from '#/utils/iso-date';
 
 interface FindCredentialIdsByUserOpts {
   userId: string;
@@ -148,6 +150,34 @@ export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpt
   const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);
   const [newPasskey] = await db.insert(passkeysTable).values(values).returning(passkeySelect);
   return newPasskey;
+};
+
+interface HasPendingInvitationOpts {
+  email: string;
+}
+
+/**
+ * Whether the address was invited and the invitation still stands: a membership invitation not rejected (it outlives
+ * its emailed token), or a live invitation token (a system invite has no membership row).
+ */
+export const hasPendingInvitation = async (ctx: DbContext, { email }: HasPendingInvitationOpts) => {
+  const { db } = ctx.var;
+
+  const [membershipInvitation] = await db
+    .select({ id: inactiveMembershipsTable.id })
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.rejectedAt)))
+    .limit(1);
+  if (membershipInvitation) return true;
+
+  const [liveToken] = await db
+    .select({ id: tokensTable.id })
+    .from(tokensTable)
+    .where(
+      and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())),
+    )
+    .limit(1);
+  return !!liveToken;
 };
 
 interface FindUnboundInvitationTokensByEmailOpts {

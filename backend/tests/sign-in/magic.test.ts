@@ -2,15 +2,17 @@ import { and, eq } from 'drizzle-orm';
 import { invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createUser, enableMFAForUser } from '../helpers';
+import { createTestOrganization, createUser, enableMFAForUser } from '../helpers';
+import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -200,6 +202,63 @@ describe('Magic link authentication', async () => {
       const location = new URL(res.headers.get('location') ?? '');
       expect(location.pathname).toBe('/auth/mfa');
       expect(location.searchParams.get('redirect')).toBe(resumePath);
+    });
+  });
+
+  describe('Registration closed to the public', () => {
+    const closeRegistration = () => {
+      setTestConfig({ selfRegistration: false });
+      onTestFinished(() => setTestConfig({ selfRegistration: true }));
+    };
+    const userFor = (email: string) => db.select().from(usersTable).where(eq(usersTable.email, email));
+
+    it('still lets an invited address sign up', async () => {
+      closeRegistration();
+      const organization = await createTestOrganization();
+      const inviter = await createUser('inviter@example.com');
+      await createInvitation({ organization, email: 'invited@example.com', createdBy: inviter.id });
+
+      const { response: res } = await call(sendMagicLink, {
+        body: { email: 'invited@example.com' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(204);
+      const [created] = await userFor('invited@example.com');
+      expect(created).toBeDefined();
+      expect(await getMagicToken(created.id)).toBeDefined();
+    });
+
+    it('creates nothing for an address that was not invited, with the same response', async () => {
+      closeRegistration();
+
+      const { response: res } = await call(sendMagicLink, {
+        body: { email: 'stranger@example.com' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(204);
+      expect(await userFor('stranger@example.com')).toHaveLength(0);
+    });
+
+    it('does not count a rejected invitation', async () => {
+      closeRegistration();
+      const organization = await createTestOrganization();
+      const inviter = await createUser('inviter@example.com');
+      const { inactiveMembership, token } = await createInvitation({
+        organization,
+        email: 'declined@example.com',
+        createdBy: inviter.id,
+      });
+      await db
+        .update(inactiveMembershipsTable)
+        .set({ rejectedAt: new Date().toISOString() })
+        .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+      await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
+
+      await call(sendMagicLink, { body: { email: 'declined@example.com' }, headers: defaultHeaders });
+
+      expect(await userFor('declined@example.com')).toHaveLength(0);
     });
   });
 
