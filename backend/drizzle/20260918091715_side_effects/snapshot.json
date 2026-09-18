@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "4eb1d822-edae-4183-9787-754379128320",
+  "id": "8af45611-3e83-4f13-953c-ce6ab9a945aa",
   "prevIds": [
-    "f14b899f-a11e-4f4b-bddc-c3452e48f073"
+    "ac16bf93-db44-42c3-9a74-8240051a39b6"
   ],
   "ddl": [
     {
@@ -3222,19 +3222,6 @@
       "generated": null,
       "identity": null,
       "name": "verified",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_id",
       "entityType": "columns",
       "schema": "public",
       "table": "emails"

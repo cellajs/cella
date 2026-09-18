@@ -17,7 +17,9 @@ changes one import. A provider changing a user's address no longer produces a se
 
 ## Run
 
-No script: manual. The schema migration needs rename hints so the data survives:
+No script: manual. The schema migration needs rename hints so the data survives. The last two hints belong to
+`20260918T0711-email-ledger-proof-stamps`; include them when both notes are applied in one `pnpm generate`, since
+the dropped `emails.token_id` otherwise reads as a possible rename:
 
 ```sh
 cd backend && pnpm tsx node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts --hints '[
@@ -26,7 +28,9 @@ cd backend && pnpm tsx node_modules/drizzle-kit/bin.cjs generate --config drizzl
  {"type":"rename","kind":"foreign key","from":["public","tokens","tokens_oauth_account_id_oauth_accounts_id_fkey"],"to":["public","tokens","tokens_identity_id_identities_id_fkey"]},
  {"type":"rename","kind":"foreign key","from":["public","identities","oauth_accounts_user_id_users_id_fkey"],"to":["public","identities","identities_user_id_users_id_fkey"]},
  {"type":"rename","kind":"index","from":["public","identities","oauth_accounts_user_id_idx"],"to":["public","identities","identities_user_id_idx"]},
- {"type":"create","kind":"index","entity":["public","identities","identities_provider_subject_idx"]}]'
+ {"type":"create","kind":"index","entity":["public","identities","identities_provider_subject_idx"]},
+ {"type":"create","kind":"column","entity":["public","emails","last_verified_by"]},
+ {"type":"create","kind":"column","entity":["public","emails","last_verified_at"]}]'
 cd .. && pnpm generate
 ```
 

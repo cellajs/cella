@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "f14b899f-a11e-4f4b-bddc-c3452e48f073",
+  "id": "8af45611-3e83-4f13-953c-ce6ab9a945aa",
   "prevIds": [
     "ac16bf93-db44-42c3-9a74-8240051a39b6"
   ],
@@ -20,7 +20,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "oauth_accounts",
+      "name": "identities",
       "entityType": "tables",
       "schema": "public"
     },
@@ -673,7 +673,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "oauth_accounts"
+      "table": "identities"
     },
     {
       "type": "uuid",
@@ -686,72 +686,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "provider",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "provider_user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "email",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "type": "boolean",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "false",
-      "generated": null,
-      "identity": null,
-      "name": "verified",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "oauth_accounts"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "verified_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "oauth_accounts"
+      "table": "identities"
     },
     {
       "type": "uuid",
@@ -764,7 +699,137 @@
       "name": "user_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "oauth_accounts"
+      "table": "identities"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'oauth'",
+      "generated": null,
+      "identity": null,
+      "name": "kind",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "issuer",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider_user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "verified",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verified_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "connection_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "data",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_used_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "identities"
     },
     {
       "type": "uuid",
@@ -1242,7 +1307,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "oauth_account_id",
+      "name": "identity_id",
       "entityType": "columns",
       "schema": "public",
       "table": "tokens"
@@ -3164,19 +3229,6 @@
     {
       "type": "uuid",
       "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "token_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "emails"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -3968,10 +4020,45 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "oauth_accounts_user_id_idx",
+      "name": "identities_user_id_idx",
       "entityType": "indexes",
       "schema": "public",
-      "table": "oauth_accounts"
+      "table": "identities"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "provider",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "provider_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "coalesce(\"issuer\", '')",
+          "isExpression": true,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "identities_provider_subject_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "identities"
     },
     {
       "nameExplicit": true,
@@ -5363,7 +5450,7 @@
       "name": "oauth_accounts_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "oauth_accounts"
+      "table": "identities"
     },
     {
       "nameExplicit": false,
@@ -5419,10 +5506,10 @@
     {
       "nameExplicit": false,
       "columns": [
-        "oauth_account_id"
+        "identity_id"
       ],
       "schemaTo": "public",
-      "tableTo": "oauth_accounts",
+      "tableTo": "identities",
       "columnsTo": [
         "id"
       ],
@@ -6011,7 +6098,7 @@
       "nameExplicit": false,
       "name": "oauth_accounts_pkey",
       "schema": "public",
-      "table": "oauth_accounts",
+      "table": "identities",
       "entityType": "pks"
     },
     {
@@ -6193,19 +6280,6 @@
       "schema": "public",
       "table": "yjs_updates",
       "entityType": "pks"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "provider",
-        "provider_user_id",
-        "email"
-      ],
-      "nullsNotDistinct": false,
-      "name": "oauth_accounts_provider_provider_user_id_email_unique",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "oauth_accounts"
     },
     {
       "nameExplicit": true,
@@ -6490,5 +6564,9 @@
       "table": "yjs_updates"
     }
   ],
-  "renames": []
+  "renames": [
+    "public.oauth_accounts->public.identities",
+    "public.tokens.oauth_account_id->public.tokens.identity_id",
+    "public.identities.oauth_accounts_user_id_idx->public.identities.identities_user_id_idx"
+  ]
 }
