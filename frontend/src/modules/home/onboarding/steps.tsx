@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,8 +7,10 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { StepperFooter } from '~/modules/home/onboarding/footer';
+import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
 import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
+import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
@@ -43,18 +45,21 @@ export function Onboarding({
 
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
-  const hasOrganizations = organizations.length > 0;
+  const { data: invitationsData } = useQuery(meInvitationsQueryOptions());
+  const invitations = invitationsData?.items ?? [];
 
-  // Locked at mount so creating an org mid-flow does not shrink the stepper.
-  const [steps] = useState(() => {
-    const allSteps = getOnboardingSteps();
-    return hasOrganizations ? [allSteps[0]] : allSteps;
-  });
+  // Locked at mount so answering an invitation or creating an org mid-flow does not reshape the stepper. The welcome
+  // route loads both queries first, so the lock sees real data.
+  const [steps] = useState(() =>
+    getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }),
+  );
 
   return (
     <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && <WelcomeText onboardingToStepper={() => setOnboardingState('stepper')} />}
+        {onboarding === 'start' && (
+          <WelcomeText invitations={invitations} onboardingToStepper={() => setOnboardingState('stepper')} />
+        )}
         {onboarding === 'stepper' && (
           <div
             className={cn(
@@ -85,6 +90,11 @@ export function Onboarding({
                       </CardHeader>
                     )}
                     <CardContent>
+                      {id === 'invitations' && (
+                        <InvitationsStep>
+                          <StepperFooter setOnboardingState={setOnboardingState} />
+                        </InvitationsStep>
+                      )}
                       {id === 'profile' && (
                         <UpdateUserForm user={user} compact>
                           <StepperFooter setOnboardingState={setOnboardingState} />
