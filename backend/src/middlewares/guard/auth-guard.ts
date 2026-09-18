@@ -31,6 +31,7 @@ export const authGuard = xMiddleware(
         ctx.set('user', cachedSession.user);
         ctx.set('userId', cachedSession.user.id);
         ctx.set('sessionToken', sessionToken);
+        ctx.set('sessionId', sessionId);
         ctx.set('isSystemAdmin', cachedSession.isSystemAdmin);
         ctx.set('db', baseDb);
 
@@ -61,6 +62,7 @@ export const authGuard = xMiddleware(
       ctx.set('user', user);
       ctx.set('userId', user.id);
       ctx.set('sessionToken', sessionToken);
+      ctx.set('sessionId', session.id);
 
       const systemAccessAllowed = isSystemAccessAllowed(ctx);
 

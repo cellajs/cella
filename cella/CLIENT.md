@@ -92,7 +92,7 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `downloadQueue` | Background download work |
 | `failedSync` | Replayed offline mutations quarantined after a 4xx error, for export and manual repair |
 
-The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in.
+The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in. The delete reaches every other tab of the same user through IndexedDB's `versionchange`, which is how those tabs sign out too.
 
 ## Cold start to live
 

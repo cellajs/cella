@@ -940,6 +940,24 @@
    "summary": "Bootstrap-owned IAM (vm-<service> applications, their path-conditioned policies, the singleVM host condition) derives from the service registry; compute, LB and key minting keep deriving from the enabled set. Toggling appConfig.services.<slug>.enabled needs no Apply infra change; adding a registry service or flipping singleVM does, and Apply creates the missing applications itself. Dormant principals must hold zero API keys: the deploy asserts it and the key mint purges them. One Apply infra change per bootstrapped stack after syncing (cella: host condition gains /mcp/; raak: new vm-yjs and vm-mcp principals)."
   },
   {
+   "id": "20260917T1850-sign-out-lifecycle",
+   "version": "next",
+   "title": "Sign-out lifecycle: session-bound streams and cross-tab teardown",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend",
+    "backend"
+   ],
+   "requires": [
+    "pnpm --filter backend exec vitest run src/modules/entities/stream",
+    "pnpm check"
+   ],
+   "summary": "The sign-out route flushes seen batches and drops the push subscription before the session ends; teardownUserState clears the app badge. LocalUserDatabase closes for good on a delete from another tab and runs deletedElsewhereListeners, so every tab of the user signs out with the deleting one instead of recreating the database. Backend: ctx.var.sessionId and AppStreamSubscriber.sessionId; sign-out and session termination emit authEvents session.deleted, and the entities listeners close the matching SSE streams with the unauthorized error; keepAlive now exits on closed or aborted streams."
+  },
+  {
    "id": "20260917T2101-email-verification-token-removed",
    "version": "next",
    "title": "The email-verification token type is removed",
