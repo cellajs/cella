@@ -10,8 +10,11 @@ import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 
-/** Unique constraints on a user's address: `users.email` and `emails.email`. */
-const addressConstraints = new Set(['users_email_key', 'emails_email_key']);
+/**
+ * A unique violation on a user's address, on `users.email` or `emails.email`. Matched on the table and column part of
+ * the constraint name, since the suffix differs between databases (`_key` from Postgres, `_unique` from older schemas).
+ */
+const isAddressConstraint = (constraint = '') => /^(users|emails)_email_/.test(constraint);
 
 interface HandleCreateUserProps {
   newUser: InsertUserModel;
@@ -63,7 +66,7 @@ export const handleCreateUser = async (
     // A taken address is the one conflict to name here. Anything else (a failed claim, a slug race, bad input)
     // surfaces as what it is.
     const pgError = extractPgError(error);
-    if (pgError?.code === '23505' && addressConstraints.has(pgError.constraint ?? '')) {
+    if (pgError?.code === '23505' && isAddressConstraint(pgError.constraint)) {
       throw new AppError(409, 'email_exists', 'warn');
     }
     throw error;
