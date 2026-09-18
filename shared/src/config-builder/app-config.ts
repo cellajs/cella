@@ -7,7 +7,10 @@ import { tunnel } from '../../config/config.tunnel.ts';
 import type { S3Config } from './types.ts';
 import { mergeDeep } from './utils.ts';
 
-type Config = Omit<typeof _default, 's3'> & { s3: S3Config };
+/** Services whose public URL the builder derives from the top-level URL family. */
+type UrlBearingService = 'frontend' | 'backend' | 'yjs' | 'mcp';
+type BuiltServices = typeof _default.services & Record<UrlBearingService, { publicUrl: string }>;
+type Config = Omit<typeof _default, 's3' | 'services'> & { s3: S3Config; services: BuiltServices };
 const configModes = { development, tunnel, staging, production, test } satisfies Record<Config['mode'], unknown>;
 
 // APP_MODE selects config independently so production-mode containers can use development naming.
@@ -34,12 +37,14 @@ if (process.env.MCP_API_URL) merged.mcpUrl = process.env.MCP_API_URL;
 // Set via env so `pnpm dev:single` or a preview deploy flips it without a config edit.
 if (process.env.SINGLE_VM) merged.singleVM = process.env.SINGLE_VM === 'true';
 
-merged.services = {
+// `services.<slug>.publicUrl` is derived, never authored: the URL family above (after env
+// overrides) is the single source, so infra consumers read one map of flags plus URLs.
+const services: BuiltServices = {
   ...merged.services,
-  frontend: { ...(merged.services.frontend ?? {}), publicUrl: merged.frontendUrl },
-  backend: { ...(merged.services.backend ?? {}), publicUrl: merged.backendUrl },
-  yjs: { ...(merged.services.yjs ?? {}), publicUrl: merged.yjsUrl },
-  mcp: { ...(merged.services.mcp ?? {}), publicUrl: merged.mcpUrl },
+  frontend: { ...merged.services.frontend, publicUrl: merged.frontendUrl },
+  backend: { ...merged.services.backend, publicUrl: merged.backendUrl },
+  yjs: { ...merged.services.yjs, publicUrl: merged.yjsUrl },
+  mcp: { ...merged.services.mcp, publicUrl: merged.mcpUrl },
 };
 
 // Scaleway needs a URL-safe slug of at least four non-hyphen characters. Apps must supply a
@@ -65,4 +70,4 @@ s3.privateBucket ??= `${bucketPrefix}-private`;
 s3.publicCDNUrl ??= `https://${s3.publicBucket}.${s3.host}`;
 s3.privateCDNUrl ??= `https://${s3.privateBucket}.${s3.host}`;
 
-export const appConfig = merged as Config;
+export const appConfig = { ...merged, services } as Config;

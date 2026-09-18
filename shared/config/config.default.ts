@@ -89,17 +89,20 @@ export const config = {
   // Same-origin: every service is a path under the app origin, so cookies stay
   // first-party (`__Host-`, SameSite=Strict), CORS disappears and CSP collapses
   // to 'self'. The LB routes /api, /yjs and /mcp by path prefix (matchPathBegin).
+  // These URLs are the single source: the config builder derives `services.<slug>.publicUrl`
+  // from them, so mode configs override the URLs here and never the `services` block.
   frontendUrl: 'https://www.cellajs.com',
   backendUrl: 'https://www.cellajs.com/api',
   backendAuthUrl: 'https://www.cellajs.com/api/auth',
   yjsUrl: 'wss://www.cellajs.com/yjs',
   mcpUrl: 'https://www.cellajs.com/mcp',
+  // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
   services: {
-    frontend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com' },
-    backend: { enabled: true as boolean, publicUrl: 'https://www.cellajs.com/api' },
+    frontend: { enabled: true as boolean },
+    backend: { enabled: true as boolean },
     cdc: { enabled: true as boolean },
-    yjs: { enabled: true as boolean, publicUrl: 'wss://www.cellajs.com/yjs' },
-    mcp: { enabled: false as boolean, publicUrl: 'https://www.cellajs.com/mcp' },
+    yjs: { enabled: true as boolean },
+    mcp: { enabled: false as boolean },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
