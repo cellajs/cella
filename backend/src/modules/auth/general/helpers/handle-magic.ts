@@ -18,7 +18,7 @@ export const handleMagicLink = async (ctx: Context<Env>, token: TokenModel) => {
 
   // Clicking a magic link proves email ownership. Sign-in is the point here, so a missing row is logged, not fatal.
   if (token.email) {
-    const verified = await markEmailVerified(db, { userId: user.id, email: token.email });
+    const verified = await markEmailVerified(db, { userId: user.id, email: token.email, by: 'magic' });
     if (!verified) log.error('Magic link address is not on the account', { userId: user.id });
   }
 

@@ -4,8 +4,10 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
+import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { createUser, enableMFAForUser } from '../helpers';
@@ -198,6 +200,23 @@ describe('Magic link authentication', async () => {
       const location = new URL(res.headers.get('location') ?? '');
       expect(location.pathname).toBe('/auth/mfa');
       expect(location.searchParams.get('redirect')).toBe(resumePath);
+    });
+  });
+
+  describe('Proven secondary address', () => {
+    it('signs in to the account that proved the address, creating no second user', async () => {
+      const user = await createUser(signUpUser.email);
+      await addProvenEmail(db, { userId: user.id, email: 'work@example.com', by: 'github' });
+
+      const { response: res } = await call(sendMagicLink, {
+        body: { email: 'work@example.com' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(204);
+      const token = await getMagicToken(user.id);
+      expect(token.email).toBe('work@example.com');
+      expect(await db.select().from(usersTable).where(eq(usersTable.email, 'work@example.com'))).toHaveLength(0);
     });
   });
 

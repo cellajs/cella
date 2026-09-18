@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
-import { requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
+import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
@@ -230,10 +230,12 @@ const verifyCallbackFlow = async ({
         ),
       );
 
-    // Only the account's own address has an email row. A provider address that differs from it lives on the OAuth
-    // account alone (identity is the provider subject, not the address), so its proof is the flag set above.
+    // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
+    // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
     if (verifyToken.email === user.email) {
-      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email });
+      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email, by: provider });
+    } else {
+      await addProvenEmail(tx, { userId: user.id, email: verifyToken.email, by: provider });
     }
   });
 

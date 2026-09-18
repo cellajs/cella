@@ -957,6 +957,23 @@
     "pnpm check"
    ],
    "summary": "sendVerificationEmail had no caller since password sign-up was removed, so the whole path goes: the sender, handleEmailVerification, the email-verification template and invokeToken branch, the 'email-verification' entry in tokenTypes, and its error and email locale keys. deleteVerificationTokens became deleteOAuthVerificationTokens; the OAuth mail subject moved to email.oauth_verification.subject. No database change (tokens.type is an unconstrained varchar). Apps remove 'email-verification' from their own tokenTypes and drop the locale keys; the /auth/email-verification page stays for the OAuth flows."
+  },
+  {
+   "id": "20260918T0711-email-ledger-proof-stamps",
+   "version": "next",
+   "title": "The emails table records inbox proofs",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "emails becomes the ledger of inboxes proven per account: lastVerifiedBy ('magic' or the OAuth provider whose verification mail was clicked) and lastVerifiedAt are stamped on every proof, verified/verifiedAt on the first. The OAuth verify click adds a differing provider address to the ledger through addProvenEmail (409 oauth_conflict when another account holds it), so a magic link for that address signs in to the same account and invitations to it bind directly. markEmailVerified takes by. Two nullable columns: apps run pnpm generate. Nothing is deleted as a side effect."
   }
  ]
 }

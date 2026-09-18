@@ -2,13 +2,16 @@ import { eq } from 'drizzle-orm';
 import { generateRandomCodeVerifier, generateRandomState } from 'oauth4webapi';
 import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
+import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
+import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { createUser } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -324,6 +327,84 @@ describe('OAuth Authentication', async () => {
       const { response: res } = await connectCallback(undefined);
 
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('Verify flow: the click on the verification mail proves the inbox', () => {
+    const state = 'mock-state-verify';
+    const providerEmail = 'github-user@example.com';
+
+    /** A connected-but-unverified GitHub account on another address, with the mailed single-use token in hand. */
+    const connectedUnverified = async () => {
+      const user = await createUser('local-account@example.com');
+      const [oauthAccount] = await db
+        .insert(oauthAccountsTable)
+        .values({
+          userId: user.id,
+          provider: 'github' as const,
+          providerUserId: 'github-user-id',
+          email: providerEmail,
+          verified: false,
+          createdAt: mockPastIsoDate(),
+        })
+        .returning();
+
+      const rawSingleUse = nanoid(40);
+      const [token] = await db
+        .insert(tokensTable)
+        .values({
+          secret: hashToken(nanoid(40)),
+          singleUseToken: hashToken(rawSingleUse),
+          type: 'oauth-verification',
+          email: providerEmail,
+          userId: user.id,
+          oauthAccountId: oauthAccount.id,
+          createdBy: user.id,
+          invokedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        })
+        .returning();
+      mockCookieStore.set('oauth-verification', rawSingleUse);
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'verify', tokenId: token.id }));
+
+      return { user, oauthAccount };
+    };
+
+    it('adds the provider address to the account as a proven inbox', async () => {
+      const { user, oauthAccount } = await connectedUnverified();
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(302);
+      const [verifiedAccount] = await db
+        .select()
+        .from(oauthAccountsTable)
+        .where(eq(oauthAccountsTable.id, oauthAccount.id));
+      expect(verifiedAccount.verified).toBe(true);
+
+      const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
+      expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedBy: 'github' });
+      // The primary is untouched.
+      const [primary] = await db.select().from(emailsTable).where(eq(emailsTable.email, 'local-account@example.com'));
+      expect(primary.userId).toBe(user.id);
+    });
+
+    it('refuses when another account took the address after the connect started', async () => {
+      const { user } = await connectedUnverified();
+      await createUser(providerEmail);
+
+      const { response: res, error } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_conflict');
+      const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
+      expect(row.userId).not.toBe(user.id);
     });
   });
 
