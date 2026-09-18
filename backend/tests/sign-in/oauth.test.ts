@@ -173,6 +173,28 @@ describe('OAuth Authentication', async () => {
       );
     });
 
+    it('mails the verification to the address the provider asserts now, not a stale snapshot', async () => {
+      const user = await createUser('local-account@example.com');
+      const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification');
+
+      // A token for the stale address could never verify: the click compares it with the provider's current address.
+      const [token] = await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id));
+      expect(token.email).toBe('github-user@example.com');
+      const [refreshed] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
+      expect(refreshed.email).toBe('github-user@example.com');
+    });
+
     it('should redirect to email verification for unverified OAuth account', async () => {
       setTestConfig({ selfRegistration: false });
       onTestFinished(() => setTestConfig({ selfRegistration: true }));

@@ -98,8 +98,9 @@ const authCallbackFlow = async ({
     return { type: 'verified', user, identity };
   }
 
-  // User has an unverified OAuth account → prompt oauth (re-)verification
+  // User has an unverified OAuth account → prompt oauth (re-)verification, mailed to the address the provider asserts now
   if (identity) {
+    await refreshIdentityEmail(identity, providerUser);
     const user = await findUserById({ var: { db } }, { id: identity.userId });
     const type = user.lastSignInAt ? 'connect' : 'signup';
     return { type: 'unverified', identity, reason: type };
@@ -152,6 +153,7 @@ const connectCallbackFlow = async ({
       return { type: 'verified', user, identity };
     }
 
+    await refreshIdentityEmail(identity, providerUser);
     return { type: 'unverified', identity, reason: 'connect' };
   }
 
@@ -253,6 +255,15 @@ const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity): Promise<Iden
     .returning();
 
   return identity;
+};
+
+/**
+ * Keeps an unverified identity's address snapshot at what the provider asserts now. The verification mail goes to the
+ * snapshot and the verify click compares it with the provider's address, so a stale snapshot could never verify.
+ */
+const refreshIdentityEmail = async (identity: IdentityModel, providerUser: TransformedUser) => {
+  if (identity.email === providerUser.email) return;
+  await db.update(identitiesTable).set({ email: providerUser.email }).where(eq(identitiesTable.id, identity.id));
 };
 
 /** A sign-in through the identity: record the use and refresh the address snapshot to what the provider asserts now. */
