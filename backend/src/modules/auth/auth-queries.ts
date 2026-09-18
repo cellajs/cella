@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, gt, isNotNull, isNull, type SQL } from 'drizzle-orm';
+import { and, desc, eq, getColumns, gt, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -178,29 +178,6 @@ export const hasPendingInvitation = async (ctx: DbContext, { email }: HasPending
     )
     .limit(1);
   return !!liveToken;
-};
-
-interface FindUnboundInvitationTokensByEmailOpts {
-  email: string;
-}
-
-/** Invitation tokens sent to an address that had no account yet: not linked to a user, and carrying a membership invitation. */
-export const findUnboundInvitationTokensByEmail = async (
-  ctx: DbContext,
-  { email }: FindUnboundInvitationTokensByEmailOpts,
-) => {
-  const { db } = ctx.var;
-  return db
-    .select({ inactiveMembershipId: tokensTable.inactiveMembershipId })
-    .from(tokensTable)
-    .where(
-      and(
-        eq(tokensTable.email, email),
-        eq(tokensTable.type, 'invitation'),
-        isNull(tokensTable.userId),
-        isNotNull(tokensTable.inactiveMembershipId),
-      ),
-    );
 };
 
 interface DeleteOAuthVerificationTokensOpts {

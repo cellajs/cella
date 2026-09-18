@@ -299,6 +299,39 @@ export const bindInactiveMemberships = async (ctx: DbContext, { ids, userId }: B
   return bound.map((row) => row.id);
 };
 
+interface BindInactiveMembershipsByEmailOpts {
+  email: string;
+  userId: string;
+}
+
+/** Binds every unbound invitation addressed to `email` and returns the ids it bound. The caller has proven that inbox. */
+export const bindInactiveMembershipsByEmail = async (
+  ctx: DbContext,
+  { email, userId }: BindInactiveMembershipsByEmailOpts,
+) => {
+  const { db } = ctx.var;
+  const bound = await db
+    .update(inactiveMembershipsTable)
+    .set({ userId })
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.userId)))
+    .returning({ id: inactiveMembershipsTable.id });
+  return bound.map((row) => row.id);
+};
+
+interface UnbindInactiveMembershipsOpts {
+  userIds: string[];
+}
+
+/** Releases invitations from users about to be removed, so they survive the cascade and wait for whoever proves the address. */
+export const unbindInactiveMemberships = async (ctx: DbContext, { userIds }: UnbindInactiveMembershipsOpts) => {
+  if (!userIds.length) return;
+  const { db } = ctx.var;
+  await db
+    .update(inactiveMembershipsTable)
+    .set({ userId: null })
+    .where(inArray(inactiveMembershipsTable.userId, userIds));
+};
+
 interface DeleteInvitationTokensOpts {
   inactiveMembershipIds: string[];
 }
