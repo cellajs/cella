@@ -45,6 +45,7 @@ const connectSrc = [
   '*.gleap.io',
   'wss://ws.gleap.io',
   'ingest.maple.dev',
+  '*.onedollarstats.com',
 ]
   .filter(Boolean)
   .join(' ');
