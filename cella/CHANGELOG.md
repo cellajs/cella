@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.10.4](https://github.com/cellajs/cella/compare/0.10.3...0.10.4) (2026-09-18)
+
+
+### 🎉 New features
+
+* **auth:** accept invitations as the signed-in account ([#1166](https://github.com/cellajs/cella/issues/1166)) ([52e7e22](https://github.com/cellajs/cella/commit/52e7e22bad7137d5b037df2835655c8f1dce89f4))
+* **frontend:** tab bar keeps the stuck avatar and title clear of the tabs ([#1163](https://github.com/cellajs/cella/issues/1163)) ([10b68fc](https://github.com/cellajs/cella/commit/10b68fc6bc8f3633cc50cb7aab43bdc3887afa9e))
+* **onboarding:** invited users answer their invitations instead of creating an organization ([#1168](https://github.com/cellajs/cella/issues/1168)) ([57cbe9b](https://github.com/cellajs/cella/commit/57cbe9b912a2047ed24c3da742c1c27e90a03f29))
+
+
+### 🐞 Bug fixes
+
+* **auth:** sign-out ends what outlives the page: other tabs, push, the server stream ([#1165](https://github.com/cellajs/cella/issues/1165)) ([19fb4c7](https://github.com/cellajs/cella/commit/19fb4c7ad765664834c91ca0d3c78988dfb49998))
+* **infra:** preview always simulates apply; privileged runs use the standing key for state ([#1160](https://github.com/cellajs/cella/issues/1160)) ([aeae98d](https://github.com/cellajs/cella/commit/aeae98d8b3e02b9f9368831b5e4250dc28f55959))
+
+
+### 🔧 Small improvements
+
+* **config:** URL family is the single source for services publicUrl ([#1164](https://github.com/cellajs/cella/issues/1164)) ([f4c3607](https://github.com/cellajs/cella/commit/f4c360723a422bf7680fcfc494e16ae3894b7cd9))
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies, keep typescript on 6 ([#1162](https://github.com/cellajs/cella/issues/1162)) ([4200f46](https://github.com/cellajs/cella/commit/4200f460ba464802330d0ebe2a3274018d16fd9a))
+
 ## [0.10.3](https://github.com/cellajs/cella/compare/0.10.2...0.10.3) (2026-09-17)
 
 
