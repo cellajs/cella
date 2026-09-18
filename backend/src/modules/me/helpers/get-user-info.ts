@@ -3,7 +3,7 @@ import { and, desc, eq, getColumns } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { DbContext, Env } from '#/core/context';
 import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
-import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -18,9 +18,9 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
   const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
 
   const getOAuth = db
-    .select({ provider: oauthAccountsTable.provider })
-    .from(oauthAccountsTable)
-    .where(and(eq(oauthAccountsTable.userId, userId), eq(oauthAccountsTable.verified, true)));
+    .select({ provider: identitiesTable.provider })
+    .from(identitiesTable)
+    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.verified, true)));
 
   const [passkeys, totps, oauth] = await Promise.all([getPasskeys, getTotp, getOAuth]);
   return { passkeys, hasTotp: !!totps.length, oauth };

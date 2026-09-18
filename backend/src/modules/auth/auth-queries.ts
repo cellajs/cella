@@ -152,13 +152,13 @@ export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpt
 
 interface DeleteOAuthVerificationTokensOpts {
   userId: string;
-  oauthAccountId: string;
+  identityId: string;
 }
 
-/** A fresh verification mail replaces the user's earlier ones for that OAuth account. */
+/** A fresh verification mail replaces the user's earlier ones for that identity. */
 export const deleteOAuthVerificationTokens = async (
   ctx: DbContext,
-  { userId, oauthAccountId }: DeleteOAuthVerificationTokensOpts,
+  { userId, identityId }: DeleteOAuthVerificationTokensOpts,
 ) => {
   const { db } = ctx.var;
   return db
@@ -167,7 +167,7 @@ export const deleteOAuthVerificationTokens = async (
       and(
         eq(tokensTable.userId, userId),
         eq(tokensTable.type, 'oauth-verification'),
-        eq(tokensTable.oauthAccountId, oauthAccountId),
+        eq(tokensTable.identityId, identityId),
       ),
     );
 };

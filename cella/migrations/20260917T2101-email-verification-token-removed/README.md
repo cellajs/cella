@@ -22,7 +22,7 @@ No script: manual.
 ## Manual steps
 
 1. In the app's `shared/config/config.default.ts`, remove `'email-verification'` from `tokenTypes`.
-2. Replace any call to `deleteVerificationTokens(userId, 'oauth-verification', id)` with `deleteOAuthVerificationTokens(ctx, { userId, oauthAccountId })` from `#/modules/auth/auth-queries`.
+2. Replace any call to `deleteVerificationTokens(userId, 'oauth-verification', id)` with `deleteOAuthVerificationTokens(ctx, { userId, identityId })` from `#/modules/auth/auth-queries`.
 3. In app locale files, delete `email-verification_expired`, `email-verification_not_found` (and their `.text` keys) and the `email.email_verification.*` keys; set `email.oauth_verification.subject` if the app translated the old subject.
 4. Delete any app test mock of `#/modules/auth/general/helpers/send-verification-email`.
 

@@ -4,20 +4,16 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import type { TokenModel } from '#/modules/auth/tokens-db';
 
 export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
-  if (!token.userId || !token.oauthAccountId) throw new AppError(500, 'server_error', 'error');
+  if (!token.userId || !token.identityId) throw new AppError(500, 'server_error', 'error');
 
-  const [oauthAccount] = await db
-    .select()
-    .from(oauthAccountsTable)
-    .where(eq(oauthAccountsTable.id, token.oauthAccountId))
-    .limit(1);
-  if (!oauthAccount) throw new AppError(400, 'invalid_request', 'warn');
+  const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, token.identityId)).limit(1);
+  if (!identity) throw new AppError(400, 'invalid_request', 'warn');
 
-  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${oauthAccount.provider}`);
+  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${identity.provider}`);
 
   verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');

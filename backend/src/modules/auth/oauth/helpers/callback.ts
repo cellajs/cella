@@ -7,10 +7,10 @@ import { type DbOrTx, baseDb as db } from '#/db/db';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
+import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import type { Provider } from '#/modules/auth/oauth/helpers/providers';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
-import { type OAuthAccountModel, oauthAccountsTable } from '#/modules/auth/oauth/oauth-accounts-db';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -25,21 +25,21 @@ type OAuthFlowResult =
   | {
       type: 'verified';
       user: UserWithCounters;
-      oauthAccount: OAuthAccountModel;
+      identity: IdentityModel;
     }
   | {
       type: 'unverified';
-      oauthAccount: OAuthAccountModel;
+      identity: IdentityModel;
       reason: 'signup' | 'signin' | 'connect' | 'invite';
     };
 
 interface BaseCallbackProps {
   providerUser: TransformedUser;
   provider: EnabledOAuthProvider;
-  oauthAccount?: OAuthAccountModel | null;
+  identity?: IdentityModel | null;
 }
 
-/** Routes connect, invite, verify and authentication callbacks; `processOAuthAccount` then does session setup, MFA, verification and redirect. */
+/** Routes connect, invite, verify and authentication callbacks; `processCallbackResult` then does session setup, MFA, verification and redirect. */
 export const handleOAuthCallback = async (
   ctx: Context<Env>,
   oauthPayload: OAuthCookiePayload,
@@ -48,18 +48,13 @@ export const handleOAuthCallback = async (
 ): Promise<Response> => {
   const { type, redirectAfter } = oauthPayload;
 
-  const [oauthAccount] = await db
+  // The provider's subject is the identity; the asserted address is a snapshot that may have changed since linking.
+  const [identity] = await db
     .select()
-    .from(oauthAccountsTable)
-    .where(
-      and(
-        eq(oauthAccountsTable.providerUserId, providerUser.id),
-        eq(oauthAccountsTable.provider, provider),
-        eq(oauthAccountsTable.email, providerUser.email),
-      ),
-    );
+    .from(identitiesTable)
+    .where(and(eq(identitiesTable.provider, provider), eq(identitiesTable.providerUserId, providerUser.id)));
 
-  const baseCallbackProps = { providerUser, provider, oauthAccount };
+  const baseCallbackProps = { providerUser, provider, identity };
 
   let result: OAuthFlowResult;
 
@@ -91,25 +86,26 @@ export const handleOAuthCallback = async (
     throw err;
   }
 
-  return await processOAuthAccount({ ctx, redirectAfter, ...result });
+  return await processCallbackResult({ ctx, redirectAfter, ...result });
 };
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or new registration. */
 const authCallbackFlow = async ({
   providerUser,
   provider,
-  oauthAccount = null,
+  identity = null,
 }: BaseCallbackProps): Promise<OAuthFlowResult> => {
-  if (oauthAccount?.verified) {
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
-    return { type: 'verified', user, oauthAccount };
+  if (identity?.verified) {
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
+    await touchIdentity(identity, providerUser);
+    return { type: 'verified', user, identity };
   }
 
   // User has an unverified OAuth account → prompt oauth (re-)verification
-  if (oauthAccount) {
-    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
+  if (identity) {
+    const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
     const type = user.lastSignInAt ? 'connect' : 'signup';
-    return { type: 'unverified', oauthAccount, reason: type };
+    return { type: 'unverified', identity, reason: type };
   }
 
   // Existing user (by email) found -> suggest sign in and connect
@@ -121,12 +117,12 @@ const authCallbackFlow = async ({
   }
 
   // No user match → create a new user and OAuth account atomically
-  const newOAuthAccount = await db.transaction(async (tx) => {
+  const newIdentity = await db.transaction(async (tx) => {
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
+    return createIdentity(tx, user.id, providerUser.id, provider, providerUser.email);
   });
 
-  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'signup' };
+  return { type: 'unverified', identity: newIdentity, reason: 'signup' };
 };
 
 /**
@@ -137,29 +133,32 @@ const connectCallbackFlow = async ({
   connectUserId,
   providerUser,
   provider,
-  oauthAccount = null,
+  identity = null,
 }: { connectUserId?: string } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   if (!connectUserId) throw new AppError(401, 'unauthorized', 'warn');
 
   const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, connectUserId));
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
-  if (oauthAccount) {
-    if (oauthAccount.userId !== connectUserId) {
+  if (identity) {
+    if (identity.userId !== connectUserId) {
       throw new AppError(409, 'oauth_conflict', 'error');
     }
 
-    if (oauthAccount.verified) return { type: 'verified', user, oauthAccount };
+    if (identity.verified) {
+      await touchIdentity(identity, providerUser);
+      return { type: 'verified', user, identity };
+    }
 
-    return { type: 'unverified', oauthAccount, reason: 'connect' };
+    return { type: 'unverified', identity, reason: 'connect' };
   }
 
   // New OAuth account connection → validate email isn't used by another user
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'error');
 
-  const newOAuthAccount = await createOAuthAccount(db, connectUserId, providerUser.id, provider, providerUser.email);
-  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'connect' };
+  const newIdentity = await createIdentity(db, connectUserId, providerUser.id, provider, providerUser.email);
+  return { type: 'unverified', identity: newIdentity, reason: 'connect' };
 };
 
 /** Sign-up via invitation: validates the token and requires its email to match the provider email before creating the OAuth account. */
@@ -167,7 +166,7 @@ const inviteCallbackFlow = async ({
   ctx,
   providerUser,
   provider,
-  oauthAccount = null,
+  identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
 
@@ -175,7 +174,7 @@ const inviteCallbackFlow = async ({
     throw new AppError(409, 'oauth_wrong_email', 'error');
   }
 
-  if (oauthAccount) throw new AppError(409, 'oauth_conflict', 'error');
+  if (identity) throw new AppError(409, 'oauth_conflict', 'error');
 
   // Email already in use by an existing user (checks both the emails and users tables)
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
@@ -186,49 +185,43 @@ const inviteCallbackFlow = async ({
   if (existingUser) throw new AppError(409, 'oauth_email_exists', 'error');
 
   // No user match → create a new user and OAuth account atomically
-  const newOAuthAccount = await db.transaction(async (tx) => {
+  const newIdentity = await db.transaction(async (tx) => {
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createOAuthAccount(tx, user.id, providerUser.id, provider, providerUser.email);
+    return createIdentity(tx, user.id, providerUser.id, provider, providerUser.email);
   });
 
-  return { type: 'unverified', oauthAccount: newOAuthAccount, reason: 'invite' };
+  return { type: 'unverified', identity: newIdentity, reason: 'invite' };
 };
 
 const verifyCallbackFlow = async ({
   ctx,
   providerUser,
   provider,
-  oauthAccount = null,
+  identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
 
-  if (!oauthAccount) throw new AppError(400, 'oauth_failed', 'error');
+  if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
   if (
     verifyToken.type !== 'oauth-verification' ||
     verifyToken.email !== providerUser.email ||
-    verifyToken.oauthAccountId !== oauthAccount.id ||
-    oauthAccount.provider !== provider
+    verifyToken.identityId !== identity.id ||
+    identity.provider !== provider
   ) {
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, oauthAccount.userId));
+  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, identity.userId));
 
-  if (oauthAccount.verified) return { type: 'verified', user, oauthAccount };
+  if (identity.verified) return { type: 'verified', user, identity };
 
-  // Verify oauthAccount + email rows atomically
+  // Verify the identity and the address atomically
   await db.transaction(async (tx) => {
     await tx
-      .update(oauthAccountsTable)
-      .set({ verified: true, verifiedAt: getIsoDate() })
-      .where(
-        and(
-          eq(oauthAccountsTable.id, oauthAccount.id),
-          eq(oauthAccountsTable.userId, user.id),
-          eq(oauthAccountsTable.email, verifyToken.email),
-        ),
-      );
+      .update(identitiesTable)
+      .set({ verified: true, verifiedAt: getIsoDate(), lastUsedAt: getIsoDate() })
+      .where(and(eq(identitiesTable.id, identity.id), eq(identitiesTable.userId, user.id)));
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
@@ -239,51 +232,53 @@ const verifyCallbackFlow = async ({
     }
   });
 
-  return { type: 'verified', user, oauthAccount };
+  return { type: 'verified', user, identity };
 };
 
-const createOAuthAccount = async (
+const createIdentity = async (
   dbOrTx: DbOrTx,
-  userId: OAuthAccountModel['userId'],
+  userId: IdentityModel['userId'],
   providerUserId: Provider['userId'],
   provider: Provider['id'],
   email: UserModel['email'],
-): Promise<OAuthAccountModel> => {
-  const [oauthAccount] = await dbOrTx
-    .insert(oauthAccountsTable)
-    .values({
-      userId,
-      providerUserId,
-      provider,
-      email,
-      verified: false,
-    })
+): Promise<IdentityModel> => {
+  const [identity] = await dbOrTx
+    .insert(identitiesTable)
+    .values({ userId, providerUserId, provider, email, verified: false })
     .returning();
 
-  return oauthAccount;
+  return identity;
+};
+
+/** A sign-in through the identity: record the use and refresh the address snapshot to what the provider asserts now. */
+const touchIdentity = async (identity: IdentityModel, providerUser: TransformedUser) => {
+  await db
+    .update(identitiesTable)
+    .set({ lastUsedAt: getIsoDate(), email: providerUser.email })
+    .where(eq(identitiesTable.id, identity.id));
 };
 
 /**
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
  * Unverified accounts get a verification email and land on the email-verification page.
  */
-const processOAuthAccount = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
-  const { ctx, type, oauthAccount, redirectAfter } = info;
+const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
+  const { ctx, type, identity, redirectAfter } = info;
   // Stored on the verification token; null means "use the default path" at the final hop.
   const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
 
   if (type === 'verified') {
-    return finishSignIn(ctx, info.user, oauthAccount.provider, redirectAfter);
+    return finishSignIn(ctx, info.user, identity.provider, redirectAfter);
   }
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   await sendOAuthVerificationEmail({
-    userId: oauthAccount.userId,
-    oauthAccountId: oauthAccount.id,
+    userId: identity.userId,
+    identityId: identity.id,
     redirectPath: redirectAfterPath,
   });
 
   const redirectUrl = new URL(
-    `/auth/email-verification/${info.reason}?provider=${oauthAccount.provider}`,
+    `/auth/email-verification/${info.reason}?provider=${identity.provider}`,
     appConfig.frontendUrl,
   );
 
