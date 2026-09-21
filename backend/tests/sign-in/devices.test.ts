@@ -71,21 +71,21 @@ const signIn = async (
 };
 
 describe('enrollDevice', () => {
-  it('reports a browser as new once, then refreshes what it last saw', async () => {
+  it('reports a browser as new once, then only moves when it was last seen', async () => {
     const user = await createTestUser(signUpUser.email);
     const deviceId = nanoid(24);
 
-    const first = await enrollDevice(user.id, deviceId, browser(), 'passkey');
-    const again = await enrollDevice(user.id, deviceId, { ...browser(), country: 'DE' }, 'github');
+    const first = await enrollDevice(user.id, deviceId);
+    const lastWeek = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    await db.update(devicesTable).set({ firstSeenAt: lastWeek, lastSeenAt: lastWeek });
+    const again = await enrollDevice(user.id, deviceId);
 
     expect(first.isNew).toBe(true);
     expect(again.isNew).toBe(false);
     expect(first.deviceIdHash).toBe(hashDeviceIdForUser(deviceId, user.id));
 
     const [row] = await devicesOf(user.id);
-    expect(row.ipCountry).toBe('DE');
-    expect(row.lastStrategy).toBe('github');
-    expect(new Date(row.lastSeenAt).getTime()).toBeGreaterThanOrEqual(new Date(row.firstSeenAt).getTime());
+    expect(new Date(row.lastSeenAt).getTime()).toBeGreaterThan(new Date(row.firstSeenAt).getTime());
   });
 
   it('treats one shared browser as new for each user', async () => {
@@ -93,8 +93,8 @@ describe('enrollDevice', () => {
     const bob = await createTestUser('bob@example.com');
     const deviceId = nanoid(24);
 
-    const forAlice = await enrollDevice(alice.id, deviceId, browser(), 'passkey');
-    const forBob = await enrollDevice(bob.id, deviceId, browser(), 'passkey');
+    const forAlice = await enrollDevice(alice.id, deviceId);
+    const forBob = await enrollDevice(bob.id, deviceId);
 
     expect(forAlice.isNew).toBe(true);
     expect(forBob.isNew).toBe(true);
@@ -105,9 +105,7 @@ describe('enrollDevice', () => {
     const user = await createTestUser(signUpUser.email);
     const deviceId = nanoid(24);
 
-    const results = await Promise.all(
-      Array.from({ length: 5 }, () => enrollDevice(user.id, deviceId, browser(), 'passkey')),
-    );
+    const results = await Promise.all(Array.from({ length: 5 }, () => enrollDevice(user.id, deviceId)));
 
     expect(results.filter((result) => result.isNew)).toHaveLength(1);
   });
@@ -279,7 +277,6 @@ describe('pruneDevices', () => {
       deviceIdHash: hashDeviceIdForUser(nanoid(24), userId),
       firstSeenAt: lastSeenAt.toISOString(),
       lastSeenAt: lastSeenAt.toISOString(),
-      lastStrategy: 'passkey',
     });
 
   it('removes rows older than the device cookie can live and keeps the rest', async () => {
