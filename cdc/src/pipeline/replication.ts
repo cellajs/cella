@@ -7,7 +7,7 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
-import { acknowledgeIdlePosition, handleDataMessage } from './handle-message';
+import { acknowledgeIdlePosition, handleDataMessage, releaseHeldAck } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
@@ -149,6 +149,7 @@ export function setupBackpressure(): void {
         log.info('WebSocket connected - resuming replication acknowledgment');
       }
       replicationState.markActive();
+      void releaseHeldAck();
     },
     onDisconnect: () => {
       if (!wsClient.inGracePeriod()) {

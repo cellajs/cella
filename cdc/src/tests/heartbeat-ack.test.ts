@@ -32,7 +32,7 @@ vi.mock('../network/websocket-client', () => ({
 const { createReplicationService } = await import('../pipeline/replication');
 const { replicationState } = await import('../services/replication-state');
 
-const { handleDataMessage } = await import('../pipeline/handle-message');
+const { handleDataMessage, releaseHeldAck } = await import('../pipeline/handle-message');
 
 // Two ticks: the heartbeat handler defers its reply by one.
 const settle = async () => {
@@ -120,12 +120,33 @@ describe('replication heartbeat acknowledgement', () => {
     it('stays put after a withheld acknowledgment', async () => {
       const service = connect();
       replicationState.lastAckedLsn = '0/AB';
-      replicationState.ackHeld = true;
+      replicationState.heldAckLsn = '0/C0';
       service.emit('heartbeat', '0/1F0', Date.now(), true);
       await settle();
 
       expect(acknowledge).toHaveBeenCalledTimes(1);
       expect(acknowledge).toHaveBeenCalledWith('0/AB');
+    });
+
+    it('sends the withheld acknowledgment once the WebSocket returns, then confirms the keepalive', async () => {
+      connect();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.heldAckLsn = '0/C0';
+      replicationState.lastKeepaliveLsn = '0/1F0';
+      await releaseHeldAck();
+
+      expect(acknowledge.mock.calls.map(([lsn]) => lsn)).toEqual(['0/C0', '0/1EF']);
+      expect(replicationState.heldAckLsn).toBeNull();
+    });
+
+    it('keeps the acknowledgment withheld while the WebSocket is still down', async () => {
+      connect();
+      ws.connected = false;
+      replicationState.heldAckLsn = '0/C0';
+      await releaseHeldAck();
+
+      expect(acknowledge).not.toHaveBeenCalled();
+      expect(replicationState.heldAckLsn).toBe('0/C0');
     });
   });
 });

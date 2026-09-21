@@ -42,7 +42,7 @@ function isSeededInsert(msg: DmlMessage): boolean {
 async function sendAck(lsn: string): Promise<void> {
   await replicationState.service?.acknowledge(lsn);
   replicationState.lastAckedLsn = lsn;
-  replicationState.ackHeld = false;
+  replicationState.heldAckLsn = null;
 }
 
 /** Acknowledgment is held while the WebSocket is disconnected. */
@@ -50,7 +50,7 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
     await sendAck(lsn);
   } else {
-    replicationState.ackHeld = true;
+    replicationState.heldAckLsn = lsn;
     log.debug('Holding LSN acknowledgment - WebSocket disconnected', { lsn });
   }
 }
@@ -72,9 +72,9 @@ let inFlightMessages = 0;
  * @returns true when the keepalive position was acknowledged.
  */
 export async function acknowledgeIdlePosition(): Promise<boolean> {
-  const { lastKeepaliveLsn, lastAckedLsn, ackHeld } = replicationState;
+  const { lastKeepaliveLsn, lastAckedLsn, heldAckLsn } = replicationState;
   const busy = inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle;
-  if (!lastKeepaliveLsn || ackHeld || busy || !wsClient.isConnected()) return false;
+  if (!lastKeepaliveLsn || heldAckLsn || busy || !wsClient.isConnected()) return false;
 
   // The client reports lsn + 1 as flushed: one byte back confirms the keepalive position itself, never a byte of the next commit record.
   const position = lsnToBigInt(lastKeepaliveLsn) - 1n;
@@ -85,6 +85,16 @@ export async function acknowledgeIdlePosition(): Promise<boolean> {
 }
 
 flushBuffer.onDrained = () => void acknowledgeIdlePosition();
+
+/**
+ * Sends the acknowledgment withheld while the WebSocket was down. Without it the slot stays pinned
+ * until the next published change, and the idle check never runs past a held position.
+ */
+export async function releaseHeldAck(): Promise<void> {
+  const { heldAckLsn } = replicationState;
+  if (heldAckLsn && wsClient.isConnected()) await sendAck(heldAckLsn);
+  await acknowledgeIdlePosition();
+}
 
 /** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
