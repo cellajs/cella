@@ -13,7 +13,7 @@ export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenMod
   const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, token.identityId)).limit(1);
   if (!identity) throw new AppError(400, 'invalid_request', 'warn');
 
-  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${identity.provider}`);
+  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${identity.issuer}`);
 
   verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');

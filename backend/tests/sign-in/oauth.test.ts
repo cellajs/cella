@@ -173,6 +173,27 @@ describe('OAuth Authentication', async () => {
       );
     });
 
+    it('never matches an identity of another kind that shares the issuer slug and subject', async () => {
+      const user = await createUser('local-account@example.com');
+      const ssoIdentity = await linkIdentity(user, { kind: 'sso' });
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      // The callback treats the GitHub user as new: no session as the SSO identity's user, and that identity is untouched.
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification');
+      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      const [untouched] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, ssoIdentity.id));
+      expect(untouched.lastUsedAt).toBeNull();
+      expect(untouched.userId).toBe(user.id);
+    });
+
     it('mails the verification to the address the provider asserts now, not a stale snapshot', async () => {
       const user = await createUser('local-account@example.com');
       const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
@@ -317,7 +338,7 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toContain('/auth/email-verification/connect');
 
       const [oauthAccount] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, user.id));
-      expect(oauthAccount).toMatchObject({ provider: 'github', email: providerEmail, verified: false });
+      expect(oauthAccount).toMatchObject({ kind: 'oauth', issuer: 'github', email: providerEmail, verified: false });
 
       // Identity is the provider subject: the provider address stays on the OAuth account.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);

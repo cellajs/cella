@@ -49,7 +49,13 @@ export const handleOAuthCallback = async (
   const [identity] = await db
     .select()
     .from(identitiesTable)
-    .where(and(eq(identitiesTable.provider, provider), eq(identitiesTable.providerUserId, providerUser.id)));
+    .where(
+      and(
+        eq(identitiesTable.kind, 'oauth'),
+        eq(identitiesTable.issuer, provider),
+        eq(identitiesTable.subject, providerUser.id),
+      ),
+    );
 
   const baseCallbackProps = { providerUser, provider, identity };
 
@@ -83,7 +89,7 @@ export const handleOAuthCallback = async (
     throw err;
   }
 
-  return await processCallbackResult({ ctx, redirectAfter, ...result });
+  return await processCallbackResult({ ctx, redirectAfter, provider, ...result });
 };
 
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or new registration. */
@@ -119,8 +125,8 @@ const authCallbackFlow = async ({
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
     return createIdentity(tx, {
       userId: user.id,
-      providerUserId: providerUser.id,
-      provider,
+      issuer: provider,
+      subject: providerUser.id,
       email: providerUser.email,
     });
   });
@@ -163,8 +169,8 @@ const connectCallbackFlow = async ({
 
   const newIdentity = await createIdentity(db, {
     userId: connectUserId,
-    providerUserId: providerUser.id,
-    provider,
+    issuer: provider,
+    subject: providerUser.id,
     email: providerUser.email,
   });
   return { type: 'unverified', identity: newIdentity, reason: 'connect' };
@@ -194,8 +200,8 @@ const inviteCallbackFlow = async ({
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
     return createIdentity(tx, {
       userId: user.id,
-      providerUserId: providerUser.id,
-      provider,
+      issuer: provider,
+      subject: providerUser.id,
       email: providerUser.email,
     });
   });
@@ -217,7 +223,7 @@ const verifyCallbackFlow = async ({
     verifyToken.type !== 'oauth-verification' ||
     verifyToken.email !== providerUser.email ||
     verifyToken.identityId !== identity.id ||
-    identity.provider !== provider
+    identity.issuer !== provider
   ) {
     throw new AppError(400, 'oauth_failed', 'error');
   }
@@ -246,7 +252,7 @@ const verifyCallbackFlow = async ({
   return { type: 'verified', user, identity };
 };
 
-type NewIdentity = Pick<IdentityModel, 'userId' | 'providerUserId' | 'provider'> & { email: UserModel['email'] };
+type NewIdentity = Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> & { email: UserModel['email'] };
 
 const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity): Promise<IdentityModel> => {
   const [identity] = await dbOrTx
@@ -278,13 +284,15 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
  * Unverified accounts get a verification email and land on the email-verification page.
  */
-const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>; redirectAfter?: string }) => {
-  const { ctx, type, identity, redirectAfter } = info;
+const processCallbackResult = async (
+  info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string },
+) => {
+  const { ctx, type, identity, provider, redirectAfter } = info;
   // Stored on the verification token; null means "use the default path" at the final hop.
   const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
 
   if (type === 'verified') {
-    return finishSignIn(ctx, info.user, identity.provider, redirectAfter);
+    return finishSignIn(ctx, info.user, provider, redirectAfter);
   }
   // Awaited so the verification token is persisted before the redirect to the "check your email" page.
   await sendOAuthVerificationEmail({
@@ -293,10 +301,7 @@ const processCallbackResult = async (info: OAuthFlowResult & { ctx: Context<Env>
     redirectPath: redirectAfterPath,
   });
 
-  const redirectUrl = new URL(
-    `/auth/email-verification/${info.reason}?provider=${identity.provider}`,
-    appConfig.frontendUrl,
-  );
+  const redirectUrl = new URL(`/auth/email-verification/${info.reason}?provider=${provider}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);
 };

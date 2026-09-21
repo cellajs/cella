@@ -18,9 +18,11 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
   const getTotp = db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
 
   const getOAuth = db
-    .select({ provider: identitiesTable.provider })
+    .select({ provider: identitiesTable.issuer })
     .from(identitiesTable)
-    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.verified, true)));
+    .where(
+      and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)),
+    );
 
   const [passkeys, totps, oauth] = await Promise.all([getPasskeys, getTotp, getOAuth]);
   return { passkeys, hasTotp: !!totps.length, oauth };
