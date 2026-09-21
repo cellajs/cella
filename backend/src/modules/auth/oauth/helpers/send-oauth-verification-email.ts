@@ -70,7 +70,7 @@ export const sendOAuthVerificationEmail = async ({ userId, identityId, redirectP
     verificationLink: verificationURL.toString(),
     name: user.name,
     providerEmail: email,
-    providerName: identity.provider,
+    providerName: identity.issuer,
   };
   const recipients = [{ email, lng }];
 

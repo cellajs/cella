@@ -214,8 +214,8 @@ export async function linkIdentity(user: { id: string; email: string }, override
     .insert(identitiesTable)
     .values({
       userId: user.id,
-      provider: 'github',
-      providerUserId: 'github-user-id',
+      issuer: 'github',
+      subject: 'github-user-id',
       email: user.email,
       verified: true,
       createdAt: mockPastIsoDate(),
