@@ -10,7 +10,7 @@ import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
@@ -66,49 +66,42 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
   log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
 };
 
-/** Generates a session token, captures device information, and can associate an admin user for impersonation. */
-export const setUserSession = async (
-  ctx: Context<Env>,
-  user: UserModel,
+/** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
+export type SignInContext = {
+  rawIp: string | null;
+  country: string | null;
+  asn: number | null;
+  device: ReturnType<typeof deviceInfo>;
+  /** Null for impersonation: the browser belongs to the admin. */
+  deviceId: string | null;
+};
+
+/** The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect. */
+export const collectSignInContext = async (ctx: Context<Env>, type: SessionTypes): Promise<SignInContext> => {
+  const rawIp = getIp(ctx);
+  const { country, asn } = await lookupIp(rawIp);
+  const deviceId = type === 'impersonation' ? null : await ensureDeviceId(ctx);
+
+  return { rawIp, country, asn, device: deviceInfo(ctx), deviceId };
+};
+
+/** Stores a session for the user and returns what the session cookie needs. Database only, so it runs without a request. */
+export const createSession = async (
+  user: Pick<UserModel, 'id'>,
+  context: SignInContext,
   strategy: AuthStrategy,
   type: SessionTypes = 'regular',
-): Promise<void> => {
-  const isSystemAdmin = await db
-    .select()
-    .from(systemRolesTable)
-    .where(and(eq(systemRolesTable.userId, user.id), eq(systemRolesTable.role, 'admin')))
-    .limit(1)
-    .then((rows) => !!rows[0]);
-
-  if (isSystemAdmin || type === 'impersonation') {
-    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
-  }
-
-  // Notify security email when a system admin signs in (skip in development)
-  if (isSystemAdmin && appConfig.mode !== 'development') {
-    const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
-      email: user.email,
-      ip,
-      timestamp: new Date().toISOString(),
-    });
-  }
+) => {
+  const { rawIp, country, asn, device, deviceId } = context;
 
   // Pseudonymize network identity. Raw IP is never persisted.
-  const rawIp = getIp(ctx);
   const subnet = rawIp ? toSubnet(rawIp) : null;
-  const { country, asn } = await lookupIp(rawIp);
-
-  const device = deviceInfo(ctx);
 
   // Generate token and store hashed
   const sessionToken = nanoid(40);
   const hashedSessionToken = hashToken(sessionToken);
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
-
-  // Long-lived per-browser device id plus its per-user HMAC. Impersonation gets none: the browser belongs to the admin.
-  const deviceId = type === 'impersonation' ? null : await ensureDeviceId(ctx);
 
   const sessionId = generateId();
   const session = {
@@ -149,22 +142,48 @@ export const setUserSession = async (
 
   await db.insert(sessionsTable).values(session);
 
-  const adminUser = ctx.var.user;
-  const adminUserIdPart = type === 'impersonation' ? adminUser.id : '';
+  if (type !== 'impersonation') {
+    // lastSignInAt lives in user_counters to avoid CDC noise on the users table
+    const lastSignInAt = getIsoDate();
+    await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
+      target: userCountersTable.userId,
+      set: { lastSignInAt },
+    });
+  }
+
+  return { sessionId, hashedSessionToken, timeSpan };
+};
+
+/** Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. Impersonation records the admin in the cookie. */
+export const setUserSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  strategy: AuthStrategy,
+  type: SessionTypes = 'regular',
+): Promise<void> => {
+  const isSystemAdmin = await db
+    .select()
+    .from(systemRolesTable)
+    .where(and(eq(systemRolesTable.userId, user.id), eq(systemRolesTable.role, 'admin')))
+    .limit(1)
+    .then((rows) => !!rows[0]);
+
+  if (isSystemAdmin || type === 'impersonation') {
+    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
+  }
+
+  const context = await collectSignInContext(ctx, type);
+  const { sessionId, hashedSessionToken, timeSpan } = await createSession(user, context, strategy, type);
+
+  const adminUserIdPart = type === 'impersonation' ? ctx.var.user.id : '';
   const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
 
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
-  if (type === 'impersonation') return;
+  notifySignIn({ user, isSystemAdmin, context });
 
-  // lastSignInAt lives in user_counters to avoid CDC noise on the users table
-  const lastSignInAt = getIsoDate();
-  await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
-    target: userCountersTable.userId,
-    set: { lastSignInAt },
-  });
-  log.info('User signed in', { strategy });
+  if (type !== 'impersonation') log.info('User signed in', { strategy });
 };
 
 /** Returns the session (secret stripped) and its user; throws when the session is missing or expired. */
