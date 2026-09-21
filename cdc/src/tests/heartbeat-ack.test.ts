@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { acknowledge } = vi.hoisted(() => ({ acknowledge: vi.fn(async (_lsn: string) => {}) }));
+const { acknowledge, ws } = vi.hoisted(() => ({
+  acknowledge: vi.fn(async (_lsn: string) => {}),
+  ws: { connected: false },
+}));
 
 vi.mock('pg-logical-replication', async () => {
   const { EventEmitter } = await import('node:events');
@@ -18,7 +21,7 @@ vi.mock('../lib/db', () => ({
 
 vi.mock('../network/websocket-client', () => ({
   wsClient: {
-    isConnected: () => false,
+    isConnected: () => ws.connected,
     inGracePeriod: () => false,
     setCallbacks: vi.fn(),
     connect: vi.fn(),
@@ -29,12 +32,19 @@ vi.mock('../network/websocket-client', () => ({
 const { createReplicationService } = await import('../pipeline/replication');
 const { replicationState } = await import('../services/replication-state');
 
-const settle = () => new Promise((resolve) => setImmediate(resolve));
+const { handleDataMessage } = await import('../pipeline/handle-message');
+
+// Two ticks: the heartbeat handler defers its reply by one.
+const settle = async () => {
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+};
 
 describe('replication heartbeat acknowledgement', () => {
   beforeEach(() => {
     replicationState.reset();
     acknowledge.mockClear();
+    ws.connected = false;
   });
 
   it('replies with 0/0 before anything was acknowledged, leaving the slot untouched', async () => {
@@ -62,5 +72,60 @@ describe('replication heartbeat acknowledgement', () => {
     await settle();
 
     expect(acknowledge).not.toHaveBeenCalled();
+  });
+
+  describe('idle worker', () => {
+    const connect = () => {
+      ws.connected = true;
+      const service = createReplicationService();
+      replicationState.service = service;
+      return service;
+    };
+
+    it.each([
+      {
+        case: 'confirms the keepalive position, one byte back because the client adds one',
+        acked: '0/AB',
+        keepalive: '0/1F0',
+        reply: '0/1EF',
+      },
+      { case: 'borrows from the high word at a segment boundary', acked: null, keepalive: '2/0', reply: '1/FFFFFFFF' },
+      { case: 'never moves backwards', acked: '0/2F0', keepalive: '0/1F0', reply: '0/2F0' },
+    ])('$case', async ({ acked, keepalive, reply }) => {
+      const service = connect();
+      replicationState.lastAckedLsn = acked;
+      service.emit('heartbeat', keepalive, Date.now(), true);
+      await settle();
+
+      expect(acknowledge).toHaveBeenCalledTimes(1);
+      expect(acknowledge).toHaveBeenCalledWith(reply);
+    });
+
+    it('holds the position while a transaction is open, then confirms it at the commit', async () => {
+      const service = connect();
+      replicationState.lastAckedLsn = '0/AB';
+      await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+      service.emit('heartbeat', '0/1F0', Date.now(), true);
+      await settle();
+
+      expect(acknowledge).toHaveBeenCalledTimes(1);
+      expect(acknowledge).toHaveBeenCalledWith('0/AB');
+
+      await handleDataMessage('0/1E0', { tag: 'commit' } as never);
+      await settle();
+
+      expect(acknowledge).toHaveBeenLastCalledWith('0/1EF');
+    });
+
+    it('stays put after a withheld acknowledgment', async () => {
+      const service = connect();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.ackHeld = true;
+      service.emit('heartbeat', '0/1F0', Date.now(), true);
+      await settle();
+
+      expect(acknowledge).toHaveBeenCalledTimes(1);
+      expect(acknowledge).toHaveBeenCalledWith('0/AB');
+    });
   });
 });

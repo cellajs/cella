@@ -11,6 +11,11 @@ class ReplicationStateManager {
   private _lastLsn: string | null = null;
   private _lastAckedLsn: string | null = null;
   private _service: LogicalReplicationService | null = null;
+
+  /** Position of the latest keepalive: everything committed before it was already streamed to this worker. */
+  lastKeepaliveLsn: string | null = null;
+  /** True from a withheld acknowledgment until the next one that is sent. */
+  ackHeld = false;
   private _replicationPausedAt: Date | null = null;
 
   // Catchup mode state
@@ -170,6 +175,8 @@ class ReplicationStateManager {
     this._replicationState = 'stopped';
     this._lastLsn = null;
     this._lastAckedLsn = null;
+    this.lastKeepaliveLsn = null;
+    this.ackHeld = false;
     this._service = null;
     this._replicationPausedAt = null;
     this._catchingUp = false;

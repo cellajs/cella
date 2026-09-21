@@ -1,7 +1,7 @@
 import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
-import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
+import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
@@ -43,9 +43,9 @@ const warnWhenAssetsUnreachable = async () => {
   const url = `${appConfig.s3.publicCDNUrl}/${key}`;
   try {
     const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
-    if (!res.ok) warnSpinner(`Seed assets not reachable (HTTP ${res.status} on ${url}); run pnpm seed:assets --check`);
+    if (!res.ok) noteSpinnerWarning(`Seed assets not reachable (HTTP ${res.status} on ${url}); run pnpm seed:assets --check`);
   } catch {
-    warnSpinner(`Seed assets not reachable (${url}); attachments will not render until the bucket is`);
+    noteSpinnerWarning(`Seed assets not reachable (${url}); attachments will not render until the bucket is`);
   }
 };
 

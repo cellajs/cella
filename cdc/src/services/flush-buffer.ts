@@ -19,6 +19,9 @@ export class FlushBuffer {
   private windowMs: number;
   private batchSize: number;
 
+  /** Called after a flush that left nothing pending. */
+  onDrained: (() => void) | null = null;
+
   constructor(
     processEvents: (events: PendingEvent[]) => Promise<void>,
     acknowledgeLsn: (lsn: string) => Promise<void>,
@@ -126,6 +129,8 @@ export class FlushBuffer {
             this.flush();
           }, this.windowMs);
         }
+      } else {
+        this.onDrained?.();
       }
     }
   }
@@ -139,6 +144,11 @@ export class FlushBuffer {
   /** Number of events currently buffered. */
   get size(): number {
     return this.pending.length;
+  }
+
+  /** Nothing buffered and no flush running. */
+  get isIdle(): boolean {
+    return this.pending.length === 0 && !this.flushing;
   }
 
   private clearTimer(): void {
