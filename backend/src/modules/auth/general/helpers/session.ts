@@ -91,14 +91,9 @@ export const collectSignInContext = async (ctx: Context<Env>, type: SessionTypes
  * one (null for a brand-new account). Must run before lastSignInAt is overwritten. A failure here never fails the sign-in, but it
  * is loud: without enrollment no new sign-in notice ever goes out.
  */
-const enrollNewDevice = async (
-  userId: string,
-  deviceId: string,
-  context: SignInContext,
-  strategy: AuthStrategy,
-): Promise<NewDevice | null> => {
+const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDevice | null> => {
   try {
-    const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId, context, strategy);
+    const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
 
     const [counters] = await db
@@ -172,7 +167,7 @@ export const createSession = async (
 
   if (type === 'impersonation') return { sessionId, hashedSessionToken, timeSpan, newDevice: null };
 
-  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId, context, strategy) : null;
+  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
 
   // lastSignInAt lives in user_counters to avoid CDC noise on the users table
   const lastSignInAt = getIsoDate();
