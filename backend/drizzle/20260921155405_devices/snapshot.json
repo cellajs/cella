@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "109919c3-14d3-4d9f-bfdd-d869765b03e8",
+  "id": "17a0a348-83c1-4088-a958-003fd90a5666",
   "prevIds": [
-    "8af45611-3e83-4f13-953c-ce6ab9a945aa"
+    "94265522-5e3a-4d33-a88f-0fd5ea1c6dd9"
   ],
   "ddl": [
     {
@@ -864,22 +864,9 @@
       "table": "identities"
     },
     {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "provider",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "identities"
-    },
-    {
       "type": "varchar(255)",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -897,7 +884,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "provider_user_id",
+      "name": "subject",
       "entityType": "columns",
       "schema": "public",
       "table": "identities"
@@ -4227,22 +4214,22 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "provider",
+          "value": "kind",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
         },
         {
-          "value": "provider_user_id",
+          "value": "issuer",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
         },
         {
-          "value": "coalesce(\"issuer\", '')",
-          "isExpression": true,
+          "value": "subject",
+          "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
@@ -4253,7 +4240,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "identities_provider_subject_idx",
+      "name": "identities_kind_issuer_subject_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "identities"

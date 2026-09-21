@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm';
 import { boolean, index, jsonb, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
@@ -11,9 +10,9 @@ export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as cons
 export const identityKinds = ['oauth', 'sso', 'lti'] as const;
 
 /**
- * External identities of a user, keyed on the provider's own subject: (provider, providerUserId, issuer). A user can hold
- * several. The address is a display snapshot of what the provider asserted last, never a key or a lookup; proven
- * inboxes live in `emails`.
+ * External identities of a user, keyed on the issuer's own subject: (kind, issuer, subject). A user can hold several.
+ * The address is a display snapshot of what the issuer asserted last, never a key or a lookup; proven inboxes live in
+ * `emails`.
  */
 export const identitiesTable = snakeCase.table(
   'identities',
@@ -24,10 +23,9 @@ export const identitiesTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     kind: varchar({ enum: identityKinds }).notNull().default('oauth'),
-    provider: varchar({ enum: supportedOAuthProviders }).notNull(),
-    // Null for social providers; the platform issuer for identities whose subject is only unique per issuer (LTI).
-    issuer: varchar({ length: maxLength.field }),
-    providerUserId: varchar({ length: maxLength.field }).notNull(),
+    // Always a slug, namespaced by kind: a supported OAuth provider for 'oauth'; its issuer URL lives in config, not here.
+    issuer: varchar({ length: maxLength.field }).notNull(),
+    subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),
     verified: boolean().notNull().default(false),
     verifiedAt: timestamp({ mode: 'string' }),
@@ -39,11 +37,7 @@ export const identitiesTable = snakeCase.table(
   },
   (table) => [
     index('identities_user_id_idx').on(table.userId),
-    uniqueIndex('identities_provider_subject_idx').on(
-      table.provider,
-      table.providerUserId,
-      sql`coalesce(${table.issuer}, '')`,
-    ),
+    uniqueIndex('identities_kind_issuer_subject_idx').on(table.kind, table.issuer, table.subject),
   ],
 );
 

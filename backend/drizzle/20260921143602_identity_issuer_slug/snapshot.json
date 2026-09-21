@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "109919c3-14d3-4d9f-bfdd-d869765b03e8",
+  "id": "94265522-5e3a-4d33-a88f-0fd5ea1c6dd9",
   "prevIds": [
     "8af45611-3e83-4f13-953c-ce6ab9a945aa"
   ],
@@ -15,12 +15,6 @@
     {
       "isRlsEnabled": true,
       "name": "attachments",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "devices",
       "entityType": "tables",
       "schema": "public"
     },
@@ -669,149 +663,6 @@
       "table": "attachments"
     },
     {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar(64)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "device_id_hash",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "first_seen_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_seen_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "notified_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_strategy",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "device_name",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'desktop'",
-      "generated": null,
-      "identity": null,
-      "name": "device_type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "device_os",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "browser",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "type": "varchar(2)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "ip_country",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
       "type": "timestamp",
       "typeSchema": null,
       "notNull": true,
@@ -864,22 +715,9 @@
       "table": "identities"
     },
     {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "provider",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "identities"
-    },
-    {
       "type": "varchar(255)",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -897,7 +735,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "provider_user_id",
+      "name": "subject",
       "entityType": "columns",
       "schema": "public",
       "table": "identities"
@@ -4162,55 +4000,6 @@
           "asc": true,
           "nullsFirst": false,
           "opclass": null
-        },
-        {
-          "value": "notified_at",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "devices_user_id_notified_at_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "last_seen_at",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "devices_last_seen_at_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
         }
       ],
       "isUnique": false,
@@ -4227,22 +4016,22 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "provider",
+          "value": "kind",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
         },
         {
-          "value": "provider_user_id",
+          "value": "issuer",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
         },
         {
-          "value": "coalesce(\"issuer\", '')",
-          "isExpression": true,
+          "value": "subject",
+          "isExpression": false,
           "asc": true,
           "nullsFirst": false,
           "opclass": null
@@ -4253,7 +4042,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "identities_provider_subject_idx",
+      "name": "identities_kind_issuer_subject_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "identities"
@@ -5645,23 +5434,6 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "devices_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
       "name": "oauth_accounts_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -6232,17 +6004,6 @@
     },
     {
       "columns": [
-        "user_id",
-        "device_id_hash"
-      ],
-      "nameExplicit": false,
-      "name": "devices_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "devices"
-    },
-    {
-      "columns": [
         "id",
         "expires_at"
       ],
@@ -6790,5 +6551,7 @@
       "table": "yjs_updates"
     }
   ],
-  "renames": []
+  "renames": [
+    "public.identities.provider_user_id->public.identities.subject"
+  ]
 }
