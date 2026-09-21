@@ -33,7 +33,12 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
       subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details }),
       previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name }),
       headerText: i18n.t(`backend:email.account_security.${type}.title`, baseProps),
-      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details }),
+      // Details can carry request-derived text (route, browser, names) and the body renders as HTML, so escape them here. The subject is plain text.
+      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, {
+        ...baseProps,
+        ...details,
+        interpolation: { escapeValue: true },
+      }),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
