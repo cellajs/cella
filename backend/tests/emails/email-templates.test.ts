@@ -74,4 +74,21 @@ describe('account security email escapes its details', () => {
     // Markup that belongs to the translation itself survives.
     expect(html).toContain('<strong>');
   });
+
+  it('keeps the account link of a new sign-in notice working after escaping', async () => {
+    const details = {
+      timestamp: '2026-01-01 09:30:00 UTC',
+      browser: 'Firefox',
+      os: 'macOS',
+      country: 'Netherlands',
+      strategy: 'Passkey',
+      accountUrl: 'https://app.example.test/account',
+    };
+    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
+    const html = await render(accountSecurityEmail.component(translated));
+
+    expect(html).toContain('href="https://app.example.test/account"');
+    expect(html).toContain('<strong>When:</strong> 2026-01-01 09:30:00 UTC');
+    expect(html).toContain('<br');
+  });
 });

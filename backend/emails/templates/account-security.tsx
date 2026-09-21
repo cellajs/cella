@@ -18,7 +18,8 @@ type AccountSecurityType =
   | 'system-role-granted'
   | 'system-role-changed'
   | 'system-role-revoked'
-  | 'invitation-accepted-elsewhere';
+  | 'invitation-accepted-elsewhere'
+  | 'new-sign-in';
 
 interface AccountSecurityStatic {
   name: string;
@@ -57,7 +58,18 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
     );
   },
   preview: {
-    statics: { name: 'Emily', type: 'totp-lockout' },
+    statics: {
+      name: 'Emily',
+      type: 'new-sign-in',
+      details: {
+        timestamp: '2026-01-01 09:30:00 UTC',
+        browser: 'Firefox',
+        os: 'macOS',
+        country: 'Netherlands',
+        strategy: 'Passkey',
+        accountUrl: `${appConfig.frontendUrl}/account`,
+      },
+    },
     recipient: {},
   },
 });

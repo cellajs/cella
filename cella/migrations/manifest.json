@@ -1027,6 +1027,25 @@
     "pnpm check"
    ],
    "summary": "Onboarding no longer sends an invited user through the create-organization steps. getOnboardingSteps takes { hasOrganizations, hasInvitations } and every step has a when: a user with pending invitations gets an invitations step (explicit accept or reject per invitation) and the profile step, a user with neither organizations nor invitations keeps the three founder steps, a member gets profile only. The /welcome route loads both queries before the step list locks, the footer reads currentStep from the stepper, and the completed screen links into the first organization or offers the menu's organization createAction. Apps that never edited frontend/src/modules/home/onboarding are unaffected; apps with their own steps add a when to each and pass the context."
+  },
+  {
+   "id": "20260921T1433-devices-table",
+   "version": "next",
+   "title": "Sign-ins enroll the browser in a devices table",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "New devices table (devicesTable in backend/src/modules/auth/devices-db.ts) remembers which browsers a user signed in from, keyed on (userId, deviceIdHash), the per-user HMAC of the device-id cookie. createSession enrolls the browser on every non-impersonation sign-in; a first insert on an account that signed in before sends the new-sign-in account security email, except after a magic link or email sign-in and beyond three notices per user per day. A daily prune-devices job removes rows unseen for 400 days and keeps 50 per user. In the same change the device-id cookie becomes SameSite Lax so OAuth callbacks and emailed links can read it, mfa sessions get a device id, the same-browser replace and the maxSessionsPerUser cap, and account security emails escape their details. Apps run pnpm generate; an app that lists tables by hand adds devices."
   }
  ]
 }

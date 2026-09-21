@@ -10,7 +10,8 @@ import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
+import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
+import { type NewDevice, notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
@@ -85,6 +86,33 @@ export const collectSignInContext = async (ctx: Context<Env>, type: SessionTypes
   return { rawIp, country, asn, device: deviceInfo(ctx), deviceId };
 };
 
+/**
+ * Enrolls the browser and, when the user has not signed in from it before, returns its hash with the sign-in that preceded this
+ * one (null for a brand-new account). Must run before lastSignInAt is overwritten. A failure here never fails the sign-in, but it
+ * is loud: without enrollment no new sign-in notice ever goes out.
+ */
+const enrollNewDevice = async (
+  userId: string,
+  deviceId: string,
+  context: SignInContext,
+  strategy: AuthStrategy,
+): Promise<NewDevice | null> => {
+  try {
+    const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId, context, strategy);
+    if (!isNew) return null;
+
+    const [counters] = await db
+      .select({ lastSignInAt: userCountersTable.lastSignInAt })
+      .from(userCountersTable)
+      .where(eq(userCountersTable.userId, userId));
+
+    return { deviceIdHash, previousSignInAt: counters?.lastSignInAt ?? null };
+  } catch (err) {
+    log.error('Failed to enroll device on sign-in', { userId, err });
+    return null;
+  }
+};
+
 /** Stores a session for the user and returns what the session cookie needs. Database only, so it runs without a request. */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
@@ -142,16 +170,18 @@ export const createSession = async (
 
   await db.insert(sessionsTable).values(session);
 
-  if (type !== 'impersonation') {
-    // lastSignInAt lives in user_counters to avoid CDC noise on the users table
-    const lastSignInAt = getIsoDate();
-    await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
-      target: userCountersTable.userId,
-      set: { lastSignInAt },
-    });
-  }
+  if (type === 'impersonation') return { sessionId, hashedSessionToken, timeSpan, newDevice: null };
 
-  return { sessionId, hashedSessionToken, timeSpan };
+  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId, context, strategy) : null;
+
+  // lastSignInAt lives in user_counters to avoid CDC noise on the users table
+  const lastSignInAt = getIsoDate();
+  await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
+    target: userCountersTable.userId,
+    set: { lastSignInAt },
+  });
+
+  return { sessionId, hashedSessionToken, timeSpan, newDevice };
 };
 
 /** Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. Impersonation records the admin in the cookie. */
@@ -173,7 +203,7 @@ export const setUserSession = async (
   }
 
   const context = await collectSignInContext(ctx, type);
-  const { sessionId, hashedSessionToken, timeSpan } = await createSession(user, context, strategy, type);
+  const { sessionId, hashedSessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type);
 
   const adminUserIdPart = type === 'impersonation' ? ctx.var.user.id : '';
   const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
@@ -181,7 +211,7 @@ export const setUserSession = async (
   // Set session cookie with the unhashed version
   await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
 
-  notifySignIn({ user, isSystemAdmin, context });
+  notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
 
   if (type !== 'impersonation') log.info('User signed in', { strategy });
 };
