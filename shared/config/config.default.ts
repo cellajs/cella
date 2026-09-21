@@ -169,10 +169,10 @@ export const config = {
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
 
   /**
-   * Maximum concurrent regular sessions per user. On sign-in, the oldest sessions beyond the cap are
+   * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
    * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
    * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
-   * feature. `mfa` and `impersonation` sessions never count toward or get evicted by the cap.
+   * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
    */
   maxSessionsPerUser: 10,
 

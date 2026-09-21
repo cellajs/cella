@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, or } from 'drizzle-orm';
+import { and, desc, eq, gt, ne, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -39,8 +39,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 };
 
 /**
- * Evicts oldest active regular sessions before inserting one, leaving MFA and impersonation alone. Selecting both partition-key
- * columns before deletion lets PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
+ * Evicts the user's oldest active sessions before inserting one. Regular and mfa sessions count together, since an mfa session is the
+ * full session of a user with MFA on; impersonation is left alone. Selecting both partition-key columns before deletion lets
+ * PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db
@@ -49,7 +50,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
     .where(
       and(
         eq(sessionsTable.userId, userId),
-        eq(sessionsTable.type, 'regular'),
+        ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
       ),
     )
@@ -106,8 +107,8 @@ export const setUserSession = async (
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
-  // Long-lived per-browser device id (regular sign-ins only) plus its per-user HMAC; mfa and impersonation sessions get none.
-  const deviceId = type === 'regular' ? await ensureDeviceId(ctx) : null;
+  // Long-lived per-browser device id plus its per-user HMAC. Impersonation gets none: the browser belongs to the admin.
+  const deviceId = type === 'impersonation' ? null : await ensureDeviceId(ctx);
 
   const sessionId = generateId();
   const session = {
@@ -129,7 +130,7 @@ export const setUserSession = async (
     expiresAt: createDate(timeSpan),
   };
 
-  if (type === 'regular') {
+  if (type !== 'impersonation') {
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
       await db
@@ -138,7 +139,7 @@ export const setUserSession = async (
           and(
             eq(sessionsTable.userId, user.id),
             eq(sessionsTable.deviceIdHash, session.deviceIdHash),
-            eq(sessionsTable.type, 'regular'),
+            ne(sessionsTable.type, 'impersonation'),
             gt(sessionsTable.expiresAt, getIsoDate()),
           ),
         );
