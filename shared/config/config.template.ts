@@ -194,7 +194,7 @@ export const config = {
   /** Token types used for verification flows */
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
 
-  /** Max concurrent regular sessions per user; oldest beyond it are evicted on sign-in (bloat/abuse guard). */
+  /** Max concurrent sessions per user (regular and mfa); oldest beyond it are evicted on sign-in (bloat/abuse guard). */
   maxSessionsPerUser: 10,
 
   /** TOTP configuration for MFA */

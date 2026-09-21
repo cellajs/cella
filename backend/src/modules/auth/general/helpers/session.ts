@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, or } from 'drizzle-orm';
+import { and, desc, eq, gt, ne, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -10,7 +10,8 @@ import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
+import { type NewDevice, notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
@@ -39,8 +40,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 };
 
 /**
- * Evicts oldest active regular sessions before inserting one, leaving MFA and impersonation alone. Selecting both partition-key
- * columns before deletion lets PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
+ * Evicts the user's oldest active sessions before inserting one. Regular and mfa sessions count together, since an mfa session is the
+ * full session of a user with MFA on; impersonation is left alone. Selecting both partition-key columns before deletion lets
+ * PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db
@@ -49,7 +51,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
     .where(
       and(
         eq(sessionsTable.userId, userId),
-        eq(sessionsTable.type, 'regular'),
+        ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
       ),
     )
@@ -65,49 +67,69 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
   log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
 };
 
-/** Generates a session token, captures device information, and can associate an admin user for impersonation. */
-export const setUserSession = async (
-  ctx: Context<Env>,
-  user: UserModel,
+/** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
+export type SignInContext = {
+  rawIp: string | null;
+  country: string | null;
+  asn: number | null;
+  device: ReturnType<typeof deviceInfo>;
+  /** Null for impersonation: the browser belongs to the admin. */
+  deviceId: string | null;
+};
+
+/** The only part of session creation that reads the request. Mints or refreshes the device id cookie as a side effect. */
+export const collectSignInContext = async (ctx: Context<Env>, type: SessionTypes): Promise<SignInContext> => {
+  const rawIp = getIp(ctx);
+  const { country, asn } = await lookupIp(rawIp);
+  const deviceId = type === 'impersonation' ? null : await ensureDeviceId(ctx);
+
+  return { rawIp, country, asn, device: deviceInfo(ctx), deviceId };
+};
+
+/**
+ * Enrolls the browser and, when the user has not signed in from it before, returns its hash with the sign-in that preceded this
+ * one (null for a brand-new account). Must run before lastSignInAt is overwritten. A failure here never fails the sign-in, but it
+ * is loud: without enrollment no new sign-in notice ever goes out.
+ */
+const enrollNewDevice = async (
+  userId: string,
+  deviceId: string,
+  context: SignInContext,
+  strategy: AuthStrategy,
+): Promise<NewDevice | null> => {
+  try {
+    const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId, context, strategy);
+    if (!isNew) return null;
+
+    const [counters] = await db
+      .select({ lastSignInAt: userCountersTable.lastSignInAt })
+      .from(userCountersTable)
+      .where(eq(userCountersTable.userId, userId));
+
+    return { deviceIdHash, previousSignInAt: counters?.lastSignInAt ?? null };
+  } catch (err) {
+    log.error('Failed to enroll device on sign-in', { userId, err });
+    return null;
+  }
+};
+
+/** Stores a session for the user and returns what the session cookie needs. Database only, so it runs without a request. */
+export const createSession = async (
+  user: Pick<UserModel, 'id'>,
+  context: SignInContext,
   strategy: AuthStrategy,
   type: SessionTypes = 'regular',
-): Promise<void> => {
-  const isSystemAdmin = await db
-    .select()
-    .from(systemRolesTable)
-    .where(and(eq(systemRolesTable.userId, user.id), eq(systemRolesTable.role, 'admin')))
-    .limit(1)
-    .then((rows) => !!rows[0]);
-
-  if (isSystemAdmin || type === 'impersonation') {
-    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
-  }
-
-  // Notify security email when a system admin signs in (skip in development)
-  if (isSystemAdmin && appConfig.mode !== 'development') {
-    const ip = getIp(ctx) ?? 'unknown';
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
-      email: user.email,
-      ip,
-      timestamp: new Date().toISOString(),
-    });
-  }
+) => {
+  const { rawIp, country, asn, device, deviceId } = context;
 
   // Pseudonymize network identity. Raw IP is never persisted.
-  const rawIp = getIp(ctx);
   const subnet = rawIp ? toSubnet(rawIp) : null;
-  const { country, asn } = await lookupIp(rawIp);
-
-  const device = deviceInfo(ctx);
 
   // Generate token and store hashed
   const sessionToken = nanoid(40);
   const hashedSessionToken = hashToken(sessionToken);
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
-
-  // Long-lived per-browser device id (regular sign-ins only) plus its per-user HMAC; mfa and impersonation sessions get none.
-  const deviceId = type === 'regular' ? await ensureDeviceId(ctx) : null;
 
   const sessionId = generateId();
   const session = {
@@ -129,7 +151,7 @@ export const setUserSession = async (
     expiresAt: createDate(timeSpan),
   };
 
-  if (type === 'regular') {
+  if (type !== 'impersonation') {
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
       await db
@@ -138,7 +160,7 @@ export const setUserSession = async (
           and(
             eq(sessionsTable.userId, user.id),
             eq(sessionsTable.deviceIdHash, session.deviceIdHash),
-            eq(sessionsTable.type, 'regular'),
+            ne(sessionsTable.type, 'impersonation'),
             gt(sessionsTable.expiresAt, getIsoDate()),
           ),
         );
@@ -148,14 +170,9 @@ export const setUserSession = async (
 
   await db.insert(sessionsTable).values(session);
 
-  const adminUser = ctx.var.user;
-  const adminUserIdPart = type === 'impersonation' ? adminUser.id : '';
-  const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
+  if (type === 'impersonation') return { sessionId, hashedSessionToken, timeSpan, newDevice: null };
 
-  // Set session cookie with the unhashed version
-  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
-
-  if (type === 'impersonation') return;
+  const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId, context, strategy) : null;
 
   // lastSignInAt lives in user_counters to avoid CDC noise on the users table
   const lastSignInAt = getIsoDate();
@@ -163,7 +180,40 @@ export const setUserSession = async (
     target: userCountersTable.userId,
     set: { lastSignInAt },
   });
-  log.info('User signed in', { strategy });
+
+  return { sessionId, hashedSessionToken, timeSpan, newDevice };
+};
+
+/** Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. Impersonation records the admin in the cookie. */
+export const setUserSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  strategy: AuthStrategy,
+  type: SessionTypes = 'regular',
+): Promise<void> => {
+  const isSystemAdmin = await db
+    .select()
+    .from(systemRolesTable)
+    .where(and(eq(systemRolesTable.userId, user.id), eq(systemRolesTable.role, 'admin')))
+    .limit(1)
+    .then((rows) => !!rows[0]);
+
+  if (isSystemAdmin || type === 'impersonation') {
+    if (!isSystemAccessAllowed(ctx)) throw new AppError(403, 'system_access_forbidden', 'warn');
+  }
+
+  const context = await collectSignInContext(ctx, type);
+  const { sessionId, hashedSessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type);
+
+  const adminUserIdPart = type === 'impersonation' ? ctx.var.user.id : '';
+  const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
+
+  // Set session cookie with the unhashed version
+  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
+
+  notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
+
+  if (type !== 'impersonation') log.info('User signed in', { strategy });
 };
 
 /** Returns the session (secret stripped) and its user; throws when the session is missing or expired. */

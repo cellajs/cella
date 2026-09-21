@@ -62,19 +62,20 @@ describe('per-user session cap (A1)', () => {
     expect(remaining.has(ids[1])).toBe(false);
   });
 
-  it('never counts or evicts mfa/impersonation sessions', async () => {
+  it('counts mfa sessions toward the cap and never touches impersonation sessions', async () => {
     const user = await createTestUser('cap2@example.com');
     const base = Date.now() - 100_000;
-    for (let i = 0; i < 5; i++) await insertSession(user.id, 'regular', base + i * 1000);
-    const mfaId = await insertSession(user.id, 'mfa', base - 5000);
+    // An mfa session is the full session of a user with MFA on, so it is capped like a regular one.
+    const mfaIds: string[] = [];
+    for (let i = 0; i < 5; i++) mfaIds.push(await insertSession(user.id, 'mfa', base + i * 1000)); // oldest → newest
     const imperId = await insertSession(user.id, 'impersonation', base - 5000);
 
     await evictExcessSessions(user.id);
 
     const all = await db.select({ id: sessionsTable.id }).from(sessionsTable).where(eq(sessionsTable.userId, user.id));
     const ids = new Set(all.map((r) => r.id));
-    // The two oldest rows are mfa/impersonation sessions, which are excluded from the cap.
-    expect(ids.has(mfaId)).toBe(true);
+    expect(mfaIds.filter((id) => ids.has(id))).toEqual(mfaIds.slice(-(TEST_CAP - 1)));
+    // The impersonation row is the oldest of all and still survives.
     expect(ids.has(imperId)).toBe(true);
   });
 

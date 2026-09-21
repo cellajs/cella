@@ -13,7 +13,8 @@ export const sendAccountSecurityEmail = (
 ) => {
   const lng = recipient.language ?? appConfig.defaultLanguage;
 
-  log.warn(`Security email: ${type}`, { email: recipient.email, ...details });
+  // A new sign-in notice is routine; every other type marks something an operator may want to look at.
+  log[type === 'new-sign-in' ? 'info' : 'warn'](`Security email: ${type}`, { email: recipient.email, ...details });
 
   mailer
     .prepareEmails(accountSecurityEmail, { name: recipient.name ?? '', type, details }, [

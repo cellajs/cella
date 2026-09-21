@@ -6,6 +6,7 @@ import enBackend from '../../../locales/en/backend.json';
 import { i18n } from '../../emails/i18n';
 import { type EmailPreviewFixture, emailPreviewFixtures } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
+import { accountSecurityEmail } from '../../emails/templates/account-security';
 
 // English is the source of truth for email.* keys.
 const enEmailKeys = Object.keys(enBackend).filter((k) => k.startsWith('email.'));
@@ -55,4 +56,39 @@ describe('email template rendering', () => {
       });
     }
   }
+});
+
+/** Details reach these mails from request data (route, tenant name, browser), and the body is rendered as HTML. */
+describe('account security email escapes its details', () => {
+  const hostile = '<a href="https://evil.test">click</a>';
+
+  it('renders markup in a detail as text, never as a link', async () => {
+    const details = { tenantName: hostile, userEmail: 'a@b.test', timestamp: 'now' };
+    const statics = { name: 'Emily', type: 'tenant-created', details } as const;
+    const translated = accountSecurityEmail.translate('en', statics);
+    const html = await render(accountSecurityEmail.component(translated));
+
+    // The detail survives as visible text; no anchor element comes out of it.
+    expect(html).not.toContain('<a href="https://evil.test"');
+    expect(html).toContain('&lt;a href');
+    // Markup that belongs to the translation itself survives.
+    expect(html).toContain('<strong>');
+  });
+
+  it('keeps the account link of a new sign-in notice working after escaping', async () => {
+    const details = {
+      timestamp: '2026-01-01 09:30:00 UTC',
+      browser: 'Firefox',
+      os: 'macOS',
+      country: 'Netherlands',
+      strategy: 'Passkey',
+      accountUrl: 'https://app.example.test/account',
+    };
+    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
+    const html = await render(accountSecurityEmail.component(translated));
+
+    expect(html).toContain('href="https://app.example.test/account"');
+    expect(html).toContain('<strong>When:</strong> 2026-01-01 09:30:00 UTC');
+    expect(html).toContain('<br');
+  });
 });

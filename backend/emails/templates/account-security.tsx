@@ -18,7 +18,8 @@ type AccountSecurityType =
   | 'system-role-granted'
   | 'system-role-changed'
   | 'system-role-revoked'
-  | 'invitation-accepted-elsewhere';
+  | 'invitation-accepted-elsewhere'
+  | 'new-sign-in';
 
 interface AccountSecurityStatic {
   name: string;
@@ -33,7 +34,12 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
       subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details }),
       previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name }),
       headerText: i18n.t(`backend:email.account_security.${type}.title`, baseProps),
-      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details }),
+      // Details can carry request-derived text (route, browser, names) and the body renders as HTML, so escape them here. The subject is plain text.
+      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, {
+        ...baseProps,
+        ...details,
+        interpolation: { escapeValue: true },
+      }),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
@@ -52,7 +58,18 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
     );
   },
   preview: {
-    statics: { name: 'Emily', type: 'totp-lockout' },
+    statics: {
+      name: 'Emily',
+      type: 'new-sign-in',
+      details: {
+        timestamp: '2026-01-01 09:30:00 UTC',
+        browser: 'Firefox',
+        os: 'macOS',
+        country: 'Netherlands',
+        strategy: 'Passkey',
+        accountUrl: `${appConfig.frontendUrl}/account`,
+      },
+    },
     recipient: {},
   },
 });
