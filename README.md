@@ -38,7 +38,7 @@
 
 ## Requirements
 
-- Node.js 24.x (`node -v`)
+- Node.js 26.x (`node -v`)
 - [Docker](https://docs.docker.com/get-docker/)
 - [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and the [gh cli](https://cli.github.com/)
 

@@ -1065,6 +1065,24 @@
     "pnpm check"
    ],
    "summary": "identities.provider and the nullable identities.issuer merge into one not-null issuer, always a slug namespaced by kind (a supported OAuth provider for 'oauth', an issuer-registry entry for sso and lti later); the issuer URL stays in config. providerUserId becomes subject, and the unique index is identities_kind_issuer_subject_idx on (kind, issuer, subject). Social lookups are scoped to kind = 'oauth'. No API change. Apps already on identities run pnpm generate with the README hints and add UPDATE identities SET issuer = provider above the DROP COLUMN so rows survive; apps still on oauth_accounts use the combined hints from the README in place of those in 20260918T0831-identities-table and get a plain rename."
+  },
+  {
+   "id": "20260921T1629-node-26",
+   "version": "next",
+   "title": "Node.js 26 is the required runtime",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    ".github/workflows",
+    "frontend"
+   ],
+   "requires": [
+    "pnpm install",
+    "pnpm check"
+   ],
+   "summary": "engines.node moves from 24.x to 26.x in every package, and CI workflows, Dockerfile, infra/boot/Dockerfile, the infra boot:build target and @types/node follow. Every developer machine, CI runner and image needs Node 26. Node 25+ defines a global localStorage that is undefined without --localstorage-file, which makes zustand persist crash on write in node-env vitest runs; frontend/vitest.setup.ts now deletes that global when there is no window. Synced files arrive migrated. Apps update their own workflows, Dockerfiles, Node version pins and engines fields, and copy the vitest guard into any setup file of their own."
   }
  ]
 }

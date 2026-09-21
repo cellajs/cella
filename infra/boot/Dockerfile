@@ -7,7 +7,7 @@
 # so it needs iproute2. The JS bundle is produced on the host by
 # `pnpm --filter infra boot:build` (tsup -> boot/dist/entry.cjs) before
 # `docker build` (context: infra/boot).
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg iproute2 \

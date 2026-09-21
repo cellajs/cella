@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "scripts": {
     "start": "node dist/cdc-worker.js",
@@ -51,7 +51,7 @@
     "sdk": "workspace:*",
     "shared": "workspace:*",
     "tsup": "^8.5.1",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1",
     "ws": "^8.21.3",

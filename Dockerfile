@@ -5,9 +5,9 @@
 # `--target <name>` (see `target` in infra/config/services.config.ts, threaded
 # through print-deploy-env into .github/workflows/deploy.yml). Shared stages:
 #
-#   base    : node:24-alpine + corepack (pnpm version pinned by the root
+#   base    : node:26-alpine + corepack (pnpm version pinned by the root
 #              package.json `packageManager` field)
-#   runtime : node:24-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
+#   runtime : node:26-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
 #              the parent of every production target
 #   geoip   : downloads GeoIP databases in a discarded stage (backend only)
 #
@@ -24,7 +24,7 @@
 # -----------------------------------------------------------------------------
 # Shared: base image with pnpm
 # -----------------------------------------------------------------------------
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 
 # pnpm version comes from the root package.json `packageManager` field; corepack
 # fetches it on first use in each stage.
@@ -35,7 +35,7 @@ WORKDIR /app
 # -----------------------------------------------------------------------------
 # Shared: production runtime base (non-root user, release metadata)
 # -----------------------------------------------------------------------------
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 RUN addgroup --system --gid 1001 app && \
     adduser --system --uid 1001 app
@@ -58,7 +58,7 @@ USER app
 # Best-effort: if the current-month URL isn't published yet, the build still
 # succeeds and country lookups simply return null until the file is supplied
 # at runtime.
-FROM node:24-alpine AS geoip
+FROM node:26-alpine AS geoip
 
 # ARG busts this stage's cache every release so each deploy refreshes the data.
 ARG RELEASE_SHA=unknown
