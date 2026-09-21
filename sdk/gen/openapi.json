@@ -1369,6 +1369,10 @@
                 },
                 "isCurrent": {
                   "type": "boolean"
+                },
+                "isNewDevice": {
+                  "type": "boolean",
+                  "description": "The browser was first seen recently and is not the first one known."
                 }
               },
               "required": [
@@ -1387,7 +1391,8 @@
                 "deviceIdHash",
                 "createdAt",
                 "expiresAt",
-                "isCurrent"
+                "isCurrent",
+                "isNewDevice"
               ]
             }
           },
@@ -1463,7 +1468,8 @@
               "ipCountry": null,
               "ipAsn": null,
               "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
-              "isCurrent": true
+              "isCurrent": true,
+              "isNewDevice": false
             }
           ],
           "passkeys": []
@@ -5247,7 +5253,8 @@
                       "ipCountry": null,
                       "ipAsn": null,
                       "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
-                      "isCurrent": true
+                      "isCurrent": true,
+                      "isNewDevice": false
                     }
                   ],
                   "passkeys": []

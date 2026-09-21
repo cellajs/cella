@@ -36,6 +36,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
           ipAsn: null,
           deviceIdHash: faker.string.hexadecimal({ length: 32, prefix: '', casing: 'lower' }),
           isCurrent: true,
+          isNewDevice: false,
         },
       ],
       passkeys: [],

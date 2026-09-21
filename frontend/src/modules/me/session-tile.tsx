@@ -59,6 +59,11 @@ export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, is
                   {t('c:this_device')}
                 </Badge>
               )}
+              {session.isNewDevice && !session.isCurrent && !isCurrentDevice && (
+                <Badge size="xs" variant="warning">
+                  {t('c:new_device')}
+                </Badge>
+              )}
             </div>
           </div>
 
