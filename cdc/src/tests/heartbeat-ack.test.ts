@@ -82,33 +82,23 @@ describe('replication heartbeat acknowledgement', () => {
       return service;
     };
 
-    it('confirms the keepalive position, reported one byte back because the client adds one', async () => {
+    it.each([
+      {
+        case: 'confirms the keepalive position, one byte back because the client adds one',
+        acked: '0/AB',
+        keepalive: '0/1F0',
+        reply: '0/1EF',
+      },
+      { case: 'borrows from the high word at a segment boundary', acked: null, keepalive: '2/0', reply: '1/FFFFFFFF' },
+      { case: 'never moves backwards', acked: '0/2F0', keepalive: '0/1F0', reply: '0/2F0' },
+    ])('$case', async ({ acked, keepalive, reply }) => {
       const service = connect();
-      replicationState.lastAckedLsn = '0/AB';
-      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      replicationState.lastAckedLsn = acked;
+      service.emit('heartbeat', keepalive, Date.now(), true);
       await settle();
 
       expect(acknowledge).toHaveBeenCalledTimes(1);
-      expect(acknowledge).toHaveBeenCalledWith('0/1EF');
-      expect(replicationState.lastAckedLsn).toBe('0/1EF');
-    });
-
-    it('borrows from the high word at a segment boundary', async () => {
-      const service = connect();
-      service.emit('heartbeat', '2/0', Date.now(), false);
-      await settle();
-
-      expect(acknowledge).toHaveBeenCalledWith('1/FFFFFFFF');
-    });
-
-    it('never moves backwards', async () => {
-      const service = connect();
-      replicationState.lastAckedLsn = '0/2F0';
-      service.emit('heartbeat', '0/1F0', Date.now(), true);
-      await settle();
-
-      expect(acknowledge).toHaveBeenCalledTimes(1);
-      expect(acknowledge).toHaveBeenCalledWith('0/2F0');
+      expect(acknowledge).toHaveBeenCalledWith(reply);
     });
 
     it('holds the position while a transaction is open, then confirms it at the commit', async () => {

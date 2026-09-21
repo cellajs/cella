@@ -12,32 +12,16 @@ const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 const CDC_STALL_TIMEOUT_MS = 30_000;
 const CDC_CATCHUP_POLL_MS = 500;
 
-interface SlotProgress {
-  active: boolean;
-  caughtUp: boolean;
-  behindBytes: bigint;
-  behindPretty: string;
-}
-
-const readSlot = async (targetLsn: string): Promise<SlotProgress | null> => {
-  const result = await db.execute(sql`
+/** How far the slot still is from the target position. */
+const readSlot = async (targetLsn: string) => {
+  const result = await db.execute<{ active: boolean; behindBytes: number; behindPretty: string }>(sql`
     SELECT active,
-      confirmed_flush_lsn >= ${targetLsn}::pg_lsn AS caught_up,
-      pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)::text AS behind_bytes,
-      pg_size_pretty(pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)) AS behind_pretty
+      pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)::float8 AS "behindBytes",
+      pg_size_pretty(pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)) AS "behindPretty"
     FROM pg_replication_slots
     WHERE slot_name = ${CDC_SLOT_NAME}
   `);
-  const row = result.rows[0] as
-    | { active: boolean; caught_up: boolean | null; behind_bytes: string | null; behind_pretty: string | null }
-    | undefined;
-  if (!row) return null;
-  return {
-    active: row.active,
-    caughtUp: row.caught_up ?? false,
-    behindBytes: BigInt(row.behind_bytes ?? 0),
-    behindPretty: row.behind_pretty ?? 'unknown',
-  };
+  return result.rows[0] ?? null;
 };
 
 /**
@@ -54,12 +38,12 @@ const settleCdcSlot = async () => {
     const lsnResult = await db.execute(sql`SELECT pg_current_wal_lsn()::text AS lsn`);
     const targetLsn = (lsnResult.rows[0] as { lsn: string }).lsn;
 
-    let leastBehind: bigint | null = null;
+    let leastBehind = Number.POSITIVE_INFINITY;
     let lastProgressAt = Date.now();
 
     while (true) {
       const slot = await readSlot(targetLsn);
-      if (!slot || slot.caughtUp) return;
+      if (!slot || slot.behindBytes <= 0) return;
 
       if (!slot.active) {
         try {
@@ -70,7 +54,7 @@ const settleCdcSlot = async () => {
         }
       }
 
-      if (leastBehind === null || slot.behindBytes < leastBehind) {
+      if (slot.behindBytes < leastBehind) {
         leastBehind = slot.behindBytes;
         lastProgressAt = Date.now();
         updateSpinner(`Recalculating counters... CDC worker has ${slot.behindPretty} of seed WAL left`);

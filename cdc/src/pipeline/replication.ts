@@ -53,15 +53,11 @@ export function createReplicationService(): LogicalReplicationService {
     log.trace('Heartbeat received', { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
     replicationState.lastKeepaliveLsn = lsn;
 
-    // Deferred one tick: data messages from the same socket read reach their handlers before the idle check.
+    // Deferred one tick so data messages from the same socket read reach their handlers before the idle check.
+    // A busy worker replies with its last flushed position, never the keepalive's: that would move confirmed_flush_lsn past events still buffered or held while the API is down. Before the first ack, 0/0 leaves the slot untouched.
     setImmediate(async () => {
-      try {
-        // An idle worker confirms the keepalive position. Otherwise reply with the last flushed position, never the keepalive's: acknowledging its LSN would move confirmed_flush_lsn past events still in the flush buffer or held while the API is down. Before the first ack, 0/0 leaves the slot untouched.
-        const advanced = await acknowledgeIdlePosition();
-        if (!advanced && shouldRespond) await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
-      } catch (error) {
-        log.debug('Heartbeat acknowledgment failed', { err: error });
-      }
+      const advanced = await acknowledgeIdlePosition();
+      if (!advanced && shouldRespond) await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
     });
   });
 

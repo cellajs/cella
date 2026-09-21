@@ -20,9 +20,6 @@ export function formatDuration(ms: number): string {
 /** Dimmed elapsed-time suffix for a closing line, so slow steps stand out in the script output. */
 export const durationSuffix = (startedAt: number) => pc.dim(` (${formatDuration(performance.now() - startedAt)})`);
 
-/** Closing text of the active spinner: the message, or its running text, plus the time since it started. */
-const closingText = (spinner: Ora, message?: string) => `${message ?? spinner.text}${durationSuffix(spinnerStartedAt)}`;
-
 /** Stops any previous spinner. */
 export function startSpinner(message: string): Ora {
   if (activeSpinner) activeSpinner.stop();
@@ -35,27 +32,17 @@ export function updateSpinner(message: string): void {
   if (activeSpinner) activeSpinner.text = message;
 }
 
-export function succeedSpinner(message?: string): void {
-  if (activeSpinner) {
-    activeSpinner.succeed(closingText(activeSpinner, message));
-    activeSpinner = null;
-  }
+/** Ends the spinner with the message, or its running text, plus the time since it started. */
+function closeSpinner(method: 'succeed' | 'fail' | 'warn', message?: string): void {
+  if (!activeSpinner) return;
+  activeSpinner[method](`${message ?? activeSpinner.text}${durationSuffix(spinnerStartedAt)}`);
+  activeSpinner = null;
 }
 
-export function failSpinner(message?: string): void {
-  if (activeSpinner) {
-    activeSpinner.fail(closingText(activeSpinner, message));
-    activeSpinner = null;
-  }
-}
-
+export const succeedSpinner = (message?: string) => closeSpinner('succeed', message);
+export const failSpinner = (message?: string) => closeSpinner('fail', message);
 /** Ends the spinner. For a warning while the step continues, use {@link noteSpinnerWarning}. */
-export function warnSpinner(message?: string): void {
-  if (activeSpinner) {
-    activeSpinner.warn(closingText(activeSpinner, message));
-    activeSpinner = null;
-  }
-}
+export const warnSpinner = (message?: string) => closeSpinner('warn', message);
 
 /** Prints a warning line and keeps the spinner running, so the step still reports its own closing line. */
 export function noteSpinnerWarning(message: string): void {

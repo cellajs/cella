@@ -65,32 +65,26 @@ const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 let inFlightMessages = 0;
 
 /**
- * Moves the slot to the latest keepalive position once every received message is applied and
- * acknowledged. Data acks stop at the last published row, so without this an idle worker pins
- * confirmed_flush_lsn while unpublished WAL keeps growing behind it. Transactions committed before a
- * keepalive were streamed ahead of it, so its position is safe whenever nothing is in flight. A
- * withheld ack blocks it until a data ack lands.
+ * Confirms the latest keepalive position once every received message is applied and acknowledged.
+ * Data acks stop at the last published row, so an idle worker would otherwise pin the slot while
+ * unpublished WAL grows behind it. Transactions committed before a keepalive were streamed ahead of
+ * it, so its position is safe whenever nothing is in flight or withheld.
  * @returns true when the keepalive position was acknowledged.
  */
 export async function acknowledgeIdlePosition(): Promise<boolean> {
-  const keepaliveLsn = replicationState.lastKeepaliveLsn;
-  if (!keepaliveLsn || replicationState.ackHeld || !wsClient.isConnected()) return false;
-  if (inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle) return false;
+  const { lastKeepaliveLsn, lastAckedLsn, ackHeld } = replicationState;
+  const busy = inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle;
+  if (!lastKeepaliveLsn || ackHeld || busy || !wsClient.isConnected()) return false;
 
-  // The client reports lsn + 1 as flushed. One byte back reports the keepalive position itself, never a byte of the next commit record.
-  const position = lsnToBigInt(keepaliveLsn) - 1n;
-  const acked = replicationState.lastAckedLsn;
-  if (position <= 0n || (acked && position <= lsnToBigInt(acked))) return false;
+  // The client reports lsn + 1 as flushed: one byte back confirms the keepalive position itself, never a byte of the next commit record.
+  const position = lsnToBigInt(lastKeepaliveLsn) - 1n;
+  if (position <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
 
   await sendAck(formatLsn(position));
   return true;
 }
 
-const acknowledgeIdlePositionSafely = () => {
-  acknowledgeIdlePosition().catch((error) => log.debug('Idle acknowledgment failed', { err: error }));
-};
-
-flushBuffer.onDrained = acknowledgeIdlePositionSafely;
+flushBuffer.onDrained = () => void acknowledgeIdlePosition();
 
 /** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
@@ -99,7 +93,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     await applyDataMessage(lsn, msg);
   } finally {
     inFlightMessages -= 1;
-    if (inFlightMessages === 0) acknowledgeIdlePositionSafely();
+    if (inFlightMessages === 0) void acknowledgeIdlePosition();
   }
 }
 
