@@ -10,7 +10,7 @@ import { mockAdmin, mockEmail, mockUnsubscribeToken } from '#/modules/user/user-
 import { setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { checkMark } from '#/utils/console';
+import { checkMark, durationSuffix } from '#/utils/console';
 
 // Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)
 setMockContext('script');
@@ -36,6 +36,7 @@ const isUserSeeded = async () => {
  * skips when the users table is already populated.
  */
 export const initSeed = async () => {
+  const startedAt = performance.now();
   // ADMIN_EMAIL is required in production: throw when it is missing.
   if (isProduction && !env.ADMIN_EMAIL) {
     throw new Error('ADMIN_EMAIL is required for production seeding.');
@@ -72,7 +73,7 @@ export const initSeed = async () => {
     .onConflictDoNothing();
 
   console.info(
-    ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in\n `,
+    ` \n${checkMark} Created admin user with email ${pc.bold(pc.greenBright(adminUser.email))}: use magic link by email to sign in${durationSuffix(startedAt)}\n `,
   );
 };
 

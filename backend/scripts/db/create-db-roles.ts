@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
-import { timestamp } from '#/utils/console';
+import { durationSuffix, timestamp } from '#/utils/console';
 import pc from 'picocolors';
 
 /**
@@ -126,6 +126,7 @@ async function isRoleManagedExternally(): Promise<boolean> {
 }
 
 export async function createDbRoles() {
+  const startedAt = performance.now();
   const migrationDb = getAdminDb('role setup');
 
   // If we're connected as one of the application roles, they're managed externally
@@ -154,7 +155,7 @@ const createRolesSql = buildCreateRolesSql(runtime.password, adminPassword);
 
   try {
     await migrationDb.execute(sql.raw(createRolesSql));
-    console.info(`${pc.green('✔')} Database roles configured`);
+    console.info(`${pc.green('✔')} Database roles configured${durationSuffix(startedAt)}`);
   } catch (error) {
     throw new Error(`${pc.red('✖')} Failed to setup roles: ${error}`);
   }

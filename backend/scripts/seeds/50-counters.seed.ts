@@ -2,22 +2,42 @@ import { sql } from 'drizzle-orm';
 import type { SeedScript } from '../types';
 import { getSeedDb } from '#/db/db';
 import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
-import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
+import { noteSpinnerWarning, startSpinner, succeedSpinner, updateSpinner } from '#/utils/console';
 
 // Seed scripts use the admin connection for privileged operations.
 const db = getSeedDb();
 
 const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
-const CDC_CATCHUP_TIMEOUT_MS = 30_000;
+/** Gives up once the slot made no progress for this long; a worker that keeps flushing is waited out. */
+const CDC_STALL_TIMEOUT_MS = 30_000;
 const CDC_CATCHUP_POLL_MS = 500;
 
-const readSlot = async (targetLsn: string) => {
+interface SlotProgress {
+  active: boolean;
+  caughtUp: boolean;
+  behindBytes: bigint;
+  behindPretty: string;
+}
+
+const readSlot = async (targetLsn: string): Promise<SlotProgress | null> => {
   const result = await db.execute(sql`
-    SELECT active, confirmed_flush_lsn >= ${targetLsn}::pg_lsn AS caught_up
+    SELECT active,
+      confirmed_flush_lsn >= ${targetLsn}::pg_lsn AS caught_up,
+      pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)::text AS behind_bytes,
+      pg_size_pretty(pg_wal_lsn_diff(${targetLsn}::pg_lsn, confirmed_flush_lsn)) AS behind_pretty
     FROM pg_replication_slots
     WHERE slot_name = ${CDC_SLOT_NAME}
   `);
-  return (result.rows[0] as { active: boolean; caught_up: boolean | null } | undefined) ?? null;
+  const row = result.rows[0] as
+    | { active: boolean; caught_up: boolean | null; behind_bytes: string | null; behind_pretty: string | null }
+    | undefined;
+  if (!row) return null;
+  return {
+    active: row.active,
+    caughtUp: row.caught_up ?? false,
+    behindBytes: BigInt(row.behind_bytes ?? 0),
+    behindPretty: row.behind_pretty ?? 'unknown',
+  };
 };
 
 /**
@@ -26,41 +46,49 @@ const readSlot = async (targetLsn: string) => {
  * seed inserts and increments on top. Settle the slot first so recalculation is the authority:
  * - no slot: the worker creates one at current WAL on startup, so seed events never replay.
  * - idle slot: advance it past the seed WAL; the pending events are skipped for good.
- * - active slot: wait for the worker to flush past the seed WAL, then recalculate over its work.
- * Never fails the seed: on timeout or missing privilege it warns and proceeds.
+ * - active slot: wait while the worker keeps flushing toward the seed WAL, then recalculate over its work.
+ * Never fails the seed: on a stalled slot or missing privilege it warns and proceeds.
  */
 const settleCdcSlot = async () => {
   try {
     const lsnResult = await db.execute(sql`SELECT pg_current_wal_lsn()::text AS lsn`);
     const targetLsn = (lsnResult.rows[0] as { lsn: string }).lsn;
 
-    let slot = await readSlot(targetLsn);
-    if (!slot) return;
+    let leastBehind: bigint | null = null;
+    let lastProgressAt = Date.now();
 
-    if (!slot.active && !slot.caught_up) {
-      try {
-        await db.execute(sql`SELECT pg_replication_slot_advance(${CDC_SLOT_NAME}, pg_current_wal_lsn())`);
-        return;
-      } catch {
-        // The worker attached between the checks; fall through to waiting for it.
+    while (true) {
+      const slot = await readSlot(targetLsn);
+      if (!slot || slot.caughtUp) return;
+
+      if (!slot.active) {
+        try {
+          await db.execute(sql`SELECT pg_replication_slot_advance(${CDC_SLOT_NAME}, pg_current_wal_lsn())`);
+          return;
+        } catch {
+          // The worker attached between the checks; keep waiting for it.
+        }
       }
-    }
 
-    const deadline = Date.now() + CDC_CATCHUP_TIMEOUT_MS;
-    while (slot && !slot.caught_up && Date.now() < deadline) {
+      if (leastBehind === null || slot.behindBytes < leastBehind) {
+        leastBehind = slot.behindBytes;
+        lastProgressAt = Date.now();
+        updateSpinner(`Recalculating counters... CDC worker has ${slot.behindPretty} of seed WAL left`);
+      } else if (Date.now() - lastProgressAt > CDC_STALL_TIMEOUT_MS) {
+        noteSpinnerWarning(
+          `CDC slot '${CDC_SLOT_NAME}' made no progress for ${CDC_STALL_TIMEOUT_MS / 1000}s with ${slot.behindPretty} left; replayed events will drift the counters. Re-run "pnpm seed counters" once the worker has caught up.`,
+        );
+        return;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, CDC_CATCHUP_POLL_MS));
-      slot = await readSlot(targetLsn);
-    }
-
-    if (slot && !slot.caught_up) {
-      warnSpinner(
-        `CDC slot '${CDC_SLOT_NAME}' still behind after ${CDC_CATCHUP_TIMEOUT_MS / 1000}s; replayed events will drift the counters. Re-run "pnpm seed counters" once the worker has caught up.`,
-      );
     }
   } catch (error) {
-    warnSpinner(
+    noteSpinnerWarning(
       `Could not settle CDC slot '${CDC_SLOT_NAME}' before recalculating: ${error instanceof Error ? error.message : String(error)}`,
     );
+  } finally {
+    updateSpinner('Recalculating counters...');
   }
 };
 
