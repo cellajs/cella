@@ -59,7 +59,7 @@ Data messages carry the activity, compacted row data, the previous location of r
 
 ## Failure and recovery
 
-The slot advances only after processing and is the only durable buffer, so a crash redelivers unacknowledged changes. Delivery is **at least once**: activity inserts are replay-safe, WebSocket messages may repeat (consumers deduplicate by activity ID), counter and sequence writes are not idempotent.
+The slot advances only after processing and is the only durable buffer, so a crash redelivers unacknowledged changes. An idle worker (nothing buffered, no acknowledgement held) also confirms the server's keepalive position, so WAL without published changes does not pile up behind the slot. Delivery is **at least once**: activity inserts are replay-safe, WebSocket messages may repeat (consumers deduplicate by activity ID), counter and sequence writes are not idempotent.
 
 | Failure | Detection | Recovery |
 | --- | --- | --- |

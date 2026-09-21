@@ -7,7 +7,7 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
-import { handleDataMessage } from './handle-message';
+import { acknowledgeIdlePosition, handleDataMessage } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
@@ -49,12 +49,20 @@ export function createReplicationService(): LogicalReplicationService {
     log.error('CDC replication error', { err: error });
   });
 
-  service.on('heartbeat', async (lsn: string, _timestamp: number, shouldRespond: boolean) => {
+  service.on('heartbeat', (lsn: string, _timestamp: number, shouldRespond: boolean) => {
     log.trace('Heartbeat received', { lsn, shouldRespond, wsConnected: wsClient.isConnected() });
-    // Reply with the last flushed position, never the keepalive's: acknowledging its LSN would move confirmed_flush_lsn past events still in the flush buffer or held while the API is down. Before the first ack, 0/0 leaves the slot untouched.
-    if (shouldRespond) {
-      await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
-    }
+    replicationState.lastKeepaliveLsn = lsn;
+
+    // Deferred one tick: data messages from the same socket read reach their handlers before the idle check.
+    setImmediate(async () => {
+      try {
+        // An idle worker confirms the keepalive position. Otherwise reply with the last flushed position, never the keepalive's: acknowledging its LSN would move confirmed_flush_lsn past events still in the flush buffer or held while the API is down. Before the first ack, 0/0 leaves the slot untouched.
+        const advanced = await acknowledgeIdlePosition();
+        if (!advanced && shouldRespond) await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
+      } catch (error) {
+        log.debug('Heartbeat acknowledgment failed', { err: error });
+      }
+    });
   });
 
   return service;

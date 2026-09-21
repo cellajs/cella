@@ -10,6 +10,8 @@ class ReplicationStateManager {
   private _replicationState: ReplicationState = 'stopped';
   private _lastLsn: string | null = null;
   private _lastAckedLsn: string | null = null;
+  private _lastKeepaliveLsn: string | null = null;
+  private _ackHeld = false;
   private _service: LogicalReplicationService | null = null;
   private _replicationPausedAt: Date | null = null;
 
@@ -45,6 +47,24 @@ class ReplicationStateManager {
 
   set lastAckedLsn(lsn: string | null) {
     this._lastAckedLsn = lsn;
+  }
+
+  /** Position of the latest keepalive: everything committed before it was already streamed to this worker. */
+  get lastKeepaliveLsn(): string | null {
+    return this._lastKeepaliveLsn;
+  }
+
+  set lastKeepaliveLsn(lsn: string | null) {
+    this._lastKeepaliveLsn = lsn;
+  }
+
+  /** True from a withheld acknowledgment until the next one that is sent. */
+  get ackHeld(): boolean {
+    return this._ackHeld;
+  }
+
+  set ackHeld(held: boolean) {
+    this._ackHeld = held;
   }
 
   get service(): LogicalReplicationService | null {
@@ -170,6 +190,8 @@ class ReplicationStateManager {
     this._replicationState = 'stopped';
     this._lastLsn = null;
     this._lastAckedLsn = null;
+    this._lastKeepaliveLsn = null;
+    this._ackHeld = false;
     this._service = null;
     this._replicationPausedAt = null;
     this._catchingUp = false;

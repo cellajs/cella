@@ -5,6 +5,7 @@ import { wsClient } from '../network/websocket-client';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
+import { formatLsn, lsnToBigInt } from '../utils/lsn';
 
 // PostgreSQL epoch: 2000-01-01T00:00:00Z in Unix ms
 const PG_EPOCH_MS = 946684800000n;
@@ -41,6 +42,7 @@ function isSeededInsert(msg: DmlMessage): boolean {
 async function sendAck(lsn: string): Promise<void> {
   await replicationState.service?.acknowledge(lsn);
   replicationState.lastAckedLsn = lsn;
+  replicationState.ackHeld = false;
 }
 
 /** Acknowledgment is held while the WebSocket is disconnected. */
@@ -48,6 +50,7 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
   if (wsClient.isConnected()) {
     await sendAck(lsn);
   } else {
+    replicationState.ackHeld = true;
     log.debug('Holding LSN acknowledgment - WebSocket disconnected', { lsn });
   }
 }
@@ -58,8 +61,49 @@ const flushBuffer = new FlushBuffer(processEvents, acknowledgeLsn, RESOURCE_LIMI
 /** Cascade suppression within a single transaction. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 
+/** Data messages whose handler has not returned yet. */
+let inFlightMessages = 0;
+
+/**
+ * Moves the slot to the latest keepalive position once every received message is applied and
+ * acknowledged. Data acks stop at the last published row, so without this an idle worker pins
+ * confirmed_flush_lsn while unpublished WAL keeps growing behind it. Transactions committed before a
+ * keepalive were streamed ahead of it, so its position is safe whenever nothing is in flight. A
+ * withheld ack blocks it until a data ack lands.
+ * @returns true when the keepalive position was acknowledged.
+ */
+export async function acknowledgeIdlePosition(): Promise<boolean> {
+  const keepaliveLsn = replicationState.lastKeepaliveLsn;
+  if (!keepaliveLsn || replicationState.ackHeld || !wsClient.isConnected()) return false;
+  if (inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle) return false;
+
+  // The client reports lsn + 1 as flushed. One byte back reports the keepalive position itself, never a byte of the next commit record.
+  const position = lsnToBigInt(keepaliveLsn) - 1n;
+  const acked = replicationState.lastAckedLsn;
+  if (position <= 0n || (acked && position <= lsnToBigInt(acked))) return false;
+
+  await sendAck(formatLsn(position));
+  return true;
+}
+
+const acknowledgeIdlePositionSafely = () => {
+  acknowledgeIdlePosition().catch((error) => log.debug('Idle acknowledgment failed', { err: error }));
+};
+
+flushBuffer.onDrained = acknowledgeIdlePositionSafely;
+
 /** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
+  inFlightMessages += 1;
+  try {
+    await applyDataMessage(lsn, msg);
+  } finally {
+    inFlightMessages -= 1;
+    if (inFlightMessages === 0) acknowledgeIdlePositionSafely();
+  }
+}
+
+async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
   const { tag } = msg;
 
   if (tag === 'begin') {
