@@ -315,6 +315,10 @@ export type MeAuthData = {
     createdAt: string;
     expiresAt: string;
     isCurrent: boolean;
+    /**
+     * The browser was first seen recently and is not the first one known.
+     */
+    isNewDevice: boolean;
   }>;
   passkeys: Array<{
     id: string;

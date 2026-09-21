@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { signInWithTotp } from 'sdk';
+import { getMyAuth, type MeAuthData, signInWithTotp } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -14,7 +14,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createTestUser, createTotpUser } from '../helpers';
+import { createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -226,6 +226,49 @@ describe('new sign-in notice through the sign-in endpoint', async () => {
 
     expect(notices()).toHaveLength(1);
     expect(await devicesOf(user.id)).toHaveLength(1);
+  });
+});
+
+describe('sessions list flags sessions from a new browser', async () => {
+  const call = await createAppClient();
+
+  const sessionsOf = async (user: { id: string }) => {
+    const { data, response } = await call(getMyAuth, {
+      headers: { ...defaultHeaders, Cookie: await createTestSession(user) },
+    });
+    expect(response.status).toBe(200);
+    // The test client types data as unknown; the SDK already consumed the body.
+    return (data as MeAuthData).sessions;
+  };
+
+  it('flags a browser first seen this week, never the first one known', async () => {
+    const user = await createTestUser(signUpUser.email);
+    const known = await createSession(user, browser(), 'passkey');
+    const recent = await createSession(user, browser(), 'passkey');
+
+    const sessions = await sessionsOf(user);
+
+    expect(sessions.find(({ id }) => id === known.sessionId)?.isNewDevice).toBe(false);
+    expect(sessions.find(({ id }) => id === recent.sessionId)?.isNewDevice).toBe(true);
+    // The requesting session carries no device id at all.
+    expect(sessions.find(({ isCurrent }) => isCurrent)?.isNewDevice).toBe(false);
+  });
+
+  it('stops flagging a browser once it has been known for longer than a session lives', async () => {
+    const user = await createTestUser(signUpUser.email);
+    await createSession(user, browser(), 'passkey');
+    const aged = await createSession(user, browser(), 'passkey');
+
+    const eightDaysAgo = new Date(Date.now() - 8 * 86_400_000).toISOString();
+    const nineDaysAgo = new Date(Date.now() - 9 * 86_400_000).toISOString();
+    await db.update(devicesTable).set({ firstSeenAt: nineDaysAgo }).where(eq(devicesTable.userId, user.id));
+    await db
+      .update(devicesTable)
+      .set({ firstSeenAt: eightDaysAgo })
+      .where(eq(devicesTable.deviceIdHash, aged.newDevice?.deviceIdHash ?? ''));
+
+    const sessions = await sessionsOf(user);
+    expect(sessions.every(({ isNewDevice }) => !isNewDevice)).toBe(true);
   });
 });
 

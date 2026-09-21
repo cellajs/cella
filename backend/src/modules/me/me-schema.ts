@@ -13,7 +13,12 @@ import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './m
 
 export const sessionSchema = createSelectSchema(sessionsTable)
   .omit({ secret: true })
-  .extend({ isCurrent: z.boolean() });
+  .extend({
+    isCurrent: z.boolean(),
+    isNewDevice: z
+      .boolean()
+      .openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
+  });
 
 export const meSchema = z
   .object({

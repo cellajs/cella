@@ -14,6 +14,7 @@ export interface MeResponse {
 export type MeSession = Omit<SessionModel, 'expiresAt'> & {
   expiresAt: string;
   isCurrent: boolean;
+  isNewDevice: boolean;
 };
 
 export interface MeAuthResponse {
