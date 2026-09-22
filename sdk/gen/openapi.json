@@ -32,6 +32,10 @@
             "name": "public",
             "description": "No authentication required; provides baseDb without RLS context"
           },
+          "tokenGuard": {
+            "name": "token",
+            "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
+          },
           "crossTenantGuard": {
             "name": "crossTenant",
             "description": "Requires userGuard and sets baseDb for cross-tenant access"
@@ -309,7 +313,35 @@
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here."
+        "description": "Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.",
+        "key": "apiKey"
+      },
+      "oauth2": {
+        "type": "oauth2",
+        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "http://localhost:3000/oauth/auth",
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "refreshUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "organization:read": "Read organizations",
+              "organization:write": "Create, update and delete organizations",
+              "attachment:read": "Read attachments",
+              "attachment:write": "Create, update and delete attachments"
+            }
+          },
+          "clientCredentials": {
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "organization:read": "Read organizations",
+              "organization:write": "Create, update and delete organizations",
+              "attachment:read": "Read attachments",
+              "attachment:write": "Create, update and delete attachments"
+            }
+          }
+        },
+        "key": "oauth2"
       }
     },
     "responses": {
@@ -2360,6 +2392,42 @@
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
         "x-tags": ["data", "attachments", "cella"]
+      },
+      "ProtectedResourceMetadata": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "authorization_servers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bearer_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_documentation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource",
+          "authorization_servers",
+          "scopes_supported",
+          "bearer_methods_supported",
+          "resource_documentation"
+        ]
       },
       "Membership": {
         "type": "object",
@@ -9229,6 +9297,9 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getOrganization",
@@ -9377,6 +9448,9 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "updateOrganization",
@@ -9618,9 +9692,18 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
+          "approvalRequired": false,
+          "category": "attachments"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachments",
         "description": "Returns a paginated list of attachments for the organization.",
@@ -9857,9 +9940,18 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "createAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.",
+          "approvalRequired": true,
+          "category": "attachments"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
         "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.",
@@ -10256,9 +10348,18 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "deleteAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "Delete attachments by id. The stored files stay in storage.",
+          "approvalRequired": true,
+          "category": "attachments"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
         "description": "Deletes one or more attachment records by ID. This does not delete the underlying file in storage.",
@@ -10382,6 +10483,9 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getPresignedUrls",
@@ -10534,9 +10638,18 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getAttachment",
+        "x-tool": {
+          "enabled": true,
+          "description": "Read one attachment: its metadata and the description as text.",
+          "approvalRequired": false,
+          "category": "attachments"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
         "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
@@ -10655,9 +10768,18 @@
           },
           {
             "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "updateAttachment",
+        "x-tool": {
+          "enabled": true,
+          "description": "Rename an attachment or replace its description.",
+          "approvalRequired": true,
+          "category": "attachments"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",
         "description": "Updates metadata of an attachment, such as its name or associated entity.",
@@ -10808,19 +10930,82 @@
         }
       }
     },
+    "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource": {
+      "get": {
+        "security": [],
+        "x-service": "mcp",
+        "operationId": "getProtectedResourceMetadata",
+        "tags": ["mcp", "cella"],
+        "summary": "Protected resource metadata",
+        "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Protected resource metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/{tenantId}/{organizationId}/mcp": {
       "post": {
         "security": [
           {
-            "cookieAuth": []
+            "oauth2": []
           }
         ],
         "x-service": "mcp",
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+        "x-guard": ["tokenGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [

@@ -1,36 +1,29 @@
-import { convertSchemaToJsonSchema, type JSONSchema, type ServerTool } from '@tanstack/ai';
-import type { UserContext } from '#/core/context';
-import { buildTools } from '#/modules/mcp/tool-registry';
+import { z } from 'zod';
+import type { ToolBinding } from '#/modules/mcp/define-tool';
 
-/** A server tool as the MCP layer sees it: the element type of the `buildTools` registry. */
-export type ExecutableTool = ServerTool;
-
+/** A tool as `tools/list` returns it. */
 export interface McpToolDescriptor {
   name: string;
   description: string;
-  inputSchema: JSONSchema;
+  inputSchema: Record<string, unknown>;
+  annotations: ToolBinding['annotations'];
+  /** cella-specific: the scope a token needs, so a client can ask for it up front. */
+  _meta: { scope: string; approvalRequired: boolean };
 }
 
-const emptyObjectSchema = (): JSONSchema => ({ type: 'object', properties: {}, required: [] });
-
-/** Convert a tool's (Standard Schema or JSON Schema) input to JSON Schema for `tools/list`. */
-function toInputSchema(schema: unknown): JSONSchema {
-  const json = schema
-    ? convertSchemaToJsonSchema(schema as Parameters<typeof convertSchemaToJsonSchema>[0])
-    : undefined;
-  const result = json ?? emptyObjectSchema();
-  if (result.type === 'object' && result.additionalProperties === undefined) result.additionalProperties = false;
-  return result;
+/** JSON Schema for `tools/list`; unknown keys are refused so an LLM cannot smuggle fields past the operation. */
+function toInputSchema(schema: z.ZodType): Record<string, unknown> {
+  const json = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' }) as Record<string, unknown>;
+  if (json.type === 'object' && json.additionalProperties === undefined) json.additionalProperties = false;
+  return json;
 }
 
-export function getMcpTools(ctx: UserContext): ExecutableTool[] {
-  return buildTools(ctx);
-}
-
-export function describeMcpTools(tools: ExecutableTool[]): McpToolDescriptor[] {
+export function describeMcpTools(tools: readonly ToolBinding[]): McpToolDescriptor[] {
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
     inputSchema: toInputSchema(tool.inputSchema),
+    annotations: tool.annotations,
+    _meta: { scope: tool.scope, approvalRequired: tool.approvalRequired },
   }));
 }

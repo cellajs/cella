@@ -1167,6 +1167,26 @@
     "pnpm check"
    ],
    "summary": "Adds node-oidc-provider as the MODE=oauth process on the same origin under /oauth/* (AUTH_SUBSTRATE_PLAN Phase D): oidc_payloads adapter, signing_keys (RS256, encrypted private JWK, current + next), clients for pre-registered apps, service_accounts.client_id for installations, tenants.restrictions.allowConsentedClients. Grant types authorization_code + refresh_token + client_credentials; client auth none (Client ID Metadata Documents) and client_secret_basic (clients rows and service accounts with their secret keys). Every token carries an RFC 8707 resource (<backendUrl>/t/<tenant> or <mcpUrl>/<tenant>/<org>/mcp). Consent page at /oauth/consent reads the session; GET/DELETE /me/connected-apps list and revoke grants; serviceGuard and actorGuard accept the JWT and resolve the consenting user (masked by token scopes) or the service account. Apps add oauthUrl, services.oauth and devPorts.oauth to config, the three tables to the RLS grant list, the oauth service to registry-enumerating infra tests, and the locale keys."
+  },
+  {
+   "id": "20260922T1930-mcp-substrate",
+   "version": "next",
+   "title": "MCP on the substrate: tokens only, tools from routes",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm install",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "The MCP endpoint sits behind tokenGuard (access tokens from the authorization server only; sessions and API keys refused) and answers tokenless calls with the RFC 9728 challenge; a public route publishes the protected resource metadata. Tools come from modules: defineTool(route, { entity, inputSchema, execute }) over routes carrying x-tool, registered through defineBackendModule({ tools }); tools/list carries annotations and the required scope, tools/call outside the token scopes answers 403 insufficient_scope with the scope to step up to. The attachment module ships the showcase (list, get, create, update, delete). OpenAPI gains an oauth2 security scheme. buildTools and @tanstack/ai are gone; apps move their tools to bindings and enable services.mcp in development and test config."
   }
  ]
 }

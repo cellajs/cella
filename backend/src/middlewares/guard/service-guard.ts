@@ -29,13 +29,16 @@ function touchLastUsed(credentialId: string, serviceAccountId: string): void {
   ]).catch((err) => log.warn('Failed to stamp credential lastUsedAt', { err, credentialId }));
 }
 
-const invalidKey = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
+export const invalidKey = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
 /**
  * A token from cella's authorization server (D12): verified locally, bound to this route's tenant, it runs as the user
  * who consented (masked by the token's scopes) or as the service account behind a `client_credentials` grant.
  */
-async function setActorFromToken(ctx: Parameters<Parameters<typeof xMiddleware>[1]>[0], jwt: string): Promise<void> {
+export async function setActorFromToken(
+  ctx: Parameters<Parameters<typeof xMiddleware>[1]>[0],
+  jwt: string,
+): Promise<void> {
   const tenantId = ctx.req.param('tenantId')?.toLowerCase();
   if (!tenantId)
     throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });

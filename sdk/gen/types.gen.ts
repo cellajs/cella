@@ -557,6 +557,14 @@ export type Attachment = {
   viewCount?: number;
 };
 
+export type ProtectedResourceMetadata = {
+  resource: string;
+  authorization_servers: Array<string>;
+  scopes_supported: Array<string>;
+  bearer_methods_supported: Array<string>;
+  resource_documentation: string;
+};
+
 /**
  * A user's membership in a channel entity, including role and activity data.
  */
@@ -4923,6 +4931,56 @@ export type UpdateAttachmentResponses = {
 };
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
+
+export type GetProtectedResourceMetadataData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource';
+};
+
+export type GetProtectedResourceMetadataErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetProtectedResourceMetadataError =
+  GetProtectedResourceMetadataErrors[keyof GetProtectedResourceMetadataErrors];
+
+export type GetProtectedResourceMetadataResponses = {
+  /**
+   * Protected resource metadata
+   */
+  200: ProtectedResourceMetadata;
+};
+
+export type GetProtectedResourceMetadataResponse =
+  GetProtectedResourceMetadataResponses[keyof GetProtectedResourceMetadataResponses];
 
 export type HandleMcpData = {
   body: unknown;

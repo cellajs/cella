@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 93,
+  "documentedOperationCount": 95,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -28,6 +28,10 @@
         "publicGuard": {
           "name": "public",
           "description": "No authentication required; provides baseDb without RLS context"
+        },
+        "tokenGuard": {
+          "name": "token",
+          "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
         },
         "crossTenantGuard": {
           "name": "crossTenant",

@@ -146,6 +146,9 @@ import type {
   GetPresignedUrlsData,
   GetPresignedUrlsErrors,
   GetPresignedUrlsResponses,
+  GetProtectedResourceMetadataData,
+  GetProtectedResourceMetadataErrors,
+  GetProtectedResourceMetadataResponses,
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
@@ -377,6 +380,8 @@ import {
   zGetPresignedUrlsBody,
   zGetPresignedUrlsPath,
   zGetPresignedUrlsResponse,
+  zGetProtectedResourceMetadataPath,
+  zGetProtectedResourceMetadataResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
   zGetRequestsQuery,
@@ -3150,7 +3155,16 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/organizations/{id}',
     ...options,
@@ -3206,7 +3220,16 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/organizations/{id}',
     ...options,
@@ -3250,7 +3273,16 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3299,7 +3331,16 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3337,7 +3378,16 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3380,7 +3430,16 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments/presigned-urls',
     ...options,
@@ -3423,7 +3482,16 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
     ...options,
@@ -3465,7 +3533,16 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
     ...options,
@@ -3476,9 +3553,44 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Protected resource metadata
+ *
+ * RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
+ *
+ * **GET /{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource** ·· [getProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· [getProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· _mcp_cella_
+ *
+ * @param {getProtectedResourceMetadataData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
+  options: Options<GetProtectedResourceMetadataData, ThrowOnError>,
+): RequestResult<GetProtectedResourceMetadataResponses, GetProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<
+    GetProtectedResourceMetadataResponses,
+    GetProtectedResourceMetadataErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetProtectedResourceMetadataPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetProtectedResourceMetadataResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource',
+    ...options,
+  });
+
+/**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.
  *
  * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
  *
@@ -3502,9 +3614,9 @@ export const handleMcp = <ThrowOnError extends boolean = true>(
     responseStyle: 'data',
     security: [
       {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
       },
     ],
     url: '/{tenantId}/{organizationId}/mcp',

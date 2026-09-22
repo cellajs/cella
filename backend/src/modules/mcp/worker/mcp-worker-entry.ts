@@ -12,52 +12,40 @@ import { baseApp } from '#/server';
 
 const port = Number(env.PORT ?? '4003');
 
+/**
+ * The MCP face as its own process: the tool endpoint and its protected-resource metadata, behind tokens from the
+ * authorization server. Needs no AI credential; `SCW_AI_API_KEY` only switches the app's own AI features on.
+ */
 export async function startMcpWorker(): Promise<void> {
-  const hasApiKey = !!env.SCW_AI_API_KEY;
-
   if (appConfig.services.mcp.enabled === false) {
     baseLog.info('MCP server disabled by appConfig');
     return;
   }
 
-  if (!hasApiKey) {
-    baseLog.info('SCW_AI_API_KEY not set, running as no-op (health-only)');
-  }
+  const hasAiKey = !!env.SCW_AI_API_KEY;
+  otel.start();
+  otel.verifyConnection();
 
-  if (hasApiKey) {
-    otel.start();
-    otel.verifyConnection();
+  // Wait for the API to be ready (it owns migrations)
+  if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000);
 
-    // Wait for the API to be ready (it owns migrations)
-    if (env.NODE_ENV === 'development') {
-      await waitForBackend(2000, 60_000);
-    }
+  baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
-    baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
-
+  if (hasAiKey) {
     await getPgBoss();
     baseLog.info('pg-boss started, queues ready');
   }
 
-  let server: ServerType | undefined;
-
-  server = serve(
-    {
-      fetch: baseApp.fetch,
-      hostname: '0.0.0.0',
-      port,
-    },
-    () => {
-      baseLog.info(`MCP service listening on port ${port}${hasApiKey ? '' : ' (no-op)'}`);
-    },
-  );
+  const server: ServerType = serve({ fetch: baseApp.fetch, hostname: '0.0.0.0', port }, () => {
+    baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
+  });
 
   setupGracefulShutdown({
     name: 'mcp-worker',
     cleanup: async () => {
-      if (server) server.close();
-      if (hasApiKey) await stopPgBoss();
-      if (hasApiKey) await otel.shutdown();
+      server.close();
+      if (hasAiKey) await stopPgBoss();
+      await otel.shutdown();
     },
     log: (msg) => baseLog.info(msg),
   });

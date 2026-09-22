@@ -22,5 +22,7 @@ export const test = {
   oauthUrl: development.oauthUrl,
   services: {
     yjs: { enabled: true },
+    mcp: { enabled: true },
+    oauth: { enabled: true },
   },
 } satisfies DeepPartial<typeof _default>;

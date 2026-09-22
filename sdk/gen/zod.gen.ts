@@ -479,6 +479,14 @@ export const zAttachment = z.object({
   viewCount: z.int().gte(0).optional(),
 });
 
+export const zProtectedResourceMetadata = z.object({
+  resource: z.string(),
+  authorization_servers: z.array(z.string()),
+  scopes_supported: z.array(z.string()),
+  bearer_methods_supported: z.array(z.string()),
+  resource_documentation: z.string(),
+});
+
 /**
  * A user's membership in a channel entity, including role and activity data.
  */
@@ -1836,6 +1844,16 @@ export const zUpdateAttachmentQuery = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = zAttachment;
+
+export const zGetProtectedResourceMetadataPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Protected resource metadata
+ */
+export const zGetProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
 export const zHandleMcpBody = z.unknown();
 

@@ -1833,6 +1833,52 @@
     "entityType": "attachment"
   },
   {
+    "id": "getProtectedResourceMetadata",
+    "hash": "tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource",
+    "method": "get",
+    "path": "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource",
+    "tags": ["mcp"],
+    "summary": "Protected resource metadata",
+    "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["mcp"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "handleMcp",
+    "hash": "tag/mcp/POST/{tenantId}/{organizationId}/mcp",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/mcp",
+    "tags": ["mcp"],
+    "summary": "MCP endpoint",
+    "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["tokenGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["mcp"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "membershipInvite",
     "hash": "tag/memberships/POST/{tenantId}/{organizationId}/memberships",
     "method": "post",

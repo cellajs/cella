@@ -1,5 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
 import { attachmentHandlers } from './attachment-handlers';
+import { attachmentTools } from './attachment-tools';
 import { updateAttachmentOp } from './operations/update-attachment';
 
 defineBackendModule({
@@ -14,4 +15,5 @@ defineBackendModule({
   yjsMaterializer: updateAttachmentOp,
   notifications: true,
   routes: [{ path: '/:tenantId/:organizationId/attachments', app: attachmentHandlers, phase: 'tenant' }],
+  tools: attachmentTools,
 });

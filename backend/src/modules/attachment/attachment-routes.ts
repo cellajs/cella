@@ -34,6 +34,13 @@ import {
 const attachmentRoutes = {
   getAttachments: createXRoute({
     operationId: 'getAttachments',
+    'x-tool': {
+      enabled: true,
+      description:
+        'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
+      approvalRequired: false,
+      category: 'attachments',
+    },
     method: 'get',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
@@ -61,6 +68,13 @@ const attachmentRoutes = {
   }),
   createAttachments: createXRoute({
     operationId: 'createAttachments',
+    'x-tool': {
+      enabled: true,
+      description:
+        'Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.',
+      approvalRequired: true,
+      category: 'attachments',
+    },
     method: 'post',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
@@ -94,6 +108,12 @@ const attachmentRoutes = {
   }),
   getAttachment: createXRoute({
     operationId: 'getAttachment',
+    'x-tool': {
+      enabled: true,
+      description: 'Read one attachment: its metadata and the description as text.',
+      approvalRequired: false,
+      category: 'attachments',
+    },
     method: 'get',
     path: '/{id}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
@@ -114,6 +134,12 @@ const attachmentRoutes = {
   }),
   updateAttachment: createXRoute({
     operationId: 'updateAttachment',
+    'x-tool': {
+      enabled: true,
+      description: 'Rename an attachment or replace its description.',
+      approvalRequired: true,
+      category: 'attachments',
+    },
     method: 'put',
     path: '/{id}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
@@ -139,6 +165,12 @@ const attachmentRoutes = {
   }),
   deleteAttachments: createXRoute({
     operationId: 'deleteAttachments',
+    'x-tool': {
+      enabled: true,
+      description: 'Delete attachments by id. The stored files stay in storage.',
+      approvalRequired: true,
+      category: 'attachments',
+    },
     method: 'delete',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],

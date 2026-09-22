@@ -2358,6 +2358,23 @@
     }
   },
   {
+    "name": "ProtectedResourceMetadata",
+    "ref": "#/components/schemas/ProtectedResourceMetadata",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "resource": { "type": "string", "required": true },
+        "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
+        "scopes_supported": { "type": "array", "required": true, "itemType": "string" },
+        "bearer_methods_supported": { "type": "array", "required": true, "itemType": "string" },
+        "resource_documentation": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {}
+  },
+  {
     "name": "StxBase",
     "ref": "#/components/schemas/StxBase",
     "type": "object",

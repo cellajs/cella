@@ -20,3 +20,8 @@ export function parseResource(uri: string): ResourceRef | null {
 }
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** RFC 9728: where a protected resource publishes its metadata; the `WWW-Authenticate` challenge points here. */
+export function resourceMetadataUrl(ref: ResourceRef): string {
+  return `${resourceUri(ref)}/.well-known/oauth-protected-resource`;
+}

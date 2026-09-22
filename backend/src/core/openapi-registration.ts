@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
+import { appConfig, scopes } from 'shared';
 import type { Env } from '#/core/context';
 import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
@@ -14,6 +14,12 @@ import { organizationMinimalBaseSchema, userMinimalBaseSchema } from '#/schemas/
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
 import { stxBaseSchema } from '#/schemas/sync-transaction-schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
+
+/** `attachment:read` reads as "Read attachments"; `write` covers create, update and delete. */
+const scopeDescription = (scope: string): string => {
+  const [entity, verb] = scope.split(':');
+  return verb === 'read' ? `Read ${entity}s` : `Create, update and delete ${entity}s`;
+};
 
 /** Register OpenAPI schemas, write the spec to disk, and mount the /openapi.json endpoint. */
 const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
@@ -55,6 +61,23 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     scheme: 'bearer',
     description:
       'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.',
+  });
+
+  // The scope vocabulary is derived from the policy matrix (D19); the same ids feed discovery and the consent screen.
+  const scopeDescriptions = Object.fromEntries(scopes.all.map((scope) => [scope, scopeDescription(scope)]));
+  registry.registerComponent('securitySchemes', 'oauth2', {
+    type: 'oauth2',
+    description:
+      'Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret.',
+    flows: {
+      authorizationCode: {
+        authorizationUrl: `${appConfig.oauthUrl}/auth`,
+        tokenUrl: `${appConfig.oauthUrl}/token`,
+        refreshUrl: `${appConfig.oauthUrl}/token`,
+        scopes: scopeDescriptions,
+      },
+      clientCredentials: { tokenUrl: `${appConfig.oauthUrl}/token`, scopes: scopeDescriptions },
+    },
   });
 
   // Register base schemas (not auto-registered as they're only used for extending other schemas)

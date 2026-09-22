@@ -38,7 +38,9 @@ export function createOauthListener(provider: Provider): Listener {
       return;
     }
     if (url === OAUTH_MOUNT || url.startsWith(`${OAUTH_MOUNT}/`) || url.startsWith(`${OAUTH_MOUNT}?`)) {
-      // The provider knows its issuer path; it expects request paths relative to the mount.
+      // The provider expects paths relative to the mount and rebuilds absolute URLs (resume, redirects) from
+      // `originalUrl`, the Express convention it reads for the mount path.
+      (req as IncomingMessage & { originalUrl?: string }).originalUrl = url;
       req.url = url.slice(OAUTH_MOUNT.length) || '/';
       oidc(req, res);
       return;

@@ -4,6 +4,7 @@ import { type ModuleConfig, registerModule } from 'shared/module-registry';
 import type { Env } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import type { MutationHandler } from '#/lib/mutation-bus';
+import type { ToolBinding } from '#/modules/mcp/define-tool';
 import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
@@ -101,6 +102,8 @@ export interface BackendModule extends ModuleConfig {
   notifications?: true | ModuleNotifications;
   /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
   routes?: BackendRoute[];
+  /** Operations exposed to MCP clients (`defineTool` over a route carrying `x-tool`); indexed by the mcp module. */
+  tools?: ToolBinding[];
 }
 
 const backendModules: BackendModule[] = [];
@@ -117,6 +120,7 @@ export function defineBackendModule(module: BackendModule): void {
     jobs = [],
     routes = [],
     notifications: _notifications,
+    tools: _tools,
     ...metadata
   } = module;
   registerModule(metadata);

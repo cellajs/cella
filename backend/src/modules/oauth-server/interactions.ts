@@ -21,6 +21,8 @@ interface ConsentDetails {
   scopes: string[];
   resource: ResourceRef;
   user: { id: string; name: string };
+  /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
+  prompt: { name: string; reasons: string[] };
   /** Why the consent screen must refuse; null when the user may accept. */
   refusal: 'not_a_member' | 'clients_not_allowed' | 'app_not_installed' | null;
 }
@@ -57,7 +59,9 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 
     const existing = interaction.grantId ? await provider.Grant.find(interaction.grantId) : undefined;
     const grant = existing ?? new provider.Grant({ accountId: user.id, clientId });
+    // Entity scopes are both the provider's scopes and the resource's: the grant records them in both forms.
     const resource = String(interaction.params.resource);
+    grant.addOIDCScope(details.scopes.join(' '));
     grant.addResourceScope(resource, details.scopes.join(' '));
     const grantId = await grant.save();
 
@@ -100,6 +104,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
     scopes: requested,
     resource,
     user: user ? { id: user.id, name: user.name } : { id: '', name: '' },
+    prompt: { name: interaction.prompt.name, reasons: interaction.prompt.reasons },
     refusal,
   };
   return { user, details, interaction, clientId };

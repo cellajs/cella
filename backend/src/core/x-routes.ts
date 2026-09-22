@@ -13,6 +13,7 @@ import {
 import { actorGuard } from '#/middlewares/guard/actor-guard';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 import { serviceGuard } from '#/middlewares/guard/service-guard';
+import { tokenGuard } from '#/middlewares/guard/token-guard';
 
 /** Runs before guards so a disabled service 404s without exposing auth behavior. Read per request. */
 const createServiceGate =
@@ -55,14 +56,17 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  // Security follows the guard: none for public, either for actorGuard, a key for serviceGuard, a cookie otherwise
+  // Security follows the guard: none for public, any credential for actorGuard, a key or token for serviceGuard, a
+  // token for tokenGuard, a cookie otherwise
   const security = extensionMiddleware.includes(publicGuard)
     ? []
     : extensionMiddleware.includes(actorGuard)
-      ? [{ cookieAuth: [] }, { apiKey: [] }]
+      ? [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }]
       : extensionMiddleware.includes(serviceGuard)
-        ? [{ apiKey: [] }]
-        : [{ cookieAuth: [] }];
+        ? [{ apiKey: [] }, { oauth2: [] }]
+        : extensionMiddleware.includes(tokenGuard)
+          ? [{ oauth2: [] }]
+          : [{ cookieAuth: [] }];
 
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();
