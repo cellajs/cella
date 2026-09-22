@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
-import { getRouteTools } from '#/core/tool-registry';
+import { getMcpTools } from '#/core/mcp-tool-registry';
 import { createXRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import '#/modules/attachment/attachment-routes';
@@ -152,7 +152,7 @@ describe('createXRoute with x-tool', () => {
       },
       responses: { 200: { description: 'ok' } },
     });
-    const tool = getRouteTools().find((candidate) => candidate.name === 'renameThing');
+    const tool = getMcpTools().find((candidate) => candidate.name === 'renameThing');
     expect(tool).toMatchObject({
       scope: 'attachment:write',
       annotations: { readOnlyHint: false, idempotentHint: true },

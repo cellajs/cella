@@ -16,7 +16,7 @@ export function createServerStx(): StxBase {
  * A server transaction that already stamps the scalar fields of `ops`, so a body built on the server passes the
  * update schema's timestamp check (a tool call, for instance) before the operation assigns its own HLC.
  */
-export function createServerStxFor(ops: Record<string, unknown>): StxBase {
+export function createServerStxStamping(ops: Record<string, unknown>): StxBase {
   const stx = createServerStx();
   const scalarFields = Object.keys(ops).filter((field) => !isArrayDelta(ops[field]));
   if (scalarFields.length === 0) return stx;

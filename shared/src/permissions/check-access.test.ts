@@ -30,9 +30,11 @@ const admin = (scopes: readonly EntityScope[] | null): Access => ({
 });
 
 describe('checkAccess with a scoped credential', () => {
-  it('an unscoped access keeps the grants (a session, or scopes null)', () => {
+  it('an unscoped access (scopes null, what a session sets) keeps the grants', () => {
     expect(checkAccess(admin(null), 'update', subject()).allowed).toBe(true);
-    expect(checkAccess({ userId: 'u1', memberships: [membership] }, 'delete', subject()).allowed).toBe(true);
+    expect(checkAccess({ userId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(
+      true,
+    );
   });
 
   it('a read scope reads and never writes', () => {

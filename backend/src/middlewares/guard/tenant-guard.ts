@@ -1,7 +1,7 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { loadActiveTenant } from './tenant-cache';
+import { loadActiveTenant } from '#/modules/tenants/helpers/load-active-tenant';
 
 /**
  * Resolves the URL's tenant and checks the actor may act in it: a service account only in the tenant its key belongs

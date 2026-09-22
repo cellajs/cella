@@ -11,8 +11,8 @@ describe('deriveScopes', () => {
     expect(scopes.all).toEqual(['attachment:read', 'attachment:write', 'organization:read', 'organization:write']);
   });
 
-  it('refuses a matrix without a single policy', () => {
-    expect(() => deriveScopes({} as PolicyMatrix)).toThrow();
+  it('derives nothing from a configuration without a single policy', () => {
+    expect(deriveScopes({} as PolicyMatrix).all).toEqual([]);
   });
 
   it('names read for reads and write for every other action', () => {

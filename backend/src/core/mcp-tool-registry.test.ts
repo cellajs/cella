@@ -1,28 +1,27 @@
 import { z } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
-import { getRouteTools, registerRouteTool } from './tool-registry';
+import { getMcpTools, registerMcpTool } from './mcp-tool-registry';
 
 const ctx = {} as OrgContext;
-const meta = (execute: (ctx: OrgContext, input: never) => Promise<unknown>) => ({
+const spec = {
   enabled: true,
   description: 'x',
   approvalRequired: false,
   category: 'test',
   entity: 'attachment' as const,
-  execute,
-});
+};
 
 const registered = (name: string) => {
-  const tool = getRouteTools().find((candidate) => candidate.name === name);
+  const tool = getMcpTools().find((candidate) => candidate.name === name);
   if (!tool) throw new Error(`${name} not registered`);
   return tool;
 };
 
-describe('registerRouteTool', () => {
+describe('registerMcpTool', () => {
   it("derives the input from params minus the route's own ids plus the query, and splits them back for execute", async () => {
     const calls: unknown[] = [];
-    registerRouteTool(
+    registerMcpTool(
       {
         operationId: 'listThings',
         method: 'get',
@@ -31,10 +30,13 @@ describe('registerRouteTool', () => {
           query: z.object({ q: z.string().optional(), limit: z.string().regex(/^\d+$/).transform(Number).optional() }),
         },
       },
-      meta(async (_ctx, input) => {
-        calls.push(input);
-        return null;
-      }),
+      {
+        ...spec,
+        execute: async (_ctx, input) => {
+          calls.push(input);
+          return null;
+        },
+      },
     );
     const tool = registered('listThings');
     expect(tool.scope).toBe('attachment:read');
@@ -48,7 +50,7 @@ describe('registerRouteTool', () => {
 
   it('nests an array body under items and rebuilds the sync transaction per item', async () => {
     const calls: unknown[] = [];
-    registerRouteTool(
+    registerMcpTool(
       {
         operationId: 'createThings',
         method: 'post',
@@ -65,10 +67,13 @@ describe('registerRouteTool', () => {
           },
         },
       },
-      meta(async (_ctx, input) => {
-        calls.push(input);
-        return null;
-      }),
+      {
+        ...spec,
+        execute: async (_ctx, input) => {
+          calls.push(input);
+          return null;
+        },
+      },
     );
     const tool = registered('createThings');
     expect(tool.scope).toBe('attachment:write');
@@ -83,10 +88,7 @@ describe('registerRouteTool', () => {
 
   it('refuses a second registration of the same operation', () => {
     expect(() =>
-      registerRouteTool(
-        { operationId: 'listThings', method: 'get' },
-        meta(async () => null),
-      ),
+      registerMcpTool({ operationId: 'listThings', method: 'get' }, { ...spec, execute: async () => null }),
     ).toThrow();
   });
 });

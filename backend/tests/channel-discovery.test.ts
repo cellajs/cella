@@ -105,7 +105,7 @@ interface ListedRow {
 
 /** The list query as a consumer wires it: LEFT join for discovery, INNER join (filters in ON) once a role filter narrows to memberships. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
-  const actor: PredicateActor = { userId, isSystemAdmin: opts.isSystemAdmin ?? false };
+  const actor: PredicateActor = { userId, isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null };
   const memberships = (await seedDb
     .select()
     .from(membershipsTable)

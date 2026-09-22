@@ -44,7 +44,7 @@ export type { PublicReadGrants } from './public-read.ts';
 export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions.ts';
 export { isRowCondition, matchesRowCondition } from './row-conditions.ts';
 export { toColumnName, toTableName } from './schema-naming.ts';
-export { deriveScopes, type EntityScope, type Scopes } from './scopes.ts';
+export { deriveScopes, type EntityScope, type ScopedEntityType, type Scopes } from './scopes.ts';
 export type {
   CanState,
   ChannelPolicyBuilder,

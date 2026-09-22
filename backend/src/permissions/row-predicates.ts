@@ -24,7 +24,7 @@ export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable
       if (!userId) return NEVER;
       return eq(resolveColumn(table, 'createdBy', name), userId);
     }
-    // PredicateActor-independent (public read): matches for anonymous actors too.
+    // Actor-independent (public read): matches for anonymous actors too.
     case 'public':
       return isNotNull(resolveColumn(table, 'publicAt', name));
   }

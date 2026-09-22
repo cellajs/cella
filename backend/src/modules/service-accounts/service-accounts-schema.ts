@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, type EntityRole, hierarchy, scopes } from 'shared';
+import { appConfig, type EntityRole, type EntityScope, hierarchy, scopes } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
@@ -14,7 +14,8 @@ import {
 // `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
 const organizationRoles = hierarchy.getRoles('organization') as [EntityRole, ...EntityRole[]];
 /** Derived from the policy matrix (non-empty by construction): the only values a key may be narrowed to. */
-const scopeEnum = z.enum(scopes.all);
+// The template configuration always carries a policy, so the vocabulary is never empty where keys are issued.
+const scopeEnum = z.enum(scopes.all as [EntityScope, ...EntityScope[]]);
 
 const serviceGrantSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),

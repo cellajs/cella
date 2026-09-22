@@ -44,9 +44,7 @@ export async function verifyAccessToken(
     const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
     if (!claims.sub || !claims.principal_kind || !claims.tenant_id)
       throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
-    const granted = (claims.scope ?? '')
-      .split(' ')
-      .filter((scope): scope is EntityScope => (scopes.all as readonly string[]).includes(scope));
+    const granted = scopes.parse(claims.scope);
     return {
       principalId: claims.sub,
       kind: claims.principal_kind,

@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '#/core/context';
-import type { ExtensionType, XMiddlewareHandler } from '#/core/openapi-extensions';
+import type { ExtensionType, SecurityRequirement, XMiddlewareHandler } from '#/core/openapi-extensions';
 
 export type { ExtensionType, XMiddlewareHandler };
 
@@ -15,6 +15,8 @@ export type XMiddlewareOptions = {
   /** Short human-readable label (e.g., 'relatable', 'tenant') */
   name?: string;
   description?: string;
+  /** Guards only: which OpenAPI security schemes the route accepts (`[]` for a public route). */
+  security?: SecurityRequirement[];
 };
 
 /** Global store for extension value metadata, keyed by "extensionType:functionName" */
@@ -27,7 +29,7 @@ export const xMiddleware = <E extends Env = Env>(
   options: XMiddlewareOptions,
   fn: MiddlewareFunction<E>,
 ): XMiddlewareHandler<E> => {
-  const { functionName, type, name, description } = options;
+  const { functionName, type, name, description, security } = options;
 
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
@@ -35,6 +37,7 @@ export const xMiddleware = <E extends Env = Env>(
   const middleware = Object.assign(createMiddleware<E>(fn), {
     __extensionType: type,
     __description: description,
+    __security: security,
   });
   // name requires Object.defineProperty since function.name is read-only in JS.
   Object.defineProperty(middleware, 'name', { value: functionName, writable: false });
@@ -46,7 +49,7 @@ export const setMiddlewareExtension = <E extends Env = Env>(
   middleware: MiddlewareHandler<E>,
   options: XMiddlewareOptions,
 ): XMiddlewareHandler<E> => {
-  const { functionName, type, name, description } = options;
+  const { functionName, type, name, description, security } = options;
 
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
@@ -54,6 +57,7 @@ export const setMiddlewareExtension = <E extends Env = Env>(
   const extended = Object.assign(middleware, {
     __extensionType: type,
     __description: description,
+    __security: security,
   });
   Object.defineProperty(extended, 'name', { value: functionName, writable: false });
   return extended;

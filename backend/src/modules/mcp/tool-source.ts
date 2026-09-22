@@ -1,12 +1,12 @@
 import { z } from '@hono/zod-openapi';
-import type { RouteTool } from '#/core/tool-registry';
+import type { McpTool } from '#/core/mcp-tool-registry';
 
 /** A tool as `tools/list` returns it. */
 export interface McpToolDescriptor {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  annotations: RouteTool['annotations'];
+  annotations: McpTool['annotations'];
   /** Beyond the MCP schema: the scope a token needs, so a client can ask for it up front. */
   _meta: { scope: string; approvalRequired: boolean };
 }
@@ -22,9 +22,9 @@ function toInputSchema(schema: z.ZodType): Record<string, unknown> {
 }
 
 /** Tools are fixed after boot, so each descriptor is derived once. */
-const descriptors = new WeakMap<RouteTool, McpToolDescriptor>();
+const descriptors = new WeakMap<McpTool, McpToolDescriptor>();
 
-export function describeMcpTools(tools: readonly RouteTool[]): McpToolDescriptor[] {
+export function describeMcpTools(tools: readonly McpTool[]): McpToolDescriptor[] {
   return tools.map((tool) => {
     let descriptor = descriptors.get(tool);
     if (!descriptor) {

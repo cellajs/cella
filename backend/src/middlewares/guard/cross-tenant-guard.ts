@@ -7,6 +7,7 @@ export const crossTenantGuard = xMiddleware(
   {
     functionName: 'crossTenantGuard',
     type: 'x-guard',
+    security: [{ cookieAuth: [] }],
     name: 'crossTenant',
     description: 'Requires userGuard and sets baseDb for cross-tenant access',
   },

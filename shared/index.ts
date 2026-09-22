@@ -98,6 +98,7 @@ export {
   policyMatrix,
   publicReadGrants,
   resolveCan,
+  type ScopedEntityType,
   scopes,
   toColumnName,
   toTableName,

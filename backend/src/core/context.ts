@@ -1,9 +1,10 @@
 import type { HttpBindings } from '@hono/node-server';
-import type { ChannelEntityType, EntityRole, EntityScope } from 'shared';
+import type { EntityScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
+import type { ServiceGrant } from '#/modules/service-accounts/service-accounts-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 
@@ -12,16 +13,8 @@ type Bindings = HttpBindings & {
   /* ... */
 };
 
-/** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
-export interface ServiceGrant {
-  channelType: ChannelEntityType;
-  channelId: string;
-  organizationId: string;
-  role: EntityRole;
-}
-
 /** A user: grants are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
-type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: EntityScope[] | null };
+type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: readonly EntityScope[] | null };
 
 /** A service account behind an API key: grants are its stored bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {
@@ -29,7 +22,7 @@ type ServiceActor = {
   id: ServiceAccountId;
   tenantId: string;
   grants: ServiceGrant[];
-  scopes: EntityScope[] | null;
+  scopes: readonly EntityScope[] | null;
 };
 
 /**
@@ -77,7 +70,7 @@ export type Env = {
     actor: Actor;
     user: UserModel;
     /** User-only sugar for `actor.id`, kept for the user-only modules. */
-    userId: string;
+    userId: UserId;
     isSystemAdmin: boolean;
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     organizationId: string;

@@ -2,6 +2,7 @@ import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
+import { registerMcpTool } from '#/core/mcp-tool-registry';
 import type { ServiceGate, XMiddlewareHandler } from '#/core/openapi-extensions';
 import {
   collectExtensionMiddleware,
@@ -11,11 +12,6 @@ import {
   type XMiddlewareOptions,
   type XToolMetadata,
 } from '#/core/openapi-extensions';
-import { type RegisteredTool, registerRouteTool } from '#/core/tool-registry';
-import { actorGuard } from '#/middlewares/guard/actor-guard';
-import { publicGuard } from '#/middlewares/guard/public-guard';
-import { serviceGuard } from '#/middlewares/guard/service-guard';
-import { tokenGuard } from '#/middlewares/guard/token-guard';
 
 /** Runs before guards so a disabled service 404s without exposing auth behavior. Read per request. */
 const createServiceGate =
@@ -63,17 +59,8 @@ export const createXRoute = <
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  // Security follows the guard: none for public, any credential for actorGuard, a key or token for serviceGuard, a
-  // token for tokenGuard, a cookie otherwise
-  const security = extensionMiddleware.includes(publicGuard)
-    ? []
-    : extensionMiddleware.includes(actorGuard)
-      ? [{ cookieAuth: [] }, { apiKey: [] }, { oauth2: [] }]
-      : extensionMiddleware.includes(serviceGuard)
-        ? [{ apiKey: [] }, { oauth2: [] }]
-        : extensionMiddleware.includes(tokenGuard)
-          ? [{ oauth2: [] }]
-          : [{ cookieAuth: [] }];
+  // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
+  const security = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
 
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();
@@ -84,10 +71,7 @@ export const createXRoute = <
   // A route carrying `x-tool` registers itself as an MCP tool; the spec keeps the metadata, never `execute`.
   const tool = config['x-tool'];
   if (tool?.enabled) {
-    registerRouteTool(
-      { operationId: config.operationId, method: config.method, request: config.request },
-      tool as RegisteredTool,
-    );
+    registerMcpTool({ operationId: config.operationId, method: config.method, request: config.request }, tool);
     const { execute: _execute, ...spec } = tool;
     Object.assign(cleanConfig, { 'x-tool': spec });
   }

@@ -26,15 +26,7 @@
           },
           "actorGuard": {
             "name": "actor",
-            "description": "Accepts a session cookie or a secret API key and sets the actor"
-          },
-          "publicGuard": {
-            "name": "public",
-            "description": "No authentication required; provides baseDb without RLS context"
-          },
-          "tokenGuard": {
-            "name": "token",
-            "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
+            "description": "Requires a session cookie, a secret API key, or an access token and sets the actor"
           },
           "crossTenantGuard": {
             "name": "crossTenant",
@@ -43,6 +35,10 @@
           "orgGuard": {
             "name": "org",
             "description": "Validates organization membership within tenant context"
+          },
+          "publicGuard": {
+            "name": "public",
+            "description": "No authentication required; provides baseDb without RLS context"
           },
           "relatableGuard": {
             "name": "relatable",
@@ -55,6 +51,10 @@
           "tenantGuard": {
             "name": "tenant",
             "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
+          },
+          "tokenGuard": {
+            "name": "token",
+            "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
           }
         }
       },

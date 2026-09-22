@@ -41,7 +41,6 @@ const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organi
       id: 'user-1',
       grants: opts.memberships,
       scopes: null,
-      credential: { kind: 'session', id: 's' },
     },
     isSystemAdmin: opts.isSystemAdmin ?? false,
     tenantId: TENANT_ID,

@@ -17,15 +17,16 @@ import type { EntityScope } from './scopes.ts';
  * principal id; `scopes` is a credential's mask (null or absent = unmasked).
  */
 export type PredicateActor =
-  | { userId: string; isSystemAdmin?: boolean; scopes?: readonly EntityScope[] | null }
+  | { userId: string; isSystemAdmin?: boolean; scopes: readonly EntityScope[] | null }
   | { anonymous: true };
 
 /**
  * Memberships and actor travel together, so no call site can pair one user's memberships with
- * another's actor. An anonymous access carries no memberships.
+ * another's actor. An anonymous access carries no memberships. `scopes` is required so a hand-built access states
+ * its mask (null = unmasked) and can never fail open by omission.
  */
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes?: readonly EntityScope[] | null }
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly EntityScope[] | null }
   | { anonymous: true };
 
 /**

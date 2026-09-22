@@ -13,6 +13,7 @@ export const tokenGuard = xMiddleware(
   {
     functionName: 'tokenGuard',
     type: 'x-guard',
+    security: [{ oauth2: [] }],
     name: 'token',
     description:
       'Requires an access token from the authorization server and sets the consenting user or service account as the actor',

@@ -7,12 +7,12 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
-import { loadActiveTenant } from '#/middlewares/guard/tenant-cache';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { AppClientMetadata } from '#/modules/oauth-server/adapter';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { loadActiveTenant } from '#/modules/tenants/helpers/load-active-tenant';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
 
@@ -86,9 +86,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const resource = parseResource(String(interaction.params.resource ?? ''));
   if (!resource) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'invalid_target' } });
 
-  const requested = String(interaction.params.scope ?? '')
-    .split(' ')
-    .filter((scope): scope is (typeof scopes.all)[number] => (scopes.all as readonly string[]).includes(scope));
+  const requested = scopes.parse(String(interaction.params.scope ?? ''));
 
   const user = await sessionUser(c);
   const kind = client.client_kind === 'registered' ? 'registered' : 'cimd';

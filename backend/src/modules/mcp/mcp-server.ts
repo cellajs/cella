@@ -2,7 +2,7 @@ import { z } from '@hono/zod-openapi';
 import { appConfig, scopes } from 'shared';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getRouteTools } from '#/core/tool-registry';
+import { getMcpTools } from '#/core/mcp-tool-registry';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
 
 /**
@@ -71,19 +71,18 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       return respond({});
 
     case 'tools/list':
-      return respond({ tools: describeMcpTools(getRouteTools()) });
+      return respond({ tools: describeMcpTools(getMcpTools()) });
 
     case 'tools/call': {
       if (isNotification) return null;
       const name = typeof message.params?.name === 'string' ? message.params.name : undefined;
       if (!name) return fail(-32602, 'Invalid params: missing tool name');
 
-      const tool = getRouteTools().find((candidate) => candidate.name === name);
+      const tool = getMcpTools().find((candidate) => candidate.name === name);
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
-      const [entity, verb] = tool.scope.split(':') as [Parameters<typeof scopes.allows>[1], 'read' | 'write'];
-      if (!scopes.allows(ctx.var.actor.scopes, entity, verb === 'read' ? 'read' : 'update'))
+      if (!scopes.allows(ctx.var.actor.scopes, tool.entity, tool.action))
         throw new InsufficientScopeError(tool.scope, id);
 
       try {

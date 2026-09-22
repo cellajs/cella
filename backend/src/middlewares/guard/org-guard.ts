@@ -26,7 +26,7 @@ export const orgGuard = xMiddleware(
 
     const db = ctx.var.db;
     // Role bindings of whoever is acting: a user's memberships, or a service account's grants.
-    const memberships = ctx.var.actor?.grants as ActorGrant[] | undefined;
+    const memberships: readonly ActorGrant[] | undefined = ctx.var.actor?.grants;
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 
@@ -35,7 +35,7 @@ export const orgGuard = xMiddleware(
     }
 
     if (memberships === undefined) {
-      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires isAuthenticated middleware' });
+      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires userGuard or serviceGuard' });
     }
 
     const cached = getOrgCache(tenantId, organizationId);

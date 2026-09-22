@@ -1,6 +1,6 @@
 import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import type { ServiceGrant } from '#/core/context';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { PrincipalId, ServiceAccountId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -15,6 +15,14 @@ export const serviceAccountStatuses = ['active', 'disabled'] as const;
  * and is disabled, never deleted, so provenance keeps pointing at it. An auth table outside RLS: the machine guard
  * resolves it before any tenant context exists.
  */
+/** One role binding of a service account, the shape the engine and the guards read; stored on the account row. */
+export interface ServiceGrant {
+  channelType: ChannelEntityType;
+  channelId: string;
+  organizationId: string;
+  role: EntityRole;
+}
+
 export const serviceAccountsTable = snakeCase.table(
   'service_accounts',
   {

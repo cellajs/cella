@@ -7,7 +7,7 @@ authorization server, never sessions or API keys (MCP spec 2026-07-28, AUTH_SUBS
 answers `401` with `WWW-Authenticate: Bearer resource_metadata="…/mcp/.well-known/oauth-protected-resource"`; that
 public route publishes the RFC 9728 document (resource id, `authorization_servers`, `scopes_supported`). Tools are no
 longer a hand-written registry: a route opts in with `'x-tool': { enabled, description, approvalRequired, category,
-entity, execute }` on `createXRoute`, which registers it (`backend/src/core/tool-registry.ts`). The input schema
+entity, execute }` on `createXRoute`, which registers it (`backend/src/core/mcp-tool-registry.ts`). The input schema
 derives from the route's `request` (params minus `tenantId` / `organizationId`, query, body); a body's sync
 transaction (`stx`) is left out of what the model sees and rebuilt server-side before the route's own schema
 validates the call. `execute(ctx, { params, query, body })` is the handler's one line, typed from the route. `tools/list` returns every tool with `annotations` and the
