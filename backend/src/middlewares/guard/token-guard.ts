@@ -6,7 +6,7 @@ import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
 
 /**
- * The MCP face accepts only tokens from cella's authorization server (D12): no sessions, no API keys. A missing or
+ * The MCP face accepts only tokens from the app's own authorization server (D12): no sessions, no API keys. A missing or
  * invalid token answers with the RFC 9728 challenge, which is how an MCP client discovers where to authorize.
  */
 export const tokenGuard = xMiddleware(

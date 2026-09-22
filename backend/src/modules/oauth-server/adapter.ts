@@ -6,10 +6,10 @@ import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Client metadata as the provider reads it; `cella_kind` tells the consent screen and the secret check which table it came from. */
-export type CellaClientMetadata = AdapterPayload & { cella_kind: 'registered' | 'service' };
+/** Client metadata as the provider reads it; `client_kind` tells the consent screen and the secret check which table it came from. */
+export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
 
-async function findClient(id: string): Promise<CellaClientMetadata | undefined> {
+async function findClient(id: string): Promise<AppClientMetadata | undefined> {
   const [app] = await baseDb.select().from(clientsTable).where(eq(clientsTable.id, id)).limit(1);
   if (app) {
     return {
@@ -25,7 +25,7 @@ async function findClient(id: string): Promise<CellaClientMetadata | undefined> 
       logo_uri: app.logoUri ?? undefined,
       client_uri: app.clientUri ?? undefined,
       policy_uri: app.policyUri ?? undefined,
-      cella_kind: 'registered',
+      client_kind: 'registered',
     };
   }
   // A service account is its own client_credentials client; its secret keys are the client secrets (compared by hash).
@@ -44,13 +44,13 @@ async function findClient(id: string): Promise<CellaClientMetadata | undefined> 
     grant_types: ['client_credentials'],
     response_types: [],
     redirect_uris: [],
-    cella_kind: 'service',
+    client_kind: 'service',
   };
 }
 
 /**
  * `node-oidc-provider`'s adapter over `oidc_payloads`: one row per model instance keyed by (type, id). The `Client`
- * model reads cella's own tables (`clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
+ * model reads the app's own tables (`clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
  * what the provider no longer reads.
  */
 export class DrizzleAdapter implements Adapter {

@@ -7,7 +7,7 @@ export interface McpToolDescriptor {
   description: string;
   inputSchema: Record<string, unknown>;
   annotations: ToolBinding['annotations'];
-  /** cella-specific: the scope a token needs, so a client can ask for it up front. */
+  /** Beyond the MCP schema: the scope a token needs, so a client can ask for it up front. */
   _meta: { scope: string; approvalRequired: boolean };
 }
 

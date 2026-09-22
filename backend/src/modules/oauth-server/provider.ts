@@ -16,11 +16,11 @@ import { log } from '#/utils/logger';
 const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
 
-/** Claims cella adds to every access token; the guard reads them to build the actor. */
-export type CellaTokenClaims = { cella_kind: 'user' | 'service'; tenant_id: string };
+/** Claims this server adds to every access token; the guard reads them to build the actor. */
+export type IssuedTokenClaims = { principal_kind: 'user' | 'service'; tenant_id: string };
 
 /**
- * The authorization server (D12): `node-oidc-provider` fed cella's keystore and store, narrowed to what the scenarios
+ * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
  * need. Grant types: authorization code + PKCE, refresh, client credentials. Client auth: none (CIMD public clients)
  * and client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
  * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
@@ -33,7 +33,7 @@ export async function createProvider(): Promise<Provider> {
     jwks,
     cookies: { keys: [env.COOKIE_SECRET], long: { signed: true }, short: { signed: true } },
     clientAuthMethods: ['none', 'client_secret_basic'],
-    extraClientMetadata: { properties: ['cella_kind'] },
+    extraClientMetadata: { properties: ['client_kind'] },
     responseTypes: ['code'],
     // Entity scopes plus what a machine client asks for; `openid` stays out: this AS issues no id_tokens.
     scopes: [...scopes.all],
@@ -87,8 +87,8 @@ export async function createProvider(): Promise<Provider> {
     extraTokenClaims: (_ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
-      const claims: CellaTokenClaims = {
-        cella_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
+      const claims: IssuedTokenClaims = {
+        principal_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
         tenant_id: resource?.tenantId ?? '',
       };
       return { ...claims };
@@ -106,11 +106,11 @@ export async function createProvider(): Promise<Provider> {
   // Secrets are never stored in plaintext: a registered app's secret is compared by hash, a service account's client
   // secret is any of its live secret keys.
   provider.Client.prototype.compareClientSecret = async function compare(
-    this: { clientId: string; clientSecret?: string; cella_kind?: string },
+    this: { clientId: string; clientSecret?: string; client_kind?: string },
     actual: string,
   ) {
     const presented = hashToken(actual);
-    if (this.cella_kind === 'service') {
+    if (this.client_kind === 'service') {
       const keys = await baseDb
         .select({ hash: credentialsTable.hash, expiresAt: credentialsTable.expiresAt })
         .from(credentialsTable)

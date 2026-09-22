@@ -32,7 +32,7 @@ function touchLastUsed(credentialId: string, serviceAccountId: string): void {
 export const invalidKey = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
 /**
- * A token from cella's authorization server (D12): verified locally, bound to this route's tenant, it runs as the user
+ * A token from the app's own authorization server (D12): verified locally, bound to this route's tenant, it runs as the user
  * who consented (masked by the token's scopes) or as the service account behind a `client_credentials` grant.
  */
 export async function setActorFromToken(
@@ -73,7 +73,7 @@ export async function setActorFromToken(
 
 /**
  * Authenticates a machine credential and sets the actor: a secret API key runs as its service account; a token from
- * cella's authorization server runs as the consenting user or the account behind it. Tenant resolution stays with
+ * the app's own authorization server runs as the consenting user or the account behind it. Tenant resolution stays with
  * `tenantGuard`, which checks the URL against the actor's tenant. Sessions never reach this guard; browsers never pass it.
  */
 export const serviceGuard = xMiddleware(

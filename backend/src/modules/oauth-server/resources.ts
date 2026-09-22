@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 
-/** The two audiences a cella-issued token can carry: the MCP server of an organization, or the REST API of a tenant. */
+/** The two audiences a token from this server can carry: the MCP server of an organization, or the REST API of a tenant. */
 export type ResourceRef = { face: 'mcp'; tenantId: string; organizationId: string } | { face: 'api'; tenantId: string };
 
 /** RFC 8707 resource identifiers are tenant-qualified (D7), so a token never crosses tenants. */

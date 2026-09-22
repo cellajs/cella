@@ -6160,7 +6160,7 @@
                       "clientId": "https://vscode.dev/oauth/client-metadata.json",
                       "clientName": "Visual Studio Code",
                       "scopes": ["attachment:read"],
-                      "resources": ["https://www.cellajs.com/mcp/tenant01/org01/mcp"],
+                      "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
                       "createdAt": "2026-09-22T10:00:00.000Z",
                       "expiresAt": "2026-10-22T10:00:00.000Z"
                     }

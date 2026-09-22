@@ -6,7 +6,7 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 export const signingKeyStatuses = ['next', 'current', 'retired'] as const;
 
 /**
- * The keystore: RS256 keypairs that sign cella-issued tokens (OAuth access tokens; later LTI launches and client
+ * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens; later LTI launches and client
  * assertions). The private JWK is encrypted at rest with `data-encryption.ts`; the public JWK is what the JWKS
  * endpoint and the in-process verifier publish. Rotation moves next → current → retired.
  */

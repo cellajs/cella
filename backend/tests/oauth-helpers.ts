@@ -59,7 +59,7 @@ class CookieJar {
 const base64url = (buffer: Buffer) => buffer.toString('base64url');
 
 /**
- * The authorization code flow with PKCE as a public client, consenting through cella's interaction routes with the
+ * The authorization code flow with PKCE as a public client, consenting through the app's interaction routes with the
  * user's session cookie: what an MCP client and the consent page do together.
  */
 export async function authorizationCodeToken(

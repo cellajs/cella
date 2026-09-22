@@ -10,7 +10,7 @@ import { appErrorHandler } from '#/lib/error';
 import { loadActiveTenant } from '#/middlewares/guard/tenant-cache';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import type { CellaClientMetadata } from '#/modules/oauth-server/adapter';
+import type { AppClientMetadata } from '#/modules/oauth-server/adapter';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 
@@ -80,7 +80,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const interaction = await provider.interactionDetails(c.env.incoming, c.env.outgoing);
   const clientId = String(interaction.params.client_id);
-  const client = (await provider.Client.find(clientId)) as (CellaClientMetadata & { clientId: string }) | undefined;
+  const client = (await provider.Client.find(clientId)) as (AppClientMetadata & { clientId: string }) | undefined;
   if (!client) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unknown_client' } });
 
   const resource = parseResource(String(interaction.params.resource ?? ''));
@@ -91,7 +91,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
     .filter((scope): scope is (typeof scopes.all)[number] => (scopes.all as readonly string[]).includes(scope));
 
   const user = await sessionUser(c);
-  const kind = client.cella_kind === 'registered' ? 'registered' : 'cimd';
+  const kind = client.client_kind === 'registered' ? 'registered' : 'cimd';
   const refusal = user ? await refusalFor(user.id, kind, clientId, resource) : null;
 
   const details: ConsentDetails = {

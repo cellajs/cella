@@ -4,7 +4,7 @@ import { appConfig, type EntityScope, scopes } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getVerificationKeySet } from '#/modules/oauth-server/keystore';
-import type { CellaTokenClaims } from '#/modules/oauth-server/provider';
+import type { IssuedTokenClaims } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
 
 export interface VerifiedAccessToken {
@@ -25,7 +25,7 @@ export function bearerJwtFrom(ctx: Context<Env>): string | null {
 }
 
 /**
- * Verifies a cella-issued access token locally against the keystore (no self-HTTP, no DB row per token) and binds it
+ * Verifies an access token this server issued, locally against the keystore (no self-HTTP, no DB row per token) and binds it
  * to the route's tenant and organization: the audience must be one of this route's resources (RFC 8707).
  */
 export async function verifyAccessToken(
@@ -41,15 +41,15 @@ export async function verifyAccessToken(
       issuer: appConfig.oauthUrl,
       audience: audiences,
     });
-    const claims = payload as typeof payload & Partial<CellaTokenClaims> & { scope?: string; client_id?: string };
-    if (!claims.sub || !claims.cella_kind || !claims.tenant_id)
+    const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
+    if (!claims.sub || !claims.principal_kind || !claims.tenant_id)
       throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
     const granted = (claims.scope ?? '')
       .split(' ')
       .filter((scope): scope is EntityScope => (scopes.all as readonly string[]).includes(scope));
     return {
       principalId: claims.sub,
-      kind: claims.cella_kind,
+      kind: claims.principal_kind,
       tenantId: claims.tenant_id,
       scopes: granted,
       clientId: claims.client_id ?? '',

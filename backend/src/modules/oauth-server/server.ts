@@ -11,7 +11,7 @@ type Listener = (req: IncomingMessage, res: ServerResponse) => void;
 
 /**
  * One Node request listener for the authorization server process: the provider (a plain Node handler, mounted with
- * the prefix stripped), the interaction routes cella renders itself, and the health endpoint. Shared by the process
+ * the prefix stripped), the interaction routes the app renders itself, and the health endpoint. Shared by the process
  * entry and the integration tests.
  */
 export function createOauthListener(provider: Provider): Listener {

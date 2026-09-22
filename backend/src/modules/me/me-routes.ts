@@ -11,6 +11,7 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
@@ -47,7 +48,7 @@ const mockConnectedApp = () => ({
   clientId: 'https://vscode.dev/oauth/client-metadata.json',
   clientName: 'Visual Studio Code',
   scopes: ['attachment:read'],
-  resources: ['https://www.cellajs.com/mcp/tenant01/org01/mcp'],
+  resources: [resourceUri({ face: 'mcp', tenantId: 'tenant01', organizationId: 'org01' })],
   createdAt: '2026-09-22T10:00:00.000Z',
   expiresAt: '2026-10-22T10:00:00.000Z',
 });
