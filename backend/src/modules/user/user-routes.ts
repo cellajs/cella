@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, crossTenantGuard, relatableGuard } from '#/middlewares/guard';
+import { crossTenantGuard, relatableGuard, userGuard } from '#/middlewares/guard';
 import { systemRoleBaseSchema } from '#/modules/system/system-schema';
 import { memberUserSchema, userListQuerySchema } from '#/modules/user/user-schema';
 import { errorResponseRefs, paginationSchema, relatableUserIdParamSchema, slugQuerySchema } from '#/schemas';
@@ -10,7 +10,7 @@ const userRoutes = {
     operationId: 'getUsers',
     method: 'get',
     path: '/users',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [userGuard, crossTenantGuard],
     tags: ['users', 'cella'],
     summary: 'Get list of users',
     description: 'Returns a list of users.',
@@ -36,7 +36,7 @@ const userRoutes = {
     operationId: 'getUser',
     method: 'get',
     path: '/users/{relatableUserId}',
-    xGuard: [authGuard, crossTenantGuard, relatableGuard],
+    xGuard: [userGuard, crossTenantGuard, relatableGuard],
     tags: ['users', 'cella'],
     summary: 'Get user',
     description:

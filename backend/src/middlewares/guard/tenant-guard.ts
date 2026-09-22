@@ -11,7 +11,7 @@ export const tenantGuard = xMiddleware(
     functionName: 'tenantGuard',
     type: 'x-guard',
     name: 'tenant',
-    description: 'Requires authGuard, validates tenant access, and sets baseDb + tenantId context',
+    description: 'Requires userGuard, validates tenant access, and sets baseDb + tenantId context',
   },
   async (ctx, next) => {
     const rawTenantId = ctx.req.param('tenantId');
@@ -34,7 +34,7 @@ export const tenantGuard = xMiddleware(
 
     if (!user || memberships === undefined) {
       throw new AppError(401, 'unauthorized', 'warn', {
-        message: 'tenantGuard requires authGuard middleware',
+        message: 'tenantGuard requires userGuard middleware',
       });
     }
 

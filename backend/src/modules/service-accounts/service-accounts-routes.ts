@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   errorResponseRefs,
@@ -35,7 +35,7 @@ export const serviceAccountRoutes = {
     operationId: 'createServiceAccount',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags,
     summary: 'Create service account',
@@ -62,7 +62,7 @@ export const serviceAccountRoutes = {
     operationId: 'getServiceAccounts',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     tags,
     summary: 'Get service accounts',
     description: 'Lists the service accounts of this organization.',
@@ -84,7 +84,7 @@ export const serviceAccountRoutes = {
     operationId: 'updateServiceAccount',
     method: 'put',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags,
     summary: 'Update service account',
@@ -105,7 +105,7 @@ export const serviceAccountRoutes = {
     operationId: 'getCredentials',
     method: 'get',
     path: '/{id}/credentials',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     tags,
     summary: 'Get API keys',
     description: 'Lists the API keys of a service account. Secrets are never returned here.',
@@ -124,7 +124,7 @@ export const serviceAccountRoutes = {
     operationId: 'createCredential',
     method: 'post',
     path: '/{id}/credentials',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags,
     summary: 'Create API key',
@@ -146,7 +146,7 @@ export const serviceAccountRoutes = {
     operationId: 'revokeCredential',
     method: 'delete',
     path: '/{id}/credentials/{credentialId}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags,
     summary: 'Revoke API key',

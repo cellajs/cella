@@ -13,13 +13,13 @@
       "required": true,
       "kind": "middleware",
       "values": {
-        "authGuard": {
-          "name": "auth",
-          "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
-        },
-        "machineGuard": {
-          "name": "machine",
+        "serviceGuard": {
+          "name": "service",
           "description": "Requires a secret API key and sets the service account as the actor"
+        },
+        "userGuard": {
+          "name": "user",
+          "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
         },
         "actorGuard": {
           "name": "actor",
@@ -31,7 +31,7 @@
         },
         "crossTenantGuard": {
           "name": "crossTenant",
-          "description": "Requires authGuard and sets baseDb for cross-tenant access"
+          "description": "Requires userGuard and sets baseDb for cross-tenant access"
         },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "relatableGuard": {
@@ -41,7 +41,7 @@
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
         "tenantGuard": {
           "name": "tenant",
-          "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+          "description": "Requires userGuard, validates tenant access, and sets baseDb + tenantId context"
         }
       }
     },

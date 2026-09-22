@@ -5,7 +5,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { findTenantById } from '#/db/prepared';
-import { machineBurstLimiter } from '#/middlewares/rate-limiter/limiters';
+import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
 import { looksLikeApiKey, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
@@ -17,14 +17,14 @@ import { log } from '#/utils/logger';
 import { getTenantCache, setTenantCache } from './tenant-cache';
 
 /** The raw credential from `Authorization: Bearer` or `x-api-key`, when the request carries one of this app's keys. */
-export function machineCredentialFrom(ctx: Context<Env>): string | null {
+export function serviceCredentialFrom(ctx: Context<Env>): string | null {
   const bearer = ctx.req.header('authorization');
   const fromBearer = bearer?.toLowerCase().startsWith('bearer ') ? bearer.slice(7).trim() : null;
   const value = fromBearer ?? ctx.req.header('x-api-key')?.trim() ?? null;
   return value && looksLikeApiKey(value) ? value : null;
 }
 
-export const hasMachineCredential = (ctx: Context<Env>): boolean => machineCredentialFrom(ctx) !== null;
+export const hasServiceCredential = (ctx: Context<Env>): boolean => serviceCredentialFrom(ctx) !== null;
 
 /** `lastUsedAt` is written at most once per key per window; the value is advisory. */
 const LAST_USED_DEBOUNCE_MS = 5 * 60 * 1000;
@@ -60,15 +60,15 @@ const toGrantRow = (grant: ServiceGrant, serviceAccountId: string, tenantId: str
  * Authenticates a secret API key and sets the service account as the actor. The tenant comes from the key, never
  * from the URL (tenantGuard checks they agree). Sessions never reach this guard; browsers never pass it.
  */
-export const machineGuard = xMiddleware(
+export const serviceGuard = xMiddleware(
   {
-    functionName: 'machineGuard',
+    functionName: 'serviceGuard',
     type: 'x-guard',
-    name: 'machine',
+    name: 'service',
     description: 'Requires a secret API key and sets the service account as the actor',
   },
   async (ctx, next) => {
-    const raw = machineCredentialFrom(ctx);
+    const raw = serviceCredentialFrom(ctx);
     if (!raw) throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'missing_api_key' } });
 
     // Secret keys are for servers: a request from a browser page carries an Origin and is refused outright.
@@ -121,6 +121,6 @@ export const machineGuard = xMiddleware(
 
     touchLastUsed(credential.id, account.id);
 
-    return machineBurstLimiter(ctx, next);
+    return serviceBurstLimiter(ctx, next);
   },
 );

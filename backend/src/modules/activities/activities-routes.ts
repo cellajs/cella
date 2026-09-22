@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { activityListQuerySchema, activitySchema } from '#/modules/activities/activities-schema';
 import { errorResponseRefs, paginationSchema } from '#/schemas';
 import { mockPaginatedActivitiesResponse } from './activities-mocks';
@@ -9,7 +9,7 @@ const activityRoutes = {
     operationId: 'getActivities',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     tags: ['activities', 'cella'],
     summary: 'Get list of activities',
     description:

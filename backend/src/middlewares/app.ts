@@ -7,7 +7,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
-import { hasMachineCredential } from '#/middlewares/guard/machine-guard';
+import { hasServiceCredential } from '#/middlewares/guard/service-guard';
 import { loggerMiddleware } from '#/middlewares/logger';
 import { runWithLogContext } from '#/utils/logger';
 
@@ -46,7 +46,7 @@ app.use('*', loggerMiddleware);
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
 // request that carries a machine credential header skips it (the machine guard rejects browser origins itself).
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
-app.use('*', (c, next) => (hasMachineCredential(c) ? next() : csrfMiddleware(c, next)));
+app.use('*', (c, next) => (hasServiceCredential(c) ? next() : csrfMiddleware(c, next)));
 
 app.use('*', clientVersionMiddleware);
 

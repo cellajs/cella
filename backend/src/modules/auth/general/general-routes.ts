@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, crossTenantGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
+import { crossTenantGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
@@ -38,7 +38,7 @@ const authGeneralRoutes = {
     operationId: 'startImpersonation',
     method: 'post',
     path: '/impersonation/start',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     tags: ['auth', 'cella'],
     summary: 'Start impersonating',
     description:
@@ -58,7 +58,7 @@ const authGeneralRoutes = {
     operationId: 'stopImpersonation',
     method: 'post',
     path: '/impersonation/stop',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['auth', 'cella'],
     summary: 'Stop impersonating',
     description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
@@ -136,7 +136,7 @@ const authGeneralRoutes = {
     operationId: 'acceptInvitationToken',
     method: 'post',
     path: '/invitation-token/accept',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [userGuard, crossTenantGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     tags: ['auth', 'cella'],

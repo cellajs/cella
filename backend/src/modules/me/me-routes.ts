@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, crossTenantGuard, publicGuard } from '#/middlewares/guard';
+import { crossTenantGuard, publicGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   meAuthDataSchema,
@@ -33,7 +33,7 @@ const meRoutes = {
     operationId: 'getMe',
     method: 'get',
     path: '/',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['me', 'cella'],
     summary: 'Get self',
     description: 'Returns the current user.',
@@ -54,7 +54,7 @@ const meRoutes = {
     operationId: 'getMyInvitations',
     method: 'get',
     path: '/invitations',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [userGuard, crossTenantGuard],
     tags: ['me', 'cella'],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
@@ -75,7 +75,7 @@ const meRoutes = {
     operationId: 'updateMe',
     method: 'put',
     path: '/',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Update self',
@@ -102,7 +102,7 @@ const meRoutes = {
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Delete self',
@@ -117,7 +117,7 @@ const meRoutes = {
     operationId: 'getMyAuth',
     method: 'get',
     path: '/auth',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['me', 'cella'],
     summary: 'Get auth data',
     description:
@@ -134,7 +134,7 @@ const meRoutes = {
     operationId: 'deleteMySessions',
     method: 'delete',
     path: '/sessions',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Terminate sessions',
@@ -158,7 +158,7 @@ const meRoutes = {
     operationId: 'deleteMyMembership',
     method: 'delete',
     path: '/leave',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [userGuard, crossTenantGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Leave entity',
@@ -194,7 +194,7 @@ const meRoutes = {
     operationId: 'getUploadToken',
     method: 'get',
     path: '/upload-token',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['me', 'cella'],
     summary: 'Get upload token',
     description:
@@ -212,7 +212,7 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Toggle MFA',
@@ -233,7 +233,7 @@ const meRoutes = {
     operationId: 'getMyMemberships',
     method: 'get',
     path: '/memberships',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['me', 'cella'],
     summary: 'Get my memberships',
     description: 'Returns all memberships for the current user across all channel entities.',

@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard } from '#/middlewares/guard';
+import { userGuard } from '#/middlewares/guard';
 import { errorResponseRefs } from '#/schemas';
 import {
   deletePushSubscriptionQuerySchema,
@@ -14,7 +14,7 @@ const pushRoutes = {
     operationId: 'getPushVapid',
     method: 'get',
     path: '/vapid',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['push'],
     summary: 'Get the Web Push application server key',
     description:
@@ -32,7 +32,7 @@ const pushRoutes = {
     operationId: 'createPushSubscription',
     method: 'post',
     path: '/subscriptions',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['push'],
     summary: 'Register a Web Push subscription',
     description:
@@ -53,7 +53,7 @@ const pushRoutes = {
     operationId: 'deletePushSubscription',
     method: 'delete',
     path: '/subscriptions',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['push'],
     summary: 'Remove a Web Push subscription',
     description: 'Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.',

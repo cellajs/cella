@@ -31,7 +31,7 @@ Global chain in `backend/src/middlewares/app.ts`: log context → referrer overr
 
 Route-level guards in `backend/src/middlewares/guard/`:
 
-- `authGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.db` (baseDb).
+- `userGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.db` (baseDb).
 - `tenantGuard`: verifies tenant membership, loads the tenant row, and sets `ctx.var.db = baseDb` and `ctx.var.tenantId`.
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.

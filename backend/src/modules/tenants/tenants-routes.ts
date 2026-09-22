@@ -4,7 +4,7 @@
  */
 
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 import {
@@ -20,7 +20,7 @@ export const tenantRoutes = {
     operationId: 'getTenants',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     tags: ['tenants', 'cella'],
     summary: 'Get list of tenants',
     description: 'Returns a paginated list of tenants. System admin access required.',
@@ -42,7 +42,7 @@ export const tenantRoutes = {
     operationId: 'selfCreateTenant',
     method: 'post',
     path: '/self',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['tenants', 'cella'],
     summary: 'Create a tenant for yourself',
@@ -71,7 +71,7 @@ export const tenantRoutes = {
     operationId: 'updateTenant',
     method: 'put',
     path: '/{tenantId}',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['tenants', 'cella'],
     summary: 'Update a tenant',

@@ -170,7 +170,7 @@ Two row columns sit beside the engine: drafts (`publishedAt`) are visible to the
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | `authGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member or tenant creator), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler |
+| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member or tenant creator), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler |
 | Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |

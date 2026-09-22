@@ -16,13 +16,13 @@
         "required": true,
         "kind": "middleware",
         "values": {
-          "authGuard": {
-            "name": "auth",
-            "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
-          },
-          "machineGuard": {
-            "name": "machine",
+          "serviceGuard": {
+            "name": "service",
             "description": "Requires a secret API key and sets the service account as the actor"
+          },
+          "userGuard": {
+            "name": "user",
+            "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
           },
           "actorGuard": {
             "name": "actor",
@@ -34,7 +34,7 @@
           },
           "crossTenantGuard": {
             "name": "crossTenant",
-            "description": "Requires authGuard and sets baseDb for cross-tenant access"
+            "description": "Requires userGuard and sets baseDb for cross-tenant access"
           },
           "orgGuard": {
             "name": "org",
@@ -50,7 +50,7 @@
           },
           "tenantGuard": {
             "name": "tenant",
-            "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+            "description": "Requires userGuard, validates tenant access, and sets baseDb + tenantId context"
           }
         }
       },
@@ -2922,7 +2922,7 @@
         "tags": ["auth", "cella"],
         "summary": "Accept invitation token as current user",
         "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "responses": {
@@ -2979,7 +2979,7 @@
         "tags": ["auth", "cella"],
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -3044,7 +3044,7 @@
         "tags": ["auth", "cella"],
         "summary": "Stop impersonating",
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -3247,7 +3247,7 @@
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3306,7 +3306,7 @@
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3360,7 +3360,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3460,7 +3460,7 @@
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3624,7 +3624,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4257,7 +4257,7 @@
         "tags": ["tenants", "cella"],
         "summary": "List domains for a tenant",
         "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4355,7 +4355,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Add a domain to a tenant",
         "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4459,7 +4459,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Remove a domain",
         "description": "Removes a domain from a tenant. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4550,7 +4550,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Get domain with verification token",
         "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4656,7 +4656,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Verify domain ownership via DNS",
         "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4786,7 +4786,7 @@
         "tags": ["entities", "cella"],
         "summary": "Check slug availability",
         "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4859,7 +4859,7 @@
         "tags": ["entities", "cella"],
         "summary": "App event SSE stream",
         "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["streamConnectLimiter"],
         "x-cache": [],
         "responses": {
@@ -4901,7 +4901,7 @@
         "tags": ["entities", "cella"],
         "summary": "App event catchup",
         "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5114,7 +5114,7 @@
         "tags": ["me", "cella"],
         "summary": "Get self",
         "description": "Returns the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5185,7 +5185,7 @@
         "tags": ["me", "cella"],
         "summary": "Update self",
         "description": "Updates the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5310,7 +5310,7 @@
         "tags": ["me", "cella"],
         "summary": "Delete self",
         "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -5349,7 +5349,7 @@
         "tags": ["me", "cella"],
         "summary": "Toggle MFA",
         "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5477,7 +5477,7 @@
         "tags": ["me", "cella"],
         "summary": "Get auth data",
         "description": "Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5549,7 +5549,7 @@
         "tags": ["me", "cella"],
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5689,7 +5689,7 @@
         "tags": ["me", "cella"],
         "summary": "Terminate sessions",
         "description": "Ends one or more sessions for the current user based on provided session IDs.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5779,7 +5779,7 @@
         "tags": ["me", "cella"],
         "summary": "Leave entity",
         "description": "Removes the current user from an entity they are a member of.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -5838,7 +5838,7 @@
         "tags": ["me", "cella"],
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -5978,7 +5978,7 @@
         "tags": ["me", "cella"],
         "summary": "Get my memberships",
         "description": "Returns all memberships for the current user across all channel entities.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6092,7 +6092,7 @@
         "tags": ["notifications"],
         "summary": "List notifications",
         "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "parameters": [
@@ -6259,7 +6259,7 @@
         "tags": ["notifications"],
         "summary": "Mark notifications as read",
         "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6337,7 +6337,7 @@
         "tags": ["notifications"],
         "summary": "Get notification preferences",
         "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6394,7 +6394,7 @@
         "tags": ["notifications"],
         "summary": "Update notification preferences",
         "description": "Partial update; unspecified keys keep their stored value.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6546,7 +6546,7 @@
         "tags": ["push"],
         "summary": "Get the Web Push application server key",
         "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6598,7 +6598,7 @@
         "tags": ["push"],
         "summary": "Register a Web Push subscription",
         "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6688,7 +6688,7 @@
         "tags": ["push"],
         "summary": "Remove a Web Push subscription",
         "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -6828,7 +6828,7 @@
         "tags": ["requests", "cella"],
         "summary": "Get list of requests",
         "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -6963,7 +6963,7 @@
         "tags": ["requests", "cella"],
         "summary": "Delete requests",
         "description": "Deletes one or more requests from the system by their IDs.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7054,7 +7054,7 @@
         "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
         "description": "Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "responses": {
@@ -7107,7 +7107,7 @@
         "tags": ["system", "cella"],
         "summary": "Invite to system",
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7209,7 +7209,7 @@
         "tags": ["system", "cella"],
         "summary": "Delete users",
         "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7300,7 +7300,7 @@
         "tags": ["system", "cella"],
         "summary": "Update user",
         "description": "Updates a user identified by ID.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7429,7 +7429,7 @@
         "tags": ["system", "cella"],
         "summary": "Newsletter to members",
         "description": "Sends a newsletter to members of one or more specified organizations.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7517,7 +7517,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Get list of tenants",
         "description": "Returns a paginated list of tenants. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7644,7 +7644,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
         "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7709,7 +7709,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Update a tenant",
         "description": "Updates a tenant by ID. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7830,7 +7830,7 @@
         "tags": ["users", "cella"],
         "summary": "Get list of users",
         "description": "Returns a list of users.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8067,7 +8067,7 @@
         "tags": ["users", "cella"],
         "summary": "Get user",
         "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
-        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8185,7 +8185,7 @@
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
         "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8266,7 +8266,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Create organizations",
         "description": "Creates one or more new organizations within a tenant.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["insertEntityLock", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8665,7 +8665,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Delete organizations",
         "description": "Deletes one or more organizations by ID within a tenant.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8767,7 +8767,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
         "description": "Returns a list of organizations.",
-        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10639,7 +10639,7 @@
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
         "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10711,7 +10711,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
         "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10868,7 +10868,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Delete memberships",
         "description": "Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11115,7 +11115,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11192,7 +11192,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11482,7 +11482,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
         "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11714,7 +11714,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
         "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11782,7 +11782,7 @@
         "tags": ["seen", "cella"],
         "summary": "Mark entities as seen",
         "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11884,7 +11884,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create service account",
         "description": "Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -12050,7 +12050,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Get service accounts",
         "description": "Lists the service accounts of this organization.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -12198,7 +12198,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Update service account",
         "description": "Renames, describes, disables or re-enables a service account. Accounts are never deleted.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -12318,7 +12318,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Get API keys",
         "description": "Lists the API keys of a service account. Secrets are never returned here.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -12420,7 +12420,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -12557,7 +12557,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Revoke API key",
         "description": "Revokes an API key immediately. The row stays for the audit trail.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = {
@@ -9,7 +9,7 @@ const mcpRoutes = {
     operationId: 'handleMcp',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     tags: ['mcp', 'cella'],
     summary: 'MCP endpoint',
     description:

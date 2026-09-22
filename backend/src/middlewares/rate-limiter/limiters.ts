@@ -71,7 +71,7 @@ export const pointsLimiter = (cost = 1) =>
   });
 
 /** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
-export const machineBurstLimiter = rateLimiter('limit', 'machineBurst', ['principalId'], {
+export const serviceBurstLimiter = rateLimiter('limit', 'machineBurst', ['principalId'], {
   limits: { points: 30, duration: 1, blockDuration: 0 },
   description: 'Max 30 requests/second per service account',
 });

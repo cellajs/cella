@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { actorGuard, authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { actorGuard, crossTenantGuard, orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
@@ -36,7 +36,7 @@ const membershipRoutes = {
     operationId: 'membershipInvite',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Create memberships',
@@ -67,7 +67,7 @@ const membershipRoutes = {
     operationId: 'deleteMemberships',
     method: 'delete',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Delete memberships',
@@ -120,7 +120,7 @@ const membershipRoutes = {
     operationId: 'handleMembershipInvitation',
     method: 'post',
     path: '/{id}/{acceptOrReject}',
-    xGuard: [authGuard, crossTenantGuard],
+    xGuard: [userGuard, crossTenantGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Respond to membership invitation',
@@ -140,7 +140,7 @@ const membershipRoutes = {
     operationId: 'getMembers',
     method: 'get',
     path: '/members',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     tags: ['memberships', 'cella'],
     summary: 'Get list of members',
     description: 'Retrieves members (users) of a channel entity by ID, including their associated membership data.',
@@ -165,7 +165,7 @@ const membershipRoutes = {
     operationId: 'getPendingMemberships',
     method: 'get',
     path: '/pending',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     tags: ['memberships', 'cella'],
     summary: 'Get list of pending memberships',
     description:
@@ -191,7 +191,7 @@ const membershipRoutes = {
     operationId: 'resendPendingInvitation',
     method: 'post',
     path: '/pending/{id}/resend',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [spamLimiter, singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Resend pending invitation',
