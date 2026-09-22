@@ -5,11 +5,6 @@ import { AppError } from '#/core/error';
 import { getMcpTools } from '#/core/mcp-tool-registry';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
 
-/**
- * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
- * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution.
- * @see https://modelcontextprotocol.io
- */
 const PROTOCOL_VERSION = '2026-07-28';
 
 export interface JsonRpcMessage {
@@ -39,7 +34,12 @@ export class InsufficientScopeError extends Error {
 
 const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersion };
 
-/** Returns `null` for notifications (messages without an `id`), which must not get a reply. */
+/**
+ * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
+ * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution. Returns `null`
+ * for notifications (messages without an `id`), which must not get a reply.
+ * @see https://modelcontextprotocol.io
+ */
 export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;

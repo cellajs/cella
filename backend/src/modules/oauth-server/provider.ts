@@ -87,14 +87,22 @@ export async function createProvider(): Promise<Provider> {
     extraTokenClaims: (_ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
+      // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
+      if (!resource) throw new InvalidTarget();
       const claims: IssuedTokenClaims = {
         principal_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
-        tenant_id: resource?.tenantId ?? '',
+        tenant_id: resource.tenantId,
       };
-      return { ...claims };
+      return claims;
     },
     renderError: async (ctx, out, error) => {
-      log.warn('OAuth server error', { error: out.error, description: out.error_description, err: error });
+      // A client's own mistake (bad PKCE, expired code, refusal) is request noise; only the server's faults are warnings.
+      const level = ctx.status >= 500 ? 'warn' : 'info';
+      log[level]('OAuth server error', {
+        error: out.error,
+        description: out.error_description,
+        ...(level === 'warn' && { err: error }),
+      });
       ctx.type = 'json';
       ctx.body = out;
     },

@@ -48,6 +48,21 @@ pnpm infra:compose
 6. Operations that must be callable with a token keep `actorGuard`; a user token sets `user` and `memberships` like
    a session would, so `UserContext` operations also work behind `serviceGuard`.
 
+## Review round (2026-09-22)
+
+- The process starts: `oauth/` is a workspace package (`pnpm dev` runs it like `mcp/`), the entry is
+  `backend/src/modules/oauth-server/worker/oauth-worker-entry.ts`, and `main.api.ts` folds it under `singleVM` on
+  `devPorts.oauth` (the mcp fold passes its port the same way). Add `oauth` to `pnpm-workspace.yaml` and the biome
+  includes.
+- The consent page lives at `/auth/consent` (`/oauth/*` is proxied to the authorization server); the interaction
+  redirect points there. The page reads the interaction routes through `frontend/src/lib/oauth-interaction.ts`.
+- `oidc_payloads.account_id` (indexed) carries the consenting user; `oidc-payloads-sweep.ts` deletes expired and
+  consumed rows hourly as a job of `oauth-server-module.ts`; a partial unique index keeps one `current` and one
+  `next` signing key (`20260922183232_signing_keys_unique_status`, `20260922184025_oidc_payloads_account_id`).
+- The API face publishes `GET /<tenant>/.well-known/oauth-protected-resource` and `serviceGuard` names it in its
+  401 challenge. Health `?depth=full` probes the store and the signing key. `rotateSigningKeys` is gone until a
+  rotation route exists. Test cleanup truncates `oidc_payloads` and `clients` with the auth tables.
+
 ## Verify
 
 ```sh

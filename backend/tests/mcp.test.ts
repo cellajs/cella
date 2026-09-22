@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import { createServiceAccount, getProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { clientsTable } from '#/modules/oauth-server/clients-db';
-import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from './fixtures';
@@ -55,15 +55,11 @@ describe('MCP on the substrate (Phase E)', async () => {
     as = await startTestOauthServer();
   });
   afterAll(async () => await as.close());
-  afterEach(async () => {
-    await db.delete(oidcPayloadsTable);
-    await db.delete(clientsTable);
-    await clearSecurityTestData();
-  });
+  afterEach(async () => await clearSecurityTestData());
 
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${Date.now()}`, 'admin');
+    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 

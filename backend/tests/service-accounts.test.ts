@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import {
   type CreateServiceAccountData,
   createCredential,
@@ -36,7 +37,7 @@ describe('Service accounts and API keys', async () => {
 
   async function orgWithAdmin(role: 'admin' | 'member' = 'admin') {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${Date.now()}`, role);
+    const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 

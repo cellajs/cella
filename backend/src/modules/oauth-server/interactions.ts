@@ -20,7 +20,8 @@ interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
   scopes: string[];
   resource: ResourceRef;
-  user: { id: string; name: string };
+  /** Null when no session is present (the page sends the person to sign in). */
+  user: { id: string; name: string } | null;
   /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
   prompt: { name: string; reasons: string[] };
   /** Why the consent screen must refuse; null when the user may accept. */
@@ -30,6 +31,7 @@ interface ConsentDetails {
 /** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
 export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> {
   const app = new Hono<InteractionEnv>();
+  // The interactions app binds Node's request objects; the handler reads only what every Hono context has.
   app.onError(appErrorHandler as never);
 
   /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
@@ -80,6 +82,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const interaction = await provider.interactionDetails(c.env.incoming, c.env.outgoing);
   const clientId = String(interaction.params.client_id);
+  // The provider types its Client model loosely; the adapter built it from AppClientMetadata.
   const client = (await provider.Client.find(clientId)) as (AppClientMetadata & { clientId: string }) | undefined;
   if (!client) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unknown_client' } });
 
@@ -96,12 +99,12 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
     client: {
       id: clientId,
       name: String(client.client_name ?? clientId),
-      logoUri: (client.logo_uri as string) ?? null,
+      logoUri: typeof client.logo_uri === 'string' ? client.logo_uri : null,
       kind,
     },
     scopes: requested,
     resource,
-    user: user ? { id: user.id, name: user.name } : { id: '', name: '' },
+    user: user ? { id: user.id, name: user.name } : null,
     prompt: { name: interaction.prompt.name, reasons: interaction.prompt.reasons },
     refusal,
   };
@@ -110,6 +113,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
 
 async function sessionUser(c: Context<InteractionEnv>) {
   try {
+    // The cookie parser reads headers only, which this context shares with the API's.
     const { sessionToken } = await getParsedSessionCookie(c as never);
     const { user } = await validateSession(sessionToken);
     return user;

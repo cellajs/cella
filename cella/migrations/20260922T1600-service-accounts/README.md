@@ -37,6 +37,18 @@ pnpm sdk
 7. App quotas: `defaultRestrictions.quotas` may set `serviceAccount` and `credential` (0 = unlimited; template defaults 20 and 100).
 8. Rate limiters keyed on `'userId'` keep working for sessions; use `'principalId'` for limits that must also cover keys.
 
+## Review round (2026-09-22)
+
+- `service_accounts.updatedBy` and `credentials.revokedBy` record who disabled or revoked (migration
+  `20260922185534_audit_principals`). `*-queries.ts` never throws and takes `(ctx, opts)`; the admin check and the
+  404 live in `helpers/managed-service-account.ts`; one operation per file. Quotas count active accounts and live
+  keys only. Keys and their account are cached by hash (`middlewares/guard/credential-cache.ts`) for a minute;
+  revoke, roll and disable invalidate. A service account with no grant is refused at `tenantGuard`.
+- Every guard declares the OpenAPI `security` it accepts (`security:` in its `xMiddleware` options); an app guard
+  does the same and `createXRoute` emits it. `Access.scopes` is required: a hand-built access states `scopes: null`.
+- `assertTenantQuota` throws `entityType` for entity keys and `meta.resource` for principal keys; apps that read
+  `restrict_by_app` errors see both shapes.
+
 ## Verify
 
 ```sh

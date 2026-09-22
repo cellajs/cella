@@ -1,6 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import type Provider from 'oidc-provider';
 import { createServiceAccount, getAttachments, getConnectedApps, revokeConnectedApp, updateOrganization } from 'sdk';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -37,14 +38,11 @@ describe('OAuth authorization server', async () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  afterEach(async () => {
-    await db.delete(oidcPayloadsTable);
-    await clearSecurityTestData();
-  });
+  afterEach(async () => await clearSecurityTestData());
 
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${Date.now()}`, 'admin');
+    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
