@@ -21,12 +21,22 @@ function toInputSchema(schema: z.ZodType): Record<string, unknown> {
   return json;
 }
 
+/** Tools are fixed after boot, so each descriptor is derived once. */
+const descriptors = new WeakMap<RouteTool, McpToolDescriptor>();
+
 export function describeMcpTools(tools: readonly RouteTool[]): McpToolDescriptor[] {
-  return tools.map((tool) => ({
-    name: tool.name,
-    description: tool.description,
-    inputSchema: toInputSchema(tool.inputSchema),
-    annotations: tool.annotations,
-    _meta: { scope: tool.scope, approvalRequired: tool.approvalRequired },
-  }));
+  return tools.map((tool) => {
+    let descriptor = descriptors.get(tool);
+    if (!descriptor) {
+      descriptor = {
+        name: tool.name,
+        description: tool.description,
+        inputSchema: toInputSchema(tool.inputSchema),
+        annotations: tool.annotations,
+        _meta: { scope: tool.scope, approvalRequired: tool.approvalRequired },
+      };
+      descriptors.set(tool, descriptor);
+    }
+    return descriptor;
+  });
 }

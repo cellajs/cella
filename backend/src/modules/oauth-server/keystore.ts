@@ -1,10 +1,9 @@
-import { eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { calculateJwkThumbprint, createLocalJWKSet, exportJWK, generateKeyPair, type JWK } from 'jose';
 import type { DbOrTx } from '#/db/db';
 import { baseDb } from '#/db/db';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const ALG = 'RS256';
@@ -55,18 +54,8 @@ export async function loadSigningJwks(db: DbOrTx = baseDb): Promise<{ keys: JWK[
   return { keys };
 }
 
-/** next → current, current → retired (still verifies until its last token expires), and a fresh next is minted. */
-export async function rotateSigningKeys(db: DbOrTx = baseDb): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx
-      .update(signingKeysTable)
-      .set({ status: 'retired', retiredAt: getIsoDate() })
-      .where(eq(signingKeysTable.status, 'current'));
-    await tx.update(signingKeysTable).set({ status: 'current' }).where(eq(signingKeysTable.status, 'next'));
-    await mintKey(tx, 'next');
-  });
-  verifyCache = null;
-}
+// Rotation (next → current → retired) is not wired yet: the provider loads its signing keys at boot, so a rotation
+// route must also restart or reload the authorization server. The plan tracks it; nothing here rotates.
 
 let verifyCache: { at: number; keySet: ReturnType<typeof createLocalJWKSet> } | null = null;
 

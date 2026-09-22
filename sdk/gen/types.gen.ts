@@ -442,6 +442,14 @@ export type Tenant = {
   domainsCount: number;
 };
 
+export type ProtectedResourceMetadata = {
+  resource: string;
+  authorization_servers: Array<string>;
+  scopes_supported: Array<string>;
+  bearer_methods_supported: Array<string>;
+  resource_documentation: string;
+};
+
 /**
  * The main channel entity is an organization.
  */
@@ -555,14 +563,6 @@ export type Attachment = {
   };
   organizationId: string;
   viewCount?: number;
-};
-
-export type ProtectedResourceMetadata = {
-  resource: string;
-  authorization_servers: Array<string>;
-  scopes_supported: Array<string>;
-  bearer_methods_supported: Array<string>;
-  resource_documentation: string;
 };
 
 /**
@@ -4182,6 +4182,55 @@ export type GetYjsTokenResponses = {
 };
 
 export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
+
+export type GetApiProtectedResourceMetadataData = {
+  body?: never;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/.well-known/oauth-protected-resource';
+};
+
+export type GetApiProtectedResourceMetadataErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetApiProtectedResourceMetadataError =
+  GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
+
+export type GetApiProtectedResourceMetadataResponses = {
+  /**
+   * Protected resource metadata
+   */
+  200: ProtectedResourceMetadata;
+};
+
+export type GetApiProtectedResourceMetadataResponse =
+  GetApiProtectedResourceMetadataResponses[keyof GetApiProtectedResourceMetadataResponses];
 
 export type DeleteOrganizationsData = {
   body: {

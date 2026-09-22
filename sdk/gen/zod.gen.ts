@@ -377,6 +377,14 @@ export const zTenantWithOrganization = zTenant.and(
   }),
 );
 
+export const zProtectedResourceMetadata = z.object({
+  resource: z.string(),
+  authorization_servers: z.array(z.string()),
+  scopes_supported: z.array(z.string()),
+  bearer_methods_supported: z.array(z.string()),
+  resource_documentation: z.string(),
+});
+
 /**
  * The main channel entity is an organization.
  */
@@ -477,14 +485,6 @@ export const zAttachment = z.object({
   }),
   organizationId: z.uuid(),
   viewCount: z.int().gte(0).optional(),
-});
-
-export const zProtectedResourceMetadata = z.object({
-  resource: z.string(),
-  authorization_servers: z.array(z.string()),
-  scopes_supported: z.array(z.string()),
-  bearer_methods_supported: z.array(z.string()),
-  resource_documentation: z.string(),
 });
 
 /**
@@ -1504,6 +1504,15 @@ export const zGetYjsTokenQuery = z.object({
 export const zGetYjsTokenResponse = z.object({
   token: z.string(),
 });
+
+export const zGetApiProtectedResourceMetadataPath = z.object({
+  tenantId: z.string().max(50),
+});
+
+/**
+ * Protected resource metadata
+ */
+export const zGetApiProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
 export const zDeleteOrganizationsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),

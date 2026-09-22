@@ -1,18 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, tenantGuard, tokenGuard } from '#/middlewares/guard';
+import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-routes';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
-
-/** RFC 9728 protected resource metadata: what an MCP client reads to find the authorization server. */
-const protectedResourceSchema = z
-  .object({
-    resource: z.string(),
-    authorization_servers: z.array(z.string()),
-    scopes_supported: z.array(z.string()),
-    bearer_methods_supported: z.array(z.string()),
-    resource_documentation: z.string(),
-  })
-  .openapi('ProtectedResourceMetadata');
 
 const mcpRoutes = {
   getProtectedResourceMetadata: createXRoute({

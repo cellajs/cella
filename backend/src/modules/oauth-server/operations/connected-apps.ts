@@ -22,9 +22,7 @@ export async function getConnectedAppsOp(ctx: UserContext): Promise<{ items: Con
     .select({ row: oidcPayloadsTable, clientName: clientsTable.name })
     .from(oidcPayloadsTable)
     .leftJoin(clientsTable, eq(clientsTable.id, sql`${oidcPayloadsTable.payload}->>'clientId'`))
-    .where(
-      and(eq(oidcPayloadsTable.type, 'Grant'), sql`${oidcPayloadsTable.payload}->>'accountId' = ${ctx.var.user.id}`),
-    )
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.accountId, ctx.var.user.id)))
     .orderBy(oidcPayloadsTable.createdAt);
 
   const items = rows.map(({ row, clientName }) => {
@@ -52,16 +50,18 @@ export async function revokeConnectedAppOp(ctx: UserContext, grantId: string): P
       and(
         eq(oidcPayloadsTable.type, 'Grant'),
         eq(oidcPayloadsTable.id, grantId),
-        sql`${oidcPayloadsTable.payload}->>'accountId' = ${ctx.var.user.id}`,
+        eq(oidcPayloadsTable.accountId, ctx.var.user.id),
       ),
     )
     .limit(1);
   if (!grant) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connectedApp' } });
 
-  await ctx.var.db.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
-  await ctx.var.db
-    .delete(oidcPayloadsTable)
-    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
+  await ctx.var.db.transaction(async (tx) => {
+    await tx.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
+    await tx
+      .delete(oidcPayloadsTable)
+      .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
+  });
   log.info('Connected app revoked', { grantId, userId: ctx.var.user.id });
   return { id: grantId };
 }

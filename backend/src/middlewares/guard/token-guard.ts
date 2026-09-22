@@ -1,6 +1,6 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { invalidKey, setActorFromToken } from '#/middlewares/guard/service-guard';
+import { routeScope, setActorFromToken, unauthorized } from '#/middlewares/guard/service-guard';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom } from '#/modules/oauth-server/verify-access-token';
@@ -18,19 +18,22 @@ export const tokenGuard = xMiddleware(
       'Requires an access token from the authorization server and sets the consenting user or service account as the actor',
   },
   async (ctx, next) => {
-    const tenantId = ctx.req.param('tenantId')?.toLowerCase();
-    const organizationId = ctx.req.param('organizationId');
-    if (!tenantId || !organizationId)
-      throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId or organizationId' } });
-    const metadata = resourceMetadataUrl({ face: 'mcp', tenantId, organizationId });
+    const scope = routeScope(ctx);
+    if (!scope.organizationId)
+      throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
+    const metadata = resourceMetadataUrl({
+      face: 'mcp',
+      tenantId: scope.tenantId,
+      organizationId: scope.organizationId,
+    });
 
     const jwt = bearerJwtFrom(ctx);
     if (!jwt) {
       ctx.header('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
-      throw invalidKey('missing_token');
+      throw unauthorized('missing_token');
     }
     try {
-      await setActorFromToken(ctx, jwt);
+      await setActorFromToken(ctx, jwt, scope);
     } catch (error) {
       const reason = error instanceof AppError ? String(error.meta?.reason ?? 'invalid_token') : 'invalid_token';
       ctx.header(

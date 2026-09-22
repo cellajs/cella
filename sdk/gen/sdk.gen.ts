@@ -89,6 +89,9 @@ import type {
   GenerateTotpKeyData,
   GenerateTotpKeyErrors,
   GenerateTotpKeyResponses,
+  GetApiProtectedResourceMetadataData,
+  GetApiProtectedResourceMetadataErrors,
+  GetApiProtectedResourceMetadataResponses,
   GetAppStreamData,
   GetAppStreamErrors,
   GetAppStreamResponses,
@@ -346,6 +349,8 @@ import {
   zGeneratePasskeyChallengeBody,
   zGeneratePasskeyChallengeResponse,
   zGenerateTotpKeyResponse,
+  zGetApiProtectedResourceMetadataPath,
+  zGetApiProtectedResourceMetadataResponse,
   zGetAttachmentPath,
   zGetAttachmentResponse,
   zGetAttachmentsPath,
@@ -2992,6 +2997,45 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/yjs/token',
+    ...options,
+  });
+
+/**
+ * Protected resource metadata (API)
+ *
+ * RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
+ *
+ * **GET /{tenantId}/.well-known/oauth-protected-resource** ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/{tenantId}/.well-known/oauth-protected-resource) ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/.well-known/oauth-protected-resource) ·· _auth_cella_
+ *
+ * @param {getApiProtectedResourceMetadataData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getApiProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
+  options: Options<GetApiProtectedResourceMetadataData, ThrowOnError>,
+): RequestResult<
+  GetApiProtectedResourceMetadataResponses,
+  GetApiProtectedResourceMetadataErrors,
+  ThrowOnError,
+  'data'
+> =>
+  (options.client ?? client).get<
+    GetApiProtectedResourceMetadataResponses,
+    GetApiProtectedResourceMetadataErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetApiProtectedResourceMetadataPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetApiProtectedResourceMetadataResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/{tenantId}/.well-known/oauth-protected-resource',
     ...options,
   });
 

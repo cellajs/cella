@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DbOrTx } from '#/db/db';
@@ -44,20 +44,27 @@ export async function listServiceAccounts(
   return { items, total };
 }
 
+/** Accounts are disabled, never deleted (D18); only active ones count against the quota. */
 export async function countServiceAccounts(ctx: UserContext): Promise<number> {
   const [{ value }] = await ctx.var.db
     .select({ value: count() })
     .from(serviceAccountsTable)
-    .where(eq(serviceAccountsTable.tenantId, ctx.var.tenantId));
+    .where(and(eq(serviceAccountsTable.tenantId, ctx.var.tenantId), eq(serviceAccountsTable.status, 'active')));
   return value;
 }
 
-/** Revoked keys do not count against the quota; they stay only as the audit trail. */
+/** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */
 export async function countLiveCredentials(ctx: UserContext): Promise<number> {
   const [{ value }] = await ctx.var.db
     .select({ value: count() })
     .from(credentialsTable)
-    .where(and(eq(credentialsTable.tenantId, ctx.var.tenantId), isNull(credentialsTable.revokedAt)));
+    .where(
+      and(
+        eq(credentialsTable.tenantId, ctx.var.tenantId),
+        isNull(credentialsTable.revokedAt),
+        or(isNull(credentialsTable.expiresAt), gt(credentialsTable.expiresAt, sql`now()`)),
+      ),
+    );
   return value;
 }
 

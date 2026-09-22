@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { baseDb } from '#/db/db';
+import { TTLCache } from '#/lib/ttl-cache';
 import { clientsTable } from '#/modules/oauth-server/clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -9,7 +10,22 @@ import { getIsoDate } from '#/utils/iso-date';
 /** Client metadata as the provider reads it; `client_kind` tells the consent screen and the secret check which table it came from. */
 export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
 
+/** The provider caches only static clients; adapter-loaded ones are cached here, dropped when the account changes. */
+const clientCache = new TTLCache<AppClientMetadata>({ maxSize: 1000, defaultTtl: 60_000 });
+
+export const invalidateClientCache = (id: string): void => {
+  clientCache.delete(id);
+};
+
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {
+  const cached = clientCache.get(id);
+  if (cached) return cached;
+  const client = await loadClient(id);
+  if (client) clientCache.set(id, client);
+  return client;
+}
+
+async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
   const [app] = await baseDb.select().from(clientsTable).where(eq(clientsTable.id, id)).limit(1);
   if (app) {
     return {
@@ -63,6 +79,7 @@ export class DrizzleAdapter implements Adapter {
       id,
       payload,
       grantId: (payload.grantId as string | undefined) ?? null,
+      accountId: (payload.accountId as string | undefined) ?? null,
       userCode: (payload.userCode as string | undefined) ?? null,
       uid: (payload.uid as string | undefined) ?? null,
       expiresAt,

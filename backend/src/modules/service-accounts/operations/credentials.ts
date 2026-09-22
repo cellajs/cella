@@ -1,5 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { invalidateCredentialCacheByAccount } from '#/middlewares/guard/credential-cache';
 import { issueCredential } from '#/modules/service-accounts/helpers/issue-credential';
 import {
   countLiveCredentials,
@@ -51,6 +52,7 @@ export async function createCredentialOp(ctx: UserContext, serviceAccountId: str
     });
   });
 
+  invalidateCredentialCacheByAccount(account.id);
   log.info('Credential issued', { credentialId: issued.credential.id, serviceAccountId: account.id });
   return { ...issued.credential, secret: issued.secret };
 }
@@ -64,6 +66,7 @@ export async function revokeCredentialOp(ctx: UserContext, serviceAccountId: str
     revokedAt: getIsoDate(),
   });
   if (!revoked) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'credential' } });
+  invalidateCredentialCacheByAccount(account.id);
   log.info('Credential revoked', { credentialId, serviceAccountId: account.id });
   return revoked;
 }

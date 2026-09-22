@@ -18,7 +18,7 @@
         "values": {
           "serviceGuard": {
             "name": "service",
-            "description": "Requires a secret API key and sets the service account as the actor"
+            "description": "Requires a secret API key or an access token and sets the service account or the consenting user as the actor"
           },
           "userGuard": {
             "name": "user",
@@ -1882,6 +1882,42 @@
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
         "x-tags": ["data", "tenants", "cella"]
       },
+      "ProtectedResourceMetadata": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "authorization_servers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bearer_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_documentation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource",
+          "authorization_servers",
+          "scopes_supported",
+          "bearer_methods_supported",
+          "resource_documentation"
+        ]
+      },
       "Organization": {
         "type": "object",
         "properties": {
@@ -2398,42 +2434,6 @@
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
         "x-tags": ["data", "attachments", "cella"]
-      },
-      "ProtectedResourceMetadata": {
-        "type": "object",
-        "properties": {
-          "resource": {
-            "type": "string"
-          },
-          "authorization_servers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "scopes_supported": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "bearer_methods_supported": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "resource_documentation": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "resource",
-          "authorization_servers",
-          "scopes_supported",
-          "bearer_methods_supported",
-          "resource_documentation"
-        ]
       },
       "Membership": {
         "type": "object",
@@ -8485,6 +8485,60 @@
                     }
                   },
                   "required": ["token"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/.well-known/oauth-protected-resource": {
+      "get": {
+        "security": [],
+        "x-service": "oauth",
+        "operationId": "getApiProtectedResourceMetadata",
+        "tags": ["auth", "cella"],
+        "summary": "Protected resource metadata (API)",
+        "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Protected resource metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
               }
             }

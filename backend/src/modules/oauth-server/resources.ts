@@ -10,16 +10,18 @@ export function resourceUri(ref: ResourceRef): string {
     : `${appConfig.backendUrl}/t/${ref.tenantId}`;
 }
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const mcpResource = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/([^/]+)/([^/]+)/mcp$`);
+const apiResource = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/t/([^/]+)$`);
+
 /** Null for anything that is not one of this deployment's resources. */
 export function parseResource(uri: string): ResourceRef | null {
-  const mcp = new RegExp(`^${escapeRegExp(appConfig.mcpUrl)}/([^/]+)/([^/]+)/mcp$`).exec(uri);
+  const mcp = mcpResource.exec(uri);
   if (mcp) return { face: 'mcp', tenantId: mcp[1].toLowerCase(), organizationId: mcp[2] };
-  const api = new RegExp(`^${escapeRegExp(appConfig.backendUrl)}/t/([^/]+)$`).exec(uri);
+  const api = apiResource.exec(uri);
   if (api) return { face: 'api', tenantId: api[1].toLowerCase() };
   return null;
 }
-
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** RFC 9728: where a protected resource publishes its metadata; the `WWW-Authenticate` challenge points here. */
 export function resourceMetadataUrl(ref: ResourceRef): string {

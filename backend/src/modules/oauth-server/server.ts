@@ -1,11 +1,33 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { getRequestListener } from '@hono/node-server';
+import { eq, sql } from 'drizzle-orm';
 import type Provider from 'oidc-provider';
 import { createHealthApp } from 'shared/health-app';
+import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
+import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
 export const OAUTH_MOUNT = '/oauth';
+
+/** What the deploy smoke reads: the store answers and a signing key exists; either missing is a 503. */
+async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
+  const components: Record<string, 'ok' | 'fail'> = { db: 'fail', signingKey: 'fail' };
+  try {
+    await baseDb.execute(sql`select 1`);
+    components.db = 'ok';
+    const [key] = await baseDb
+      .select({ id: signingKeysTable.id })
+      .from(signingKeysTable)
+      .where(eq(signingKeysTable.status, 'current'))
+      .limit(1);
+    if (key) components.signingKey = 'ok';
+  } catch {
+    // Reported below as the failing component.
+  }
+  const ok = Object.values(components).every((status) => status === 'ok');
+  return { httpStatus: ok ? 200 : 503, body: { status: ok ? 'ok' : 'fail', components } };
+}
 
 type Listener = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -17,9 +39,7 @@ type Listener = (req: IncomingMessage, res: ServerResponse) => void;
 export function createOauthListener(provider: Provider): Listener {
   const oidc = provider.callback();
   const interactions = getRequestListener(createInteractionsApp(provider).fetch);
-  const health = getRequestListener(
-    createHealthApp({ version: env.RELEASE_SHA, full: () => ({ httpStatus: 200, body: { status: 'ok' } }) }).fetch,
-  );
+  const health = getRequestListener(createHealthApp({ version: env.RELEASE_SHA, full: probeHealth }).fetch);
 
   return (req, res) => {
     const url = req.url ?? '/';

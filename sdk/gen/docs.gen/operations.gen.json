@@ -1558,6 +1558,29 @@
     }
   },
   {
+    "id": "getApiProtectedResourceMetadata",
+    "hash": "tag/auth/GET/{tenantId}/.well-known/oauth-protected-resource",
+    "method": "get",
+    "path": "/{tenantId}/.well-known/oauth-protected-resource",
+    "tags": ["auth"],
+    "summary": "Protected resource metadata (API)",
+    "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "createOrganizations",
     "hash": "tag/organizations/POST/{tenantId}/organizations",
     "method": "post",
