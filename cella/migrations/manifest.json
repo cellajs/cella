@@ -1187,6 +1187,26 @@
     "pnpm check"
    ],
    "summary": "The MCP endpoint sits behind tokenGuard (access tokens from the authorization server only; sessions and API keys refused) and answers tokenless calls with the RFC 9728 challenge; a public route publishes the protected resource metadata. Tools are routes: createXRoute registers a route carrying x-tool ({ enabled, description, approvalRequired, category, entity, execute }) in the core tool registry, deriving the input schema from the route request with the sync transaction left out and rebuilt server-side; tools/list carries annotations and the required scope, tools/call outside the token scopes answers 403 insufficient_scope with the scope to step up to. The attachment module ships the showcase (list, get, create, update, delete). OpenAPI gains an oauth2 security scheme. buildTools and @tanstack/ai are gone; apps move their tools onto routes and enable services.mcp in development and test config."
+  },
+  {
+   "id": "20260922T2010-app-voice",
+   "version": "next",
+   "title": "app voice: no product name in identifiers and wire strings",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/scripts",
+    "cella"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm vocabulary:check"
+   ],
+   "summary": "The domain verification TXT record is _<appConfig.slug>-verification.<domain> (was _cella-verification) and the HKDF salt behind encryptData is the neutral constant data-encryption (was cella:data-encryption), which re-keys every stored ciphertext: TOTP secrets encrypted before the change no longer decrypt, so delete them (no users) or keep the old salt with a marker. pnpm vocabulary:check gains a product-name rule rejecting cella_*, Cella*, _cella-* identifiers and cellajs.com literals in backend/src, shared/src and frontend/src; cella/AGENTS.md records that cella in code names the template only where it contrasts with the app."
   }
  ]
 }

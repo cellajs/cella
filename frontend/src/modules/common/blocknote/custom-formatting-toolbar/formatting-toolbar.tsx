@@ -11,7 +11,7 @@ import {
 } from '@blocknote/react';
 import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-config';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
-import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
+import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
@@ -26,7 +26,7 @@ function FormattingToolbarContent({
   return (
     <FormattingToolbar>
       {customFormattingToolBarConfig.blockTypeSelect && (
-        <CellaCustomBlockTypeSelect headingLevels={headingLevels} titleLevel={titleLevel} />
+        <CustomBlockTypeSelect headingLevels={headingLevels} titleLevel={titleLevel} />
       )}
       {customFormattingToolBarConfig.blockStyleSelect && (
         <>

@@ -650,7 +650,7 @@
     "path": "/tenants/{tenantId}/domains/{id}/verify",
     "tags": ["tenants"],
     "summary": "Verify domain ownership via DNS",
-    "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.",
+    "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

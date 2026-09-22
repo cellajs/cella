@@ -1,4 +1,5 @@
 import dns from 'node:dns/promises';
+import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomainById, updateDomain } from '#/modules/domains/domains-queries';
@@ -17,7 +18,7 @@ export async function verifyDomainOp(ctx: UserContext, id: string) {
     throw new AppError(422, 'invalid_request', 'warn', { meta: { reason: 'Domain has no verification token' } });
   }
 
-  const hostname = `_cella-verification.${domain.domain}`;
+  const hostname = `_${appConfig.slug}-verification.${domain.domain}`;
   let recordsFound: string[] = [];
 
   try {

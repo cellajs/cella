@@ -1457,7 +1457,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
 /**
  * Verify domain ownership via DNS
  *
- * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.
+ * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.
  *
  * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
  *

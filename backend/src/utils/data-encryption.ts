@@ -6,7 +6,8 @@ const ALGORITHM = 'aes-256-gcm';
 const KEY_BYTES = 32;
 const IV_BYTES = 12;
 const AUTH_TAG_BYTES = 16;
-const HKDF_SALT = 'cella:data-encryption';
+// A fixed, product-neutral salt: changing it re-keys every stored ciphertext.
+const HKDF_SALT = 'data-encryption';
 
 const encode = (value: Buffer) => value.toString('base64url');
 const decode = (value: string) => Buffer.from(value, 'base64url');
