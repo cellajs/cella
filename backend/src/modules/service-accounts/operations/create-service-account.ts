@@ -26,25 +26,28 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
 
   assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx));
 
-  const serviceAccount = await insertServiceAccount(db, {
-    tenantId,
-    name: input.name,
-    description: input.description,
-    grants: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
-    createdBy: creatorId,
+  // Account and first key land together: a failed key issue never leaves a keyless account behind.
+  const { serviceAccount, issued } = await db.transaction(async (tx) => {
+    const serviceAccount = await insertServiceAccount(tx, {
+      tenantId,
+      name: input.name,
+      description: input.description,
+      grants: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
+      createdBy: creatorId,
+    });
+    const issued = input.key
+      ? await issueCredential(tx, {
+          principalId: serviceAccount.id,
+          tenantId,
+          name: input.key.name,
+          description: input.key.description,
+          scopes: input.key.scopes ?? null,
+          expiresAt: input.key.expiresAt,
+          createdBy: creatorId,
+        })
+      : null;
+    return { serviceAccount, issued };
   });
-
-  const issued = input.key
-    ? await issueCredential(db, {
-        principalId: serviceAccount.id,
-        tenantId,
-        name: input.key.name,
-        description: input.key.description,
-        scopes: input.key.scopes ?? null,
-        expiresAt: input.key.expiresAt,
-        createdBy: creatorId,
-      })
-    : null;
 
   log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
   return {

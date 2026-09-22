@@ -10,6 +10,7 @@ import '#/modules/domains/domains-module';
 import '#/modules/entities/entities-module';
 import '#/modules/mcp/mcp-module';
 import '#/modules/me/me-module';
+import '#/modules/oauth-server/oauth-server-module';
 import '#/modules/memberships/memberships-module';
 import '#/modules/metrics/metrics-module';
 import '#/modules/notification/notification-module';

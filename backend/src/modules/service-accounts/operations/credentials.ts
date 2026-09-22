@@ -31,22 +31,25 @@ export async function createCredentialOp(ctx: UserContext, serviceAccountId: str
   const account = await findServiceAccountInTenant(ctx, serviceAccountId);
   assertTenantQuota(ctx, 'credential', await countLiveCredentials(ctx));
 
-  const issued = await issueCredential(ctx.var.db, {
-    principalId: account.id,
-    tenantId: ctx.var.tenantId,
-    name: input.name,
-    description: input.description,
-    scopes: input.scopes ?? null,
-    expiresAt: input.expiresAt,
-    createdBy: ctx.var.actor.id,
+  // The predecessor is checked before the new key exists, and both writes land or neither does: a bad `rollFrom`
+  // never leaves an orphan live key whose plaintext nobody received.
+  const issued = await ctx.var.db.transaction(async (tx) => {
+    if (input.rollFrom) {
+      const overlapEnd = new Date(Date.now() + input.rollOverlapDays * DAY_MS).toISOString();
+      const rolled = await expireCredential(tx, { principalId: account.id, id: input.rollFrom, expiresAt: overlapEnd });
+      if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'credential' } });
+      log.info('Credential rolled', { from: input.rollFrom, overlapEnd });
+    }
+    return issueCredential(tx, {
+      principalId: account.id,
+      tenantId: ctx.var.tenantId,
+      name: input.name,
+      description: input.description,
+      scopes: input.scopes ?? null,
+      expiresAt: input.expiresAt,
+      createdBy: ctx.var.actor.id,
+    });
   });
-
-  if (input.rollFrom) {
-    const overlapEnd = new Date(Date.now() + input.rollOverlapDays * DAY_MS).toISOString();
-    const rolled = await expireCredential(ctx, account.id, input.rollFrom, overlapEnd);
-    if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'credential' } });
-    log.info('Credential rolled', { from: input.rollFrom, to: issued.credential.id, overlapEnd });
-  }
 
   log.info('Credential issued', { credentialId: issued.credential.id, serviceAccountId: account.id });
   return { ...issued.credential, secret: issued.secret };
@@ -55,7 +58,11 @@ export async function createCredentialOp(ctx: UserContext, serviceAccountId: str
 export async function revokeCredentialOp(ctx: UserContext, serviceAccountId: string, credentialId: string) {
   await requireOrgAdmin(ctx);
   const account = await findServiceAccountInTenant(ctx, serviceAccountId);
-  const revoked = await revokeCredential(ctx, account.id, credentialId, getIsoDate());
+  const revoked = await revokeCredential(ctx.var.db, {
+    principalId: account.id,
+    id: credentialId,
+    revokedAt: getIsoDate(),
+  });
   if (!revoked) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'credential' } });
   log.info('Credential revoked', { credentialId, serviceAccountId: account.id });
   return revoked;

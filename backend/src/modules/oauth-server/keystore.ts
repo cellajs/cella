@@ -16,14 +16,19 @@ async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
   const publicJwk = { ...(await exportJWK(publicKey)), alg: ALG, use: 'sig' };
   const kid = await calculateJwkThumbprint(publicJwk);
   const privateJwk = { ...(await exportJWK(privateKey)), kid, alg: ALG, use: 'sig' };
-  await db.insert(signingKeysTable).values({
-    id: kid,
-    alg: ALG,
-    status,
-    privateJwk: encryptData(JSON.stringify(privateJwk), ENCRYPTION_PURPOSE),
-    publicJwk: { ...publicJwk, kid },
-  });
-  log.info('Signing key minted', { kid, status });
+  // Two processes booting at once both try; the unique index lets one win and the other keeps that key.
+  const inserted = await db
+    .insert(signingKeysTable)
+    .values({
+      id: kid,
+      alg: ALG,
+      status,
+      privateJwk: encryptData(JSON.stringify(privateJwk), ENCRYPTION_PURPOSE),
+      publicJwk: { ...publicJwk, kid },
+    })
+    .onConflictDoNothing()
+    .returning({ id: signingKeysTable.id });
+  if (inserted.length > 0) log.info('Signing key minted', { kid, status });
 }
 
 /** Guarantees a `current` and a `next` key exist; the next key is public before it ever signs (LTI §6.4, Canvas's rule). */
@@ -43,9 +48,9 @@ export async function loadSigningJwks(db: DbOrTx = baseDb): Promise<{ keys: JWK[
     .select()
     .from(signingKeysTable)
     .where(inArray(signingKeysTable.status, ['current', 'next']));
-  const order = { current: 0, next: 1, retired: 2 } as const;
+  const order = { current: 0, next: 1 } as const;
   const keys = rows
-    .sort((a, b) => order[a.status] - order[b.status])
+    .sort((a, b) => order[a.status as keyof typeof order] - order[b.status as keyof typeof order])
     .map((row) => JSON.parse(decryptData(row.privateJwk, ENCRYPTION_PURPOSE)) as JWK);
   return { keys };
 }

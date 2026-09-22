@@ -30,6 +30,12 @@
     "kind": "module"
   },
   {
+    "name": "oauth-server",
+    "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept by the API's job runner.",
+    "count": 0,
+    "kind": "module"
+  },
+  {
     "name": "memberships",
     "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
     "count": 7,

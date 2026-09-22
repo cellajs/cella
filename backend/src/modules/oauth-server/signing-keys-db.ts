@@ -1,4 +1,5 @@
-import { index, jsonb, snakeCase, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { index, jsonb, snakeCase, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
@@ -22,7 +23,11 @@ export const signingKeysTable = snakeCase.table(
     createdAt: timestampColumns.createdAt,
     retiredAt: timestamp({ mode: 'string' }),
   },
-  (table) => [index('signing_keys_status_idx').on(table.status)],
+  (table) => [
+    index('signing_keys_status_idx').on(table.status),
+    // One signer and one successor at a time, whatever races at first boot or during a rollout.
+    uniqueIndex('signing_keys_one_per_status_idx').on(table.status).where(sql`${table.status} in ('current', 'next')`),
+  ],
 );
 
 export type SigningKeyModel = typeof signingKeysTable.$inferSelect;

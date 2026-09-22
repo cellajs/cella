@@ -21,7 +21,7 @@ export async function insertUsers(
   const withIds = records.map((record) => ({ ...record, id: record.id ?? generateId() }));
 
   return db.transaction(async (tx) => {
-    await insertPrincipals(
+    const principalIds = await insertPrincipals(
       tx,
       withIds.map(({ id }) => id),
       'user',
@@ -30,11 +30,12 @@ export async function insertUsers(
     const userInsert = tx.insert(usersTable).values(withIds).returning();
     const users = onConflictDoNothing ? await userInsert.onConflictDoNothing() : await userInsert;
 
+    // Only principals this call created and whose user row was skipped; an id that already existed keeps its user.
     if (onConflictDoNothing && users.length < withIds.length) {
       const inserted = new Set(users.map((user) => user.id));
       await deleteDanglingPrincipals(
         tx,
-        withIds.filter(({ id }) => !inserted.has(id)).map(({ id }) => id),
+        principalIds.filter((id) => !inserted.has(id)),
       );
     }
     return users;
