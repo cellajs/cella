@@ -110,7 +110,7 @@ function Cell<R, SR>({
   }
 
   function handleRowChange(newRow: R) {
-    onRowChange(column, newRow);
+    onRowChange(column, rowIdx, newRow);
   }
 
   return (
@@ -167,7 +167,7 @@ interface MergedCellContentProps<R, SR> {
   rowIdx: number;
   isCellEditable: boolean;
   tabIndex: number;
-  onRowChange: (column: CalculatedColumn<R, SR>, newRow: R) => void;
+  onRowChange: (column: CalculatedColumn<R, SR>, rowIdx: number, newRow: R) => void;
 }
 
 /** Empty slots collapse and render no placeholder. */
@@ -191,7 +191,7 @@ function MergedCellContent<R, SR>({
         rowIdx,
         isCellEditable: false,
         tabIndex,
-        onRowChange: (newRow: R) => onRowChange(slotColumn, newRow),
+        onRowChange: (newRow: R) => onRowChange(slotColumn, rowIdx, newRow),
       });
       if (content == null) return null;
       return (
@@ -225,7 +225,7 @@ function MergedCellContent<R, SR>({
             rowIdx,
             isCellEditable,
             tabIndex,
-            onRowChange: (newRow: R) => onRowChange(column, newRow),
+            onRowChange: (newRow: R) => onRowChange(column, rowIdx, newRow),
           })}
         </div>
         {renderSide('right', 'shrink-0')}

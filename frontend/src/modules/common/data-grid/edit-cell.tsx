@@ -9,9 +9,7 @@ import type {
 } from './types';
 import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
 
-// biome-ignore lint/suspicious/noExplicitAny: Scheduling API types not available in tsgo
-const _scheduler = globalThis as any;
-const canUsePostTask = typeof _scheduler.scheduler === 'object' && typeof _scheduler.scheduler.postTask === 'function';
+const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
 const cellEditingClassname = '!p-0 [&>input]:border-0 [&>input]:shadow-none [&>input]:bg-transparent';
 
@@ -74,11 +72,8 @@ export function EditCell<R, SR>({
         const { signal } = abortController;
         abortControllerRef.current = abortController;
         // postTask runs the handler outside a React render and before the next paint.
-        _scheduler.scheduler
-          .postTask(commitOnOutsideMouseDown, {
-            priority: 'user-blocking',
-            signal,
-          })
+        scheduler
+          .postTask(commitOnOutsideMouseDown, { priority: 'user-blocking', signal })
           // ignore abort errors
           .catch(() => {});
       } else {

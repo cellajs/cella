@@ -1,54 +1,35 @@
-/* Cell layout that needs CSS vars and compound selectors */
+/* Row-level rules that need compound selectors or pseudo-elements */
 
-/* Grid-row-start via CSS var cascades naturally through display:contents rows. */
-.rdg-cell {
-  grid-row-start: var(--rdg-grid-row-start);
-}
-
-/* Row-box rows carry their own placement, so their cells reset to auto and flow into the row's subgrid. */
-.rdg-row-box {
-  grid-row-start: var(--rdg-grid-row-start);
-}
-
-.rdg-row-box > .rdg-cell {
-  grid-row-start: auto;
+/* Rows are one-track subgrids; cells and the indicator pseudo-element pin to that track so nothing auto-places into an implicit one. */
+.rdg-row > .rdg-cell {
+  grid-row: 1;
 }
 
 /* Show the last frozen cell shadow only when the grid is scrolled horizontally. */
-[data-scrolled-left] > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen),
 [data-scrolled-left] > * > .rdg-cell-frozen:nth-last-child(1 of .rdg-cell-frozen) {
   box-shadow: 2px 0 5px -2px rgba(136, 136, 136, 0.3);
 }
 
 /* DataTable overrides: drag-and-drop indicators */
 
-/* Attribute selectors keep drag updates on one row, and inset shadows escape cell clipping; only the final row draws a bottom edge. */
-.rdg-row[data-drop-edge="top"] > .rdg-cell {
+/* One attribute per row drives a pseudo-element spanning the row subgrid above its cells, frozen ones included. */
+.rdg-row[data-drop-edge]::after {
+  content: "";
+  grid-column: 1 / -1;
+  grid-row: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.rdg-row[data-drop-edge="top"]::after {
   box-shadow: inset 0 2px 0 0 var(--primary);
 }
 
-.rdg-row[data-drop-edge="bottom"] > .rdg-cell {
+.rdg-row[data-drop-edge="bottom"]::after {
   box-shadow: inset 0 -2px 0 0 var(--primary);
 }
 
-/* Rows use display:contents, so joined inset cell shadows form the center-zone ring, with vertical edges on the first and last cells. */
-.rdg-row[data-drop-edge="center"] > .rdg-cell {
+.rdg-row[data-drop-edge="center"]::after {
   background-color: oklch(from var(--primary) l c h / 0.08);
-  box-shadow:
-    inset 0 1px 0 0 var(--primary),
-    inset 0 -1px 0 0 var(--primary);
-}
-
-.rdg-row[data-drop-edge="center"] > .rdg-cell:first-child {
-  box-shadow:
-    inset 0 1px 0 0 var(--primary),
-    inset 0 -1px 0 0 var(--primary),
-    inset 1px 0 0 0 var(--primary);
-}
-
-.rdg-row[data-drop-edge="center"] > .rdg-cell:last-child {
-  box-shadow:
-    inset 0 1px 0 0 var(--primary),
-    inset 0 -1px 0 0 var(--primary),
-    inset -1px 0 0 0 var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
 }

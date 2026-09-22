@@ -22,7 +22,7 @@ import {
 } from './hooks';
 import { useStickyHeader } from './hooks/use-sticky-header';
 import { defaultRenderRow } from './row';
-import { RowDragCell, type RowDragConfig } from './row-drag-cell';
+import { RowDragCell, type RowDragConfig, RowDropTarget } from './row-drag';
 import type {
   ActiveModes,
   CalculatedColumn,
@@ -43,6 +43,7 @@ import type {
   Maybe,
   Position,
   Renderers,
+  RenderRowProps,
   RowSelectionMode,
   RowsChangeData,
   SelectCellOptions,
@@ -87,7 +88,7 @@ interface EditCellState<R> extends Position {
 
 type SharedDivProps = Pick<
   React.ComponentProps<'div'>,
-  'role' | 'aria-label' | 'aria-labelledby' | 'aria-description' | 'aria-describedby' | 'aria-rowcount' | 'className'
+  'aria-label' | 'aria-labelledby' | 'aria-description' | 'aria-describedby' | 'aria-rowcount' | 'className'
 >;
 
 export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends SharedDivProps {
@@ -131,7 +132,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   onScroll?: Maybe<(event: React.UIEvent<HTMLDivElement>) => void>;
   onColumnResize?: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>;
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
-  /** Enable handle-column row reordering with per-cell drop targets and indicators. */
+  /** Enable handle-column row reordering with per-row drop targets and indicators. */
   onRowReorder?: Maybe<(fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => void>;
   /** When provided, the middle 50% of each row becomes a "reparent" drop zone for tree-structured data. */
   onRowReparent?: Maybe<(fromIdx: number, toIdx: number) => void>;
@@ -238,7 +239,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     rowClass,
     headerRowClass,
     // ARIA
-    role: rawRole,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-description': ariaDescription,
@@ -252,12 +252,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   } = props;
 
   // defaults
-  const role = rawRole ?? 'grid';
   const baseRowHeight = rawRowHeight ?? 35;
   const headerRowHeight = hideHeader
     ? 0
     : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
-  const renderRow = renderers?.renderRow ?? defaultRenderRow;
+  const userRenderRow = renderers?.renderRow ?? defaultRenderRow;
   const userRenderCell = renderers?.renderCell ?? defaultRenderCell;
   // Latest refs keep the row-drag config stable when consumers pass non-memoized callbacks.
   const onRowReorderLatest = useLatestCallback(onRowReorder ?? (() => {}));
@@ -290,13 +289,22 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       renderRowDragPreviewLatest,
     ],
   );
+  // Row DnD: handle cells become drag sources and each row box becomes one drop target.
   const renderCell = useMemo(() => {
     if (!rowDragConfig) return userRenderCell;
-    const config = rowDragConfig as RowDragConfig<unknown>;
-    return (key: Key, props: Parameters<typeof userRenderCell>[1]) => (
-      <RowDragCell key={key} {...(props as CellRendererProps<unknown, SR>)} config={config} />
-    );
+    return (key: Key, props: CellRendererProps<R, SR>) =>
+      props.column.rowDragHandle === true ? (
+        <RowDragCell<R, SR> key={key} {...props} config={rowDragConfig} />
+      ) : (
+        userRenderCell(key, props)
+      );
   }, [rowDragConfig, userRenderCell]);
+  const renderRow = useMemo(() => {
+    if (!rowDragConfig) return userRenderRow;
+    return (key: Key, props: RenderRowProps<R, SR>) => (
+      <RowDropTarget<R, SR> key={key} rowKey={key} {...props} config={rowDragConfig} renderRow={userRenderRow} />
+    );
+  }, [rowDragConfig, userRenderRow]);
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
@@ -354,10 +362,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     [columnWidths],
   );
 
-  const { gridRef, viewportHeight, horizontalScrollbarHeight, scrollTop, measured } = useGridDimensions(
-    undefined,
-    enableRowVirtualization,
-  );
+  const { gridRef, viewportHeight, scrollTop, measured } = useGridDimensions(undefined, enableRowVirtualization);
 
   const {
     columns,
@@ -433,12 +438,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     mode: 'SELECT',
   }));
 
-  const focusSinkRef = useRef<HTMLDivElement>(null);
   // Blocks a double commit when both commitEditorChanges and the EditCell outside-click handler fire for one edit session.
   const editCommittedRef = useRef(false);
 
   // computed values
-  const isTreeGrid = role === 'treegrid';
   const headerRowsHeight = headerRowsCount * headerRowHeight;
   const clientHeight = viewportHeight - headerRowsHeight;
   const isSelectable = effectiveSelectedRows != null && effectiveOnSelectedRowsChange != null;
@@ -505,11 +508,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     setColumnResizing,
   );
 
-  const minColIdx = isTreeGrid ? -1 : 0;
   const maxColIdx = columns.length - 1;
   const selectedCellIsWithinSelectionBounds = isCellWithinSelectionBounds(selectedPosition);
   const selectedCellIsWithinViewportBounds = isCellWithinViewportBounds(selectedPosition);
-  const scrollHeight = headerRowHeight + totalRowHeight + horizontalScrollbarHeight;
 
   function selectCell(position: Position, options?: SelectCellOptions): void {
     if (!isCellSelectionEnabled) return;
@@ -612,12 +613,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     shouldFocusCellRef.current = false;
     const shouldScroll = !skipScrollOnFocusRef.current;
     skipScrollOnFocusRef.current = false;
-    if (focusSinkRef.current !== null && selectedPosition.idx === -1) {
-      focusSinkRef.current.focus({ preventScroll: true });
-      if (shouldScroll) scrollIntoView(focusSinkRef.current);
-    } else {
-      focusCell(shouldScroll);
-    }
+    focusCell(shouldScroll);
     // `selectedPosition.mode` is a dep so an EDIT to SELECT transition on the same cell still refocuses it.
   }, [focusCell, selectedPosition.idx, selectedPosition.rowIdx, selectedPosition.mode]);
 
@@ -758,9 +754,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
 
     if (!(event.target instanceof Element)) return;
-    const isCellEvent = event.target.closest('.rdg-cell') !== null;
-    const isRowEvent = isTreeGrid && event.target === focusSinkRef.current;
-    if (!isCellEvent && !isRowEvent) return;
+    if (event.target.closest('.rdg-cell') === null) return;
 
     switch (event.key) {
       case 'ArrowUp':
@@ -878,7 +872,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   // utils
   function isColIdxWithinSelectionBounds(idx: number) {
-    return idx >= minColIdx && idx <= maxColIdx;
+    return idx >= 0 && idx <= maxColIdx;
   }
 
   function isRowIdxWithinViewportBounds(rowIdx: number) {
@@ -907,7 +901,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   function getNextPosition(key: string, ctrlKey: boolean, shiftKey: boolean): Position {
     const { idx, rowIdx } = selectedPosition;
-    const isRowSelected = selectedCellIsWithinSelectionBounds && idx === -1;
 
     switch (key) {
       case 'ArrowUp':
@@ -921,10 +914,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       case 'Tab':
         return { idx: idx + (shiftKey ? -1 : 1), rowIdx };
       case 'Home':
-        if (isRowSelected) return { idx, rowIdx: minRowIdx };
         return { idx: 0, rowIdx: ctrlKey ? minRowIdx : rowIdx };
       case 'End':
-        if (isRowSelected) return { idx, rowIdx: maxRowIdx };
         return { idx: maxColIdx, rowIdx: ctrlKey ? maxRowIdx : rowIdx };
       case 'PageUp': {
         if (selectedPosition.rowIdx === minRowIdx) return selectedPosition;
@@ -1129,11 +1120,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     templateRows += gridTemplateRows;
   }
 
-  const isGroupRowFocused = selectedPosition.idx === -1 && selectedPosition.rowIdx !== minRowIdx - 1;
-
   return (
     <div
-      role={role ?? 'grid'}
+      role="grid"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-description={ariaDescription}
@@ -1144,7 +1133,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       // Explicit tabIndex makes the scrollable container keyboard focusable the same way in Chrome and Firefox.
       tabIndex={-1}
       className={cn(
-        'rdg grid h-full overflow-x-auto text-foreground text-sm accent-primary [contain:style]',
+        // Tabular digits keep numeric columns aligned across rows.
+        'rdg grid h-full overflow-x-auto text-foreground text-sm tabular-nums accent-primary [contain:style]',
         {
           'rdg-readonly': readOnly,
           // Row-body clicks select rows, so the row outline replaces the per-cell one.
@@ -1160,7 +1150,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         gridTemplateColumns,
         gridTemplateRows: templateRows,
         '--rdg-header-row-height': `${headerRowHeight}px`,
-        '--rdg-scroll-height': `${scrollHeight}px`,
         ...layoutCssVars,
       }}
       dir="ltr"
@@ -1216,21 +1205,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
       {/* single-column cells so column widths stay measurable regardless of colSpan */}
       {renderMeasuringCells(columns)}
-
-      {/* extra div is needed for row navigation in a treegrid */}
-      {isTreeGrid && (
-        <div
-          ref={focusSinkRef}
-          tabIndex={isGroupRowFocused ? 0 : -1}
-          className={cn('rdg-focus-sink pointer-events-none z-2 col-span-full', {
-            'rdg-focus-sink-header-summary z-3': !isRowIdxWithinViewportBounds(selectedPosition.rowIdx),
-            'outline-2 outline-primary outline-solid -outline-offset-2': isGroupRowFocused,
-          })}
-          style={{
-            gridRowStart: selectedPosition.rowIdx + headerRowsCount + 1,
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -1,13 +1,8 @@
-import type { CSSProperties } from 'react';
 import { cn } from '~/utils/cn';
 import type { CalculatedColumn, CalculatedColumnOrColumnGroup } from '../types';
 import { resolveWrapTextLines } from './wrap-text-utils';
 
 export { cn } from '~/utils/cn';
-
-export function getRowStyle(rowIdx: number): CSSProperties {
-  return { '--rdg-grid-row-start': rowIdx };
-}
 
 export function getHeaderCellStyle<R, SR>(
   column: CalculatedColumnOrColumnGroup<R, SR>,

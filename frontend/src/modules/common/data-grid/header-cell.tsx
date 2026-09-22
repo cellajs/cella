@@ -254,7 +254,7 @@ function ResizeHandle<R, SR>({ column, onColumnResize, onColumnResizeEnd }: Resi
   const initialLeftRef = useRef<number>(undefined);
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === 'mouse' && event.buttons !== 1) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
       return;
     }
 

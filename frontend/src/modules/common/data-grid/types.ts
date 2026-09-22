@@ -231,7 +231,7 @@ export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererPr
   isInSelectedRange?: boolean;
   /** Range boundary info for styling (only set when isInSelectedRange is true) */
   rangeBoundary?: { isTop: boolean; isBottom: boolean; isLeft: boolean; isRight: boolean };
-  onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, newRow: TRow) => void;
+  onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
 }
 
 export type CellEvent<E extends React.SyntheticEvent<HTMLDivElement>> = E & {
@@ -294,7 +294,7 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
-  /** Renders the row as a real subgrid box, not display:contents, and animates order changes with motion layout. */
+  /** Animates order changes with a motion layout transition. */
   animateReorder?: boolean;
   lastFrozenColumnIndex: number;
   selectedCellEditor: ReactElement<RenderEditCellProps<TRow>> | undefined;

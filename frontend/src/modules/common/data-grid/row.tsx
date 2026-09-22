@@ -1,9 +1,12 @@
 import { type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
 import { memo, useMemo } from 'react';
-import { useLatestCallback } from '~/hooks/use-latest-ref';
 import { RowSelectionContext, type RowSelectionContextValue } from './hooks';
-import type { CalculatedColumn, RenderRowProps } from './types';
-import { cn, getCellRangeBoundary, getColSpan, getRowStyle, isCellInRange } from './utils/grid-utils';
+import type { RenderRowProps } from './types';
+import { cn, getCellRangeBoundary, getColSpan, isCellInRange } from './utils/grid-utils';
+
+// Rows are real subgrid boxes: column tracks still resolve at the root grid, and the row has a hit-test box for drag and drop and row-wide indicators.
+const rowClassname =
+  'rdg-row group/row col-span-full grid grid-cols-subgrid aria-selected:bg-accent aria-selected:hover:bg-accent';
 
 function Row<R, SR>({
   className,
@@ -31,21 +34,8 @@ function Row<R, SR>({
   ...props
 }: RenderRowProps<R, SR>) {
   const reducedMotion = useReducedMotion();
-  const handleRowChange = useLatestCallback((column: CalculatedColumn<R, SR>, newRow: R) => {
-    onRowChange(column, rowIdx, newRow);
-  });
 
-  className = cn(
-    'rdg-row group/row aria-selected:bg-accent aria-selected:hover:bg-accent',
-    // Row-box mode needs a real box for motion layout measurement; its subgrid keeps column tracks resolving at the root grid.
-    animateReorder ? 'rdg-row-box col-span-full grid grid-cols-subgrid' : 'contents',
-    `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`,
-    {
-      'rdg-row-selected': selectedCellIdx === -1,
-    },
-    rowClass?.(row, rowIdx),
-    className,
-  );
+  className = cn(rowClassname, `rdg-row-${rowIdx % 2 === 0 ? 'even' : 'odd'}`, rowClass?.(row, rowIdx), className);
 
   const cells: React.ReactNode[] = [];
 
@@ -82,7 +72,7 @@ function Row<R, SR>({
           onCellClick,
           onCellDoubleClick,
           onCellContextMenu,
-          onRowChange: handleRowChange,
+          onRowChange,
           selectCell,
         }),
       );
@@ -94,10 +84,7 @@ function Row<R, SR>({
     [isRowSelectionDisabled, isRowSelected],
   );
 
-  const rowStyle = {
-    ...getRowStyle(gridRowStart),
-    ...style,
-  };
+  const rowStyle = { gridRowStart, ...style };
 
   if (animateReorder) {
     return (
