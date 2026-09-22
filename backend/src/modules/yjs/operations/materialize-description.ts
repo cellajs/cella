@@ -48,7 +48,8 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     var: {
       user,
       userId: user.id,
-      actor: { kind: 'user', id: user.id, grants: memberships },
+      // The relay proved this write, not a credential of the user; the session ref is a placeholder for the type.
+      actor: { kind: 'user', id: user.id, grants: memberships, scopes: null, credential: { kind: 'session', id: '' } },
       isSystemAdmin: false,
       memberships,
       db: baseDb,

@@ -560,6 +560,57 @@ export type Membership = {
   organizationId: string;
 };
 
+/**
+ * A machine principal: the actor an API key runs as, with its role bindings.
+ */
+export type ServiceAccount = {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  status: 'active' | 'disabled';
+  grants: Array<{
+    channelType: 'organization';
+    channelId: string;
+    organizationId: string;
+    role: 'admin' | 'member';
+  }>;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  lastUsedAt: string | null;
+};
+
+/**
+ * A newly issued API key with its plaintext secret.
+ */
+export type CreatedCredential = Credential & {
+  /**
+   * The plaintext API key; store it now, it is not shown again.
+   */
+  secret: string;
+};
+
+/**
+ * An API key of a service account; the secret is never returned after creation.
+ */
+export type Credential = {
+  id: string;
+  principalId: string;
+  tenantId: string;
+  type: 'secret' | 'publishable';
+  name: string;
+  description: string | null;
+  prefix: string;
+  last4: string;
+  scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUsedAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+};
+
 export type GetAuthHealthData = {
   body?: never;
   path?: never;
@@ -5299,3 +5350,329 @@ export type MarkSeenResponses = {
 };
 
 export type MarkSeenResponse = MarkSeenResponses[keyof MarkSeenResponses];
+
+export type GetServiceAccountsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: {
+    q?: string;
+    offset?: string;
+    limit?: string;
+  };
+  url: '/{tenantId}/{organizationId}/service-accounts';
+};
+
+export type GetServiceAccountsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetServiceAccountsError = GetServiceAccountsErrors[keyof GetServiceAccountsErrors];
+
+export type GetServiceAccountsResponses = {
+  /**
+   * Service accounts
+   */
+  200: {
+    items: Array<ServiceAccount>;
+    total: number;
+  };
+};
+
+export type GetServiceAccountsResponse = GetServiceAccountsResponses[keyof GetServiceAccountsResponses];
+
+export type CreateServiceAccountData = {
+  body: {
+    name: string;
+    description?: string;
+    role: 'admin' | 'member';
+    key?: {
+      name: string;
+      description?: string;
+      scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+      expiresAt?: string;
+    };
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/service-accounts';
+};
+
+export type CreateServiceAccountErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateServiceAccountError = CreateServiceAccountErrors[keyof CreateServiceAccountErrors];
+
+export type CreateServiceAccountResponses = {
+  /**
+   * Service account was created
+   */
+  201: {
+    serviceAccount: ServiceAccount;
+    credential?: CreatedCredential;
+  };
+};
+
+export type CreateServiceAccountResponse = CreateServiceAccountResponses[keyof CreateServiceAccountResponses];
+
+export type UpdateServiceAccountData = {
+  body: {
+    name?: string;
+    description?: string | null;
+    status?: 'active' | 'disabled';
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}';
+};
+
+export type UpdateServiceAccountErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateServiceAccountError = UpdateServiceAccountErrors[keyof UpdateServiceAccountErrors];
+
+export type UpdateServiceAccountResponses = {
+  /**
+   * Service account was updated
+   */
+  200: ServiceAccount;
+};
+
+export type UpdateServiceAccountResponse = UpdateServiceAccountResponses[keyof UpdateServiceAccountResponses];
+
+export type GetCredentialsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials';
+};
+
+export type GetCredentialsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetCredentialsError = GetCredentialsErrors[keyof GetCredentialsErrors];
+
+export type GetCredentialsResponses = {
+  /**
+   * API keys
+   */
+  200: {
+    items: Array<Credential>;
+  };
+};
+
+export type GetCredentialsResponse = GetCredentialsResponses[keyof GetCredentialsResponses];
+
+export type CreateCredentialData = {
+  body: {
+    name: string;
+    description?: string;
+    scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
+    expiresAt?: string;
+    rollFrom?: string;
+    rollOverlapDays?: number;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials';
+};
+
+export type CreateCredentialErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateCredentialError = CreateCredentialErrors[keyof CreateCredentialErrors];
+
+export type CreateCredentialResponses = {
+  /**
+   * API key was issued
+   */
+  201: CreatedCredential;
+};
+
+export type CreateCredentialResponse = CreateCredentialResponses[keyof CreateCredentialResponses];
+
+export type RevokeCredentialData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+    credentialId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}';
+};
+
+export type RevokeCredentialErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeCredentialError = RevokeCredentialErrors[keyof RevokeCredentialErrors];
+
+export type RevokeCredentialResponses = {
+  /**
+   * API key was revoked
+   */
+  200: Credential;
+};
+
+export type RevokeCredentialResponse = RevokeCredentialResponses[keyof RevokeCredentialResponses];

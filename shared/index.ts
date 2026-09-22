@@ -97,6 +97,7 @@ export {
   policyMatrix,
   publicReadGrants,
   resolveCan,
+  scopes,
   toColumnName,
   toTableName,
   validateAncestorScope,

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { actorGuard, authGuard, crossTenantGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
@@ -97,7 +97,7 @@ const membershipRoutes = {
     operationId: 'updateMembership',
     method: 'put',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Update membership',

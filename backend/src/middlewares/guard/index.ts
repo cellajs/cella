@@ -1,5 +1,7 @@
+export * from './actor-guard';
 export * from './auth-guard';
 export * from './cross-tenant-guard';
+export * from './machine-guard';
 export * from './org-guard';
 export * from './public-guard';
 export * from './relatable-guard';

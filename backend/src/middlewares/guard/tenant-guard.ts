@@ -22,6 +22,12 @@ export const tenantGuard = xMiddleware(
 
     const tenantId = rawTenantId.toLowerCase();
 
+    // A service actor's tenant comes from its key, never from the URL: the two must agree and nothing else applies.
+    if (ctx.var.actor?.kind === 'service') {
+      if (ctx.var.tenantId !== tenantId) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
+      return next();
+    }
+
     const user = ctx.var.user;
     const memberships = ctx.var.memberships;
     const isSystemAdmin = ctx.var.isSystemAdmin;

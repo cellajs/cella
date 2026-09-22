@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 85,
+  "documentedOperationCount": 91,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -13,13 +13,21 @@
       "required": true,
       "kind": "middleware",
       "values": {
-        "publicGuard": {
-          "name": "public",
-          "description": "No authentication required; provides baseDb without RLS context"
-        },
         "authGuard": {
           "name": "auth",
           "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
+        },
+        "machineGuard": {
+          "name": "machine",
+          "description": "Requires a secret API key and sets the service account as the actor"
+        },
+        "actorGuard": {
+          "name": "actor",
+          "description": "Accepts a session cookie or a secret API key and sets the actor"
+        },
+        "publicGuard": {
+          "name": "public",
+          "description": "No authentication required; provides baseDb without RLS context"
         },
         "crossTenantGuard": {
           "name": "crossTenant",
@@ -65,6 +73,7 @@
           "name": "passkeyChallenge",
           "description": "Max 30 passkey challenges/hour per IP"
         },
+        "machineBurstLimiter": { "name": "machineBurst", "description": "Max 30 requests/second per service account" },
         "syncReadLimiter": {
           "name": "syncRead",
           "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"

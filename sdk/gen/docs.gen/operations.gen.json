@@ -1600,7 +1600,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard"],
+      "xGuard": ["actorGuard", "tenantGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -1625,7 +1625,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard"],
+      "xGuard": ["actorGuard", "tenantGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -1650,7 +1650,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["syncReadLimiter"],
       "xCache": []
     },
@@ -1675,7 +1675,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -1700,7 +1700,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -1725,7 +1725,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["presignedUrlLimiter"],
       "xCache": []
     },
@@ -1750,7 +1750,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": ["productCache"]
     },
@@ -1775,7 +1775,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -1846,7 +1846,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -1967,6 +1967,144 @@
     },
     "tagsByKind": {
       "module": ["seen"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getServiceAccounts",
+    "hash": "tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts",
+    "method": "get",
+    "path": "/{tenantId}/{organizationId}/service-accounts",
+    "tags": ["service-accounts"],
+    "summary": "Get service accounts",
+    "description": "Lists the service accounts of this organization.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "createServiceAccount",
+    "hash": "tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/service-accounts",
+    "tags": ["service-accounts"],
+    "summary": "Create service account",
+    "description": "Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "updateServiceAccount",
+    "hash": "tag/service-accounts/PUT/{tenantId}/{organizationId}/service-accounts/{id}",
+    "method": "put",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}",
+    "tags": ["service-accounts"],
+    "summary": "Update service account",
+    "description": "Renames, describes, disables or re-enables a service account. Accounts are never deleted.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getCredentials",
+    "hash": "tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "method": "get",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "tags": ["service-accounts"],
+    "summary": "Get API keys",
+    "description": "Lists the API keys of a service account. Secrets are never returned here.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "createCredential",
+    "hash": "tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "tags": ["service-accounts"],
+    "summary": "Create API key",
+    "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "revokeCredential",
+    "hash": "tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}",
+    "method": "delete",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}",
+    "tags": ["service-accounts"],
+    "summary": "Revoke API key",
+    "description": "Revokes an API key immediately. The row stays for the audit trail.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["authGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["service-accounts"],
       "owner": ["cella"]
     }
   }

@@ -10,6 +10,7 @@ import {
   getExtensionPropIds,
   type XMiddlewareOptions,
 } from '#/core/openapi-extensions';
+import { actorGuard } from '#/middlewares/guard/actor-guard';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 
 /** Runs before guards so a disabled service 404s without exposing auth behavior. Read per request. */
@@ -53,8 +54,12 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     xMiddlewares.filter((mw) => mw.__extensionType === key && mw.name).map((mw) => mw.name),
   );
 
-  // Public routes have no security, authenticated routes require cookie auth
-  const security = extensionMiddleware.includes(publicGuard) ? [] : [{ cookieAuth: [] }];
+  // Public routes have no security; actorGuard routes take a session or an API key; the rest require cookie auth
+  const security = extensionMiddleware.includes(publicGuard)
+    ? []
+    : extensionMiddleware.includes(actorGuard)
+      ? [{ cookieAuth: [] }, { apiKey: [] }]
+      : [{ cookieAuth: [] }];
 
   // Strip extension props to prevent them leaking as null in OpenAPI
   const extensionPropIds = getExtensionPropIds();

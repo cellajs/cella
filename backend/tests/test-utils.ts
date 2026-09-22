@@ -55,7 +55,7 @@ export async function clearDatabase() {
   resetOrganizationMockEnforcers();
 
   await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE 
-    sessions, tokens, passkeys, identities, emails, users, principals
+    sessions, tokens, passkeys, identities, emails, users, credentials, service_accounts, principals
     CASCADE`);
 }
 

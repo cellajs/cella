@@ -16,11 +16,21 @@ export type DbContext = {
   var: Pick<Env['Variables'], 'db'>;
 };
 
+/** What proved the actor: a session cookie, or a secret API key. */
+export type CredentialRef = { kind: 'session' | 'secret'; id: string };
+
 /**
- * The principal a request runs as (a user today, a service account later) and the role bindings the permission
- * engine reads for it. `id` is what provenance columns and the engine's `own` condition compare against.
+ * The principal a request runs as (a user, or a service account behind an API key) and the role bindings the
+ * permission engine reads for it. `id` is what provenance columns and the engine's `own` condition compare against;
+ * `scopes` is the credential's mask over the grants (null = unmasked, as every session is).
  */
-export type Actor = { kind: PrincipalKind; id: string; grants: MembershipBaseModel[] };
+export type Actor = {
+  kind: PrincipalKind;
+  id: string;
+  grants: MembershipBaseModel[];
+  scopes: string[] | null;
+  credential: CredentialRef;
+};
 
 /** Someone acting inside a tenant, whatever proved them: no user row, so it stays callable from machine credentials. */
 export type ActorContext = {

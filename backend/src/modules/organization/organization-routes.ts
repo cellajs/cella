@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
+import { actorGuard, authGuard, crossTenantGuard, relatableGuard, tenantGuard } from '#/middlewares/guard';
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -80,7 +80,7 @@ const organizationRoutes = {
     operationId: 'getOrganization',
     method: 'get',
     path: '/{tenantId}/organizations/{id}',
-    xGuard: [authGuard, tenantGuard],
+    xGuard: [actorGuard, tenantGuard],
     tags: ['organizations', 'cella', 'channel'],
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
@@ -97,7 +97,7 @@ const organizationRoutes = {
     operationId: 'updateOrganization',
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
-    xGuard: [authGuard, tenantGuard],
+    xGuard: [actorGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['organizations', 'cella', 'channel'],
     summary: 'Update organization',

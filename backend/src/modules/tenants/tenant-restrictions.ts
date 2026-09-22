@@ -1,7 +1,8 @@
 import { appConfig, type EntityType } from 'shared';
 
-/** Hard entity caps per tenant. 0 = unlimited. */
-export type Quotas = Record<EntityType, number>;
+/** Hard caps per tenant on entities and on machine principals and their keys. 0 = unlimited. */
+export type QuotaKey = EntityType | 'serviceAccount' | 'credential';
+export type Quotas = Record<QuotaKey, number>;
 
 /** Time-windowed throughput limits per user in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
 export type RateLimits = {
@@ -17,8 +18,9 @@ export type Restrictions = {
 export const defaultRestrictions = (): Restrictions => {
   const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
 
-  const quotas = appConfig.entityTypes.reduce((acc, entityType) => {
-    acc[entityType] = defaultQuotas[entityType] ?? 0;
+  const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, 'serviceAccount', 'credential'];
+  const quotas = quotaKeys.reduce((acc, key) => {
+    acc[key] = defaultQuotas[key] ?? 0;
     return acc;
   }, {} as Quotas);
 

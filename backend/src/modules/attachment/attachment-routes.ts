@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { productCache } from '#/middlewares/product-cache';
 import {
   bulkPointsLimiter,
@@ -36,7 +36,7 @@ const attachmentRoutes = {
     operationId: 'getAttachments',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     // Sync-driven read backpressure on the delta path (template pattern for app product lists)
     xRateLimiter: [syncReadLimiter],
     tags: ['attachments', 'cella', 'product'],
@@ -63,7 +63,7 @@ const attachmentRoutes = {
     operationId: 'createAttachments',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Create attachments',
@@ -96,7 +96,7 @@ const attachmentRoutes = {
     operationId: 'getAttachment',
     method: 'get',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xCache: [productCache('attachment')],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
@@ -116,7 +116,7 @@ const attachmentRoutes = {
     operationId: 'updateAttachment',
     method: 'put',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Update attachment',
@@ -141,7 +141,7 @@ const attachmentRoutes = {
     operationId: 'deleteAttachments',
     method: 'delete',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Delete attachments',
@@ -169,7 +169,7 @@ const attachmentRoutes = {
     operationId: 'getPresignedUrls',
     method: 'post',
     path: '/presigned-urls',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [presignedUrlLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get presigned URLs',

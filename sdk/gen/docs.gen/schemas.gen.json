@@ -1364,6 +1364,242 @@
     }
   },
   {
+    "name": "CreatedCredential",
+    "ref": "#/components/schemas/CreatedCredential",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "principalId": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["secret", "publishable"]
+        },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "description": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "prefix": { "type": "string", "required": true, "maxLength": 255 },
+        "last4": { "type": "string", "required": true, "maxLength": 4 },
+        "scopes": {
+          "type": ["array", "null"],
+          "required": true,
+          "itemType": "string",
+          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+        },
+        "expiresAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "revokedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastUsedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "createdAt": { "type": "string", "required": true },
+        "secret": {
+          "type": "string",
+          "required": true,
+          "description": "The plaintext API key; store it now, it is not shown again."
+        }
+      },
+      "extendsRef": "#/components/schemas/Credential"
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    },
+    "description": "A newly issued API key with its plaintext secret.",
+    "extendsRef": "#/components/schemas/Credential",
+    "example": {
+      "id": "5302a43a-9867-408a-a97e-03039539daa6",
+      "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
+      "tenantId": "uiucev",
+      "type": "secret",
+      "name": "CI deploy key",
+      "description": null,
+      "prefix": "cella-development_sk_test_Ab3d",
+      "last4": "x9Qz",
+      "scopes": ["attachment:read"],
+      "expiresAt": null,
+      "revokedAt": null,
+      "lastUsedAt": null,
+      "createdBy": "fb5cf568-9f45-4433-a778-1ea4555f182f",
+      "createdAt": "2024-09-18T17:30:03.959Z",
+      "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345x9Qz1A2b3C"
+    }
+  },
+  {
+    "name": "Credential",
+    "ref": "#/components/schemas/Credential",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "principalId": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["secret", "publishable"]
+        },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "description": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "prefix": { "type": "string", "required": true, "maxLength": 255 },
+        "last4": { "type": "string", "required": true, "maxLength": 4 },
+        "scopes": {
+          "type": ["array", "null"],
+          "required": true,
+          "itemType": "string",
+          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+        },
+        "expiresAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "revokedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastUsedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    },
+    "description": "An API key of a service account; the secret is never returned after creation.",
+    "example": {
+      "id": "59dd359c-2e7e-4074-a23f-6e9c390cd41f",
+      "principalId": "fed064e4-b892-4754-9f25-eb03c9345b3b",
+      "tenantId": "n6x310",
+      "type": "secret",
+      "name": "CI deploy key",
+      "description": null,
+      "prefix": "cella-development_sk_test_Ab3d",
+      "last4": "x9Qz",
+      "scopes": ["attachment:read"],
+      "expiresAt": null,
+      "revokedAt": null,
+      "lastUsedAt": null,
+      "createdBy": "8382c69f-b39f-4cea-8e4b-0481cbe890d8",
+      "createdAt": "2024-11-07T06:32:14.154Z"
+    }
+  },
+  {
+    "name": "ServiceAccount",
+    "ref": "#/components/schemas/ServiceAccount",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "name": { "type": "string", "required": true, "maxLength": 255 },
+        "description": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["active", "disabled"]
+        },
+        "grants": {
+          "type": "array",
+          "required": true,
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "properties": {
+              "channelType": {
+                "type": "string",
+                "required": true,
+                "enum": ["organization"]
+              },
+              "channelId": { "type": "string", "required": true, "maxLength": 50 },
+              "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+              "role": {
+                "type": "string",
+                "required": true,
+                "enum": ["admin", "member"]
+              }
+            }
+          }
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        },
+        "lastUsedAt": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "module": ["service-accounts"],
+      "owner": ["cella"]
+    },
+    "description": "A machine principal: the actor an API key runs as, with its role bindings.",
+    "example": {
+      "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
+      "tenantId": "yug3pr",
+      "name": "system bot",
+      "description": "Use the mobile TCP application, then you can reboot the multi-byte sensor!",
+      "status": "active",
+      "grants": [
+        {
+          "channelType": "organization",
+          "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+          "organizationId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+          "role": "member"
+        }
+      ],
+      "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
+      "createdAt": "2024-09-01T22:49:17.262Z",
+      "updatedAt": "2024-09-01T22:49:17.262Z",
+      "lastUsedAt": null
+    }
+  },
+  {
     "name": "Tenant",
     "ref": "#/components/schemas/Tenant",
     "type": "object",

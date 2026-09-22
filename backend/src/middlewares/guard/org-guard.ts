@@ -23,7 +23,8 @@ export const orgGuard = xMiddleware(
       throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
 
     const db = ctx.var.db;
-    const memberships = ctx.var.memberships;
+    // Role bindings of whoever is acting: a user's memberships, or a service account's grants.
+    const memberships = ctx.var.actor?.grants;
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 

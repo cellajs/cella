@@ -486,6 +486,60 @@ export const zMembership = z.object({
 });
 
 /**
+ * A machine principal: the actor an API key runs as, with its role bindings.
+ */
+export const zServiceAccount = z.object({
+  id: z.uuid(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
+  description: z.string().max(255).nullable(),
+  status: z.enum(['active', 'disabled']),
+  grants: z.array(
+    z.object({
+      channelType: z.enum(['organization']),
+      channelId: z.string().max(50),
+      organizationId: z.string().max(50),
+      role: z.enum(['admin', 'member']),
+    }),
+  ),
+  createdBy: z.uuid().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+  lastUsedAt: z.string().nullable(),
+});
+
+/**
+ * An API key of a service account; the secret is never returned after creation.
+ */
+export const zCredential = z.object({
+  id: z.uuid(),
+  principalId: z.uuid(),
+  tenantId: z.string().max(24),
+  type: z.enum(['secret', 'publishable']),
+  name: z.string().max(255),
+  description: z.string().max(255).nullable(),
+  prefix: z.string().max(255),
+  last4: z.string().max(4),
+  scopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+    .nullable(),
+  expiresAt: z.string().nullable(),
+  revokedAt: z.string().nullable(),
+  lastUsedAt: z.string().nullable(),
+  createdBy: z.uuid().nullable(),
+  createdAt: z.string(),
+});
+
+/**
+ * A newly issued API key with its plaintext secret.
+ */
+export const zCreatedCredential = zCredential.and(
+  z.object({
+    secret: z.string(),
+  }),
+);
+
+/**
  * Auth health status
  */
 export const zGetAuthHealthResponse = z.object({
@@ -1947,3 +2001,134 @@ export const zMarkSeenPath = z.object({
 export const zMarkSeenResponse = z.object({
   newCount: z.int().gte(0),
 });
+
+export const zGetServiceAccountsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zGetServiceAccountsQuery = z.object({
+  q: z.string().max(255).optional(),
+  offset: z.string().regex(/^\d+$/).optional(),
+  limit: z.string().regex(/^\d+$/).optional(),
+});
+
+/**
+ * Service accounts
+ */
+export const zGetServiceAccountsResponse = z.object({
+  items: z.array(zServiceAccount),
+  total: z.number(),
+});
+
+export const zCreateServiceAccountBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
+  description: z.string().max(255).optional(),
+  role: z.enum(['admin', 'member']),
+  key: z
+    .object({
+      name: z
+        .string()
+        .min(2)
+        .max(255)
+        .regex(/^[\p{L}\d\-., '&()]+$/u),
+      description: z.string().max(255).optional(),
+      scopes: z
+        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+        .min(1)
+        .nullish(),
+      expiresAt: z.iso.datetime().optional(),
+    })
+    .optional(),
+});
+
+export const zCreateServiceAccountPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Service account was created
+ */
+export const zCreateServiceAccountResponse = z.object({
+  serviceAccount: zServiceAccount,
+  credential: zCreatedCredential.optional(),
+});
+
+export const zUpdateServiceAccountBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .optional(),
+  description: z.string().max(255).nullish(),
+  status: z.enum(['active', 'disabled']).optional(),
+});
+
+export const zUpdateServiceAccountPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Service account was updated
+ */
+export const zUpdateServiceAccountResponse = zServiceAccount;
+
+export const zGetCredentialsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * API keys
+ */
+export const zGetCredentialsResponse = z.object({
+  items: z.array(zCredential),
+});
+
+export const zCreateCredentialBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
+  description: z.string().max(255).optional(),
+  scopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+    .min(1)
+    .nullish(),
+  expiresAt: z.iso.datetime().optional(),
+  rollFrom: z.string().max(50).optional(),
+  rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
+});
+
+export const zCreateCredentialPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * API key was issued
+ */
+export const zCreateCredentialResponse = zCreatedCredential;
+
+export const zRevokeCredentialPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+  credentialId: z.string().max(50),
+});
+
+/**
+ * API key was revoked
+ */
+export const zRevokeCredentialResponse = zCredential;

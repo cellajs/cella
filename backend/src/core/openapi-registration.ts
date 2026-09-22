@@ -50,6 +50,13 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
       "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
 
+  registry.registerComponent('securitySchemes', 'apiKey', {
+    type: 'http',
+    scheme: 'bearer',
+    description:
+      'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.',
+  });
+
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('OrganizationMinimalBase', organizationMinimalBaseSchema);

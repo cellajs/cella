@@ -1121,6 +1121,26 @@
     "pnpm check"
    ],
    "summary": "New principals (id, kind) table: users.id is a foreign key to it and createdBy/updatedBy/deletedBy in productColumns and channelColumns reference principals instead of users, so a later service account can be named in provenance with a real constraint. Users are inserted through insertUsers(), which writes the principal row first in one transaction; any direct db.insert(usersTable) fails on the new foreign key. AuthContext is renamed UserContext (a signed-in user) and ActorContext is its new supertype, carrying one actor { kind, id, grants } variable that accessFrom/actorFrom read; machine-callable operations are typed on it. Error bodies gain requestId. Apps rename AuthContext to UserContext with one perl/sed pass, run pnpm generate with one create hint per provenance foreign key, add the principals backfill INSERT after CREATE TABLE in the generated SQL, route user inserts through insertUsers, add principals to test TRUNCATE lists, and retype operations that only need the actor's id."
+  },
+  {
+   "id": "20260922T1600-service-accounts",
+   "version": "next",
+   "title": "service accounts and API keys: the first machine principal",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Adds service_accounts (a tenant-scoped machine principal with role bindings in grants, disabled never deleted) and credentials (opaque API keys stored as hashes, with a scopes mask). machineGuard authenticates Authorization: Bearer <app>_sk_live_\u2026 as the service account and actorGuard accepts a session or a key on routes whose operations take ActorContext. Scopes are derived from the policy matrix (scopes next to policyMatrix, <entityType>:read|write) and masked in checkAccess and collection reads; the points limiter keys on (tenantId, principalId); CSRF is skipped for machine credentials. Apps run pnpm generate and pnpm sdk, add the two tables to the RLS grant list and test TRUNCATE lists, switch machine-callable routes to actorGuard, and give hand-built test contexts an actor."
   }
  ]
 }

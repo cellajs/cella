@@ -14,6 +14,7 @@ import {
   type PublicReadGrants,
   policyMatrix,
   type RowConditionName,
+  scopes,
 } from 'shared';
 import { AppError } from '#/core/error';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -308,6 +309,11 @@ export const resolveCollectionReadFilterForPolicies = ({
   publicGrants,
   hierarchy,
 }: CollectionReadScopeInput): CollectionReadFilter => {
+  // A scoped credential (API key) that lacks the read scope for this type reads nothing, sysadmin or not.
+  if (!('anonymous' in actor) && !scopes.allows(actor.scopes, entityType, 'read')) {
+    return { homeChannelIds: [], conditionalScopes: [] };
+  }
+
   // Administrator short-circuit, matching the engine: they may pass the guard without a membership.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
     // A requested home channel still narrows: sysadmin widens WHO can read, never WHAT a filtered list returns.

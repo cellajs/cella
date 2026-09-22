@@ -34,6 +34,14 @@ const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organi
   var: {
     db: emptyDb as never,
     memberships: opts.memberships,
+    // The guard reads the actor's grants; for a session those are the memberships.
+    actor: {
+      kind: 'user',
+      id: 'user-1',
+      grants: opts.memberships,
+      scopes: null,
+      credential: { kind: 'session', id: 's' },
+    },
     isSystemAdmin: opts.isSystemAdmin ?? false,
     tenantId: TENANT_ID,
   },

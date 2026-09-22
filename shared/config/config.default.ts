@@ -65,6 +65,8 @@ export const config = {
       organization: 1,
       user: 1000,
       attachment: 100,
+      serviceAccount: 20,
+      credential: 100,
     },
     rateLimits: {
       apiPointsPerHour: 1000,

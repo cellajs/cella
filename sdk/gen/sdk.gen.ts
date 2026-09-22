@@ -23,6 +23,9 @@ import type {
   CreateAttachmentsData,
   CreateAttachmentsErrors,
   CreateAttachmentsResponses,
+  CreateCredentialData,
+  CreateCredentialErrors,
+  CreateCredentialResponses,
   CreateDomainData,
   CreateDomainErrors,
   CreateDomainResponses,
@@ -38,6 +41,9 @@ import type {
   CreateRequestData,
   CreateRequestErrors,
   CreateRequestResponses,
+  CreateServiceAccountData,
+  CreateServiceAccountErrors,
+  CreateServiceAccountResponses,
   CreateTotpData,
   CreateTotpErrors,
   CreateTotpResponses,
@@ -95,6 +101,9 @@ import type {
   GetAuthHealthData,
   GetAuthHealthErrors,
   GetAuthHealthResponses,
+  GetCredentialsData,
+  GetCredentialsErrors,
+  GetCredentialsResponses,
   GetDomainData,
   GetDomainErrors,
   GetDomainResponses,
@@ -143,6 +152,9 @@ import type {
   GetRequestsData,
   GetRequestsErrors,
   GetRequestsResponses,
+  GetServiceAccountsData,
+  GetServiceAccountsErrors,
+  GetServiceAccountsResponses,
   GetTenantsData,
   GetTenantsErrors,
   GetTenantsResponses,
@@ -202,6 +214,9 @@ import type {
   ResendPendingInvitationData,
   ResendPendingInvitationErrors,
   ResendPendingInvitationResponses,
+  RevokeCredentialData,
+  RevokeCredentialErrors,
+  RevokeCredentialResponses,
   SelfCreateTenantData,
   SelfCreateTenantErrors,
   SelfCreateTenantResponses,
@@ -251,6 +266,9 @@ import type {
   UpdateOrganizationData,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
+  UpdateServiceAccountData,
+  UpdateServiceAccountErrors,
+  UpdateServiceAccountResponses,
   UpdateTenantData,
   UpdateTenantErrors,
   UpdateTenantResponses,
@@ -271,6 +289,9 @@ import {
   zCreateAttachmentsBody,
   zCreateAttachmentsPath,
   zCreateAttachmentsResponse,
+  zCreateCredentialBody,
+  zCreateCredentialPath,
+  zCreateCredentialResponse,
   zCreateDomainBody,
   zCreateDomainPath,
   zCreateDomainResponse,
@@ -283,6 +304,9 @@ import {
   zCreatePushSubscriptionResponse,
   zCreateRequestBody,
   zCreateRequestResponse,
+  zCreateServiceAccountBody,
+  zCreateServiceAccountPath,
+  zCreateServiceAccountResponse,
   zCreateTotpBody,
   zDeleteAttachmentsBody,
   zDeleteAttachmentsPath,
@@ -319,6 +343,8 @@ import {
   zGetAttachmentsQuery,
   zGetAttachmentsResponse,
   zGetAuthHealthResponse,
+  zGetCredentialsPath,
+  zGetCredentialsResponse,
   zGetDomainPath,
   zGetDomainResponse,
   zGetDomainsPath,
@@ -348,6 +374,9 @@ import {
   zGetPushVapidResponse,
   zGetRequestsQuery,
   zGetRequestsResponse,
+  zGetServiceAccountsPath,
+  zGetServiceAccountsQuery,
+  zGetServiceAccountsResponse,
   zGetTenantsQuery,
   zGetTenantsResponse,
   zGetTokenDataPath,
@@ -388,6 +417,8 @@ import {
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationPath,
   zResendPendingInvitationResponse,
+  zRevokeCredentialPath,
+  zRevokeCredentialResponse,
   zSelfCreateTenantBody,
   zSelfCreateTenantResponse,
   zSendMagicLinkBody,
@@ -423,6 +454,9 @@ import {
   zUpdateOrganizationBody,
   zUpdateOrganizationPath,
   zUpdateOrganizationResponse,
+  zUpdateServiceAccountBody,
+  zUpdateServiceAccountPath,
+  zUpdateServiceAccountResponse,
   zUpdateTenantBody,
   zUpdateTenantPath,
   zUpdateTenantResponse,
@@ -3036,6 +3070,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/organizations/{id}',
     ...options,
@@ -3091,6 +3126,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/organizations/{id}',
     ...options,
@@ -3134,6 +3170,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3182,6 +3219,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3219,6 +3257,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments',
     ...options,
@@ -3261,6 +3300,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments/presigned-urls',
     ...options,
@@ -3303,6 +3343,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
     ...options,
@@ -3344,6 +3385,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
     ...options,
@@ -3519,6 +3561,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
+      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/memberships/{id}',
     ...options,
@@ -3747,4 +3790,259 @@ export const markSeen = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get service accounts
+ *
+ * Lists the service accounts of this organization.
+ *
+ * **GET /{tenantId}/{organizationId}/service-accounts** ·· [getServiceAccounts](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts) ·· [getServiceAccounts](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/service-accounts) ·· _service-accounts_cella_
+ *
+ * @param {getServiceAccountsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string=} options.query.q - `string` (optional)
+ * @param {string=} options.query.offset - `string` (optional)
+ * @param {string=} options.query.limit - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getServiceAccounts = <ThrowOnError extends boolean = true>(
+  options: Options<GetServiceAccountsData, ThrowOnError>,
+): RequestResult<GetServiceAccountsResponses, GetServiceAccountsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetServiceAccountsResponses, GetServiceAccountsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetServiceAccountsPath,
+          query: zGetServiceAccountsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetServiceAccountsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts',
+    ...options,
+  });
+
+/**
+ * Create service account
+ *
+ * Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.
+ *
+ * **POST /{tenantId}/{organizationId}/service-accounts** ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts) ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/service-accounts) ·· _service-accounts_cella_
+ *
+ * @param {createServiceAccountData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
+ * @param {enum=} options.body.role - `enum` (optional)
+ * @param {object} options.body.key - `object`
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ */
+export const createServiceAccount = <ThrowOnError extends boolean = true>(
+  options: Options<CreateServiceAccountData, ThrowOnError>,
+): RequestResult<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateServiceAccountResponses, CreateServiceAccountErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateServiceAccountBody,
+          path: zCreateServiceAccountPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateServiceAccountResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update service account
+ *
+ * Renames, describes, disables or re-enables a service account. Accounts are never deleted.
+ *
+ * **PUT /{tenantId}/{organizationId}/service-accounts/{id}** ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/PUT/{tenantId}/{organizationId}/service-accounts/{id}) ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/service-accounts/{id}) ·· _service-accounts_cella_
+ *
+ * @param {updateServiceAccountData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string | null=} options.body.description - `string | null` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const updateServiceAccount = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateServiceAccountData, ThrowOnError>,
+): RequestResult<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<UpdateServiceAccountResponses, UpdateServiceAccountErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateServiceAccountBody,
+          path: zUpdateServiceAccountPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateServiceAccountResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get API keys
+ *
+ * Lists the API keys of a service account. Secrets are never returned here.
+ *
+ * **GET /{tenantId}/{organizationId}/service-accounts/{id}/credentials** ·· [getCredentials](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts/{id}/credentials) ·· [getCredentials](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/service-accounts/{id}/credentials) ·· _service-accounts_cella_
+ *
+ * @param {getCredentialsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getCredentials = <ThrowOnError extends boolean = true>(
+  options: Options<GetCredentialsData, ThrowOnError>,
+): RequestResult<GetCredentialsResponses, GetCredentialsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetCredentialsResponses, GetCredentialsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetCredentialsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetCredentialsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials',
+    ...options,
+  });
+
+/**
+ * Create API key
+ *
+ * Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.
+ *
+ * **POST /{tenantId}/{organizationId}/service-accounts/{id}/credentials** ·· [createCredential](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts/{id}/credentials) ·· [createCredential](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/service-accounts/{id}/credentials) ·· _service-accounts_cella_
+ *
+ * @param {createCredentialData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.name - `string` (optional)
+ * @param {string=} options.body.description - `string` (optional)
+ * @param {any[] | null=} options.body.scopes - `any[] | null` (optional)
+ * @param {string=} options.body.expiresAt - `string` (optional)
+ * @param {string=} options.body.rollFrom - `string` (optional)
+ * @param {integer=} options.body.rollOverlapDays - `integer` (optional)
+ * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ */
+export const createCredential = <ThrowOnError extends boolean = true>(
+  options: Options<CreateCredentialData, ThrowOnError>,
+): RequestResult<CreateCredentialResponses, CreateCredentialErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateCredentialResponses, CreateCredentialErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateCredentialBody,
+          path: zCreateCredentialPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateCredentialResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Revoke API key
+ *
+ * Revokes an API key immediately. The row stays for the audit trail.
+ *
+ * **DELETE /{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}** ·· [revokeCredential](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}) ·· [revokeCredential](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}) ·· _service-accounts_cella_
+ *
+ * @param {revokeCredentialData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string} options.path.credentialid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const revokeCredential = <ThrowOnError extends boolean = true>(
+  options: Options<RevokeCredentialData, ThrowOnError>,
+): RequestResult<RevokeCredentialResponses, RevokeCredentialErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<RevokeCredentialResponses, RevokeCredentialErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRevokeCredentialPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRevokeCredentialResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}',
+    ...options,
   });

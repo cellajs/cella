@@ -34,6 +34,8 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     ...channelTableNames,
     ...membershipTableNames,
     'principals',
+    'service_accounts',
+    'credentials',
     'users',
     'sessions',
     'devices',
