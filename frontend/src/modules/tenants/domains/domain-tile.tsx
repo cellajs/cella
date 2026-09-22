@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GetDomainResponse, VerifyDomainResponse } from 'sdk';
+import { appConfig } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useDomainDeleteMutation, useDomainVerifyMutation } from '~/modules/tenants/query';
@@ -33,7 +34,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
   const { copied: valueCopied, copyToClipboard: copyValue } = useCopyToClipboard();
   const [verifyResult, setVerifyResult] = useState<VerifyDomainResponse | null>(null);
 
-  const txtHost = `_cella-verification.${domain.domain}`;
+  const txtHost = `_${appConfig.slug}-verification.${domain.domain}`;
   const txtValue = domain.verificationToken ?? domain.id;
 
   const handleVerify = () => {
