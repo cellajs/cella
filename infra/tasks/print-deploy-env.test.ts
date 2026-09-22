@@ -18,12 +18,14 @@ const fakeAppConfig = {
   backendUrl: 'https://api.cella.example',
   yjsUrl: 'https://yjs.cella.example',
   mcpUrl: 'https://mcp.cella.example',
+  oauthUrl: 'https://api.cella.example/oauth',
   services: {
     frontend: { enabled: true, publicUrl: 'https://www.cella.example' },
     backend: { enabled: true, publicUrl: 'https://api.cella.example' },
     cdc: { enabled: true },
     yjs: { enabled: false, publicUrl: 'https://yjs.cella.example' },
     mcp: { enabled: false, publicUrl: 'https://mcp.cella.example' },
+    oauth: { enabled: false, publicUrl: 'https://api.cella.example/oauth' },
   },
   securityEmail: 'security@cella.example',
 } as any;
@@ -125,6 +127,7 @@ describe('buildDeployEnv', () => {
       ...fakeAppConfig.services,
       yjs: { enabled: true, publicUrl: 'https://yjs.cella.example' },
       mcp: { enabled: true, publicUrl: 'https://mcp.cella.example' },
+      oauth: { enabled: true, publicUrl: 'https://api.cella.example/oauth' },
     };
     for (const singleVM of [false, true]) {
       const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).vm_assert_json) as Row[];
@@ -136,6 +139,7 @@ describe('buildDeployEnv', () => {
         expect(off.filter((row) => row.dormant).map((row) => row.app)).toEqual([
           'cella-production-vm-yjs',
           'cella-production-vm-mcp',
+          'cella-production-vm-oauth',
         ]);
       }
     }

@@ -12,6 +12,7 @@ services:
       - '4001:4001'
       - '4002:4002'
       - '4003:4003'
+      - '4004:4004'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -27,6 +28,7 @@ services:
       CDC_HEALTH_PORT: '4001'
       YJS_PORT: '4002'
       MCP_API_URL: ${MCP_API_URL}
+      OAUTH_URL: ${OAUTH_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
       interval: '5s'
@@ -182,6 +184,47 @@ services:
       coHosted: true
       bindings:
         MCP_API_URL: '@{self.url}'
+  oauth:
+    image: ${REGISTRY}/backend:${OAUTH_TAG:-latest}
+    profiles: [oauth]
+    restart: unless-stopped
+    ports:
+      - '4004:4004'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: oauth
+      PORT: '4004'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      OAUTH_URL: ${OAUTH_URL}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4004/health']
+      interval: '5s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+    x-service:
+      slug: oauth
+      healthPort: 4004
+      healthTimeoutSeconds: 240
+      healthExpectStatus: 204
+      runRelease: false
+      replacementStrategy: start-first
+      drainSeconds: 10
+      instanceType: DEV1-S
+      drainPolicy: requests
+      lbRoute: path
+      pathPrefix: /oauth
+      reusesImageOf: backend
+      coHosted: true
+      bindings:
+        OAUTH_URL: '@{self.url}'
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]

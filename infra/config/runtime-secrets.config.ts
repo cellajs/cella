@@ -12,7 +12,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'oauth'],
   },
   unsubscribeSecret: {
     secretName: 'unsubscribe-token-secret',
@@ -57,7 +57,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'oauth'],
   },
   adminEmail: {
     secretName: 'admin-email',

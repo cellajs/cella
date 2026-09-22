@@ -55,6 +55,7 @@ describe('deriveInfra', () => {
     expect(bySlug.get('backend')).toBe('www.cellajs.com');
     expect(bySlug.get('yjs')).toBe('www.cellajs.com');
     expect(bySlug.get('mcp')).toBe('www.cellajs.com');
+    expect(bySlug.get('oauth')).toBe('www.cellajs.com');
     // cdc is internal-only (no lbRoute) → no endpoint
     expect(bySlug.has('cdc')).toBe(false);
   });
@@ -64,6 +65,7 @@ describe('deriveInfra', () => {
     expect(bySlug.get('backend')).toBe('https://www.cellajs.com/api');
     expect(bySlug.get('yjs')).toBe('wss://www.cellajs.com/yjs');
     expect(bySlug.get('mcp')).toBe('https://www.cellajs.com/mcp');
+    expect(bySlug.get('oauth')).toBe('https://www.cellajs.com/oauth');
   });
 
   it('hasDomain is false for localhost', () => {

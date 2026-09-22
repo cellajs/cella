@@ -11,10 +11,10 @@ export const appStores = defineStores({
     logicalReplication: true,
     // The store owns the DSN and CA secret declarations; these map each one to its consuming services, merged ahead of runtime-secrets.config.ts.
     secretConsumers: {
-      runtime: ['backend', 'yjs', 'mcp'],
+      runtime: ['backend', 'yjs', 'mcp', 'oauth'],
       admin: ['backend', 'mcp'],
       cdc: ['cdc'],
-      ca: ['backend', 'yjs', 'mcp', 'cdc'],
+      ca: ['backend', 'yjs', 'mcp', 'cdc', 'oauth'],
     },
   }),
 });

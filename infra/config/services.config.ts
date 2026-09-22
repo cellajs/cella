@@ -112,6 +112,36 @@ export const appServices = defineServices({
     },
   },
 
+  oauth: {
+    image: '${REGISTRY}/backend:${OAUTH_TAG:-latest}',
+    port: 4004,
+    healthExpectStatus: 204,
+    healthTimeoutSeconds: 240,
+    startPeriod: '15s',
+    replacementStrategy: 'start-first',
+    drainPolicy: 'requests',
+    drainSeconds: 10,
+    // Reuses the backend image at the same SHA, so CI builds no separate oauth image.
+    reusesImageOf: 'backend',
+    // The authorization server (D12): reached at https://<app-host>/oauth/... through an LB path-begin route, same origin as the API so tokens and consent cookies share one issuer.
+    lbRoute: 'path',
+    pathPrefix: '/oauth',
+    instanceType: 'DEV1-S',
+    // singleVM folds it into the backend process; the LB still routes to the host VM.
+    coHosted: true,
+    env: {
+      MODE: 'oauth',
+      PORT: '4004',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
+      OAUTH_URL: '${OAUTH_URL}',
+    },
+    // The issuer URL, host-routed through the LB.
+    bindings: {
+      OAUTH_URL: '@{self.url}',
+    },
+  },
+
   frontend: {
     // Production-only reverse proxy in front of the SPA bucket, built per release from infra/caddy/Dockerfile; its runtime knobs are ORIGIN_HOST and CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',
