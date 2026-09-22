@@ -1,4 +1,4 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -8,7 +8,7 @@ import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
 
 /** Accepts the membership invitation behind a validated single-use token as the signed-in user, whatever address it was sent to. */
-export async function acceptInvitationTokenOp(ctx: AuthContext, tokenRecord: TokenModel) {
+export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: TokenModel) {
   if (!tokenRecord.inactiveMembershipId) throw new AppError(400, 'invalid_request', 'warn');
 
   const user = ctx.var.user;

@@ -5,8 +5,8 @@
 New `principals (id, kind)` table; `users.id` is now a foreign key to it and `createdBy` / `updatedBy` /
 `deletedBy` in `productColumns` and `channelColumns` reference `principals` instead of `users`. Users are
 inserted through `insertUsers()` (`backend/src/modules/user/helpers/insert-users.ts`), which writes the
-principal row first. `ActorContext` (`#/core/context`) is the new supertype of `AuthContext`, carrying one `actor`
-`{ kind, id, grants }` variable; `accessFrom` / `actorFrom` read `ctx.var.actor`. Error bodies carry `requestId`. Prepares service accounts (AUTH_SUBSTRATE_PLAN
+principal row first. `AuthContext` is renamed **`UserContext`** (a signed-in user), and `ActorContext` (`#/core/context`)
+is its new supertype, carrying one `actor` `{ kind, id, grants }` variable that `accessFrom` / `actorFrom` read. Error bodies carry `requestId`. Prepares service accounts (AUTH_SUBSTRATE_PLAN
 Phase A).
 
 ## Blast radius
@@ -34,13 +34,14 @@ constraint names it needs when run without hints).
 
 ## Manual steps
 
+0. Rename the type everywhere: `git ls-files '*.ts' '*.tsx' '*.md' | xargs perl -pi -e 's/\bAuthContext\b/UserContext/g'`.
 1. In the generated `migration.sql`, insert the backfill directly after `CREATE TABLE "principals"` and before
    any `ADD CONSTRAINT`: `INSERT INTO "principals" ("id", "kind", "created_at") SELECT "id", 'user', "created_at" FROM "users";`
 2. Replace every `db.insert(usersTable)` in app code, seeds and tests with `insertUsers(db, records, { onConflictDoNothing })`.
 3. Add `principals` to test `TRUNCATE` lists that include `users`.
 4. Add `'principals'` to `fullCrudTables` in `backend/scripts/migrations/10-rls.migration.ts` if the app pins that file.
-5. App operations that only need the actor's id: change `AuthContext` to `ActorContext` and `ctx.var.user.id` to
-   `ctx.var.actor.id`, `ctx.var.memberships` to `ctx.var.actor.grants`. Operations reading `user.name` / `email` stay on `AuthContext`.
+5. App operations that only need the actor's id: change `UserContext` to `ActorContext` and `ctx.var.user.id` to
+   `ctx.var.actor.id`, `ctx.var.memberships` to `ctx.var.actor.grants`. Operations reading `user.name` / `email` stay on `UserContext`.
 6. `withAuditUserLite` is gone; use `withAuditUser(ctx, entity)`.
 
 ## Verify

@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -11,7 +11,7 @@ import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof userUpdateBodySchema>;
 
-export async function updateUserOp(ctx: AuthContext, id: string, input: UpdateUserInput) {
+export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUserInput) {
   const user = ctx.var.user;
 
   const targetUser = await findUserById(ctx, { id });

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { isProduct } from 'shared';
 import { uuidv7 } from 'uuidv7';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -55,7 +55,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
       tenantId: input.tenantId,
       organizationId: input.organizationId ?? undefined,
     },
-  } as unknown as AuthContext;
+  } as unknown as UserContext;
 
   const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description);
   if (sanitized) {

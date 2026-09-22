@@ -1,5 +1,5 @@
 import { convertSchemaToJsonSchema, type JSONSchema, type ServerTool } from '@tanstack/ai';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { buildTools } from '#/modules/mcp/tool-registry';
 
 /** A server tool as the MCP layer sees it: the element type of the `buildTools` registry. */
@@ -23,7 +23,7 @@ function toInputSchema(schema: unknown): JSONSchema {
   return result;
 }
 
-export function getMcpTools(ctx: AuthContext): ExecutableTool[] {
+export function getMcpTools(ctx: UserContext): ExecutableTool[] {
   return buildTools(ctx);
 }
 

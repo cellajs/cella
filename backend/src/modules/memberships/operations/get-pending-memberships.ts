@@ -1,5 +1,5 @@
 import type { ChannelEntityType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -13,7 +13,7 @@ interface GetPendingMembershipsInput {
   limit: number;
 }
 
-export async function getPendingMembershipsOp(ctx: AuthContext, input: GetPendingMembershipsInput) {
+export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput) {
   const organization = ctx.var.organization;
 
   const { entityId, entityType, sort, order, offset, limit } = input;

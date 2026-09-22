@@ -1,6 +1,6 @@
 import { appConfig, type ChannelEntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import {
@@ -24,7 +24,7 @@ interface DispatchDeferredInvitesOpts {
  * Sends invites held while their context was unpublished and stamps `remindedAt`. Invitation tokens are rotated
  * (fresh secret and expiry) because raw tokens are unrecoverable; the throttle skips rows emailed in the last seven days.
  */
-export async function dispatchDeferredInvites(ctx: AuthContext, { channelIds }: DispatchDeferredInvitesOpts) {
+export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: DispatchDeferredInvitesOpts) {
   const user = ctx.var.user;
 
   const pendingRows = await findPendingInactiveMembershipsByChannels(ctx, { channelIds });

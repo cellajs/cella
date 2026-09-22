@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { handleMcpMessage } from '#/modules/mcp/mcp-server';
 import { describeMcpTools, type ExecutableTool } from '#/modules/mcp/tool-source';
 
 // The MCP server only depends on the tool registry, and the default registry ignores ctx.
-const ctx = { var: {} } as unknown as AuthContext;
+const ctx = { var: {} } as unknown as UserContext;
 
 describe('mcp-server', () => {
   it('responds to initialize with protocol version, capabilities, and server info', async () => {

@@ -1,5 +1,5 @@
 import type { UploadTemplateId } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { getParams, getSignature } from '#/lib/transloadit';
@@ -10,7 +10,7 @@ interface GetUploadTokenOpts {
   templateId: UploadTemplateId;
 }
 
-export function getUploadTokenOp(ctx: AuthContext, { publicBucket, organizationId, templateId }: GetUploadTokenOpts) {
+export function getUploadTokenOp(ctx: UserContext, { publicBucket, organizationId, templateId }: GetUploadTokenOpts) {
   const user = ctx.var.user;
 
   const sub = [organizationId, user.id].filter((part): part is string => typeof part === 'string').join('/');

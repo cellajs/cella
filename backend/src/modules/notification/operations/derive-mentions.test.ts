@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import type { MutationPayload } from '#/lib/mutation-bus';
 import type { NotificationSource } from '../notification-sources';
 import { deriveMentions } from './derive-mentions';
@@ -15,7 +15,7 @@ const staleRow = {
 };
 
 // Test mock: only `var.db` is forwarded to `writeMentions`, so the full Hono context is not built.
-const ctx = { var: { db: {} } } as unknown as AuthContext;
+const ctx = { var: { db: {} } } as unknown as UserContext;
 
 const run = async (deriveFrom: NotificationSource['deriveFrom'], payload: MutationPayload) => {
   const writeMentions = vi.fn(async () => {});

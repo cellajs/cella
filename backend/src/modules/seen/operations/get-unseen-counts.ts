@@ -1,7 +1,7 @@
 import { getColumns, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, type SeenTrackedProductType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { groupingChannelTypes, seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
@@ -23,7 +23,7 @@ const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
   return column;
 };
 
-export async function getUnseenCountsOp(ctx: AuthContext) {
+export async function getUnseenCountsOp(ctx: UserContext) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
   const actor = actorFrom(ctx);
@@ -71,7 +71,7 @@ export async function getUnseenCountsOp(ctx: AuthContext) {
     }
     if (readableTypes.length === 0) continue;
 
-    const unseenRows = await tenantRead({ var: { ...ctx.var, tenantId } } as AuthContext, (readCtx) =>
+    const unseenRows = await tenantRead({ var: { ...ctx.var, tenantId } } as UserContext, (readCtx) =>
       findUnseenCountsByUser(readCtx, {
         userId: user.id,
         channelIds: [...channelIds],

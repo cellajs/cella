@@ -1,9 +1,9 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { deleteDomain } from '#/modules/domains/domains-queries';
 import { log } from '#/utils/logger';
 
-export async function deleteDomainOp(ctx: AuthContext, id: string) {
+export async function deleteDomainOp(ctx: UserContext, id: string) {
   const tenantId = ctx.var.tenantId;
 
   const deleted = await deleteDomain(ctx, { id });

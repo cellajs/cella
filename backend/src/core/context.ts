@@ -11,19 +11,6 @@ type Bindings = HttpBindings & {
   /* ... */
 };
 
-/**
- * Three context types, narrowest first; type an operation on the narrowest one it needs:
- *
- * - `DbContext`: a database connection and nothing else (queries, background jobs).
- * - `ActorContext`: someone is acting (a user today, a service account later) inside a tenant. Carries `actor`
- *   with the id and grants the permission engine reads, plus tenant and organization scope. No user row.
- * - `AuthContext`: a signed-in user. Everything in `ActorContext` plus `user`, `memberships` and the session.
- *
- * `AuthContext` is assignable to `ActorContext`, which is assignable to `DbContext`, so a handler with a
- * session can call any of them. The reverse is a type error: an operation on `ActorContext` cannot read
- * `ctx.var.user`, which is what keeps it callable from machine credentials.
- */
-
 /** Minimal context for query functions that only need a database connection. */
 export type DbContext = {
   var: Pick<Env['Variables'], 'db'>;
@@ -35,10 +22,7 @@ export type DbContext = {
  */
 export type Actor = { kind: PrincipalKind; id: string; grants: MembershipBaseModel[] };
 
-/**
- * Context for operations a machine actor may call: the actor and the tenant scope, but no user row. An operation
- * typed on this cannot read `ctx.var.user`, so it stays callable from every credential kind.
- */
+/** Someone acting inside a tenant, whatever proved them: no user row, so it stays callable from machine credentials. */
 export type ActorContext = {
   var: Pick<
     Env['Variables'],
@@ -46,11 +30,16 @@ export type ActorContext = {
   >;
 };
 
-/** Authenticated user context for Hono handlers, operations, and workers; a subtype of `ActorContext`. */
-export type AuthContext = {
+/** A signed-in user: everything in `ActorContext` plus `user`, `memberships` and the session. */
+export type UserContext = {
   var: Omit<Env['Variables'], 'requestId'>;
 };
 
+/**
+ * Request variables; the three derived contexts pick from them, narrowest first: `DbContext` (a connection),
+ * `ActorContext` (someone acting inside a tenant, no user row), `UserContext` (a signed-in user). Each is assignable
+ * to the one before it, so type an operation on the narrowest it needs; `ctx.var.user` is a type error on the first two.
+ */
 export type Env = {
   Variables: {
     actor: Actor;

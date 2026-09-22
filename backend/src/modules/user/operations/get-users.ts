@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, ilike, or, type SQL } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { usersTable } from '#/modules/user/user-db';
@@ -10,7 +10,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type GetUsersInput = z.infer<typeof userListQuerySchema>;
 
-export async function getUsersOp(ctx: AuthContext, input: GetUsersInput) {
+export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
   const db = ctx.var.db;
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const memberships = ctx.var.memberships;

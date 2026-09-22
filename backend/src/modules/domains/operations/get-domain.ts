@@ -1,8 +1,8 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomainById } from '#/modules/domains/domains-queries';
 
-export async function getDomainOp(ctx: AuthContext, id: string) {
+export async function getDomainOp(ctx: UserContext, id: string) {
   const domain = await findDomainById(ctx, { id });
 
   if (!domain) {

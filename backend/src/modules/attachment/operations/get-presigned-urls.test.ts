@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 
 // Boundaries mocked: the RLS transaction passes through; DB query, signer and permission are stubbed.
 vi.mock('#/db/tenant-context', () => ({
-  tenantRead: (ctx: AuthContext, fn: (c: AuthContext) => unknown) => fn(ctx),
+  tenantRead: (ctx: UserContext, fn: (c: UserContext) => unknown) => fn(ctx),
 }));
 const findAttachmentsByIds = vi.fn();
 vi.mock('#/modules/attachment/attachment-queries', () => ({
@@ -23,7 +23,7 @@ vi.mock('#/permissions/build-subject', () => ({
 
 const { getPresignedUrlsOp } = await import('./get-presigned-urls');
 
-const ctx = { var: { memberships: [] } } as unknown as AuthContext;
+const ctx = { var: { memberships: [] } } as unknown as UserContext;
 
 const attachmentA = {
   id: 'att-a',

@@ -1,14 +1,14 @@
 import { and, asc, eq } from 'drizzle-orm';
-import type { AuthContext, DbContext } from '#/core/context';
+import type { DbContext, UserContext } from '#/core/context';
 import { domainsTable } from '#/modules/domains/domains-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-export const findDomainsByTenant = async (ctx: AuthContext) => {
+export const findDomainsByTenant = async (ctx: UserContext) => {
   const { db, tenantId } = ctx.var;
   return db.select().from(domainsTable).where(eq(domainsTable.tenantId, tenantId)).orderBy(asc(domainsTable.domain));
 };
 
-export const findTenantExists = async (ctx: AuthContext) => {
+export const findTenantExists = async (ctx: UserContext) => {
   const { db, tenantId } = ctx.var;
   const [tenant] = await db
     .select({ id: tenantsTable.id })
@@ -32,7 +32,7 @@ interface InsertDomainOpts {
   domain: string;
 }
 
-export const insertDomain = async (ctx: AuthContext, { domain }: InsertDomainOpts) => {
+export const insertDomain = async (ctx: UserContext, { domain }: InsertDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [created] = await db.insert(domainsTable).values({ tenantId, domain }).returning();
   return created;
@@ -42,7 +42,7 @@ interface FindDomainByIdOpts {
   id: string;
 }
 
-export const findDomainById = async (ctx: AuthContext, { id }: FindDomainByIdOpts) => {
+export const findDomainById = async (ctx: UserContext, { id }: FindDomainByIdOpts) => {
   const { db, tenantId } = ctx.var;
   const [domain] = await db
     .select()
@@ -56,7 +56,7 @@ interface DeleteDomainOpts {
   id: string;
 }
 
-export const deleteDomain = async (ctx: AuthContext, { id }: DeleteDomainOpts) => {
+export const deleteDomain = async (ctx: UserContext, { id }: DeleteDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [deleted] = await db
     .delete(domainsTable)
@@ -71,7 +71,7 @@ interface UpdateDomainOpts {
     Partial<Pick<typeof domainsTable.$inferInsert, 'verified' | 'verifiedAt'>>;
 }
 
-export const updateDomain = async (ctx: AuthContext, { id, values }: UpdateDomainOpts) => {
+export const updateDomain = async (ctx: UserContext, { id, values }: UpdateDomainOpts) => {
   const { db, tenantId } = ctx.var;
   const [updated] = await db
     .update(domainsTable)

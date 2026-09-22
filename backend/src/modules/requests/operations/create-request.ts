@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
@@ -17,7 +17,7 @@ interface CreateRequestInput {
   message: string | null;
 }
 
-export async function createRequestOp(ctx: AuthContext, input: CreateRequestInput) {
+export async function createRequestOp(ctx: UserContext, input: CreateRequestInput) {
   const { email, type: requestType, message } = input;
   // Cast type to proper literal union for Drizzle v1 strict types
   const type = requestType as RequestModel['type'];

@@ -1,4 +1,4 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
@@ -17,7 +17,7 @@ interface UpdateMeInput {
   userFlags?: { finishedOnboarding?: boolean };
 }
 
-export async function updateMeOp(ctx: AuthContext, input: UpdateMeInput) {
+export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   const user = ctx.var.user;
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });

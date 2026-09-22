@@ -1,10 +1,10 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteOrganizationsByIds } from '#/modules/organization/organization-queries';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { log } from '#/utils/logger';
 
-export async function deleteOrganizationsOp(ctx: AuthContext, ids: string[], tenantId: string) {
+export async function deleteOrganizationsOp(ctx: UserContext, ids: string[], tenantId: string) {
   const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
   const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'organization', toDeleteIds);

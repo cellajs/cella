@@ -1,5 +1,5 @@
 import { appConfig, type EntityRole } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
@@ -15,7 +15,7 @@ interface SendNewsletterInput {
   toSelf?: boolean;
 }
 
-export async function sendNewsletterOp(ctx: AuthContext, input: SendNewsletterInput) {
+export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterInput) {
   const user = ctx.var.user;
   const { organizationIds, subject, content, roles, toSelf } = input;
 

@@ -1,11 +1,11 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { findCurrentUser, upsertLastStarted } from '#/modules/me/me-queries';
 import { getIsoDate } from '#/utils/iso-date';
 
 const THROTTLE_MS = 60 * 1000; // 1 minute
 const lastStartedMemory = new Map<string, number>();
 
-export async function getMeOp(ctx: AuthContext) {
+export async function getMeOp(ctx: UserContext) {
   const isSystemAdmin = ctx.var.isSystemAdmin;
   const userId = ctx.var.userId;
 

@@ -1,5 +1,5 @@
 import { and, eq, notInArray } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -9,7 +9,7 @@ interface SelfCreateTenantInput {
   name: string;
 }
 
-export async function selfCreateTenantOp(ctx: AuthContext, input: SelfCreateTenantInput) {
+export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTenantInput) {
   const db = ctx.var.db;
   const user = ctx.var.user;
 

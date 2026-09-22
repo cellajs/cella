@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -15,7 +15,7 @@ const ORG = 'org-a';
 /** Scope check unit: the entity lookup and permission engine are mocked, so only the tenant/organization comparison is under test. */
 describe('getValidChannel request scope', () => {
   const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = {}) =>
-    ({ var: { db: {}, userId: 'user-1', ...scope } }) as unknown as AuthContext;
+    ({ var: { db: {}, userId: 'user-1', ...scope } }) as unknown as UserContext;
 
   const organization = { id: ORG, entityType: 'organization', tenantId: TENANT };
 

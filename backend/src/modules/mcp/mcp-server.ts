@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { describeMcpTools, getMcpTools } from '#/modules/mcp/tool-source';
 
 /**
@@ -25,7 +25,7 @@ export interface JsonRpcResponse {
 const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersion };
 
 /** Returns `null` for notifications (messages without an `id`), which must not get a reply. */
-export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
+export async function handleMcpMessage(ctx: UserContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });

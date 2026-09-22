@@ -1,5 +1,5 @@
 import { eq, type SQL } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { usersTable } from '#/modules/user/user-db';
@@ -9,7 +9,7 @@ interface GetUserOpts {
   bySlug?: boolean;
 }
 
-export async function getUserOp(ctx: AuthContext, relatableUserId: string, opts: GetUserOpts = {}) {
+export async function getUserOp(ctx: UserContext, relatableUserId: string, opts: GetUserOpts = {}) {
   const requestingUser = ctx.var.user;
   const db = ctx.var.db;
   const isSystemAdmin = ctx.var.isSystemAdmin;

@@ -1,7 +1,7 @@
 import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
-import type { ActorContext, AuthContext, DbContext } from '#/core/context';
+import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
@@ -254,7 +254,7 @@ interface FindInactiveMembershipForUserOpts {
   id: string;
 }
 
-export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
+export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()
@@ -272,7 +272,7 @@ const claimableBy = (userId: string) =>
   or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId));
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
-export const findClaimableInactiveMembership = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
+export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()

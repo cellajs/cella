@@ -1,9 +1,9 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomainByName, findTenantExists, insertDomain } from '#/modules/domains/domains-queries';
 import { log } from '#/utils/logger';
 
-export async function createDomainOp(ctx: AuthContext, domain: string) {
+export async function createDomainOp(ctx: UserContext, domain: string) {
   const tenantId = ctx.var.tenantId;
 
   const tenant = await findTenantExists(ctx);

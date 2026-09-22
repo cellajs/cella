@@ -1,8 +1,8 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { findPendingInvitations } from '#/modules/me/me-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 
-export async function getMyInvitationsOp(ctx: AuthContext) {
+export async function getMyInvitationsOp(ctx: UserContext) {
   const user = ctx.var.user;
 
   const rawItems = await findPendingInvitations(ctx, { userId: user.id });

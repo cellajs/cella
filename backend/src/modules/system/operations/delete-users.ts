@@ -1,10 +1,10 @@
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteUsersByIds, findUsersByIds } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
-export async function deleteUsersOp(ctx: AuthContext, ids: string[]) {
+export async function deleteUsersOp(ctx: UserContext, ids: string[]) {
   const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
   const targets = await findUsersByIds(ctx, { ids: toDeleteIds });

@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { countDomainsByTenant, findTenantById, updateTenant } from '#/modules/tenants/tenants-queries';
@@ -8,7 +8,7 @@ import { log } from '#/utils/logger';
 
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
-export async function updateTenantOp(ctx: AuthContext, tenantId: string, updates: UpdateTenantInput) {
+export async function updateTenantOp(ctx: UserContext, tenantId: string, updates: UpdateTenantInput) {
   const existing = await findTenantById(ctx, { targetTenantId: tenantId });
   if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
 

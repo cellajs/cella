@@ -1,5 +1,5 @@
 import type { ChannelEntityType, EntityRole } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import { findMembersPaginated } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -18,7 +18,7 @@ interface GetMembersInput {
   include?: string[];
 }
 
-export async function getMembersOp(ctx: AuthContext, input: GetMembersInput) {
+export async function getMembersOp(ctx: UserContext, input: GetMembersInput) {
   const organization = ctx.var.organization;
 
   const { entityId, entityType, q, sort, order, offset, limit, role, userIds, include } = input;

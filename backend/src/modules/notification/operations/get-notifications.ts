@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { findChannelNames } from '../helpers/channel-names';
 import { findSubjectNames } from '../helpers/subject-names';
 import { countUnreadByUser, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
@@ -21,7 +21,7 @@ export interface GetNotificationsInput {
  * client treats this response as the source of truth and any realtime signal only as a hint to
  * refetch it.
  */
-export async function getNotificationsOp(ctx: AuthContext, input: GetNotificationsInput) {
+export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
 
   const [rows, unreadCount] = await Promise.all([

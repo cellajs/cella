@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, ilike, type SQL } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenantsPaginated } from '#/modules/tenants/tenants-queries';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
@@ -8,7 +8,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type GetTenantsInput = z.infer<typeof tenantListQuerySchema>;
 
-export async function getTenantsOp(ctx: AuthContext, input: GetTenantsInput) {
+export async function getTenantsOp(ctx: UserContext, input: GetTenantsInput) {
   const { q, status, limit, offset, sort, order } = input;
 
   const conditions: SQL[] = [];
