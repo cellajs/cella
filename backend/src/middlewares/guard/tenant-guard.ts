@@ -34,13 +34,12 @@ export const tenantGuard = xMiddleware(
 
     const tenant = await loadActiveTenant(tenantId);
 
-    // A user needs a foothold: a membership in the tenant, system admin, or having created it (bootstrap, before any
-    // organization or membership exists).
+    // A foothold: a service account holds at least one grant (its grants live in its own tenant); a user has a
+    // membership in the tenant, is system admin, or created it (bootstrap, before any organization or membership exists).
     const allowed =
-      actor.kind === 'service' ||
-      ctx.var.isSystemAdmin ||
-      actor.grants.some((m) => m.tenantId === tenantId) ||
-      tenant.createdBy === actor.id;
+      actor.kind === 'service'
+        ? actor.grants.length > 0
+        : ctx.var.isSystemAdmin || actor.grants.some((m) => m.tenantId === tenantId) || tenant.createdBy === actor.id;
     if (!allowed) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
 
     // TODO(sso): Enforce non-empty tenant auth strategies for user actors, exempting system administrators.
