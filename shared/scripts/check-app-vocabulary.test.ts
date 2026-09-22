@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findAppVocabularyFindings, loadAllowlist } from './check-app-vocabulary.ts';
+import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
 
 const legacyTerm = ['fo', 'rk'].join('');
 
@@ -46,6 +46,7 @@ describe('findAppVocabularyFindings', () => {
         column: 5,
         term: legacyTerm,
         location: 'path',
+        rule: 'source-control-term',
       },
     ]);
   });
@@ -64,6 +65,46 @@ describe('findAppVocabularyFindings', () => {
     expect(findAppVocabularyFindings('json/lucide-icon-names.json', `git-${legacyTerm}`, allowlist)).toEqual([]);
     expect(findAppVocabularyFindings('frontend/public/static/generated/icons.svg', legacyTerm, allowlist)).toEqual([]);
     expect(findAppVocabularyFindings('json/other.json', legacyTerm, allowlist)).toHaveLength(1);
+  });
+});
+
+describe('findProductNameFindings', () => {
+  const name = ['cel', 'la'].join('');
+
+  it('finds the product name in identifiers, claims, DNS records and URLs of app logic', () => {
+    const source = [
+      `const claim = '${name}_kind';`,
+      `type ${name[0].toUpperCase()}${name.slice(1)}TokenClaims = {};`,
+      `const host = \`_${name}-verification.\${domain}\`;`,
+      `const url = 'https://www.${name}js.com/mcp';`,
+    ].join('\n');
+    expect(
+      findProductNameFindings('backend/src/modules/x/x.ts', source).map(({ line, term }) => ({ line, term })),
+    ).toEqual([
+      { line: 1, term: `${name}_k` },
+      { line: 2, term: 'CellaT' },
+      { line: 3, term: `_${name}-` },
+      { line: 4, term: `${name}js.com` },
+    ]);
+  });
+
+  it('leaves prose, tags and ownership markers alone', () => {
+    const source = [
+      `// none in ${name}; apps with other vocabularies add theirs`,
+      `tags: ['me', '${name}'],`,
+      `owner: '${name}',`,
+    ].join('\n');
+    expect(findProductNameFindings('backend/src/modules/x/x.ts', source)).toEqual([]);
+  });
+
+  it('covers logic roots only, never tests, config, docs or the marketing site', () => {
+    const source = `const url = 'https://www.${name}js.com';`;
+    expect(findProductNameFindings('backend/src/x.test.ts', source)).toEqual([]);
+    expect(findProductNameFindings('shared/config/config.default.ts', source)).toEqual([]);
+    expect(findProductNameFindings('frontend/src/modules/marketing/about.tsx', source)).toEqual([]);
+    expect(findProductNameFindings('frontend/src/content/docs/x.mdx', source)).toEqual([]);
+    expect(findProductNameFindings('infra/lib/x.ts', source)).toEqual([]);
+    expect(findProductNameFindings('frontend/src/modules/me/x.tsx', source)).toHaveLength(1);
   });
 });
 

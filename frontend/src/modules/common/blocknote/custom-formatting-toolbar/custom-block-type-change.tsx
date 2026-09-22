@@ -14,7 +14,7 @@ import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export function CellaCustomBlockTypeSelect({
+export function CustomBlockTypeSelect({
   headingLevels,
   titleLevel,
 }: {

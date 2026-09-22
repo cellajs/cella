@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { createXRoute } from '#/core/x-routes';
 import { authGuard, sysAdminGuard, tenantGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -117,8 +118,7 @@ export const domainRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['tenants', 'cella'],
     summary: 'Verify domain ownership via DNS',
-    description:
-      'Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-verification.<domain> TXT record matching the verification token.',
+    description: `Looks up DNS TXT records for the domain to verify ownership. Checks for a _${appConfig.slug}-verification.<domain> TXT record matching the verification token.`,
     request: { params: domainParamSchema },
     responses: {
       200: {
