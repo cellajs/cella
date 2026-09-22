@@ -44,7 +44,7 @@ const interactionUrl = (uid: string, suffix: string) =>
 export function OAuthConsentPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { uid } = useSearch({ from: '/_public/oauth/consent' });
+  const { uid } = useSearch({ from: '/_public/auth/consent' });
   const [submitting, setSubmitting] = useState(false);
 
   const { data, error, isPending } = useQuery({
@@ -53,7 +53,7 @@ export function OAuthConsentPage() {
       const response = await fetch(interactionUrl(uid, 'details'), { credentials: 'include' });
       if (response.status === 401) {
         // No session: sign in and come back to this very interaction.
-        const redirect = `/oauth/consent?uid=${encodeURIComponent(uid)}`;
+        const redirect = `/auth/consent?uid=${encodeURIComponent(uid)}`;
         navigate({ to: '/auth/authenticate', search: { redirect }, replace: true });
         return null;
       }
@@ -83,8 +83,9 @@ export function OAuthConsentPage() {
     }
   };
 
-  if (isPending || !data) return <Spinner className="h-10 w-10" />;
+  // An expired or unknown interaction is an answer, not a wait; the unauthenticated case navigates away above.
   if (error) return <p className="text-center">{t('c:error.oauth_consent_expired')}</p>;
+  if (isPending || !data) return <Spinner className="h-10 w-10" />;
 
   const { client, scopes, refusal } = data;
 

@@ -85,6 +85,7 @@ packageExtensions:
       esbuild: ^0.28.1
 packages:
   - mcp
+  - oauth
   - backend
   - cdc
   - shared

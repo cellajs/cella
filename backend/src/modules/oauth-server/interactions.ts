@@ -34,7 +34,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 
   /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
   app.get('/oauth/interaction/:uid', (c) =>
-    c.redirect(`${appConfig.frontendUrl}/oauth/consent?uid=${c.req.param('uid')}`),
+    c.redirect(`${appConfig.frontendUrl}/auth/consent?uid=${c.req.param('uid')}`),
   );
 
   app.get('/oauth/interaction/:uid/details', async (c) => {

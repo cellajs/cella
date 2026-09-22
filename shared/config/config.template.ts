@@ -102,8 +102,9 @@ export const config = {
   backendAuthUrl: 'https://__project_slug__.example.com/api/auth',
   /** Yjs realtime relay URL */
   yjsUrl: 'wss://__project_slug__.example.com/yjs',
-  /** AI service base URL */
+  /** MCP endpoint base URL */
   mcpUrl: 'https://__project_slug__.example.com/mcp',
+  /** Authorization server base URL (same origin as the API) */
   oauthUrl: 'https://__project_slug__.example.com/oauth',
   /**
    * Local dev service listen ports and Vite proxy targets. Offset the whole block together
@@ -120,7 +121,8 @@ export const config = {
     backend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com/api' },
     cdc: { enabled: true as boolean },
     yjs: { enabled: false as boolean, publicUrl: 'wss://__project_slug__.example.com/yjs' },
-    ai: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/mcp' },
+    mcp: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/mcp' },
+    oauth: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/oauth' },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled

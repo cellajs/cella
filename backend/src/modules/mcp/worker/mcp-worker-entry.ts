@@ -10,13 +10,12 @@ import '#/modules'; // composition root: registers every backend module (this wo
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { baseApp } from '#/server';
 
-const port = Number(env.PORT ?? '4003');
-
 /**
  * The MCP face as its own process: the tool endpoint and its protected-resource metadata, behind tokens from the
  * authorization server. Needs no AI credential; `SCW_AI_API_KEY` only switches the app's own AI features on.
  */
-export async function startMcpWorker(): Promise<void> {
+export async function startMcpWorker(options: { port?: number } = {}): Promise<void> {
+  const port = options.port ?? Number(env.PORT);
   if (appConfig.services.mcp.enabled === false) {
     baseLog.info('MCP server disabled by appConfig');
     return;

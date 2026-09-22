@@ -1012,6 +1012,31 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  oauth:
+    dependencies:
+      dotenv:
+        specifier: ^18.0.1
+        version: 18.0.1
+      shared:
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: 26.5.0
+        version: 26.5.0
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20260707.2
+        version: 7.0.0-dev.20260707.2
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   sdk:
     dependencies:
       shared:

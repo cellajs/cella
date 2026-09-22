@@ -1,0 +1,26 @@
+{
+  "name": "oauth-worker",
+  "version": "0.0.1",
+  "description": "Standalone OAuth authorization server (node-oidc-provider on the app origin under /oauth)",
+  "type": "module",
+  "engines": {
+    "node": "26.x"
+  },
+  "scripts": {
+    "start:dev": "tsx src/oauth-worker.ts",
+    "dev": "cross-env NODE_ENV=development tsx --watch-path=src --watch-path=../backend/src --watch-path=../shared/src --watch-path=../shared/config src/oauth-worker.ts",
+    "ts": "cd .. && tsgo -p oauth/tsconfig.json --pretty",
+    "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.1",
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.0",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "cross-env": "^10.1.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}
