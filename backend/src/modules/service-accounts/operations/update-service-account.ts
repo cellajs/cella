@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
-import { invalidateCredentialCacheByAccount } from '#/middlewares/guard/credential-cache';
+import { invalidateApiKeyCacheByAccount } from '#/middlewares/guard/api-key-cache';
 import { invalidateClientCache } from '#/modules/oauth-server/adapter';
 import { loadManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -16,7 +16,7 @@ export async function updateServiceAccountOp(ctx: UserContext, id: string, input
     .set({ ...input, updatedAt: getIsoDate(), updatedBy: ctx.var.actor.id })
     .where(eq(serviceAccountsTable.id, account.id))
     .returning();
-  invalidateCredentialCacheByAccount(account.id);
+  invalidateApiKeyCacheByAccount(account.id);
   invalidateClientCache(account.id);
   log.info('Service account updated', { serviceAccountId: id, status: updated.status });
   return updated;

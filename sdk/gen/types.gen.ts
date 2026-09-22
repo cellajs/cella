@@ -611,7 +611,7 @@ export type ServiceAccount = {
 /**
  * A newly issued API key with its plaintext secret.
  */
-export type CreatedCredential = Credential & {
+export type CreatedCredential = ApiKey & {
   /**
    * The plaintext API key; store it now, it is not shown again.
    */
@@ -621,7 +621,7 @@ export type CreatedCredential = Credential & {
 /**
  * An API key of a service account; the secret is never returned after creation.
  */
-export type Credential = {
+export type ApiKey = {
   id: string;
   principalId: string;
   tenantId: string;
@@ -5695,7 +5695,7 @@ export type CreateServiceAccountResponses = {
    */
   201: {
     serviceAccount: ServiceAccount;
-    credential?: CreatedCredential;
+    apiKey?: CreatedCredential;
   };
 };
 
@@ -5754,7 +5754,7 @@ export type UpdateServiceAccountResponses = {
 
 export type UpdateServiceAccountResponse = UpdateServiceAccountResponses[keyof UpdateServiceAccountResponses];
 
-export type GetCredentialsData = {
+export type GetApiKeysData = {
   body?: never;
   path: {
     tenantId: string;
@@ -5762,10 +5762,10 @@ export type GetCredentialsData = {
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials';
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys';
 };
 
-export type GetCredentialsErrors = {
+export type GetApiKeysErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -5792,20 +5792,20 @@ export type GetCredentialsErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetCredentialsError = GetCredentialsErrors[keyof GetCredentialsErrors];
+export type GetApiKeysError = GetApiKeysErrors[keyof GetApiKeysErrors];
 
-export type GetCredentialsResponses = {
+export type GetApiKeysResponses = {
   /**
    * API keys
    */
   200: {
-    items: Array<Credential>;
+    items: Array<ApiKey>;
   };
 };
 
-export type GetCredentialsResponse = GetCredentialsResponses[keyof GetCredentialsResponses];
+export type GetApiKeysResponse = GetApiKeysResponses[keyof GetApiKeysResponses];
 
-export type CreateCredentialData = {
+export type CreateApiKeyData = {
   body: {
     name: string;
     description?: string;
@@ -5820,10 +5820,10 @@ export type CreateCredentialData = {
     id: string;
   };
   query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials';
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys';
 };
 
-export type CreateCredentialErrors = {
+export type CreateApiKeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -5850,30 +5850,30 @@ export type CreateCredentialErrors = {
   429: TooManyRequestsError;
 };
 
-export type CreateCredentialError = CreateCredentialErrors[keyof CreateCredentialErrors];
+export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
 
-export type CreateCredentialResponses = {
+export type CreateApiKeyResponses = {
   /**
    * API key was issued
    */
   201: CreatedCredential;
 };
 
-export type CreateCredentialResponse = CreateCredentialResponses[keyof CreateCredentialResponses];
+export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
 
-export type RevokeCredentialData = {
+export type RevokeApiKeyData = {
   body?: never;
   path: {
     tenantId: string;
     organizationId: string;
     id: string;
-    credentialId: string;
+    keyId: string;
   };
   query?: never;
-  url: '/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}';
+  url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}';
 };
 
-export type RevokeCredentialErrors = {
+export type RevokeApiKeyErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -5900,13 +5900,13 @@ export type RevokeCredentialErrors = {
   429: TooManyRequestsError;
 };
 
-export type RevokeCredentialError = RevokeCredentialErrors[keyof RevokeCredentialErrors];
+export type RevokeApiKeyError = RevokeApiKeyErrors[keyof RevokeApiKeyErrors];
 
-export type RevokeCredentialResponses = {
+export type RevokeApiKeyResponses = {
   /**
    * API key was revoked
    */
-  200: Credential;
+  200: ApiKey;
 };
 
-export type RevokeCredentialResponse = RevokeCredentialResponses[keyof RevokeCredentialResponses];
+export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];

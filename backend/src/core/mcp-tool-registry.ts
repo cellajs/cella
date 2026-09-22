@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type EntityActionType, type EntityScope, type ScopedEntityType, scopes } from 'shared';
+import { type AccessScope, type AccessScopedEntityType, accessScopes, type EntityActionType } from 'shared';
 import type { OrgContext } from '#/core/context';
 import type { ToolInput, ToolRoute, XToolMetadata } from '#/core/openapi-extensions';
 import { createServerStx, createServerStxStamping } from '#/core/stx/create-server-stx';
@@ -9,9 +9,9 @@ export interface McpTool {
   name: string;
   description: string;
   /** What the route acts on and how; the scope a token must carry follows from it (`<entity>:read` | `:write`). */
-  entity: ScopedEntityType;
+  entity: AccessScopedEntityType;
   action: EntityActionType;
-  scope: EntityScope;
+  scope: AccessScope;
   /** MCP tool annotations, derived from the HTTP method. */
   annotations: { readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean };
   approvalRequired: boolean;
@@ -101,7 +101,7 @@ export function registerMcpTool<Req extends ToolRoute['request']>(
     description: meta.description,
     entity: meta.entity,
     action,
-    scope: scopes.required(meta.entity, action),
+    scope: accessScopes.required(meta.entity, action),
     annotations: { readOnlyHint: isRead, destructiveHint: method === 'delete', idempotentHint: method !== 'post' },
     approvalRequired: meta.approvalRequired,
     inputSchema,

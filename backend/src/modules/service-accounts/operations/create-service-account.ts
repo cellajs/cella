@@ -2,7 +2,7 @@ import { hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { insertServiceAccount } from '#/modules/service-accounts/helpers/insert-service-accounts';
-import { issueCredential } from '#/modules/service-accounts/helpers/issue-credential';
+import { issueApiKey } from '#/modules/service-accounts/helpers/issue-api-key';
 import { requireOrgAdmin } from '#/modules/service-accounts/helpers/managed-service-account';
 import { countServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
@@ -37,7 +37,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
       createdBy: creatorId,
     });
     const issued = input.key
-      ? await issueCredential(tx, {
+      ? await issueApiKey(tx, {
           principalId: serviceAccount.id,
           tenantId,
           name: input.key.name,
@@ -53,6 +53,6 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
   log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
   return {
     serviceAccount,
-    ...(issued && { credential: { ...issued.credential, secret: issued.secret } }),
+    ...(issued && { apiKey: { ...issued.apiKey, secret: issued.secret } }),
   };
 }

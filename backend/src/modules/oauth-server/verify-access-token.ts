@@ -1,6 +1,6 @@
 import type { Context } from 'hono';
 import { errors, jwtVerify } from 'jose';
-import { appConfig, type EntityScope, scopes } from 'shared';
+import { type AccessScope, accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getVerificationKeySet } from '#/modules/oauth-server/keystore';
@@ -12,7 +12,7 @@ export interface VerifiedAccessToken {
   kind: 'user' | 'service';
   tenantId: string;
   /** The token's scope set, always a mask: a delegated token never carries a principal's full grants implicitly. */
-  scopes: EntityScope[];
+  scopes: AccessScope[];
   clientId: string;
 }
 
@@ -44,7 +44,7 @@ export async function verifyAccessToken(
     const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
     if (!claims.sub || !claims.principal_kind || !claims.tenant_id)
       throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
-    const granted = scopes.parse(claims.scope);
+    const granted = accessScopes.parse(claims.scope);
     return {
       principalId: claims.sub,
       kind: claims.principal_kind,

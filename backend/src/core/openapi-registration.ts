@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig, scopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
@@ -64,7 +64,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   });
 
   // The scope vocabulary is derived from the policy matrix (D19); the same ids feed discovery and the consent screen.
-  const scopeDescriptions = Object.fromEntries(scopes.all.map((scope) => [scope, scopeDescription(scope)]));
+  const scopeDescriptions = Object.fromEntries(accessScopes.all.map((scope) => [scope, scopeDescription(scope)]));
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
     description:

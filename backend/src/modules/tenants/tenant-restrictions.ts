@@ -3,7 +3,7 @@ import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
 /** Quotas on machine principals and their keys, beside the entity quotas; one place to extend for a new kind. */
-export const principalQuotaKeys = ['serviceAccount', 'credential'] as const;
+export const principalQuotaKeys = ['serviceAccount', 'apiKey'] as const;
 
 /** Hard caps per tenant on entities and on machine principals and their keys. 0 = unlimited. */
 export type QuotaKey = EntityType | (typeof principalQuotaKeys)[number];

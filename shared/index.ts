@@ -71,6 +71,9 @@ export type {
 } from './src/permissions/index.ts';
 export {
   type Access,
+  type AccessScope,
+  type AccessScopedEntityType,
+  accessScopes,
   allActionsAllowed,
   allActionsDenied,
   type BatchPermissionResult,
@@ -83,7 +86,6 @@ export {
   computeCan,
   configurePermissions,
   createActionRecord,
-  type EntityScope,
   formatBatchPermissionSummary,
   formatPermissionDecision,
   getAllDecisions,
@@ -98,8 +100,6 @@ export {
   policyMatrix,
   publicReadGrants,
   resolveCan,
-  type ScopedEntityType,
-  scopes,
   toColumnName,
   toTableName,
   validateAncestorScope,

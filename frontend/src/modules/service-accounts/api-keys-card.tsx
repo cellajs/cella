@@ -34,7 +34,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
       { path, body: { name: keyName, role: 'member', key: { name: keyName } } },
       {
         onSuccess: (created) => {
-          setSecret(created.credential?.secret ?? null);
+          setSecret(created.apiKey?.secret ?? null);
           setName('');
         },
       },

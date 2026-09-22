@@ -66,7 +66,7 @@ export const config = {
       user: 1000,
       attachment: 100,
       serviceAccount: 20,
-      credential: 100,
+      apiKey: 100,
     },
     rateLimits: {
       apiPointsPerHour: 1000,
@@ -177,7 +177,7 @@ export const config = {
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
    * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
-   * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
+   * bloat/abuse protection (apiKey-stuffing bursts, unbounded session accumulation), not a UX
    * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
    */
   maxSessionsPerUser: 10,

@@ -1,4 +1,5 @@
 import {
+  accessScopes,
   hierarchy as appHierarchy,
   type ChannelEntityType,
   publicReadGrants as configuredPublicReadGrants,
@@ -14,7 +15,6 @@ import {
   type PublicReadGrants,
   policyMatrix,
   type RowConditionName,
-  scopes,
 } from 'shared';
 import type { ActorGrant } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -310,7 +310,7 @@ export const resolveCollectionReadFilterForPolicies = ({
   hierarchy,
 }: CollectionReadScopeInput): CollectionReadFilter => {
   // A scoped credential (API key) that lacks the read scope for this type reads nothing, sysadmin or not.
-  if (!('anonymous' in actor) && !scopes.allows(actor.scopes, entityType, 'read')) {
+  if (!('anonymous' in actor) && !accessScopes.allows(actor.scopes, entityType, 'read')) {
     return { homeChannelIds: [], conditionalScopes: [] };
   }
 

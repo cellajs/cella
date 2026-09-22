@@ -1,4 +1,10 @@
-export { policyMatrix, publicReadGrants, scopes } from '../../config/permissions-config.ts';
+export { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
+export {
+  type AccessScope,
+  type AccessScopedEntityType,
+  type AccessScopes,
+  deriveAccessScopes,
+} from './access-scopes.ts';
 export {
   allActionsAllowed,
   allActionsDenied,
@@ -44,7 +50,6 @@ export type { PublicReadGrants } from './public-read.ts';
 export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions.ts';
 export { isRowCondition, matchesRowCondition } from './row-conditions.ts';
 export { toColumnName, toTableName } from './schema-naming.ts';
-export { deriveScopes, type EntityScope, type ScopedEntityType, type Scopes } from './scopes.ts';
 export type {
   CanState,
   ChannelPolicyBuilder,

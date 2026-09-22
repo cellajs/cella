@@ -3,19 +3,19 @@ import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, idInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 import {
-  mockCreatedCredentialResponse,
-  mockCredentialResponse,
+  mockApiKeyResponse,
+  mockCreatedApiKeyResponse,
   mockPaginatedServiceAccountsResponse,
   mockServiceAccountResponse,
 } from './service-accounts-mocks';
 import {
-  createCredentialBodySchema,
-  createdCredentialSchema,
+  apiKeyParamSchema,
+  apiKeySchema,
+  apiKeysResponseSchema,
+  createApiKeyBodySchema,
+  createdApiKeySchema,
   createServiceAccountBodySchema,
   createServiceAccountResponseSchema,
-  credentialParamSchema,
-  credentialSchema,
-  credentialsResponseSchema,
   serviceAccountListQuerySchema,
   serviceAccountSchema,
   updateServiceAccountBodySchema,
@@ -43,7 +43,7 @@ export const serviceAccountRoutes = {
         content: {
           'application/json': {
             schema: createServiceAccountResponseSchema,
-            example: { serviceAccount: mockServiceAccountResponse(), credential: mockCreatedCredentialResponse() },
+            example: { serviceAccount: mockServiceAccountResponse(), apiKey: mockCreatedApiKeyResponse() },
           },
         },
       },
@@ -93,10 +93,10 @@ export const serviceAccountRoutes = {
       ...errorResponseRefs,
     },
   }),
-  getCredentials: createXRoute({
-    operationId: 'getCredentials',
+  getApiKeys: createXRoute({
+    operationId: 'getApiKeys',
     method: 'get',
-    path: '/{id}/credentials',
+    path: '/{id}/keys',
     xGuard: [userGuard, tenantGuard, orgGuard],
     tags: ['service-accounts', 'cella'],
     summary: 'Get API keys',
@@ -106,16 +106,16 @@ export const serviceAccountRoutes = {
       200: {
         description: 'API keys',
         content: {
-          'application/json': { schema: credentialsResponseSchema, example: { items: [mockCredentialResponse()] } },
+          'application/json': { schema: apiKeysResponseSchema, example: { items: [mockApiKeyResponse()] } },
         },
       },
       ...errorResponseRefs,
     },
   }),
-  createCredential: createXRoute({
-    operationId: 'createCredential',
+  createApiKey: createXRoute({
+    operationId: 'createApiKey',
     method: 'post',
-    path: '/{id}/credentials',
+    path: '/{id}/keys',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['service-accounts', 'cella'],
@@ -124,30 +124,30 @@ export const serviceAccountRoutes = {
       'Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.',
     request: {
       params: idInTenantOrgParamSchema,
-      body: { required: true, content: { 'application/json': { schema: createCredentialBodySchema } } },
+      body: { required: true, content: { 'application/json': { schema: createApiKeyBodySchema } } },
     },
     responses: {
       201: {
         description: 'API key was issued',
-        content: { 'application/json': { schema: createdCredentialSchema, example: mockCreatedCredentialResponse() } },
+        content: { 'application/json': { schema: createdApiKeySchema, example: mockCreatedApiKeyResponse() } },
       },
       ...errorResponseRefs,
     },
   }),
-  revokeCredential: createXRoute({
-    operationId: 'revokeCredential',
+  revokeApiKey: createXRoute({
+    operationId: 'revokeApiKey',
     method: 'delete',
-    path: '/{id}/credentials/{credentialId}',
+    path: '/{id}/keys/{keyId}',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['service-accounts', 'cella'],
     summary: 'Revoke API key',
     description: 'Revokes an API key immediately. The row stays for the audit trail.',
-    request: { params: credentialParamSchema },
+    request: { params: apiKeyParamSchema },
     responses: {
       200: {
         description: 'API key was revoked',
-        content: { 'application/json': { schema: credentialSchema, example: mockCredentialResponse() } },
+        content: { 'application/json': { schema: apiKeySchema, example: mockApiKeyResponse() } },
       },
       ...errorResponseRefs,
     },

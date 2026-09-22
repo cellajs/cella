@@ -1,6 +1,6 @@
 import type { RouteConfig, z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
-import type { appConfig, ScopedEntityType } from 'shared';
+import type { AccessScopedEntityType, appConfig } from 'shared';
 import type { Env, OrgContext } from '#/core/context';
 
 /** Services that can gate a route, derived from appConfig.services. */
@@ -105,7 +105,7 @@ export type XToolSpec = {
   approvalRequired: boolean;
   category: string;
   /** The entity the route acts on: with the method it names the scope a token needs (`<entity>:read` | `:write`). */
-  entity: ScopedEntityType;
+  entity: AccessScopedEntityType;
 };
 
 /** A route opts in as an MCP tool by carrying this; the input schema derives from the route's `request`. */

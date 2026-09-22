@@ -71,11 +71,11 @@ describe('MCP on the substrate (Phase E)', async () => {
       body: { name: 'CI bot', role: 'admin', key: { name: 'ci', scopes: null } },
       headers: ctx.headers,
     });
-    const created = data as { serviceAccount: { id: string }; credential: { secret: string } };
+    const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
     const resource = resourceUri({ face: 'mcp', tenantId: ctx.org.tenantId, organizationId: ctx.org.id });
     const { status, body } = await clientCredentialsToken(
       as.issuer,
-      { clientId: created.serviceAccount.id, clientSecret: created.credential.secret },
+      { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret },
       { scope, resource },
     );
     expect(status).toBe(200);

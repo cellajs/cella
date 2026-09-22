@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gt, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
-import { credentialSafeColumns, credentialsTable } from '#/modules/service-accounts/credentials-db';
+import { apiKeySafeColumns, apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -60,51 +60,45 @@ export async function countServiceAccounts(ctx: DbContext, { tenantId }: InTenan
 }
 
 /** Revoked and expired keys do not count against the quota; they stay only as the audit trail. */
-export async function countLiveCredentials(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
+export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpts): Promise<number> {
   const [{ value }] = await ctx.var.db
     .select({ value: count() })
-    .from(credentialsTable)
+    .from(apiKeysTable)
     .where(
       and(
-        eq(credentialsTable.tenantId, tenantId),
-        isNull(credentialsTable.revokedAt),
-        or(isNull(credentialsTable.expiresAt), gt(credentialsTable.expiresAt, sql`now()`)),
+        eq(apiKeysTable.tenantId, tenantId),
+        isNull(apiKeysTable.revokedAt),
+        or(isNull(apiKeysTable.expiresAt), gt(apiKeysTable.expiresAt, sql`now()`)),
       ),
     );
   return value;
 }
 
-export async function findCredentialsByPrincipal(ctx: DbContext, { principalId }: { principalId: string }) {
+export async function findApiKeysByPrincipal(ctx: DbContext, { principalId }: { principalId: string }) {
   return ctx.var.db
-    .select(credentialSafeColumns)
-    .from(credentialsTable)
-    .where(eq(credentialsTable.principalId, principalId))
-    .orderBy(desc(credentialsTable.createdAt));
+    .select(apiKeySafeColumns)
+    .from(apiKeysTable)
+    .where(eq(apiKeysTable.principalId, principalId))
+    .orderBy(desc(apiKeysTable.createdAt));
 }
 
-interface ExpireCredentialOpts {
+interface ExpireApiKeyOpts {
   principalId: string;
   id: string;
   expiresAt: string;
 }
 
 /** Sets `expiresAt` on a live key of the principal for the roll overlap, never later than an expiry it already has; null when no such key exists. */
-export async function expireCredential(ctx: DbContext, { principalId, id, expiresAt }: ExpireCredentialOpts) {
+export async function expireApiKey(ctx: DbContext, { principalId, id, expiresAt }: ExpireApiKeyOpts) {
   const [row] = await ctx.var.db
-    .update(credentialsTable)
-    .set({ expiresAt: sql`LEAST(${credentialsTable.expiresAt}, ${expiresAt}::timestamp)` })
-    .where(
-      and(
-        eq(credentialsTable.id, id),
-        eq(credentialsTable.principalId, principalId),
-        isNull(credentialsTable.revokedAt),
-      ),
-    )
-    .returning({ id: credentialsTable.id });
+    .update(apiKeysTable)
+    .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamp)` })
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.principalId, principalId), isNull(apiKeysTable.revokedAt)))
+    .returning({ id: apiKeysTable.id });
   return row ?? null;
 }
 
-interface RevokeCredentialOpts {
+interface RevokeApiKeyOpts {
   principalId: string;
   id: string;
   revokedAt: string;
@@ -112,20 +106,11 @@ interface RevokeCredentialOpts {
 }
 
 /** Revokes a live key; a second call finds nothing, so the first `revokedAt` stays as the audit timestamp. */
-export async function revokeCredential(
-  ctx: DbContext,
-  { principalId, id, revokedAt, revokedBy }: RevokeCredentialOpts,
-) {
+export async function revokeApiKey(ctx: DbContext, { principalId, id, revokedAt, revokedBy }: RevokeApiKeyOpts) {
   const [row] = await ctx.var.db
-    .update(credentialsTable)
+    .update(apiKeysTable)
     .set({ revokedAt, revokedBy })
-    .where(
-      and(
-        eq(credentialsTable.id, id),
-        eq(credentialsTable.principalId, principalId),
-        isNull(credentialsTable.revokedAt),
-      ),
-    )
-    .returning(credentialSafeColumns);
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.principalId, principalId), isNull(apiKeysTable.revokedAt)))
+    .returning(apiKeySafeColumns);
   return row ?? null;
 }

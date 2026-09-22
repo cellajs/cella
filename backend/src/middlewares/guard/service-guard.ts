@@ -5,13 +5,13 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
+import { getApiKeyCache, setApiKeyCache, shouldStampLastUsed } from '#/middlewares/guard/api-key-cache';
 import { getMembershipCache, setMembershipCache } from '#/middlewares/guard/auth-cache';
-import { getCredentialCache, setCredentialCache, shouldStampLastUsed } from '#/middlewares/guard/credential-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
-import { credentialsTable } from '#/modules/service-accounts/credentials-db';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
@@ -22,18 +22,18 @@ import { log } from '#/utils/logger';
 /** Users behind access tokens have no session to cache under; the row is cached by id for the token's lifetime scale. */
 const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_000 });
 
-function touchLastUsed(credentialId: string, serviceAccountId: string): void {
-  if (!shouldStampLastUsed(credentialId)) return;
+function touchLastUsed(keyId: string, serviceAccountId: string): void {
+  if (!shouldStampLastUsed(keyId)) return;
   const at = getIsoDate();
   void Promise.all([
-    baseDb.update(credentialsTable).set({ lastUsedAt: at }).where(eq(credentialsTable.id, credentialId)),
+    baseDb.update(apiKeysTable).set({ lastUsedAt: at }).where(eq(apiKeysTable.id, keyId)),
     baseDb.update(serviceAccountsTable).set({ lastUsedAt: at }).where(eq(serviceAccountsTable.id, serviceAccountId)),
-  ]).catch((err) => log.warn('Failed to stamp credential lastUsedAt', { err, credentialId }));
+  ]).catch((err) => log.warn('Failed to stamp apiKey lastUsedAt', { err, keyId }));
 }
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
-/** The route's tenant and organization ids as the URL carries them; every machine guard binds a credential to them. */
+/** The route's tenant and organization ids as the URL carries them; every machine guard binds a apiKey to them. */
 export function routeScope(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
   const tenantId = ctx.req.param('tenantId')?.toLowerCase();
   if (!tenantId)
@@ -89,21 +89,21 @@ export async function setActorFromToken(
 }
 
 /** The key and its account in one read, cached by hash; a revoke, roll, or disable invalidates the account's keys. */
-async function resolveCredential(hash: string) {
-  const cached = getCredentialCache(hash);
+async function resolveApiKey(hash: string) {
+  const cached = getApiKeyCache(hash);
   if (cached) return cached;
   const [row] = await baseDb
-    .select({ credential: credentialsTable, account: serviceAccountsTable })
-    .from(credentialsTable)
-    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, credentialsTable.principalId))
-    .where(and(eq(credentialsTable.hash, hash)))
+    .select({ apiKey: apiKeysTable, account: serviceAccountsTable })
+    .from(apiKeysTable)
+    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.principalId))
+    .where(and(eq(apiKeysTable.hash, hash)))
     .limit(1);
-  if (row) setCredentialCache(hash, row);
+  if (row) setApiKeyCache(hash, row);
   return row;
 }
 
 /**
- * Authenticates a machine credential and sets the actor: a secret API key runs as its service account; a token from
+ * Authenticates a machine apiKey and sets the actor: a secret API key runs as its service account; a token from
  * the app's own authorization server runs as the consenting user or the account behind it. Tenant resolution stays
  * with `tenantGuard`, which checks the URL against the actor's tenant. Sessions never reach this guard; browsers never
  * pass it.
@@ -141,9 +141,9 @@ export const serviceGuard = xMiddleware(
     const parsed = parseApiKey(raw);
     if (parsed?.type !== 'secret') throw unauthorized('invalid_api_key');
 
-    const resolved = await resolveCredential(parsed.hash);
-    const credential = resolved?.credential;
-    if (!credential || credential.revokedAt || (credential.expiresAt && isExpiredDate(credential.expiresAt))) {
+    const resolved = await resolveApiKey(parsed.hash);
+    const apiKey = resolved?.apiKey;
+    if (!apiKey || apiKey.revokedAt || (apiKey.expiresAt && isExpiredDate(apiKey.expiresAt))) {
       throw unauthorized('invalid_api_key');
     }
     if (resolved.account.status !== 'active') throw unauthorized('service_account_disabled');
@@ -154,12 +154,12 @@ export const serviceGuard = xMiddleware(
       id: account.id,
       tenantId: account.tenantId,
       grants: account.grants,
-      scopes: credential.scopes,
+      scopes: apiKey.scopes,
     });
     ctx.set('isSystemAdmin', false);
     ctx.set('db', baseDb);
 
-    touchLastUsed(credential.id, account.id);
+    touchLastUsed(apiKey.id, account.id);
 
     return serviceBurstLimiter(ctx, next);
   },

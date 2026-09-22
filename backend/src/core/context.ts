@@ -1,5 +1,5 @@
 import type { HttpBindings } from '@hono/node-server';
-import type { EntityScope } from 'shared';
+import type { AccessScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -14,7 +14,7 @@ type Bindings = HttpBindings & {
 };
 
 /** A user: grants are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
-type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: readonly EntityScope[] | null };
+type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: readonly AccessScope[] | null };
 
 /** A service account behind an API key: grants are its stored bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {
@@ -22,7 +22,7 @@ type ServiceActor = {
   id: ServiceAccountId;
   tenantId: string;
   grants: ServiceGrant[];
-  scopes: readonly EntityScope[] | null;
+  scopes: readonly AccessScope[] | null;
 };
 
 /**

@@ -1,8 +1,8 @@
 import type { ChannelEntityType, EntityActionType, EntityType, ProductEntityType } from '../../types.ts';
+import { type AccessScopes, deriveAccessScopes } from './access-scopes.ts';
 import { type HierarchyOverrides, resolveHierarchy } from './engine/resolve-hierarchy.ts';
 import type { PublicReadGrants } from './public-read.ts';
 import { isRowCondition } from './row-conditions.ts';
-import { deriveScopes, type Scopes } from './scopes.ts';
 import type {
   ChannelPolicyBuilder,
   EntityActionPermissions,
@@ -64,8 +64,8 @@ const createChannelBuilders = (
 export interface PermissionsConfigResult {
   policyMatrix: PolicyMatrix;
   publicReadGrants: PublicReadGrants;
-  /** Derived from the matrix: the credential scope vocabulary. @see scopes.ts */
-  scopes: Scopes;
+  /** Derived from the matrix: the credential scope vocabulary. @see access-scopes.ts */
+  accessScopes: AccessScopes;
 }
 
 /** @see public-read.ts */
@@ -105,7 +105,7 @@ export const configurePermissions = (
     }
   }
 
-  return { policyMatrix: policies, publicReadGrants, scopes: deriveScopes(policies) };
+  return { policyMatrix: policies, publicReadGrants, accessScopes: deriveAccessScopes(policies) };
 };
 
 /** No public read grants. For tests and callers driving the engine with synthetic policies. */

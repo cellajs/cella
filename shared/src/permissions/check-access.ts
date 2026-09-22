@@ -1,6 +1,7 @@
 import { hierarchy } from '../../config/hierarchy-config.ts';
-import { policyMatrix, publicReadGrants, scopes } from '../../config/permissions-config.ts';
+import { accessScopes, policyMatrix, publicReadGrants } from '../../config/permissions-config.ts';
 import type { EntityActionType, EntityType } from '../../types.ts';
+import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 import type {
@@ -9,7 +10,6 @@ import type {
   PermissionDecision,
   SubjectForPermission,
 } from './engine/types.ts';
-import type { EntityScope } from './scopes.ts';
 
 /**
  * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
@@ -17,7 +17,7 @@ import type { EntityScope } from './scopes.ts';
  * principal id; `scopes` is a credential's mask (null or absent = unmasked).
  */
 export type PredicateActor =
-  | { userId: string; isSystemAdmin?: boolean; scopes: readonly EntityScope[] | null }
+  | { userId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 
 /**
@@ -26,7 +26,7 @@ export type PredicateActor =
  * its mask (null = unmasked) and can never fail open by omission.
  */
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly EntityScope[] | null }
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 
 /**
@@ -34,7 +34,7 @@ export type Access<T extends AccessMembership = AccessMembership> =
  * never more. Unscoped access (a session, or `scopes: null`) passes untouched.
  */
 const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean =>
-  'anonymous' in access || scopes.allows(access.scopes, entityType, action);
+  'anonymous' in access || accessScopes.allows(access.scopes, entityType, action);
 
 /** System admins bypass every check; anonymous actors hold nothing. */
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>

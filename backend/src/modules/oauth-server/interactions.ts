@@ -2,7 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import { and, eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
-import { appConfig, scopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
@@ -89,7 +89,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const resource = parseResource(String(interaction.params.resource ?? ''));
   if (!resource) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'invalid_target' } });
 
-  const requested = scopes.parse(String(interaction.params.scope ?? ''));
+  const requested = accessScopes.parse(String(interaction.params.scope ?? ''));
 
   const user = await sessionUser(c);
   const kind = client.client_kind === 'registered' ? 'registered' : 'cimd';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { AccessScope } from './access-scopes.ts';
 import { type Access, checkAccess, checkAccessBatch, checkAccessFanout } from './check-access.ts';
 import type { AccessMembership, SubjectForPermission } from './engine/types.ts';
-import type { EntityScope } from './scopes.ts';
 
 /**
  * The credential mask over the template's own policy: an organization admin may do everything with attachments, so
@@ -23,7 +23,7 @@ const subject = (id = 'a1'): SubjectForPermission =>
     row: { createdBy: 'u1', publicAt: null },
   }) as never;
 
-const admin = (scopes: readonly EntityScope[] | null): Access => ({
+const admin = (scopes: readonly AccessScope[] | null): Access => ({
   userId: 'u1',
   memberships: [membership],
   scopes,

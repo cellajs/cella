@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig, scopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { mcpRoutes } from '#/modules/mcp/mcp-routes';
 import {
@@ -20,7 +20,7 @@ app.openapi(mcpRoutes.getProtectedResourceMetadata, async (ctx) => {
     {
       resource: resourceUri(ref),
       authorization_servers: [appConfig.oauthUrl],
-      scopes_supported: [...scopes.all],
+      scopes_supported: [...accessScopes.all],
       bearer_methods_supported: ['header'],
       resource_documentation: `${appConfig.frontendUrl}/docs`,
     },

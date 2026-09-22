@@ -535,7 +535,7 @@ export const zServiceAccount = z.object({
 /**
  * An API key of a service account; the secret is never returned after creation.
  */
-export const zCredential = z.object({
+export const zApiKey = z.object({
   id: z.uuid(),
   principalId: z.uuid(),
   tenantId: z.string().max(24),
@@ -558,7 +558,7 @@ export const zCredential = z.object({
 /**
  * A newly issued API key with its plaintext secret.
  */
-export const zCreatedCredential = zCredential.and(
+export const zCreatedCredential = zApiKey.and(
   z.object({
     secret: z.string(),
   }),
@@ -2121,7 +2121,7 @@ export const zCreateServiceAccountPath = z.object({
  */
 export const zCreateServiceAccountResponse = z.object({
   serviceAccount: zServiceAccount,
-  credential: zCreatedCredential.optional(),
+  apiKey: zCreatedCredential.optional(),
 });
 
 export const zUpdateServiceAccountBody = z.object({
@@ -2146,7 +2146,7 @@ export const zUpdateServiceAccountPath = z.object({
  */
 export const zUpdateServiceAccountResponse = zServiceAccount;
 
-export const zGetCredentialsPath = z.object({
+export const zGetApiKeysPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
   id: z.string().max(50),
@@ -2155,11 +2155,11 @@ export const zGetCredentialsPath = z.object({
 /**
  * API keys
  */
-export const zGetCredentialsResponse = z.object({
-  items: z.array(zCredential),
+export const zGetApiKeysResponse = z.object({
+  items: z.array(zApiKey),
 });
 
-export const zCreateCredentialBody = z.object({
+export const zCreateApiKeyBody = z.object({
   name: z
     .string()
     .min(2)
@@ -2175,7 +2175,7 @@ export const zCreateCredentialBody = z.object({
   rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
 });
 
-export const zCreateCredentialPath = z.object({
+export const zCreateApiKeyPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
   id: z.string().max(50),
@@ -2184,16 +2184,16 @@ export const zCreateCredentialPath = z.object({
 /**
  * API key was issued
  */
-export const zCreateCredentialResponse = zCreatedCredential;
+export const zCreateApiKeyResponse = zCreatedCredential;
 
-export const zRevokeCredentialPath = z.object({
+export const zRevokeApiKeyPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
   id: z.string().max(50),
-  credentialId: z.string().max(50),
+  keyId: z.string().max(50),
 });
 
 /**
  * API key was revoked
  */
-export const zRevokeCredentialResponse = zCredential;
+export const zRevokeApiKeyResponse = zApiKey;

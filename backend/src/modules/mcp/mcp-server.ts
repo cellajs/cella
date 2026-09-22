@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, scopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getMcpTools } from '#/core/mcp-tool-registry';
@@ -82,7 +82,7 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
-      if (!scopes.allows(ctx.var.actor.scopes, tool.entity, tool.action))
+      if (!accessScopes.allows(ctx.var.actor.scopes, tool.entity, tool.action))
         throw new InsufficientScopeError(tool.scope, id);
 
       try {

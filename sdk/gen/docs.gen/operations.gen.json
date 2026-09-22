@@ -2155,10 +2155,10 @@
     }
   },
   {
-    "id": "getCredentials",
-    "hash": "tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "id": "getApiKeys",
+    "hash": "tag/service-accounts/GET/{tenantId}/{organizationId}/service-accounts/{id}/keys",
     "method": "get",
-    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/keys",
     "tags": ["service-accounts"],
     "summary": "Get API keys",
     "description": "Lists the API keys of a service account. Secrets are never returned here.",
@@ -2178,10 +2178,10 @@
     }
   },
   {
-    "id": "createCredential",
-    "hash": "tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "id": "createApiKey",
+    "hash": "tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts/{id}/keys",
     "method": "post",
-    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/keys",
     "tags": ["service-accounts"],
     "summary": "Create API key",
     "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
@@ -2201,10 +2201,10 @@
     }
   },
   {
-    "id": "revokeCredential",
-    "hash": "tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}",
+    "id": "revokeApiKey",
+    "hash": "tag/service-accounts/DELETE/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}",
     "method": "delete",
-    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}",
+    "path": "/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}",
     "tags": ["service-accounts"],
     "summary": "Revoke API key",
     "description": "Revokes an API key immediately. The row stays for the audit trail.",

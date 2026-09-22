@@ -55,8 +55,8 @@ describe('OAuth authorization server', async () => {
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
-    const created = data as { serviceAccount: { id: string }; credential: { secret: string } };
-    return { ...ctx, clientId: created.serviceAccount.id, clientSecret: created.credential.secret };
+    const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
+    return { ...ctx, clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret };
   }
 
   async function clientCredentials(client: { clientId: string; clientSecret: string }, params: Record<string, string>) {

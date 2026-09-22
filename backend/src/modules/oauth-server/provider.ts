@@ -1,14 +1,14 @@
 import { timingSafeEqual } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-provider';
-import { appConfig, scopes } from 'shared';
+import { accessScopes, appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { parseResource } from '#/modules/oauth-server/resources';
 import { principalsTable } from '#/modules/principals/principals-db';
-import { credentialsTable } from '#/modules/service-accounts/credentials-db';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -21,7 +21,7 @@ export type IssuedTokenClaims = { principal_kind: 'user' | 'service'; tenant_id:
 
 /**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
- * need. Grant types: authorization code + PKCE, refresh, client credentials. Client auth: none (CIMD public clients)
+ * need. Grant types: authorization code + PKCE, refresh, client apiKeys. Client auth: none (CIMD public clients)
  * and client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
  * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
  */
@@ -36,7 +36,7 @@ export async function createProvider(): Promise<Provider> {
     extraClientMetadata: { properties: ['client_kind'] },
     responseTypes: ['code'],
     // Entity scopes plus what a machine client asks for; `openid` stays out: this AS issues no id_tokens.
-    scopes: [...scopes.all],
+    scopes: [...accessScopes.all],
     pkce: { required: () => true },
     features: {
       devInteractions: { enabled: false },
@@ -55,7 +55,7 @@ export async function createProvider(): Promise<Provider> {
           const resource = parseResource(resourceIndicator);
           if (!resource) throw new InvalidTarget();
           return {
-            scope: scopes.all.join(' '),
+            scope: accessScopes.all.join(' '),
             audience: resourceIndicator,
             accessTokenFormat: 'jwt',
             accessTokenTTL: HOUR,
@@ -120,13 +120,13 @@ export async function createProvider(): Promise<Provider> {
     const presented = hashToken(actual);
     if (this.client_kind === 'service') {
       const keys = await baseDb
-        .select({ hash: credentialsTable.hash, expiresAt: credentialsTable.expiresAt })
-        .from(credentialsTable)
+        .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt })
+        .from(apiKeysTable)
         .where(
           and(
-            eq(credentialsTable.principalId, this.clientId),
-            eq(credentialsTable.type, 'secret'),
-            isNull(credentialsTable.revokedAt),
+            eq(apiKeysTable.principalId, this.clientId),
+            eq(apiKeysTable.type, 'secret'),
+            isNull(apiKeysTable.revokedAt),
           ),
         );
       return keys.some((key) => (!key.expiresAt || !isExpiredDate(key.expiresAt)) && safeEqual(key.hash, presented));

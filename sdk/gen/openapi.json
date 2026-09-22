@@ -2639,7 +2639,7 @@
       "CreatedCredential": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/Credential"
+            "$ref": "#/components/schemas/ApiKey"
           },
           {
             "type": "object",
@@ -2673,7 +2673,7 @@
         },
         "x-tags": ["service-accounts", "cella"]
       },
-      "Credential": {
+      "ApiKey": {
         "type": "object",
         "properties": {
           "id": {
@@ -2755,11 +2755,11 @@
         ],
         "description": "An API key of a service account; the secret is never returned after creation.",
         "example": {
-          "id": "59dd359c-2e7e-4074-a23f-6e9c390cd41f",
-          "principalId": "fed064e4-b892-4754-9f25-eb03c9345b3b",
-          "tenantId": "n6x310",
+          "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+          "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+          "tenantId": "maq9vh",
           "type": "secret",
-          "name": "input key",
+          "name": "reboot key",
           "description": null,
           "prefix": "cella-development_sk_test_Ab3d",
           "last4": "2345",
@@ -2768,8 +2768,8 @@
           "revokedAt": null,
           "revokedBy": null,
           "lastUsedAt": null,
-          "createdBy": "382c69fb-39fc-4eae-b4b0-481cbe890d80",
-          "createdAt": "2024-06-30T03:36:40.831Z"
+          "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+          "createdAt": "2024-11-05T21:01:57.922Z"
         },
         "x-tags": ["service-accounts", "cella"]
       }
@@ -12446,7 +12446,7 @@
                     "updatedBy": null,
                     "lastUsedAt": null
                   },
-                  "credential": {
+                  "apiKey": {
                     "id": "5302a43a-9867-408a-a97e-03039539daa6",
                     "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
                     "tenantId": "uiucev",
@@ -12471,7 +12471,7 @@
                     "serviceAccount": {
                       "$ref": "#/components/schemas/ServiceAccount"
                     },
-                    "credential": {
+                    "apiKey": {
                       "$ref": "#/components/schemas/CreatedCredential"
                     }
                   },
@@ -12773,14 +12773,14 @@
         }
       }
     },
-    "/{tenantId}/{organizationId}/service-accounts/{id}/credentials": {
+    "/{tenantId}/{organizationId}/service-accounts/{id}/keys": {
       "get": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "getCredentials",
+        "operationId": "getApiKeys",
         "tags": ["service-accounts", "cella"],
         "summary": "Get API keys",
         "description": "Lists the API keys of a service account. Secrets are never returned here.",
@@ -12824,11 +12824,11 @@
                 "example": {
                   "items": [
                     {
-                      "id": "59dd359c-2e7e-4074-a23f-6e9c390cd41f",
-                      "principalId": "fed064e4-b892-4754-9f25-eb03c9345b3b",
-                      "tenantId": "n6x310",
+                      "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+                      "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                      "tenantId": "maq9vh",
                       "type": "secret",
-                      "name": "input key",
+                      "name": "reboot key",
                       "description": null,
                       "prefix": "cella-development_sk_test_Ab3d",
                       "last4": "2345",
@@ -12837,8 +12837,8 @@
                       "revokedAt": null,
                       "revokedBy": null,
                       "lastUsedAt": null,
-                      "createdBy": "382c69fb-39fc-4eae-b4b0-481cbe890d80",
-                      "createdAt": "2024-06-30T03:36:40.831Z"
+                      "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+                      "createdAt": "2024-11-05T21:01:57.922Z"
                     }
                   ]
                 },
@@ -12848,7 +12848,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Credential"
+                        "$ref": "#/components/schemas/ApiKey"
                       }
                     }
                   },
@@ -12883,7 +12883,7 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "createCredential",
+        "operationId": "createApiKey",
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
@@ -13014,14 +13014,14 @@
         }
       }
     },
-    "/{tenantId}/{organizationId}/service-accounts/{id}/credentials/{credentialId}": {
+    "/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}": {
       "delete": {
         "security": [
           {
             "cookieAuth": []
           }
         ],
-        "operationId": "revokeCredential",
+        "operationId": "revokeApiKey",
         "tags": ["service-accounts", "cella"],
         "summary": "Revoke API key",
         "description": "Revokes an API key immediately. The row stays for the audit trail.",
@@ -13062,7 +13062,7 @@
               "maxLength": 50
             },
             "required": true,
-            "name": "credentialId",
+            "name": "keyId",
             "in": "path"
           }
         ],
@@ -13072,11 +13072,11 @@
             "content": {
               "application/json": {
                 "example": {
-                  "id": "59dd359c-2e7e-4074-a23f-6e9c390cd41f",
-                  "principalId": "fed064e4-b892-4754-9f25-eb03c9345b3b",
-                  "tenantId": "n6x310",
+                  "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+                  "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                  "tenantId": "maq9vh",
                   "type": "secret",
-                  "name": "input key",
+                  "name": "reboot key",
                   "description": null,
                   "prefix": "cella-development_sk_test_Ab3d",
                   "last4": "2345",
@@ -13085,11 +13085,11 @@
                   "revokedAt": null,
                   "revokedBy": null,
                   "lastUsedAt": null,
-                  "createdBy": "382c69fb-39fc-4eae-b4b0-481cbe890d80",
-                  "createdAt": "2024-06-30T03:36:40.831Z"
+                  "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+                  "createdAt": "2024-11-05T21:01:57.922Z"
                 },
                 "schema": {
-                  "$ref": "#/components/schemas/Credential"
+                  "$ref": "#/components/schemas/ApiKey"
                 }
               }
             }

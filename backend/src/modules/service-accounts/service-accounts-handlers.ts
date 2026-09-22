@@ -1,11 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { defaultHook } from '#/utils/default-hook';
-import { createCredentialOp } from './operations/create-credential';
+import { createApiKeyOp } from './operations/create-api-key';
 import { createServiceAccountOp } from './operations/create-service-account';
-import { getCredentialsOp } from './operations/get-credentials';
+import { getApiKeysOp } from './operations/get-api-keys';
 import { getServiceAccountsOp } from './operations/get-service-accounts';
-import { revokeCredentialOp } from './operations/revoke-credential';
+import { revokeApiKeyOp } from './operations/revoke-api-key';
 import { updateServiceAccountOp } from './operations/update-service-account';
 import { serviceAccountRoutes } from './service-accounts-routes';
 
@@ -27,21 +27,21 @@ app.openapi(serviceAccountRoutes.updateServiceAccount, async (ctx) => {
   return ctx.json(data, 200);
 });
 
-app.openapi(serviceAccountRoutes.getCredentials, async (ctx) => {
+app.openapi(serviceAccountRoutes.getApiKeys, async (ctx) => {
   const { id } = ctx.req.valid('param');
-  const data = await getCredentialsOp(ctx, id);
+  const data = await getApiKeysOp(ctx, id);
   return ctx.json(data, 200);
 });
 
-app.openapi(serviceAccountRoutes.createCredential, async (ctx) => {
+app.openapi(serviceAccountRoutes.createApiKey, async (ctx) => {
   const { id } = ctx.req.valid('param');
-  const data = await createCredentialOp(ctx, id, ctx.req.valid('json'));
+  const data = await createApiKeyOp(ctx, id, ctx.req.valid('json'));
   return ctx.json(data, 201);
 });
 
-app.openapi(serviceAccountRoutes.revokeCredential, async (ctx) => {
-  const { id, credentialId } = ctx.req.valid('param');
-  const data = await revokeCredentialOp(ctx, id, credentialId);
+app.openapi(serviceAccountRoutes.revokeApiKey, async (ctx) => {
+  const { id, keyId } = ctx.req.valid('param');
+  const data = await revokeApiKeyOp(ctx, id, keyId);
   return ctx.json(data, 200);
 });
 

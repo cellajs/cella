@@ -3,27 +3,27 @@ import { crc32 } from 'node:zlib';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import type { CredentialType, InsertCredentialModel } from '#/modules/service-accounts/credentials-db';
+import type { ApiKeyType, InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { hashToken } from '#/utils/hash-token';
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const SECRET_LENGTH = 32;
 const CHECKSUM_LENGTH = 6;
 
-/** The wire tag of each credential type: `<app>_sk_…` is a secret key, `<app>_pk_…` a publishable one. */
-const wireTags = { secret: 'sk', publishable: 'pk' } as const satisfies Record<CredentialType, string>;
-type WireTag = (typeof wireTags)[CredentialType];
+/** The wire tag of each key type: `<app>_sk_…` is a secret key, `<app>_pk_…` a publishable one. */
+const wireTags = { secret: 'sk', publishable: 'pk' } as const satisfies Record<ApiKeyType, string>;
+type WireTag = (typeof wireTags)[ApiKeyType];
 const typeOfTag = Object.fromEntries(Object.entries(wireTags).map(([type, tag]) => [tag, type])) as Record<
   WireTag,
-  CredentialType
+  ApiKeyType
 >;
 
 /** `live` keys exist only in production; everything else mints `test` keys. */
 type KeyEnv = 'live' | 'test';
 
-/** What a well-formed key of this app says about itself, in the columns the credentials row stores. */
-export type ParsedApiKey = Pick<InsertCredentialModel, 'prefix' | 'last4' | 'hash'> & {
-  type: CredentialType;
+/** What a well-formed key of this app says about itself, in the columns the apiKeys row stores. */
+export type ParsedApiKey = Pick<InsertApiKeyModel, 'prefix' | 'last4' | 'hash'> & {
+  type: ApiKeyType;
   env: KeyEnv;
 };
 
@@ -54,7 +54,7 @@ const keyPattern = new RegExp(
  * `<app>_sk_live_<32 base62><6 base62 crc32>`: scannable by prefix, checkable offline, dispatched on shape by the
  * guard. Returns the plaintext (shown once) and what is stored about it.
  */
-export function generateApiKey(type: CredentialType): { key: string; parsed: ParsedApiKey } {
+export function generateApiKey(type: ApiKeyType): { key: string; parsed: ParsedApiKey } {
   const env: KeyEnv = appConfig.mode === 'production' ? 'live' : 'test';
   const body = `${appConfig.slug}_${wireTags[type]}_${env}_${randomBase62(SECRET_LENGTH)}`;
   const key = `${body}${checksumOf(body)}`;

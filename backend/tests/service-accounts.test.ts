@@ -2,12 +2,12 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
   type CreateServiceAccountData,
-  createCredential,
+  createApiKey,
   createServiceAccount,
+  getApiKeys,
   getAttachments,
-  getCredentials,
   getServiceAccounts,
-  revokeCredential,
+  revokeApiKey,
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
@@ -16,7 +16,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { principalsTable } from '#/modules/principals/principals-db';
-import { credentialsTable } from '#/modules/service-accounts/credentials-db';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
@@ -51,20 +51,20 @@ describe('Service accounts and API keys', async () => {
     expect(response.status).toBe(201);
     const created = data as {
       serviceAccount: { id: string };
-      credential: { id: string; secret: string; prefix: string };
+      apiKey: { id: string; secret: string; prefix: string };
     };
-    return { ...ctx, account: created.serviceAccount, credential: created.credential, key: created.credential.secret };
+    return { ...ctx, account: created.serviceAccount, apiKey: created.apiKey, key: created.apiKey.secret };
   }
 
   it('creates an account and its first key in one step, storing only the hash', async () => {
-    const { account, credential, key } = await issueKey();
+    const { account, apiKey, key } = await issueKey();
 
     expect(key.startsWith(`${appConfig.slug}_sk_test_`)).toBe(true);
-    expect(credential.prefix).toBe(key.slice(0, credential.prefix.length));
+    expect(apiKey.prefix).toBe(key.slice(0, apiKey.prefix.length));
 
     const [principal] = await db.select().from(principalsTable).where(eq(principalsTable.id, account.id));
     expect(principal.kind).toBe('service');
-    const [row] = await db.select().from(credentialsTable).where(eq(credentialsTable.id, credential.id));
+    const [row] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, apiKey.id));
     expect(row.hash).toBe(hashToken(key));
     expect(JSON.stringify(row)).not.toContain(key);
   });
@@ -111,7 +111,7 @@ describe('Service accounts and API keys', async () => {
   });
 
   it('rejects a revoked key, a browser origin, and a foreign tenant', async () => {
-    const { org, key, account, credential, headers } = await issueKey();
+    const { org, key, account, apiKey, headers } = await issueKey();
 
     const foreign = await call(getAttachments, {
       path: { tenantId: 'other01', organizationId: org.id },
@@ -125,8 +125,8 @@ describe('Service accounts and API keys', async () => {
     });
     expect(browser.response.status).toBe(403);
 
-    const revoked = await call(revokeCredential, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: account.id, credentialId: credential.id },
+    const revoked = await call(revokeApiKey, {
+      path: { tenantId: org.tenantId, organizationId: org.id, id: account.id, keyId: apiKey.id },
       headers,
     });
     expect(revoked.response.status).toBe(200);
@@ -139,16 +139,16 @@ describe('Service accounts and API keys', async () => {
   });
 
   it('rolls a key with an overlap window', async () => {
-    const { org, account, credential, headers } = await issueKey();
-    const { data, response } = await call(createCredential, {
+    const { org, account, apiKey, headers } = await issueKey();
+    const { data, response } = await call(createApiKey, {
       path: { tenantId: org.tenantId, organizationId: org.id, id: account.id },
-      body: { name: 'deploy v2', rollFrom: credential.id, rollOverlapDays: 3 },
+      body: { name: 'deploy v2', rollFrom: apiKey.id, rollOverlapDays: 3 },
       headers,
     });
     expect(response.status).toBe(201);
     expect((data as { secret: string }).secret.startsWith(`${appConfig.slug}_sk_`)).toBe(true);
 
-    const [old] = await db.select().from(credentialsTable).where(eq(credentialsTable.id, credential.id));
+    const [old] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, apiKey.id));
     expect(old.expiresAt).not.toBeNull();
     expect(new Date(old.expiresAt as string).getTime()).toBeGreaterThan(Date.now());
   });
@@ -162,7 +162,7 @@ describe('Service accounts and API keys', async () => {
     expect(list.response.status).toBe(200);
     expect((list.data as { items: { id: string }[] }).items.map((item) => item.id)).toContain(account.id);
 
-    const keys = await call(getCredentials, {
+    const keys = await call(getApiKeys, {
       path: { tenantId: org.tenantId, organizationId: org.id, id: account.id },
       headers,
     });
@@ -175,9 +175,9 @@ describe('Service accounts and API keys', async () => {
   it('refuses an expired key and a key of a disabled account', async () => {
     const expired = await issueKey();
     await db
-      .update(credentialsTable)
+      .update(apiKeysTable)
       .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
-      .where(eq(credentialsTable.id, expired.credential.id));
+      .where(eq(apiKeysTable.id, expired.apiKey.id));
     const expiredCall = await call(getAttachments, {
       path: { tenantId: expired.org.tenantId, organizationId: expired.org.id },
       headers: machineHeaders(expired.key),
@@ -222,22 +222,22 @@ describe('Service accounts and API keys', async () => {
 
   it('refuses a roll from an unknown key without issuing anything', async () => {
     const { org, account, headers } = await issueKey();
-    const before = await db.select().from(credentialsTable).where(eq(credentialsTable.principalId, account.id));
-    const { response } = await call(createCredential, {
+    const before = await db.select().from(apiKeysTable).where(eq(apiKeysTable.principalId, account.id));
+    const { response } = await call(createApiKey, {
       path: { tenantId: org.tenantId, organizationId: org.id, id: account.id },
       body: { name: 'v2', rollFrom: '00000000-0000-4000-8000-000000000000', rollOverlapDays: 1 },
       headers,
     });
     expect(response.status).toBe(404);
-    const after = await db.select().from(credentialsTable).where(eq(credentialsTable.principalId, account.id));
+    const after = await db.select().from(apiKeysTable).where(eq(apiKeysTable.principalId, account.id));
     expect(after).toHaveLength(before.length);
   });
 
   it('refuses revoking a key through another account and keeps the first revokedAt', async () => {
     const a = await issueKey();
     const b = await issueKey();
-    const crossed = await call(revokeCredential, {
-      path: { tenantId: a.org.tenantId, organizationId: a.org.id, id: a.account.id, credentialId: b.credential.id },
+    const crossed = await call(revokeApiKey, {
+      path: { tenantId: a.org.tenantId, organizationId: a.org.id, id: a.account.id, keyId: b.apiKey.id },
       headers: a.headers,
     });
     expect(crossed.response.status).toBe(404);
@@ -246,15 +246,12 @@ describe('Service accounts and API keys', async () => {
       tenantId: a.org.tenantId,
       organizationId: a.org.id,
       id: a.account.id,
-      credentialId: a.credential.id,
+      keyId: a.apiKey.id,
     };
-    expect((await call(revokeCredential, { path, headers: a.headers })).response.status).toBe(200);
-    const [{ revokedAt }] = await db.select().from(credentialsTable).where(eq(credentialsTable.id, a.credential.id));
-    expect((await call(revokeCredential, { path, headers: a.headers })).response.status).toBe(404);
-    const [{ revokedAt: again }] = await db
-      .select()
-      .from(credentialsTable)
-      .where(eq(credentialsTable.id, a.credential.id));
+    expect((await call(revokeApiKey, { path, headers: a.headers })).response.status).toBe(200);
+    const [{ revokedAt }] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, a.apiKey.id));
+    expect((await call(revokeApiKey, { path, headers: a.headers })).response.status).toBe(404);
+    const [{ revokedAt: again }] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, a.apiKey.id));
     expect(again).toBe(revokedAt);
   });
 

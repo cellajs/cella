@@ -35,7 +35,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     ...membershipTableNames,
     'principals',
     'service_accounts',
-    'credentials',
+    'api_keys',
     'clients',
     'signing_keys',
     'oidc_payloads',

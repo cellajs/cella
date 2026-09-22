@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
-import type { CredentialModel } from '#/modules/service-accounts/credentials-db';
+import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 
@@ -29,7 +29,7 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
 const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
 const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
-export const mockCredentialResponse = (key = 'credential:default'): CredentialModel =>
+export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
     principalId: mockUuid(),
@@ -48,8 +48,8 @@ export const mockCredentialResponse = (key = 'credential:default'): CredentialMo
     createdAt: mockPastIsoDate(),
   }));
 
-export const mockCreatedCredentialResponse = (key = 'createdCredential:default') => ({
-  ...mockCredentialResponse(key),
+export const mockCreatedApiKeyResponse = (key = 'createdCredential:default') => ({
+  ...mockApiKeyResponse(key),
   secret: exampleSecret,
 });
 

@@ -159,7 +159,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   defaultRestrictions: {
     /** Hard caps per tenant on entity types and on machine principals and their keys; 0 = unlimited. */
-    quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'credential', number>>;
+    quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
     rateLimits: { apiPointsPerHour: number };
   };
 
