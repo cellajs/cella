@@ -10,6 +10,8 @@ import type {
   HandleMembershipInvitationData,
   HandleMembershipInvitationResponse,
   MeAuthData,
+  RevokeConnectedAppData,
+  RevokeConnectedAppResponse,
   ToggleMfaData,
   User,
 } from 'sdk';
@@ -22,6 +24,7 @@ import {
   getMyInvitations,
   getMyMemberships,
   handleMembershipInvitation,
+  revokeConnectedApp,
   toggleMfa,
   type UpdateMeData,
   updateMe,
@@ -51,6 +54,7 @@ export const meKeys = {
   },
   delete: {
     passkey: ['me', 'delete', 'passkey'] as const,
+    connectedApp: ['me', 'delete', 'connected-app'] as const,
     totp: ['me', 'delete', 'totp'] as const,
   },
   handleInvitation: ['me', 'handle-invitation'] as const,
@@ -62,7 +66,7 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
 export const meConnectedAppsQueryOptions = () =>
-  queryOptions<GetConnectedAppsResponse>({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
+  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
 
 export const meInvitationsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
@@ -204,3 +208,21 @@ export const useAcceptInvitationTokenMutation = () =>
     mutationFn: () => acceptInvitationToken(),
     onSuccess: (settledEntity) => onInvitationSettled(settledEntity, 'accept'),
   });
+
+/** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */
+export const useRevokeConnectedAppMutation = () => {
+  return useMutation<RevokeConnectedAppResponse, ApiError, MutationData<RevokeConnectedAppData>>({
+    mutationKey: meKeys.delete.connectedApp,
+    mutationFn: ({ path }) => revokeConnectedApp({ path }),
+    onSuccess: (_data, { path: { id } }) => {
+      queryClient.setQueryData<GetConnectedAppsResponse>(meKeys.connectedApps, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, items: oldData.items.filter((item) => item.id !== id) };
+      });
+      toaster.success(t('c:success.revoke_resource', { resource: t('c:connected_app') }));
+    },
+    onError(error) {
+      console.error('Error revoking connected app:', error);
+    },
+  });
+};
