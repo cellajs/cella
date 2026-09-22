@@ -18,7 +18,7 @@ export type AppErrorOpts = {
 
 /** Custom error class for structured API errors with i18n support. */
 export class AppError extends Error {
-  name: Error['name'];
+  override name: Error['name'];
   status: ErrorSchemaType['status'];
   type: ErrorSchemaType['type'];
   severity: ErrorSchemaType['severity'];

@@ -33,8 +33,9 @@ pnpm sdk
 3. Routes a machine may call: switch `xGuard: [userGuard, ...]` to `[actorGuard, ...]` on routes whose operations are typed `ActorContext`. Never on a route whose operation reads `ctx.var.user`.
 4. Hand-built contexts in tests (`{ var: { memberships } }`) also need `actor: { kind: 'user', id, grants: memberships, scopes: null }`; guards read `actor.grants`, and a user's grant must carry `userId` to count as a membership row.
 5. `Actor` is a union (`UserActor | ServiceActor`); code that surfaces a grant as a membership row narrows with `isMembershipRow` (`memberships/helpers/select.ts`). `ActorContext` no longer promises `organization`; operations behind `orgGuard` that read it take `OrgContext`. The shared SQL actor type is now `PredicateActor` (was `Actor`).
-6. App quotas: `defaultRestrictions.quotas` may set `serviceAccount` and `credential` (0 = unlimited; template defaults 20 and 100).
-7. Rate limiters keyed on `'userId'` keep working for sessions; use `'principalId'` for limits that must also cover keys.
+6. Id brands (`backend/src/db/utils/ids.ts`): columns referencing `users.id` are `$type<UserId>()`, columns referencing `principals.id` are `$type<PrincipalId>()`, `service_accounts.id` is `ServiceAccountId`. Plain strings still flow in everywhere; what fails to compile is a service account's id (or `actor.id`, the union) written into a user-only column. App tables with a `userId` / `createdBy` column that references `users.id` get the same `.$type<UserId>()`; product and channel tables inherit it from the column helpers. `backend/tsconfig.json` turns on `noImplicitOverride` and `noImplicitReturns` (shared is checked through it; the frontend is not there yet).
+7. App quotas: `defaultRestrictions.quotas` may set `serviceAccount` and `credential` (0 = unlimited; template defaults 20 and 100).
+8. Rate limiters keyed on `'userId'` keep working for sessions; use `'principalId'` for limits that must also cover keys.
 
 ## Verify
 

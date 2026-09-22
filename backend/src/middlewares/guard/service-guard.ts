@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import type { ServiceAccountId } from '#/db/utils/ids';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
 import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
@@ -60,7 +61,8 @@ export const serviceGuard = xMiddleware(
     const [account] = await baseDb
       .select()
       .from(serviceAccountsTable)
-      .where(eq(serviceAccountsTable.id, credential.principalId))
+      // A credential's principal is a service account in this phase; a user-owned key (PAT) would branch here.
+      .where(eq(serviceAccountsTable.id, credential.principalId as ServiceAccountId))
       .limit(1);
     if (account?.status !== 'active') throw invalidKey('service_account_disabled');
 

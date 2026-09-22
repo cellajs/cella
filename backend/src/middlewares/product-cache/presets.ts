@@ -57,6 +57,7 @@ export const productCache = (entityType: ProductEntityType): MiddlewareHandler<E
         const entityData = ctx.get('productCacheData');
         if (entityData) productCacheStore.set(key, entityData);
       });
+      return;
     },
   );
 

@@ -1,4 +1,5 @@
 import { index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import type { UserId } from '#/db/utils/ids';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -12,7 +13,8 @@ export const devicesTable = snakeCase.table(
   {
     userId: uuid()
       .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     deviceIdHash: varchar({ length: 64 }).notNull(),
     firstSeenAt: timestamp({ mode: 'string' }).notNull(),
     lastSeenAt: timestamp({ mode: 'string' }).notNull(),

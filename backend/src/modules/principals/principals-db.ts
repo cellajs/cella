@@ -1,5 +1,6 @@
 import { snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
+import type { PrincipalId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 /** Who can act and be named in provenance: a human user, or a service account behind an API key. */
@@ -13,7 +14,7 @@ export type PrincipalKind = (typeof principalKinds)[number];
  * (helpers/insert-principals.ts), always in the same transaction as the kind's row.
  */
 export const principalsTable = snakeCase.table('principals', {
-  id: uuid().primaryKey().$defaultFn(generateId),
+  id: uuid().primaryKey().$defaultFn(generateId).$type<PrincipalId>(),
   kind: varchar({ enum: principalKinds }).notNull(),
   createdAt: timestampColumns.createdAt,
 });

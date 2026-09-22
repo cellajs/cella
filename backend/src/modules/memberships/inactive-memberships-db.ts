@@ -3,6 +3,7 @@ import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -22,14 +23,17 @@ export const inactiveMembershipsTable = snakeCase.table(
     channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
     channelId: uuid('channel_id').notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
-    userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
     role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     rejectedAt: timestamp({ mode: 'string' }),
     remindedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
       .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     organizationId: uuid().notNull(),
     ...membershipChannelColumns(),
   },

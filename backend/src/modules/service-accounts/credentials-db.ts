@@ -3,6 +3,7 @@ import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle
 import type { EntityScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { PrincipalId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { principalsTable } from '#/modules/principals/principals-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -22,7 +23,8 @@ export const credentialsTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     principalId: uuid()
       .notNull()
-      .references(() => principalsTable.id, { onDelete: 'cascade' }),
+      .references(() => principalsTable.id, { onDelete: 'cascade' })
+      .$type<PrincipalId>(),
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
@@ -38,7 +40,9 @@ export const credentialsTable = snakeCase.table(
     expiresAt: timestamp({ mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),
     lastUsedAt: timestamp({ mode: 'string' }),
-    createdBy: uuid().references(() => principalsTable.id, { onDelete: 'set null' }),
+    createdBy: uuid()
+      .references(() => principalsTable.id, { onDelete: 'set null' })
+      .$type<PrincipalId>(),
     createdAt: timestampColumns.createdAt,
   },
   (table) => [

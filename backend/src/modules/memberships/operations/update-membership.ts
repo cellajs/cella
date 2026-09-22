@@ -17,7 +17,8 @@ interface UpdateMembershipInput {
 
 /** User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership (D9). */
 export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
-  const actorId = ctx.var.actor.id;
+  // `memberships.updatedBy` is a user id: the type rejects `actor.id`, which could be a service account.
+  const actorId = ctx.var.user.id;
   const memberships = ctx.var.memberships;
 
   const { role, archived, muted, displayOrder } = input;

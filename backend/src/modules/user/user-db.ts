@@ -2,6 +2,7 @@ import { boolean, foreignKey, index, jsonb, snakeCase, text, uuid, varchar } fro
 import { appConfig, type UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { principalsTable } from '#/modules/principals/principals-db';
 
@@ -18,7 +19,8 @@ export const usersTable = snakeCase.table(
     id: uuid()
       .primaryKey()
       .$defaultFn(generateId)
-      .references(() => principalsTable.id, { onDelete: 'cascade' }),
+      .references(() => principalsTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     entityType: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
@@ -38,7 +40,7 @@ export const usersTable = snakeCase.table(
       .notNull()
       .default({} as UserFlags),
     updatedAt: timestampColumns.updatedAt,
-    updatedBy: uuid(),
+    updatedBy: uuid().$type<UserId>(),
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),

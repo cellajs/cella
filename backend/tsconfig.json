@@ -2,6 +2,9 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+    // Backend and shared only: the frontend has pre-existing implicit returns to clean up first.
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
 
     "allowImportingTsExtensions": true,
 

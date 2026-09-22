@@ -1,6 +1,7 @@
 import { index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -10,7 +11,8 @@ export const totpsTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     userId: uuid()
       .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     secret: varchar({ length: maxLength.field }).notNull(),
     createdAt: timestampColumns.createdAt,
   },

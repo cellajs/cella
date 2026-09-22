@@ -1,6 +1,7 @@
 import type { HttpBindings } from '@hono/node-server';
 import type { ChannelEntityType, EntityRole, EntityScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
+import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
@@ -20,12 +21,12 @@ export interface ServiceGrant {
 }
 
 /** A signed-in user: grants are its membership rows, unmasked. */
-type UserActor = { kind: 'user'; id: string; grants: MembershipBaseModel[]; scopes: null };
+type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: null };
 
 /** A service account behind an API key: grants are its stored bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {
   kind: 'service';
-  id: string;
+  id: ServiceAccountId;
   tenantId: string;
   grants: ServiceGrant[];
   scopes: EntityScope[] | null;

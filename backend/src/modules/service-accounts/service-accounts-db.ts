@@ -2,6 +2,7 @@ import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/p
 import { generateId } from 'shared/utils/entity-id';
 import type { ServiceGrant } from '#/core/context';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { PrincipalId, ServiceAccountId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { principalsTable } from '#/modules/principals/principals-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -19,7 +20,8 @@ export const serviceAccountsTable = snakeCase.table(
     id: uuid()
       .primaryKey()
       .$defaultFn(generateId)
-      .references(() => principalsTable.id, { onDelete: 'cascade' }),
+      .references(() => principalsTable.id, { onDelete: 'cascade' })
+      .$type<ServiceAccountId>(),
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
@@ -27,7 +29,9 @@ export const serviceAccountsTable = snakeCase.table(
     description: varchar({ length: maxLength.field }),
     status: varchar({ enum: serviceAccountStatuses }).notNull().default('active'),
     grants: jsonb().$type<ServiceGrant[]>().notNull().default([]),
-    createdBy: uuid().references(() => principalsTable.id, { onDelete: 'set null' }),
+    createdBy: uuid()
+      .references(() => principalsTable.id, { onDelete: 'set null' })
+      .$type<PrincipalId>(),
     createdAt: timestampColumns.createdAt,
     updatedAt: timestampColumns.updatedAt,
     lastUsedAt: timestamp({ mode: 'string' }),

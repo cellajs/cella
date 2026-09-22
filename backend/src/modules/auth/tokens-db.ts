@@ -2,6 +2,7 @@ import { index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -17,11 +18,15 @@ export const tokensTable = snakeCase.table(
     singleUseToken: varchar({ length: maxLength.field }),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
-    userId: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     identityId: uuid().references(() => identitiesTable.id, { onDelete: 'cascade' }),
     inactiveMembershipId: uuid(),
     redirectPath: varchar({ length: maxLength.field }),
-    createdBy: uuid().references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdBy: uuid()
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
     invokedAt: timestamp({ withTimezone: true, mode: 'string' }),
