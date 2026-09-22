@@ -19,7 +19,7 @@ const membership = (tenantId: string) =>
     userId: 'u1',
   }) as never;
 
-type Actor = { kind: 'user' | 'service'; id: string; grants: unknown[]; scopes: null; tenantId?: string };
+type Actor = { kind: 'user' | 'service'; id: string; bindings: unknown[]; scopes: null; tenantId?: string };
 
 const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; tenantId?: string | undefined }) => ({
   req: { param: (name: string) => (name === 'tenantId' ? opts.tenantId : undefined) },
@@ -42,12 +42,12 @@ const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
   throw new Error('expected tenantGuard to throw');
 };
 
-const user = (grants: unknown[]): Actor => ({ kind: 'user', id: 'u1', grants, scopes: null });
-const service = (tenantId: string, grants: unknown[] = [membership(tenantId)]): Actor => ({
+const user = (bindings: unknown[]): Actor => ({ kind: 'user', id: 'u1', bindings, scopes: null });
+const service = (tenantId: string, bindings: unknown[] = [membership(tenantId)]): Actor => ({
   kind: 'service',
   id: 'sa1',
   tenantId,
-  grants,
+  bindings,
   scopes: null,
 });
 
@@ -71,7 +71,7 @@ describe('tenantGuard', () => {
 
   it('admits a system admin and the tenant creator without a membership', async () => {
     expect(await run(mockCtx({ actor: user([]), isSystemAdmin: true, tenantId: TENANT_ID }))).toHaveBeenCalled();
-    const creator: Actor = { kind: 'user', id: 'founder', grants: [], scopes: null };
+    const creator: Actor = { kind: 'user', id: 'founder', bindings: [], scopes: null };
     expect(await run(mockCtx({ actor: creator, tenantId: TENANT_ID }))).toHaveBeenCalled();
   });
 

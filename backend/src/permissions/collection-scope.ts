@@ -16,7 +16,7 @@ import {
   policyMatrix,
   type RowConditionName,
 } from 'shared';
-import type { ActorGrant } from '#/core/context';
+import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 
 const roleReadValue = (
@@ -78,7 +78,7 @@ interface ScopeAccumulator {
 /** The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list. */
 const resolveScopes = (
   policies: PolicyMatrix,
-  memberships: ActorGrant[],
+  memberships: ActorBinding[],
   entityType: ProductEntityType,
   organizationId: string,
   elevatedGrants: ReadonlySet<string> | undefined,
@@ -260,7 +260,7 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEn
 export interface CollectionReadScopeInput {
   /** Policy set. The bound wrapper injects the app's; parity tests pass synthetic ones. */
   policies: PolicyMatrix;
-  memberships: ActorGrant[];
+  memberships: ActorBinding[];
   entityType: ProductEntityType;
   organizationId: string;
   /** Who is asking. Carries the system-admin bypass; required so no call site can forget it. */
@@ -280,7 +280,7 @@ export interface CollectionReadScopeInput {
  * @throws AppError 403 `forbidden` when a requested id is outside the caller's readable scope.
  */
 export const resolveCollectionReadFilter = (
-  memberships: ActorGrant[],
+  memberships: ActorBinding[],
   entityType: ProductEntityType,
   organizationId: string,
   actor: PredicateActor,

@@ -2,7 +2,7 @@
 
 ## What & why
 
-Two new tables, `service_accounts` (a machine principal: tenant-scoped, role bindings in `grants`, disabled never
+Two new tables, `service_accounts` (a machine principal: tenant-scoped, role bindings in `bindings`, disabled never
 deleted) and `credentials` (opaque API keys, hash only, `scopes` mask). `serviceGuard` authenticates
 `Authorization: Bearer <app>_sk_live_…` (or `x-api-key`) as that account; `actorGuard` accepts a session or a key on
 routes whose operations take `ActorContext`. Scopes are derived from the policy matrix (`scopes` next to

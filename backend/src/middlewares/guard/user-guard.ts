@@ -46,7 +46,7 @@ export const userGuard = xMiddleware(
           setMembershipCache(cachedSession.user.id, memberships);
         }
         ctx.set('memberships', memberships);
-        ctx.set('actor', { kind: 'user', id: cachedSession.user.id, grants: memberships, scopes: null });
+        ctx.set('actor', { kind: 'user', id: cachedSession.user.id, bindings: memberships, scopes: null });
 
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
@@ -90,7 +90,7 @@ export const userGuard = xMiddleware(
       });
 
       ctx.set('memberships', memberships);
-      ctx.set('actor', { kind: 'user', id: user.id, grants: memberships, scopes: null });
+      ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 

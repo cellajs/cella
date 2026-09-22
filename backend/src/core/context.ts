@@ -4,7 +4,7 @@ import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
-import type { ServiceGrant } from '#/modules/service-accounts/service-accounts-db';
+import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 import type { UserModel } from '#/modules/user/user-db';
 
@@ -13,24 +13,24 @@ type Bindings = HttpBindings & {
   /* ... */
 };
 
-/** A user: grants are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
-type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: readonly AccessScope[] | null };
+/** A user: its bindings are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
+type UserActor = { kind: 'user'; id: UserId; bindings: MembershipBaseModel[]; scopes: readonly AccessScope[] | null };
 
-/** A service account behind an API key: grants are its stored bindings, `scopes` the key's mask (null = unmasked). */
+/** A service account behind an API key: `bindings` are its stored role bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {
   kind: 'service';
   id: ServiceAccountId;
   tenantId: string;
-  grants: ServiceGrant[];
+  bindings: RoleBinding[];
   scopes: readonly AccessScope[] | null;
 };
 
 /**
  * The principal a request runs as, with the role bindings the permission engine reads. `id` is what provenance
- * columns and the engine's `own` condition compare against; a grant is read for its channel, organization and role.
+ * columns and the engine's `own` condition compare against; a binding is read for its channel, organization and role.
  */
 export type Actor = UserActor | ServiceActor;
-export type ActorGrant = Actor['grants'][number];
+export type ActorBinding = Actor['bindings'][number];
 
 /** Minimal context for query functions that only need a database connection. */
 export type DbContext = {
@@ -74,7 +74,7 @@ export type Env = {
     isSystemAdmin: boolean;
     organization: OrganizationModel & { membership: MembershipBaseModel | null };
     organizationId: string;
-    /** User-only sugar for `actor.grants`, with the inviter's id; a service actor has no memberships. */
+    /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
     sessionToken: string;
     /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */

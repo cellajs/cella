@@ -48,7 +48,7 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     var: {
       user,
       userId: user.id,
-      actor: { kind: 'user', id: user.id, grants: memberships, scopes: null },
+      actor: { kind: 'user', id: user.id, bindings: memberships, scopes: null },
       isSystemAdmin: false,
       memberships,
       db: baseDb,

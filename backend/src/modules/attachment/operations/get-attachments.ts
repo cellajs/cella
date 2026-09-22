@@ -33,7 +33,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const homeChannelId = await resolveAttachmentHomeScope(ctx, channelId);
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(
-    ctx.var.actor.grants,
+    ctx.var.actor.bindings,
     'attachment',
     organizationId,
     actor,

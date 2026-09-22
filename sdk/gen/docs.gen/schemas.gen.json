@@ -1574,7 +1574,7 @@
           "required": true,
           "enum": ["active", "disabled"]
         },
-        "grants": {
+        "bindings": {
           "type": "array",
           "required": true,
           "itemType": "object",
@@ -1596,7 +1596,7 @@
             }
           }
         },
-        "clientId": {
+        "oauthClientId": {
           "type": ["string", "null"],
           "required": true,
           "maxLength": 255
@@ -1634,7 +1634,7 @@
       "name": "system bot",
       "description": "Use the mobile TCP application, then you can reboot the multi-byte sensor!",
       "status": "active",
-      "grants": [
+      "bindings": [
         {
           "channelType": "organization",
           "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
@@ -1642,7 +1642,7 @@
           "role": "member"
         }
       ],
-      "clientId": null,
+      "oauthClientId": null,
       "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
       "createdAt": "2024-09-01T22:49:17.262Z",
       "updatedAt": "2024-09-01T22:49:17.262Z",

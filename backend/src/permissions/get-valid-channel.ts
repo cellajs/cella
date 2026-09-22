@@ -1,14 +1,14 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
-import type { ActorContext, ActorGrant } from '#/core/context';
+import type { ActorBinding, ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
-import { accessFrom, type GrantOf } from '#/permissions/access';
+import { accessFrom, type BindingOf } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
 /** `membership` is the grant that allowed the action: a membership row for a user, a stored binding for a service. */
-export interface ValidChannelResult<T extends ChannelEntityType, G extends ActorGrant = ActorGrant> {
+export interface ValidChannelResult<T extends ChannelEntityType, G extends ActorBinding = ActorBinding> {
   entity: EntityModel<T>;
   membership: G | null;
 }
@@ -26,7 +26,7 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidChannelResult<T, GrantOf<C>>> => {
+): Promise<ValidChannelResult<T, BindingOf<C>>> => {
   const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug });
 
   // Cross-tenant routes set no scope and the organization row carries no organizationId, so only ids

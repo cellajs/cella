@@ -38,8 +38,8 @@ export const tenantGuard = xMiddleware(
     // membership in the tenant, is system admin, or created it (bootstrap, before any organization or membership exists).
     const allowed =
       actor.kind === 'service'
-        ? actor.grants.length > 0
-        : ctx.var.isSystemAdmin || actor.grants.some((m) => m.tenantId === tenantId) || tenant.createdBy === actor.id;
+        ? actor.bindings.length > 0
+        : ctx.var.isSystemAdmin || actor.bindings.some((m) => m.tenantId === tenantId) || tenant.createdBy === actor.id;
     if (!allowed) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
 
     // TODO(sso): Enforce non-empty tenant auth strategies for user actors, exempting system administrators.

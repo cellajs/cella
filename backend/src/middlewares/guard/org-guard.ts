@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { ActorGrant } from '#/core/context';
+import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { isMembershipRow } from '#/modules/memberships/helpers/select';
@@ -25,8 +25,8 @@ export const orgGuard = xMiddleware(
       throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
 
     const db = ctx.var.db;
-    // Role bindings of whoever is acting: a user's memberships, or a service account's grants.
-    const memberships: readonly ActorGrant[] | undefined = ctx.var.actor?.grants;
+    // Role bindings of whoever is acting: a user's memberships, or a service account's stored bindings.
+    const memberships: readonly ActorBinding[] | undefined = ctx.var.actor?.bindings;
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 

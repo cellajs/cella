@@ -257,7 +257,7 @@ describe('Service accounts and API keys', async () => {
 
   it('refuses a service account without a grant at the tenant door', async () => {
     const { org, account, key } = await issueKey();
-    await db.update(serviceAccountsTable).set({ grants: [] }).where(eq(serviceAccountsTable.id, account.id));
+    await db.update(serviceAccountsTable).set({ bindings: [] }).where(eq(serviceAccountsTable.id, account.id));
     const { response } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       headers: machineHeaders(key),

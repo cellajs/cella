@@ -21,7 +21,7 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
   const { data } = useQuery(apiKeysQueryOptions(path, account.id));
   const { mutate: revoke, isPending } = useRevokeApiKeyMutation();
   const live = (data?.items ?? []).filter((apiKey) => !apiKey.revokedAt);
-  const role = account.grants[0]?.role;
+  const role = account.bindings[0]?.role;
 
   const handleRevoke = (apiKey: ApiKey) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));

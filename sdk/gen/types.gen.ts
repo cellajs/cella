@@ -594,13 +594,13 @@ export type ServiceAccount = {
   name: string;
   description: string | null;
   status: 'active' | 'disabled';
-  grants: Array<{
+  bindings: Array<{
     channelType: 'organization';
     channelId: string;
     organizationId: string;
     role: 'admin' | 'member';
   }>;
-  clientId: string | null;
+  oauthClientId: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;

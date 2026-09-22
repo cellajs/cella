@@ -33,7 +33,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
       tenantId,
       name: input.name,
       description: input.description,
-      grants: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
+      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
       createdBy: creatorId,
     });
     const issued = input.key

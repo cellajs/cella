@@ -10,7 +10,7 @@ import { principalsTable } from '#/modules/principals/principals-db';
  * Metadata Document and the user's consent is the gate. Service accounts are not rows here either; their
  * `client_credentials` client is the account itself, authenticated with its secret key.
  */
-export const clientsTable = snakeCase.table('clients', {
+export const oauthClientsTable = snakeCase.table('oauth_clients', {
   /** The `client_id`: an opaque id for registered apps (CIMD clients use an HTTPS URL and are never stored). */
   id: varchar({ length: maxLength.field }).primaryKey(),
   name: varchar({ length: maxLength.field }).notNull(),
@@ -27,4 +27,4 @@ export const clientsTable = snakeCase.table('clients', {
   updatedAt: timestampColumns.updatedAt,
 });
 
-export type ClientModel = typeof clientsTable.$inferSelect;
+export type OauthClientModel = typeof oauthClientsTable.$inferSelect;

@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
-import { clientsTable } from '#/modules/oauth-server/clients-db';
+import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -26,7 +26,7 @@ async function findClient(id: string): Promise<AppClientMetadata | undefined> {
 }
 
 async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
-  const [app] = await baseDb.select().from(clientsTable).where(eq(clientsTable.id, id)).limit(1);
+  const [app] = await baseDb.select().from(oauthClientsTable).where(eq(oauthClientsTable.id, id)).limit(1);
   if (app) {
     return {
       client_id: app.id,

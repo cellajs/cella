@@ -516,7 +516,7 @@ export const zServiceAccount = z.object({
   name: z.string().max(255),
   description: z.string().max(255).nullable(),
   status: z.enum(['active', 'disabled']),
-  grants: z.array(
+  bindings: z.array(
     z.object({
       channelType: z.enum(['organization']),
       channelId: z.string().max(50),
@@ -524,7 +524,7 @@ export const zServiceAccount = z.object({
       role: z.enum(['admin', 'member']),
     }),
   ),
-  clientId: z.string().max(255).nullable(),
+  oauthClientId: z.string().max(255).nullable(),
   createdBy: z.uuid().nullable(),
   updatedBy: z.uuid().nullable(),
   createdAt: z.string(),

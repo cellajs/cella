@@ -146,7 +146,7 @@ async function refusalFor(
     .from(serviceAccountsTable)
     .where(
       and(
-        eq(serviceAccountsTable.clientId, clientId),
+        eq(serviceAccountsTable.oauthClientId, clientId),
         eq(serviceAccountsTable.tenantId, resource.tenantId),
         eq(serviceAccountsTable.status, 'active'),
       ),

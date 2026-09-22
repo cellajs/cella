@@ -13,7 +13,7 @@ const organizationRoles = hierarchy.getRoles('organization') as [EntityRole, ...
 // The template configuration always carries a policy, so the vocabulary is never empty where keys are issued.
 const scopeEnum = z.enum(accessScopes.all as [AccessScope, ...AccessScope[]]);
 
-const serviceGrantSchema = z.object({
+const roleBindingSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),
   channelId: validIdSchema,
   organizationId: validIdSchema,
@@ -28,7 +28,7 @@ export const serviceAccountSchema = z
   .object({
     ...createSelectSchema(serviceAccountsTable).shape,
     status: z.enum(serviceAccountStatuses),
-    grants: z.array(serviceGrantSchema),
+    bindings: z.array(roleBindingSchema),
   })
   .openapi('ServiceAccount', {
     description: 'A machine principal: the actor an API key runs as, with its role bindings.',

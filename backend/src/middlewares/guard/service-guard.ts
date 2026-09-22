@@ -68,7 +68,7 @@ export async function setActorFromToken(
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
-    ctx.set('actor', { kind: 'user', id: user.id, grants: memberships, scopes: token.scopes });
+    ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
   } else {
     const [account] = await baseDb
       .select()
@@ -80,7 +80,7 @@ export async function setActorFromToken(
       kind: 'service',
       id: account.id,
       tenantId: account.tenantId,
-      grants: account.grants,
+      bindings: account.bindings,
       scopes: token.scopes,
     });
   }
@@ -153,7 +153,7 @@ export const serviceGuard = xMiddleware(
       kind: 'service',
       id: account.id,
       tenantId: account.tenantId,
-      grants: account.grants,
+      bindings: account.bindings,
       scopes: apiKey.scopes,
     });
     ctx.set('isSystemAdmin', false);

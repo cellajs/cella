@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { clientsTable } from '#/modules/oauth-server/clients-db';
+import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from './fixtures';
@@ -86,7 +86,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   async function userToken(scope: string, ctx?: Awaited<ReturnType<typeof orgWithAdmin>>) {
     const owner = ctx ?? (await orgWithAdmin());
     await db
-      .insert(clientsTable)
+      .insert(oauthClientsTable)
       .values({ id: CLIENT_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] })
       .onConflictDoNothing();
     const { data } = await call(createServiceAccount, {
@@ -97,7 +97,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const installation = (data as { serviceAccount: { id: string } }).serviceAccount;
     await db
       .update(serviceAccountsTable)
-      .set({ clientId: CLIENT_ID })
+      .set({ oauthClientId: CLIENT_ID })
       .where(eq(serviceAccountsTable.id, installation.id));
 
     const resource = resourceUri({ face: 'mcp', tenantId: owner.org.tenantId, organizationId: owner.org.id });
