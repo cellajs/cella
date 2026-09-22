@@ -1,4 +1,4 @@
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
@@ -7,12 +7,11 @@ import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions';
 
 export async function getOrganizationOp(
-  ctx: AuthContext,
+  ctx: ActorContext,
   id: string,
   tenantId: string,
   opts: { bySlug?: boolean; include: string[] },
 ) {
-  const user = ctx.var.user;
   const { bySlug, include } = opts;
 
   const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', bySlug);
@@ -31,7 +30,7 @@ export async function getOrganizationOp(
     includeCounts
       ? getChannelCounts(ctx, { entityType: organization.entityType, entityId: organization.id })
       : undefined,
-    withAuditUser(ctx, organization, user),
+    withAuditUser(ctx, organization),
   ]);
 
   const included: { counts?: typeof counts; membership?: ReturnType<typeof toMembershipBase> } = {};

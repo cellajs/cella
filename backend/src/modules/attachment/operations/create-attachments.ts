@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
@@ -17,7 +17,7 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
-export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAttachmentsInput) {
+export async function createAttachmentsOp(ctx: ActorContext, rawInput: CreateAttachmentsInput) {
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;
@@ -58,7 +58,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
       tenantId: organization.tenantId,
       organizationId: organization.id,
       createdAt: now,
-      createdBy: ctx.var.user.id,
+      createdBy: ctx.var.principalId,
       stx: buildStx(stx),
     };
 
@@ -77,7 +77,7 @@ export async function createAttachmentsOp(ctx: AuthContext, rawInput: CreateAtta
 
   log.info('Attachments created', { count: createdAttachments.length });
 
-  const attachmentResponses = await withAuditUsers(ctx, createdAttachments, ctx.var.user);
+  const attachmentResponses = await withAuditUsers(ctx, createdAttachments);
 
   return { data: attachmentResponses, rejectedIds: [] as string[] };
 }

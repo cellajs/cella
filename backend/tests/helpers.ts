@@ -17,6 +17,7 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
@@ -28,7 +29,7 @@ export type ErrorResponse = z.infer<typeof apiErrorSchema>;
 /** User with a verified email, for OAuth/passkey tests. */
 export async function createUser(email: string) {
   const userRecord = mockUser({ email });
-  const [user] = await db.insert(usersTable).values(userRecord).returning();
+  const [user] = await insertUsers(db, [userRecord]);
   await db.insert(emailsTable).values(mockEmail(user));
   return user;
 }
@@ -97,7 +98,7 @@ export function passkeyAssertion(opts: { credentialId: string; challenge?: strin
 
 export async function createTestUser(email: string, verified = true) {
   const userRecord = mockUser({ email });
-  const [user] = await db.insert(usersTable).values(userRecord).returning();
+  const [user] = await insertUsers(db, [userRecord]);
 
   const unsubscribeTokenRecord = await mockUnsubscribeToken(user);
   await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();

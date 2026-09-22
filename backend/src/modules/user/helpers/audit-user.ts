@@ -103,15 +103,3 @@ export async function withAuditUser<T extends { createdBy: string | null; update
   const [result] = await withAuditUsers(ctx, [entity], knownUsersInput);
   return result;
 }
-
-/** Audit-user hydration without DB queries: the current user becomes updatedBy and createdBy is stubbed null. */
-export function withAuditUserLite<T extends { createdBy: string | null; updatedBy?: string | null }>(
-  entity: T,
-  currentUser: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
-): WithAuditUsers<T> {
-  return {
-    ...(entity as Omit<T, 'createdBy' | 'updatedBy'>),
-    createdBy: null,
-    updatedBy: toUserMinimalBase(currentUser),
-  } as WithAuditUsers<T>;
-}

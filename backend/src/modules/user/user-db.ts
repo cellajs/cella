@@ -3,15 +3,22 @@ import { appConfig, type UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { principalsTable } from '#/modules/principals/principals-db';
 
 const languagesEnum = appConfig.languages;
 
-/** Users table. Closely related to `emailsTable` for email verification. */
+/**
+ * Users table. Closely related to `emailsTable` for email verification. The id is a `principals` row of kind `user`,
+ * written first by `insertUsers`; provenance columns on content reference `principals`, not this table.
+ */
 export const usersTable = snakeCase.table(
   'users',
   {
     createdAt: timestampColumns.createdAt,
-    id: uuid().primaryKey().$defaultFn(generateId),
+    id: uuid()
+      .primaryKey()
+      .$defaultFn(generateId)
+      .references(() => principalsTable.id, { onDelete: 'cascade' }),
     entityType: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),

@@ -935,6 +935,9 @@
           "logId": {
             "type": "string"
           },
+          "requestId": {
+            "type": "string"
+          },
           "path": {
             "type": "string"
           },
@@ -2328,7 +2331,7 @@
             "enum": ["admin", "member"]
           },
           "createdBy": {
-            "type": "string",
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "updatedAt": {

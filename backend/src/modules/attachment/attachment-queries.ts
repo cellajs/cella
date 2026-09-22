@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { AuthContext, DbContext } from '#/core/context';
+import type { ActorContext, DbContext } from '#/core/context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 
@@ -11,7 +11,7 @@ interface FindAttachmentsByStxMutationIdOpts {
 }
 
 export const findAttachmentsByStxMutationId = async (
-  ctx: AuthContext,
+  ctx: ActorContext,
   { mutationId }: FindAttachmentsByStxMutationIdOpts,
 ) => {
   const { db } = ctx.var;
@@ -34,7 +34,7 @@ interface UpdateAttachmentOpts {
   values: Partial<typeof attachmentsTable.$inferInsert>;
 }
 
-export const updateAttachment = async (ctx: AuthContext, { id, values }: UpdateAttachmentOpts) => {
+export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {
   const { db } = ctx.var;
   const [updated] = await db
     .update(attachmentsTable)
@@ -51,7 +51,7 @@ interface DeleteAttachmentsByIdsOpts {
 }
 
 export const deleteAttachmentsByIds = async (
-  ctx: AuthContext,
+  ctx: ActorContext,
   { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
 ) => {
   const { db } = ctx.var;
@@ -72,7 +72,7 @@ interface FindAttachmentsByIdsOpts {
 }
 
 /** Unknown, deleted and out-of-scope ids are absent; the caller treats absence as rejection. */
-export const findAttachmentsByIds = async (ctx: AuthContext, { ids }: FindAttachmentsByIdsOpts) => {
+export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
   return db
     .select()

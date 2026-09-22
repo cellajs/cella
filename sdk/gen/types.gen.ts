@@ -208,6 +208,7 @@ export type ApiError = {
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   logId?: string;
+  requestId?: string;
   path?: string;
   method?: string;
   timestamp?: string;
@@ -550,7 +551,7 @@ export type Membership = {
   channelId: string;
   userId: string;
   role: 'admin' | 'member';
-  createdBy: string;
+  createdBy: string | null;
   updatedAt: string | null;
   updatedBy: string | null;
   archived: boolean;

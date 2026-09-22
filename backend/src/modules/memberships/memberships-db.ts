@@ -28,9 +28,7 @@ export const membershipsTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
-    createdBy: uuid()
-      .notNull()
-      .references(() => usersTable.id, { onDelete: 'set null' }),
+    createdBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
     updatedAt: timestampColumns.updatedAt,
     updatedBy: uuid().references(() => usersTable.id, { onDelete: 'set null' }),
     archived: boolean().default(false).notNull(),

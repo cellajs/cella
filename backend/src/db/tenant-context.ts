@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import type { DbOrTx, Tx } from './db';
 import { baseDb } from './db';
 
@@ -12,8 +12,8 @@ async function setSessionVars(tx: Tx, tenantId: string, userId: string, includeD
   `);
 }
 
-async function setTenantSessionVars(tx: Tx, ctx: AuthContext, includeDeleted: boolean): Promise<void> {
-  await setSessionVars(tx, ctx.var.tenantId, ctx.var.userId, includeDeleted);
+async function setTenantSessionVars(tx: Tx, ctx: ActorContext, includeDeleted: boolean): Promise<void> {
+  await setSessionVars(tx, ctx.var.tenantId, ctx.var.principalId, includeDeleted);
 }
 
 /**
@@ -40,13 +40,13 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
  * list whose per-row subqueries read RLS-guarded product tables.
  */
 export async function tenantReadAs<T>(
-  ctx: AuthContext,
+  ctx: ActorContext,
   tenantId: string,
-  fn: (readCtx: AuthContext) => Promise<T>,
+  fn: (readCtx: ActorContext) => Promise<T>,
 ): Promise<T> {
   return baseDb.transaction(
     async (tx) => {
-      await setSessionVars(tx, tenantId, ctx.var.userId, false);
+      await setSessionVars(tx, tenantId, ctx.var.principalId, false);
       return fn({ var: { ...ctx.var, db: tx } });
     },
     { accessMode: 'read only' },
@@ -54,7 +54,7 @@ export async function tenantReadAs<T>(
 }
 
 /** Read-only tenant RLS transaction for normal product queries. */
-export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext) => Promise<T>): Promise<T> {
+export async function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   // Fold READ ONLY into BEGIN, saving one DB round trip per read.
   return baseDb.transaction(
     async (tx) => {
@@ -66,8 +66,8 @@ export async function tenantRead<T>(ctx: AuthContext, fn: (readCtx: AuthContext)
 }
 
 export async function tenantReadIncludingDeleted<T>(
-  ctx: AuthContext,
-  fn: (readCtx: AuthContext) => Promise<T>,
+  ctx: ActorContext,
+  fn: (readCtx: ActorContext) => Promise<T>,
 ): Promise<T> {
   return baseDb.transaction(
     async (tx) => {
@@ -79,7 +79,7 @@ export async function tenantReadIncludingDeleted<T>(
 }
 
 /** Read-write RLS transaction for mutation handlers; session vars let RLS SELECT policies pass on RETURNING. */
-export async function tenantContext<T>(ctx: AuthContext, fn: (txCtx: AuthContext) => Promise<T>): Promise<T> {
+export async function tenantContext<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(async (tx) => {
     await setTenantSessionVars(tx, ctx, false);
     return fn({ var: { ...ctx.var, db: tx } });
@@ -87,8 +87,8 @@ export async function tenantContext<T>(ctx: AuthContext, fn: (txCtx: AuthContext
 }
 
 export async function tenantContextIncludingDeleted<T>(
-  ctx: AuthContext,
-  fn: (txCtx: AuthContext) => Promise<T>,
+  ctx: ActorContext,
+  fn: (txCtx: ActorContext) => Promise<T>,
 ): Promise<T> {
   return baseDb.transaction(async (tx) => {
     await setTenantSessionVars(tx, ctx, true);

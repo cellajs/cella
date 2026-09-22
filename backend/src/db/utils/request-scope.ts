@@ -1,7 +1,7 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { EntityType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
 /**
@@ -9,7 +9,7 @@ import { AppError } from '#/core/error';
  * scoped code without both `tenantGuard` and `orgGuard` is a wiring bug, not a request error.
  */
 export const requestScope = (
-  ctx: AuthContext,
+  ctx: ActorContext,
   entityType?: EntityType,
 ): { tenantId: string; organizationId: string } => {
   const { tenantId, organizationId } = ctx.var;
@@ -28,7 +28,7 @@ export const requestScope = (
  * global UUID identity on purpose: removing RLS must broaden no application query.
  */
 export const requestScopeWhere = (
-  ctx: AuthContext,
+  ctx: ActorContext,
   table: { tenantId: PgColumn; organizationId: PgColumn },
   entityType?: EntityType,
 ): SQL => {

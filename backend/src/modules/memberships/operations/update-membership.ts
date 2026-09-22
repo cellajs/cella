@@ -1,6 +1,6 @@
 import { type EntityRole, hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
@@ -15,9 +15,9 @@ interface UpdateMembershipInput {
   displayOrder?: number;
 }
 
-export async function updateMembershipOp(ctx: AuthContext, membershipId: string, input: UpdateMembershipInput) {
-  const user = ctx.var.user;
-  const memberships = ctx.var.memberships;
+export async function updateMembershipOp(ctx: ActorContext, membershipId: string, input: UpdateMembershipInput) {
+  const principalId = ctx.var.principalId;
+  const memberships = ctx.var.grants;
 
   const { role, archived, muted, displayOrder } = input;
 
@@ -53,7 +53,7 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
     ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
     ...(muted !== undefined && { muted }),
     ...(archived !== undefined && { archived }),
-    updatedBy: user.id,
+    updatedBy: principalId,
     updatedAt: getIsoDate(),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });

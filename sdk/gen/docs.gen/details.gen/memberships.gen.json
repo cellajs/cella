@@ -295,7 +295,11 @@
               "required": true,
               "enum": ["admin", "member"]
             },
-            "createdBy": { "type": "string", "required": true, "format": "uuid" },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true

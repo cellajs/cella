@@ -57,6 +57,6 @@ export async function createOrgUser(
 export async function clearSecurityTestData() {
   await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE
     sessions, tokens, passkeys, identities, emails,
-    memberships, inactive_memberships, organizations, tenants, users
+    memberships, inactive_memberships, organizations, tenants, users, principals
     CASCADE`);
 }

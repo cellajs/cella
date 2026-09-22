@@ -5,8 +5,9 @@ import { AppError } from '#/core/error';
 import { extractPgError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { emailsTable } from '#/modules/user/emails-db';
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
-import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
+import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 
@@ -37,16 +38,15 @@ export const handleCreateUser = async (
   try {
     const normalizedEmail = newUser.email.toLowerCase().trim();
 
-    const [user] = await db
-      .insert(usersTable)
-      .values({
+    const [user] = await insertUsers(db, [
+      {
         slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
         firstName: newUser.firstName,
         email: normalizedEmail,
         name: newUser.name,
         language: appConfig.defaultLanguage,
-      })
-      .returning();
+      },
+    ]);
 
     await db
       .insert(unsubscribeTokensTable)

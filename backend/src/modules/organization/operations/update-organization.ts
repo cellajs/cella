@@ -1,4 +1,4 @@
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -15,14 +15,14 @@ import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
 export async function updateOrganizationOp(
-  ctx: AuthContext,
+  ctx: ActorContext,
   id: string,
   tenantId: string,
   rawInput: Record<string, unknown>,
 ) {
   // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
-  const user = ctx.var.user;
+  const principalId = ctx.var.principalId;
 
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
 
@@ -41,7 +41,7 @@ export async function updateOrganizationOp(
   // Validate media URLs in welcomeText are from trusted sources (CDN only)
   if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
 
-  const values = { ...input, updatedAt: getIsoDate(), updatedBy: user.id };
+  const values = { ...input, updatedAt: getIsoDate(), updatedBy: principalId };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
@@ -65,7 +65,7 @@ export async function updateOrganizationOp(
     counts,
   };
 
-  const organizationWithAudit = await withAuditUser(ctx, updatedOrganizationRecord, user);
+  const organizationWithAudit = await withAuditUser(ctx, updatedOrganizationRecord);
 
   return { ...organizationWithAudit, included };
 }

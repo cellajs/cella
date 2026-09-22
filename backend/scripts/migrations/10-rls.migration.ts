@@ -33,6 +33,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
   const fullCrudTables = [
     ...channelTableNames,
     ...membershipTableNames,
+    'principals',
     'users',
     'sessions',
     'devices',

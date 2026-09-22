@@ -1,7 +1,7 @@
 import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import type { AuthContext, DbContext } from '#/core/context';
+import type { ActorContext, DbContext } from '#/core/context';
 import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -45,7 +45,7 @@ interface UpdateOrganizationOpts {
 }
 
 /** Merges organizationFlags, setupConfig and toolsConfig via jsonb || when provided. */
-export const updateOrganization = async (ctx: AuthContext, { id, values }: UpdateOrganizationOpts) => {
+export const updateOrganization = async (ctx: ActorContext, { id, values }: UpdateOrganizationOpts) => {
   const { db, tenantId } = ctx.var;
   const { organizationFlags, setupConfig, toolsConfig, ...rest } = values;
 
@@ -71,7 +71,7 @@ interface DeleteOrganizationsByIdsOpts {
   ids: string[];
 }
 
-export const deleteOrganizationsByIds = async (ctx: AuthContext, { ids }: DeleteOrganizationsByIdsOpts) => {
+export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: DeleteOrganizationsByIdsOpts) => {
   const { db, tenantId } = ctx.var;
   return db
     .delete(organizationsTable)

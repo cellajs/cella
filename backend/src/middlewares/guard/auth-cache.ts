@@ -1,10 +1,12 @@
 import { TTLCache } from '#/lib/ttl-cache';
+import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 
 export interface SessionCacheEntry {
   user: UserWithCounters;
   isSystemAdmin: boolean;
+  authStrategy: AuthStrategy;
 }
 
 export type MembershipCacheEntry = (MembershipBaseModel & { createdBy: string | null })[];

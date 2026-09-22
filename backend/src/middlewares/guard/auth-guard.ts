@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm';
+import type { ActorRef, CredentialRef } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isSystemAccessAllowed } from '#/utils/system-access';
@@ -34,6 +36,7 @@ export const authGuard = xMiddleware(
         ctx.set('sessionId', sessionId);
         ctx.set('isSystemAdmin', cachedSession.isSystemAdmin);
         ctx.set('db', baseDb);
+        setActor(ctx, cachedSession.user.id, sessionId, cachedSession.authStrategy);
 
         // Memberships cached separately with longer TTL (keyed by userId)
         let memberships = getMembershipCache(cachedSession.user.id);
@@ -45,6 +48,7 @@ export const authGuard = xMiddleware(
           setMembershipCache(cachedSession.user.id, memberships);
         }
         ctx.set('memberships', memberships);
+        ctx.set('grants', memberships);
 
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
@@ -63,6 +67,7 @@ export const authGuard = xMiddleware(
       ctx.set('userId', user.id);
       ctx.set('sessionToken', sessionToken);
       ctx.set('sessionId', session.id);
+      setActor(ctx, user.id, session.id, session.authStrategy);
 
       const systemAccessAllowed = isSystemAccessAllowed(ctx);
 
@@ -88,10 +93,11 @@ export const authGuard = xMiddleware(
       });
 
       ctx.set('memberships', memberships);
+      ctx.set('grants', memberships);
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 
-      setSessionCache(session.id, user.id, { user, isSystemAdmin });
+      setSessionCache(session.id, user.id, { user, isSystemAdmin, authStrategy: session.authStrategy });
       setMembershipCache(user.id, memberships);
 
       await next();
@@ -101,3 +107,17 @@ export const authGuard = xMiddleware(
     }
   },
 );
+
+/** The actor fields a session-authenticated user carries: unmasked, proven by the session, one principal id. */
+function setActor(
+  ctx: { set: (key: 'actor' | 'principalId' | 'scopes' | 'credential' | 'authStrategy', value: unknown) => void },
+  userId: string,
+  sessionId: string,
+  authStrategy: AuthStrategy,
+): void {
+  ctx.set('actor', { kind: 'user', id: userId } satisfies ActorRef);
+  ctx.set('principalId', userId);
+  ctx.set('scopes', null);
+  ctx.set('credential', { kind: 'session', id: sessionId } satisfies CredentialRef);
+  ctx.set('authStrategy', authStrategy);
+}

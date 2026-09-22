@@ -1,5 +1,5 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -21,7 +21,7 @@ export interface ValidChannelResult<T extends ChannelEntityType> {
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType>(
-  ctx: AuthContext,
+  ctx: ActorContext,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,

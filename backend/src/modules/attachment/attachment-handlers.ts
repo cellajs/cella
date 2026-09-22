@@ -35,8 +35,8 @@ app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {
   const { id } = ctx.req.valid('param');
-  const { fullResponse } = ctx.req.valid('query');
-  const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'), { fullResponse });
+  // `fullResponse` in the query is accepted and ignored: audit fields are resolved for every response shape.
+  const result = await updateAttachmentOp(ctx, id, ctx.req.valid('json'), {});
   return ctx.json(result, 200);
 });
 

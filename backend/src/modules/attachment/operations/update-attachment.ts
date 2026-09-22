@@ -1,10 +1,10 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { withAuditUser, withAuditUserLite } from '#/modules/user/helpers/audit-user';
+import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidProduct } from '#/permissions/get-valid-product';
 import { keywordsFromDocument } from '#/utils/description-document';
 import { getIsoDate } from '#/utils/iso-date';
@@ -15,14 +15,14 @@ type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
 /** Also the attachment's Yjs materializer: the relay calls it with `serverOrigin` for a collaborative description. */
 export async function updateAttachmentOp(
-  ctx: AuthContext,
+  ctx: ActorContext,
   id: string,
   input: UpdateAttachmentInput,
-  opts: { fullResponse?: boolean; serverOrigin?: boolean },
+  opts: { serverOrigin?: boolean },
 ) {
   const { ops: rawOps, stx } = input;
-  const { fullResponse, serverOrigin } = opts;
-  const user = ctx.var.user;
+  const { serverOrigin } = opts;
+  const principalId = ctx.var.principalId;
 
   // Media in a description must come from trusted sources (CDN only).
   if (rawOps.description) assertBlockMediaUrls(rawOps.description, 'attachment', 'description');
@@ -42,7 +42,7 @@ export async function updateAttachmentOp(
         ? { keywords: keywordsFromDocument(resolved.values.description as string | null) }
         : {}),
       updatedAt: getIsoDate(),
-      updatedBy: user.id,
+      updatedBy: principalId,
       ...(resolved.changed ? { stx: resolved.stx } : {}),
     };
     const updated = await updateAttachment(txCtx, { id, values });
@@ -53,9 +53,6 @@ export async function updateAttachmentOp(
 
   log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-  const attachmentResponse = fullResponse
-    ? await withAuditUser(ctx, updatedAttachmentRecord, user)
-    : withAuditUserLite(updatedAttachmentRecord, user);
-
-  return attachmentResponse;
+  // Resolved by id for every response shape: the context carries a principal id, not a user row to stub from.
+  return withAuditUser(ctx, updatedAttachmentRecord);
 }

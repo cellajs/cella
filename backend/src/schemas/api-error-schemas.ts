@@ -31,6 +31,8 @@ export const apiErrorSchema = z
     severity: z.enum(severityLevels),
     entityType: entityTypeSchema.optional(),
     logId: z.string().optional(),
+    /** Request id, also sent as the `X-Request-Id` response header; quote it when reporting a failure. */
+    requestId: z.string().optional(),
     path: z.string().optional(),
     method: z.string().optional(),
     timestamp: z.string().optional(),

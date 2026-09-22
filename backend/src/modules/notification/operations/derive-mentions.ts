@@ -1,4 +1,4 @@
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import type { NotificationSubjectRow } from '#/lib/module';
 import type { MutationPayload } from '#/lib/mutation-bus';
 import { log } from '#/utils/logger';
@@ -15,7 +15,7 @@ import { type NotificationSource, writeSubjectMentions } from '../notification-s
  * read permission makes the column trustworthy, which is what the fan-out relies on.
  */
 export async function deriveMentions(
-  ctx: AuthContext,
+  ctx: ActorContext,
   payload: MutationPayload,
   source: NotificationSource,
 ): Promise<void> {
