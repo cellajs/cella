@@ -861,7 +861,10 @@ BEGIN
     GRANT SELECT, INSERT, UPDATE, DELETE ON inactive_memberships TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON principals TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON service_accounts TO runtime_role;
-    GRANT SELECT, INSERT, UPDATE, DELETE ON credentials TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON api_keys TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON oauth_clients TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON signing_keys TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_payloads TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON users TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON sessions TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON devices TO runtime_role;
@@ -1163,14 +1166,38 @@ BEGIN
     missing := array_append(missing, 'grant:service_accounts:UPDATE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.service_accounts', 'DELETE') THEN
     missing := array_append(missing, 'grant:service_accounts:DELETE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.credentials', 'SELECT') THEN
-    missing := array_append(missing, 'grant:credentials:SELECT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.credentials', 'INSERT') THEN
-    missing := array_append(missing, 'grant:credentials:INSERT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.credentials', 'UPDATE') THEN
-    missing := array_append(missing, 'grant:credentials:UPDATE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.credentials', 'DELETE') THEN
-    missing := array_append(missing, 'grant:credentials:DELETE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.api_keys', 'SELECT') THEN
+    missing := array_append(missing, 'grant:api_keys:SELECT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.api_keys', 'INSERT') THEN
+    missing := array_append(missing, 'grant:api_keys:INSERT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.api_keys', 'UPDATE') THEN
+    missing := array_append(missing, 'grant:api_keys:UPDATE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.api_keys', 'DELETE') THEN
+    missing := array_append(missing, 'grant:api_keys:DELETE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oauth_clients', 'SELECT') THEN
+    missing := array_append(missing, 'grant:oauth_clients:SELECT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oauth_clients', 'INSERT') THEN
+    missing := array_append(missing, 'grant:oauth_clients:INSERT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oauth_clients', 'UPDATE') THEN
+    missing := array_append(missing, 'grant:oauth_clients:UPDATE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oauth_clients', 'DELETE') THEN
+    missing := array_append(missing, 'grant:oauth_clients:DELETE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.signing_keys', 'SELECT') THEN
+    missing := array_append(missing, 'grant:signing_keys:SELECT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.signing_keys', 'INSERT') THEN
+    missing := array_append(missing, 'grant:signing_keys:INSERT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.signing_keys', 'UPDATE') THEN
+    missing := array_append(missing, 'grant:signing_keys:UPDATE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.signing_keys', 'DELETE') THEN
+    missing := array_append(missing, 'grant:signing_keys:DELETE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oidc_payloads', 'SELECT') THEN
+    missing := array_append(missing, 'grant:oidc_payloads:SELECT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oidc_payloads', 'INSERT') THEN
+    missing := array_append(missing, 'grant:oidc_payloads:INSERT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oidc_payloads', 'UPDATE') THEN
+    missing := array_append(missing, 'grant:oidc_payloads:UPDATE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.oidc_payloads', 'DELETE') THEN
+    missing := array_append(missing, 'grant:oidc_payloads:DELETE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.users', 'SELECT') THEN
     missing := array_append(missing, 'grant:users:SELECT'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.users', 'INSERT') THEN

@@ -7,10 +7,7 @@ import {
 } from '#/modules/service-accounts/api-keys-db';
 import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
 
-type IssueInput = Pick<
-  InsertApiKeyModel,
-  'principalId' | 'tenantId' | 'name' | 'description' | 'scopes' | 'expiresAt' | 'createdBy'
->;
+type IssueInput = Pick<InsertApiKeyModel, 'principalId' | 'tenantId' | 'name' | 'scopes' | 'expiresAt' | 'createdBy'>;
 
 /** Mints a secret key for a principal. Only the hash is stored; the plaintext `secret` is returned once. */
 export async function issueApiKey(db: DbOrTx, input: IssueInput): Promise<{ apiKey: ApiKeyModel; secret: string }> {

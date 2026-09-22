@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "signing_keys_one_per_status_idx" ON "signing_keys" ("status") WHERE "status" in ('current', 'next');

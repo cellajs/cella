@@ -514,7 +514,6 @@ export const zServiceAccount = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
   name: z.string().max(255),
-  description: z.string().max(255).nullable(),
   status: z.enum(['active', 'disabled']),
   bindings: z.array(
     z.object({
@@ -529,7 +528,6 @@ export const zServiceAccount = z.object({
   updatedBy: z.uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
-  lastUsedAt: z.string().nullable(),
 });
 
 /**
@@ -539,9 +537,7 @@ export const zApiKey = z.object({
   id: z.uuid(),
   principalId: z.uuid(),
   tenantId: z.string().max(24),
-  type: z.enum(['secret', 'publishable']),
   name: z.string().max(255),
-  description: z.string().max(255).nullable(),
   prefix: z.string().max(255),
   last4: z.string().max(4),
   scopes: z
@@ -550,7 +546,6 @@ export const zApiKey = z.object({
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
-  lastUsedAt: z.string().nullable(),
   createdBy: z.uuid().nullable(),
   createdAt: z.string(),
 });
@@ -2092,7 +2087,6 @@ export const zCreateServiceAccountBody = z.object({
     .min(2)
     .max(255)
     .regex(/^[\p{L}\d\-., '&()]+$/u),
-  description: z.string().max(255).optional(),
   role: z.enum(['admin', 'member']),
   key: z
     .object({
@@ -2101,7 +2095,6 @@ export const zCreateServiceAccountBody = z.object({
         .min(2)
         .max(255)
         .regex(/^[\p{L}\d\-., '&()]+$/u),
-      description: z.string().max(255).optional(),
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
@@ -2131,7 +2124,6 @@ export const zUpdateServiceAccountBody = z.object({
     .max(255)
     .regex(/^[\p{L}\d\-., '&()]+$/u)
     .optional(),
-  description: z.string().max(255).nullish(),
   status: z.enum(['active', 'disabled']).optional(),
 });
 
@@ -2165,7 +2157,6 @@ export const zCreateApiKeyBody = z.object({
     .min(2)
     .max(255)
     .regex(/^[\p{L}\d\-., '&()]+$/u),
-  description: z.string().max(255).optional(),
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)

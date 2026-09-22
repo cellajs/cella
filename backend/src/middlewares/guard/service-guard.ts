@@ -5,7 +5,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
-import { getApiKeyCache, setApiKeyCache, shouldStampLastUsed } from '#/middlewares/guard/api-key-cache';
+import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
 import { getMembershipCache, setMembershipCache } from '#/middlewares/guard/auth-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -16,20 +16,9 @@ import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { getIsoDate } from '#/utils/iso-date';
-import { log } from '#/utils/logger';
 
 /** Users behind access tokens have no session to cache under; the row is cached by id for the token's lifetime scale. */
 const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_000 });
-
-function touchLastUsed(keyId: string, serviceAccountId: string): void {
-  if (!shouldStampLastUsed(keyId)) return;
-  const at = getIsoDate();
-  void Promise.all([
-    baseDb.update(apiKeysTable).set({ lastUsedAt: at }).where(eq(apiKeysTable.id, keyId)),
-    baseDb.update(serviceAccountsTable).set({ lastUsedAt: at }).where(eq(serviceAccountsTable.id, serviceAccountId)),
-  ]).catch((err) => log.warn('Failed to stamp apiKey lastUsedAt', { err, keyId }));
-}
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
@@ -158,8 +147,6 @@ export const serviceGuard = xMiddleware(
     });
     ctx.set('isSystemAdmin', false);
     ctx.set('db', baseDb);
-
-    touchLastUsed(apiKey.id, account.id);
 
     return serviceBurstLimiter(ctx, next);
   },

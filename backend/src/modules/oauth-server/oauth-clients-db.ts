@@ -18,8 +18,6 @@ export const oauthClientsTable = snakeCase.table('oauth_clients', {
   secretHash: varchar({ length: maxLength.field }),
   redirectUris: jsonb().$type<string[]>().notNull().default([]),
   logoUri: varchar({ length: maxLength.url }),
-  clientUri: varchar({ length: maxLength.url }),
-  policyUri: varchar({ length: maxLength.url }),
   createdBy: uuid()
     .references(() => principalsTable.id, { onDelete: 'set null' })
     .$type<PrincipalId>(),

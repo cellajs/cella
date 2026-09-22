@@ -39,8 +39,6 @@ async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
       response_types: ['code'],
       redirect_uris: app.redirectUris,
       logo_uri: app.logoUri ?? undefined,
-      client_uri: app.clientUri ?? undefined,
-      policy_uri: app.policyUri ?? undefined,
       client_kind: 'registered',
     };
   }
@@ -80,7 +78,6 @@ export class DrizzleAdapter implements Adapter {
       payload,
       grantId: (payload.grantId as string | undefined) ?? null,
       accountId: (payload.accountId as string | undefined) ?? null,
-      userCode: (payload.userCode as string | undefined) ?? null,
       uid: (payload.uid as string | undefined) ?? null,
       expiresAt,
     };
@@ -112,13 +109,9 @@ export class DrizzleAdapter implements Adapter {
     return row ? toPayload(row) : undefined;
   }
 
-  async findByUserCode(userCode: string): Promise<AdapterPayload | undefined> {
-    const [row] = await baseDb
-      .select()
-      .from(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.userCode, userCode)))
-      .limit(1);
-    return row ? toPayload(row) : undefined;
+  /** Device authorization is not enabled, so no row ever carries a user code. */
+  async findByUserCode(_userCode: string): Promise<AdapterPayload | undefined> {
+    return undefined;
   }
 
   async consume(id: string): Promise<void> {

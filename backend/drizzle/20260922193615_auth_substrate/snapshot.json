@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "f3cc7024-7c29-4eaa-beaa-ad9bf40e6178",
+  "id": "ebb44777-a7b9-4b40-97ba-4d938c6a6414",
   "prevIds": [
-    "02585b33-2ee7-4ace-93c4-48cdd2ca8fa2"
+    "3e214583-2b0e-43ab-8309-669edec64e60"
   ],
   "ddl": [
     {
@@ -104,7 +104,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "clients",
+      "name": "oauth_clients",
       "entityType": "tables",
       "schema": "public"
     },
@@ -152,7 +152,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "credentials",
+      "name": "api_keys",
       "entityType": "tables",
       "schema": "public"
     },
@@ -2392,7 +2392,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "varchar(255)",
@@ -2405,7 +2405,7 @@
       "name": "name",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "varchar(255)",
@@ -2418,7 +2418,7 @@
       "name": "secret_hash",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "jsonb",
@@ -2431,7 +2431,7 @@
       "name": "redirect_uris",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "varchar(2048)",
@@ -2444,33 +2444,7 @@
       "name": "logo_uri",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "client_uri",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "clients"
-    },
-    {
-      "type": "varchar(2048)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "policy_uri",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "uuid",
@@ -2483,7 +2457,7 @@
       "name": "created_by",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "timestamp",
@@ -2496,7 +2470,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "timestamp",
@@ -2509,7 +2483,7 @@
       "name": "updated_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "type": "varchar(255)",
@@ -2571,7 +2545,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_code",
+      "name": "account_id",
       "entityType": "columns",
       "schema": "public",
       "table": "oidc_payloads"
@@ -3435,7 +3409,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "uuid",
@@ -3448,7 +3422,7 @@
       "name": "principal_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(24)",
@@ -3461,20 +3435,7 @@
       "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
-    },
-    {
-      "type": "varchar",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'secret'",
-      "generated": null,
-      "identity": null,
-      "name": "type",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(255)",
@@ -3487,20 +3448,7 @@
       "name": "name",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "description",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(255)",
@@ -3513,7 +3461,7 @@
       "name": "prefix",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(255)",
@@ -3526,7 +3474,7 @@
       "name": "hash",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(4)",
@@ -3539,7 +3487,7 @@
       "name": "last4",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "varchar(255)",
@@ -3552,7 +3500,7 @@
       "name": "scopes",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "timestamp",
@@ -3565,7 +3513,7 @@
       "name": "expires_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "timestamp",
@@ -3578,20 +3526,20 @@
       "name": "revoked_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
-      "type": "timestamp",
+      "type": "uuid",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "last_used_at",
+      "name": "revoked_by",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "uuid",
@@ -3604,7 +3552,7 @@
       "name": "created_by",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "timestamp",
@@ -3617,7 +3565,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "type": "uuid",
@@ -3659,19 +3607,6 @@
       "table": "service_accounts"
     },
     {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "description",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "service_accounts"
-    },
-    {
       "type": "varchar",
       "typeSchema": null,
       "notNull": true,
@@ -3692,7 +3627,7 @@
       "default": "'[]'",
       "generated": null,
       "identity": null,
-      "name": "grants",
+      "name": "bindings",
       "entityType": "columns",
       "schema": "public",
       "table": "service_accounts"
@@ -3705,7 +3640,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "client_id",
+      "name": "oauth_client_id",
       "entityType": "columns",
       "schema": "public",
       "table": "service_accounts"
@@ -3719,6 +3654,19 @@
       "generated": null,
       "identity": null,
       "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "service_accounts"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_by",
       "entityType": "columns",
       "schema": "public",
       "table": "service_accounts"
@@ -3745,19 +3693,6 @@
       "generated": null,
       "identity": null,
       "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "service_accounts"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "last_used_at",
       "entityType": "columns",
       "schema": "public",
       "table": "service_accounts"
@@ -3871,7 +3806,7 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": "'{\"quotas\":{\"user\":1000,\"organization\":1,\"attachment\":100,\"serviceAccount\":20,\"credential\":100},\"rateLimits\":{\"apiPointsPerHour\":1000},\"allowConsentedClients\":true}'",
+      "default": "'{\"quotas\":{\"user\":1000,\"organization\":1,\"attachment\":100,\"serviceAccount\":20,\"apiKey\":100},\"rateLimits\":{\"apiPointsPerHour\":1000},\"allowConsentedClients\":true}'",
       "generated": null,
       "identity": null,
       "name": "restrictions",
@@ -5643,6 +5578,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "account_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "oidc_payloads_account_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "oidc_payloads"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "uid",
           "isExpression": false,
           "asc": true,
@@ -5656,27 +5612,6 @@
       "method": "btree",
       "concurrently": false,
       "name": "oidc_payloads_uid_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "oidc_payloads"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_code",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "oidc_payloads_user_code_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "oidc_payloads"
@@ -5719,6 +5654,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "signing_keys_status_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "signing_keys"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "status",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"status\" in ('current', 'next')",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "signing_keys_one_per_status_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "signing_keys"
@@ -6019,10 +5975,10 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "credentials_hash_idx",
+      "name": "api_keys_hash_idx",
       "entityType": "indexes",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "nameExplicit": true,
@@ -6040,10 +5996,10 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "credentials_principal_id_idx",
+      "name": "api_keys_principal_id_idx",
       "entityType": "indexes",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "nameExplicit": true,
@@ -6061,10 +6017,10 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "credentials_tenant_id_idx",
+      "name": "api_keys_tenant_id_idx",
       "entityType": "indexes",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "nameExplicit": true,
@@ -6838,10 +6794,10 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "clients_created_by_principals_id_fkey",
+      "name": "oauth_clients_created_by_principals_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "clients"
+      "table": "oauth_clients"
     },
     {
       "nameExplicit": false,
@@ -6940,10 +6896,10 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "credentials_principal_id_principals_id_fkey",
+      "name": "api_keys_principal_id_principals_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "nameExplicit": false,
@@ -6957,10 +6913,27 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "credentials_tenant_id_tenants_id_fkey",
+      "name": "api_keys_tenant_id_tenants_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "revoked_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "principals",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "api_keys_revoked_by_principals_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "api_keys"
     },
     {
       "nameExplicit": false,
@@ -6974,10 +6947,10 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "credentials_created_by_principals_id_fkey",
+      "name": "api_keys_created_by_principals_id_fkey",
       "entityType": "fks",
       "schema": "public",
-      "table": "credentials"
+      "table": "api_keys"
     },
     {
       "nameExplicit": false,
@@ -7016,16 +6989,16 @@
     {
       "nameExplicit": false,
       "columns": [
-        "client_id"
+        "oauth_client_id"
       ],
       "schemaTo": "public",
-      "tableTo": "clients",
+      "tableTo": "oauth_clients",
       "columnsTo": [
         "id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "service_accounts_client_id_clients_id_fkey",
+      "name": "service_accounts_oauth_client_id_oauth_clients_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "service_accounts"
@@ -7043,6 +7016,23 @@
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "name": "service_accounts_created_by_principals_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "service_accounts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "updated_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "principals",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "service_accounts_updated_by_principals_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "service_accounts"
@@ -7435,9 +7425,9 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "clients_pkey",
+      "name": "oauth_clients_pkey",
       "schema": "public",
-      "table": "clients",
+      "table": "oauth_clients",
       "entityType": "pks"
     },
     {
@@ -7495,9 +7485,9 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "credentials_pkey",
+      "name": "api_keys_pkey",
       "schema": "public",
-      "table": "credentials",
+      "table": "api_keys",
       "entityType": "pks"
     },
     {

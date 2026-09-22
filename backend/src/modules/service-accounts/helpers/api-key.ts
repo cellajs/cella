@@ -3,8 +3,12 @@ import { crc32 } from 'node:zlib';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import type { ApiKeyType, InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
+import type { InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { hashToken } from '#/utils/hash-token';
+
+/** `secret` keys authenticate a service account; `publishable` keys (later) identify a tenant and authorize nothing. */
+export const apiKeyTypes = ['secret', 'publishable'] as const;
+export type ApiKeyType = (typeof apiKeyTypes)[number];
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const SECRET_LENGTH = 32;

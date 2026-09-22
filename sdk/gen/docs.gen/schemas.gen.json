@@ -1400,17 +1400,7 @@
         "id": { "type": "string", "required": true, "format": "uuid" },
         "principalId": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "type": {
-          "type": "string",
-          "required": true,
-          "enum": ["secret", "publishable"]
-        },
         "name": { "type": "string", "required": true, "maxLength": 255 },
-        "description": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
-        },
         "prefix": { "type": "string", "required": true, "maxLength": 255 },
         "last4": { "type": "string", "required": true, "maxLength": 4 },
         "scopes": {
@@ -1431,10 +1421,6 @@
           "type": ["string", "null"],
           "required": true,
           "format": "uuid"
-        },
-        "lastUsedAt": {
-          "type": ["string", "null"],
-          "required": true
         },
         "createdBy": {
           "type": ["string", "null"],
@@ -1454,16 +1440,13 @@
       "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
       "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
       "tenantId": "maq9vh",
-      "type": "secret",
       "name": "reboot key",
-      "description": null,
       "prefix": "cella-development_sk_test_Ab3d",
       "last4": "2345",
       "scopes": ["attachment:read"],
       "expiresAt": null,
       "revokedAt": null,
       "revokedBy": null,
-      "lastUsedAt": null,
       "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
       "createdAt": "2024-11-05T21:01:57.922Z"
     }
@@ -1478,17 +1461,7 @@
         "id": { "type": "string", "required": true, "format": "uuid" },
         "principalId": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "type": {
-          "type": "string",
-          "required": true,
-          "enum": ["secret", "publishable"]
-        },
         "name": { "type": "string", "required": true, "maxLength": 255 },
-        "description": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
-        },
         "prefix": { "type": "string", "required": true, "maxLength": 255 },
         "last4": { "type": "string", "required": true, "maxLength": 4 },
         "scopes": {
@@ -1509,10 +1482,6 @@
           "type": ["string", "null"],
           "required": true,
           "format": "uuid"
-        },
-        "lastUsedAt": {
-          "type": ["string", "null"],
-          "required": true
         },
         "createdBy": {
           "type": ["string", "null"],
@@ -1539,16 +1508,13 @@
       "id": "5302a43a-9867-408a-a97e-03039539daa6",
       "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
       "tenantId": "uiucev",
-      "type": "secret",
       "name": "transmit key",
-      "description": null,
       "prefix": "cella-development_sk_test_Ab3d",
       "last4": "2345",
       "scopes": ["attachment:read"],
       "expiresAt": null,
       "revokedAt": null,
       "revokedBy": null,
-      "lastUsedAt": null,
       "createdBy": "b5cf5689-f454-4337-a781-ea4555f182fa",
       "createdAt": "2024-08-06T06:09:43.711Z",
       "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
@@ -1564,11 +1530,6 @@
         "id": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
         "name": { "type": "string", "required": true, "maxLength": 255 },
-        "description": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
-        },
         "status": {
           "type": "string",
           "required": true,
@@ -1615,10 +1576,6 @@
         "updatedAt": {
           "type": ["string", "null"],
           "required": true
-        },
-        "lastUsedAt": {
-          "type": ["string", "null"],
-          "required": true
         }
       }
     },
@@ -1632,7 +1589,6 @@
       "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
       "tenantId": "yug3pr",
       "name": "system bot",
-      "description": "Use the mobile TCP application, then you can reboot the multi-byte sensor!",
       "status": "active",
       "bindings": [
         {
@@ -1643,11 +1599,10 @@
         }
       ],
       "oauthClientId": null,
-      "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
+      "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
       "createdAt": "2024-09-01T22:49:17.262Z",
       "updatedAt": "2024-09-01T22:49:17.262Z",
-      "updatedBy": null,
-      "lastUsedAt": null
+      "updatedBy": null
     }
   },
   {

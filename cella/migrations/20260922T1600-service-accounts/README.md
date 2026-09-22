@@ -3,7 +3,7 @@
 ## What & why
 
 Two new tables, `service_accounts` (a machine principal: tenant-scoped, role bindings in `bindings`, disabled never
-deleted) and `credentials` (opaque API keys, hash only, `scopes` mask). `serviceGuard` authenticates
+deleted) and `api_keys` (opaque keys, hash only, `scopes` mask). `serviceGuard` authenticates
 `Authorization: Bearer <app>_sk_live_…` (or `x-api-key`) as that account; `actorGuard` accepts a session or a key on
 routes whose operations take `ActorContext`. Scopes are derived from the policy matrix (`scopes` next to
 `policyMatrix`, `<entityType>:read|write`) and applied as a mask in `checkAccess*` and collection reads. The points
@@ -28,8 +28,8 @@ pnpm sdk
 ## Manual steps
 
 0. Rename the guards everywhere: `git ls-files '*.ts' '*.tsx' '*.md' | xargs perl -pi -e 's/\bauthGuard\b/userGuard/g'` (`authGuard` is now `userGuard`, the session-only guard; `serviceGuard` takes API keys; `actorGuard` takes either).
-1. Add `'service_accounts'` and `'credentials'` to `fullCrudTables` in `backend/scripts/migrations/10-rls.migration.ts` if the app pins that file (they are auth tables, not RLS tables).
-2. Add `credentials, service_accounts` to test `TRUNCATE` lists that include `users`.
+1. Add `'service_accounts'` and `'api_keys'` to `fullCrudTables` in `backend/scripts/migrations/10-rls.migration.ts` if the app pins that file (they are auth tables, not RLS tables).
+2. Add `api_keys, service_accounts` to test `TRUNCATE` lists that include `users`.
 3. Routes a machine may call: switch `xGuard: [userGuard, ...]` to `[actorGuard, ...]` on routes whose operations are typed `ActorContext`. Never on a route whose operation reads `ctx.var.user`.
 4. Hand-built contexts in tests (`{ var: { memberships } }`) also need `actor: { kind: 'user', id, grants: memberships, scopes: null }`; guards read `actor.grants`, and a user's grant must carry `userId` to count as a membership row.
 5. `Actor` is a union (`UserActor | ServiceActor`); code that surfaces a grant as a membership row narrows with `isMembershipRow` (`memberships/helpers/select.ts`). `ActorContext` no longer promises `organization`; operations behind `orgGuard` that read it take `OrgContext`. The shared SQL actor type is now `PredicateActor` (was `Actor`).
@@ -39,8 +39,7 @@ pnpm sdk
 
 ## Review round (2026-09-22)
 
-- `service_accounts.updatedBy` and `credentials.revokedBy` record who disabled or revoked (migration
-  `20260922185534_audit_principals`). `*-queries.ts` never throws and takes `(ctx, opts)`; the admin check and the
+- `service_accounts.updatedBy` and `api_keys.revokedBy` record who disabled or revoked (one regenerated migration, `20260922193615_auth_substrate`, carries every table of this plan). `*-queries.ts` never throws and takes `(ctx, opts)`; the admin check and the
   404 live in `helpers/managed-service-account.ts`; one operation per file. Quotas count active accounts and live
   keys only. Keys and their account are cached by hash (`middlewares/guard/credential-cache.ts`) for a minute;
   revoke, roll and disable invalidate. A service account with no grant is refused at `tenantGuard`.
@@ -57,3 +56,17 @@ pnpm generate
 pnpm sdk
 pnpm check
 ```
+
+## Naming round (2026-09-22)
+
+- Names follow what other systems call these things: the keys table is `api_keys` (`ApiKey`, `apiKeysTable`,
+  `issueApiKey`, routes `…/service-accounts/{id}/keys`); `credential` stays the passkey word. The OAuth scope
+  vocabulary is `AccessScope` / `accessScopes` (`accessScopes.all/required/allows/parse`), qualified because `scope`
+  was already the engine's read-scope family; the wire word `scope` is unchanged. A service account's role bindings
+  are `bindings` (`RoleBinding`, `actor.bindings`, `ActorBinding`); `grants` stays the engine's word. The quota key is
+  `apiKey`.
+- Dropped as not yet read by anything: `lastUsedAt` on accounts and keys (and the stamping in the guard),
+  `description` on both, the key `type` column (the key format still carries `sk` / `pk`). Add them back with the
+  screen that shows them.
+- The nine migrations this plan produced during review are squashed into `20260922193615_auth_substrate` (+ its
+  `side_effects`); apps that already applied an earlier folder reset their database.

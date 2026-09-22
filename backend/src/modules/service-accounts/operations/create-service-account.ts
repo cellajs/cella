@@ -32,7 +32,6 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
     const serviceAccount = await insertServiceAccount(tx, {
       tenantId,
       name: input.name,
-      description: input.description,
       bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
       createdBy: creatorId,
     });
@@ -41,7 +40,6 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
           principalId: serviceAccount.id,
           tenantId,
           name: input.key.name,
-          description: input.key.description,
           scopes: input.key.scopes ?? null,
           expiresAt: input.key.expiresAt,
           createdBy: creatorId,

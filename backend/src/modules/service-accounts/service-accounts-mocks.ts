@@ -13,7 +13,6 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       id: mockUuid(),
       tenantId: mockTenantId(),
       name: `${faker.hacker.noun()} bot`,
-      description: faker.hacker.phrase(),
       status: 'active',
       bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: 'member' }],
       oauthClientId: null,
@@ -21,7 +20,6 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       createdAt,
       updatedAt: createdAt,
       updatedBy: null,
-      lastUsedAt: null,
     };
   });
 
@@ -34,16 +32,13 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
     id: mockUuid(),
     principalId: mockUuid(),
     tenantId: mockTenantId(),
-    type: 'secret',
     name: `${faker.hacker.verb()} key`,
-    description: null,
     prefix: exampleSecret.slice(0, `${appConfig.slug}_sk_test_`.length + 4),
     last4: exampleSecret.slice(-10, -6),
     scopes: ['attachment:read'],
     expiresAt: null,
     revokedAt: null,
     revokedBy: null,
-    lastUsedAt: null,
     createdBy: mockUuid(),
     createdAt: mockPastIsoDate(),
   }));

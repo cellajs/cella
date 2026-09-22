@@ -6,7 +6,7 @@ cella issues its own OAuth 2.1 tokens (AUTH_SUBSTRATE_PLAN Phase D). `node-oidc-
 (`MODE=oauth`, port `devPorts.oauth`) on the same public origin under `/oauth/*`: Postgres adapter over
 `oidc_payloads`, signing keys in `signing_keys` (RS256, private JWK encrypted with `data-encryption.ts`, `current` +
 `next` published), grant types `authorization_code` + `refresh_token` + `client_credentials`, client auth `none`
-(Client ID Metadata Documents, for MCP clients) and `client_secret_basic` (`clients` rows, and every active service
+(Client ID Metadata Documents, for MCP clients) and `client_secret_basic` (`oauth_clients` rows, and every active service
 account with its secret keys as client secrets). Every token names an RFC 8707 resource (`<backendUrl>/t/<tenant>` or
 `<mcpUrl>/<tenant>/<org>/mcp`), so it never crosses tenants. Consent is a cella page (`/oauth/consent`) that reads the
 session; `GET/DELETE /me/connected-apps` list and revoke grants. `serviceGuard` and `actorGuard` accept the JWT as a
@@ -14,7 +14,7 @@ bearer and resolve the consenting user (masked by the token scopes) or the servi
 
 ## Blast radius
 
-Database change (three tables, `service_accounts.client_id`, tenant `restrictions` default gains
+Database change (three tables, `service_accounts.oauth_client_id`, tenant `restrictions` default gains
 `allowConsentedClients`), not sync-breaking, no cache bump. New config keys `oauthUrl`, `services.oauth`,
 `devPorts.oauth`, env `OAUTH_URL`, `MODE=oauth`. Infra registry gains the `oauth` service (reuses the backend image,
 co-hosted under singleVM, path route `/oauth`), so per-stack `Apply` creates its principal before the next deploy.
@@ -37,7 +37,7 @@ pnpm infra:compose
 1. Config: add `oauthUrl` to every `shared/config/config.<mode>.ts` (same origin as the API: `<origin>/oauth`),
    `services.oauth: { enabled: boolean }` and `devPorts.oauth` to `config.default.ts`; the vite dev proxy forwards
    `/oauth` to that port. Set `services.oauth.enabled: true` where MCP clients or registered apps must connect.
-2. RLS: add `clients`, `signing_keys`, `oidc_payloads` to the grant list in `backend/scripts/migrations/10-rls.migration.ts`
+2. RLS: add `oauth_clients`, `signing_keys`, `oidc_payloads` to the grant list in `backend/scripts/migrations/10-rls.migration.ts`
    if the app pins that file (auth tables, no tenant policy).
 3. Tests: add `oidc_payloads` cleanup where suites truncate auth tables; the AS test starts the provider in-process
    (`createOauthListener`), no separate process.
@@ -58,10 +58,10 @@ pnpm infra:compose
   redirect points there. The page reads the interaction routes through `frontend/src/lib/oauth-interaction.ts`.
 - `oidc_payloads.account_id` (indexed) carries the consenting user; `oidc-payloads-sweep.ts` deletes expired and
   consumed rows hourly as a job of `oauth-server-module.ts`; a partial unique index keeps one `current` and one
-  `next` signing key (`20260922183232_signing_keys_unique_status`, `20260922184025_oidc_payloads_account_id`).
+  `next` signing key (both in the regenerated `20260922193615_auth_substrate`).
 - The API face publishes `GET /<tenant>/.well-known/oauth-protected-resource` and `serviceGuard` names it in its
   401 challenge. Health `?depth=full` probes the store and the signing key. `rotateSigningKeys` is gone until a
-  rotation route exists. Test cleanup truncates `oidc_payloads` and `clients` with the auth tables.
+  rotation route exists. Test cleanup truncates `oidc_payloads` and `oauth_clients` with the auth tables.
 
 ## Verify
 
@@ -71,3 +71,10 @@ pnpm --filter backend exec vitest run tests/oauth-server.test.ts
 pnpm --filter infra test
 curl -s http://localhost:3000/oauth/.well-known/oauth-authorization-server | jq .issuer
 ```
+
+## Naming round (2026-09-22)
+
+- The clients table is `oauth_clients` (`oauthClientsTable`, `OauthClientModel`) and the installation column
+  `service_accounts.oauth_client_id`, qualified like `oidc_payloads` because `client` means the query client
+  everywhere else. Dropped: `client_uri` / `policy_uri` (the consent screen renders name and logo) and
+  `oidc_payloads.user_code` (device authorization is off; the adapter answers `findByUserCode` with nothing).

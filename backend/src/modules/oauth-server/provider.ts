@@ -122,13 +122,7 @@ export async function createProvider(): Promise<Provider> {
       const keys = await baseDb
         .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt })
         .from(apiKeysTable)
-        .where(
-          and(
-            eq(apiKeysTable.principalId, this.clientId),
-            eq(apiKeysTable.type, 'secret'),
-            isNull(apiKeysTable.revokedAt),
-          ),
-        );
+        .where(and(eq(apiKeysTable.principalId, this.clientId), isNull(apiKeysTable.revokedAt)));
       return keys.some((key) => (!key.expiresAt || !isExpiredDate(key.expiresAt)) && safeEqual(key.hash, presented));
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);

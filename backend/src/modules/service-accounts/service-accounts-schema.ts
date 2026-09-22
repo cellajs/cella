@@ -4,7 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { idInTenantOrgParamSchema, maxLength, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
+import { idInTenantOrgParamSchema, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
 import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from './service-accounts-mocks';
 
 // `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
@@ -56,7 +56,6 @@ export const createdApiKeySchema = apiKeySchema
 
 const apiKeyInputSchema = z.object({
   name: validNameSchema,
-  description: z.string().max(maxLength.field).optional(),
   /** Mask over the account's grants. Omitted or null = every scope the grants allow. */
   scopes: z.array(scopeEnum).min(1).nullable().optional(),
   expiresAt: z.string().datetime().optional(),
@@ -71,7 +70,6 @@ export const createApiKeyBodySchema = apiKeyInputSchema.extend({
 
 export const createServiceAccountBodySchema = z.object({
   name: validNameSchema,
-  description: z.string().max(maxLength.field).optional(),
   /** Organization role of the account; capped at the creator's own role. */
   role: z.enum(organizationRoles),
   /** One-step "create API key": the first key is issued together with the account. */
@@ -80,7 +78,6 @@ export const createServiceAccountBodySchema = z.object({
 
 export const updateServiceAccountBodySchema = z.object({
   name: validNameSchema.optional(),
-  description: z.string().max(maxLength.field).nullable().optional(),
   status: z.enum(serviceAccountStatuses).optional(),
 });
 

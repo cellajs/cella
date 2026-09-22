@@ -592,7 +592,6 @@ export type ServiceAccount = {
   id: string;
   tenantId: string;
   name: string;
-  description: string | null;
   status: 'active' | 'disabled';
   bindings: Array<{
     channelType: 'organization';
@@ -605,7 +604,6 @@ export type ServiceAccount = {
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string | null;
-  lastUsedAt: string | null;
 };
 
 /**
@@ -625,16 +623,13 @@ export type ApiKey = {
   id: string;
   principalId: string;
   tenantId: string;
-  type: 'secret' | 'publishable';
   name: string;
-  description: string | null;
   prefix: string;
   last4: string;
   scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
   expiresAt: string | null;
   revokedAt: string | null;
   revokedBy: string | null;
-  lastUsedAt: string | null;
   createdBy: string | null;
   createdAt: string;
 };
@@ -5643,11 +5638,9 @@ export type GetServiceAccountsResponse = GetServiceAccountsResponses[keyof GetSe
 export type CreateServiceAccountData = {
   body: {
     name: string;
-    description?: string;
     role: 'admin' | 'member';
     key?: {
       name: string;
-      description?: string;
       scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
       expiresAt?: string;
     };
@@ -5704,7 +5697,6 @@ export type CreateServiceAccountResponse = CreateServiceAccountResponses[keyof C
 export type UpdateServiceAccountData = {
   body: {
     name?: string;
-    description?: string | null;
     status?: 'active' | 'disabled';
   };
   path: {
@@ -5808,7 +5800,6 @@ export type GetApiKeysResponse = GetApiKeysResponses[keyof GetApiKeysResponses];
 export type CreateApiKeyData = {
   body: {
     name: string;
-    description?: string;
     scopes?: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
     expiresAt?: string;
     rollFrom?: string;

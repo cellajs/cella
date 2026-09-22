@@ -23,9 +23,6 @@ const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({
 /** Reverse index: account id to the key hashes cached for it, so a revoke or disable can drop them all. */
 const accountIndex = new Map<string, Set<string>>();
 
-/** `lastUsedAt` is written at most once per key per window; a miss means "write now". */
-const lastUsedCache = new TTLCache<true>({ maxSize: 5000, defaultTtl: 5 * 60_000 });
-
 export const getApiKeyCache = (hash: string): ApiKeyCacheEntry | undefined => apiKeyCache.get(hash);
 
 export const setApiKeyCache = (hash: string, entry: ApiKeyCacheEntry): void => {
@@ -43,18 +40,9 @@ export const invalidateApiKeyCacheByAccount = (accountId: string): void => {
   for (const hash of accountIndex.get(accountId) ?? []) apiKeyCache.delete(hash);
   accountIndex.delete(accountId);
 };
-
-/** True once per window per key; the caller stamps `lastUsedAt` when it gets true. */
-export const shouldStampLastUsed = (keyId: string): boolean => {
-  if (lastUsedCache.get(keyId)) return false;
-  lastUsedCache.set(keyId, true);
-  return true;
-};
-
 export const clearApiKeyCache = (): void => {
   apiKeyCache.clear();
   accountIndex.clear();
-  lastUsedCache.clear();
 };
 
-export const apiKeyCacheStats = () => ({ apiKey: apiKeyCache.stats, lastUsed: lastUsedCache.stats });
+export const apiKeyCacheStats = () => apiKeyCache.stats;

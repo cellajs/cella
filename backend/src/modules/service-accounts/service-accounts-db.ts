@@ -1,4 +1,4 @@
-import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
@@ -35,7 +35,6 @@ export const serviceAccountsTable = snakeCase.table(
       .notNull()
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
     name: varchar({ length: maxLength.field }).notNull(),
-    description: varchar({ length: maxLength.field }),
     status: varchar({ enum: serviceAccountStatuses }).notNull().default('active'),
     bindings: jsonb().$type<RoleBinding[]>().notNull().default([]),
     /** Set when this account is the installation of a registered app in this tenant (D4); its consents hang off it. */
@@ -43,13 +42,12 @@ export const serviceAccountsTable = snakeCase.table(
     createdBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })
       .$type<PrincipalId>(),
-    /** Who last changed name, description or status; disabling is the security-relevant act here. */
+    /** Who last changed name or status; disabling is the security-relevant act here. */
     updatedBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })
       .$type<PrincipalId>(),
     createdAt: timestampColumns.createdAt,
     updatedAt: timestampColumns.updatedAt,
-    lastUsedAt: timestamp({ mode: 'string' }),
   },
   (table) => [index('service_accounts_tenant_id_idx').on(table.tenantId)],
 );

@@ -17,7 +17,6 @@ export const oidcPayloadsTable = snakeCase.table(
     grantId: varchar({ length: maxLength.field }),
     /** The consenting user, lifted from the payload so "Connected apps" and a per-user revoke are index reads. */
     accountId: varchar({ length: maxLength.field }),
-    userCode: varchar({ length: maxLength.field }),
     uid: varchar({ length: maxLength.field }),
     expiresAt: timestamp({ mode: 'string' }),
     consumedAt: timestamp({ mode: 'string' }),
@@ -28,7 +27,6 @@ export const oidcPayloadsTable = snakeCase.table(
     index('oidc_payloads_grant_id_idx').on(table.grantId),
     index('oidc_payloads_account_id_idx').on(table.accountId),
     index('oidc_payloads_uid_idx').on(table.uid),
-    index('oidc_payloads_user_code_idx').on(table.userCode),
     index('oidc_payloads_expires_at_idx').on(table.expiresAt),
   ],
 );

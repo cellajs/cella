@@ -8,10 +8,6 @@ import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { principalsTable } from '#/modules/principals/principals-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
-/** `secret` keys authenticate a service account; `publishable` keys (later) identify a tenant and authorize nothing. */
-export const apiKeyTypes = ['secret', 'publishable'] as const;
-export type ApiKeyType = (typeof apiKeyTypes)[number];
-
 /**
  * Opaque keys of a principal. Only the SHA-256 hash is stored; the plaintext is shown once at creation. A key may
  * only narrow what its principal can do (`scopes`), never widen it. Not under RLS: the machine guard looks a key up by
@@ -28,9 +24,7 @@ export const apiKeysTable = snakeCase.table(
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
-    type: varchar({ enum: apiKeyTypes }).notNull().default('secret'),
     name: varchar({ length: maxLength.field }).notNull(),
-    description: varchar({ length: maxLength.field }),
     /** The public part shown in the UI and logs: `<app>_sk_live_` plus the first characters of the secret. */
     prefix: varchar({ length: maxLength.field }).notNull(),
     hash: varchar({ length: maxLength.field }).notNull(),
@@ -42,7 +36,6 @@ export const apiKeysTable = snakeCase.table(
     revokedBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })
       .$type<PrincipalId>(),
-    lastUsedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })
       .$type<PrincipalId>(),
