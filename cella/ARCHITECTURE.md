@@ -37,7 +37,7 @@ Below you see a typical full production stack. However, Yjs is optional and CDC 
 | **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
 | **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC) and Yjs workers run separately or alongside the API. |
+| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth and MCP workers run separately or alongside the API. |
 
 Cella favors a narrow stack over replaceable abstractions: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
@@ -58,11 +58,11 @@ Channel entities stay conventional CRUD. Product entities get live updates and o
 
 ## Trust boundaries
 
-Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Each sign-in enrolls the browser in the devices table under a per-user hash of a long-lived device cookie; a sign-in from a browser the account has not used before mails the owner, and rows unseen for 400 days are pruned. An account is identified by its sign-in credentials, not by an email address: an invitation sent to any address can be accepted by whoever opens its link, as the account they are signed in to. External identities (OAuth today, SSO later) live in the identities table keyed on kind, issuer slug and the issuer's subject, never on an address. The emails table lists the inboxes an account has proven, the sign-up address and any provider address whose verification mail was clicked; each is a magic-link sign-in identifier and an invitation target. Cella has a layered approach to balance defense in depth, maintainability and performance.
+Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. Each sign-in enrolls the browser in the devices table under a per-user hash of a long-lived device cookie; a sign-in from a browser the account has not used before mails the owner, and rows unseen for 400 days are pruned. An account is identified by its sign-in credentials, not by an email address: an invitation sent to any address can be accepted by whoever opens its link, as the account they are signed in to. External identities (OAuth today, SSO later) live in the identities table keyed on kind, issuer slug and the issuer's subject, never on an address. The emails table lists the inboxes an account has proven, the sign-up address and any provider address whose verification mail was clicked; each is a magic-link sign-in identifier and an invitation target. Machines act as principals too: a service account holds role bindings like a member and authenticates with an API key or an access token from the app's own authorization server, narrowed by access scopes ([Interoperability](./INTEROPERABILITY.md)). Cella has a layered approach to balance defense in depth, maintainability and performance.
 
 | Layer | Responsibility |
 | --- | --- |
-| **Request guards** | Establish the authenticated tenant and channel context. |
+| **Request guards** | Establish the actor (a person or a service account), the tenant and the channel context. |
 | **Permission engine** | Decide whether the actor may create, read, update, or delete the subject. |
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
@@ -73,7 +73,7 @@ The permission engine lives in `shared/`, so the API and the optional Yjs relay 
 
 Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
 
-Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC and Yjs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth and MCP are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
@@ -89,7 +89,8 @@ Flat-root monorepo:
 ├── sdk           Generated OpenAPI client, types, and Zod schemas
 ├── cdc           PostgreSQL change-data-capture worker
 ├── yjs           Optional collaborative-editing relay
-├── mcp           Optional Model Context Protocol service
+├── mcp           Optional Model Context Protocol worker
+├── oauth         Optional OAuth authorization server worker
 ├── infra         Pulumi deployment and operational CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
 ├── locales       Translations

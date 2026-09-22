@@ -53,7 +53,9 @@ Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Auth
 
-Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/`, `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+
+Machine access ([Interoperability](/docs/page/architecture/interoperability)): `principals/` (the supertype every provenance column references), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client; `credential` means a passkey.
 
 ## Permissions
 
@@ -85,7 +87,7 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 **Extension system** in `backend/src/core/`:
 
 - `x-middleware.ts`: wrap guards/limiters/caches with `xMiddleware(options, fn)` so they appear in the spec and docs UI. Use `setMiddlewareExtension` for composed middleware.
-- `x-routes.ts`: always `createXRoute`, never `createRoute`. Props: `xGuard` (required), `xRateLimiter`, `xCache`.
+- `x-routes.ts`: always `createXRoute`, never `createRoute`. Props: `xGuard` (required), `xRateLimiter`, `xCache`, `x-tool` (opts the route in as an MCP tool: `{ enabled, description, approvalRequired, category, entity, execute }`; input derives from `request`, `execute` calls the operation). Per-operation `security` follows the guard's declaration (`cookieAuth`, `apiKey`, `oauth2`).
 - `openapi-extensions.ts`: new `x-*` extension types go here.
 - `openapi-registration.ts`: builds the spec and writes `openapi.cache.json`.
 - Frontend: the openapi-parser plugin (`sdk/src/plugins/openapi-parser/`) writes generated docs, served by Vite at `/static/docs.gen/`. The docs UI is the frontend docs module.
@@ -168,6 +170,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 ## Testing
 
 - Test modes: [Testing](/docs/page/guides/testing).
+- The authorization server runs in-process for tests: `backend/tests/oauth-helpers.ts` (`startTestOauthServer`, `clientCredentialsToken`, `authorizationCodeToken` through the consent routes).
 
 ## Deploy debugging
 
@@ -193,7 +196,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 
 ## Commands
 
-- `pnpm dev`: Dev servers for every package. Start PostgreSQL first with `pnpm docker`.
+- `pnpm dev`: Dev servers for every package, including the `oauth/` and `mcp/` workers. Start PostgreSQL first with `pnpm docker`.
 - `pnpm check`: Runs `sdk` + typecheck + `lens:check` + `lint:fix` (which includes the style and doc checks).
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.

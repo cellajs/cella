@@ -50,6 +50,8 @@ Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) 
 
 ## Conventions
 
+A branch that adds migrations runs its suite against a throwaway database (`DB_TEST_PORT=<port>` with a fresh container from the same image), never the shared test database other worktrees migrate. Tests that need the authorization server start it in-process with `backend/tests/oauth-helpers.ts`; no separate process, no network.
+
 **Placement.** Pick by scope:
 
 - _Unit tests_: next to the code, as `some-module.test.ts` or a `tests/` folder inside the module when there are several (e.g. [backend/src/lib/tests/](../backend/src/lib/tests/)).

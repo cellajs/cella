@@ -75,10 +75,12 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | **Product** | Owns no roles and inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
 | **User entity** | Carries no policies. `configurePermissions` filters it out. |
 | **Membership** | Explicit `user → channel` relation. The engine reads only `{ channelType, channelId, role }` (`AccessMembership`). |
+| **Binding** | A role on a channel, whoever holds it: a membership row for a user, a stored binding for a service account. `actor.bindings` is what the guards and the engine read. |
 | **Subject** | What is acted on: entity type, optional id, `channelIds` scope, optionally `row`. |
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` in policies: allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
+| **Access scope** | A credential's mask over its bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
 
 ## The access you present
 
@@ -86,11 +88,11 @@ Every `checkAccess*` call takes an explicit `Access`, actor plus memberships:
 
 ```ts
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[] }
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 ```
 
-Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the guard-populated `userId`, `isSystemAdmin`, and `memberships` off the request context and yields `{ anonymous: true }` when nobody is signed in.
+Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the actor the guard populated (`id`, `bindings`, `scopes`, `isSystemAdmin`) off the request context and yields `{ anonymous: true }` when nobody is signed in. `scopes` is required so a hand-built access states its mask: a session passes `null`; an API key or an access token passes what it was issued with, and the decision is `allowed AND the scope covers the action`. Where scopes come from: [Interoperability](./INTEROPERABILITY.md#access-scopes).
 
 ## The policy consulted
 

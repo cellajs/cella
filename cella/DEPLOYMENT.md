@@ -22,15 +22,15 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
             │             Scaleway Load Balancer              │  TLS termination,
             │  default    →  frontend VM                      │  one public IP
             │  /api       →  backend VM                       │
-            │  /yjs, /mcp →  worker VMs                       │
+            │  /yjs, /mcp, /oauth → worker VMs                │
  ┌──────────┤                                                 ├────────────┐
  │          └───────┬────────────────┬──────────────────┬─────┘            │
  │ Private network  │                │                  │  plain HTTP to   │
  │ (VPC)            │                │                  │  VM private IPs  │
  │                  ▼                ▼                  ▼                  │
  │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
- │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs,      │ │
- │           │   (Caddy)   │  │             │ │  mcp (run on backend     │ │
+ │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs, mcp, │ │
+ │           │   (Caddy)   │  │             │ │  oauth (run on backend   │ │
  │           │             │  │             │ │  VM when singleVM)       │ │
  │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
  │                  │                │                  │                  │
@@ -48,7 +48,7 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Backend, yjs and mcp share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`). The LB never rewrites paths. `cdc` never takes an LB route.
+- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` never takes an LB route.
 - **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
@@ -157,7 +157,7 @@ Most config changes ship through a normal CI deploy, including toggling `appConf
 
 **Preview** in the same menu is the read-only dry run of an Apply infra change; a CI deploy applies the same diff except the VM policy rules. Your standing admin key is enough for it, and the organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`. Run it before an Apply to see exactly what will change.
 
-VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service, or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
+VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service (the `oauth` worker in 0.11 is such an addition), or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
 
 ## Fresh installation
 
