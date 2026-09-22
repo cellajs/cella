@@ -3,6 +3,7 @@ import { createXRoute } from '#/core/x-routes';
 import { crossTenantGuard, publicGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
+  connectedAppSchema,
   meAuthDataSchema,
   mePendingInvitationSchema,
   meSchema,
@@ -11,7 +12,6 @@ import {
   uploadTokenSchema,
 } from '#/modules/me/me-schema';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
@@ -24,34 +24,12 @@ import {
   paginationSchema,
 } from '#/schemas';
 import {
+  mockConnectedApp,
   mockMeAuthResponse,
   mockMeResponse,
   mockPaginatedInvitationsResponse,
   mockUploadTokenResponse,
 } from './me-mocks';
-
-/** A consent the user gave to an OAuth client, as the account page lists it. */
-const connectedAppSchema = z
-  .object({
-    id: z.string(),
-    clientId: z.string(),
-    clientName: z.string(),
-    scopes: z.array(z.string()),
-    resources: z.array(z.string()),
-    createdAt: z.string(),
-    expiresAt: z.string().nullable(),
-  })
-  .openapi('ConnectedApp', { description: 'An OAuth consent (grant) of the current user.' });
-
-const mockConnectedApp = () => ({
-  id: 'gr_01J9Z2Q0X7ZQ4S5M8N',
-  clientId: 'https://vscode.dev/oauth/client-metadata.json',
-  clientName: 'Visual Studio Code',
-  scopes: ['attachment:read'],
-  resources: [resourceUri({ face: 'mcp', tenantId: 'tenant01', organizationId: 'org01' })],
-  createdAt: '2026-09-22T10:00:00.000Z',
-  expiresAt: '2026-10-22T10:00:00.000Z',
-});
 
 const meRoutes = {
   getMe: createXRoute({
@@ -309,7 +287,7 @@ const meRoutes = {
       200: {
         description: 'Consent was revoked',
         content: {
-          'application/json': { schema: z.object({ id: z.string() }), example: { id: mockConnectedApp().id } },
+          'application/json': { schema: batchResponseSchema() },
         },
       },
       ...errorResponseRefs,

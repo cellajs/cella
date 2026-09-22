@@ -152,6 +152,7 @@ describe('OAuth authorization server', async () => {
     const grantId = await grant.save();
     const refresh = new provider.RefreshToken({
       accountId: user.id,
+      // The provider's Client class is not constructible outside its own lifecycle; the model reads only clientId.
       client: { clientId: grant.clientId } as never,
       grantId,
       gty: 'authorization_code',

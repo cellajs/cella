@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
 import type { CredentialModel } from '#/modules/service-accounts/credentials-db';
+import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 
 export const mockServiceAccountResponse = (key = 'serviceAccount:default'): ServiceAccountModel =>
@@ -19,12 +20,14 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       createdBy: mockUuid(),
       createdAt,
       updatedAt: createdAt,
+      updatedBy: null,
       lastUsedAt: null,
     };
   });
 
-/** A fixed key whose checksum is valid, so examples round-trip through `parseApiKey`; never issued. */
-const exampleSecret = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123454Wf2Qf`;
+/** A fixed key whose checksum is computed, so the example round-trips through `parseApiKey`; never issued. */
+const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
+const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
 export const mockCredentialResponse = (key = 'credential:default'): CredentialModel =>
   withFakerSeed(key, () => ({
@@ -39,6 +42,7 @@ export const mockCredentialResponse = (key = 'credential:default'): CredentialMo
     scopes: ['attachment:read'],
     expiresAt: null,
     revokedAt: null,
+    revokedBy: null,
     lastUsedAt: null,
     createdBy: mockUuid(),
     createdAt: mockPastIsoDate(),

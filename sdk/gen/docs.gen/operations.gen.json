@@ -1023,7 +1023,7 @@
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": true,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["userGuard"],
       "xRateLimiter": ["pointsLimiter"],

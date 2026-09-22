@@ -526,6 +526,7 @@ export const zServiceAccount = z.object({
   ),
   clientId: z.string().max(255).nullable(),
   createdBy: z.uuid().nullable(),
+  updatedBy: z.uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   lastUsedAt: z.string().nullable(),
@@ -548,6 +549,7 @@ export const zCredential = z.object({
     .nullable(),
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
+  revokedBy: z.uuid().nullable(),
   lastUsedAt: z.string().nullable(),
   createdBy: z.uuid().nullable(),
   createdAt: z.string(),
@@ -1128,7 +1130,9 @@ export const zRevokeConnectedAppPath = z.object({
  * Consent was revoked
  */
 export const zRevokeConnectedAppResponse = z.object({
-  id: z.string(),
+  data: z.array(z.unknown()),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 /**

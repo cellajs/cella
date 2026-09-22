@@ -3,7 +3,8 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { insertServiceAccount } from '#/modules/service-accounts/helpers/insert-service-accounts';
 import { issueCredential } from '#/modules/service-accounts/helpers/issue-credential';
-import { countServiceAccounts, requireOrgAdmin } from '#/modules/service-accounts/service-accounts-queries';
+import { requireOrgAdmin } from '#/modules/service-accounts/helpers/managed-service-account';
+import { countServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { log } from '#/utils/logger';
@@ -24,7 +25,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
     throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'role_exceeds_creator', role: input.role } });
   }
 
-  assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx));
+  assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx, { tenantId }));
 
   // Account and first key land together: a failed key issue never leaves a keyless account behind.
   const { serviceAccount, issued } = await db.transaction(async (tx) => {

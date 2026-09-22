@@ -602,6 +602,7 @@ export type ServiceAccount = {
   }>;
   clientId: string | null;
   createdBy: string | null;
+  updatedBy: string | null;
   createdAt: string;
   updatedAt: string | null;
   lastUsedAt: string | null;
@@ -632,6 +633,7 @@ export type Credential = {
   scopes: Array<'organization:read' | 'organization:write' | 'attachment:read' | 'attachment:write'> | null;
   expiresAt: string | null;
   revokedAt: string | null;
+  revokedBy: string | null;
   lastUsedAt: string | null;
   createdBy: string | null;
   createdAt: string;
@@ -2919,7 +2921,17 @@ export type RevokeConnectedAppResponses = {
    * Consent was revoked
    */
   200: {
-    id: string;
+    data: Array<unknown>;
+    /**
+     * Identifiers of items that could not be processed
+     */
+    rejectedIds: Array<string>;
+    /**
+     * Map of reason code to rejected item IDs
+     */
+    rejectionReasons?: {
+      [key: string]: Array<string>;
+    };
   };
 };
 

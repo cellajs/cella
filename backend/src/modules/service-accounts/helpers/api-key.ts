@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { crc32 } from 'node:zlib';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
@@ -37,13 +37,14 @@ const toBase62 = (n: number, length: number): string => {
   return out;
 };
 
+/** Uniform over the alphabet: `randomInt` rejects the biased tail a `byte % 62` would keep. */
 const randomBase62 = (length: number): string => {
   let out = '';
-  for (const byte of randomBytes(length)) out += BASE62[byte % 62];
+  for (let i = 0; i < length; i++) out += BASE62[randomInt(62)];
   return out;
 };
 
-const checksumOf = (body: string): string => toBase62(crc32(body), CHECKSUM_LENGTH);
+export const checksumOf = (body: string): string => toBase62(crc32(body), CHECKSUM_LENGTH);
 
 const keyPattern = new RegExp(
   `^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${SECRET_LENGTH}})([0-9A-Za-z]{${CHECKSUM_LENGTH}})$`,

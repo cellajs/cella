@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { MOCK_REF_DATE, mockNanoid, mockPaginated, mockUuid, withFakerSeed } from '#/mocks';
 import type { MeAuthResponse, MeResponse, UploadTokenResponse } from '#/modules/me/types';
 import { mockInactiveMembershipResponse } from '#/modules/memberships/memberships-mocks';
+import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
@@ -67,3 +68,13 @@ export const mockPendingInvitationResponse = (key = 'pending-invitation:default'
 });
 
 export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);
+
+export const mockConnectedApp = () => ({
+  id: 'gr_01J9Z2Q0X7ZQ4S5M8N',
+  clientId: 'https://vscode.dev/oauth/client-metadata.json',
+  clientName: 'Visual Studio Code',
+  scopes: ['attachment:read'],
+  resources: [resourceUri({ face: 'mcp', tenantId: 'tenant01', organizationId: 'org01' })],
+  createdAt: '2026-09-22T10:00:00.000Z',
+  expiresAt: '2026-10-22T10:00:00.000Z',
+});

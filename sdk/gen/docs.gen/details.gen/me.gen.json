@@ -1560,11 +1560,22 @@
         "schema": {
           "type": "object",
           "properties": {
-            "id": { "type": "string", "required": true }
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
           },
           "contentType": "application/json"
-        },
-        "example": { "id": "gr_01J9Z2Q0X7ZQ4S5M8N" }
+        }
       },
       {
         "status": 400,

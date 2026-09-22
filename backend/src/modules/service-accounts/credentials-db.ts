@@ -39,6 +39,9 @@ export const credentialsTable = snakeCase.table(
     scopes: varchar({ length: maxLength.field }).$type<EntityScope>().array(),
     expiresAt: timestamp({ mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),
+    revokedBy: uuid()
+      .references(() => principalsTable.id, { onDelete: 'set null' })
+      .$type<PrincipalId>(),
     lastUsedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })

@@ -1,9 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { defaultHook } from '#/utils/default-hook';
+import { createCredentialOp } from './operations/create-credential';
 import { createServiceAccountOp } from './operations/create-service-account';
-import { createCredentialOp, getCredentialsOp, revokeCredentialOp } from './operations/credentials';
+import { getCredentialsOp } from './operations/get-credentials';
 import { getServiceAccountsOp } from './operations/get-service-accounts';
+import { revokeCredentialOp } from './operations/revoke-credential';
 import { updateServiceAccountOp } from './operations/update-service-account';
 import { serviceAccountRoutes } from './service-accounts-routes';
 

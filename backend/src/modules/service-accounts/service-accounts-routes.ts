@@ -1,13 +1,7 @@
 import { createXRoute } from '#/core/x-routes';
 import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import {
-  errorResponseRefs,
-  idInTenantOrgParamSchema,
-  paginationSchema,
-  tenantOrgParamSchema,
-  validIdSchema,
-} from '#/schemas';
+import { errorResponseRefs, idInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 import {
   mockCreatedCredentialResponse,
   mockCredentialResponse,
@@ -19,15 +13,13 @@ import {
   createdCredentialSchema,
   createServiceAccountBodySchema,
   createServiceAccountResponseSchema,
+  credentialParamSchema,
   credentialSchema,
   credentialsResponseSchema,
   serviceAccountListQuerySchema,
   serviceAccountSchema,
   updateServiceAccountBodySchema,
 } from './service-accounts-schema';
-
-const credentialParamSchema = idInTenantOrgParamSchema.extend({ credentialId: validIdSchema });
-const tags = ['service-accounts', 'cella'];
 
 /** All routes are user-only: creating and managing machine principals is a human act (D9). */
 export const serviceAccountRoutes = {
@@ -37,7 +29,7 @@ export const serviceAccountRoutes = {
     path: '/',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Create service account',
     description:
       'Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.',
@@ -63,7 +55,7 @@ export const serviceAccountRoutes = {
     method: 'get',
     path: '/',
     xGuard: [userGuard, tenantGuard, orgGuard],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Get service accounts',
     description: 'Lists the service accounts of this organization.',
     request: { params: tenantOrgParamSchema, query: serviceAccountListQuerySchema },
@@ -86,7 +78,7 @@ export const serviceAccountRoutes = {
     path: '/{id}',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Update service account',
     description: 'Renames, describes, disables or re-enables a service account. Accounts are never deleted.',
     request: {
@@ -106,7 +98,7 @@ export const serviceAccountRoutes = {
     method: 'get',
     path: '/{id}/credentials',
     xGuard: [userGuard, tenantGuard, orgGuard],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Get API keys',
     description: 'Lists the API keys of a service account. Secrets are never returned here.',
     request: { params: idInTenantOrgParamSchema },
@@ -126,7 +118,7 @@ export const serviceAccountRoutes = {
     path: '/{id}/credentials',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Create API key',
     description:
       'Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.',
@@ -148,7 +140,7 @@ export const serviceAccountRoutes = {
     path: '/{id}/credentials/{credentialId}',
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags,
+    tags: ['service-accounts', 'cella'],
     summary: 'Revoke API key',
     description: 'Revokes an API key immediately. The row stays for the audit trail.',
     request: { params: credentialParamSchema },
@@ -161,5 +153,3 @@ export const serviceAccountRoutes = {
     },
   }),
 };
-
-export type ServiceAccountRoutes = typeof serviceAccountRoutes;

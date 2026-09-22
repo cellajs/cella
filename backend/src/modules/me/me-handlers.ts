@@ -15,13 +15,14 @@ import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { deleteSessionsByIds, deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
+import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
 import { getMeOp } from '#/modules/me/operations/get-me';
 import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
+import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
-import { getConnectedAppsOp, revokeConnectedAppOp } from '#/modules/oauth-server/operations/connected-apps';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 

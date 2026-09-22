@@ -43,6 +43,10 @@ export const serviceAccountsTable = snakeCase.table(
     createdBy: uuid()
       .references(() => principalsTable.id, { onDelete: 'set null' })
       .$type<PrincipalId>(),
+    /** Who last changed name, description or status; disabling is the security-relevant act here. */
+    updatedBy: uuid()
+      .references(() => principalsTable.id, { onDelete: 'set null' })
+      .$type<PrincipalId>(),
     createdAt: timestampColumns.createdAt,
     updatedAt: timestampColumns.updatedAt,
     lastUsedAt: timestamp({ mode: 'string' }),

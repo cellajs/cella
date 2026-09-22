@@ -4,7 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { maxLength, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
+import { idInTenantOrgParamSchema, maxLength, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
 import {
   mockCreatedCredentialResponse,
   mockCredentialResponse,
@@ -24,6 +24,10 @@ const serviceGrantSchema = z.object({
   role: z.enum(organizationRoles),
 });
 
+/** The route addresses one key of one account. */
+export const credentialParamSchema = idInTenantOrgParamSchema.extend({ credentialId: validIdSchema });
+
+/** `createdBy` / `updatedBy` stay principal ids: the audit-user hydration resolves users only (service badge is a follow-up). */
 export const serviceAccountSchema = z
   .object({
     ...createSelectSchema(serviceAccountsTable).shape,
