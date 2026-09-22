@@ -489,6 +489,11 @@
                             "minimum": 0
                           }
                         }
+                      },
+                      "allowConsentedClients": {
+                        "type": "boolean",
+                        "required": true,
+                        "description": "Whether users may consent to OAuth clients not installed by an admin"
                       }
                     }
                   },
@@ -657,6 +662,11 @@
                       "minimum": 0
                     }
                   }
+                },
+                "allowConsentedClients": {
+                  "type": "boolean",
+                  "required": true,
+                  "description": "Whether users may consent to OAuth clients not installed by an admin"
                 }
               }
             },
@@ -801,6 +811,11 @@
                       "minimum": 0
                     }
                   }
+                },
+                "allowConsentedClients": {
+                  "type": "boolean",
+                  "required": true,
+                  "description": "Whether users may consent to OAuth clients not installed by an admin"
                 }
               }
             },
@@ -940,6 +955,7 @@
                 "description": "Entity quotas (0 = unlimited)",
                 "additionalProperties": { "type": "integer", "required": false, "minimum": 0 }
               },
+              "allowConsentedClients": { "type": "boolean", "required": false },
               "rateLimits": {
                 "type": "object",
                 "required": false,

@@ -1651,6 +1651,40 @@
         },
         "x-tags": ["data", "me", "cella"]
       },
+      "ConnectedApp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
+        "description": "An OAuth consent (grant) of the current user."
+      },
       "Request": {
         "type": "object",
         "properties": {
@@ -1751,9 +1785,13 @@
                   }
                 },
                 "required": ["apiPointsPerHour"]
+              },
+              "allowConsentedClients": {
+                "type": "boolean",
+                "description": "Whether users may consent to OAuth clients not installed by an admin"
               }
             },
-            "required": ["quotas", "rateLimits"]
+            "required": ["quotas", "rateLimits", "allowConsentedClients"]
           },
           "authStrategies": {
             "type": "array",
@@ -2463,6 +2501,10 @@
               "required": ["channelType", "channelId", "organizationId", "role"]
             }
           },
+          "clientId": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
           "createdBy": {
             "type": ["string", "null"],
             "format": "uuid"
@@ -2484,6 +2526,7 @@
           "description",
           "status",
           "grants",
+          "clientId",
           "createdBy",
           "createdAt",
           "updatedAt",
@@ -2504,6 +2547,7 @@
               "role": "member"
             }
           ],
+          "clientId": null,
           "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
           "createdAt": "2024-09-01T22:49:17.262Z",
           "updatedAt": "2024-09-01T22:49:17.262Z",
@@ -6022,6 +6066,140 @@
         }
       }
     },
+    "/me/connected-apps": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getConnectedApps",
+        "tags": ["me", "cella"],
+        "summary": "Get connected apps",
+        "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Connected apps",
+            "content": {
+              "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "gr_01J9Z2Q0X7ZQ4S5M8N",
+                      "clientId": "https://vscode.dev/oauth/client-metadata.json",
+                      "clientName": "Visual Studio Code",
+                      "scopes": ["attachment:read"],
+                      "resources": ["https://www.cellajs.com/mcp/tenant01/org01/mcp"],
+                      "createdAt": "2026-09-22T10:00:00.000Z",
+                      "expiresAt": "2026-10-22T10:00:00.000Z"
+                    }
+                  ]
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConnectedApp"
+                      }
+                    }
+                  },
+                  "required": ["items"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/me/connected-apps/{id}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeConnectedApp",
+        "tags": ["me", "cella"],
+        "summary": "Revoke connected app",
+        "description": "Revokes a consent: the grant and every token issued under it are deleted.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent was revoked",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "gr_01J9Z2Q0X7ZQ4S5M8N"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/metrics/public": {
       "get": {
         "security": [],
@@ -7769,6 +7947,9 @@
                           "minimum": 0
                         },
                         "description": "Entity quotas (0 = unlimited)"
+                      },
+                      "allowConsentedClients": {
+                        "type": "boolean"
                       },
                       "rateLimits": {
                         "type": "object",
@@ -11979,6 +12160,7 @@
                         "role": "member"
                       }
                     ],
+                    "clientId": null,
                     "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
                     "createdAt": "2024-09-01T22:49:17.262Z",
                     "updatedAt": "2024-09-01T22:49:17.262Z",
@@ -12118,6 +12300,7 @@
                           "role": "member"
                         }
                       ],
+                      "clientId": null,
                       "createdBy": "71b17b41-ee45-46f6-bf29-b747a897a617",
                       "createdAt": "2024-03-18T03:56:02.722Z",
                       "updatedAt": "2024-03-18T03:56:02.722Z",
@@ -12137,6 +12320,7 @@
                           "role": "member"
                         }
                       ],
+                      "clientId": null,
                       "createdBy": "3c2ac382-7d82-4be1-b935-e9d906125ba7",
                       "createdAt": "2024-04-20T08:15:05.883Z",
                       "updatedAt": "2024-04-20T08:15:05.883Z",
@@ -12272,6 +12456,7 @@
                       "role": "member"
                     }
                   ],
+                  "clientId": null,
                   "createdBy": "e4dbeebe-841e-48f2-bf96-02d0cb26c756",
                   "createdAt": "2024-09-01T22:49:17.262Z",
                   "updatedAt": "2024-09-01T22:49:17.262Z",

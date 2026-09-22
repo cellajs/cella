@@ -20,8 +20,8 @@ export interface ServiceGrant {
   role: EntityRole;
 }
 
-/** A signed-in user: grants are its membership rows, unmasked. */
-type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: null };
+/** A user: grants are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
+type UserActor = { kind: 'user'; id: UserId; grants: MembershipBaseModel[]; scopes: EntityScope[] | null };
 
 /** A service account behind an API key: grants are its stored bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {

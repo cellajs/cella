@@ -15,6 +15,7 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       description: faker.hacker.phrase(),
       status: 'active',
       grants: [{ channelType: 'organization', channelId: organizationId, organizationId, role: 'member' }],
+      clientId: null,
       createdBy: mockUuid(),
       createdAt,
       updatedAt: createdAt,

@@ -989,6 +989,52 @@
     }
   },
   {
+    "id": "getConnectedApps",
+    "hash": "tag/me/GET/me/connected-apps",
+    "method": "get",
+    "path": "/me/connected-apps",
+    "tags": ["me"],
+    "summary": "Get connected apps",
+    "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "revokeConnectedApp",
+    "hash": "tag/me/DELETE/me/connected-apps/{id}",
+    "method": "delete",
+    "path": "/me/connected-apps/{id}",
+    "tags": ["me"],
+    "summary": "Revoke connected app",
+    "description": "Revokes a consent: the grant and every token issued under it are deleted.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["me"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "getPublicCounts",
     "hash": "tag/metrics/GET/metrics/public",
     "method": "get",

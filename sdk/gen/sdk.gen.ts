@@ -101,6 +101,9 @@ import type {
   GetAuthHealthData,
   GetAuthHealthErrors,
   GetAuthHealthResponses,
+  GetConnectedAppsData,
+  GetConnectedAppsErrors,
+  GetConnectedAppsResponses,
   GetCredentialsData,
   GetCredentialsErrors,
   GetCredentialsResponses,
@@ -214,6 +217,9 @@ import type {
   ResendPendingInvitationData,
   ResendPendingInvitationErrors,
   ResendPendingInvitationResponses,
+  RevokeConnectedAppData,
+  RevokeConnectedAppErrors,
+  RevokeConnectedAppResponses,
   RevokeCredentialData,
   RevokeCredentialErrors,
   RevokeCredentialResponses,
@@ -343,6 +349,7 @@ import {
   zGetAttachmentsQuery,
   zGetAttachmentsResponse,
   zGetAuthHealthResponse,
+  zGetConnectedAppsResponse,
   zGetCredentialsPath,
   zGetCredentialsResponse,
   zGetDomainPath,
@@ -417,6 +424,8 @@ import {
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationPath,
   zResendPendingInvitationResponse,
+  zRevokeConnectedAppPath,
+  zRevokeConnectedAppResponse,
   zRevokeCredentialPath,
   zRevokeCredentialResponse,
   zSelfCreateTenantBody,
@@ -1995,6 +2004,77 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/me/memberships',
+    ...options,
+  });
+
+/**
+ * Get connected apps
+ *
+ * Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.
+ *
+ * **GET /me/connected-apps** ·· [getConnectedApps](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/connected-apps) ·· [getConnectedApps](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/connected-apps) ·· _me_cella_
+ *
+ * @param {getConnectedAppsData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getConnectedApps = <ThrowOnError extends boolean = true>(
+  options?: Options<GetConnectedAppsData, ThrowOnError>,
+): RequestResult<GetConnectedAppsResponses, GetConnectedAppsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetConnectedAppsResponses, GetConnectedAppsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetConnectedAppsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/connected-apps',
+    ...options,
+  });
+
+/**
+ * Revoke connected app
+ *
+ * Revokes a consent: the grant and every token issued under it are deleted.
+ *
+ * **DELETE /me/connected-apps/{id}** ·· [revokeConnectedApp](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/connected-apps/{id}) ·· [revokeConnectedApp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/connected-apps/{id}) ·· _me_cella_
+ *
+ * @param {revokeConnectedAppData} options
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
+  options: Options<RevokeConnectedAppData, ThrowOnError>,
+): RequestResult<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRevokeConnectedAppPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRevokeConnectedAppResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v2',
+        type: 'apiKey',
+      },
+    ],
+    url: '/me/connected-apps/{id}',
     ...options,
   });
 

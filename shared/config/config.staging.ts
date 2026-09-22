@@ -13,6 +13,8 @@ export const staging = {
   backendAuthUrl: 'https://staging.cellajs.com/api/auth',
   yjsUrl: 'wss://staging.cellajs.com/yjs',
   mcpUrl: 'https://staging.cellajs.com/mcp',
+  oauthUrl: 'https://staging.cellajs.com/oauth',
+  services: { oauth: { enabled: true } },
 
   singleVM: true,
 } satisfies DeepPartial<typeof _default>;

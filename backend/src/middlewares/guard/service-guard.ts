@@ -4,9 +4,12 @@ import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import type { ServiceAccountId } from '#/db/utils/ids';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { bearerJwtFrom, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
 import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { usersTable } from '#/modules/user/user-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -29,7 +32,45 @@ function touchLastUsed(credentialId: string, serviceAccountId: string): void {
 const invalidKey = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
 /**
- * Authenticates a secret API key and sets its service account as the actor. Tenant resolution stays with
+ * A token from cella's authorization server (D12): verified locally, bound to this route's tenant, it runs as the user
+ * who consented (masked by the token's scopes) or as the service account behind a `client_credentials` grant.
+ */
+async function setActorFromToken(ctx: Parameters<Parameters<typeof xMiddleware>[1]>[0], jwt: string): Promise<void> {
+  const tenantId = ctx.req.param('tenantId')?.toLowerCase();
+  if (!tenantId)
+    throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
+  const token = await verifyAccessToken(jwt, { tenantId, organizationId: ctx.req.param('organizationId') });
+
+  if (token.kind === 'user') {
+    const [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, token.principalId)).limit(1);
+    if (!user) throw invalidKey('unknown_user');
+    const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    ctx.set('user', user);
+    ctx.set('userId', user.id);
+    ctx.set('memberships', memberships);
+    ctx.set('actor', { kind: 'user', id: user.id, grants: memberships, scopes: token.scopes });
+  } else {
+    const [account] = await baseDb
+      .select()
+      .from(serviceAccountsTable)
+      .where(eq(serviceAccountsTable.id, token.principalId))
+      .limit(1);
+    if (account?.status !== 'active') throw invalidKey('service_account_disabled');
+    ctx.set('actor', {
+      kind: 'service',
+      id: account.id,
+      tenantId: account.tenantId,
+      grants: account.grants,
+      scopes: token.scopes,
+    });
+  }
+  ctx.set('isSystemAdmin', false);
+  ctx.set('db', baseDb);
+}
+
+/**
+ * Authenticates a machine credential and sets the actor: a secret API key runs as its service account; a token from
+ * cella's authorization server runs as the consenting user or the account behind it. Tenant resolution stays with
  * `tenantGuard`, which checks the URL against the actor's tenant. Sessions never reach this guard; browsers never pass it.
  */
 export const serviceGuard = xMiddleware(
@@ -40,6 +81,12 @@ export const serviceGuard = xMiddleware(
     description: 'Requires a secret API key and sets the service account as the actor',
   },
   async (ctx, next) => {
+    const jwt = bearerJwtFrom(ctx);
+    if (jwt) {
+      await setActorFromToken(ctx, jwt);
+      return serviceBurstLimiter(ctx, next);
+    }
+
     const raw = apiKeyFrom(ctx);
     if (!raw) throw invalidKey('missing_api_key');
 

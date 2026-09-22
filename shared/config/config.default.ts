@@ -98,6 +98,8 @@ export const config = {
   backendAuthUrl: 'https://www.cellajs.com/api/auth',
   yjsUrl: 'wss://www.cellajs.com/yjs',
   mcpUrl: 'https://www.cellajs.com/mcp',
+  /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
+  oauthUrl: 'https://www.cellajs.com/oauth',
   // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
   services: {
     frontend: { enabled: true as boolean },
@@ -105,6 +107,7 @@ export const config = {
     cdc: { enabled: true as boolean },
     yjs: { enabled: true as boolean },
     mcp: { enabled: false as boolean },
+    oauth: { enabled: false as boolean },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
@@ -143,6 +146,7 @@ export const config = {
     cdcHealth: 4001,
     yjs: 4002,
     mcp: 4003,
+    oauth: 4004,
   },
 
   has: {

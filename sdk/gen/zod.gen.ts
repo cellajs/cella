@@ -320,6 +320,19 @@ export const zUploadToken = z.object({
 });
 
 /**
+ * An OAuth consent (grant) of the current user.
+ */
+export const zConnectedApp = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  clientName: z.string(),
+  scopes: z.array(z.string()),
+  resources: z.array(z.string()),
+  createdAt: z.string(),
+  expiresAt: z.string().nullable(),
+});
+
+/**
  * A contact or waitlist submission from an unauthenticated user.
  */
 export const zRequest = z.object({
@@ -343,6 +356,7 @@ export const zTenant = z.object({
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
     }),
+    allowConsentedClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'])),
   createdBy: z.uuid().nullable(),
@@ -502,6 +516,7 @@ export const zServiceAccount = z.object({
       role: z.enum(['admin', 'member']),
     }),
   ),
+  clientId: z.string().max(255).nullable(),
   createdBy: z.uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
@@ -1091,6 +1106,24 @@ export const zGetMyMembershipsResponse = z.object({
 });
 
 /**
+ * Connected apps
+ */
+export const zGetConnectedAppsResponse = z.object({
+  items: z.array(zConnectedApp),
+});
+
+export const zRevokeConnectedAppPath = z.object({
+  id: z.string().max(50),
+});
+
+/**
+ * Consent was revoked
+ */
+export const zRevokeConnectedAppResponse = z.object({
+  id: z.string(),
+});
+
+/**
  * Public counts
  */
 export const zGetPublicCountsResponse = z.object({
@@ -1387,6 +1420,7 @@ export const zUpdateTenantBody = z.object({
   restrictions: z
     .object({
       quotas: z.record(z.string(), z.int().gte(0)).optional(),
+      allowConsentedClients: z.boolean().optional(),
       rateLimits: z
         .object({
           apiPointsPerHour: z.int().gte(0).optional(),

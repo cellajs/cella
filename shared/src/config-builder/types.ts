@@ -183,7 +183,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   yjsUrl: string;
 
   mcpUrl: string;
-  devPorts: { frontend: number; api: number; cdcHealth: number; yjs: number; mcp: number };
+  oauthUrl: string;
+  devPorts: { frontend: number; api: number; cdcHealth: number; yjs: number; mcp: number; oauth: number };
   services: Record<string, AppServiceEndpointConfig>;
   singleVM: boolean;
   aboutUrl: string;

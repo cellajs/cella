@@ -19,6 +19,7 @@ export const test = {
   backendAuthUrl: development.backendAuthUrl,
   yjsUrl: development.yjsUrl,
   mcpUrl: development.mcpUrl,
+  oauthUrl: development.oauthUrl,
   services: {
     yjs: { enabled: true },
   },

@@ -5,6 +5,8 @@ if (env.MODE === 'migrate') {
   await import('./main.migrate');
 } else if (env.MODE === 'mcp') {
   await import('./main.mcp');
+} else if (env.MODE === 'oauth') {
+  await import('./main.oauth');
 } else if (env.MODE === 'cdc') {
   await import('./main.cdc');
 } else {

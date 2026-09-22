@@ -21,6 +21,9 @@ export const development = {
   backendAuthUrl: 'http://localhost:3000/api/auth',
   yjsUrl: 'ws://localhost:3000/yjs',
   mcpUrl: 'http://localhost:3000/mcp',
+  oauthUrl: 'http://localhost:3000/oauth',
+  // The authorization server runs locally so the MCP consent flow can be exercised end to end.
+  services: { oauth: { enabled: true } },
 
   // Shared Cella Maps key is referer-restricted to official domains and rejects localhost.
   // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.

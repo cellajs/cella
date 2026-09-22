@@ -370,6 +370,19 @@ export type UploadToken = {
 };
 
 /**
+ * An OAuth consent (grant) of the current user.
+ */
+export type ConnectedApp = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  scopes: Array<string>;
+  resources: Array<string>;
+  createdAt: string;
+  expiresAt: string | null;
+};
+
+/**
  * A contact or waitlist submission from an unauthenticated user.
  */
 export type Request = {
@@ -411,6 +424,10 @@ export type Tenant = {
        */
       apiPointsPerHour: number;
     };
+    /**
+     * Whether users may consent to OAuth clients not installed by an admin
+     */
+    allowConsentedClients: boolean;
   };
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
   createdBy: string | null;
@@ -575,6 +592,7 @@ export type ServiceAccount = {
     organizationId: string;
     role: 'admin' | 'member';
   }>;
+  clientId: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string | null;
@@ -2803,6 +2821,102 @@ export type GetMyMembershipsResponses = {
 
 export type GetMyMembershipsResponse = GetMyMembershipsResponses[keyof GetMyMembershipsResponses];
 
+export type GetConnectedAppsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/connected-apps';
+};
+
+export type GetConnectedAppsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetConnectedAppsError = GetConnectedAppsErrors[keyof GetConnectedAppsErrors];
+
+export type GetConnectedAppsResponses = {
+  /**
+   * Connected apps
+   */
+  200: {
+    items: Array<ConnectedApp>;
+  };
+};
+
+export type GetConnectedAppsResponse = GetConnectedAppsResponses[keyof GetConnectedAppsResponses];
+
+export type RevokeConnectedAppData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/me/connected-apps/{id}';
+};
+
+export type RevokeConnectedAppErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type RevokeConnectedAppError = RevokeConnectedAppErrors[keyof RevokeConnectedAppErrors];
+
+export type RevokeConnectedAppResponses = {
+  /**
+   * Consent was revoked
+   */
+  200: {
+    id: string;
+  };
+};
+
+export type RevokeConnectedAppResponse = RevokeConnectedAppResponses[keyof RevokeConnectedAppResponses];
+
 export type GetPublicCountsData = {
   body?: never;
   path?: never;
@@ -3841,6 +3955,7 @@ export type UpdateTenantData = {
       quotas?: {
         [key: string]: number;
       };
+      allowConsentedClients?: boolean;
       rateLimits?: {
         apiPointsPerHour?: number;
       };
