@@ -4,7 +4,7 @@ import { configurePermissions } from '../src/permissions/policy-matrix.ts';
 // Access policies per entity type: `1` = allowed, `0`/omitted = denied. Elevation vs. self rows,
 // product home rows, publicRead and row conditions are all explained in cella/PERMISSIONS.md.
 
-export const { policyMatrix, publicReadGrants } = configurePermissions(
+export const { policyMatrix, publicReadGrants, accessScopes } = configurePermissions(
   appConfig.entityTypes,
   ({ entityType, channels }) => {
     switch (entityType) {

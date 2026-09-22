@@ -1,5 +1,5 @@
 import { type EntityRole, hierarchy } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
@@ -19,7 +19,7 @@ interface GetOrganizationsInput {
   include: string[];
 }
 
-export async function getOrganizationsOp(ctx: AuthContext, input: GetOrganizationsInput) {
+export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizationsInput) {
   const user = ctx.var.user;
   const memberships = ctx.var.memberships;
   const { q, sort, order, offset, limit, relatableUserId, role, excludeArchived, include } = input;

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getMyInvitations, membershipInvite } from 'sdk';
 import { type EntityRole, hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-invites';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -111,7 +111,7 @@ describe('Draft context invite deferral', async () => {
       .update(organizationsTable)
       .set({ publishedAt: new Date().toISOString() })
       .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as AuthContext, {
+    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as UserContext, {
       channelIds: [organization.id],
     });
 
@@ -127,7 +127,7 @@ describe('Draft context invite deferral', async () => {
     const originalTokenId = beforeRow.tokenId;
     expect(beforeRow.remindedAt).toBeNull();
 
-    const ctx = { var: { db, user: admin } } as unknown as AuthContext;
+    const ctx = { var: { db, user: admin } } as unknown as UserContext;
     const first = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(first.dispatched).toBe(1);
 

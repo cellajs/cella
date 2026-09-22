@@ -7,8 +7,9 @@ export const crossTenantGuard = xMiddleware(
   {
     functionName: 'crossTenantGuard',
     type: 'x-guard',
+    security: [{ cookieAuth: [] }],
     name: 'crossTenant',
-    description: 'Requires authGuard and sets baseDb for cross-tenant access',
+    description: 'Requires userGuard and sets baseDb for cross-tenant access',
   },
   async (ctx, next) => {
     const user = ctx.var.user;
@@ -16,7 +17,7 @@ export const crossTenantGuard = xMiddleware(
 
     if (!user || memberships === undefined) {
       throw new AppError(401, 'unauthorized', 'warn', {
-        message: 'crossTenantGuard requires authGuard middleware',
+        message: 'crossTenantGuard requires userGuard middleware',
       });
     }
 

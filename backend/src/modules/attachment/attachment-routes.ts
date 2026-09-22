@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { productCache } from '#/middlewares/product-cache';
 import {
   bulkPointsLimiter,
@@ -30,13 +30,27 @@ import {
   mockBatchAttachmentsResponse,
   mockPaginatedAttachmentsResponse,
 } from './attachment-mocks';
+import { createAttachmentsOp } from './operations/create-attachments';
+import { deleteAttachmentsOp } from './operations/delete-attachments';
+import { getAttachmentOp } from './operations/get-attachment';
+import { getAttachmentsOp } from './operations/get-attachments';
+import { updateAttachmentOp } from './operations/update-attachment';
 
 const attachmentRoutes = {
   getAttachments: createXRoute({
     operationId: 'getAttachments',
+    'x-tool': {
+      enabled: true,
+      description:
+        'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
+      approvalRequired: false,
+      category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { query }) => getAttachmentsOp(ctx, query),
+    },
     method: 'get',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     // Sync-driven read backpressure on the delta path (template pattern for app product lists)
     xRateLimiter: [syncReadLimiter],
     tags: ['attachments', 'cella', 'product'],
@@ -61,9 +75,18 @@ const attachmentRoutes = {
   }),
   createAttachments: createXRoute({
     operationId: 'createAttachments',
+    'x-tool': {
+      enabled: true,
+      description:
+        'Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.',
+      approvalRequired: true,
+      category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { body }) => createAttachmentsOp(ctx, body),
+    },
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Create attachments',
@@ -94,9 +117,17 @@ const attachmentRoutes = {
   }),
   getAttachment: createXRoute({
     operationId: 'getAttachment',
+    'x-tool': {
+      enabled: true,
+      description: 'Read one attachment: its metadata and the description as text.',
+      approvalRequired: false,
+      category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { params }) => getAttachmentOp(ctx, params.id),
+    },
     method: 'get',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xCache: [productCache('attachment')],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
@@ -114,9 +145,18 @@ const attachmentRoutes = {
   }),
   updateAttachment: createXRoute({
     operationId: 'updateAttachment',
+    'x-tool': {
+      enabled: true,
+      description: 'Rename an attachment or replace its description.',
+      approvalRequired: true,
+      category: 'attachments',
+      entity: 'attachment',
+      // The transaction is server-built, so field timestamps come from the server clock.
+      execute: (ctx, { params, body }) => updateAttachmentOp(ctx, params.id, body, { serverOrigin: true }),
+    },
     method: 'put',
     path: '/{id}',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Update attachment',
@@ -139,9 +179,17 @@ const attachmentRoutes = {
   }),
   deleteAttachments: createXRoute({
     operationId: 'deleteAttachments',
+    'x-tool': {
+      enabled: true,
+      description: 'Delete attachments by id. The stored files stay in storage.',
+      approvalRequired: true,
+      category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { body }) => deleteAttachmentsOp(ctx, Array.isArray(body.ids) ? body.ids : [body.ids]),
+    },
     method: 'delete',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Delete attachments',
@@ -169,7 +217,7 @@ const attachmentRoutes = {
     operationId: 'getPresignedUrls',
     method: 'post',
     path: '/presigned-urls',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [presignedUrlLimiter],
     tags: ['attachments', 'cella', 'product'],
     summary: 'Get presigned URLs',

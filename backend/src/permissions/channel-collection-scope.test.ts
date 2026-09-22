@@ -1,4 +1,4 @@
-import type { Actor, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix } from 'shared';
+import type { ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix, PredicateActor } from 'shared';
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { describe, expect, it } from 'vitest';
@@ -34,9 +34,9 @@ const membership = (channelType: string, channelId: string, role: string): Membe
     role,
   }) as unknown as MembershipBaseModel;
 
-const actor: Actor = { userId: 'actor', isSystemAdmin: false };
+const actor: PredicateActor = { userId: 'actor', isSystemAdmin: false, scopes: null };
 
-const resolve = (memberships: MembershipBaseModel[], asActor: Actor = actor): ChannelCollectionReadScope =>
+const resolve = (memberships: MembershipBaseModel[], asActor: PredicateActor = actor): ChannelCollectionReadScope =>
   resolveChannelCollectionReadScopeForPolicies({
     policies,
     memberships,
@@ -48,7 +48,7 @@ const resolve = (memberships: MembershipBaseModel[], asActor: Actor = actor): Ch
 
 describe('resolveChannelCollectionReadScope', () => {
   it('system admin resolves to unconditional org-wide', () => {
-    const scope = resolve([], { userId: 'admin', isSystemAdmin: true });
+    const scope = resolve([], { userId: 'admin', isSystemAdmin: true, scopes: null });
     expect(scope).toEqual({ orgWide: 'all', ancestorScopes: [] });
   });
 

@@ -1,7 +1,7 @@
 import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -28,7 +28,7 @@ interface CreateMembershipsInput {
   entityType: ChannelEntityType;
 }
 
-export async function createMembershipsOp(ctx: AuthContext, input: CreateMembershipsInput) {
+export async function createMembershipsOp(ctx: UserContext, input: CreateMembershipsInput) {
   const db = ctx.var.db;
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;

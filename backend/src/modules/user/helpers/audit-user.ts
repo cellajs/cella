@@ -57,7 +57,10 @@ type KnownUsersInput =
   | Map<string, UserMinimalBase>
   | { id: string; name: string; slug: string; thumbnailUrl: string | null };
 
-/** Populates createdBy/updatedBy string IDs with UserMinimalBase objects. */
+/**
+ * Populates createdBy/updatedBy string IDs with UserMinimalBase objects. The columns hold any principal id; a
+ * service account resolves to `null` here until responses carry a second principal kind (substrate Phase C).
+ */
 export async function withAuditUsers<T extends { createdBy: string | null; updatedBy?: string | null }>(
   { var: { db } }: { var: { db: DbOrTx } },
   entities: T[],
@@ -102,16 +105,4 @@ export async function withAuditUser<T extends { createdBy: string | null; update
 ) {
   const [result] = await withAuditUsers(ctx, [entity], knownUsersInput);
   return result;
-}
-
-/** Audit-user hydration without DB queries: the current user becomes updatedBy and createdBy is stubbed null. */
-export function withAuditUserLite<T extends { createdBy: string | null; updatedBy?: string | null }>(
-  entity: T,
-  currentUser: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
-): WithAuditUsers<T> {
-  return {
-    ...(entity as Omit<T, 'createdBy' | 'updatedBy'>),
-    createdBy: null,
-    updatedBy: toUserMinimalBase(currentUser),
-  } as WithAuditUsers<T>;
 }

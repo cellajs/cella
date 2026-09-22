@@ -84,3 +84,21 @@ export const mePendingInvitationSchema = z.object({
   entity: channelBaseSchema,
   inactiveMembership: inactiveMembershipSchema,
 });
+
+/** A consent the user gave to an OAuth client, as the account page lists it. */
+export const connectedAppSchema = z
+  .object({
+    id: z.string(),
+    clientId: z.string(),
+    clientName: z.string(),
+    scopes: z.array(z.string()),
+    resources: z.array(z.string()),
+    createdAt: z.string(),
+    expiresAt: z.string().nullable(),
+  })
+  .openapi('ConnectedApp', {
+    description: 'An OAuth consent (grant) of the current user.',
+    'x-tags': schemaTags('data', 'me', 'cella'),
+  });
+
+export type ConnectedApp = z.infer<typeof connectedAppSchema>;

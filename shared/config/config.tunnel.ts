@@ -13,4 +13,5 @@ export const tunnel = {
   backendAuthUrl: 'https://cella.ngrok.dev/api/auth',
   yjsUrl: 'wss://cella.ngrok.dev/yjs',
   mcpUrl: 'https://cella.ngrok.dev/mcp',
+  oauthUrl: 'https://cella.ngrok.dev/oauth',
 } satisfies DeepPartial<typeof _default>;

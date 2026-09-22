@@ -53,7 +53,7 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
  * @param cost Static request cost, or zero to derive it from the request.
  */
 export const pointsLimiter = (cost = 1) =>
-  rateLimiter('limit', 'apiPoints', ['tenantId', 'userId'], {
+  rateLimiter('limit', 'apiPoints', ['tenantId', 'principalId'], {
     limits: {
       points: 5000, // Hard ceiling: no user can exceed this regardless of tenant config
       duration: 60 * 60,
@@ -69,6 +69,12 @@ export const pointsLimiter = (cost = 1) =>
       return budget ?? defaultRestrictions().rateLimits.apiPointsPerHour;
     },
   });
+
+/** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
+export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['principalId'], {
+  limits: { points: 30, duration: 1, blockDuration: 0 },
+  description: 'Max 30 requests/second per service account',
+});
 
 /** Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff. */
 export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {

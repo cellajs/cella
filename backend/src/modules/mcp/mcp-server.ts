@@ -1,12 +1,11 @@
-import { appConfig } from 'shared';
-import type { AuthContext } from '#/core/context';
-import { describeMcpTools, getMcpTools } from '#/modules/mcp/tool-source';
+import { z } from '@hono/zod-openapi';
+import { accessScopes, appConfig } from 'shared';
+import type { OrgContext } from '#/core/context';
+import { AppError } from '#/core/error';
+import { getMcpTools } from '#/core/mcp-tool-registry';
+import { describeMcpTools } from '#/modules/mcp/tool-source';
 
-/**
- * Minimal Model Context Protocol server over JSON-RPC 2.0: `initialize`, `tools/list`, `tools/call`, `ping`.
- * @see https://modelcontextprotocol.io
- */
-const PROTOCOL_VERSION = '2025-06-18';
+const PROTOCOL_VERSION = '2026-07-28';
 
 export interface JsonRpcMessage {
   jsonrpc: '2.0';
@@ -22,14 +21,34 @@ export interface JsonRpcResponse {
   error?: { code: number; message: string; data?: unknown };
 }
 
+/** Thrown by `tools/call` when the token lacks the tool's scope; the handler turns it into the RFC 6750 challenge. */
+export class InsufficientScopeError extends Error {
+  constructor(
+    readonly scope: string,
+    readonly id: string | number | null,
+  ) {
+    super('insufficient_scope');
+    this.name = 'InsufficientScopeError';
+  }
+}
+
 const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersion };
 
-/** Returns `null` for notifications (messages without an `id`), which must not get a reply. */
-export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
+/**
+ * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
+ * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution. Returns `null`
+ * for notifications (messages without an `id`), which must not get a reply.
+ * @see https://modelcontextprotocol.io
+ */
+export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
-  const fail = (code: number, msg: string): JsonRpcResponse => ({ jsonrpc: '2.0', id, error: { code, message: msg } });
+  const fail = (code: number, msg: string, data?: unknown): JsonRpcResponse => ({
+    jsonrpc: '2.0',
+    id,
+    error: { code, message: msg, ...(data !== undefined && { data }) },
+  });
 
   switch (message.method) {
     case 'initialize': {
@@ -38,6 +57,8 @@ export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage
         protocolVersion: typeof requested === 'string' ? requested : PROTOCOL_VERSION,
         capabilities: { tools: { listChanged: false } },
         serverInfo,
+        instructions:
+          'Tools act inside one organization as the person or service account that authorized this client. A call answered with insufficient_scope needs a token carrying the named scope.',
       });
     }
 
@@ -50,27 +71,29 @@ export async function handleMcpMessage(ctx: AuthContext, message: JsonRpcMessage
       return respond({});
 
     case 'tools/list':
-      return respond({ tools: describeMcpTools(getMcpTools(ctx)) });
+      return respond({ tools: describeMcpTools(getMcpTools()) });
 
     case 'tools/call': {
       if (isNotification) return null;
       const name = typeof message.params?.name === 'string' ? message.params.name : undefined;
-      const args = (message.params?.arguments ?? {}) as Record<string, unknown>;
       if (!name) return fail(-32602, 'Invalid params: missing tool name');
 
-      const tool = getMcpTools(ctx).find((candidate) => candidate.name === name);
+      const tool = getMcpTools().find((candidate) => candidate.name === name);
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
+      // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
+      if (!accessScopes.allows(ctx.var.actor.scopes, tool.entity, tool.action))
+        throw new InsufficientScopeError(tool.scope, id);
+
       try {
-        // `tools/call` has no event stream, so custom events are dropped; the callback must exist because tools may call it.
-        const output = await tool.execute?.(args, {
-          toolCallId: String(id),
-          emitCustomEvent: () => undefined,
-        });
+        const output = await tool.run(ctx, message.params?.arguments);
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
-        return respond({ content: [{ type: 'text', text }] });
+        return respond({ content: [{ type: 'text', text }], structuredContent: output ?? undefined });
       } catch (error) {
-        const text = error instanceof Error ? error.message : String(error);
+        // The route's schemas refused the arguments: a JSON-RPC params error with the issues.
+        if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
+        // Permission and domain failures are answers the model can act on, not transport errors.
+        const text = error instanceof AppError ? `${error.type}: ${error.message}` : String(error);
         return respond({ content: [{ type: 'text', text }], isError: true });
       }
     }

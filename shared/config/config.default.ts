@@ -65,6 +65,8 @@ export const config = {
       organization: 1,
       user: 1000,
       attachment: 100,
+      serviceAccount: 20,
+      apiKey: 100,
     },
     rateLimits: {
       apiPointsPerHour: 1000,
@@ -96,6 +98,8 @@ export const config = {
   backendAuthUrl: 'https://www.cellajs.com/api/auth',
   yjsUrl: 'wss://www.cellajs.com/yjs',
   mcpUrl: 'https://www.cellajs.com/mcp',
+  /** The OAuth authorization server (issuer). Same origin under `/oauth`, so the session cookie reaches its consent screen. */
+  oauthUrl: 'https://www.cellajs.com/oauth',
   // Which services this app runs; a mode config flips a flag here, e.g. mcp on in staging only.
   services: {
     frontend: { enabled: true as boolean },
@@ -103,6 +107,7 @@ export const config = {
     cdc: { enabled: true as boolean },
     yjs: { enabled: true as boolean },
     mcp: { enabled: false as boolean },
+    oauth: { enabled: false as boolean },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
@@ -141,6 +146,7 @@ export const config = {
     cdcHealth: 4001,
     yjs: 4002,
     mcp: 4003,
+    oauth: 4004,
   },
 
   has: {
@@ -171,7 +177,7 @@ export const config = {
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are
    * hard-deleted (Hanko-style eviction). Keep comfortably above a realistic device count. This is
-   * bloat/abuse protection (credential-stuffing bursts, unbounded session accumulation), not a UX
+   * bloat/abuse protection (apiKey-stuffing bursts, unbounded session accumulation), not a UX
    * feature. Regular and `mfa` sessions count together; `impersonation` sessions are left alone.
    */
   maxSessionsPerUser: 10,

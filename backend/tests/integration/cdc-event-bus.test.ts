@@ -7,7 +7,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { usersTable } from '#/modules/user/user-db';
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 
 const mockEventWithData = (key: string): ActivityEvent =>
   ({
@@ -93,7 +93,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       .returning({ id: organizationsTable.id, slug: organizationsTable.slug, tenantId: organizationsTable.tenantId });
 
     const userData = mockUser();
-    [testUser] = await db.insert(usersTable).values(userData).returning({ id: usersTable.id, email: usersTable.email });
+    const [insertedUser] = await insertUsers(db, [userData]);
+    testUser = { id: insertedUser.id, email: insertedUser.email };
     await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
 
     // Strict sub-organization ancestor columns carry foreign keys, so their rows must exist.

@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
@@ -23,7 +23,7 @@ interface HandleMembershipInvitationOpts {
 }
 
 export async function handleMembershipInvitationOp(
-  ctx: AuthContext,
+  ctx: UserContext,
   inactiveMembershipId: string,
   acceptOrReject: 'accept' | 'reject',
   { viaToken = false }: HandleMembershipInvitationOpts = {},

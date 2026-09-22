@@ -10,6 +10,7 @@ import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/m
 import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { UserModel, usersTable } from '#/modules/user/user-db';
 import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
@@ -104,7 +105,7 @@ export const organizationsSeed = async () => {
     const userRecords = mockMany(() => mockUser(), MEMBERS_COUNT);
     const users: UserModel[] = [];
     for (const batch of toBatches(userRecords)) {
-      users.push(...(await db.insert(usersTable).values(batch).returning().onConflictDoNothing()));
+      users.push(...(await insertUsers(db, batch, { onConflictDoNothing: true })));
     }
 
     // Make unsubscribeToken row for each user, then insert into the database

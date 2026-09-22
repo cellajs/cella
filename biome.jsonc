@@ -20,6 +20,7 @@
       "cdc/src/**",
       "yjs/src/**",
       "mcp/src/**",
+      "oauth/src/**",
       "infra/**",
       "bench/src/**",
       "sdk/gen/**",
@@ -325,7 +326,7 @@
       }
     },
     {
-      "includes": ["cdc/**", "yjs/**", "mcp/**"],
+      "includes": ["cdc/**", "yjs/**", "mcp/**", "oauth/**"],
       "linter": {
         "rules": {
           "style": {
@@ -441,6 +442,7 @@
         "cdc/src/env.ts",
         "yjs/src/env.ts",
         "mcp/src/mcp-worker.ts",
+        "oauth/src/oauth-worker.ts",
         "cli/**"
       ],
       "linter": {

@@ -1,5 +1,5 @@
 import type { ChannelEntityType, ChannelIdColumns, EntityActionType, ProductEntityType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
@@ -11,7 +11,7 @@ import { buildSubjectFromEntity } from '#/permissions/build-subject';
 type ScopedRow = { id: string; tenantId?: string; organizationId?: string | null };
 
 /** A row is in scope when it matches every id the guard chain set; the organization row itself carries no `organizationId`. */
-const inRequestScope = (ctx: AuthContext, row: ScopedRow): boolean => {
+const inRequestScope = (ctx: ActorContext, row: ScopedRow): boolean => {
   const { tenantId, organizationId } = ctx.var;
   if (tenantId && 'tenantId' in row && row.tenantId !== tenantId) return false;
   if (organizationId && 'organizationId' in row && row.organizationId !== organizationId) return false;
@@ -27,7 +27,7 @@ const inRequestScope = (ctx: AuthContext, row: ScopedRow): boolean => {
  * @throws {AppError} 403 if no entities are allowed.
  */
 export const splitByPermission = async (
-  ctx: AuthContext,
+  ctx: ActorContext,
   action: EntityActionType,
   entityType: ChannelEntityType | ProductEntityType,
   ids: string[],

@@ -142,6 +142,7 @@ export const zApiError = z.object({
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
   logId: z.string().optional(),
+  requestId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
   timestamp: z.string().optional(),
@@ -319,6 +320,19 @@ export const zUploadToken = z.object({
 });
 
 /**
+ * An OAuth consent (grant) of the current user.
+ */
+export const zConnectedApp = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  clientName: z.string(),
+  scopes: z.array(z.string()),
+  resources: z.array(z.string()),
+  createdAt: z.string(),
+  expiresAt: z.string().nullable(),
+});
+
+/**
  * A contact or waitlist submission from an unauthenticated user.
  */
 export const zRequest = z.object({
@@ -342,6 +356,7 @@ export const zTenant = z.object({
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
     }),
+    allowConsentedClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'])),
   createdBy: z.uuid().nullable(),
@@ -361,6 +376,14 @@ export const zTenantWithOrganization = zTenant.and(
     organization: zOrganizationMinimalBase.nullable(),
   }),
 );
+
+export const zProtectedResourceMetadata = z.object({
+  resource: z.string(),
+  authorization_servers: z.array(z.string()),
+  scopes_supported: z.array(z.string()),
+  bearer_methods_supported: z.array(z.string()),
+  resource_documentation: z.string(),
+});
 
 /**
  * The main channel entity is an organization.
@@ -475,7 +498,7 @@ export const zMembership = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  createdBy: z.uuid(),
+  createdBy: z.uuid().nullable(),
   updatedAt: z.string().nullable(),
   updatedBy: z.uuid().nullable(),
   archived: z.boolean(),
@@ -483,6 +506,58 @@ export const zMembership = z.object({
   displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
   organizationId: z.uuid(),
 });
+
+/**
+ * A machine principal: the actor an API key runs as, with its role bindings.
+ */
+export const zServiceAccount = z.object({
+  id: z.uuid(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
+  status: z.enum(['active', 'disabled']),
+  bindings: z.array(
+    z.object({
+      channelType: z.enum(['organization']),
+      channelId: z.string().max(50),
+      organizationId: z.string().max(50),
+      role: z.enum(['admin', 'member']),
+    }),
+  ),
+  oauthClientId: z.string().max(255).nullable(),
+  createdBy: z.uuid().nullable(),
+  updatedBy: z.uuid().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
+});
+
+/**
+ * An API key of a service account; the secret is never returned after creation.
+ */
+export const zApiKey = z.object({
+  id: z.uuid(),
+  principalId: z.uuid(),
+  tenantId: z.string().max(24),
+  name: z.string().max(255),
+  prefix: z.string().max(255),
+  last4: z.string().max(4),
+  scopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+    .nullable(),
+  expiresAt: z.string().nullable(),
+  revokedAt: z.string().nullable(),
+  revokedBy: z.uuid().nullable(),
+  createdBy: z.uuid().nullable(),
+  createdAt: z.string(),
+});
+
+/**
+ * A newly issued API key with its plaintext secret.
+ */
+export const zCreatedCredential = zApiKey.and(
+  z.object({
+    secret: z.string(),
+  }),
+);
 
 /**
  * Auth health status
@@ -1036,6 +1111,26 @@ export const zGetMyMembershipsResponse = z.object({
 });
 
 /**
+ * Connected apps
+ */
+export const zGetConnectedAppsResponse = z.object({
+  items: z.array(zConnectedApp),
+});
+
+export const zRevokeConnectedAppPath = z.object({
+  id: z.string().max(50),
+});
+
+/**
+ * Consent was revoked
+ */
+export const zRevokeConnectedAppResponse = z.object({
+  data: z.array(z.unknown()),
+  rejectedIds: z.array(z.string()),
+  rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+/**
  * Public counts
  */
 export const zGetPublicCountsResponse = z.object({
@@ -1332,6 +1427,7 @@ export const zUpdateTenantBody = z.object({
   restrictions: z
     .object({
       quotas: z.record(z.string(), z.int().gte(0)).optional(),
+      allowConsentedClients: z.boolean().optional(),
       rateLimits: z
         .object({
           apiPointsPerHour: z.int().gte(0).optional(),
@@ -1407,6 +1503,15 @@ export const zGetYjsTokenQuery = z.object({
 export const zGetYjsTokenResponse = z.object({
   token: z.string(),
 });
+
+export const zGetApiProtectedResourceMetadataPath = z.object({
+  tenantId: z.string().max(50),
+});
+
+/**
+ * Protected resource metadata
+ */
+export const zGetApiProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
 export const zDeleteOrganizationsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
@@ -1748,6 +1853,16 @@ export const zUpdateAttachmentQuery = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
+export const zGetProtectedResourceMetadataPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Protected resource metadata
+ */
+export const zGetProtectedResourceMetadataResponse = zProtectedResourceMetadata;
+
 export const zHandleMcpBody = z.unknown();
 
 export const zHandleMcpPath = z.object({
@@ -1946,3 +2061,130 @@ export const zMarkSeenPath = z.object({
 export const zMarkSeenResponse = z.object({
   newCount: z.int().gte(0),
 });
+
+export const zGetServiceAccountsPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zGetServiceAccountsQuery = z.object({
+  q: z.string().max(255).optional(),
+  offset: z.string().regex(/^\d+$/).optional(),
+  limit: z.string().regex(/^\d+$/).optional(),
+});
+
+/**
+ * Service accounts
+ */
+export const zGetServiceAccountsResponse = z.object({
+  items: z.array(zServiceAccount),
+  total: z.number(),
+});
+
+export const zCreateServiceAccountBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
+  role: z.enum(['admin', 'member']),
+  key: z
+    .object({
+      name: z
+        .string()
+        .min(2)
+        .max(255)
+        .regex(/^[\p{L}\d\-., '&()]+$/u),
+      scopes: z
+        .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+        .min(1)
+        .nullish(),
+      expiresAt: z.iso.datetime().optional(),
+    })
+    .optional(),
+});
+
+export const zCreateServiceAccountPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Service account was created
+ */
+export const zCreateServiceAccountResponse = z.object({
+  serviceAccount: zServiceAccount,
+  apiKey: zCreatedCredential.optional(),
+});
+
+export const zUpdateServiceAccountBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .optional(),
+  status: z.enum(['active', 'disabled']).optional(),
+});
+
+export const zUpdateServiceAccountPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Service account was updated
+ */
+export const zUpdateServiceAccountResponse = zServiceAccount;
+
+export const zGetApiKeysPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * API keys
+ */
+export const zGetApiKeysResponse = z.object({
+  items: z.array(zApiKey),
+});
+
+export const zCreateApiKeyBody = z.object({
+  name: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
+  scopes: z
+    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
+    .min(1)
+    .nullish(),
+  expiresAt: z.iso.datetime().optional(),
+  rollFrom: z.string().max(50).optional(),
+  rollOverlapDays: z.int().gte(0).lte(30).optional().default(7),
+});
+
+export const zCreateApiKeyPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * API key was issued
+ */
+export const zCreateApiKeyResponse = zCreatedCredential;
+
+export const zRevokeApiKeyPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+  keyId: z.string().max(50),
+});
+
+/**
+ * API key was revoked
+ */
+export const zRevokeApiKeyResponse = zApiKey;

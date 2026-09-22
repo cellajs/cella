@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
@@ -11,7 +11,7 @@ import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { systemInviteEmail } from '../../../../emails';
 
-export async function createInviteOp(ctx: AuthContext, emails: string[]) {
+export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
   const lng = user.language;
   const senderName = user.name;

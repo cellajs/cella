@@ -25,6 +25,7 @@ const quotasSchema = z.record(z.string(), z.number().int().min(0)).describe('Ent
 const restrictionsSchema = z.object({
   quotas: quotasSchema,
   rateLimits: rateLimitsSchema,
+  allowConsentedClients: z.boolean().describe('Whether users may consent to OAuth clients not installed by an admin'),
 });
 
 export const tenantSchema = z
@@ -56,6 +57,7 @@ export const selfCreateTenantBodySchema = createInsertSchema(tenantsTable, {
 const partialRestrictionsSchema = z
   .object({
     quotas: quotasSchema.optional(),
+    allowConsentedClients: z.boolean().optional(),
     rateLimits: z
       .object({
         apiPointsPerHour: z.number().int().min(0).optional(),

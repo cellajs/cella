@@ -6,9 +6,8 @@ const cache = new TTLCache<TenantModel>({
   defaultTtl: 60_000,
 });
 
-export const getTenantCache = (tenantId: string): TenantModel | undefined => {
-  return cache.get(tenantId);
-};
+/** Also what a test seeds so the guard needs no database. */
+export const getTenantCache = (tenantId: string): TenantModel | undefined => cache.get(tenantId);
 
 export const setTenantCache = (tenantId: string, tenant: TenantModel): void => {
   cache.set(tenantId, tenant);

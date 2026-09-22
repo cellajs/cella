@@ -1,11 +1,11 @@
 import { appConfig, type ProductEntityType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 import type { StxBase } from '#/schemas';
 
 /** Reference to the entity's standard update op; the relay invokes it with the server-origin envelope. */
 export type YjsMaterializer = (
-  ctx: AuthContext,
+  ctx: UserContext,
   id: string,
   input: { ops: { description: string }; stx: StxBase },
   opts: { serverOrigin: true },

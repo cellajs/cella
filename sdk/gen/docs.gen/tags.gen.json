@@ -8,7 +8,7 @@
   {
     "name": "auth",
     "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 24,
+    "count": 25,
     "kind": "module"
   },
   {
@@ -20,13 +20,19 @@
   {
     "name": "mcp",
     "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same tool registry.",
-    "count": 0,
+    "count": 2,
     "kind": "module"
   },
   {
     "name": "me",
     "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act\n    exclusively on the current user and follow a different authorization flow.",
-    "count": 11,
+    "count": 13,
+    "kind": "module"
+  },
+  {
+    "name": "oauth-server",
+    "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept by the API's job runner.",
+    "count": 0,
     "kind": "module"
   },
   {
@@ -69,6 +75,12 @@
     "name": "seen",
     "description": "Endpoints for tracking entity view counts and marking entities as seen by the current user.",
     "count": 2,
+    "kind": "module"
+  },
+  {
+    "name": "service-accounts",
+    "description": "Machine principals and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
+    "count": 6,
     "kind": "module"
   },
   {

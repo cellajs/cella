@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
+import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, syncReadLimiter } from '#/middlewares/rate-limiter/limiters';
 import { seenBatchBodySchema, seenBatchResponseSchema, unseenCountsResponseSchema } from '#/modules/seen/seen-schema';
 import { errorResponseRefs, tenantOrgParamSchema } from '#/schemas';
@@ -9,7 +9,7 @@ const seenRoutes = {
     operationId: 'markSeen',
     method: 'post',
     path: '/',
-    xGuard: [authGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['seen', 'cella'],
     summary: 'Mark entities as seen',
@@ -35,7 +35,7 @@ const seenRoutes = {
     operationId: 'getUnseenCounts',
     method: 'get',
     path: '/counts',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [syncReadLimiter],
     tags: ['seen', 'cella'],
     summary: 'Get unseen counts',

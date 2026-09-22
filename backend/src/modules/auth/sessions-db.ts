@@ -1,6 +1,7 @@
 import { index, integer, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -19,7 +20,8 @@ export const sessionsTable = snakeCase.table(
     type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
     userId: uuid()
       .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     deviceName: varchar({ length: maxLength.field }),
     deviceType: varchar({ enum: ['desktop', 'mobile'] })
       .notNull()

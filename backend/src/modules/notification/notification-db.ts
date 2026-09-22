@@ -2,6 +2,7 @@ import { boolean, foreignKey, index, primaryKey, snakeCase, timestamp, uuid, var
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 import { notificationTypes } from './notification-types';
@@ -71,7 +72,8 @@ export const notificationsTable = snakeCase.table(
 export const notificationPreferencesTable = snakeCase.table('notification_preferences', {
   userId: uuid()
     .primaryKey()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+    .references(() => usersTable.id, { onDelete: 'cascade' })
+    .$type<UserId>(),
   /** In-app delivery is never opt-out; only email is. */
   mentionEmail: boolean().notNull().default(true),
   commentEmail: boolean().notNull().default(false),

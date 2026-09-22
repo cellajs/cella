@@ -45,7 +45,7 @@ function createTestApp(middleware: ReturnType<typeof rateLimiter>, userId?: stri
   });
   if (userId) {
     app.use(async (c, next) => {
-      // Mirror authGuard, which sets both `user` and `userId`
+      // Mirror userGuard, which sets both `user` and `userId`
       c.set('user', { id: userId } as Env['Variables']['user']);
       c.set('userId', userId);
       await next();

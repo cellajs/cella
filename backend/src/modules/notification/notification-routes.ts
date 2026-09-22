@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, publicGuard } from '#/middlewares/guard';
+import { publicGuard, userGuard } from '#/middlewares/guard';
 import { syncReadLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 import { unsubscribeCategories } from './helpers/category-token';
@@ -18,7 +18,7 @@ const notificationRoutes = {
     operationId: 'getNotifications',
     method: 'get',
     path: '/',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [syncReadLimiter],
     tags: ['notifications'],
     summary: 'List notifications',
@@ -39,7 +39,7 @@ const notificationRoutes = {
     operationId: 'markNotificationsRead',
     method: 'post',
     path: '/read',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['notifications'],
     summary: 'Mark notifications as read',
     description:
@@ -60,7 +60,7 @@ const notificationRoutes = {
     operationId: 'getNotificationPreferences',
     method: 'get',
     path: '/preferences',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['notifications'],
     summary: 'Get notification preferences',
     description: 'Email and digest preferences for the current user. In-app delivery is not opt-out.',
@@ -76,7 +76,7 @@ const notificationRoutes = {
     operationId: 'updateNotificationPreferences',
     method: 'patch',
     path: '/preferences',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     tags: ['notifications'],
     summary: 'Update notification preferences',
     description: 'Partial update; unspecified keys keep their stored value.',

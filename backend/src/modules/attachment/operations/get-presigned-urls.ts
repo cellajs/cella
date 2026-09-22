@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByIds } from '#/modules/attachment/attachment-queries';
@@ -32,7 +32,7 @@ const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVarian
  * anything is signed. Missing and denied ids merge into one `rejectedIds` list, so the response
  * is not an existence oracle. Succeeds even when every item is rejected.
  */
-export async function getPresignedUrlsOp(ctx: AuthContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
+export async function getPresignedUrlsOp(ctx: UserContext, { items }: PresignedUrlsBody): Promise<PresignedUrlsResult> {
   const pairs = new Map<string, { attachmentId: string; variant: AttachmentVariant }>();
   for (const { attachmentId, variant } of items) {
     pairs.set(`${attachmentId}:${variant}`, { attachmentId, variant });

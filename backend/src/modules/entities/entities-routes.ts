@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, tenantGuard } from '#/middlewares/guard';
+import { tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, streamConnectLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockStreamResponse } from '#/modules/entities/entities-mocks';
 import { checkSlugBodySchema } from '#/modules/entities/entities-schema';
@@ -11,7 +11,7 @@ const entityRoutes = {
     operationId: 'checkSlug',
     method: 'post',
     path: '/{tenantId}/check-slug',
-    xGuard: [authGuard, tenantGuard],
+    xGuard: [userGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['entities', 'cella'],
     summary: 'Check slug availability',
@@ -36,7 +36,7 @@ const entityRoutes = {
     operationId: 'getAppStream',
     method: 'get',
     path: '/app/stream',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [streamConnectLimiter],
     tags: ['entities', 'cella'],
     summary: 'App event SSE stream',
@@ -57,7 +57,7 @@ const entityRoutes = {
     operationId: 'postAppCatchup',
     method: 'post',
     path: '/app/stream',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['entities', 'cella'],
     summary: 'App event catchup',

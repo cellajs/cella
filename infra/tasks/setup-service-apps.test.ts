@@ -17,12 +17,13 @@ describe('ensureRegistryPrincipals', () => {
   it('split-VM: one application per registry service plus boot, whatever is enabled', async () => {
     const result = await ensureRegistryPrincipals({ ...base, singleVM: false });
     const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
-    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-frontend', 'boot']);
+    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-frontend', 'boot']);
     expect(result.allAppIds).toEqual([
       'id-vm-backend',
       'id-vm-cdc',
       'id-vm-yjs',
       'id-vm-mcp',
+      'id-vm-oauth',
       'id-vm-frontend',
       'id-boot',
     ]);

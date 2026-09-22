@@ -41,6 +41,8 @@ export async function accessForUserIds(userIds: string[]): Promise<Map<string, U
 
   for (const userId of unique) {
     result.set(userId, {
+      // An offline user is read as a session would be: unmasked.
+      scopes: null,
       userId,
       isSystemAdmin: adminIds.has(userId),
       memberships: byUser.get(userId) ?? [],

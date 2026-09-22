@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, publicGuard, sysAdminGuard } from '#/middlewares/guard';
+import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
@@ -36,7 +36,7 @@ const requestRoutes = {
     operationId: 'getRequests',
     method: 'get',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     tags: ['requests', 'cella'],
     summary: 'Get list of requests',
     description: 'Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.',
@@ -58,7 +58,7 @@ const requestRoutes = {
     operationId: 'deleteRequests',
     method: 'delete',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['requests', 'cella'],
     summary: 'Delete requests',

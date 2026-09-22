@@ -1,10 +1,10 @@
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
@@ -15,14 +15,14 @@ import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
 export async function updateOrganizationOp(
-  ctx: AuthContext,
+  ctx: ActorContext,
   id: string,
   tenantId: string,
   rawInput: Record<string, unknown>,
 ) {
   // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
-  const user = ctx.var.user;
+  const actorId = ctx.var.actor.id;
 
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
 
@@ -41,7 +41,7 @@ export async function updateOrganizationOp(
   // Validate media URLs in welcomeText are from trusted sources (CDN only)
   if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
 
-  const values = { ...input, updatedAt: getIsoDate(), updatedBy: user.id };
+  const values = { ...input, updatedAt: getIsoDate(), updatedBy: actorId };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
@@ -61,11 +61,12 @@ export async function updateOrganizationOp(
   });
 
   const included = {
-    ...(membership && { membership: toMembershipBase(membership) }),
+    // A service account's grant is not a membership row; only a user's row is returned.
+    ...(membership && isMembershipRow(membership) && { membership: toMembershipBase(membership) }),
     counts,
   };
 
-  const organizationWithAudit = await withAuditUser(ctx, updatedOrganizationRecord, user);
+  const organizationWithAudit = await withAuditUser(ctx, updatedOrganizationRecord);
 
   return { ...organizationWithAudit, included };
 }

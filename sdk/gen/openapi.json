@@ -16,21 +16,29 @@
         "required": true,
         "kind": "middleware",
         "values": {
-          "publicGuard": {
-            "name": "public",
-            "description": "No authentication required; provides baseDb without RLS context"
+          "serviceGuard": {
+            "name": "service",
+            "description": "Requires a secret API key or an access token and sets the service account or the consenting user as the actor"
           },
-          "authGuard": {
-            "name": "auth",
+          "userGuard": {
+            "name": "user",
             "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
+          },
+          "actorGuard": {
+            "name": "actor",
+            "description": "Requires a session cookie, a secret API key, or an access token and sets the actor"
           },
           "crossTenantGuard": {
             "name": "crossTenant",
-            "description": "Requires authGuard and sets baseDb for cross-tenant access"
+            "description": "Requires userGuard and sets baseDb for cross-tenant access"
           },
           "orgGuard": {
             "name": "org",
             "description": "Validates organization membership within tenant context"
+          },
+          "publicGuard": {
+            "name": "public",
+            "description": "No authentication required; provides baseDb without RLS context"
           },
           "relatableGuard": {
             "name": "relatable",
@@ -42,7 +50,11 @@
           },
           "tenantGuard": {
             "name": "tenant",
-            "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+            "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
+          },
+          "tokenGuard": {
+            "name": "token",
+            "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
           }
         }
       },
@@ -76,6 +88,10 @@
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
             "description": "Max 30 passkey challenges/hour per IP"
+          },
+          "serviceBurstLimiter": {
+            "name": "serviceBurst",
+            "description": "Max 30 requests/second per service account"
           },
           "syncReadLimiter": {
             "name": "syncRead",
@@ -214,6 +230,12 @@
       "kind": "module"
     },
     {
+      "name": "oauth-server",
+      "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept by the API's job runner.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
       "name": "memberships",
       "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
       "parent": "cella",
@@ -256,6 +278,12 @@
       "kind": "module"
     },
     {
+      "name": "service-accounts",
+      "description": "Machine principals and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
       "name": "system",
       "description": "System level endpoints for administrative actions and platform wide functionality, such as user\n    invitations, file uploads, and webhook handling.",
       "parent": "cella",
@@ -287,6 +315,39 @@
         "in": "cookie",
         "name": "cella-development-session-v2",
         "description": "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first."
+      },
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.",
+        "key": "apiKey"
+      },
+      "oauth2": {
+        "type": "oauth2",
+        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "http://localhost:3000/oauth/auth",
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "refreshUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "organization:read": "Read organizations",
+              "organization:write": "Create, update and delete organizations",
+              "attachment:read": "Read attachments",
+              "attachment:write": "Create, update and delete attachments"
+            }
+          },
+          "clientCredentials": {
+            "tokenUrl": "http://localhost:3000/oauth/token",
+            "scopes": {
+              "organization:read": "Read organizations",
+              "organization:write": "Create, update and delete organizations",
+              "attachment:read": "Read attachments",
+              "attachment:write": "Create, update and delete attachments"
+            }
+          }
+        },
+        "key": "oauth2"
       }
     },
     "responses": {
@@ -933,6 +994,9 @@
             "enum": ["user", "organization", "attachment"]
           },
           "logId": {
+            "type": "string"
+          },
+          "requestId": {
             "type": "string"
           },
           "path": {
@@ -1625,6 +1689,41 @@
         },
         "x-tags": ["data", "me", "cella"]
       },
+      "ConnectedApp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
+        "description": "An OAuth consent (grant) of the current user.",
+        "x-tags": ["data", "me", "cella"]
+      },
       "Request": {
         "type": "object",
         "properties": {
@@ -1725,9 +1824,13 @@
                   }
                 },
                 "required": ["apiPointsPerHour"]
+              },
+              "allowConsentedClients": {
+                "type": "boolean",
+                "description": "Whether users may consent to OAuth clients not installed by an admin"
               }
             },
-            "required": ["quotas", "rateLimits"]
+            "required": ["quotas", "rateLimits", "allowConsentedClients"]
           },
           "authStrategies": {
             "type": "array",
@@ -1779,6 +1882,42 @@
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
         "x-tags": ["data", "tenants", "cella"]
+      },
+      "ProtectedResourceMetadata": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "authorization_servers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bearer_methods_supported": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resource_documentation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource",
+          "authorization_servers",
+          "scopes_supported",
+          "bearer_methods_supported",
+          "resource_documentation"
+        ]
       },
       "Organization": {
         "type": "object",
@@ -2328,7 +2467,7 @@
             "enum": ["admin", "member"]
           },
           "createdBy": {
-            "type": "string",
+            "type": ["string", "null"],
             "format": "uuid"
           },
           "updatedAt": {
@@ -2388,6 +2527,220 @@
           "updatedBy": null
         },
         "x-tags": ["data", "memberships", "cella"]
+      },
+      "ServiceAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled"]
+          },
+          "bindings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "channelType": {
+                  "type": "string",
+                  "enum": ["organization"]
+                },
+                "channelId": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "organizationId": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["admin", "member"]
+                }
+              },
+              "required": ["channelType", "channelId", "organizationId", "role"]
+            }
+          },
+          "oauthClientId": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "createdBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "updatedBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "name",
+          "status",
+          "bindings",
+          "oauthClientId",
+          "createdBy",
+          "updatedBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "A machine principal: the actor an API key runs as, with its role bindings.",
+        "example": {
+          "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
+          "tenantId": "yug3pr",
+          "name": "system bot",
+          "status": "active",
+          "bindings": [
+            {
+              "channelType": "organization",
+              "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+              "organizationId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+              "role": "member"
+            }
+          ],
+          "oauthClientId": null,
+          "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
+          "createdAt": "2024-09-01T22:49:17.262Z",
+          "updatedAt": "2024-09-01T22:49:17.262Z",
+          "updatedBy": null
+        },
+        "x-tags": ["service-accounts", "cella"]
+      },
+      "CreatedCredential": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiKey"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "secret": {
+                "type": "string",
+                "description": "The plaintext API key; store it now, it is not shown again."
+              }
+            },
+            "required": ["secret"]
+          }
+        ],
+        "description": "A newly issued API key with its plaintext secret.",
+        "example": {
+          "id": "5302a43a-9867-408a-a97e-03039539daa6",
+          "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
+          "tenantId": "uiucev",
+          "name": "transmit key",
+          "prefix": "cella-development_sk_test_Ab3d",
+          "last4": "2345",
+          "scopes": ["attachment:read"],
+          "expiresAt": null,
+          "revokedAt": null,
+          "revokedBy": null,
+          "createdBy": "b5cf5689-f454-4337-a781-ea4555f182fa",
+          "createdAt": "2024-08-06T06:09:43.711Z",
+          "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
+        },
+        "x-tags": ["service-accounts", "cella"]
+      },
+      "ApiKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "principalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "last4": {
+            "type": "string",
+            "maxLength": 4
+          },
+          "scopes": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "string",
+              "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+            }
+          },
+          "expiresAt": {
+            "type": ["string", "null"]
+          },
+          "revokedAt": {
+            "type": ["string", "null"]
+          },
+          "revokedBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "createdBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "principalId",
+          "tenantId",
+          "name",
+          "prefix",
+          "last4",
+          "scopes",
+          "expiresAt",
+          "revokedAt",
+          "revokedBy",
+          "createdBy",
+          "createdAt"
+        ],
+        "description": "An API key of a service account; the secret is never returned after creation.",
+        "example": {
+          "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+          "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+          "tenantId": "maq9vh",
+          "name": "reboot key",
+          "prefix": "cella-development_sk_test_Ab3d",
+          "last4": "2345",
+          "scopes": ["attachment:read"],
+          "expiresAt": null,
+          "revokedAt": null,
+          "revokedBy": null,
+          "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+          "createdAt": "2024-11-05T21:01:57.922Z"
+        },
+        "x-tags": ["service-accounts", "cella"]
       }
     },
     "parameters": {}
@@ -2670,7 +3023,7 @@
         "tags": ["auth", "cella"],
         "summary": "Accept invitation token as current user",
         "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "responses": {
@@ -2727,7 +3080,7 @@
         "tags": ["auth", "cella"],
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -2792,7 +3145,7 @@
         "tags": ["auth", "cella"],
         "summary": "Stop impersonating",
         "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -2995,7 +3348,7 @@
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3054,7 +3407,7 @@
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3108,7 +3461,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3208,7 +3561,7 @@
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3372,7 +3725,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4005,7 +4358,7 @@
         "tags": ["tenants", "cella"],
         "summary": "List domains for a tenant",
         "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4103,7 +4456,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Add a domain to a tenant",
         "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4207,7 +4560,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Remove a domain",
         "description": "Removes a domain from a tenant. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4298,7 +4651,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Get domain with verification token",
         "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4404,7 +4757,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Verify domain ownership via DNS",
         "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.",
-        "x-guard": ["authGuard", "sysAdminGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4534,7 +4887,7 @@
         "tags": ["entities", "cella"],
         "summary": "Check slug availability",
         "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4607,7 +4960,7 @@
         "tags": ["entities", "cella"],
         "summary": "App event SSE stream",
         "description": "SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["streamConnectLimiter"],
         "x-cache": [],
         "responses": {
@@ -4649,7 +5002,7 @@
         "tags": ["entities", "cella"],
         "summary": "App event catchup",
         "description": "Fetch missed entity and membership changes since last sync. Send cursor and declared views (prefix sets + org-sequence cursors) in the body.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -4862,7 +5215,7 @@
         "tags": ["me", "cella"],
         "summary": "Get self",
         "description": "Returns the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -4933,7 +5286,7 @@
         "tags": ["me", "cella"],
         "summary": "Update self",
         "description": "Updates the current user.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5058,7 +5411,7 @@
         "tags": ["me", "cella"],
         "summary": "Delete self",
         "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -5097,7 +5450,7 @@
         "tags": ["me", "cella"],
         "summary": "Toggle MFA",
         "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5225,7 +5578,7 @@
         "tags": ["me", "cella"],
         "summary": "Get auth data",
         "description": "Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5297,7 +5650,7 @@
         "tags": ["me", "cella"],
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5437,7 +5790,7 @@
         "tags": ["me", "cella"],
         "summary": "Terminate sessions",
         "description": "Ends one or more sessions for the current user based on provided session IDs.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5527,7 +5880,7 @@
         "tags": ["me", "cella"],
         "summary": "Leave entity",
         "description": "Removes the current user from an entity they are a member of.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -5586,7 +5939,7 @@
         "tags": ["me", "cella"],
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -5726,7 +6079,7 @@
         "tags": ["me", "cella"],
         "summary": "Get my memberships",
         "description": "Returns all memberships for the current user across all channel entities.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -5745,6 +6098,155 @@
                     }
                   },
                   "required": ["items"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/me/connected-apps": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getConnectedApps",
+        "tags": ["me", "cella"],
+        "summary": "Get connected apps",
+        "description": "Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Connected apps",
+            "content": {
+              "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "gr_01J9Z2Q0X7ZQ4S5M8N",
+                      "clientId": "https://vscode.dev/oauth/client-metadata.json",
+                      "clientName": "Visual Studio Code",
+                      "scopes": ["attachment:read"],
+                      "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+                      "createdAt": "2026-09-22T10:00:00.000Z",
+                      "expiresAt": "2026-10-22T10:00:00.000Z"
+                    }
+                  ]
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ConnectedApp"
+                      }
+                    }
+                  },
+                  "required": ["items"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/me/connected-apps/{id}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeConnectedApp",
+        "tags": ["me", "cella"],
+        "summary": "Revoke connected app",
+        "description": "Revokes a consent: the grant and every token issued under it are deleted.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consent was revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "prefixItems": []
+                    },
+                    "rejectedIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Identifiers of items that could not be processed"
+                    },
+                    "rejectionReasons": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of reason code to rejected item IDs"
+                    }
+                  },
+                  "required": ["data", "rejectedIds"]
                 }
               }
             }
@@ -5840,7 +6342,7 @@
         "tags": ["notifications"],
         "summary": "List notifications",
         "description": "Returns the current user notification inbox, newest first, with the unread count. Ambient posts are not included: those are covered by unseen counts. Rows older than the retention window are removed with their partition.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "parameters": [
@@ -6007,7 +6509,7 @@
         "tags": ["notifications"],
         "summary": "Mark notifications as read",
         "description": "Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6085,7 +6587,7 @@
         "tags": ["notifications"],
         "summary": "Get notification preferences",
         "description": "Email and digest preferences for the current user. In-app delivery is not opt-out.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6142,7 +6644,7 @@
         "tags": ["notifications"],
         "summary": "Update notification preferences",
         "description": "Partial update; unspecified keys keep their stored value.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6294,7 +6796,7 @@
         "tags": ["push"],
         "summary": "Get the Web Push application server key",
         "description": "Returns the VAPID public key `PushManager.subscribe()` needs, or null when this deployment has no push keys configured; the client then offers no push toggle.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6346,7 +6848,7 @@
         "tags": ["push"],
         "summary": "Register a Web Push subscription",
         "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -6436,7 +6938,7 @@
         "tags": ["push"],
         "summary": "Remove a Web Push subscription",
         "description": "Deletes the given endpoint for the current user; an endpoint owned by someone else is a no-op.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -6576,7 +7078,7 @@
         "tags": ["requests", "cella"],
         "summary": "Get list of requests",
         "description": "Returns a list of submitted requests across all types: contact form, newsletter, and waitlist.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -6711,7 +7213,7 @@
         "tags": ["requests", "cella"],
         "summary": "Delete requests",
         "description": "Deletes one or more requests from the system by their IDs.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -6802,7 +7304,7 @@
         "tags": ["seen", "cella"],
         "summary": "Get unseen counts",
         "description": "Returns the number of unseen product entities per parent channel entity (e.g., project) and entity type for the current user. Computed within the rolling seen window so entities older than seen_by retention do not participate.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "responses": {
@@ -6855,7 +7357,7 @@
         "tags": ["system", "cella"],
         "summary": "Invite to system",
         "description": "Invites one or more users to the system via email. Can be used to onboard system level users or admins.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -6957,7 +7459,7 @@
         "tags": ["system", "cella"],
         "summary": "Delete users",
         "description": "Deletes one or more users from the system based on a list of IDs. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7048,7 +7550,7 @@
         "tags": ["system", "cella"],
         "summary": "Update user",
         "description": "Updates a user identified by ID.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7177,7 +7679,7 @@
         "tags": ["system", "cella"],
         "summary": "Newsletter to members",
         "description": "Sends a newsletter to members of one or more specified organizations.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7265,7 +7767,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Get list of tenants",
         "description": "Returns a paginated list of tenants. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7392,7 +7894,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Create a tenant for yourself",
         "description": "Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -7457,7 +7959,7 @@
         "tags": ["tenants", "cella"],
         "summary": "Update a tenant",
         "description": "Updates a tenant by ID. System admin access required.",
-        "x-guard": ["authGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -7517,6 +8019,9 @@
                           "minimum": 0
                         },
                         "description": "Entity quotas (0 = unlimited)"
+                      },
+                      "allowConsentedClients": {
+                        "type": "boolean"
                       },
                       "rateLimits": {
                         "type": "object",
@@ -7578,7 +8083,7 @@
         "tags": ["users", "cella"],
         "summary": "Get list of users",
         "description": "Returns a list of users.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7815,7 +8320,7 @@
         "tags": ["users", "cella"],
         "summary": "Get user",
         "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
-        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -7933,7 +8438,7 @@
         "operationId": "getYjsToken",
         "summary": "Get Yjs token",
         "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-        "x-guard": ["authGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8003,6 +8508,60 @@
         }
       }
     },
+    "/{tenantId}/.well-known/oauth-protected-resource": {
+      "get": {
+        "security": [],
+        "x-service": "oauth",
+        "operationId": "getApiProtectedResourceMetadata",
+        "tags": ["auth", "cella"],
+        "summary": "Protected resource metadata (API)",
+        "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Protected resource metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/{tenantId}/organizations": {
       "post": {
         "security": [
@@ -8014,7 +8573,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Create organizations",
         "description": "Creates one or more new organizations within a tenant.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["insertEntityLock", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8413,7 +8972,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Delete organizations",
         "description": "Deletes one or more organizations by ID within a tenant.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["userGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8515,7 +9074,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
         "description": "Returns a list of organizations.",
-        "x-guard": ["authGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8793,13 +9352,19 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getOrganization",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get organization",
         "description": "Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["actorGuard", "tenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8938,13 +9503,19 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "updateOrganization",
         "tags": ["organizations", "cella", "channel"],
         "summary": "Update organization",
         "description": "Updates an organization within a tenant.",
-        "x-guard": ["authGuard", "tenantGuard"],
+        "x-guard": ["actorGuard", "tenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -9176,13 +9747,26 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
+          "approvalRequired": false,
+          "category": "attachments",
+          "entity": "attachment"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachments",
         "description": "Returns a paginated list of attachments for the organization.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["syncReadLimiter"],
         "x-cache": [],
         "parameters": [
@@ -9412,13 +9996,26 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "createAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.",
+          "approvalRequired": true,
+          "category": "attachments",
+          "entity": "attachment"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
         "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -9808,13 +10405,26 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "deleteAttachments",
+        "x-tool": {
+          "enabled": true,
+          "description": "Delete attachments by id. The stored files stay in storage.",
+          "approvalRequired": true,
+          "category": "attachments",
+          "entity": "attachment"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
         "description": "Deletes one or more attachment records by ID. This does not delete the underlying file in storage.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -9931,13 +10541,19 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getPresignedUrls",
         "tags": ["attachments", "cella", "product"],
         "summary": "Get presigned URLs",
         "description": "Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["presignedUrlLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10080,13 +10696,26 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "getAttachment",
+        "x-tool": {
+          "enabled": true,
+          "description": "Read one attachment: its metadata and the description as text.",
+          "approvalRequired": false,
+          "category": "attachments",
+          "entity": "attachment"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
         "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": ["productCache"],
         "parameters": [
@@ -10198,13 +10827,26 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
           }
         ],
         "operationId": "updateAttachment",
+        "x-tool": {
+          "enabled": true,
+          "description": "Rename an attachment or replace its description.",
+          "approvalRequired": true,
+          "category": "attachments",
+          "entity": "attachment"
+        },
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",
         "description": "Updates metadata of an attachment, such as its name or associated entity.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10351,19 +10993,82 @@
         }
       }
     },
+    "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource": {
+      "get": {
+        "security": [],
+        "x-service": "mcp",
+        "operationId": "getProtectedResourceMetadata",
+        "tags": ["mcp", "cella"],
+        "summary": "Protected resource metadata",
+        "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Protected resource metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtectedResourceMetadata"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/{tenantId}/{organizationId}/mcp": {
       "post": {
         "security": [
           {
-            "cookieAuth": []
+            "oauth2": []
           }
         ],
         "x-service": "mcp",
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0) endpoint. Exposes the workspace-scoped server tool registry to MCP clients (initialize, tools/list, tools/call).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+        "x-guard": ["tokenGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -10435,7 +11140,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
         "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10592,7 +11297,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Delete memberships",
         "description": "Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10721,7 +11426,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Update membership",
         "description": "Updates the membership metadata, such as role, muted, or archived status.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10836,7 +11541,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
-        "x-guard": ["authGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -10913,7 +11618,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Get list of members",
         "description": "Retrieves members (users) of a channel entity by ID, including their associated membership data.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11203,7 +11908,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
         "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11435,7 +12140,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
         "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11503,7 +12208,7 @@
         "tags": ["seen", "cella"],
         "summary": "Mark entities as seen",
         "description": "Records that the current user has viewed one or more product entities. Deduplicates against existing records. Updates entity view counts for newly seen entities.",
-        "x-guard": ["authGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -11569,6 +12274,755 @@
                     }
                   },
                   "required": ["newCount"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/service-accounts": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createServiceAccount",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Create service account",
+        "description": "Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "member"]
+                  },
+                  "key": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 255,
+                        "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                      },
+                      "scopes": {
+                        "type": ["array", "null"],
+                        "items": {
+                          "type": "string",
+                          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                        },
+                        "minItems": 1
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": ["name"]
+                  }
+                },
+                "required": ["name", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service account was created",
+            "content": {
+              "application/json": {
+                "example": {
+                  "serviceAccount": {
+                    "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
+                    "tenantId": "yug3pr",
+                    "name": "system bot",
+                    "status": "active",
+                    "bindings": [
+                      {
+                        "channelType": "organization",
+                        "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+                        "organizationId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+                        "role": "member"
+                      }
+                    ],
+                    "oauthClientId": null,
+                    "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
+                    "createdAt": "2024-09-01T22:49:17.262Z",
+                    "updatedAt": "2024-09-01T22:49:17.262Z",
+                    "updatedBy": null
+                  },
+                  "apiKey": {
+                    "id": "5302a43a-9867-408a-a97e-03039539daa6",
+                    "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
+                    "tenantId": "uiucev",
+                    "name": "transmit key",
+                    "prefix": "cella-development_sk_test_Ab3d",
+                    "last4": "2345",
+                    "scopes": ["attachment:read"],
+                    "expiresAt": null,
+                    "revokedAt": null,
+                    "revokedBy": null,
+                    "createdBy": "b5cf5689-f454-4337-a781-ea4555f182fa",
+                    "createdAt": "2024-08-06T06:09:43.711Z",
+                    "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
+                  }
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "serviceAccount": {
+                      "$ref": "#/components/schemas/ServiceAccount"
+                    },
+                    "apiKey": {
+                      "$ref": "#/components/schemas/CreatedCredential"
+                    }
+                  },
+                  "required": ["serviceAccount"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getServiceAccounts",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Get service accounts",
+        "description": "Lists the service accounts of this organization.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service accounts",
+            "content": {
+              "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
+                      "tenantId": "yx645y",
+                      "name": "circuit bot",
+                      "status": "active",
+                      "bindings": [
+                        {
+                          "channelType": "organization",
+                          "channelId": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
+                          "organizationId": "ebbb3603-89ce-485d-bbd9-1cd87f54ea01",
+                          "role": "member"
+                        }
+                      ],
+                      "oauthClientId": null,
+                      "createdBy": "0796fe85-592b-48e6-b71b-17b41ee456f6",
+                      "createdAt": "2024-03-18T03:56:02.722Z",
+                      "updatedAt": "2024-03-18T03:56:02.722Z",
+                      "updatedBy": null
+                    },
+                    {
+                      "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
+                      "tenantId": "pa56tp",
+                      "name": "feed bot",
+                      "status": "active",
+                      "bindings": [
+                        {
+                          "channelType": "organization",
+                          "channelId": "d772a771-fc15-4065-be63-546594859fc3",
+                          "organizationId": "d772a771-fc15-4065-be63-546594859fc3",
+                          "role": "member"
+                        }
+                      ],
+                      "oauthClientId": null,
+                      "createdBy": "339b813c-f84d-4752-a3c2-ac3827d82be1",
+                      "createdAt": "2024-04-20T08:15:05.883Z",
+                      "updatedAt": "2024-04-20T08:15:05.883Z",
+                      "updatedBy": null
+                    }
+                  ],
+                  "total": 2
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceAccount"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/service-accounts/{id}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateServiceAccount",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Update service account",
+        "description": "Renames, describes, disables or re-enables a service account. Accounts are never deleted.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "disabled"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service account was updated",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
+                  "tenantId": "yug3pr",
+                  "name": "system bot",
+                  "status": "active",
+                  "bindings": [
+                    {
+                      "channelType": "organization",
+                      "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+                      "organizationId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
+                      "role": "member"
+                    }
+                  ],
+                  "oauthClientId": null,
+                  "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
+                  "createdAt": "2024-09-01T22:49:17.262Z",
+                  "updatedAt": "2024-09-01T22:49:17.262Z",
+                  "updatedBy": null
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceAccount"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/service-accounts/{id}/keys": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getApiKeys",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Get API keys",
+        "description": "Lists the API keys of a service account. Secrets are never returned here.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API keys",
+            "content": {
+              "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+                      "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                      "tenantId": "maq9vh",
+                      "name": "reboot key",
+                      "prefix": "cella-development_sk_test_Ab3d",
+                      "last4": "2345",
+                      "scopes": ["attachment:read"],
+                      "expiresAt": null,
+                      "revokedAt": null,
+                      "revokedBy": null,
+                      "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+                      "createdAt": "2024-11-05T21:01:57.922Z"
+                    }
+                  ]
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApiKey"
+                      }
+                    }
+                  },
+                  "required": ["items"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createApiKey",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Create API key",
+        "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                  },
+                  "scopes": {
+                    "type": ["array", "null"],
+                    "items": {
+                      "type": "string",
+                      "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
+                    },
+                    "minItems": 1
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "rollFrom": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "rollOverlapDays": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 30,
+                    "default": 7
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API key was issued",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "5302a43a-9867-408a-a97e-03039539daa6",
+                  "principalId": "aaa60c2b-e0af-49cb-9e15-dfb3e738082d",
+                  "tenantId": "uiucev",
+                  "name": "transmit key",
+                  "prefix": "cella-development_sk_test_Ab3d",
+                  "last4": "2345",
+                  "scopes": ["attachment:read"],
+                  "expiresAt": null,
+                  "revokedAt": null,
+                  "revokedBy": null,
+                  "createdBy": "b5cf5689-f454-4337-a781-ea4555f182fa",
+                  "createdAt": "2024-08-06T06:09:43.711Z",
+                  "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedCredential"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "revokeApiKey",
+        "tags": ["service-accounts", "cella"],
+        "summary": "Revoke API key",
+        "description": "Revokes an API key immediately. The row stays for the audit trail.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key was revoked",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
+                  "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                  "tenantId": "maq9vh",
+                  "name": "reboot key",
+                  "prefix": "cella-development_sk_test_Ab3d",
+                  "last4": "2345",
+                  "scopes": ["attachment:read"],
+                  "expiresAt": null,
+                  "revokedAt": null,
+                  "revokedBy": null,
+                  "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
+                  "createdAt": "2024-11-05T21:01:57.922Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKey"
                 }
               }
             }

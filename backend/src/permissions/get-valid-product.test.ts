@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
@@ -8,7 +8,7 @@ import { getValidProduct } from '#/permissions/get-valid-product';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
 vi.mock('#/db/tenant-context', () => ({
-  tenantRead: vi.fn((ctx: AuthContext, fn: (readCtx: AuthContext) => unknown) => fn(ctx)),
+  tenantRead: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
 }));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
 vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
@@ -22,7 +22,14 @@ const ORG = 'org-a';
 describe('getValidProduct request scope', () => {
   const ctx = (
     scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: TENANT, organizationId: ORG },
-  ) => ({ var: { db: baseDb, userId: 'user-1', ...scope } }) as unknown as AuthContext;
+  ) =>
+    ({
+      var: {
+        db: baseDb,
+        actor: { kind: 'user', id: 'user-1', bindings: [], scopes: null },
+        ...scope,
+      },
+    }) as unknown as UserContext;
 
   const row = (overrides: Record<string, unknown> = {}) => ({
     id: 'att-1',

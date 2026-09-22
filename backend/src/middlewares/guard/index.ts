@@ -1,7 +1,11 @@
-export * from './auth-guard';
+export { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
+export * from './actor-guard';
 export * from './cross-tenant-guard';
 export * from './org-guard';
 export * from './public-guard';
 export * from './relatable-guard';
+export * from './service-guard';
 export * from './sys-admin-guard';
 export * from './tenant-guard';
+export * from './token-guard';
+export * from './user-guard';

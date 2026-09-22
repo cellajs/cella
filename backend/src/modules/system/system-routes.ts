@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, sysAdminGuard } from '#/middlewares/guard';
+import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { inviteBodySchema, sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import { mockUserResponse } from '#/modules/user/user-mocks';
@@ -19,7 +19,7 @@ const systemRoutes = {
     operationId: 'systemInvite',
     method: 'post',
     path: '/invite',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     tags: ['system', 'cella'],
     summary: 'Invite to system',
@@ -48,7 +48,7 @@ const systemRoutes = {
     operationId: 'deleteUsers',
     method: 'delete',
     path: '/',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['system', 'cella'],
     summary: 'Delete users',
@@ -72,7 +72,7 @@ const systemRoutes = {
     operationId: 'updateUser',
     method: 'put',
     path: '/{id}',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['system', 'cella'],
     summary: 'Update user',
@@ -95,7 +95,7 @@ const systemRoutes = {
     operationId: 'sendNewsletter',
     method: 'post',
     path: '/newsletter',
-    xGuard: [authGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['system', 'cella'],
     summary: 'Newsletter to members',

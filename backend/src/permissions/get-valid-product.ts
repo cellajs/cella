@@ -1,5 +1,5 @@
 import { draftVisibleTo, type EntityActionType, type ProductEntityType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
@@ -21,7 +21,7 @@ export interface ValidProductResult<K extends ProductEntityType> {
  * bypassed. System-admin bypass sits inside `checkAccess` and never widens that scope.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
-  ctx: AuthContext,
+  ctx: ActorContext,
   id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
@@ -40,7 +40,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   if (!entity || entity.tenantId !== tenantId || entity.organizationId !== organizationId) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
-  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.userId)) {
+  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.actor.id)) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
 

@@ -71,7 +71,9 @@ export type {
 } from './src/permissions/index.ts';
 export {
   type Access,
-  type Actor,
+  type AccessScope,
+  type AccessScopedEntityType,
+  accessScopes,
   allActionsAllowed,
   allActionsDenied,
   type BatchPermissionResult,
@@ -94,6 +96,7 @@ export {
   MissingScopeError,
   matchesRowCondition,
   type PermissionResult,
+  type PredicateActor,
   policyMatrix,
   publicReadGrants,
   resolveCan,

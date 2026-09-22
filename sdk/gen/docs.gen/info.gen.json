@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 85,
+  "documentedOperationCount": 96,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -13,19 +13,27 @@
       "required": true,
       "kind": "middleware",
       "values": {
+        "serviceGuard": {
+          "name": "service",
+          "description": "Requires a secret API key or an access token and sets the service account or the consenting user as the actor"
+        },
+        "userGuard": {
+          "name": "user",
+          "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
+        },
+        "actorGuard": {
+          "name": "actor",
+          "description": "Requires a session cookie, a secret API key, or an access token and sets the actor"
+        },
+        "crossTenantGuard": {
+          "name": "crossTenant",
+          "description": "Requires userGuard and sets baseDb for cross-tenant access"
+        },
+        "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "publicGuard": {
           "name": "public",
           "description": "No authentication required; provides baseDb without RLS context"
         },
-        "authGuard": {
-          "name": "auth",
-          "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
-        },
-        "crossTenantGuard": {
-          "name": "crossTenant",
-          "description": "Requires authGuard and sets baseDb for cross-tenant access"
-        },
-        "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "relatableGuard": {
           "name": "relatable",
           "description": "Checks that the requesting user shares at least one organization with the target user"
@@ -33,7 +41,11 @@
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
         "tenantGuard": {
           "name": "tenant",
-          "description": "Requires authGuard, validates tenant access, and sets baseDb + tenantId context"
+          "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
+        },
+        "tokenGuard": {
+          "name": "token",
+          "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
         }
       }
     },
@@ -65,6 +77,7 @@
           "name": "passkeyChallenge",
           "description": "Max 30 passkey challenges/hour per IP"
         },
+        "serviceBurstLimiter": { "name": "serviceBurst", "description": "Max 30 requests/second per service account" },
         "syncReadLimiter": {
           "name": "syncRead",
           "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"

@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { type PgColumn, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
-  type Actor,
   appConfig,
   type ChannelEntityType,
   computeCan,
@@ -9,6 +8,7 @@ import {
   hierarchy,
   type PolicyCellInput,
   type PolicyMatrix,
+  type PredicateActor,
   type ProductEntityType,
   type PublicReadGrants,
   resolveCan,
@@ -141,10 +141,10 @@ interface Scenario {
   publicGrants: PublicReadGrants;
 }
 
-const scenarioActor = (scenario: Scenario): Actor =>
+const scenarioActor = (scenario: Scenario): PredicateActor =>
   scenario.userId === undefined
     ? { anonymous: true }
-    : { userId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin };
+    : { userId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin, scopes: null };
 
 const membership = (channelType: ChannelEntityType, channelId: string, role: string): MembershipBaseModel =>
   ({
@@ -449,8 +449,8 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedGrants?: Readonly
 };
 
 /** The deep scenario's actor. Deep chains exercise scope, not the admin bypass. */
-const deepActor = (scenario: DeepScenario): Actor =>
-  scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
+const deepActor = (scenario: DeepScenario): PredicateActor =>
+  scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false, scopes: null };
 
 const deepSqlReadableIds = async (
   scenario: DeepScenario,
@@ -513,7 +513,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
 
   // Sysadmin widens who can read, never what a placement-filtered list returns: the bypass keeps `requested` narrowing.
   it('an explicitly requested home-channel narrows a sysadmin read like any other', async () => {
-    const sysadmin: Actor = { userId: 'u1', isSystemAdmin: true };
+    const sysadmin: PredicateActor = { userId: 'u1', isSystemAdmin: true, scopes: null };
     const sqlIdsFor = async (requested: { homeChannelId?: string; homeChannelIds?: string[] }) => {
       const filter = resolveCollectionReadFilterForPolicies({
         policies: deepPolicies(() => 0),
@@ -669,7 +669,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
         .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
-      const actor: Actor = { userId, isSystemAdmin };
+      const actor: PredicateActor = { userId, isSystemAdmin, scopes: null };
 
       const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID, actor);
       const where = buildCollectionReadWhere(filter, parityTable, homeChannelColumn, actor);
@@ -683,7 +683,11 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       for (const row of ROWS) {
         // Same subject shape dispatch builds: ancestor scope + the row itself
         const subject = rowSubject(row);
-        const engineAllowed = checkAccess({ userId, isSystemAdmin, memberships }, 'read', subject).allowed;
+        const engineAllowed = checkAccess(
+          { userId, isSystemAdmin, memberships, scopes: null },
+          'read',
+          subject,
+        ).allowed;
         const dispatchAllowed = canReceiveProductEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
@@ -709,7 +713,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         rowData.publishedAt = null;
         const publishedEvent = { ...draftEvent, rowData: { ...rowData, publishedAt: PUBLIC_AT } };
 
-        const engineAllowed = checkAccess(subscriber, 'read', rowSubject(row)).allowed;
+        const engineAllowed = checkAccess({ ...subscriber, scopes: null }, 'read', rowSubject(row)).allowed;
         // A published row dispatches exactly like the engine decides; the same row as a draft never dispatches.
         expect(canReceiveProductEvent(subscriber, publishedEvent), `${label} → row ${row.id} published`).toBe(
           engineAllowed,

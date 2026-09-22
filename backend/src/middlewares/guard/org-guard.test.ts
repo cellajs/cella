@@ -24,8 +24,9 @@ const orgRow = {
  * purpose: the case this guard has to get right only exists in apps whose hierarchy has channels
  * below the organization, and those rows carry organizationId as an ancestor column.
  */
+// A user's grant is its membership row: `userId` is what tells it apart from a service account's grant.
 const membership = (channelType: string, organizationId: string) =>
-  ({ channelType, organizationId, channelId: 'channel-1', role: 'member' }) as never;
+  ({ channelType, organizationId, channelId: 'channel-1', role: 'member', userId: 'user-1' }) as never;
 
 const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
 
@@ -34,6 +35,13 @@ const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organi
   var: {
     db: emptyDb as never,
     memberships: opts.memberships,
+    // The guard reads the actor's bindings; for a session those are the memberships.
+    actor: {
+      kind: 'user',
+      id: 'user-1',
+      bindings: opts.memberships,
+      scopes: null,
+    },
     isSystemAdmin: opts.isSystemAdmin ?? false,
     tenantId: TENANT_ID,
   },

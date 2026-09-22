@@ -15,6 +15,7 @@ export function fakeConfig(overrides: Partial<EngineConfig> = {}): EngineConfig 
       cdc: { enabled: true },
       yjs: { enabled: false, publicUrl: 'wss://www.cellajs.com/yjs' },
       mcp: { enabled: false, publicUrl: 'https://www.cellajs.com/mcp' },
+      oauth: { enabled: false, publicUrl: 'https://www.cellajs.com/oauth' },
     },
     s3: {
       host: 's3.nl-ams.scw.cloud',

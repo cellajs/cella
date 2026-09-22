@@ -10,3 +10,6 @@ export const authenticateRouteSearchParamsSchema = z.object({
 export const authErrorRouteSearchParamsSchema = z
   .object({ tokenId: z.string().optional() })
   .extend(errorSearchSchema.shape);
+
+/** The authorization server's interaction id, carried through sign-in and back. */
+export const consentRouteSearchParamsSchema = z.object({ uid: z.string() });

@@ -1,11 +1,11 @@
 import dns from 'node:dns/promises';
 import { appConfig } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findDomainById, updateDomain } from '#/modules/domains/domains-queries';
 import { log } from '#/utils/logger';
 
-export async function verifyDomainOp(ctx: AuthContext, id: string) {
+export async function verifyDomainOp(ctx: UserContext, id: string) {
   const tenantId = ctx.var.tenantId;
 
   const domain = await findDomainById(ctx, { id });

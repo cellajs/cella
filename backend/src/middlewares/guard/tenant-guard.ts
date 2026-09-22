@@ -1,84 +1,54 @@
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { findTenantById } from '#/db/prepared';
-import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
-import { getTenantCache, setTenantCache } from './tenant-cache';
+import { loadActiveTenant } from '#/modules/tenants/helpers/load-active-tenant';
 
-/** Validates tenant access and sets baseDb + tenant context; orgGuard resolves organizations. */
+/**
+ * Resolves the URL's tenant and checks the actor may act in it: a service account only in the tenant its key belongs
+ * to; a user with a membership there, as its creator during bootstrap, or as system admin. Sets baseDb + tenant
+ * context; orgGuard resolves organizations.
+ */
 export const tenantGuard = xMiddleware(
   {
     functionName: 'tenantGuard',
     type: 'x-guard',
     name: 'tenant',
-    description: 'Requires authGuard, validates tenant access, and sets baseDb + tenantId context',
+    description: 'Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context',
   },
   async (ctx, next) => {
     const rawTenantId = ctx.req.param('tenantId');
-
     if (!rawTenantId) {
       throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
     }
-
     const tenantId = rawTenantId.toLowerCase();
 
-    const user = ctx.var.user;
-    const memberships = ctx.var.memberships;
-    const isSystemAdmin = ctx.var.isSystemAdmin;
+    const actor = ctx.var.actor;
+    if (!actor)
+      throw new AppError(401, 'unauthorized', 'warn', { message: 'tenantGuard requires userGuard or serviceGuard' });
 
-    if (!user || memberships === undefined) {
-      throw new AppError(401, 'unauthorized', 'warn', {
-        message: 'tenantGuard requires authGuard middleware',
-      });
-    }
-
-    // Tenant access requires a membership, system admin, or having created the tenant
-    const hasTenantMembership = memberships.some((m) => m.tenantId === tenantId);
-
-    const cached = getTenantCache(tenantId);
-    if (cached) {
-      // The creator passes during bootstrap, before any orgs or memberships exist
-      if (!isSystemAdmin && !hasTenantMembership && cached.createdBy !== user.id) {
-        throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
-      }
-
-      if (cached.status !== 'active') {
-        throw new AppError(403, 'forbidden', 'warn', { message: `Tenant is ${cached.status}` });
-      }
-
-      ctx.set('db', baseDb);
-      ctx.set('tenantId', tenantId);
-      ctx.set('tenant', cached);
-
-      return next();
-    }
-
-    const [tenant] = await findTenantById.execute({ id: tenantId });
-
-    if (!tenant) {
-      throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
-    }
-
-    if (!isSystemAdmin && !hasTenantMembership && tenant.createdBy !== user.id) {
+    // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
+    // so a key learns nothing about other tenants.
+    if (actor.kind === 'service' && actor.tenantId !== tenantId) {
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
     }
 
-    tenant.restrictions = normalizeRestrictions(tenant.restrictions);
+    const tenant = await loadActiveTenant(tenantId);
 
-    if (tenant.status !== 'active') {
-      throw new AppError(403, 'forbidden', 'warn', { message: `Tenant is ${tenant.status}` });
-    }
+    // A foothold: a service account holds at least one grant (its grants live in its own tenant); a user has a
+    // membership in the tenant, is system admin, or created it (bootstrap, before any organization or membership exists).
+    const allowed =
+      actor.kind === 'service'
+        ? actor.bindings.length > 0
+        : ctx.var.isSystemAdmin || actor.bindings.some((m) => m.tenantId === tenantId) || tenant.createdBy === actor.id;
+    if (!allowed) throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant' } });
 
-    // TODO(sso): Enforce non-empty tenant auth strategies, exempting system administrators.
+    // TODO(sso): Enforce non-empty tenant auth strategies for user actors, exempting system administrators.
     // Reject mismatches with `sso_required` and a tenant-entry redirect hint.
-
-    setTenantCache(tenantId, tenant);
 
     // Handlers use tenantRead for product entity RLS reads.
     ctx.set('db', baseDb);
     ctx.set('tenantId', tenantId);
     ctx.set('tenant', tenant);
-
     await next();
   },
 );

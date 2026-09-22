@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { authGuard, publicGuard } from '#/middlewares/guard';
+import { publicGuard, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
 import {
@@ -40,7 +40,7 @@ const authPasskeysRoutes = {
     operationId: 'createPasskey',
     method: 'post',
     path: '/passkey',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Create passkey',
@@ -64,7 +64,7 @@ const authPasskeysRoutes = {
     operationId: 'deletePasskey',
     method: 'delete',
     path: '/passkey/{id}',
-    xGuard: [authGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Delete passkey',

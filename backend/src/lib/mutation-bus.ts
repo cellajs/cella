@@ -1,5 +1,5 @@
 import type { TrackedEventType } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 
 /** The batched rows an event is about: `before`/`after` index-aligned for updates, `before` alone for deletes. */
@@ -10,7 +10,7 @@ export interface MutationPayload {
   serverOrigin?: boolean;
 }
 
-export type MutationHandler = (ctx: AuthContext, payload: MutationPayload) => Promise<void>;
+export type MutationHandler = (ctx: ActorContext, payload: MutationPayload) => Promise<void>;
 
 const handlers = new Map<TrackedEventType, MutationHandler[]>();
 
@@ -31,7 +31,7 @@ onBackendModuleRegister((module) => {
 
 /** Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. */
 export async function dispatchMutation(
-  ctx: AuthContext,
+  ctx: ActorContext,
   event: TrackedEventType,
   payload: MutationPayload = {},
 ): Promise<void> {

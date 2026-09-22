@@ -1,7 +1,7 @@
 import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
-import type { AuthContext, DbContext } from '#/core/context';
+import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
@@ -59,7 +59,7 @@ interface FindMembershipAwareRowsOpts {
 }
 
 export const findMembershipAwareRows = async (
-  ctx: AuthContext,
+  ctx: OrgContext,
   { emails, entityType, entityId }: FindMembershipAwareRowsOpts,
 ) => {
   const { db, organizationId } = ctx.var;
@@ -161,7 +161,7 @@ interface FindMembershipByIdInOrgOpts {
   membershipId: string;
 }
 
-export const findMembershipByIdInOrg = async (ctx: AuthContext, { membershipId }: FindMembershipByIdInOrgOpts) => {
+export const findMembershipByIdInOrg = async (ctx: OrgContext, { membershipId }: FindMembershipByIdInOrgOpts) => {
   const { db, organizationId } = ctx.var;
   const [membership] = await db
     .select(membershipBaseSelect)
@@ -191,7 +191,7 @@ interface DeleteMembershipsByIdsOpts {
   ids: string[];
 }
 
-export const deleteMembershipsByIds = async (ctx: AuthContext, { ids }: DeleteMembershipsByIdsOpts) => {
+export const deleteMembershipsByIds = async (ctx: OrgContext, { ids }: DeleteMembershipsByIdsOpts) => {
   const { db, organizationId } = ctx.var;
   return db
     .delete(membershipsTable)
@@ -203,7 +203,7 @@ interface UpdateMembershipOpts {
   values: Partial<typeof membershipsTable.$inferInsert>;
 }
 
-export const updateMembership = async (ctx: AuthContext, { id, values }: UpdateMembershipOpts) => {
+export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMembershipOpts) => {
   const { db, organizationId } = ctx.var;
   const [updated] = await db
     .update(membershipsTable)
@@ -254,7 +254,7 @@ interface FindInactiveMembershipForUserOpts {
   id: string;
 }
 
-export const findInactiveMembershipForUser = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
+export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()
@@ -272,7 +272,7 @@ const claimableBy = (userId: string) =>
   or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId));
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
-export const findClaimableInactiveMembership = async (ctx: AuthContext, { id }: FindInactiveMembershipForUserOpts) => {
+export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()

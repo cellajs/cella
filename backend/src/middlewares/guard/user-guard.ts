@@ -14,11 +14,12 @@ import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCach
  * Authenticates the session and sets user, memberships, and base db context from short TTL caches. The RLS lookup
  * transaction ends before `next()`, so handlers open their own scoped reads.
  */
-export const authGuard = xMiddleware(
+export const userGuard = xMiddleware(
   {
-    functionName: 'authGuard',
+    functionName: 'userGuard',
     type: 'x-guard',
-    name: 'auth',
+    security: [{ cookieAuth: [] }],
+    name: 'user',
     description: 'Requires valid session and sets auth context (user, memberships, baseDb)',
   },
   async (ctx, next) => {
@@ -45,6 +46,7 @@ export const authGuard = xMiddleware(
           setMembershipCache(cachedSession.user.id, memberships);
         }
         ctx.set('memberships', memberships);
+        ctx.set('actor', { kind: 'user', id: cachedSession.user.id, bindings: memberships, scopes: null });
 
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
@@ -88,6 +90,7 @@ export const authGuard = xMiddleware(
       });
 
       ctx.set('memberships', memberships);
+      ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 

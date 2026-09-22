@@ -1,6 +1,8 @@
 import { and, eq } from 'drizzle-orm';
+import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
+import { isMembershipRow } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { getOrgCache, setOrgCache } from './org-cache';
@@ -23,7 +25,8 @@ export const orgGuard = xMiddleware(
       throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
 
     const db = ctx.var.db;
-    const memberships = ctx.var.memberships;
+    // Role bindings of whoever is acting: a user's memberships, or a service account's stored bindings.
+    const memberships: readonly ActorBinding[] | undefined = ctx.var.actor?.bindings;
     const isSystemAdmin = ctx.var.isSystemAdmin;
     const tenantId = ctx.var.tenantId;
 
@@ -32,7 +35,7 @@ export const orgGuard = xMiddleware(
     }
 
     if (memberships === undefined) {
-      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires isAuthenticated middleware' });
+      throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires userGuard or serviceGuard' });
     }
 
     const cached = getOrgCache(tenantId, organizationId);
@@ -65,7 +68,11 @@ export const orgGuard = xMiddleware(
     if (!isSystemAdmin && !isInOrganization) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
-    const orgWithMembership = { ...organization, membership: orgMembership };
+    // A service account's grant is not a membership row; the organization-level membership is a user's only.
+    const orgWithMembership = {
+      ...organization,
+      membership: orgMembership && isMembershipRow(orgMembership) ? orgMembership : null,
+    };
 
     // membership is the organization-level row: null for system admins, and for members who hold
     // rows only in channels below the organization

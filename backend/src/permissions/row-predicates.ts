@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { type Actor, appConfig, type ChannelEntityType, type RowConditionName } from 'shared';
+import { appConfig, type ChannelEntityType, type PredicateActor, type RowConditionName } from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
@@ -17,7 +17,7 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 };
 
 /** SQL twin of the check-form `matchesRowCondition` (parity-tested); anonymous actors never match actor-bound forms. */
-export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: Actor): SQL => {
+export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: PredicateActor): SQL => {
   switch (name) {
     case 'own': {
       const userId = 'anonymous' in actor ? undefined : actor.userId;
@@ -44,7 +44,7 @@ export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
   table: AnyPgTable,
   homeChannelColumn: PgColumn,
-  actor: Actor,
+  actor: PredicateActor,
 ): CollectionReadWhere => {
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
   if (filter.homeChannelIds === undefined) return { kind: 'all' };

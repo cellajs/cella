@@ -1,6 +1,6 @@
 import { type EntityRole, hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
@@ -15,8 +15,10 @@ interface UpdateMembershipInput {
   displayOrder?: number;
 }
 
-export async function updateMembershipOp(ctx: AuthContext, membershipId: string, input: UpdateMembershipInput) {
-  const user = ctx.var.user;
+/** User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership (D9). */
+export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
+  // `memberships.updatedBy` is a user id: the type rejects `actor.id`, which could be a service account.
+  const actorId = ctx.var.user.id;
   const memberships = ctx.var.memberships;
 
   const { role, archived, muted, displayOrder } = input;
@@ -53,7 +55,7 @@ export async function updateMembershipOp(ctx: AuthContext, membershipId: string,
     ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
     ...(muted !== undefined && { muted }),
     ...(archived !== undefined && { archived }),
-    updatedBy: user.id,
+    updatedBy: actorId,
     updatedAt: getIsoDate(),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });

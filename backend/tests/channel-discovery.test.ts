@@ -1,6 +1,6 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
-import type { Actor, ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix } from 'shared';
+import type { ChannelEntityType, EntityHierarchy, EntityType, PolicyMatrix, PredicateActor } from 'shared';
 import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/deep-fixture';
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -105,7 +105,7 @@ interface ListedRow {
 
 /** The list query as a consumer wires it: LEFT join for discovery, INNER join (filters in ON) once a role filter narrows to memberships. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
-  const actor: Actor = { userId, isSystemAdmin: opts.isSystemAdmin ?? false };
+  const actor: PredicateActor = { userId, isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null };
   const memberships = (await seedDb
     .select()
     .from(membershipsTable)

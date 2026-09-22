@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
@@ -16,7 +16,7 @@ import { defaultWelcomeText } from '#json/text-blocks.json';
 
 type CreateOrganizationItem = { id: string; name: string; slug: string };
 
-export async function createOrganizationsOp(ctx: AuthContext, rawItems: CreateOrganizationItem[], tenantId: string) {
+export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOrganizationItem[], tenantId: string) {
   // Normalize old-shape field names to their current names before any body access
   const items = rawItems.map((item) => organizationContract.normalizeBody(item));
   const user = ctx.var.user;

@@ -1455,5 +1455,177 @@
         "contentType": "application/json"
       }
     ]
+  },
+  {
+    "operationId": "getConnectedApps",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Connected apps",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/ConnectedApp",
+              "items": {
+                "type": "object",
+                "description": "An OAuth consent (grant) of the current user.",
+                "properties": {
+                  "id": { "type": "string", "required": true },
+                  "clientId": { "type": "string", "required": true },
+                  "clientName": { "type": "string", "required": true },
+                  "scopes": { "type": "array", "required": true, "itemType": "string" },
+                  "resources": { "type": "array", "required": true, "itemType": "string" },
+                  "createdAt": { "type": "string", "required": true },
+                  "expiresAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  }
+                },
+                "ref": "#/components/schemas/ConnectedApp"
+              }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "gr_01J9Z2Q0X7ZQ4S5M8N",
+              "clientId": "https://vscode.dev/oauth/client-metadata.json",
+              "clientName": "Visual Studio Code",
+              "scopes": ["attachment:read"],
+              "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+              "createdAt": "2026-09-22T10:00:00.000Z",
+              "expiresAt": "2026-10-22T10:00:00.000Z"
+            }
+          ]
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "revokeConnectedApp",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Consent was revoked",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "array", "required": true },
+            "rejectedIds": {
+              "type": "array",
+              "required": true,
+              "description": "Identifiers of items that could not be processed",
+              "itemType": "string"
+            },
+            "rejectionReasons": {
+              "type": "object",
+              "required": false,
+              "description": "Map of reason code to rejected item IDs",
+              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
   }
 ]

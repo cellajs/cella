@@ -5,6 +5,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 const AccountGeneralCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountGeneralCard');
 const AccountSessionsCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountSessionsCard');
 const AccountAuthenticationCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountAuthenticationCard');
+const AccountConnectedAppsCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountConnectedAppsCard');
 const AccountDeleteCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountDeleteCard');
 
 defineFrontendModule({
@@ -36,6 +37,17 @@ defineFrontendModule({
             label: 'c:authentication',
             order: 30,
             render: () => <AccountAuthenticationCard />,
+          } as const,
+        ]
+      : []),
+    ...(appConfig.services.oauth.enabled
+      ? [
+          {
+            slot: 'account.settings',
+            id: 'connected-apps',
+            label: 'c:connected_apps',
+            order: 40,
+            render: () => <AccountConnectedAppsCard />,
           } as const,
         ]
       : []),

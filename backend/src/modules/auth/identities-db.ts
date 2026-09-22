@@ -1,6 +1,7 @@
 import { boolean, index, jsonb, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
+import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -21,7 +22,8 @@ export const identitiesTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     userId: uuid()
       .notNull()
-      .references(() => usersTable.id, { onDelete: 'cascade' }),
+      .references(() => usersTable.id, { onDelete: 'cascade' })
+      .$type<UserId>(),
     kind: varchar({ enum: identityKinds }).notNull().default('oauth'),
     // Always a slug, namespaced by kind: a supported OAuth provider for 'oauth'; its issuer URL lives in config, not here.
     issuer: varchar({ length: maxLength.field }).notNull(),

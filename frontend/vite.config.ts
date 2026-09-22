@@ -129,6 +129,7 @@ const viteConfig = {
       '/api': { target: `http://localhost:${appConfig.devPorts.api}` },
       '/yjs': { target: `ws://localhost:${appConfig.devPorts.yjs}`, ws: true },
       '/mcp': { target: `http://localhost:${appConfig.devPorts.mcp}` },
+      '/oauth': { target: `http://localhost:${appConfig.devPorts.oauth}` },
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.

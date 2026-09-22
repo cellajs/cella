@@ -1,5 +1,5 @@
 import type { SubjectForPermission } from 'shared';
-import type { AuthContext } from '#/core/context';
+import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { checkAccess } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
@@ -10,7 +10,7 @@ import { validateAncestorScope } from '#/permissions/validate-ancestor-scope';
  * does not exist yet. Every ancestor channel ID must be present: `null` states org-level scope,
  * while an omitted (undefined) ancestor throws 400 so it cannot fall back to a broader scope.
  */
-export const canCreateEntity = (ctx: AuthContext, entity: SubjectForPermission) => {
+export const canCreateEntity = (ctx: ActorContext, entity: SubjectForPermission) => {
   const { entityType } = entity;
 
   validateAncestorScope(entity);

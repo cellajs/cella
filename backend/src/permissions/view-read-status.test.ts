@@ -48,7 +48,7 @@ const statusFor = (
       memberships: opts.memberships ?? [],
       entityType: ITEM,
       organizationId: ROOT_ID,
-      actor: { userId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false },
+      actor: { userId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null },
       elevatedGrants: opts.elevatedGrants,
       ...deepOverrides,
     },

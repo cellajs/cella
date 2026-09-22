@@ -13,8 +13,8 @@ import {
   services,
 } from './services';
 
-const allOn = { yjs: { enabled: true }, mcp: { enabled: true } };
-const allOff = { yjs: { enabled: false }, mcp: { enabled: false } };
+const allOn = { yjs: { enabled: true }, mcp: { enabled: true }, oauth: { enabled: true } };
+const allOff = { yjs: { enabled: false }, mcp: { enabled: false }, oauth: { enabled: false } };
 
 describe('service registry: enabledServices', () => {
   it('includes services that do not opt out in appConfig.services', () => {
@@ -42,7 +42,9 @@ describe('service registry: enabledServices', () => {
   });
 
   it('toggles yjs and mcp independently', () => {
-    const yjsOnly = enabledServices({ yjs: { enabled: true }, mcp: { enabled: false } }).map((s) => s.slug);
+    const yjsOnly = enabledServices({ yjs: { enabled: true }, mcp: { enabled: false }, oauth: { enabled: false } }).map(
+      (s) => s.slug,
+    );
     expect(yjsOnly).toContain('yjs');
     expect(yjsOnly).not.toContain('mcp');
   });
@@ -99,7 +101,7 @@ describe('placeServices (placement is independent of enablement)', () => {
   it('singleVM keeps the host, folds co-hosted workers, collocates placement-host containers', () => {
     const placed = placeServices(services, true);
     expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
-    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'yjs', 'mcp']);
+    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'yjs', 'mcp', 'oauth']);
     expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
   });
 
@@ -113,7 +115,7 @@ describe('placeServices (placement is independent of enablement)', () => {
 
 describe('registry view: bootstrap-owned IAM ignores enablement', () => {
   it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
-    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'frontend']);
+    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'frontend']);
   });
 
   it('singleVM: only the host owns a principal', () => {
@@ -121,7 +123,7 @@ describe('registry view: bootstrap-owned IAM ignores enablement', () => {
   });
 
   it('singleVM host scope unions every registry worker and collocated container, enabled or not', () => {
-    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'frontend']);
+    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'frontend']);
   });
 
   it('a non-host principal reads only its own folder', () => {
@@ -141,8 +143,8 @@ describe('service registry: lbRoute contract', () => {
     expect(services.find((s) => s.slug === 'frontend')?.lbRoute).toBe('default');
   });
 
-  it('backend / yjs / mcp are path-routed (same-origin model)', () => {
-    for (const name of ['backend', 'yjs', 'mcp'] as const) {
+  it('backend / yjs / mcp / oauth are path-routed (same-origin model)', () => {
+    for (const name of ['backend', 'yjs', 'mcp', 'oauth'] as const) {
       expect(services.find((s) => s.slug === name)?.lbRoute).toBe('path');
     }
   });

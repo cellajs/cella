@@ -1103,6 +1103,92 @@
    "summary": "devices drops lastStrategy, deviceName, deviceType, deviceOs, browser and ipCountry: every sign-in wrote them and nothing read them, since the new sign-in notice builds its text from the request and the sessions list reads the same facts from the session row. The table is now (userId, deviceIdHash, firstSeenAt, lastSeenAt, notifiedAt) and enrollDevice(userId, deviceId) loses its context and strategy parameters. No API change. Apps run pnpm generate (six DROP COLUMN statements, no prompts; an app applying this together with 20260921T1433-devices-table gets the table in its final shape), drop the last two arguments from their own enrollDevice calls, and read a dropped column from the session row of that sign-in."
   },
   {
+   "id": "20260922T1210-principals",
+   "version": "next",
+   "title": "principals: one actor table behind every provenance column",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/scripts",
+    "backend/tests"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "New principals (id, kind) table: users.id is a foreign key to it and createdBy/updatedBy/deletedBy in productColumns and channelColumns reference principals instead of users, so a later service account can be named in provenance with a real constraint. Users are inserted through insertUsers(), which writes the principal row first in one transaction; any direct db.insert(usersTable) fails on the new foreign key. AuthContext is renamed UserContext (a signed-in user) and ActorContext is its new supertype, carrying one actor { kind, id, grants } variable that accessFrom/actorFrom read; machine-callable operations are typed on it. Error bodies gain requestId. Apps rename AuthContext to UserContext with one perl/sed pass, run pnpm generate with one create hint per provenance foreign key, add the principals backfill INSERT after CREATE TABLE in the generated SQL, route user inserts through insertUsers, add principals to test TRUNCATE lists, and retype operations that only need the actor's id."
+  },
+  {
+   "id": "20260922T1600-service-accounts",
+   "version": "next",
+   "title": "service accounts and API keys: the first machine principal",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Adds service_accounts (a tenant-scoped machine principal with role bindings in bindings, disabled never deleted) and api_keys (opaque API keys stored as hashes, with a scopes mask). serviceGuard authenticates Authorization: Bearer <app>_sk_live_\u2026 as the service account and actorGuard accepts a session or a key on routes whose operations take ActorContext. Scopes are derived from the policy matrix (scopes next to policyMatrix, <entityType>:read|write) and masked in checkAccess and collection reads; the points limiter keys on (tenantId, principalId); CSRF is skipped for machine credentials. Apps rename authGuard to userGuard with one perl pass (userGuard = session only, serviceGuard = API key, actorGuard = either), run pnpm generate and pnpm sdk, add the two tables to the RLS grant list and test TRUNCATE lists, switch machine-callable routes to actorGuard, give hand-built test contexts an actor ({ kind: 'user', id, grants, scopes: null }), rename the shared SQL actor type Actor to PredicateActor, narrow grants to membership rows with isMembershipRow where a membership is returned, and type operations that read the organization as OrgContext. Id brands: user-referencing columns are UserId, principal-referencing ones PrincipalId, service_accounts.id ServiceAccountId; only a service id (or actor.id) into a user column fails to compile. backend/tsconfig.json turns on noImplicitOverride and noImplicitReturns. Review round: service_accounts.updatedBy and credentials.revokedBy (migration audit_principals), queries take (ctx, opts) and never throw, one operation per file, credential cache by hash, guards declare their OpenAPI security, Access.scopes is required."
+  },
+  {
+   "id": "20260922T1900-oauth-server",
+   "version": "next",
+   "title": "OAuth authorization server: keystore, consent, connected apps",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src",
+    "shared/config",
+    "infra/config",
+    "locales"
+   ],
+   "requires": [
+    "pnpm check",
+    "pnpm generate",
+    "pnpm generate:routes",
+    "pnpm infra:compose",
+    "pnpm install",
+    "pnpm sdk"
+   ],
+   "summary": "Adds node-oidc-provider as the MODE=oauth process on the same origin under /oauth/* (AUTH_SUBSTRATE_PLAN Phase D): oidc_payloads adapter, signing_keys (RS256, encrypted private JWK, current + next), oauth_clients for pre-registered apps, service_accounts.oauth_client_id for installations, tenants.restrictions.allowConsentedClients. Grant types authorization_code + refresh_token + client_credentials; client auth none (Client ID Metadata Documents) and client_secret_basic (clients rows and service accounts with their secret keys). Every token carries an RFC 8707 resource (<backendUrl>/t/<tenant> or <mcpUrl>/<tenant>/<org>/mcp). Consent page at /oauth/consent reads the session; GET/DELETE /me/connected-apps list and revoke grants; serviceGuard and actorGuard accept the JWT and resolve the consenting user (masked by token scopes) or the service account. Apps add oauthUrl, services.oauth and devPorts.oauth to config, the three tables to the RLS grant list, the oauth service to registry-enumerating infra tests, and the locale keys. Review round: oauth/ workspace package and singleVM fold (add oauth to pnpm-workspace.yaml), consent page at /auth/consent, oidc_payloads.account_id + hourly sweep job, unique current/next signing key, API-face protected resource metadata, health probe."
+  },
+  {
+   "id": "20260922T1930-mcp-substrate",
+   "version": "next",
+   "title": "MCP on the substrate: tokens only, tools from routes",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm install",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "The MCP endpoint sits behind tokenGuard (access tokens from the authorization server only; sessions and API keys refused) and answers tokenless calls with the RFC 9728 challenge; a public route publishes the protected resource metadata. Tools are routes: createXRoute registers a route carrying x-tool ({ enabled, description, approvalRequired, category, entity, execute }) in the core tool registry, deriving the input schema from the route request with the sync transaction left out and rebuilt server-side; tools/list carries annotations and the required scope, tools/call outside the token scopes answers 403 insufficient_scope with the scope to step up to. The attachment module ships the showcase (list, get, create, update, delete). OpenAPI gains an oauth2 security scheme. buildTools and @tanstack/ai are gone; apps move their tools onto routes and enable services.mcp in development and test config."
+  },
+  {
    "id": "20260922T2010-app-voice",
    "version": "next",
    "title": "app voice: no product name in identifiers and wire strings",
