@@ -4,7 +4,7 @@ import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { updateOrganization } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
@@ -61,7 +61,8 @@ export async function updateOrganizationOp(
   });
 
   const included = {
-    ...(membership && { membership: toMembershipBase(membership) }),
+    // A service account's grant is not a membership row; only a user's row is returned.
+    ...(membership && isMembershipRow(membership) && { membership: toMembershipBase(membership) }),
     counts,
   };
 

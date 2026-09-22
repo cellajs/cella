@@ -1,12 +1,12 @@
 import { type AnyColumn, and, eq, inArray, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
 import {
-  type Actor,
   hierarchy as appHierarchy,
   type ChannelEntityType,
   type EntityHierarchy,
   getEntityPolicies,
   getPolicyPermissions,
   type PolicyMatrix,
+  type PredicateActor,
   policyMatrix,
 } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -35,7 +35,7 @@ export interface ChannelCollectionScopeInput {
   channelType: Exclude<ChannelEntityType, 'organization'>;
   organizationId: string;
   /** Who is asking. Carries the system-admin bypass; required so no call site can forget it. */
-  actor: Actor;
+  actor: PredicateActor;
   /** Hierarchy override; tests pass a synthetic one. */
   hierarchy?: EntityHierarchy;
 }
@@ -104,7 +104,7 @@ export const resolveChannelCollectionReadScope = (
   memberships: MembershipBaseModel[],
   channelType: Exclude<ChannelEntityType, 'organization'>,
   organizationId: string,
-  actor: Actor,
+  actor: PredicateActor,
 ): ChannelCollectionReadScope =>
   resolveChannelCollectionReadScopeForPolicies({
     policies: policyMatrix,

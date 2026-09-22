@@ -1,7 +1,7 @@
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
-import { toMembershipBase } from '#/modules/memberships/helpers/select';
+import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions';
@@ -36,7 +36,10 @@ export async function getOrganizationOp(
   const included: { counts?: typeof counts; membership?: ReturnType<typeof toMembershipBase> } = {};
 
   if (counts) included.counts = counts;
-  if (includeMembership && membership) included.membership = toMembershipBase(membership);
+  // A service account's grant is not a membership row; only a user's row is returned.
+  if (includeMembership && membership && isMembershipRow(membership)) {
+    included.membership = toMembershipBase(membership);
+  }
 
   return { ...organizationWithAudit, included };
 }

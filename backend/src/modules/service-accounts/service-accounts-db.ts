@@ -1,20 +1,12 @@
 import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import type { ServiceGrant } from '#/core/context';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { principalsTable } from '#/modules/principals/principals-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 export const serviceAccountStatuses = ['active', 'disabled'] as const;
-
-/** One role binding, the shape the permission engine reads; the organization is always the tenant's single one. */
-export interface ServiceGrant {
-  channelType: ChannelEntityType;
-  channelId: string;
-  organizationId: string;
-  role: EntityRole;
-}
 
 /**
  * Machine principals: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `grants`

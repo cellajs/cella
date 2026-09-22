@@ -6,8 +6,10 @@ import {
   getCredentials,
   getServiceAccounts,
   type RevokeCredentialData,
+  type RevokeCredentialResponse,
   revokeCredential,
 } from 'sdk';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import type { MutationData } from '~/query/types';
 
@@ -24,7 +26,7 @@ export const serviceAccountKeys = {
 export const serviceAccountsQueryOptions = (path: OrgPath) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
-    queryFn: () => getServiceAccounts({ path, query: { limit: '50' } }),
+    queryFn: () => getServiceAccounts({ path, query: { limit: String(appConfig.requestLimits.default) } }),
   });
 
 export const credentialsQueryOptions = (path: OrgPath, id: string) =>
@@ -45,7 +47,7 @@ export const useCreateServiceAccountMutation = () => {
 
 export const useRevokeCredentialMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation<unknown, ApiError, MutationData<RevokeCredentialData>>({
+  return useMutation<RevokeCredentialResponse, ApiError, MutationData<RevokeCredentialData>>({
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeCredential({ path }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: serviceAccountKeys.all }),

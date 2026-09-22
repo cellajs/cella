@@ -140,7 +140,7 @@ function CredentialRow({
           {credential.prefix}…{credential.last4}
         </span>
       </div>
-      <span className="text-muted-foreground text-xs max-sm:hidden" aria-describedby={t('c:created_at')}>
+      <span className="text-muted-foreground text-xs max-sm:hidden" title={t('c:created_at')}>
         {dateShort(credential.createdAt)}
       </span>
       <Button type="button" size="xs" variant="ghost" onClick={onRevoke} loading={isPending}>

@@ -1,5 +1,4 @@
 import {
-  type Actor,
   hierarchy as appHierarchy,
   type ChannelEntityType,
   publicReadGrants as configuredPublicReadGrants,
@@ -10,14 +9,15 @@ import {
   isRowCondition,
   type PolicyCell,
   type PolicyMatrix,
+  type PredicateActor,
   type ProductEntityType,
   type PublicReadGrants,
   policyMatrix,
   type RowConditionName,
   scopes,
 } from 'shared';
+import type { ActorGrant } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 
 const roleReadValue = (
   policies: PolicyMatrix,
@@ -78,7 +78,7 @@ interface ScopeAccumulator {
 /** The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list. */
 const resolveScopes = (
   policies: PolicyMatrix,
-  memberships: MembershipBaseModel[],
+  memberships: ActorGrant[],
   entityType: ProductEntityType,
   organizationId: string,
   elevatedGrants: ReadonlySet<string> | undefined,
@@ -260,11 +260,11 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEn
 export interface CollectionReadScopeInput {
   /** Policy set. The bound wrapper injects the app's; parity tests pass synthetic ones. */
   policies: PolicyMatrix;
-  memberships: MembershipBaseModel[];
+  memberships: ActorGrant[];
   entityType: ProductEntityType;
   organizationId: string;
   /** Who is asking. Carries the system-admin bypass; required so no call site can forget it. */
-  actor: Actor;
+  actor: PredicateActor;
   /** Home-channel narrowing from the request; when neither field is given the read aggregates over the readable scope. */
   requested?: { homeChannelId?: string; homeChannelIds?: string[] };
   /** Channel-qualified subtree-grant keys, compiled from the hierarchy. @see shared/config/hierarchy-config.ts */
@@ -280,10 +280,10 @@ export interface CollectionReadScopeInput {
  * @throws AppError 403 `forbidden` when a requested id is outside the caller's readable scope.
  */
 export const resolveCollectionReadFilter = (
-  memberships: MembershipBaseModel[],
+  memberships: ActorGrant[],
   entityType: ProductEntityType,
   organizationId: string,
-  actor: Actor,
+  actor: PredicateActor,
   requested?: { homeChannelId?: string; homeChannelIds?: string[] },
 ): CollectionReadFilter =>
   resolveCollectionReadFilterForPolicies({

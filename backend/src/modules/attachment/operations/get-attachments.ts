@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { and, asc, count, eq, getColumns, ilike, isNull, or, type SQL } from 'drizzle-orm';
-import type { ActorContext } from '#/core/context';
+import type { OrgContext } from '#/core/context';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
@@ -24,7 +24,7 @@ import { prepareStringForILikeFilter } from '#/utils/sql';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
-export async function getAttachmentsOp(ctx: ActorContext, input: GetAttachmentsInput) {
+export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
   const { q, sort, order, limit, offset, seqCursor, channelId } = input;
 

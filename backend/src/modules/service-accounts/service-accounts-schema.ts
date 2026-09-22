@@ -11,11 +11,12 @@ import {
   mockServiceAccountResponse,
 } from './service-accounts-mocks';
 
+// `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
 const organizationRoles = hierarchy.getRoles('organization') as [EntityRole, ...EntityRole[]];
-/** `scopes.all` is derived from the policy matrix; an empty matrix would make this enum empty, which zod rejects. */
-const scopeEnum = z.enum(scopes.all as unknown as [string, ...string[]]);
+/** Derived from the policy matrix (non-empty by construction): the only values a key may be narrowed to. */
+const scopeEnum = z.enum(scopes.all);
 
-export const serviceGrantSchema = z.object({
+const serviceGrantSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),
   channelId: validIdSchema,
   organizationId: validIdSchema,
@@ -63,6 +64,7 @@ const credentialInputSchema = z.object({
 export const createCredentialBodySchema = credentialInputSchema.extend({
   /** Roll: issue this key as the successor of an existing one, which keeps working for `rollOverlapDays`. */
   rollFrom: validIdSchema.optional(),
+  /** Days the rolled key stays valid, long enough to deploy the successor; Stripe's default is the same week. */
   rollOverlapDays: z.number().int().min(0).max(30).default(7),
 });
 
@@ -90,7 +92,6 @@ export const credentialsResponseSchema = z.object({ items: z.array(credentialSch
 
 export const serviceAccountListQuerySchema = paginationQuerySchema.pick({ q: true, offset: true, limit: true });
 
-export type ServiceGrantInput = z.infer<typeof serviceGrantSchema>;
 export type CreateServiceAccountInput = z.infer<typeof createServiceAccountBodySchema>;
 export type UpdateServiceAccountInput = z.infer<typeof updateServiceAccountBodySchema>;
 export type CreateCredentialInput = z.infer<typeof createCredentialBodySchema>;

@@ -3561,7 +3561,6 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
         name: 'cella-development-session-v2',
         type: 'apiKey',
       },
-      { scheme: 'bearer', type: 'http' },
     ],
     url: '/{tenantId}/{organizationId}/memberships/{id}',
     ...options,

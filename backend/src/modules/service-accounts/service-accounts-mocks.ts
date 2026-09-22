@@ -22,16 +22,19 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
     };
   });
 
+/** A fixed key whose checksum is valid, so examples round-trip through `parseApiKey`; never issued. */
+const exampleSecret = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123454Wf2Qf`;
+
 export const mockCredentialResponse = (key = 'credential:default'): CredentialModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
     principalId: mockUuid(),
     tenantId: mockTenantId(),
     type: 'secret',
-    name: 'CI deploy key',
+    name: `${faker.hacker.verb()} key`,
     description: null,
-    prefix: `${appConfig.slug}_sk_test_Ab3d`,
-    last4: 'x9Qz',
+    prefix: exampleSecret.slice(0, `${appConfig.slug}_sk_test_`.length + 4),
+    last4: exampleSecret.slice(-10, -6),
     scopes: ['attachment:read'],
     expiresAt: null,
     revokedAt: null,
@@ -42,7 +45,7 @@ export const mockCredentialResponse = (key = 'credential:default'): CredentialMo
 
 export const mockCreatedCredentialResponse = (key = 'createdCredential:default') => ({
   ...mockCredentialResponse(key),
-  secret: `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345x9Qz1A2b3C`,
+  secret: exampleSecret,
 });
 
 export const mockPaginatedServiceAccountsResponse = (count = 2) => mockPaginated(mockServiceAccountResponse, count);

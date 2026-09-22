@@ -15,8 +15,8 @@ import { principalsTable } from '#/modules/principals/principals-db';
 import { credentialsTable } from '#/modules/service-accounts/credentials-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from './fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession } from './helpers';
-import { clearSecurityTestData } from './security/helpers';
+import { createTestOrganization } from './helpers';
+import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 afterEach(async () => await clearSecurityTestData());
@@ -31,15 +31,8 @@ describe('Service accounts and API keys', async () => {
 
   async function orgWithAdmin(role: 'admin' | 'member' = 'admin') {
     const org = await createTestOrganization();
-    const user = await createOrganizationAdminUser(
-      `${role}-${Date.now()}@example.com`,
-      org.id,
-      role,
-      true,
-      org.tenantId,
-    );
-    const cookie = await createTestSession(user);
-    return { org, user, headers: { ...defaultHeaders, Cookie: cookie } };
+    const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${Date.now()}`, role);
+    return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
   async function issueKey(opts: { role?: 'admin' | 'member'; scopes?: Scope[] | null } = {}) {

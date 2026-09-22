@@ -1,4 +1,4 @@
-import type { Actor, ProductEntityType } from 'shared';
+import type { PredicateActor, ProductEntityType } from 'shared';
 import { appConfig, pathHomeId } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
@@ -18,7 +18,7 @@ const dbCtx: DbContext = { var: { db } };
  */
 export async function answerCatchupViews(
   memberships: MembershipBaseModel[],
-  actor: Actor,
+  actor: PredicateActor,
   views: CatchupView[],
 ): Promise<CatchupViewAnswer[]> {
   if (views.length === 0) return [];
@@ -91,7 +91,7 @@ export async function answerCatchupViews(
 export async function appCatchupOp(
   memberships: MembershipBaseModel[],
   cursor?: string,
-  actor?: Actor,
+  actor?: PredicateActor,
   views?: CatchupView[],
 ): Promise<AppCatchupResponse> {
   const organizationIds = new Set(memberships.map((m) => m.organizationId));

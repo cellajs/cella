@@ -26,7 +26,7 @@ describe('getValidProduct request scope', () => {
     ({
       var: {
         db: baseDb,
-        actor: { kind: 'user', id: 'user-1', grants: [], scopes: null, credential: { kind: 'session', id: 's' } },
+        actor: { kind: 'user', id: 'user-1', grants: [], scopes: null },
         ...scope,
       },
     }) as unknown as UserContext;

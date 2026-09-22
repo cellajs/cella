@@ -1,7 +1,6 @@
-import { inArray } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbOrTx } from '#/db/db';
-import { principalsTable } from '#/modules/principals/principals-db';
+import { deleteDanglingPrincipals, insertPrincipals } from '#/modules/principals/helpers/insert-principals';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 
 interface InsertUsersOptions {
@@ -22,19 +21,21 @@ export async function insertUsers(
   const withIds = records.map((record) => ({ ...record, id: record.id ?? generateId() }));
 
   return db.transaction(async (tx) => {
-    const principalRows = withIds.map(({ id }) => ({ id, kind: 'user' as const }));
-    const principalInsert = tx.insert(principalsTable).values(principalRows);
-    if (onConflictDoNothing) await principalInsert.onConflictDoNothing();
-    else await principalInsert;
-
+    await insertPrincipals(
+      tx,
+      withIds.map(({ id }) => id),
+      'user',
+      { onConflictDoNothing },
+    );
     const userInsert = tx.insert(usersTable).values(withIds).returning();
     const users = onConflictDoNothing ? await userInsert.onConflictDoNothing() : await userInsert;
 
     if (onConflictDoNothing && users.length < withIds.length) {
       const inserted = new Set(users.map((user) => user.id));
-      const skipped = withIds.filter(({ id }) => !inserted.has(id)).map(({ id }) => id);
-      // Only principals this call created can be dangling; a pre-existing user keeps its pre-existing principal.
-      await tx.delete(principalsTable).where(inArray(principalsTable.id, skipped));
+      await deleteDanglingPrincipals(
+        tx,
+        withIds.filter(({ id }) => !inserted.has(id)).map(({ id }) => id),
+      );
     }
     return users;
   });

@@ -1,38 +1,30 @@
-import { count, eq } from 'drizzle-orm';
 import { hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { insertServiceAccount } from '#/modules/service-accounts/helpers/insert-service-accounts';
 import { issueCredential } from '#/modules/service-accounts/helpers/issue-credential';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { countServiceAccounts, requireOrgAdmin } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
-import { getValidChannel } from '#/permissions';
+import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { log } from '#/utils/logger';
 
 /**
- * Organization admins create service accounts (D9). The account's role is capped at the creator's own: an admin may
- * bind `admin` or `member`, never more than they hold. Only humans get here: memberships and provenance stay theirs.
+ * The account's role is capped at the creator's own: an admin may bind `admin` or `member`, never more than they
+ * hold. Only humans get here; memberships and provenance of memberships stay theirs.
  */
 export async function createServiceAccountOp(ctx: UserContext, input: CreateServiceAccountInput) {
   const { db, tenantId, organizationId, isSystemAdmin } = ctx.var;
   const creatorId = ctx.var.actor.id;
 
-  const { membership } = await getValidChannel(ctx, organizationId, 'organization', 'update');
-
+  const { membership } = await requireOrgAdmin(ctx);
+  // Roles are listed most-privileged first; a lower index is a higher role.
   const roles = hierarchy.getRoles('organization');
   const creatorRank = isSystemAdmin ? 0 : membership ? roles.indexOf(membership.role) : -1;
   if (creatorRank < 0 || roles.indexOf(input.role) < creatorRank) {
-    throw new AppError(403, 'invalid_role', 'warn', { meta: { role: input.role } });
+    throw new AppError(403, 'forbidden', 'warn', { meta: { reason: 'role_exceeds_creator', role: input.role } });
   }
 
-  const quota = ctx.var.tenant.restrictions.quotas.serviceAccount;
-  if (quota > 0) {
-    const [{ value: existing }] = await db
-      .select({ value: count() })
-      .from(serviceAccountsTable)
-      .where(eq(serviceAccountsTable.tenantId, tenantId));
-    if (existing >= quota) throw new AppError(403, 'restrict_by_app', 'warn', { meta: { resource: 'serviceAccount' } });
-  }
+  assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx));
 
   const serviceAccount = await insertServiceAccount(db, {
     tenantId,

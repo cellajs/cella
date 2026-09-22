@@ -1846,7 +1846,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },

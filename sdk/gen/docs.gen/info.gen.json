@@ -41,7 +41,7 @@
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
         "tenantGuard": {
           "name": "tenant",
-          "description": "Requires userGuard, validates tenant access, and sets baseDb + tenantId context"
+          "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
         }
       }
     },
@@ -73,7 +73,7 @@
           "name": "passkeyChallenge",
           "description": "Max 30 passkey challenges/hour per IP"
         },
-        "machineBurstLimiter": { "name": "machineBurst", "description": "Max 30 requests/second per service account" },
+        "serviceBurstLimiter": { "name": "serviceBurst", "description": "Max 30 requests/second per service account" },
         "syncReadLimiter": {
           "name": "syncRead",
           "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"

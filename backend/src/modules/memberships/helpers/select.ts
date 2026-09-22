@@ -1,5 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import { getColumns } from 'drizzle-orm';
+import type { ActorGrant } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { pick } from '#/utils/pick';
@@ -25,3 +26,6 @@ export const toMembershipBase = (membership: Record<string, unknown>): Membershi
   }
   return result as MembershipBaseModel;
 };
+
+/** A user's grant is its membership row; a service account's grant is not. Narrows `actor.grants` elements. */
+export const isMembershipRow = (grant: ActorGrant): grant is MembershipBaseModel => 'userId' in grant;

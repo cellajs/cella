@@ -45,13 +45,7 @@ export const userGuard = xMiddleware(
           setMembershipCache(cachedSession.user.id, memberships);
         }
         ctx.set('memberships', memberships);
-        ctx.set('actor', {
-          kind: 'user',
-          id: cachedSession.user.id,
-          grants: memberships,
-          scopes: null,
-          credential: { kind: 'session', id: sessionId },
-        });
+        ctx.set('actor', { kind: 'user', id: cachedSession.user.id, grants: memberships, scopes: null });
 
         if (ctx.req.method === 'GET') {
           updateLastSeenAt(cachedSession.user.id);
@@ -95,13 +89,7 @@ export const userGuard = xMiddleware(
       });
 
       ctx.set('memberships', memberships);
-      ctx.set('actor', {
-        kind: 'user',
-        id: user.id,
-        grants: memberships,
-        scopes: null,
-        credential: { kind: 'session', id: session.id },
-      });
+      ctx.set('actor', { kind: 'user', id: user.id, grants: memberships, scopes: null });
       ctx.set('isSystemAdmin', isSystemAdmin);
       ctx.set('db', baseDb);
 

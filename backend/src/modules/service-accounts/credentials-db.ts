@@ -1,4 +1,6 @@
+import { getTableColumns } from 'drizzle-orm';
 import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import type { EntityScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -7,6 +9,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** `secret` keys authenticate a service account; `publishable` keys (later) identify a tenant and authorize nothing. */
 export const credentialTypes = ['secret', 'publishable'] as const;
+export type CredentialType = (typeof credentialTypes)[number];
 
 /**
  * Opaque keys of a principal. Only the SHA-256 hash is stored; the plaintext is shown once at creation. A key may
@@ -31,7 +34,7 @@ export const credentialsTable = snakeCase.table(
     hash: varchar({ length: maxLength.field }).notNull(),
     last4: varchar({ length: 4 }).notNull(),
     /** Mask over the principal's grants; null = unmasked. Values come from `scopes.all`. */
-    scopes: varchar({ length: maxLength.field }).array(),
+    scopes: varchar({ length: maxLength.field }).$type<EntityScope>().array(),
     expiresAt: timestamp({ mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),
     lastUsedAt: timestamp({ mode: 'string' }),
@@ -45,7 +48,11 @@ export const credentialsTable = snakeCase.table(
   ],
 );
 
-/** Includes the hash; use only in the guard and the key operations. */
+const { hash: _hash, ...safeColumns } = getTableColumns(credentialsTable);
+/** Every column but the hash: what any response may carry. */
+export const credentialSafeColumns = safeColumns;
+
+/** Includes the hash; use only in the guard. */
 export type UnsafeCredentialModel = typeof credentialsTable.$inferSelect;
 export type InsertCredentialModel = typeof credentialsTable.$inferInsert;
 export type CredentialModel = Omit<UnsafeCredentialModel, 'hash'>;

@@ -1,5 +1,6 @@
 import { xMiddleware } from '#/core/x-middleware';
-import { hasServiceCredential, serviceGuard } from './service-guard';
+import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
+import { serviceGuard } from './service-guard';
 import { userGuard } from './user-guard';
 
 /**
@@ -14,5 +15,5 @@ export const actorGuard = xMiddleware(
     name: 'actor',
     description: 'Accepts a session cookie or a secret API key and sets the actor',
   },
-  async (ctx, next) => (hasServiceCredential(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
+  async (ctx, next) => (hasApiKeyHeader(ctx) ? serviceGuard(ctx, next) : userGuard(ctx, next)),
 );

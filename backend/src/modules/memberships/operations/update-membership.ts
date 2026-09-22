@@ -1,6 +1,6 @@
 import { type EntityRole, hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
-import type { ActorContext } from '#/core/context';
+import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
@@ -15,9 +15,10 @@ interface UpdateMembershipInput {
   displayOrder?: number;
 }
 
-export async function updateMembershipOp(ctx: ActorContext, membershipId: string, input: UpdateMembershipInput) {
+/** User-only: `memberships.updatedBy` references `users`, so a service account never edits a membership (D9). */
+export async function updateMembershipOp(ctx: UserContext, membershipId: string, input: UpdateMembershipInput) {
   const actorId = ctx.var.actor.id;
-  const memberships = ctx.var.actor.grants;
+  const memberships = ctx.var.memberships;
 
   const { role, archived, muted, displayOrder } = input;
 

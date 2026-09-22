@@ -1,4 +1,4 @@
-import type { Actor, ProductEntityType } from 'shared';
+import type { PredicateActor, ProductEntityType } from 'shared';
 import { pathSegments } from 'shared';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import {
@@ -20,7 +20,7 @@ export function resolveViewReadStatus(
   memberships: MembershipBaseModel[],
   entityType: ProductEntityType,
   organizationId: string,
-  actor: Actor,
+  actor: PredicateActor,
   prefix: string,
   depth: ViewDepth = 'subtree',
   truePath?: string | null,

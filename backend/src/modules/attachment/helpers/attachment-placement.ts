@@ -8,7 +8,7 @@ import {
   hierarchy,
   type NullableAncestorType,
 } from 'shared';
-import type { ActorContext } from '#/core/context';
+import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
 import type { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -73,7 +73,7 @@ export const validateAttachmentPlacement = (
  * org-homed, which the fields schema only allows when no strict ancestor exists.
  */
 export const resolveAttachmentPlacement = async (
-  ctx: ActorContext,
+  ctx: OrgContext,
   input: AttachmentPlacementInput,
 ): Promise<ResolvedAttachmentPlacement> => {
   const columns: Record<string, string | null> = Object.fromEntries(
@@ -111,7 +111,7 @@ export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
  * of the home type. With the organization as home there is no narrower channel, so other ids are unknown.
  */
 export const resolveAttachmentHomeScope = async (
-  ctx: ActorContext,
+  ctx: OrgContext,
   channelId: string | undefined,
 ): Promise<string | undefined> => {
   if (!channelId || channelId === ctx.var.organization.id) return undefined;

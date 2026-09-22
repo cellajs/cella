@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { type PgColumn, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
-  type Actor,
   appConfig,
   type ChannelEntityType,
   computeCan,
@@ -9,6 +8,7 @@ import {
   hierarchy,
   type PolicyCellInput,
   type PolicyMatrix,
+  type PredicateActor,
   type ProductEntityType,
   type PublicReadGrants,
   resolveCan,
@@ -141,7 +141,7 @@ interface Scenario {
   publicGrants: PublicReadGrants;
 }
 
-const scenarioActor = (scenario: Scenario): Actor =>
+const scenarioActor = (scenario: Scenario): PredicateActor =>
   scenario.userId === undefined
     ? { anonymous: true }
     : { userId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin };
@@ -449,7 +449,7 @@ const deepEngineReadableIds = (scenario: DeepScenario, elevatedGrants?: Readonly
 };
 
 /** The deep scenario's actor. Deep chains exercise scope, not the admin bypass. */
-const deepActor = (scenario: DeepScenario): Actor =>
+const deepActor = (scenario: DeepScenario): PredicateActor =>
   scenario.userId === undefined ? { anonymous: true } : { userId: scenario.userId, isSystemAdmin: false };
 
 const deepSqlReadableIds = async (
@@ -513,7 +513,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
 
   // Sysadmin widens who can read, never what a placement-filtered list returns: the bypass keeps `requested` narrowing.
   it('an explicitly requested home-channel narrows a sysadmin read like any other', async () => {
-    const sysadmin: Actor = { userId: 'u1', isSystemAdmin: true };
+    const sysadmin: PredicateActor = { userId: 'u1', isSystemAdmin: true };
     const sqlIdsFor = async (requested: { homeChannelId?: string; homeChannelIds?: string[] }) => {
       const filter = resolveCollectionReadFilterForPolicies({
         policies: deepPolicies(() => 0),
@@ -669,7 +669,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         .map((m) => `${m.channelType}:${m.channelId}:${m.role}`)
         .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
-      const actor: Actor = { userId, isSystemAdmin };
+      const actor: PredicateActor = { userId, isSystemAdmin };
 
       const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID, actor);
       const where = buildCollectionReadWhere(filter, parityTable, homeChannelColumn, actor);

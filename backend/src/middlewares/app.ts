@@ -7,8 +7,8 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
-import { hasServiceCredential } from '#/middlewares/guard/service-guard';
 import { loggerMiddleware } from '#/middlewares/logger';
+import { hasApiKeyHeader } from '#/modules/service-accounts/helpers/api-key';
 import { runWithLogContext } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>();
@@ -44,9 +44,9 @@ app.use('*', loggerMiddleware);
 
 // No CORS middleware: the API is same-origin under /api, so other origins get no grant and the browser blocks them.
 // CSRF rejects state-changing requests whose Origin header is not the app origin. It protects cookie auth only, so a
-// request that carries a machine credential header skips it (the machine guard rejects browser origins itself).
+// request that carries an API key skips it (the service guard rejects browser origins itself).
 const csrfMiddleware = csrf({ origin: appConfig.frontendUrl });
-app.use('*', (c, next) => (hasServiceCredential(c) ? next() : csrfMiddleware(c, next)));
+app.use('*', (c, next) => (hasApiKeyHeader(c) ? next() : csrfMiddleware(c, next)));
 
 app.use('*', clientVersionMiddleware);
 

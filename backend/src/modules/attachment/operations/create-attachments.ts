@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import type { ActorContext } from '#/core/context';
+import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext, tenantRead } from '#/db/tenant-context';
@@ -17,7 +17,7 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type CreateAttachmentsInput = z.infer<typeof attachmentCreateManyStxBodySchema>;
-export async function createAttachmentsOp(ctx: ActorContext, rawInput: CreateAttachmentsInput) {
+export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttachmentsInput) {
   const input = rawInput.map((item) => attachmentContract.normalizeCreateItem(item));
   const { organization, tenant } = ctx.var;
   const attachmentRestrictions = tenant.restrictions.quotas.attachment;

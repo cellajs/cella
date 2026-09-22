@@ -9,13 +9,13 @@ export {
 export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
 export {
   type Access,
-  type Actor,
   type BatchPermissionResult,
   type CheckAccessFanoutOptions,
   checkAccess,
   checkAccessBatch,
   checkAccessFanout,
   type PermissionResult,
+  type PredicateActor,
 } from './check-access.ts';
 export type { EntityCanMap } from './compute-can.ts';
 export { computeCan } from './compute-can.ts';
@@ -44,7 +44,7 @@ export type { PublicReadGrants } from './public-read.ts';
 export type { ConditionActor, RowConditionName, RowForCondition } from './row-conditions.ts';
 export { isRowCondition, matchesRowCondition } from './row-conditions.ts';
 export { toColumnName, toTableName } from './schema-naming.ts';
-export { deriveScopes, type EntityScope, type Scopes, type ScopeVerb, scopeVerbs } from './scopes.ts';
+export { deriveScopes, type EntityScope, type Scopes } from './scopes.ts';
 export type {
   CanState,
   ChannelPolicyBuilder,

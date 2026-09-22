@@ -9,13 +9,15 @@ import type {
   PermissionDecision,
   SubjectForPermission,
 } from './engine/types.ts';
+import type { EntityScope } from './scopes.ts';
 
 /**
  * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
- * omitted user id a type error, so no actor-based condition is denied by accident.
+ * omitted user id a type error, so no actor-based condition is denied by accident. `userId` is any
+ * principal id; `scopes` is a credential's mask (null or absent = unmasked).
  */
-export type Actor =
-  | { userId: string; isSystemAdmin?: boolean; scopes?: readonly string[] | null }
+export type PredicateActor =
+  | { userId: string; isSystemAdmin?: boolean; scopes?: readonly EntityScope[] | null }
   | { anonymous: true };
 
 /**
@@ -23,7 +25,7 @@ export type Actor =
  * another's actor. An anonymous access carries no memberships.
  */
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes?: readonly string[] | null }
+  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes?: readonly EntityScope[] | null }
   | { anonymous: true };
 
 /**
@@ -94,10 +96,11 @@ export function checkAccessBatch<T extends AccessMembership>(
 ): BatchPermissionResult<T> {
   const engineAccess = toEngineAccess(access);
   const decisions = getAllDecisions(policyMatrix, engineAccess.memberships, subjects, accessOptions(engineAccess));
+  const entityTypes = new Map(subjects.map((subject) => [subject.id, subject.entityType]));
   const results = new Map<string, PermissionResult<T>>();
   for (const [id, decision] of decisions) {
-    const subject = subjects.find((s) => s.id === id);
-    const inScope = subject ? scopeAllows(access, subject.entityType, action) : true;
+    const entityType = entityTypes.get(id);
+    const inScope = entityType ? scopeAllows(access, entityType, action) : true;
     results.set(id, { allowed: decision.can[action] && inScope, membership: decision.membership });
   }
   return { results, decisions };

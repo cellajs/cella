@@ -1,16 +1,16 @@
 import type { ChannelEntityType, EntityActionType } from 'shared';
-import type { ActorContext } from '#/core/context';
+import type { ActorContext, ActorGrant } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/access';
+import { accessFrom, type GrantOf } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
-export interface ValidChannelResult<T extends ChannelEntityType> {
+/** `membership` is the grant that allowed the action: a membership row for a user, a stored binding for a service. */
+export interface ValidChannelResult<T extends ChannelEntityType, G extends ActorGrant = ActorGrant> {
   entity: EntityModel<T>;
-  membership: MembershipBaseModel | null;
+  membership: G | null;
 }
 
 /**
@@ -20,13 +20,13 @@ export interface ValidChannelResult<T extends ChannelEntityType> {
  * Channel tables sit outside RLS, so the request-scope comparison here is their tenant isolation.
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
-export const getValidChannel = async <T extends ChannelEntityType>(
-  ctx: ActorContext,
+export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
+  ctx: C,
   entityId: string,
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
-): Promise<ValidChannelResult<T>> => {
+): Promise<ValidChannelResult<T, GrantOf<C>>> => {
   const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug });
 
   // Cross-tenant routes set no scope and the organization row carries no organizationId, so only ids
