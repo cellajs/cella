@@ -22,7 +22,7 @@ export async function updateOrganizationOp(
 ) {
   // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
-  const principalId = ctx.var.principalId;
+  const actorId = ctx.var.actor.id;
 
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
 
@@ -41,7 +41,7 @@ export async function updateOrganizationOp(
   // Validate media URLs in welcomeText are from trusted sources (CDN only)
   if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
 
-  const values = { ...input, updatedAt: getIsoDate(), updatedBy: principalId };
+  const values = { ...input, updatedAt: getIsoDate(), updatedBy: actorId };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);

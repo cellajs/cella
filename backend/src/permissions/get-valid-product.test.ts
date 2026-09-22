@@ -22,7 +22,7 @@ const ORG = 'org-a';
 describe('getValidProduct request scope', () => {
   const ctx = (
     scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: TENANT, organizationId: ORG },
-  ) => ({ var: { db: baseDb, userId: 'user-1', ...scope } }) as unknown as AuthContext;
+  ) => ({ var: { db: baseDb, actor: { kind: 'user', id: 'user-1', grants: [] }, ...scope } }) as unknown as AuthContext;
 
   const row = (overrides: Record<string, unknown> = {}) => ({
     id: 'att-1',

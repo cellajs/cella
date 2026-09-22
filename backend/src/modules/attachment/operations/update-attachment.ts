@@ -22,7 +22,7 @@ export async function updateAttachmentOp(
 ) {
   const { ops: rawOps, stx } = input;
   const { serverOrigin } = opts;
-  const principalId = ctx.var.principalId;
+  const actorId = ctx.var.actor.id;
 
   // Media in a description must come from trusted sources (CDN only).
   if (rawOps.description) assertBlockMediaUrls(rawOps.description, 'attachment', 'description');
@@ -42,7 +42,7 @@ export async function updateAttachmentOp(
         ? { keywords: keywordsFromDocument(resolved.values.description as string | null) }
         : {}),
       updatedAt: getIsoDate(),
-      updatedBy: principalId,
+      updatedBy: actorId,
       ...(resolved.changed ? { stx: resolved.stx } : {}),
     };
     const updated = await updateAttachment(txCtx, { id, values });

@@ -58,7 +58,7 @@ export async function createAttachmentsOp(ctx: ActorContext, rawInput: CreateAtt
       tenantId: organization.tenantId,
       organizationId: organization.id,
       createdAt: now,
-      createdBy: ctx.var.principalId,
+      createdBy: ctx.var.actor.id,
       stx: buildStx(stx),
     };
 

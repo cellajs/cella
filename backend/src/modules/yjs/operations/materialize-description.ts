@@ -44,17 +44,11 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
   const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
   // Worker context only: persist as the last editor with no system-administrator bypass, matching relay authorization.
-  // No credential proved this write (the relay did), so `credential` and `authStrategy` stay null.
   const ctx = {
     var: {
       user,
       userId: user.id,
-      actor: { kind: 'user', id: user.id },
-      principalId: user.id,
-      grants: memberships,
-      scopes: null,
-      credential: null,
-      authStrategy: null,
+      actor: { kind: 'user', id: user.id, grants: memberships },
       isSystemAdmin: false,
       memberships,
       db: baseDb,

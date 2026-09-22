@@ -13,7 +13,7 @@ async function setSessionVars(tx: Tx, tenantId: string, userId: string, includeD
 }
 
 async function setTenantSessionVars(tx: Tx, ctx: ActorContext, includeDeleted: boolean): Promise<void> {
-  await setSessionVars(tx, ctx.var.tenantId, ctx.var.principalId, includeDeleted);
+  await setSessionVars(tx, ctx.var.tenantId, ctx.var.actor.id, includeDeleted);
 }
 
 /**
@@ -46,7 +46,7 @@ export async function tenantReadAs<T>(
 ): Promise<T> {
   return baseDb.transaction(
     async (tx) => {
-      await setSessionVars(tx, tenantId, ctx.var.principalId, false);
+      await setSessionVars(tx, tenantId, ctx.var.actor.id, false);
       return fn({ var: { ...ctx.var, db: tx } });
     },
     { accessMode: 'read only' },

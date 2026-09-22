@@ -11,7 +11,7 @@ export async function deleteAttachmentsOp(
 ): Promise<{ data: []; rejectedIds: string[] }> {
   const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'attachment', ids);
   const deletedAt = getIsoDate();
-  const deletedBy = ctx.var.principalId;
+  const deletedBy = ctx.var.actor.id;
 
   await tenantContextIncludingDeleted(ctx, (txCtx) =>
     deleteAttachmentsByIds(txCtx, { ids: allowedIds, deletedAt, deletedBy }),

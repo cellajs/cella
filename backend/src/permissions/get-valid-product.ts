@@ -40,7 +40,7 @@ export const getValidProduct = async <K extends ProductEntityType>(
   if (!entity || entity.tenantId !== tenantId || entity.organizationId !== organizationId) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
-  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.principalId)) {
+  if (!draftVisibleTo(entity as Record<string, unknown>, ctx.var.actor.id)) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
 

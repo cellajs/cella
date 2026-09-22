@@ -16,8 +16,8 @@ interface UpdateMembershipInput {
 }
 
 export async function updateMembershipOp(ctx: ActorContext, membershipId: string, input: UpdateMembershipInput) {
-  const principalId = ctx.var.principalId;
-  const memberships = ctx.var.grants;
+  const actorId = ctx.var.actor.id;
+  const memberships = ctx.var.actor.grants;
 
   const { role, archived, muted, displayOrder } = input;
 
@@ -53,7 +53,7 @@ export async function updateMembershipOp(ctx: ActorContext, membershipId: string
     ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
     ...(muted !== undefined && { muted }),
     ...(archived !== undefined && { archived }),
-    updatedBy: principalId,
+    updatedBy: actorId,
     updatedAt: getIsoDate(),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });

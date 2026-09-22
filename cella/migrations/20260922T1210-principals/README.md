@@ -5,9 +5,8 @@
 New `principals (id, kind)` table; `users.id` is now a foreign key to it and `createdBy` / `updatedBy` /
 `deletedBy` in `productColumns` and `channelColumns` reference `principals` instead of `users`. Users are
 inserted through `insertUsers()` (`backend/src/modules/user/helpers/insert-users.ts`), which writes the
-principal row first. `ActorContext` (`#/core/context`) is the new supertype of `AuthContext` with
-`principalId`, `grants`, `actor`, `scopes`, `credential`, `authStrategy`; `accessFrom` / `actorFrom` read
-`principalId` and `grants`. Error bodies carry `requestId`. Prepares service accounts (AUTH_SUBSTRATE_PLAN
+principal row first. `ActorContext` (`#/core/context`) is the new supertype of `AuthContext`, carrying one `actor`
+`{ kind, id, grants }` variable; `accessFrom` / `actorFrom` read `ctx.var.actor`. Error bodies carry `requestId`. Prepares service accounts (AUTH_SUBSTRATE_PLAN
 Phase A).
 
 ## Blast radius
@@ -41,7 +40,7 @@ constraint names it needs when run without hints).
 3. Add `principals` to test `TRUNCATE` lists that include `users`.
 4. Add `'principals'` to `fullCrudTables` in `backend/scripts/migrations/10-rls.migration.ts` if the app pins that file.
 5. App operations that only need the actor's id: change `AuthContext` to `ActorContext` and `ctx.var.user.id` to
-   `ctx.var.principalId`, `ctx.var.memberships` to `ctx.var.grants`. Operations reading `user.name` / `email` stay on `AuthContext`.
+   `ctx.var.actor.id`, `ctx.var.memberships` to `ctx.var.actor.grants`. Operations reading `user.name` / `email` stay on `AuthContext`.
 6. `withAuditUserLite` is gone; use `withAuditUser(ctx, entity)`.
 
 ## Verify
