@@ -6,8 +6,11 @@ The MCP endpoint (`POST /<tenant>/<org>/mcp`) now sits behind `tokenGuard`: only
 authorization server, never sessions or API keys (MCP spec 2026-07-28, AUTH_SUBSTRATE_PLAN Phase E). A tokenless call
 answers `401` with `WWW-Authenticate: Bearer resource_metadata="…/mcp/.well-known/oauth-protected-resource"`; that
 public route publishes the RFC 9728 document (resource id, `authorization_servers`, `scopes_supported`). Tools are no
-longer a hand-written registry: a module declares `tools: [defineTool(route, { entity, inputSchema, execute })]` over
-routes carrying `x-tool`, and the mcp module indexes them. `tools/list` returns every tool with `annotations` and the
+longer a hand-written registry: a route opts in with `'x-tool': { enabled, description, approvalRequired, category,
+entity, execute }` on `createXRoute`, which registers it (`backend/src/core/tool-registry.ts`). The input schema
+derives from the route's `request` (params minus `tenantId` / `organizationId`, query, body); a body's sync
+transaction (`stx`) is left out of what the model sees and rebuilt server-side before the route's own schema
+validates the call. `execute(ctx, { params, query, body })` is the handler's one line, typed from the route. `tools/list` returns every tool with `annotations` and the
 scope it needs (`_meta.scope`); `tools/call` outside the token's scopes answers `403` with
 `WWW-Authenticate: Bearer error="insufficient_scope", scope="<entity>:write"` (step-up), inside them it runs the
 operation in-process as the consenting user or the service account. The attachment module ships the showcase
@@ -17,8 +20,8 @@ the derived vocabulary; guards emit it per operation.
 ## Blast radius
 
 No database change. Route change: `handleMcp` refuses sessions (was `userGuard`). Config: `services.mcp` enabled in
-development and test. `@tanstack/ai` dropped from the backend (the tool shape is cella's own). `buildTools` and
-`ExecutableTool` are gone; apps that registered tools there move them to `defineTool` bindings on their modules.
+development and test. `@tanstack/ai` dropped from the backend. `buildTools` and `ExecutableTool` are gone; apps that registered tools
+there move them onto the routes.
 
 ## Run
 
@@ -33,13 +36,13 @@ pnpm sdk
 
 1. Config: `services: { mcp: { enabled: true } }` in `config.development.ts` and `config.test.ts` (and wherever MCP
    clients must connect); `oauth` must be enabled on the same modes.
-2. Tools: for each route an MCP client may call, add `'x-tool': { enabled, description, approvalRequired, category }`
-   to the route and a `defineTool(route, { entity, inputSchema, execute })` binding in `<module>-tools.ts`, registered
-   through `defineBackendModule({ tools })`. Inputs are model-shaped (JSON numbers, no sync transaction);
-   `execute(ctx, input)` receives an `OrgContext` and calls the operation function. Scope derives from the method
-   (`get` = `<entity>:read`, else `<entity>:write`).
-3. Apps that extended `buildTools()` (removed) move each tool to a binding; `@tanstack/ai` types are no longer imported
-   by the template.
+2. Tools: for each route an MCP client may call, add `'x-tool': { enabled, description, approvalRequired, category,
+   entity, execute }` to the route; `execute: (ctx, { params, query, body }) => xOp(ctx, ...)` mirrors the handler.
+   Query values arrive as strings (the route's own schema reads them); a `stx` in the body is rebuilt server-side, so
+   pass `{ serverOrigin: true }` to update operations. Scope derives from the method (`get` = `<entity>:read`, else
+   `<entity>:write`).
+3. Apps that extended `buildTools()` (removed) move each tool onto its route; `@tanstack/ai` types are no longer
+   imported by the template.
 4. Tests: `backend/tests/oauth-helpers.ts` starts the AS in-process and runs client_credentials or the authorization
    code flow with consent through the interaction routes; reuse it for app tool tests.
 5. Provenance written by a service account hydrates to `null` in `createdBy` / `updatedBy` on the wire (audit-user

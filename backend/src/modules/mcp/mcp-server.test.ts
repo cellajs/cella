@@ -1,12 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
-import '#/modules/attachment/attachment-module';
-import { defineTool } from '#/modules/mcp/define-tool';
+import { getRouteTools } from '#/core/tool-registry';
+import { createXRoute } from '#/core/x-routes';
+import { publicGuard } from '#/middlewares/guard';
+import '#/modules/attachment/attachment-routes';
 import { handleMcpMessage, InsufficientScopeError } from '#/modules/mcp/mcp-server';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
 
-/** Transport-level behavior needs no database: the registry is the attachment module's, the actor carries scopes. */
+/** Transport-level behavior needs no database: the registry is the attachment routes', the actor carries scopes. */
 const contextWith = (scopes: string[] | null) =>
   ({ var: { actor: { kind: 'service', scopes } } }) as unknown as OrgContext;
 
@@ -48,10 +50,19 @@ describe('mcp-server', () => {
         'deleteAttachments',
       ]),
     );
-    const update = tools.find((tool) => tool.name === 'updateAttachment');
-    expect(update?._meta.scope).toBe('attachment:write');
-    expect(update?.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: true });
-    expect(update?.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+    const properties = (name: string) => Object.keys((byName[name].inputSchema as { properties: object }).properties);
+    expect(byName.updateAttachment._meta.scope).toBe('attachment:write');
+    expect(byName.updateAttachment.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    // Path params minus the route's own, plus the body without its sync transaction.
+    expect(byName.updateAttachment.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
+    expect(properties('updateAttachment')).toEqual(expect.arrayContaining(['id', 'ops']));
+    expect(properties('updateAttachment')).not.toContain('stx');
+    expect(properties('createAttachments')).toEqual(['items']);
     expect(tools.find((tool) => tool.name === 'getAttachments')?.annotations.readOnlyHint).toBe(true);
     expect(tools.find((tool) => tool.name === 'deleteAttachments')?.annotations.destructiveHint).toBe(true);
   });
@@ -67,12 +78,12 @@ describe('mcp-server', () => {
     ).rejects.toMatchObject(new InsufficientScopeError('attachment:write', 6));
   });
 
-  it('rejects invalid arguments before executing', async () => {
+  it('rejects arguments the route schema refuses, before executing', async () => {
     const res = await handleMcpMessage(contextWith(null), {
       jsonrpc: '2.0',
       id: 7,
       method: 'tools/call',
-      params: { name: 'deleteAttachments', arguments: { ids: [] } },
+      params: { name: 'updateAttachment', arguments: { id: 'x', ops: {} } },
     });
     expect(res?.error?.code).toBe(-32602);
   });
@@ -103,21 +114,56 @@ describe('mcp-server', () => {
   });
 });
 
-describe('defineTool', () => {
-  it('derives name, scope and annotations from the route and refuses routes without x-tool', () => {
-    const route = {
-      operationId: 'listThings',
-      method: 'get',
-      'x-tool': { enabled: true, description: 'List things', approvalRequired: false, category: 'things' },
-    };
-    const tool = defineTool(route, { entity: 'attachment', inputSchema: z.object({}), execute: async () => [] });
-    expect(tool).toMatchObject({ name: 'listThings', scope: 'attachment:read', annotations: { readOnlyHint: true } });
-    expect(describeMcpTools([tool])[0].inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
-    expect(() =>
-      defineTool(
-        { operationId: 'x', method: 'get' },
-        { entity: 'attachment', inputSchema: z.object({}), execute: async () => null },
-      ),
-    ).toThrow();
+describe('createXRoute with x-tool', () => {
+  it('registers the route as a tool, derives the input from the request, and rebuilds the sync transaction', async () => {
+    const calls: unknown[] = [];
+    createXRoute({
+      operationId: 'renameThing',
+      method: 'put',
+      path: '/{id}',
+      xGuard: [publicGuard],
+      'x-tool': {
+        enabled: true,
+        description: 'Rename a thing',
+        approvalRequired: true,
+        category: 'things',
+        entity: 'attachment',
+        execute: async (_ctx, { params, body }) => {
+          calls.push({ id: params.id, name: body.ops.name, stx: body.stx });
+          return { ok: true };
+        },
+      },
+      request: {
+        params: z.object({ tenantId: z.string(), organizationId: z.string(), id: z.string() }),
+        body: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                ops: z.object({ name: z.string() }),
+                stx: z.object({
+                  mutationId: z.string(),
+                  sourceId: z.string(),
+                  fieldTimestamps: z.record(z.string(), z.string()),
+                }),
+              }),
+            },
+          },
+        },
+      },
+      responses: { 200: { description: 'ok' } },
+    });
+    const tool = getRouteTools().find((candidate) => candidate.name === 'renameThing');
+    expect(tool).toMatchObject({
+      scope: 'attachment:write',
+      annotations: { readOnlyHint: false, idempotentHint: true },
+    });
+    expect(Object.keys((describeMcpTools([tool!])[0].inputSchema as { properties: object }).properties)).toEqual([
+      'id',
+      'ops',
+    ]);
+
+    await tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 'renamed' } });
+    expect(calls[0]).toMatchObject({ id: 'thing-1', name: 'renamed', stx: { sourceId: 'server' } });
+    await expect(tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 7 } })).rejects.toThrow();
   });
 });

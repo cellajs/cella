@@ -30,6 +30,11 @@ import {
   mockBatchAttachmentsResponse,
   mockPaginatedAttachmentsResponse,
 } from './attachment-mocks';
+import { createAttachmentsOp } from './operations/create-attachments';
+import { deleteAttachmentsOp } from './operations/delete-attachments';
+import { getAttachmentOp } from './operations/get-attachment';
+import { getAttachmentsOp } from './operations/get-attachments';
+import { updateAttachmentOp } from './operations/update-attachment';
 
 const attachmentRoutes = {
   getAttachments: createXRoute({
@@ -40,6 +45,8 @@ const attachmentRoutes = {
         'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
       approvalRequired: false,
       category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { query }) => getAttachmentsOp(ctx, query),
     },
     method: 'get',
     path: '/',
@@ -74,6 +81,8 @@ const attachmentRoutes = {
         'Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.',
       approvalRequired: true,
       category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { body }) => createAttachmentsOp(ctx, body),
     },
     method: 'post',
     path: '/',
@@ -113,6 +122,8 @@ const attachmentRoutes = {
       description: 'Read one attachment: its metadata and the description as text.',
       approvalRequired: false,
       category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { params }) => getAttachmentOp(ctx, params.id),
     },
     method: 'get',
     path: '/{id}',
@@ -139,6 +150,9 @@ const attachmentRoutes = {
       description: 'Rename an attachment or replace its description.',
       approvalRequired: true,
       category: 'attachments',
+      entity: 'attachment',
+      // The transaction is server-built, so field timestamps come from the server clock.
+      execute: (ctx, { params, body }) => updateAttachmentOp(ctx, params.id, body, { serverOrigin: true }),
     },
     method: 'put',
     path: '/{id}',
@@ -170,6 +184,8 @@ const attachmentRoutes = {
       description: 'Delete attachments by id. The stored files stay in storage.',
       approvalRequired: true,
       category: 'attachments',
+      entity: 'attachment',
+      execute: (ctx, { body }) => deleteAttachmentsOp(ctx, Array.isArray(body.ids) ? body.ids : [body.ids]),
     },
     method: 'delete',
     path: '/',

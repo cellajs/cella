@@ -1,13 +1,13 @@
+import { z } from '@hono/zod-openapi';
 import { appConfig, scopes } from 'shared';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import type { ToolBinding } from '#/modules/mcp/define-tool';
-import { getTools } from '#/modules/mcp/tool-registry';
+import { getRouteTools } from '#/core/tool-registry';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
 
 /**
  * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
- * `tools/call`, `ping`. Tools come from the module registry; the token's scopes gate execution.
+ * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution.
  * @see https://modelcontextprotocol.io
  */
 const PROTOCOL_VERSION = '2026-07-28';
@@ -71,14 +71,14 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       return respond({});
 
     case 'tools/list':
-      return respond({ tools: describeMcpTools(getTools()) });
+      return respond({ tools: describeMcpTools(getRouteTools()) });
 
     case 'tools/call': {
       if (isNotification) return null;
       const name = typeof message.params?.name === 'string' ? message.params.name : undefined;
       if (!name) return fail(-32602, 'Invalid params: missing tool name');
 
-      const tool = getTools().find((candidate) => candidate.name === name);
+      const tool = getRouteTools().find((candidate) => candidate.name === name);
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
@@ -86,15 +86,14 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       if (!scopes.allows(ctx.var.actor.scopes, entity, verb === 'read' ? 'read' : 'update'))
         throw new InsufficientScopeError(tool.scope, id);
 
-      const parsed = tool.inputSchema.safeParse(message.params?.arguments ?? {});
-      if (!parsed.success) return fail(-32602, 'Invalid params', parsed.error.issues);
-
       try {
-        const output = await (tool as ToolBinding<unknown>).execute(ctx, parsed.data);
+        const output = await tool.run(ctx, message.params?.arguments);
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
         return respond({ content: [{ type: 'text', text }], structuredContent: output ?? undefined });
       } catch (error) {
-        // Permission and validation failures are answers the model can act on, not transport errors.
+        // The route's schemas refused the arguments: a JSON-RPC params error with the issues.
+        if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
+        // Permission and domain failures are answers the model can act on, not transport errors.
         const text = error instanceof AppError ? `${error.type}: ${error.message}` : String(error);
         return respond({ content: [{ type: 'text', text }], isError: true });
       }

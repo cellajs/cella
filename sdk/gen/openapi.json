@@ -9702,7 +9702,8 @@
           "enabled": true,
           "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
           "approvalRequired": false,
-          "category": "attachments"
+          "category": "attachments",
+          "entity": "attachment"
         },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachments",
@@ -9950,7 +9951,8 @@
           "enabled": true,
           "description": "Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.",
           "approvalRequired": true,
-          "category": "attachments"
+          "category": "attachments",
+          "entity": "attachment"
         },
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
@@ -10358,7 +10360,8 @@
           "enabled": true,
           "description": "Delete attachments by id. The stored files stay in storage.",
           "approvalRequired": true,
-          "category": "attachments"
+          "category": "attachments",
+          "entity": "attachment"
         },
         "tags": ["attachments", "cella", "product"],
         "summary": "Delete attachments",
@@ -10648,7 +10651,8 @@
           "enabled": true,
           "description": "Read one attachment: its metadata and the description as text.",
           "approvalRequired": false,
-          "category": "attachments"
+          "category": "attachments",
+          "entity": "attachment"
         },
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
@@ -10778,7 +10782,8 @@
           "enabled": true,
           "description": "Rename an attachment or replace its description.",
           "approvalRequired": true,
-          "category": "attachments"
+          "category": "attachments",
+          "entity": "attachment"
         },
         "tags": ["attachments", "cella", "product"],
         "summary": "Update attachment",

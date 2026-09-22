@@ -32,6 +32,18 @@ type ToolResult = {
 };
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
+
+/** A create item as the route's body schema reads it (the sync transaction is added server-side). */
+const buildItem = (name: string, filename: string) => ({
+  id: crypto.randomUUID(),
+  name,
+  filename,
+  contentType: 'application/octet-stream',
+  size: '1234',
+  keys: { original: `uploads/${filename}` },
+  bucketName: 'attachments',
+  publicBucket: false,
+});
 const CLIENT_ID = 'test-portfolio';
 
 describe('MCP on the substrate (Phase E)', async () => {
@@ -157,11 +169,15 @@ describe('MCP on the substrate (Phase E)', async () => {
       ]),
     );
 
-    const read = await toolCall(ctx, 'getAttachments', { limit: 5 });
+    // Query values are strings, as the route reads them.
+    const read = await toolCall(ctx, 'getAttachments', { limit: '5' });
     expect(read.response.status).toBe(200);
     expect(toolResult(read).structuredContent).toMatchObject({ items: [], total: 0 });
 
-    const write = await toolCall(ctx, 'updateAttachment', { id: '00000000-0000-4000-8000-000000000000', name: 'x' });
+    const write = await toolCall(ctx, 'updateAttachment', {
+      id: '00000000-0000-4000-8000-000000000000',
+      ops: { name: 'x' },
+    });
     expect(write.response.status).toBe(403);
     expect(write.response.headers.get('www-authenticate')).toContain(
       'error="insufficient_scope", scope="attachment:write"',
@@ -172,20 +188,13 @@ describe('MCP on the substrate (Phase E)', async () => {
   it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {
     const ctx = await serviceToken('attachment:write');
     const created = await toolCall(ctx, 'createAttachments', {
-      items: [
-        {
-          name: 'Build log',
-          filename: 'build.log',
-          contentType: 'text/plain',
-          size: 1234,
-          key: 'uploads/ci/build.log',
-        },
-      ],
+      items: [buildItem('Build log', 'build.log')],
     });
+    expect(created.rpc.error).toBeUndefined();
     expect(created.response.status).toBe(200);
     const result = created.rpc.result as ToolResult;
     expect(result.isError).toBeUndefined();
-    const { items } = result.structuredContent as { items: { id: string; name: string }[] };
+    const { data: items } = result.structuredContent as { data: { id: string; name: string }[] };
     expect(items).toHaveLength(1);
     // Provenance is the principal id; the wire shape hydrates users only (service badges are a UI follow-up).
     const provenance = async (id: string) =>
@@ -194,13 +203,9 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     // `write` implies `read` (D2).
     const read = await toolCall(ctx, 'getAttachment', { id: items[0].id });
-    expect(toolResult(read).structuredContent).toMatchObject({
-      id: items[0].id,
-      name: 'Build log',
-      descriptionText: '',
-    });
+    expect(toolResult(read).structuredContent).toMatchObject({ id: items[0].id, name: 'Build log' });
 
-    const renamed = await toolCall(ctx, 'updateAttachment', { id: items[0].id, name: 'Build log (main)' });
+    const renamed = await toolCall(ctx, 'updateAttachment', { id: items[0].id, ops: { name: 'Build log (main)' } });
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Build log (main)' });
     expect((await provenance(items[0].id)).updatedBy).toBe(ctx.accountId);
 
@@ -221,17 +226,10 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const seed = await serviceToken('attachment:write');
     const created = await toolCall(seed, 'createAttachments', {
-      items: [
-        {
-          name: 'Thesis',
-          filename: 'thesis.pdf',
-          contentType: 'application/pdf',
-          size: 99,
-          key: 'uploads/t/thesis.pdf',
-        },
-      ],
+      items: [buildItem('Thesis', 'thesis.pdf')],
     });
-    const { items } = toolResult(created).structuredContent as { items: { id: string }[] };
+    expect(created.rpc.error).toBeUndefined();
+    const { data: items } = toolResult(created).structuredContent as { data: { id: string }[] };
 
     // The reader is in another tenant: the token's audience refuses this organization outright.
     const wrongTenant = await toolCall({ org: seed.org, jwt: reader.jwt }, 'getAttachments', {});
@@ -240,7 +238,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const list = await toolCall(reader, 'getAttachments', {});
     expect(list.response.status).toBe(200);
 
-    const refused = await toolCall(reader, 'updateAttachment', { id: items[0].id, name: 'Thesis v2' });
+    const refused = await toolCall(reader, 'updateAttachment', { id: items[0].id, ops: { name: 'Thesis v2' } });
     expect(refused.response.status).toBe(403);
     expect(refused.response.headers.get('www-authenticate')).toContain('scope="attachment:write"');
 
@@ -249,12 +247,12 @@ describe('MCP on the substrate (Phase E)', async () => {
     const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: items[0].id });
     expect(moved.response.status).toBe(200);
     const own = await toolCall(writer, 'createAttachments', {
-      items: [
-        { name: 'Draft', filename: 'draft.pdf', contentType: 'application/pdf', size: 10, key: 'uploads/u/draft.pdf' },
-      ],
+      items: [buildItem('Draft', 'draft.pdf')],
     });
-    const mine = (toolResult(own).structuredContent as { items: { id: string }[] }).items[0];
-    const renamed = await toolCall(writer, 'updateAttachment', { id: mine.id, name: 'Draft v2' });
+    expect(own.rpc.error).toBeUndefined();
+    expect(toolResult(own).isError).toBeUndefined();
+    const mine = (toolResult(own).structuredContent as { data: { id: string }[] }).data[0];
+    const renamed = await toolCall(writer, 'updateAttachment', { id: mine.id, ops: { name: 'Draft v2' } });
     expect(renamed.response.status).toBe(200);
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Draft v2' });
     const [row] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, mine.id));

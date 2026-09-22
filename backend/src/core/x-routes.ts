@@ -9,7 +9,9 @@ import {
   type ExtensionPropId,
   getExtensionPropIds,
   type XMiddlewareOptions,
+  type XToolMetadata,
 } from '#/core/openapi-extensions';
+import { type RegisteredTool, registerRouteTool } from '#/core/tool-registry';
 import { actorGuard } from '#/middlewares/guard/actor-guard';
 import { publicGuard } from '#/middlewares/guard/public-guard';
 import { serviceGuard } from '#/middlewares/guard/service-guard';
@@ -25,7 +27,7 @@ const createServiceGate =
 
 type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
 
-type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
+type Route<P extends string, R extends Omit<RouteOptions, 'path' | 'x-tool' | 'request'> & { path: P }> = ReturnType<
   typeof createRoute<P, Omit<R, ExtensionPropId>>
 >;
 
@@ -33,9 +35,14 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
  * Wraps `createRoute` with extension middleware (xGuard, xRateLimiter), documented in OpenAPI as `x-*` properties.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
-export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(
-  config: R,
-): Route<P, R> => {
+export const createXRoute = <
+  P extends string,
+  Req extends RouteOptions['request'],
+  R extends Omit<RouteOptions, 'path' | 'x-tool' | 'request'> & { path: P },
+>(
+  // `x-tool.execute` is typed from this route's own `request`, so an operation receives the request parts it expects.
+  config: R & { request?: Req; 'x-tool'?: XToolMetadata<Req> },
+): Route<P, R & { request?: Req }> => {
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = config.middleware
     ? Array.isArray(config.middleware)
@@ -73,6 +80,17 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const cleanConfig = Object.fromEntries(
     Object.entries(config).filter(([key]) => !extensionPropIds.includes(key)),
   ) as Omit<R, ExtensionPropId>;
+
+  // A route carrying `x-tool` registers itself as an MCP tool; the spec keeps the metadata, never `execute`.
+  const tool = config['x-tool'];
+  if (tool?.enabled) {
+    registerRouteTool(
+      { operationId: config.operationId, method: config.method, request: config.request },
+      tool as RegisteredTool,
+    );
+    const { execute: _execute, ...spec } = tool;
+    Object.assign(cleanConfig, { 'x-tool': spec });
+  }
 
   return createRoute({
     security,
