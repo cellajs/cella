@@ -15,6 +15,7 @@ import { mockUserResponse } from '#/modules/user/user-mocks';
 import { userFlagsSchema, userSchema, userUpdateBodySchema } from '#/modules/user/user-schema';
 import {
   batchResponseSchema,
+  entityIdParamSchema,
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
@@ -27,6 +28,29 @@ import {
   mockPaginatedInvitationsResponse,
   mockUploadTokenResponse,
 } from './me-mocks';
+
+/** A consent the user gave to an OAuth client, as the account page lists it. */
+const connectedAppSchema = z
+  .object({
+    id: z.string(),
+    clientId: z.string(),
+    clientName: z.string(),
+    scopes: z.array(z.string()),
+    resources: z.array(z.string()),
+    createdAt: z.string(),
+    expiresAt: z.string().nullable(),
+  })
+  .openapi('ConnectedApp', { description: 'An OAuth consent (grant) of the current user.' });
+
+const mockConnectedApp = () => ({
+  id: 'gr_01J9Z2Q0X7ZQ4S5M8N',
+  clientId: 'https://vscode.dev/oauth/client-metadata.json',
+  clientName: 'Visual Studio Code',
+  scopes: ['attachment:read'],
+  resources: ['https://www.cellajs.com/mcp/tenant01/org01/mcp'],
+  createdAt: '2026-09-22T10:00:00.000Z',
+  expiresAt: '2026-10-22T10:00:00.000Z',
+});
 
 const meRoutes = {
   getMe: createXRoute({
@@ -244,6 +268,47 @@ const meRoutes = {
           'application/json': {
             schema: z.object({ items: z.array(membershipBaseSchema) }),
           },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  getConnectedApps: createXRoute({
+    operationId: 'getConnectedApps',
+    method: 'get',
+    path: '/connected-apps',
+    xGuard: [userGuard],
+    tags: ['me', 'cella'],
+    summary: 'Get connected apps',
+    description: 'Lists the OAuth clients the user consented to (MCP clients, registered apps) with their scopes.',
+    responses: {
+      200: {
+        description: 'Connected apps',
+        content: {
+          'application/json': {
+            schema: z.object({ items: z.array(connectedAppSchema) }),
+            example: { items: [mockConnectedApp()] },
+          },
+        },
+      },
+      ...errorResponseRefs,
+    },
+  }),
+  revokeConnectedApp: createXRoute({
+    operationId: 'revokeConnectedApp',
+    method: 'delete',
+    path: '/connected-apps/{id}',
+    xGuard: [userGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['me', 'cella'],
+    summary: 'Revoke connected app',
+    description: 'Revokes a consent: the grant and every token issued under it are deleted.',
+    request: { params: entityIdParamSchema },
+    responses: {
+      200: {
+        description: 'Consent was revoked',
+        content: {
+          'application/json': { schema: z.object({ id: z.string() }), example: { id: mockConnectedApp().id } },
         },
       },
       ...errorResponseRefs,

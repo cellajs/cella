@@ -21,6 +21,7 @@ import { Route as PublicContentRouteRouteImport } from './_public/_content/route
 import { Route as PublicMarketingRouteImport } from './_public/_marketing'
 import { Route as PublicAuthRouteRouteImport } from './_public/auth/route'
 import { Route as PublicErrorRouteImport } from './_public/error'
+import { Route as PublicOauthRouteRouteImport } from './_public/oauth/route'
 import { Route as AppTenantIdOrganizationSlugRouteRouteImport } from './_app/$tenantId.$organizationSlug/route'
 import { Route as AppSystemToolRouteImport } from './_app/system/$tool'
 import { Route as AppSystemOrganizationsRouteImport } from './_app/system/organizations'
@@ -38,6 +39,7 @@ import { Route as PublicAuthErrorRouteImport } from './_public/auth/error'
 import { Route as PublicAuthMfaRouteImport } from './_public/auth/mfa'
 import { Route as PublicAuthSignOutRouteImport } from './_public/auth/sign-out'
 import { Route as PublicAuthUnsubscribedRouteImport } from './_public/auth/unsubscribed'
+import { Route as PublicOauthConsentRouteImport } from './_public/oauth/consent'
 import { Route as AppTenantIdOrganizationSlugOrganizationRouteRouteImport } from './_app/$tenantId.$organizationSlug/organization/route'
 import { Route as PublicContentDocsIndexRouteImport } from './_public/_content/docs/index'
 import { Route as PublicContentDocsOperationsRouteImport } from './_public/_content/docs/operations'
@@ -108,6 +110,11 @@ const PublicAuthRouteRoute = PublicAuthRouteRouteImport.update({
 const PublicErrorRoute = PublicErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicOauthRouteRoute = PublicOauthRouteRouteImport.update({
+  id: '/oauth',
+  path: '/oauth',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const AppTenantIdOrganizationSlugRouteRoute =
@@ -197,6 +204,11 @@ const PublicAuthUnsubscribedRoute = PublicAuthUnsubscribedRouteImport.update({
   id: '/unsubscribed',
   path: '/unsubscribed',
   getParentRoute: () => PublicAuthRouteRoute,
+} as any)
+const PublicOauthConsentRoute = PublicOauthConsentRouteImport.update({
+  id: '/consent',
+  path: '/consent',
+  getParentRoute: () => PublicOauthRouteRoute,
 } as any)
 const AppTenantIdOrganizationSlugOrganizationRouteRoute =
   AppTenantIdOrganizationSlugOrganizationRouteRouteImport.update({
@@ -291,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/system': typeof AppSystemRouteRouteWithChildren
   '/auth': typeof PublicAuthRouteRouteWithChildren
+  '/oauth': typeof PublicOauthRouteRouteWithChildren
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
@@ -313,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/auth/mfa': typeof PublicAuthMfaRoute
   '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
+  '/oauth/consent': typeof PublicOauthConsentRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/docs/operations': typeof PublicContentDocsOperationsRoute
   '/docs/overview': typeof PublicContentDocsOverviewRoute
@@ -333,6 +347,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/system': typeof AppSystemRouteRouteWithChildren
   '/auth': typeof PublicAuthRouteRouteWithChildren
+  '/oauth': typeof PublicOauthRouteRouteWithChildren
   '/account': typeof AppAccountRoute
   '/home': typeof AppHomeRoute
   '/n': typeof AppNRoute
@@ -354,6 +369,7 @@ export interface FileRoutesByTo {
   '/auth/mfa': typeof PublicAuthMfaRoute
   '/auth/sign-out': typeof PublicAuthSignOutRoute
   '/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
+  '/oauth/consent': typeof PublicOauthConsentRoute
   '/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/docs/operations': typeof PublicContentDocsOperationsRoute
   '/docs/overview': typeof PublicContentDocsOverviewRoute
@@ -377,6 +393,7 @@ export interface FileRoutesById {
   '/_app/system': typeof AppSystemRouteRouteWithChildren
   '/_public/_content': typeof PublicContentRouteRouteWithChildren
   '/_public/auth': typeof PublicAuthRouteRouteWithChildren
+  '/_public/oauth': typeof PublicOauthRouteRouteWithChildren
   '/_app/account': typeof AppAccountRoute
   '/_app/home': typeof AppHomeRoute
   '/_app/n': typeof AppNRoute
@@ -401,6 +418,7 @@ export interface FileRoutesById {
   '/_public/auth/mfa': typeof PublicAuthMfaRoute
   '/_public/auth/sign-out': typeof PublicAuthSignOutRoute
   '/_public/auth/unsubscribed': typeof PublicAuthUnsubscribedRoute
+  '/_public/oauth/consent': typeof PublicOauthConsentRoute
   '/_app/$tenantId/$organizationSlug/organization': typeof AppTenantIdOrganizationSlugOrganizationRouteRouteWithChildren
   '/_public/_content/docs/operations': typeof PublicContentDocsOperationsRoute
   '/_public/_content/docs/overview': typeof PublicContentDocsOverviewRoute
@@ -423,6 +441,7 @@ export interface FileRouteTypes {
     | '/'
     | '/system'
     | '/auth'
+    | '/oauth'
     | '/account'
     | '/home'
     | '/n'
@@ -445,6 +464,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sign-out'
     | '/auth/unsubscribed'
+    | '/oauth/consent'
     | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
@@ -465,6 +485,7 @@ export interface FileRouteTypes {
     | '/'
     | '/system'
     | '/auth'
+    | '/oauth'
     | '/account'
     | '/home'
     | '/n'
@@ -486,6 +507,7 @@ export interface FileRouteTypes {
     | '/auth/mfa'
     | '/auth/sign-out'
     | '/auth/unsubscribed'
+    | '/oauth/consent'
     | '/$tenantId/$organizationSlug/organization'
     | '/docs/operations'
     | '/docs/overview'
@@ -508,6 +530,7 @@ export interface FileRouteTypes {
     | '/_app/system'
     | '/_public/_content'
     | '/_public/auth'
+    | '/_public/oauth'
     | '/_app/account'
     | '/_app/home'
     | '/_app/n'
@@ -532,6 +555,7 @@ export interface FileRouteTypes {
     | '/_public/auth/mfa'
     | '/_public/auth/sign-out'
     | '/_public/auth/unsubscribed'
+    | '/_public/oauth/consent'
     | '/_app/$tenantId/$organizationSlug/organization'
     | '/_public/_content/docs/operations'
     | '/_public/_content/docs/overview'
@@ -638,6 +662,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof PublicErrorRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/oauth': {
+      id: '/_public/oauth'
+      path: '/oauth'
+      fullPath: '/oauth'
+      preLoaderRoute: typeof PublicOauthRouteRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/_app/$tenantId/$organizationSlug': {
@@ -758,6 +789,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/unsubscribed'
       preLoaderRoute: typeof PublicAuthUnsubscribedRouteImport
       parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/oauth/consent': {
+      id: '/_public/oauth/consent'
+      path: '/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof PublicOauthConsentRouteImport
+      parentRoute: typeof PublicOauthRouteRoute
     }
     '/_app/$tenantId/$organizationSlug/organization': {
       id: '/_app/$tenantId/$organizationSlug/organization'
@@ -1012,6 +1050,17 @@ const PublicAuthRouteRouteWithChildren = PublicAuthRouteRoute._addFileChildren(
   PublicAuthRouteRouteChildren,
 )
 
+interface PublicOauthRouteRouteChildren {
+  PublicOauthConsentRoute: typeof PublicOauthConsentRoute
+}
+
+const PublicOauthRouteRouteChildren: PublicOauthRouteRouteChildren = {
+  PublicOauthConsentRoute: PublicOauthConsentRoute,
+}
+
+const PublicOauthRouteRouteWithChildren =
+  PublicOauthRouteRoute._addFileChildren(PublicOauthRouteRouteChildren)
+
 interface PublicMarketingRouteChildren {
   PublicMarketingAboutRoute: typeof PublicMarketingAboutRoute
   PublicMarketingAccessibilityRoute: typeof PublicMarketingAccessibilityRoute
@@ -1039,6 +1088,7 @@ const PublicMarketingRouteWithChildren = PublicMarketingRoute._addFileChildren(
 interface PublicRouteRouteChildren {
   PublicContentRouteRoute: typeof PublicContentRouteRouteWithChildren
   PublicAuthRouteRoute: typeof PublicAuthRouteRouteWithChildren
+  PublicOauthRouteRoute: typeof PublicOauthRouteRouteWithChildren
   PublicMarketingRoute: typeof PublicMarketingRouteWithChildren
   PublicErrorRoute: typeof PublicErrorRoute
 }
@@ -1046,6 +1096,7 @@ interface PublicRouteRouteChildren {
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicContentRouteRoute: PublicContentRouteRouteWithChildren,
   PublicAuthRouteRoute: PublicAuthRouteRouteWithChildren,
+  PublicOauthRouteRoute: PublicOauthRouteRouteWithChildren,
   PublicMarketingRoute: PublicMarketingRouteWithChildren,
   PublicErrorRoute: PublicErrorRoute,
 }

@@ -21,6 +21,7 @@ import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
+import { getConnectedAppsOp, revokeConnectedAppOp } from '#/modules/oauth-server/operations/connected-apps';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -156,6 +157,17 @@ app.openapi(meRoutes.getMyMemberships, async (ctx) => {
   const items = memberships.map(({ createdBy, ...rest }) => rest);
 
   return ctx.json({ items }, 200);
+});
+
+app.openapi(meRoutes.getConnectedApps, async (ctx) => {
+  const data = await getConnectedAppsOp(ctx);
+  return ctx.json(data, 200);
+});
+
+app.openapi(meRoutes.revokeConnectedApp, async (ctx) => {
+  const { id } = ctx.req.valid('param');
+  const data = await revokeConnectedAppOp(ctx, id);
+  return ctx.json(data, 200);
 });
 
 export const meHandlers = app;

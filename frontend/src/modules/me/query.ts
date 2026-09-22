@@ -5,6 +5,7 @@ import type {
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
+  GetConnectedAppsResponse,
   GetMyInvitationsResponse,
   HandleMembershipInvitationData,
   HandleMembershipInvitationResponse,
@@ -17,6 +18,7 @@ import {
   createPasskey,
   deletePasskey,
   deleteTotp,
+  getConnectedApps,
   getMyInvitations,
   getMyMemberships,
   handleMembershipInvitation,
@@ -38,6 +40,7 @@ export const meKeys = {
   all: ['me'] as const,
   auth: ['me', 'auth'] as const,
   invites: ['me', 'invites'] as const,
+  connectedApps: ['me', 'connected-apps'] as const,
   memberships: ['me', 'memberships'] as const,
   register: {
     passkey: ['me', 'register', 'passkey'] as const,
@@ -57,6 +60,9 @@ export const meKeys = {
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
 
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
+
+export const meConnectedAppsQueryOptions = () =>
+  queryOptions<GetConnectedAppsResponse>({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
 
 export const meInvitationsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });

@@ -10,6 +10,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
+import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
@@ -42,6 +43,16 @@ export function AccountSessionsCard() {
   return (
     <ToolCard label="c:sessions" description={t('c:sessions.text')} className={cardClass}>
       <SessionsList />
+    </ToolCard>
+  );
+}
+
+export function AccountConnectedAppsCard() {
+  const { t } = useTranslation();
+
+  return (
+    <ToolCard label="c:connected_apps" description={t('c:connected_apps.text')} className={cardClass}>
+      <ConnectedAppsList />
     </ToolCard>
   );
 }
