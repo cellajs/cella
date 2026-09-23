@@ -15,10 +15,7 @@ const MMDB = gzipSync(Buffer.concat([Buffer.from('tree-and-data'), Buffer.from('
 const MANIFEST: GeoipManifest = {
   month: '2026-08',
   publishedAt: '2026-08-02T06:00:00Z',
-  files: {
-    country: { key: 'geoip/dbip-country-lite.mmdb.gz', month: '2026-08', bytes: 1, sha256: 'a' },
-    asn: { key: 'geoip/dbip-asn-lite.mmdb.gz', month: '2026-08', bytes: 1, sha256: 'b' },
-  },
+  months: { country: '2026-08', asn: '2026-08' },
 };
 
 /** A plan whose effects all succeed for the target month, recording call order into `calls`. */
@@ -64,7 +61,7 @@ describe('sequenceGeoipRefresh', () => {
     ]);
     expect(result.manifest.month).toBe('2026-09');
     expect(result.manifest.publishedAt).toBe(NOW.toISOString());
-    expect(result.manifest.files.country.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.manifest.months).toEqual({ country: '2026-09', asn: '2026-09' });
   });
 
   it('is a no-op when the manifest already carries the target month', async () => {
@@ -108,7 +105,7 @@ describe('sequenceGeoipRefresh', () => {
 
     expect(result.published).toBe(true);
     expect(result.manifest.month).toBe('2026-08');
-    expect(result.manifest.files.asn.month).toBe('2026-08');
+    expect(result.manifest.months.asn).toBe('2026-08');
     expect(calls.filter((c) => c.startsWith('fetch'))).toHaveLength(4);
   });
 

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag, getNumFlag } from './args';
@@ -7,11 +6,12 @@ export type GeoipKind = 'country' | 'asn';
 export const GEOIP_KINDS: readonly GeoipKind[] = ['country', 'asn'];
 export const DEFAULT_PREFIX = 'geoip';
 
-/** Every published object is described here; the backend never reads it, operators and the staleness gate do. */
+/** What the prefix holds: the backend never reads it, operators and the staleness gate do. */
 export interface GeoipManifest {
+  /** The DB-IP release published; per database below, since the fallback month can differ. */
   month: string;
   publishedAt: string;
-  files: Record<GeoipKind, { key: string; month: string; bytes: number; sha256: string }>;
+  months: Record<GeoipKind, string>;
 }
 
 /**
@@ -61,7 +61,7 @@ const MMDB_METADATA_MARKER = Buffer.from('\xab\xcd\xefMaxMind.com', 'latin1');
  * A downloaded archive is trusted only when it gunzips and the payload ends in the MMDB metadata section; anything
  * else (an HTML error page, a truncated stream) is refused before a single byte reaches the bucket.
  */
-export const verifyMmdbArchive = (archive: Uint8Array): { ok: true; bytes: number } | { ok: false; reason: string } => {
+export const verifyMmdbArchive = (archive: Uint8Array): { ok: true } | { ok: false; reason: string } => {
   let payload: Buffer;
   try {
     payload = gunzipSync(archive);
@@ -71,7 +71,7 @@ export const verifyMmdbArchive = (archive: Uint8Array): { ok: true; bytes: numbe
   // The marker sits at most 128 KiB from the end per the MMDB spec.
   const tail = payload.subarray(Math.max(0, payload.length - 128 * 1024));
   if (!tail.includes(MMDB_METADATA_MARKER)) return { ok: false, reason: 'no MMDB metadata section' };
-  return { ok: true, bytes: payload.length };
+  return { ok: true };
 };
 
 const ageDays = (iso: string, now: Date): number => (now.getTime() - new Date(iso).getTime()) / 86_400_000;
@@ -95,7 +95,7 @@ export async function sequenceGeoipRefresh(plan: GeoipRefreshPlan): Promise<Geoi
   }
 
   const fallbackMonth = monthOf(new Date(`${plan.month}-01T00:00:00Z`), -1);
-  const downloaded: Array<{ kind: GeoipKind; month: string; archive: Uint8Array; bytes: number }> = [];
+  const downloaded: Array<{ kind: GeoipKind; month: string; archive: Uint8Array }> = [];
   for (const kind of plan.kinds) {
     let month = plan.month;
     let response = await plan.fetchDatabase(databaseUrl(kind, month));
@@ -109,24 +109,21 @@ export async function sequenceGeoipRefresh(plan: GeoipRefreshPlan): Promise<Geoi
     }
     const verified = verifyMmdbArchive(response.body);
     if (!verified.ok) throw new Error(`DB-IP ${kind} archive for ${month} rejected: ${verified.reason}.`);
-    downloaded.push({ kind, month, archive: response.body, bytes: verified.bytes });
+    downloaded.push({ kind, month, archive: response.body });
     plan.log(`${kind} ${month}: ${(response.body.length / 1_048_576).toFixed(1)} MiB gzipped, verified.`);
   }
 
-  const files = {} as GeoipManifest['files'];
+  const months = {} as GeoipManifest['months'];
   for (const { kind, month, archive } of downloaded) {
     const key = objectKey(plan.prefix, kind);
     await plan.putObject(key, archive, 'application/gzip');
-    files[kind] = { key, month, bytes: archive.length, sha256: createHash('sha256').update(archive).digest('hex') };
+    months[kind] = month;
     plan.log(`uploaded ${plan.bucket}/${key}`);
   }
   const manifest: GeoipManifest = {
-    month: downloaded.reduce(
-      (newest, file) => (file.month > newest ? file.month : newest),
-      downloaded[0]?.month ?? plan.month,
-    ),
+    month: downloaded.some((file) => file.month === plan.month) ? plan.month : fallbackMonth,
     publishedAt: plan.now().toISOString(),
-    files,
+    months,
   };
   await plan.putObject(manifestKey(plan.prefix), Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
   plan.log(`uploaded ${plan.bucket}/${manifestKey(plan.prefix)} (month ${manifest.month})`);
