@@ -3,7 +3,6 @@ import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'reac
 
 interface GridDimensions {
   viewportHeight: number;
-  horizontalScrollbarHeight: number;
   scrollTop: number;
   gridRect: DOMRect | null;
   /** False until the first layout measurement commits; the placeholder numbers below are not viewport geometry. */
@@ -16,7 +15,6 @@ interface GridDimensionsResult extends GridDimensions {
 
 const initialDimensions: GridDimensions = {
   viewportHeight: 1,
-  horizontalScrollbarHeight: 0,
   scrollTop: 0,
   gridRect: null,
   measured: false,
@@ -117,61 +115,35 @@ export function useGridDimensions(
     };
 
     // --- Initial synchronous measurement ---
-    const { clientHeight, offsetHeight } = grid;
-    const initialHScrollbar = offsetHeight - clientHeight;
+    commit(measureScroll(initialDimensions));
 
-    commit(
-      measureScroll({
-        ...initialDimensions,
-        horizontalScrollbarHeight: initialHScrollbar,
-      }),
-    );
-
-    // rAF-throttled ResizeObserver, tracking only horizontalScrollbarHeight.
-    const resizeObserver = new ResizeObserver(() => {
-      const { clientHeight, offsetHeight } = grid;
-      const newHScrollbar = offsetHeight - clientHeight;
-
-      scheduleUpdate(() => {
-        const prev = snapshotRef.current;
-        if (prev.horizontalScrollbarHeight === newHScrollbar) return;
-        commit({ ...prev, horizontalScrollbarHeight: newHScrollbar });
-      });
-    });
-    resizeObserver.observe(grid);
-
-    // --- Scroll handler (rAF-throttled), only needed for row virtualization ---
-    const handleScroll = () => {
-      scheduleUpdate(() => {
-        commit(measureScroll(snapshotRef.current));
-      });
-    };
-
-    const handleResize = () => {
+    const remeasure = () => {
       scheduleUpdate(() => {
         commit(measureScroll(snapshotRef.current));
       });
     };
 
     // Without row virtualization scrollTop is unused, and these listeners would only cause rerenders.
+    let resizeObserver: ResizeObserver | null = null;
     if (enableRowVirtualization) {
       if (isWindowScroll) {
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        window.addEventListener('resize', handleResize, { passive: true });
+        window.addEventListener('scroll', remeasure, { passive: true });
+        window.addEventListener('resize', remeasure, { passive: true });
       } else {
-        scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+        scrollContainer.addEventListener('scroll', remeasure, { passive: true });
+        resizeObserver = new ResizeObserver(remeasure);
         resizeObserver.observe(scrollContainer);
       }
     }
 
     return () => {
       cancelAnimationFrame(rafId);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       if (isWindowScroll) {
-        window.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', remeasure);
+        window.removeEventListener('resize', remeasure);
       } else {
-        scrollContainer.removeEventListener('scroll', handleScroll);
+        scrollContainer.removeEventListener('scroll', remeasure);
       }
     };
   }, [scrollContainerRef, enableRowVirtualization]);

@@ -67,13 +67,7 @@ function HeaderRow<R, SR>({
     <div
       role="row"
       aria-rowindex={rowIdx} // aria-rowindex is 1 based
-      className={cn(
-        headerRowClassname,
-        {
-          'rdg-row-selected': selectedCellIdx === -1,
-        },
-        headerRowClass,
-      )}
+      className={cn(headerRowClassname, headerRowClass)}
     >
       {cells}
     </div>
