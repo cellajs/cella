@@ -1,4 +1,8 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'drizzle-kit';
+
+// drizzle-kit evaluates this file in its own process, so load backend/.env here; variables already set win.
+if (existsSync('.env')) process.loadEnvFile('.env');
 
 const databaseUrl = process.env.DATABASE_URL || '';
 // Use admin URL for Drizzle Studio/push so it bypasses RLS (admin_role has BYPASSRLS)

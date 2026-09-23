@@ -2,18 +2,17 @@ import { defineConfig } from 'tsup';
 
 /**
  * Packages that have to stay on disk. Everything else is inlined into dist/.
- * - papaparse: CJS dynamic require of a data file that does not survive ESM bundling.
- * - @ngrok/ngrok, @napi-rs/canvas: native addons, loaded by platform-specific .node file.
+ * - @ngrok/ngrok: native addon, loaded by platform-specific .node file.
  * - @opentelemetry/*: the SDK patches modules through the loader registry, so it loads from disk,
  *   and so does anything it instruments. `pg` is here for that reason: PgInstrumentation only ever
  *   sees a module the registry handed it, so an inlined copy emits no query spans.
- * - @blocknote/server-util and jsdom: jsdom resolves its default stylesheet through __dirname, so
- *   inlining it points that lookup at the bundle. server-util reaches jsdom, so both load from disk.
+ * - jsdom: resolves its default stylesheet through __dirname, so inlining it points that lookup at the
+ *   bundle. @blocknote/server-util, which reaches it, is inlined; only its jsdom import stays external.
  * - pino and its transports: `pino.transport()` starts a worker thread from a file path inside the
  *   pino package, and resolves transport targets like 'pino-pretty' by name from the caller, so
  *   neither survives being inlined.
  */
-const KEEP_ON_DISK = String.raw`pg(?:\/|$)|papaparse|@ngrok\/ngrok|@napi-rs\/canvas|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|@blocknote\\/server-util|jsdom`;
+const KEEP_ON_DISK = String.raw`pg(?:\/|$)|@ngrok\/ngrok|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|jsdom`;
 
 export default defineConfig({
   entry: {
@@ -46,12 +45,8 @@ export default defineConfig({
     options.jsx = 'automatic'; // Use modern JSX transform for email templates
   },
   external: [
-    // CJS dynamic data-file require does not survive ESM bundling.
-    // Regexes: a bare name matches the exact specifier, and these are reached through subpaths too.
-    /^papaparse(\/|$)/,
-    // Native addons.
+    // Native addon. Regexes: a bare name matches the exact specifier, and these are reached through subpaths too.
     /^@ngrok\/ngrok(\/|$)/,
-    /^@napi-rs\/canvas(\/|$)/,
     // The SDK patches modules through the loader registry, so both it and anything it instruments
     // have to be loaded from disk; a bundled copy of `pg` is never handed to the instrumentation.
     /^@opentelemetry/,
@@ -59,7 +54,6 @@ export default defineConfig({
     /^pino(-|\/|$)/,
     /^thread-stream(\/|$)/,
     /^sonic-boom(\/|$)/,
-    /^@blocknote\/server-util(\/|$)/,
     /^jsdom(\/|$)/,
   ],
 });

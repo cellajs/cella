@@ -87,10 +87,10 @@
     "@commitlint/config-conventional": "^21.2.3",
     "@evilmartians/lefthook": "^2.1.14",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "@vitest/coverage-v8": "^5.0.1",
     "cross-env": "^10.1.0",
     "knip": "^6.37.0",
     "rimraf": "^6.1.3",
-    "semver": "^7.7.3",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1"

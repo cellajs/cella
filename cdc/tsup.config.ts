@@ -5,12 +5,12 @@ import { defineConfig } from 'tsup';
  * - pg, pg-logical-replication: `pg` stays external so PgInstrumentation can still patch it through
  *   the loader registry.
  * - @opentelemetry/*: the SDK patches modules through that registry, so it loads from disk.
- * - @blocknote/server-util and jsdom: jsdom resolves its default stylesheet through __dirname, so
- *   inlining it points that lookup at the bundle. server-util reaches jsdom, so both load from disk.
+ * - jsdom: resolves its default stylesheet through __dirname, so inlining it points that lookup at the
+ *   bundle. @blocknote/server-util, which reaches it, is inlined; only its jsdom import stays external.
  * - pino and its transports: `pino.transport()` starts a worker thread from a file path inside the
  *   pino package, and resolves targets like 'pino-pretty' by name from the caller.
  */
-const KEEP_ON_DISK = String.raw`pg(?:\/|$)|pg-logical-replication|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|@blocknote\\/server-util|jsdom`;
+const KEEP_ON_DISK = String.raw`pg(?:\/|$)|pg-logical-replication|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|jsdom`;
 
 
 export default defineConfig({
@@ -57,7 +57,6 @@ export default defineConfig({
     /^pino(-|\/|$)/,
     /^thread-stream(\/|$)/,
     /^sonic-boom(\/|$)/,
-    /^@blocknote\/server-util(\/|$)/,
     /^jsdom(\/|$)/,
   ],
 });
