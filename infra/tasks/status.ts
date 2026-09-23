@@ -4,13 +4,25 @@ import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import {
+  classifyPrincipal,
+  describeKey,
+  formatKeyLine,
+  hoursUntilExpiry,
+  type KeyDescription,
+  type PrincipalRole,
+  resolveOperatorIdentity,
+} from '../lib/scaleway/operator-identity';
+import { principalNames } from '../lib/scaleway/principals';
+import {
   detectComputeDeferred,
   detectStackState,
   pickStackShort,
   type StackState,
 } from '../lib/stack/bootstrap-stack-state';
 import {
+  type ControlState,
   controlKey,
+  type LockInfo,
   lockKey,
   makeControlClient,
   peekLock,
@@ -209,4 +221,141 @@ if (isMain(import.meta.url)) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
   });
+}
+
+/** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
+export interface QuickFacts {
+  lock?: LockInfo;
+  control?: ControlState;
+  /** The standing key's bearer and role, when the key can describe itself. */
+  standing?: { desc: KeyDescription; role: PrincipalRole };
+  /** Probes that did not answer within the budget or errored, by name. */
+  unavailable: string[];
+}
+
+/** Race a probe against the budget: a slow Scaleway call must not delay the menu. */
+async function within<T>(ms: number, probe: Promise<T>): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => resolve(undefined), ms);
+    timer.unref?.();
+  });
+  try {
+    return await Promise.race([probe, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function collectQuickFacts(
+  ctx: { environment: string; appConfig: EngineConfig; projectId?: string },
+  opts: { budgetMs?: number; now?: number } = {},
+): Promise<QuickFacts> {
+  const budgetMs = opts.budgetMs ?? 4_000;
+  const facts: QuickFacts = { unavailable: [] };
+  const identity = resolveOperatorIdentity();
+  const bucket = stateBucket(ctx.appConfig.slug);
+
+  const stateProbe = async () => {
+    if (!identity.state) return;
+    const s3 = await makeControlClient(ctx.appConfig.s3.region, identity.state.accessKey, identity.state.secretKey);
+    const [lock, control] = await Promise.all([
+      peekLock(s3, bucket, lockKey(ctx.environment)),
+      readControlState(s3, bucket, controlKey(ctx.environment)).then((result) => result.state),
+    ]);
+    facts.lock = lock;
+    facts.control = control;
+  };
+  const keyProbe = async () => {
+    if (!identity.standing) return;
+    const desc = await describeKey(identity.standing);
+    facts.standing = { desc, role: classifyPrincipal(desc, principalNames(ctx.appConfig.slug, ctx.environment)) };
+  };
+  await Promise.all([
+    within(
+      budgetMs,
+      stateProbe().catch(() => facts.unavailable.push('state bucket')),
+    ).then((v) => {
+      if (v === undefined && identity.state && !facts.control && !facts.unavailable.includes('state bucket'))
+        facts.unavailable.push('state bucket');
+    }),
+    within(
+      budgetMs,
+      keyProbe().catch(() => facts.unavailable.push('key lookup')),
+    ).then((v) => {
+      if (v === undefined && identity.standing && !facts.standing && !facts.unavailable.includes('key lookup'))
+        facts.unavailable.push('key lookup');
+    }),
+  ]);
+  return facts;
+}
+
+/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. */
+export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; hasStandingKey?: boolean } = {}): string[] {
+  const now = opts.now ?? Date.now();
+  const lines: string[] = [];
+  if (facts.lock) {
+    const expired = Date.parse(facts.lock.expiresAt) <= now;
+    lines.push(
+      `${expired ? warningMark : pc.yellow('●')} Lock: ${expired ? 'expired lease of' : 'held by'} ${pc.cyan(facts.lock.owner)} (${facts.lock.operation}, since ${facts.lock.acquiredAt.slice(0, 19).replace('T', ' ')} UTC)`,
+    );
+  } else if (facts.control || !facts.unavailable.includes('state bucket')) {
+    lines.push(`${pc.green('●')} Lock: free`);
+  }
+  if (facts.control) {
+    const active = Object.entries(facts.control.rollout)
+      .filter(([, rollout]) => rollout.active)
+      .map(([slug, rollout]) => `${slug} ${rollout.active?.sha.slice(0, 7)}`);
+    const pending = Object.entries(facts.control.rollout)
+      .filter(([, rollout]) => rollout.pendingSha)
+      .map(([slug, rollout]) => `${slug} ${rollout.pendingSha?.slice(0, 7)} pending`);
+    const when = facts.control.updatedAt
+      ? ` (updated ${facts.control.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.control.updatedBy ?? '?'})`
+      : '';
+    lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
+  }
+  if (facts.standing) {
+    const { desc, role } = facts.standing;
+    const hours = hoursUntilExpiry(desc, now);
+    const expiry =
+      hours === undefined
+        ? ''
+        : hours < 0
+          ? ' — EXPIRED'
+          : hours < 48
+            ? ` — expires in ${Math.max(1, Math.round(hours))}h`
+            : '';
+    const mark = role === 'admin' && !(hours !== undefined && hours < 48) ? pc.green('●') : warningMark;
+    lines.push(`${mark} Key: SCW_ACCESS_KEY ${formatKeyLine(desc, role)}${expiry}`);
+    if (role !== 'admin') {
+      lines.push(
+        `  ${pc.dim('The standing slot should hold the admin application key: Manage keys & secrets → Fetch operator credentials.')}`,
+      );
+    }
+  } else if (opts.hasStandingKey === false) {
+    lines.push(
+      `${warningMark} Key: no SCW_ACCESS_KEY / SCW_SECRET_KEY in infra/.env.<mode> (Manage keys & secrets → Fetch operator credentials)`,
+    );
+  }
+  if (facts.unavailable.length > 0)
+    lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
+  return lines;
+}
+
+/** Print the quick facts for a loaded CLI context; never throws, never blocks longer than the budget. */
+export async function printQuickFacts(context: {
+  environment: string;
+  appConfig: EngineConfig;
+  projectId: string;
+}): Promise<void> {
+  const facts = await withSpinner('Checking lock, rollout and key', () =>
+    collectQuickFacts({
+      environment: context.environment,
+      appConfig: context.appConfig,
+      projectId: context.projectId || undefined,
+    }),
+  );
+  const hasStandingKey = Boolean(resolveOperatorIdentity().standing);
+  for (const line of formatQuickFacts(facts, { hasStandingKey })) console.info(line);
+  console.info('');
 }

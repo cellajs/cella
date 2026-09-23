@@ -289,6 +289,12 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
   }
 }
 
+// What an operator wants to know before choosing: is the stack locked, what is live, and which key this machine holds. Bounded, best-effort.
+if (context.state === 'bootstrapped' && !nonInteractive()) {
+  const { printQuickFacts } = await import('../tasks/status');
+  await printQuickFacts(context);
+}
+
 const mode: Exclude<CliMode, 'status'> =
   context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context);
 
