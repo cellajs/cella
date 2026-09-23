@@ -30,7 +30,7 @@ const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
-    principalId: mockUuid(),
+    actorId: mockUuid(),
     tenantId: mockTenantId(),
     name: `${faker.hacker.verb()} key`,
     prefix: exampleSecret.slice(0, `${appConfig.slug}_sk_test_`.length + 4),

@@ -1,16 +1,16 @@
 import { generateId } from 'shared/utils/entity-id';
 import type { DbOrTx } from '#/db/db';
-import { deleteDanglingPrincipals, insertPrincipals } from '#/modules/principals/helpers/insert-principals';
+import { deleteDanglingActors, insertActors } from '#/modules/actors/helpers/insert-actors';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 
 interface InsertUsersOptions {
-  /** Skip rows that already exist (seed re-runs); a skipped user leaves no principal behind. */
+  /** Skip rows that already exist (seed re-runs); a skipped user leaves no actor behind. */
   onConflictDoNothing?: boolean;
 }
 
 /**
- * The only way to insert users: the `principals` row of kind `user` goes first, in one transaction, so a failed user
- * insert (taken email, slug race) leaves no orphan principal and a missed call site fails on the foreign key.
+ * The only way to insert users: the `actors` row of kind `user` goes first, in one transaction, so a failed user
+ * insert (taken email, slug race) leaves no orphan actor and a missed call site fails on the foreign key.
  */
 export async function insertUsers(
   db: DbOrTx,
@@ -21,7 +21,7 @@ export async function insertUsers(
   const withIds = records.map((record) => ({ ...record, id: record.id ?? generateId() }));
 
   return db.transaction(async (tx) => {
-    const principalIds = await insertPrincipals(
+    const actorIds = await insertActors(
       tx,
       withIds.map(({ id }) => id),
       'user',
@@ -30,12 +30,12 @@ export async function insertUsers(
     const userInsert = tx.insert(usersTable).values(withIds).returning();
     const users = onConflictDoNothing ? await userInsert.onConflictDoNothing() : await userInsert;
 
-    // Only principals this call created and whose user row was skipped; an id that already existed keeps its user.
+    // Only actors this call created and whose user row was skipped; an id that already existed keeps its user.
     if (onConflictDoNothing && users.length < withIds.length) {
       const inserted = new Set(users.map((user) => user.id));
-      await deleteDanglingPrincipals(
+      await deleteDanglingActors(
         tx,
-        principalIds.filter((id) => !inserted.has(id)),
+        actorIds.filter((id) => !inserted.has(id)),
       );
     }
     return users;

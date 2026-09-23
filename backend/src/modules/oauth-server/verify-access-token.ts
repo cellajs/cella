@@ -8,10 +8,10 @@ import type { IssuedTokenClaims } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
 
 export interface VerifiedAccessToken {
-  principalId: string;
+  actorId: string;
   kind: 'user' | 'service';
   tenantId: string;
-  /** The token's scope set, always a mask: a delegated token never carries a principal's full bindings implicitly. */
+  /** The token's scope set, always a mask: a delegated token never carries an actor's full bindings implicitly. */
   scopes: AccessScope[];
   clientId: string;
 }
@@ -42,12 +42,12 @@ export async function verifyAccessToken(
       audience: audiences,
     });
     const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
-    if (!claims.sub || !claims.principal_kind || !claims.tenant_id)
+    if (!claims.sub || !claims.actor_kind || !claims.tenant_id)
       throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
     const scopes = accessScopes.parse(claims.scope);
     return {
-      principalId: claims.sub,
-      kind: claims.principal_kind,
+      actorId: claims.sub,
+      kind: claims.actor_kind,
       tenantId: claims.tenant_id,
       scopes,
       clientId: claims.client_id ?? '',

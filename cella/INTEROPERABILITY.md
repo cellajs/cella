@@ -1,10 +1,10 @@
 # Interoperability
 
-This document covers how systems outside the browser act on your app: the faces they connect to and the substrate of principals, keys, scopes and tokens under them.
+This document covers how systems outside the browser act on your app: the faces they connect to and the substrate of actors, keys, scopes and tokens under them.
 
 ### TL;DR
 
-Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. A caller is always a principal (a person or a service account), always holds role bindings the permission engine understands, and may carry a mask of access scopes that narrows what those bindings allow. There is no second permission vocabulary for machines.
+Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. A caller is always an actor (a person or a service account), always holds role bindings the permission engine understands, and may carry a mask of access scopes that narrows what those bindings allow. There is no second permission vocabulary for machines.
 
 ## Who connects
 
@@ -21,7 +21,7 @@ The OpenAPI contract and the generated SDK are the same for every caller ([Clien
 
 Routes that accept a machine caller say so through their guard. `actorGuard` takes a session cookie, an API key, or an access token; `serviceGuard` takes only keys and tokens. An operation behind either is typed on `ActorContext`, which has no user row, so it cannot accidentally read one. Session-only routes keep `userGuard` ([AGENTS.md](./AGENTS.md#middleware--guards)).
 
-An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant: `tenantGuard` compares the two before loading the tenant row, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per principal) and, on routes that carry it, the tenant's hourly points budget, keyed on tenant and principal.
+An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant: `tenantGuard` compares the two before loading the tenant row, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per actor) and, on routes that carry it, the tenant's hourly points budget, keyed on tenant and actor.
 
 ## Face: OAuth
 
@@ -33,9 +33,9 @@ Each organization has an MCP endpoint that accepts only access tokens. A client 
 
 ## The substrate
 
-### Principals
+### Actors
 
-Every actor is a row in `principals`, of kind `user` or `service`. Provenance columns (`createdBy`, `updatedBy`, `deletedBy`) reference principals, so a row written by a service account keeps a real foreign key. A service account is tenant-scoped, holds role bindings like a member does, and is disabled rather than deleted so provenance keeps pointing at it. Creating one is an organization admin's act, and the role it gets is capped at the creator's own.
+Every actor is a row in `actors`, of kind `user` or `service`. Provenance columns (`createdBy`, `updatedBy`, `deletedBy`) reference actors, so a row written by a service account keeps a real foreign key. A service account is tenant-scoped, holds role bindings like a member does, and is disabled rather than deleted so provenance keeps pointing at it. Creating one is an organization admin's act, and the role it gets is capped at the creator's own.
 
 ### API keys
 
@@ -43,11 +43,11 @@ A key is `<slug>_sk_live_…` (or `_test_` outside production): a prefix, 32 ran
 
 ### Access scopes
 
-The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`. A scope is a mask over the principal's bindings, applied at the end of every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else; `write` implies `read`; a scope the vocabulary no longer knows fails closed. A session, and a key issued without scopes, are unmasked. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
+The scope vocabulary is derived from the policy matrix, never listed by hand: every entity type with a policy has `<type>:read` and `<type>:write`. A scope is a mask over the actor's bindings, applied at the end of every permission check: a key or token holding `attachment:read` can read what its account's role reads, and nothing else; `write` implies `read`; a scope the vocabulary no longer knows fails closed. A session, and a key issued without scopes, are unmasked. The same ids appear in the OpenAPI `oauth2` scheme, in discovery documents and on the consent screen, so the contract is one list.
 
 ### Tokens
 
-Access tokens are RS256 JWTs the OAuth face signs: `sub` is the principal, `principal_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then loads the principal: a cached read for a user, one row read for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
+Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then loads the actor: a cached read for a user, one row read for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
 
 ### Guards
 
@@ -62,13 +62,13 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the principal, `prin
 
 ### Quotas and limits
 
-Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the principal: a service account spends its own budget, and an app acting on a person's consent spends that person's.
+Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the actor: a service account spends its own budget, and an app acting on a person's consent spends that person's.
 
 ## Where to look
 
 | Piece | Path |
 | --- | --- |
-| Principals and provenance | `backend/src/modules/principals/`, `backend/src/db/utils/ids.ts`, provenance columns in `db/utils/product-columns.ts` and `channel-columns.ts` |
+| Actors and provenance | `backend/src/modules/actors/`, `backend/src/db/utils/ids.ts`, provenance columns in `db/utils/product-columns.ts` and `channel-columns.ts` |
 | Service accounts and keys | `backend/src/modules/service-accounts/` |
 | Scopes | `shared/src/permissions/access-scopes.ts`, mask in `check-access.ts` and, for list queries, `backend/src/permissions/collection-scope.ts` |
 | Authorization server | `backend/src/modules/oauth-server/`, process entry in `oauth/` |

@@ -26,7 +26,7 @@ type ServiceActor = {
 };
 
 /**
- * The principal a request runs as, with the role bindings the permission engine reads. `id` is what provenance
+ * The actor a request runs as, with the role bindings the permission engine reads. `id` is what provenance
  * columns and the engine's `own` condition compare against; a binding is read for its channel, organization and role.
  */
 export type Actor = UserActor | ServiceActor;

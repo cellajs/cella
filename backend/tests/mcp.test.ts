@@ -192,7 +192,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(result.isError).toBeUndefined();
     const { data: items } = result.structuredContent as { data: { id: string; name: string }[] };
     expect(items).toHaveLength(1);
-    // Provenance is the principal id; the wire shape hydrates users only (service badges are a UI follow-up).
+    // Provenance is the actor id; the wire shape hydrates users only (service badges are a UI follow-up).
     const provenance = async (id: string) =>
       (await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
     expect((await provenance(items[0].id)).createdBy).toBe(ctx.accountId);

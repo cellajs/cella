@@ -1408,7 +1408,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "required": true, "format": "uuid" },
-        "principalId": { "type": "string", "required": true, "format": "uuid" },
+        "actorId": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
         "name": { "type": "string", "required": true, "maxLength": 255 },
         "prefix": { "type": "string", "required": true, "maxLength": 255 },
@@ -1448,7 +1448,7 @@
     "description": "An API key of a service account; the secret is never returned after creation.",
     "example": {
       "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
-      "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+      "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
       "tenantId": "maq9vh",
       "name": "reboot key",
       "prefix": "cella-development_sk_test_Ab3d",
@@ -1469,7 +1469,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "required": true, "format": "uuid" },
-        "principalId": { "type": "string", "required": true, "format": "uuid" },
+        "actorId": { "type": "string", "required": true, "format": "uuid" },
         "tenantId": { "type": "string", "required": true, "maxLength": 24 },
         "name": { "type": "string", "required": true, "maxLength": 255 },
         "prefix": { "type": "string", "required": true, "maxLength": 255 },
@@ -1516,7 +1516,7 @@
     "extendsRef": "#/components/schemas/ApiKey",
     "example": {
       "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-      "principalId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+      "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
       "tenantId": "kr2nrm",
       "name": "connect key",
       "prefix": "cella-development_sk_test_Ab3d",
@@ -1594,7 +1594,7 @@
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
-    "description": "A machine principal: the actor an API key runs as, with its role bindings.",
+    "description": "The actor an API key runs as, with its role bindings.",
     "example": {
       "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
       "tenantId": "yug3pr",

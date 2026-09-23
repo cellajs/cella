@@ -4,13 +4,13 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { principalsTable } from '#/modules/principals/principals-db';
+import { actorsTable } from '#/modules/actors/actors-db';
 
 const languagesEnum = appConfig.languages;
 
 /**
- * Users table. Closely related to `emailsTable` for email verification. The id is a `principals` row of kind `user`,
- * written first by `insertUsers`; provenance columns on content reference `principals`, not this table.
+ * Users table. Closely related to `emailsTable` for email verification. The id is an `actors` row of kind `user`,
+ * written first by `insertUsers`; provenance columns on content reference `actors`, not this table.
  */
 export const usersTable = snakeCase.table(
   'users',
@@ -19,7 +19,7 @@ export const usersTable = snakeCase.table(
     id: uuid()
       .primaryKey()
       .$defaultFn(generateId)
-      .references(() => principalsTable.id, { onDelete: 'cascade' })
+      .references(() => actorsTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     entityType: varchar({ enum: ['user'] })
       .notNull()

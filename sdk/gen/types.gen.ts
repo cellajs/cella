@@ -595,7 +595,7 @@ export type Membership = {
 };
 
 /**
- * A machine principal: the actor an API key runs as, with its role bindings.
+ * The actor an API key runs as, with its role bindings.
  */
 export type ServiceAccount = {
   id: string;
@@ -630,7 +630,7 @@ export type CreatedApiKey = ApiKey & {
  */
 export type ApiKey = {
   id: string;
-  principalId: string;
+  actorId: string;
   tenantId: string;
   name: string;
   prefix: string;

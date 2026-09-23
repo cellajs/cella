@@ -53,6 +53,6 @@ export async function updateAttachmentOp(
 
   log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
-  // Resolved by id for every response shape: the context carries a principal id, not a user row to stub from.
+  // Resolved by id for every response shape: the context carries an actor id, not a user row to stub from.
   return withAuditUser(ctx, updatedAttachmentRecord);
 }

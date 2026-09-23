@@ -58,8 +58,8 @@ type KnownUsersInput =
   | { id: string; name: string; slug: string; thumbnailUrl: string | null };
 
 /**
- * Populates createdBy/updatedBy string IDs with UserMinimalBase objects. The columns hold any principal id; a
- * service account resolves to `null` here until responses carry a second principal kind (substrate Phase C).
+ * Populates createdBy/updatedBy string IDs with UserMinimalBase objects. The columns hold any actor id; a
+ * service account resolves to `null` here until responses carry a second actor kind (substrate Phase C).
  */
 export async function withAuditUsers<T extends { createdBy: string | null; updatedBy?: string | null }>(
   { var: { db } }: { var: { db: DbOrTx } },

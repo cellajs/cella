@@ -43,9 +43,9 @@ export async function setActorFromToken(
   const token = await verifyAccessToken(jwt, scope);
 
   if (token.kind === 'user') {
-    let user = tokenUserCache.get(token.principalId);
+    let user = tokenUserCache.get(token.actorId);
     if (!user) {
-      [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, token.principalId)).limit(1);
+      [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId)).limit(1);
       if (!user) throw unauthorized('unknown_user');
       tokenUserCache.set(user.id, user);
     }
@@ -62,7 +62,7 @@ export async function setActorFromToken(
     const [account] = await baseDb
       .select()
       .from(serviceAccountsTable)
-      .where(eq(serviceAccountsTable.id, token.principalId))
+      .where(eq(serviceAccountsTable.id, token.actorId))
       .limit(1);
     if (account?.status !== 'active') throw unauthorized('service_account_disabled');
     ctx.set('actor', {
@@ -84,7 +84,7 @@ async function resolveApiKey(hash: string) {
   const [row] = await baseDb
     .select({ apiKey: apiKeysTable, account: serviceAccountsTable })
     .from(apiKeysTable)
-    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.principalId))
+    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
     .where(and(eq(apiKeysTable.hash, hash)))
     .limit(1);
   if (row) setApiKeyCache(hash, row);

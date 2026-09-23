@@ -14,8 +14,8 @@ import {
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { principalsTable } from '#/modules/principals/principals-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -62,8 +62,8 @@ describe('Service accounts and API keys', async () => {
     expect(key.startsWith(`${appConfig.slug}_sk_test_`)).toBe(true);
     expect(apiKey.prefix).toBe(key.slice(0, apiKey.prefix.length));
 
-    const [principal] = await db.select().from(principalsTable).where(eq(principalsTable.id, account.id));
-    expect(principal.kind).toBe('service');
+    const [actor] = await db.select().from(actorsTable).where(eq(actorsTable.id, account.id));
+    expect(actor.kind).toBe('service');
     const [row] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, apiKey.id));
     expect(row.hash).toBe(hashToken(key));
     expect(JSON.stringify(row)).not.toContain(key);
@@ -222,14 +222,14 @@ describe('Service accounts and API keys', async () => {
 
   it('refuses a roll from an unknown key without issuing anything', async () => {
     const { org, account, headers } = await issueKey();
-    const before = await db.select().from(apiKeysTable).where(eq(apiKeysTable.principalId, account.id));
+    const before = await db.select().from(apiKeysTable).where(eq(apiKeysTable.actorId, account.id));
     const { response } = await call(createApiKey, {
       path: { tenantId: org.tenantId, organizationId: org.id, id: account.id },
       body: { name: 'v2', rollFrom: '00000000-0000-4000-8000-000000000000', rollOverlapDays: 1 },
       headers,
     });
     expect(response.status).toBe(404);
-    const after = await db.select().from(apiKeysTable).where(eq(apiKeysTable.principalId, account.id));
+    const after = await db.select().from(apiKeysTable).where(eq(apiKeysTable.actorId, account.id));
     expect(after).toHaveLength(before.length);
   });
 

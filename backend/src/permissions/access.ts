@@ -1,7 +1,7 @@
 import type { Access, PredicateActor } from 'shared';
 import type { Actor, ActorBinding } from '#/core/context';
 
-/** The guard-populated context fields the access helpers read; the engine's `userId` is any principal id. */
+/** The guard-populated context fields the access helpers read; the engine's `userId` is any actor id. */
 export interface AccessContext {
   var: {
     actor?: Pick<Actor, 'id' | 'bindings' | 'scopes'>;
@@ -20,7 +20,7 @@ export const actorFrom = (ctx: AccessContext): PredicateActor =>
 
 /**
  * Actor AND grants in one object for `checkAccess`. Hand-assembling one risks pairing one
- * principal's grants with another's identity.
+ * actor's grants with another's identity.
  */
 export const accessFrom = <C extends AccessContext>(ctx: C): Access<BindingOf<C>> =>
   ctx.var.actor

@@ -4,10 +4,10 @@ import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-prov
 import { accessScopes, appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { parseResource } from '#/modules/oauth-server/resources';
-import { principalsTable } from '#/modules/principals/principals-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -17,7 +17,7 @@ const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
 
 /** Claims this server adds to every access token; the guard reads them to build the actor. */
-export type IssuedTokenClaims = { principal_kind: 'user' | 'service'; tenant_id: string };
+export type IssuedTokenClaims = { actor_kind: 'user' | 'service'; tenant_id: string };
 
 /**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
@@ -80,8 +80,8 @@ export async function createProvider(): Promise<Provider> {
       url: (_ctx, interaction) => `/oauth/interaction/${interaction.uid}`,
     },
     findAccount: async (_ctx, sub) => {
-      const [principal] = await baseDb.select().from(principalsTable).where(eq(principalsTable.id, sub)).limit(1);
-      if (principal?.kind !== 'user') return undefined;
+      const [actor] = await baseDb.select().from(actorsTable).where(eq(actorsTable.id, sub)).limit(1);
+      if (actor?.kind !== 'user') return undefined;
       return { accountId: sub, claims: async () => ({ sub }) };
     },
     extraTokenClaims: (_ctx, token) => {
@@ -90,7 +90,7 @@ export async function createProvider(): Promise<Provider> {
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
       if (!resource) throw new InvalidTarget();
       const claims: IssuedTokenClaims = {
-        principal_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
+        actor_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
         tenant_id: resource.tenantId,
       };
       return claims;
@@ -122,7 +122,7 @@ export async function createProvider(): Promise<Provider> {
       const keys = await baseDb
         .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt })
         .from(apiKeysTable)
-        .where(and(eq(apiKeysTable.principalId, this.clientId), isNull(apiKeysTable.revokedAt)));
+        .where(and(eq(apiKeysTable.actorId, this.clientId), isNull(apiKeysTable.revokedAt)));
       return keys.some((key) => (!key.expiresAt || !isExpiredDate(key.expiresAt)) && safeEqual(key.hash, presented));
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);

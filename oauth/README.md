@@ -48,7 +48,7 @@ A consent is a Grant row bound to one resource with the approved scopes. People 
 | Refresh token | 30 days, rotated on use; grants live 30 days |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the principal), `principal_kind` (`user` or `service`), `tenant_id`, `scope`, `aud` and `iss`. Verification happens in the guard against the public keys in `signing_keys` (every status, so a retired key still verifies), cached in-process for five minutes: no round trip to this worker, no row per token.
+Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the actor), `actor_kind` (`user` or `service`), `tenant_id`, `scope`, `aud` and `iss`. Verification happens in the guard against the public keys in `signing_keys` (every status, so a retired key still verifies), cached in-process for five minutes: no round trip to this worker, no row per token.
 
 ## Keystore
 

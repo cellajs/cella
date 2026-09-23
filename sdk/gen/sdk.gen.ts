@@ -4075,7 +4075,7 @@ export const getServiceAccounts = <ThrowOnError extends boolean = true>(
 /**
  * Create service account
  *
- * Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.
+ * Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.
  *
  * **POST /{tenantId}/{organizationId}/service-accounts** ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/POST/{tenantId}/{organizationId}/service-accounts) ·· [createServiceAccount](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/service-accounts) ·· _service-accounts_cella_
  *

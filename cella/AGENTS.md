@@ -55,7 +55,7 @@ Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
 Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
 
-Machine access ([Interoperability](/docs/page/architecture/interoperability)): `principals/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
+Machine access ([Interoperability](/docs/page/architecture/interoperability)): `actors/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
 
 ## Permissions
 

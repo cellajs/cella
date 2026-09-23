@@ -1,8 +1,8 @@
 import { jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
-import type { PrincipalId } from '#/db/utils/ids';
+import type { ActorId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { principalsTable } from '#/modules/principals/principals-db';
+import { actorsTable } from '#/modules/actors/actors-db';
 
 /**
  * Pre-registered OAuth apps (a student portfolio, a partner integration): deployment-wide, installed per tenant by a
@@ -19,8 +19,8 @@ export const oauthClientsTable = snakeCase.table('oauth_clients', {
   redirectUris: jsonb().$type<string[]>().notNull().default([]),
   logoUri: varchar({ length: maxLength.url }),
   createdBy: uuid()
-    .references(() => principalsTable.id, { onDelete: 'set null' })
-    .$type<PrincipalId>(),
+    .references(() => actorsTable.id, { onDelete: 'set null' })
+    .$type<ActorId>(),
   createdAt: timestampColumns.createdAt,
   updatedAt: timestampColumns.updatedAt,
 });
