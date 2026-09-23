@@ -1,6 +1,6 @@
 import pino from 'pino';
 import { describe, expect, it } from 'vitest';
-import { redactedFields } from '#/lib/pino';
+import { redactedFields } from '#/lib/redact-keys';
 
 const CENSOR = '[REDACTED]';
 
@@ -44,6 +44,20 @@ describe('pino log redaction', () => {
     expect(meta.token).toBe(CENSOR);
     expect(meta.secret).toBe(CENSOR);
     expect(meta.credentialId).toBe(CENSOR);
+  });
+
+  it('redacts every registered secret column, so a logged row leaks no hash', () => {
+    const logged = collectLog({
+      msg: 'row',
+      key: { id: 'k1', hash: 'sha256', secretHash: 'sha256', privateJwk: '{}', singleUseToken: 'h' },
+    });
+    const key = logged.key as Record<string, unknown>;
+
+    expect(key.id).toBe('k1');
+    expect(key.hash).toBe(CENSOR);
+    expect(key.secretHash).toBe(CENSOR);
+    expect(key.privateJwk).toBe(CENSOR);
+    expect(key.singleUseToken).toBe(CENSOR);
   });
 
   it('does not redact non-sensitive keys, including websocket close `code`', () => {

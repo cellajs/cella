@@ -1,5 +1,6 @@
-import { getColumns } from 'drizzle-orm';
-import { entityTables, redactedColumns, resourceTables } from '#/tables';
+import { getColumns, getTableName } from 'drizzle-orm';
+import { secretColumnsOf } from '#/db/secret-columns';
+import { entityTables, resourceTables } from '#/tables';
 import type { CdcRowData, TableMeta } from '../types';
 
 /**
@@ -22,21 +23,24 @@ export const excludedRowDataKeys: Set<string> = (() => {
   return keys;
 })();
 
-/** Secret-bearing columns per tracked type (`redactedColumns`), stripped whatever their length. */
-const redactedKeysByType: ReadonlyMap<string, ReadonlySet<string>> = new Map(
-  Object.entries(redactedColumns).map(([type, keys]) => [type, new Set(keys)]),
+/** Secret columns per tracked table (`secretColumns` in backend/src/db/secret-columns.ts), stripped whatever their length. */
+const secretKeysByTable: ReadonlyMap<string, ReadonlySet<string>> = new Map(
+  [...Object.values(entityTables), ...Object.values(resourceTables)].map((table) => {
+    const name = getTableName(table);
+    return [name, new Set(secretColumnsOf(name))];
+  }),
 );
 
 /**
  * Called in the handlers, after changedFields has been computed: drops large-text columns and the
- * type's redacted columns, so neither crosses to the backend.
+ * table's secret columns, so neither crosses to the backend.
  */
 export function compactRowData(tableMeta: TableMeta, rowData: CdcRowData): CdcRowData {
-  const redacted = redactedKeysByType.get(tableMeta.type);
-  if (excludedRowDataKeys.size === 0 && !redacted) return rowData;
+  const secret = secretKeysByTable.get(getTableName(tableMeta.table));
+  if (excludedRowDataKeys.size === 0 && !secret?.size) return rowData;
   const slim: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(rowData)) {
-    if (!excludedRowDataKeys.has(key) && !redacted?.has(key)) slim[key] = value;
+    if (!excludedRowDataKeys.has(key) && !secret?.has(key)) slim[key] = value;
   }
   return slim as CdcRowData;
 }
