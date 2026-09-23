@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { createServiceAccount, getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
@@ -18,6 +18,9 @@ import {
 } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
+
+// Attachments sit behind tenant RLS, so assertions read them as admin; under TEST_DB_ROLE=runtime `db` sees none.
+const adminDb = getAdminDb('test assertions');
 
 type Rpc = {
   jsonrpc: '2.0';
@@ -194,7 +197,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(items).toHaveLength(1);
     // Provenance is the actor id; the wire shape hydrates users only (service badges are a UI follow-up).
     const provenance = async (id: string) =>
-      (await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+      (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
     expect((await provenance(items[0].id)).createdBy).toBe(ctx.accountId);
 
     // `write` implies `read` (D2).
@@ -251,7 +254,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const renamed = await toolCall(writer, 'updateAttachment', { id: mine.id, ops: { name: 'Draft v2' } });
     expect(renamed.response.status).toBe(200);
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Draft v2' });
-    const [row] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, mine.id));
+    const [row] = await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, mine.id));
     expect(row.createdBy).toBe(writer.user.id);
     expect(row.updatedBy).toBe(writer.user.id);
   });
