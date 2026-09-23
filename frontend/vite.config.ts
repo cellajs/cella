@@ -454,7 +454,7 @@ const viteConfig = {
     // browser, so mode selection and the URL overrides it reads must survive
     // into this replacement object; NODE_ENV alone silently rebakes production.
     'process.env': Object.fromEntries(
-      (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_API_URL'] as const)
+      (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
         .filter((key) => process.env[key] !== undefined)
         .map((key) => [key, process.env[key]]),
     ),

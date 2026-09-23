@@ -27,7 +27,7 @@ services:
       API_WS_URL: ${API_WS_URL}
       CDC_HEALTH_PORT: '4001'
       YJS_PORT: '4002'
-      MCP_API_URL: ${MCP_API_URL}
+      MCP_URL: ${MCP_URL}
       OAUTH_URL: ${OAUTH_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4000/health']
@@ -161,7 +161,7 @@ services:
       PORT: '4003'
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      MCP_API_URL: ${MCP_API_URL}
+      MCP_URL: ${MCP_URL}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4003/health']
       interval: '5s'
@@ -183,7 +183,7 @@ services:
       reusesImageOf: backend
       coHosted: true
       bindings:
-        MCP_API_URL: '@{self.url}'
+        MCP_URL: '@{self.url}'
   oauth:
     image: ${REGISTRY}/backend:${OAUTH_TAG:-latest}
     profiles: [oauth]
