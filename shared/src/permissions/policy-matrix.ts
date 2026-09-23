@@ -64,7 +64,7 @@ const createChannelBuilders = (
 export interface PermissionsConfigResult {
   policyMatrix: PolicyMatrix;
   publicReadGrants: PublicReadGrants;
-  /** Derived from the matrix: the credential scope vocabulary. @see access-scopes.ts */
+  /** Derived from the matrix: the access scope vocabulary for API keys and access tokens. @see access-scopes.ts */
   accessScopes: AccessScopes;
 }
 

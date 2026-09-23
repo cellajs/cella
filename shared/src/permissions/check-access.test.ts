@@ -4,7 +4,7 @@ import { type Access, checkAccess, checkAccessBatch, checkAccessFanout } from '.
 import type { AccessMembership, SubjectForPermission } from './engine/types.ts';
 
 /**
- * The credential mask over the template's own policy: an organization admin may do everything with attachments, so
+ * The key or token mask over the template's own policy: an organization admin may do everything with attachments, so
  * every denial below comes from `scopes` alone.
  */
 const membership: AccessMembership = {
@@ -29,7 +29,7 @@ const admin = (scopes: readonly AccessScope[] | null): Access => ({
   scopes,
 });
 
-describe('checkAccess with a scoped credential', () => {
+describe('checkAccess with a scoped key or token', () => {
   it('an unscoped access (scopes null, what a session sets) keeps the grants', () => {
     expect(checkAccess(admin(null), 'update', subject()).allowed).toBe(true);
     expect(checkAccess({ userId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(

@@ -22,7 +22,7 @@ const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_0
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
-/** The route's tenant and organization ids as the URL carries them; every machine guard binds a credential to them. */
+/** The route's tenant and organization ids as the URL carries them; every machine guard binds the key or token to them. */
 export function routeTarget(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
   const tenantId = ctx.req.param('tenantId')?.toLowerCase();
   if (!tenantId)
@@ -92,7 +92,7 @@ async function resolveApiKey(hash: string) {
 }
 
 /**
- * Authenticates a machine credential and sets the actor: a secret API key runs as its service account; a token from
+ * Authenticates a machine caller by API key or access token and sets the actor: a secret API key runs as its service account; a token from
  * the app's own authorization server runs as the consenting user or the account behind it. Tenant resolution stays
  * with `tenantGuard`, which checks the URL against the actor's tenant. Sessions never reach this guard; browsers never
  * pass it.

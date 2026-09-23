@@ -80,7 +80,7 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` in policies: allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
-| **Access scope** | A credential's mask over its bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
+| **Access scope** | The mask an API key or access token puts over its principal's bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
 
 ## The access you present
 

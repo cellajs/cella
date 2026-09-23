@@ -28,8 +28,8 @@ describe('deriveAccessScopes', () => {
   });
 });
 
-describe('accessScopes.allows (the credential mask)', () => {
-  it('leaves an unscoped credential untouched', () => {
+describe('accessScopes.allows (the key or token mask)', () => {
+  it('leaves an unscoped key untouched', () => {
     expect(accessScopes.allows(null, 'attachment', 'delete')).toBe(true);
     expect(accessScopes.allows(undefined, 'organization', 'create')).toBe(true);
   });

@@ -33,7 +33,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 
 - `userGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.actor`, `ctx.var.db` (baseDb).
 - `serviceGuard`: a secret API key (`Authorization: Bearer <slug>_sk_…` or `x-api-key`) or an access token from the app's authorization server; sets `ctx.var.actor` (a service account, or the consenting user masked by the token scopes). Never system admin.
-- `actorGuard`: a session or a machine credential, for routes whose operation takes `ActorContext`. `tokenGuard`: access tokens only (the MCP face), answering 401 with the RFC 9728 challenge.
+- `actorGuard`: a session, an API key or an access token, for routes whose operation takes `ActorContext`. `tokenGuard`: access tokens only (the MCP face), answering 401 with the RFC 9728 challenge.
 - Contexts, narrowest first: `DbContext` (a connection), `ActorContext` (actor + tenant, no user row), `OrgContext` (plus the organization), `UserContext` (a signed-in user, session fields only behind `userGuard`). Type an operation on the narrowest it needs. Every guard declares the OpenAPI `security` it accepts; `createXRoute` emits it per operation.
 - `tenantGuard`: verifies tenant membership, loads the tenant row, and sets `ctx.var.db = baseDb` and `ctx.var.tenantId`.
 - `orgGuard`: resolves the organization and verifies membership.
@@ -55,7 +55,7 @@ Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
 Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
 
-Machine access ([Interoperability](/docs/page/architecture/interoperability)): `principals/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client; `credential` is the generic word for what proves a caller (session, API key, access token), never a table or type name.
+Machine access ([Interoperability](/docs/page/architecture/interoperability)): `principals/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
 
 ## Permissions
 

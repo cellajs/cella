@@ -7,7 +7,7 @@ deleted) and `api_keys` (opaque keys, hash only, `scopes` mask). `serviceGuard` 
 `Authorization: Bearer <app>_sk_live_…` (or `x-api-key`) as that account; `actorGuard` accepts a session or a key on
 routes whose operations take `ActorContext`. Scopes are derived from the policy matrix (`accessScopes` next to
 `policyMatrix`, `<entityType>:read|write`) and applied as a mask in `checkAccess*` and collection reads. The points
-limiter keys on `(tenantId, principalId)`; CSRF is skipped for requests carrying a machine credential. AUTH_SUBSTRATE_PLAN Phase B.
+limiter keys on `(tenantId, principalId)`; CSRF is skipped for requests carrying an API key. AUTH_SUBSTRATE_PLAN Phase B.
 
 ## Blast radius
 
@@ -60,7 +60,7 @@ pnpm check
 ## Naming round (2026-09-22)
 
 - Names follow what other systems call these things: the keys table is `api_keys` (`ApiKey`, `apiKeysTable`,
-  `issueApiKey`, routes `…/service-accounts/{id}/keys`); `credential` stays the generic word for what proves a caller, never a name. The OAuth scope
+  `issueApiKey`, routes `…/service-accounts/{id}/keys`); `credential` stays the WebAuthn word; prose names the proof (API key, access token, session). The OAuth scope
   vocabulary is `AccessScope` / `accessScopes` (`accessScopes.all/required/allows/parse`), qualified because `scope`
   was already the engine's read-scope family; the wire word `scope` is unchanged. A service account's role bindings
   are `bindings` (`RoleBinding`, `actor.bindings`, `ActorBinding`); `grants` stays the engine's word. The quota key is
