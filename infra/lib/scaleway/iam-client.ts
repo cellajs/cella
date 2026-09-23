@@ -15,6 +15,9 @@ export interface GrantedRule {
   policyName: string;
   permissionSets: string[];
   condition: string;
+  /** Rule scope: the project ids it applies to, or the organization when it is organization-wide. */
+  projectIds?: string[];
+  organizationId?: string;
 }
 
 export interface ScwApiKey {
@@ -103,16 +106,21 @@ export async function fetchGrantedRules(
   );
   const collected: GrantedRule[] = [];
   for (const policy of bound) {
-    const { rules = [] } = await scwFetch<{ rules?: Array<{ permission_set_names?: string[]; condition?: string }> }>(
-      auth,
-      'GET',
-      `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`,
-    );
+    const { rules = [] } = await scwFetch<{
+      rules?: Array<{
+        permission_set_names?: string[];
+        condition?: string;
+        project_ids?: string[];
+        organization_id?: string;
+      }>;
+    }>(auth, 'GET', `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`);
     for (const rule of rules) {
       collected.push({
         policyName: policy.name,
         permissionSets: rule.permission_set_names ?? [],
         condition: rule.condition ?? '',
+        projectIds: rule.project_ids,
+        organizationId: rule.organization_id,
       });
     }
   }

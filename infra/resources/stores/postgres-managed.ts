@@ -1,4 +1,5 @@
 import type * as pulumi from '@pulumi/pulumi';
+import { CRON_HOME_DATABASE, POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
 /** Roles provisioned on the instance. Each maps to a PostgreSQL user + DSN. */
@@ -178,7 +179,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       const adminUser = new scaleway.databases.User('admin-user', {
         instanceId: instance.id,
-        name: 'admin_role',
+        name: POSTGRES_ROLE_NAMES.admin,
         password: adminPassword,
         isAdmin: true, // grants REPLICATION (not BYPASSRLS) at Scaleway level
         region,
@@ -186,7 +187,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       const runtimeUser = new scaleway.databases.User('runtime-user', {
         instanceId: instance.id,
-        name: 'runtime_role',
+        name: POSTGRES_ROLE_NAMES.runtime,
         password: runtimePassword,
         isAdmin: false,
         region,
@@ -210,7 +211,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       // pg_cron lives only in Scaleway's default `rdb` database; the migrate step schedules the partition maintenance job from there as the admin user.
       new scaleway.databases.Privilege('admin-cron-privilege', {
         instanceId: instance.id,
-        databaseName: 'rdb',
+        databaseName: CRON_HOME_DATABASE,
         userName: adminUser.name,
         permission: 'all',
         region,

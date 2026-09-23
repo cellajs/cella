@@ -286,6 +286,7 @@ export async function runDeploy(
           '--organization-id',
           process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
           ...(row.dormant ? ['--dormant'] : []),
+          ...(row.condition ? ['--project-scope'] : []),
         ]);
       }
     });

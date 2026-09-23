@@ -10,6 +10,7 @@ import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
+import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
@@ -30,6 +31,8 @@ export interface PrivilegedConvergeOptions {
   prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined;
   /** Show the plan (`pulumi preview --diff`) and confirm it once before `up`; `up` then skips its own preview. Declining ends the run with `completed: false`. */
   confirmPlan?: boolean;
+  /** After a completed `up`, prove the live IAM grants and database privileges match what the program declares; the outcome lands in `verified`. */
+  verifyAfter?: boolean;
 }
 
 export interface PrivilegedConvergeResult {
@@ -37,6 +40,8 @@ export interface PrivilegedConvergeResult {
   stack: string;
   /** False when the operator declined the retry loop before `up` converged. */
   completed: boolean;
+  /** Set only with `verifyAfter`: false when the live grants or privileges still differ from the program after a completed `up`. */
+  verified?: boolean;
 }
 
 /**
@@ -205,7 +210,32 @@ export async function runPrivilegedConverge(
     await releaseLock();
   }
 
-  return { env, stack, completed };
+  let verified: boolean | undefined;
+  if (completed && opts.verifyAfter) {
+    console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
+    const result = await verifyPrivilegedUp({
+      appConfig,
+      projectId,
+      organizationId,
+      secretKey: bootSecret,
+      log: (msg) => console.info(pc.dim(msg)),
+    });
+    verified = result.ok;
+    if (!result.ok) {
+      console.error(
+        `\n${warningMark} pulumi reported success, but the live infrastructure still differs from the program:\n${result.problems.map((problem) => `  ✗ ${problem}`).join('\n')}`,
+      );
+      console.error(
+        pc.dim(
+          '  The provider recorded an update Scaleway did not keep. Re-run with --debug-provider to capture the API calls, then fix the rule in the console if a deploy is waiting.',
+        ),
+      );
+    } else {
+      console.info(`${pc.green('✓')} live grants and privileges match the program`);
+    }
+  }
+
+  return { env, stack, completed, verified };
 }
 
 /** Loud reminder to revoke the short-lived bootstrap key after the run. */

@@ -40,6 +40,8 @@ export interface AssertVmGrantsOptions {
   requiredSecretCondition?: string;
   /** A registry principal with no deployed VM. It keeps its policy but must hold ZERO API keys: any key on it is an unmonitored credential, a FAILURE. */
   dormant?: boolean;
+  /** Every rule must be scoped to exactly this project: an organization-wide rule (a console edit's default) reaches every project, a FAILURE. */
+  requiredProjectId?: string;
   /** Injected for tests; defaults to global fetch. */
   fetchImpl?: FetchLike;
   /** Injected for tests; defaults to console.info. */
@@ -56,6 +58,8 @@ export interface AssertVmGrantsResult {
   unconditionedSecretRules: string[];
   /** Access keys found on a dormant principal; empty unless `dormant` was requested. */
   dormantKeys: string[];
+  /** Rules whose scope is not exactly the required project; empty unless `requiredProjectId` was given. */
+  misscopedRules: string[];
 }
 
 /**
@@ -98,6 +102,18 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     }
   }
 
+  const misscopedRules: string[] = [];
+  if (opts.requiredProjectId) {
+    for (const rule of rules) {
+      const scope = rule.organizationId
+        ? `organization ${rule.organizationId}`
+        : `projects [${(rule.projectIds ?? []).join(', ')}]`;
+      const projectScoped =
+        !rule.organizationId && rule.projectIds?.length === 1 && rule.projectIds[0] === opts.requiredProjectId;
+      if (!projectScoped) misscopedRules.push(`${rule.policyName} [${rule.permissionSets.join(', ')}] scope=${scope}`);
+    }
+  }
+
   // Only a dormant principal is listed: a live one legitimately holds the current and previous generation's keys.
   const dormantKeys = opts.dormant
     ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key)
@@ -108,11 +124,14 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     missing.length === 0 &&
     extraFatal.length === 0 &&
     unconditionedSecretRules.length === 0 &&
-    dormantKeys.length === 0;
+    dormantKeys.length === 0 &&
+    misscopedRules.length === 0;
   if (missing.length > 0) log(`✗ VM grant INCOMPLETE, missing: ${missing.join(', ')}`);
   if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD, extra write/broad grant(s): ${extraFatal.join(', ')}`);
   for (const entry of unconditionedSecretRules)
     log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
+  for (const entry of misscopedRules)
+    log(`✗ VM rule NOT scoped to the project (reaches every project of the organization): ${entry}`);
   if (dormantKeys.length > 0)
     log(
       `✗ dormant principal holds ${dormantKeys.length} API key(s): a registry service outside the deployed set must have none: ${dormantKeys.join(', ')}`,
@@ -123,10 +142,13 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     );
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
+    const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
     const dormantNote = opts.dormant ? ', dormant principal holds no key' : '';
-    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${dormantNote}`);
+    log(
+      `✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}${dormantNote}`,
+    );
   }
-  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, dormantKeys };
+  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, dormantKeys, misscopedRules };
 }
 
 // Standalone entry point.
@@ -143,6 +165,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const requiredSecretCondition = getFlag(argv, '--secret-condition') ?? undefined;
   const dormant = argv.includes('--dormant');
+  // The CI app legitimately holds an organization-scoped key-mint rule; VM and boot principals pass --project-scope.
+  const requiredProjectId = argv.includes('--project-scope') ? projectId : undefined;
   const requiredSetsCsv = getFlag(argv, '--required-sets');
   const required = (requiredSetsCsv ?? '')
     .split(',')
@@ -158,6 +182,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     requiredSecretCondition,
     required,
     dormant,
+    requiredProjectId,
   });
   if (!result.ok) {
     // Only fatal problems reach here: missing sets, a write or broad escalation, or an un-scoped secret rule. Benign read-only extras warn without setting ok=false.
@@ -170,6 +195,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         ? `secret rules without the required path condition: ${result.unconditionedSecretRules.join('; ')}`
         : '',
       result.dormantKeys.length > 0 ? `dormant principal holds API key(s): ${result.dormantKeys.join(', ')}` : '',
+      result.misscopedRules.length > 0 ? `rules not scoped to the project: ${result.misscopedRules.join('; ')}` : '',
     ].filter(Boolean);
     throw new Error(
       `VM application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +

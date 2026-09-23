@@ -18,6 +18,11 @@ export async function runApply(context: InfraContext): Promise<void> {
   );
 
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
-  const { completed } = await runPrivilegedConverge(context, { operation: 'apply', confirmPlan: true });
+  const { completed, verified } = await runPrivilegedConverge(context, {
+    operation: 'apply',
+    confirmPlan: true,
+    verifyAfter: true,
+  });
   if (completed) printRevokeReminder();
+  if (completed && verified === false) process.exit(1);
 }
