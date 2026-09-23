@@ -1,15 +1,15 @@
 import type { ChannelEntityType, ChannelIdColumns, ProductEntityType, SubjectForPermission } from 'shared';
 import {
-  MissingScopeError,
+  MissingAncestorError,
   buildSubject as sharedBuildSubject,
   buildSubjectFromEntity as sharedBuildSubjectFromEntity,
 } from 'shared';
 import { AppError } from '#/core/error';
 
-/** Translate the shared engine's tier-neutral `MissingScopeError` into `AppError(400, 'missing_scope')`. */
+/** Translate the shared engine's tier-neutral `MissingAncestorError` into `AppError(400, 'missing_ancestor')`. */
 const translateMissingScope = (e: unknown): never => {
-  if (e instanceof MissingScopeError) {
-    throw new AppError(400, 'missing_scope', 'error', {
+  if (e instanceof MissingAncestorError) {
+    throw new AppError(400, 'missing_ancestor', 'error', {
       entityType: e.entityType,
       meta: { missingChannel: e.missingChannel, missingKey: e.missingKey },
     });

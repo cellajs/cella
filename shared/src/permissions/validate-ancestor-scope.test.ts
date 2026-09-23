@@ -1,5 +1,5 @@
 import type { AncestorChannelIds, SubjectForPermission } from 'shared';
-import { hierarchy, MissingScopeError, validateAncestorScope } from 'shared';
+import { hierarchy, MissingAncestorError, validateAncestorScope } from 'shared';
 import { describe, expect, it } from 'vitest';
 
 const buildRawSubject = (
@@ -35,13 +35,13 @@ describe('shared validateAncestorScope', () => {
     expect(() => validateAncestorScope(buildRawSubject(productWithAncestors, { [firstAncestor]: null }))).not.toThrow();
   });
 
-  it('throws MissingScopeError when an ancestor ID is undefined', () => {
+  it('throws MissingAncestorError when an ancestor ID is undefined', () => {
     try {
       validateAncestorScope(buildRawSubject(productWithAncestors, { [firstAncestor]: undefined }));
-      expect.unreachable('Expected MissingScopeError to be thrown');
+      expect.unreachable('Expected MissingAncestorError to be thrown');
     } catch (e) {
-      expect(e).toBeInstanceOf(MissingScopeError);
-      expect((e as MissingScopeError).missingChannel).toBe(firstAncestor);
+      expect(e).toBeInstanceOf(MissingAncestorError);
+      expect((e as MissingAncestorError).missingChannel).toBe(firstAncestor);
     }
   });
 });

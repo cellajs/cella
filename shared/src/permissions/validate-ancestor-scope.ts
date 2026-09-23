@@ -1,11 +1,11 @@
 import { hierarchy } from '../../config/hierarchy-config.ts';
 import { appConfig } from '../config-builder/app-config.ts';
 import type { SubjectForPermission } from './engine/types.ts';
-import { MissingScopeError } from './missing-scope-error.ts';
+import { MissingAncestorError } from './missing-ancestor-error.ts';
 
 /**
  * `null` marks an unused ancestor; `undefined` is missing.
- * @throws MissingScopeError when an ancestor channel id is `undefined`
+ * @throws MissingAncestorError when an ancestor channel id is `undefined`
  */
 export const validateAncestorScope = (entity: SubjectForPermission) => {
   const ancestors = hierarchy.getOrderedAncestors(entity.entityType);
@@ -14,7 +14,7 @@ export const validateAncestorScope = (entity: SubjectForPermission) => {
     const value = entity.channelIds[ancestor];
 
     if (value === undefined) {
-      throw new MissingScopeError(entity.entityType, ancestor, appConfig.entityIdColumnKeys[ancestor]);
+      throw new MissingAncestorError(entity.entityType, ancestor, appConfig.entityIdColumnKeys[ancestor]);
     }
   }
 };

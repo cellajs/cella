@@ -42,7 +42,7 @@ export type {
   SubjectForPermission,
 } from './engine/types.ts';
 export { validateMembership, validateSubject } from './engine/validation.ts';
-export { MissingScopeError } from './missing-scope-error.ts';
+export { MissingAncestorError } from './missing-ancestor-error.ts';
 export type { PermissionsConfigResult } from './policy-matrix.ts';
 // `configurePolicyMatrix` is test-only; it lives at `shared/testing/policies`, not on this barrel.
 export { configurePermissions, getEntityPolicies, getPolicyPermissions } from './policy-matrix.ts';

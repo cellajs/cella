@@ -152,7 +152,7 @@ export type SubjectForPermission = {
 };
 ```
 
-Ancestor scope is **tri-state**. `undefined` means a required scope was omitted and throws `MissingScopeError` (HTTP 400 `missing_scope`, WebSocket close `4400`). `null` means explicitly not scoped to that ancestor. A string is a concrete channel id. A missing scope never defaults to unscoped, which would bypass permissions.
+Ancestor scope is **tri-state**. `undefined` means a required scope was omitted and throws `MissingAncestorError` (HTTP 400 `missing_ancestor`, WebSocket close `4400`). `null` means explicitly not scoped to that ancestor. A string is a concrete channel id. A missing scope never defaults to unscoped, which would bypass permissions.
 
 ## Row conditions
 
