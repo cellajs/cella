@@ -27,13 +27,13 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Closes the streams bound to a deleted session; without this they stay live until the client reconnects.
+// Closes the streams bound to a revoked session; without this they stay live until the client reconnects.
 // The client treats the `unauthorized` code as permanent and opens its circuit.
-authEvents.on('session.deleted', async ({ userId, sessionIds }) => {
+authEvents.on('session.revoked', async ({ userId, sessionIds }) => {
   const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
   for (const subscriber of subscribers) {
     if (!sessionIds.includes(subscriber.sessionId)) continue;
-    await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session ended' });
+    await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session revoked' });
     streamSubscriberManager.unregister(subscriber.id);
     // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
     subscriber.stream.abort();

@@ -1309,6 +1309,27 @@
     "pnpm sdk"
    ],
    "summary": "The stored identity and the request-time value share one name. backend/src/modules/principals/ is backend/src/modules/actors/ (principalsTable -> actorsTable, principalKinds -> actorKinds, insertPrincipals -> insertActors, deleteDanglingPrincipals -> deleteDanglingActors), PrincipalId -> ActorId, api_keys.principal_id -> actor_id with its index and the *_principals_id_fkey constraints renamed in migration 20260923100637_principal_to_actor, access-token claim principal_kind -> actor_kind, rate-limit identifier principalId -> actorId, findApiKeysByPrincipal -> findApiKeysByActor, principalQuotaKeys -> machineQuotaKeys. The engine access field userId -> actorId on Access, PredicateActor, EngineAccess, ConditionActor and PermissionCheckOptions (manual: userId also names the membership column; pnpm check lists every literal). Docs and comments say actor; infra/ keeps principal for Scaleway IAM. The ApiKey wire shape carries actorId, which no client reads, so clientCacheVersion does not bump."
+  },
+   {
+   "id": "20260923T2319-session-revocation",
+   "version": "next",
+   "title": "Sessions are revoked, not deleted",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src",
+    "locales"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "A session ends the way an API key does: sessions gains revokedAt, revokedBy (actor; null for the server's housekeeping) and revocationReason (sign_out, other_session, mfa_enabled, session_cap, replaced), and the row stays until the nightly sweep, so the sessions list shows revoked and expired sessions of the last 30 days. revokeSessions (auth-queries.ts) replaces deleteSession and deleteSessionsByIds; validateSession answers 401 session_revoked; the route deleteMySessions is revokeMySessions and returns the revoked rows; the auth event session.deleted is session.revoked. Locale keys terminate, terminate_all, success.session_terminated and success.sessions_terminated are removed in favour of revoke, revoke_all and success.revoke_resource; revocation_reason.*, revoked, expired and session_history are added. Three nullable columns (migration 20260923232124_session_revocation); no clientCacheVersion bump. Passkeys and TOTP say delete everywhere (mail types passkey-deleted / totp-deleted, locale keys delete_mfa_last, passkey_delete_failed, totp_delete_failed; unlink, unlink_mfa_last, success.passkey_unlinked, success.totp_removed, passkey_unlink_failed, totp_remove_failed removed), and emails.lastVerifiedBy is lastVerifiedVia (markEmailVerified takes via) because every other *By column names an actor."
   }
  ]
 }

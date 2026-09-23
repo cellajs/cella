@@ -4,15 +4,14 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { authEvents } from '#/modules/auth/auth-events';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { deleteSessionsByIds, deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
+import { deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
@@ -21,6 +20,7 @@ import { getMyAuthOp } from '#/modules/me/operations/get-my-auth';
 import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
+import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
 import { defaultHook } from '#/utils/default-hook';
@@ -86,31 +86,11 @@ app.openapi(meRoutes.getMyInvitations, async (ctx) => {
   return ctx.json(data, 200);
 });
 
-app.openapi(meRoutes.deleteMySessions, async (ctx) => {
-  const user = ctx.var.user;
-
+app.openapi(meRoutes.revokeMySessions, async (ctx) => {
   const { ids } = ctx.req.valid('json');
-
-  const sessionIds = Array.isArray(ids) ? ids : [ids];
-  const { sessionToken } = await getParsedSessionCookie(ctx);
-  const { session: currentSession } = await validateSession(sessionToken);
-
-  try {
-    if (currentSession && sessionIds.includes(currentSession.id)) deleteAuthCookie(ctx, 'session');
-
-    const deleted = await deleteSessionsByIds(ctx, { sessionIds });
-
-    invalidateCache.user(user.id);
-
-    const deletedIds = deleted.map((s) => s.id);
-    const rejectedIds = sessionIds.filter((id) => !deletedIds.includes(id));
-
-    if (deletedIds.length > 0) authEvents.emit('session.deleted', { userId: user.id, sessionIds: deletedIds });
-
-    return ctx.json({ data: [] as never[], rejectedIds }, 200);
-  } catch {
-    return ctx.json({ data: [] as never[], rejectedIds: sessionIds }, 200);
-  }
+  const { data, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
+  if (signedOut) deleteAuthCookie(ctx, 'session');
+  return ctx.json({ data, rejectedIds }, 200);
 });
 
 app.openapi(meRoutes.updateMe, async (ctx) => {

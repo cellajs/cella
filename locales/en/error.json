@@ -167,6 +167,8 @@
   "server_error.text": "Your request could not be completed.",
   "session_expired": "Session Expired",
   "session_expired.text": "Your authentication session has expired. Please log in again to continue.",
+  "session_revoked": "Session revoked",
+  "session_revoked.text": "This session was signed out. Please sign in again to continue.",
   "sign_up_restricted": "Invite only",
   "sign_up_restricted.text": "We are currently invite-only. Can't wait? Contact us for an invite.",
   "slug_exists": "Slug already exists",
