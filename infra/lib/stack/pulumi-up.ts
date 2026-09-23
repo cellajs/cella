@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createWriteStream } from 'node:fs';
 import { isBootstrapOwned } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
@@ -104,6 +105,22 @@ export interface PulumiUpOptions {
   configFile?: string;
   /** Skip Pulumi's own preview: the caller already showed the plan and got a confirmation. */
   skipPreview?: boolean;
+  /** Capture engine and provider logs (`--logflow -v=9`) into this file: the record of every API call the provider made, for a "reported but not applied" update. */
+  debugLogPath?: string;
+}
+
+/** The exact `pulumi up` argument list for the options, so the debug and skip-preview forms are testable without spawning Pulumi. */
+export function pulumiUpArgs(stack: string, opts: PulumiUpOptions = {}): string[] {
+  return [
+    'up',
+    '--stack',
+    stack,
+    '--yes',
+    '--non-interactive',
+    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
+    ...(opts.skipPreview ? ['--skip-preview'] : []),
+    ...(opts.debugLogPath ? ['--logtostderr', '--logflow', '-v=9'] : []),
+  ];
 }
 
 /** Run `pulumi up --yes --non-interactive` in `cwd`. `configFile` swaps the stack config for the DB-exposure overlay; a non-zero exit prints a permission hint when stderr indicates one. */
@@ -113,15 +130,10 @@ export async function runPulumiUpWithHint(
   env: NodeJS.ProcessEnv,
   opts: PulumiUpOptions = {},
 ): Promise<PulumiUpResult> {
-  const extraArgs = [
-    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
-    ...(opts.skipPreview ? ['--skip-preview'] : []),
-  ];
-  console.info(
-    `\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${extraArgs.map((a) => ` ${a}`).join('')}`,
-  );
+  const args = pulumiUpArgs(stack, opts);
+  console.info(`\n→ pulumi up (base infra)\n  $ pulumi ${args.join(' ')}`);
   // stdout is teed, not inherited, so the Diagnostics section reaches parseOrphanedDeletes; --non-interactive already forces the plain display, so piping changes nothing for the operator.
-  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...extraArgs], {
+  const child = spawn('pulumi', args, {
     cwd,
     env,
     stdio: ['inherit', 'pipe', 'pipe'],
@@ -131,13 +143,18 @@ export async function runPulumiUpWithHint(
     stdoutBuf += chunk.toString();
     process.stdout.write(chunk);
   });
+  // With a debug log the verbose engine/provider stream goes to the file only; the terminal keeps Pulumi's normal output on stdout.
+  const debugStream = opts.debugLogPath ? createWriteStream(opts.debugLogPath, { flags: 'a' }) : undefined;
+  if (opts.debugLogPath) console.info(`  ${pc.dim(`engine + provider log: ${opts.debugLogPath}`)}`);
   let stderrBuf = '';
   child.stderr?.on('data', (chunk: Buffer) => {
     stderrBuf += chunk.toString();
-    process.stderr.write(chunk);
+    if (debugStream) debugStream.write(chunk);
+    else process.stderr.write(chunk);
   });
 
   const exitCode = await waitForExitCode(child);
+  await new Promise<void>((resolve) => (debugStream ? debugStream.end(resolve) : resolve()));
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
     if (dup) {

@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { assertBootstrapCapable, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
@@ -33,6 +35,8 @@ export interface PrivilegedConvergeOptions {
   confirmPlan?: boolean;
   /** After a completed `up`, prove the live IAM grants and database privileges match what the program declares; the outcome lands in `verified`. */
   verifyAfter?: boolean;
+  /** Capture the engine and provider log of the `up` under infra/.debug/, for an update Pulumi reports but the provider never sent. */
+  debugProvider?: boolean;
 }
 
 export interface PrivilegedConvergeResult {
@@ -178,10 +182,18 @@ export async function runPrivilegedConverge(
       }
     }
 
+    let debugLogPath: string | undefined;
+    if (opts.debugProvider) {
+      const dir = resolve(infraDir, '.debug');
+      mkdirSync(dir, { recursive: true });
+      debugLogPath = resolve(dir, `${opts.operation}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+    }
+
     while (true) {
       const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
         configFile,
         skipPreview: opts.confirmPlan,
+        debugLogPath,
       });
       if (code === 0) {
         completed = true;
