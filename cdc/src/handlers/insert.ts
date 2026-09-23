@@ -10,5 +10,5 @@ export function handleInsert(tableMeta: TableMeta, message: Pgoutput.MessageInse
 
   const activity = createActivity(tableMeta, rowData, 'create');
 
-  return { activity, rowData: compactRowData(rowData), oldRowData: null, tableMeta };
+  return { activity, rowData: compactRowData(tableMeta, rowData), oldRowData: null, tableMeta };
 }

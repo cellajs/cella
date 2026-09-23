@@ -46,7 +46,13 @@ export function createActivity(
 
   return {
     tenantId,
-    userId: getRowValue(row, 'updatedBy') ?? getRowValue(row, 'createdBy') ?? getRowValue(row, 'userId') ?? null,
+    // The actor: whoever last touched the row. `revokedBy` is the api_keys update column.
+    userId:
+      getRowValue(row, 'updatedBy') ??
+      getRowValue(row, 'revokedBy') ??
+      getRowValue(row, 'createdBy') ??
+      getRowValue(row, 'userId') ??
+      null,
     entityType,
     resourceType,
     action,
