@@ -8,7 +8,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
-import { partitionConfigs } from '../scripts/migrations/10-partman.migration';
+import { partitionConfigs } from '../scripts/migrations/10-partitions.migration';
 
 // App entries carry their Drizzle table, so the map extends itself from product-tables.ts.
 const drizzleTables: Record<string, PgTable> = {
@@ -22,8 +22,8 @@ const drizzleTables: Record<string, PgTable> = {
 };
 
 // Keep each Drizzle schema compatible with the structural requirements enforced when
-// the partman migration builds a partitioned clone from PostgreSQL catalog metadata.
-describe('partman configs satisfy partitioning preconditions of the Drizzle schemas', () => {
+// the partition migration builds a partitioned clone from PostgreSQL catalog metadata.
+describe('partition configs satisfy partitioning preconditions of the Drizzle schemas', () => {
   it('covers every partition config with a known Drizzle table', () => {
     for (const config of partitionConfigs) {
       expect(drizzleTables[config.name], `no Drizzle table registered in this test for '${config.name}'`).toBeDefined();
@@ -41,7 +41,7 @@ describe('partman configs satisfy partitioning preconditions of the Drizzle sche
         expect(pkColumns).toContain(config.partitionColumn);
       });
 
-      it('has a NOT NULL partition column (pg_partman control column requirement)', () => {
+      it('has a NOT NULL partition column (range partitioning cannot route NULL)', () => {
         expect(partitionColumn, `column '${config.partitionColumn}' missing on ${config.name}`).toBeDefined();
         expect(partitionColumn?.notNull).toBe(true);
       });

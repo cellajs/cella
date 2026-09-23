@@ -5,7 +5,7 @@ import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Email unsubscribe tokens, multiple per user, old ones stay valid. Partitioned by createdAt via pg_partman (monthly, 90-day retention). */
+/** Email unsubscribe tokens, multiple per user, old ones stay valid. Partitioned by createdAt (monthly, 90-day retention). */
 export const unsubscribeTokensTable = snakeCase.table(
   'unsubscribe_tokens',
   {

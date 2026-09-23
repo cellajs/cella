@@ -11,7 +11,7 @@ export type SessionTypes = (typeof sessionTypeEnum)[number];
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
-/** Authenticated session data. Partitioned by expiresAt via pg_partman (weekly, 30-day retention); Drizzle sees a regular table. */
+/** Authenticated session data. Partitioned by expiresAt (weekly, 30-day retention); Drizzle sees a regular table. */
 export const sessionsTable = snakeCase.table(
   'sessions',
   {

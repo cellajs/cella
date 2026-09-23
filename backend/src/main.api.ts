@@ -10,7 +10,6 @@ import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
-import '#/lib/db-maintenance'; // registers the DB maintenance job before jobs start
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
@@ -47,6 +46,8 @@ const main = async () => {
 
     console.info(`${timestamp()} [startup] Running migrations...`);
     await pgMigrate(migrationDb, migrateConfig);
+    const { schedulePartitionMaintenance } = await import('../scripts/db/schedule-partition-maintenance');
+    await schedulePartitionMaintenance();
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
 

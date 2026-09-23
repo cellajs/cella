@@ -23,6 +23,10 @@ services:
       - max_replication_slots=10
       - -c
       - max_slot_wal_keep_size=2GB
+      - -c
+      - shared_preload_libraries=pg_cron
+      - -c
+      - cron.database_name=postgres
     ports:
       - ${DB_PORT}:5432
     restart: always
@@ -48,6 +52,10 @@ services:
       - max_replication_slots=10
       - -c
       - max_slot_wal_keep_size=2GB
+      - -c
+      - shared_preload_libraries=pg_cron
+      - -c
+      - cron.database_name=postgres
     ports:
       - ${DB_TEST_PORT}:5432
     profiles:

@@ -10,7 +10,7 @@ import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
 import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
-import { partitionConfigs } from './10-partman.migration';
+import { MAINTENANCE_PROCEDURE, partitionConfigs } from './10-partitions.migration';
 import { classifyRlsTables } from './10-rls.migration';
 import { unloggedTables } from './10-unlogged.migration';
 
@@ -164,12 +164,10 @@ ${grantChecks}
   -- UNLOGGED
 ${unloggedChecks}
 
-  -- Partitioning (same precondition as the partman block: extension installed)
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_partman') THEN
+  -- Partitioning and its maintenance procedure
 ${partitionChecks}
-  ELSE
-    RAISE NOTICE 'verify: pg_partman not installed - skipping partition assertions.';
-  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${MAINTENANCE_PROCEDURE}' AND pronamespace = 'public'::regnamespace) THEN
+    missing := array_append(missing, 'procedure:${MAINTENANCE_PROCEDURE}'); END IF;
 
   -- CDC publication (${publicationTableCount} tracked tables)
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN

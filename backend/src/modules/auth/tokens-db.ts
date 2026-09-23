@@ -9,7 +9,7 @@ import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 
-/** Tokens for email verification and invitation. Partitioned by expiresAt via pg_partman (weekly, 30-day retention); Drizzle sees a regular table. */
+/** Tokens for email verification and invitation. Partitioned by expiresAt (weekly, 30-day retention); Drizzle sees a regular table. */
 export const tokensTable = snakeCase.table(
   'tokens',
   {

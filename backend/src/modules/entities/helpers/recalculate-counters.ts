@@ -214,7 +214,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   // ── Phase 4: Product counters ─────────────────────────────────────────
   await db.delete(productCountersTable);
 
-  // 4a: viewCount from seen_by, unique user views over a 90-day pg_partman window.
+  // 4a: viewCount from seen_by, unique user views over the 90-day partition retention window.
   await db.execute(
     sql.raw(`
     INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)

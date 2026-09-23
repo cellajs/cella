@@ -1229,6 +1229,26 @@
     "pnpm --filter infra compose:generate"
    ],
    "summary": "MissingScopeError/missing_scope -> MissingAncestorError/missing_ancestor (engine error for an absent ancestor channel id; no longer shares a word with RFC 6750 insufficient_scope); tenant restriction allowConsentedClients -> allowUnregisteredClients and refusal clients_not_allowed -> unregistered_clients_not_allowed (it gates consent to OAuth clients with no registration), with a migration rewriting the column default and stored rows; env MCP_API_URL -> MCP_URL. Tenant wire shape changes: clientCacheVersion v9-tenant-restrictions."
+  },
+  {
+   "id": "20260923T1200-partition-maintenance-pg-cron",
+   "version": "next",
+   "title": "partition retention moves from pg_partman to maintain_partitions() and pg_cron",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/scripts",
+    "backend/src",
+    "backend/db",
+    "infra/resources"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "pg_partman is removed: Scaleway Managed PostgreSQL never offered it, so production skipped partitioning entirely, and run_maintenance() depended on an in-process timer that production never started. 10-partitions.migration.ts converts the same six tables to native range partitions with a DEFAULT partition and installs the maintain_partitions() procedure (drop past retention, trim DEFAULT, create two intervals ahead, move DEFAULT rows into new ranges); schedule-partition-maintenance.ts registers it as a nightly pg_cron job from the cluster's cron database (rdb on Scaleway, postgres in the dev image) after every migrate and boot-time migration, failing loudly when pg_cron is not loaded. The dev image installs postgresql-17-cron instead of postgresql-17-partman and compose preloads it; infra adds admin-cron-privilege on rdb. db-maintenance.ts (lib and script) and the db-maintenance backend job are deleted; partman-parity.test.ts is partition-parity.test.ts."
   }
  ]
 }

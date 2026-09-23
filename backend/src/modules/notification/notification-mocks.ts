@@ -11,7 +11,7 @@ const READ_PROBABILITY = 0.4;
 
 /**
  * A seed notification dated shortly after its subject but never older than 14 days: old-seeded
- * subjects still produce a recent-looking inbox, and rows land in live pg_partman partitions
+ * subjects still produce a recent-looking inbox, and rows land in live partitions
  * well inside the 90-day retention.
  */
 const seedNotificationDate = (subjectAt: string) => {
