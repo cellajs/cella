@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { failWithHint, withSpinner } from '../lib/utils/cli-output';
-import { autoAcceptDefaults, confirmOrDefault, inputOrDefault } from './shared';
+import { autoAcceptDefaults, confirmOrDefault, inputOrDefault, stackNameFor } from './shared';
 
 const savedArgv = process.argv;
 const savedNonInteractive = process.env.INFRA_NON_INTERACTIVE;
@@ -108,5 +108,17 @@ describe('withSpinner', () => {
   it('propagates a rejection', async () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     await expect(withSpinner('boom', async () => Promise.reject(new Error('nope')))).rejects.toThrow('nope');
+  });
+});
+
+describe('stackNameFor', () => {
+  it('derives the DIY-backend stack name from the mode', () => {
+    delete process.env.INFRA_STACK_NAME;
+    expect(stackNameFor({ environment: 'production' })).toBe('organization/infra/production');
+  });
+  it('honours INFRA_STACK_NAME for unusual layouts', () => {
+    process.env.INFRA_STACK_NAME = 'org/other/prod';
+    expect(stackNameFor({ environment: 'production' })).toBe('org/other/prod');
+    delete process.env.INFRA_STACK_NAME;
   });
 });

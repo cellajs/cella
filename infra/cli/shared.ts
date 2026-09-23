@@ -147,13 +147,9 @@ export async function resolveOrCreatePassphrase(
   return { passphrase, generated: true };
 }
 
-/** The "Pulumi stack name" prompt every action shares. */
-export function promptStackName(context: InfraContext): Promise<string> {
-  return inputOrDefault({
-    message: 'Pulumi stack name',
-    envName: 'INFRA_STACK_NAME',
-    default: `organization/infra/${context.environment}`,
-  });
+/** The stack name every action targets: derived from the mode on the DIY backend (`organization/infra/<mode>`); `INFRA_STACK_NAME` overrides it for unusual layouts. Never prompted. */
+export function stackNameFor(context: Pick<InfraContext, 'environment'>): string {
+  return process.env.INFRA_STACK_NAME?.trim() || `organization/infra/${context.environment}`;
 }
 
 /** A required free-text prompt (used for Scaleway access keys). */

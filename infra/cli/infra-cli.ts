@@ -32,7 +32,8 @@ loadBaseEnvFiles();
 
 /**
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
- * otherwise the first existing stack file wins (production before staging), and with no stack file an interactive install asks, defaulting to staging.
+ * otherwise the only existing stack file wins silently, two existing stack files ask once (and fail non-interactively), and with no stack
+ * file an interactive install asks, defaulting to staging.
  * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production credentials from backend/.env.
  */
 async function resolveMode(): Promise<'production' | 'staging'> {
@@ -62,6 +63,18 @@ async function resolveMode(): Promise<'production' | 'staging'> {
           description: 'The real thing. Promote here later once staging is green.',
         },
       ],
+    });
+  }
+  const existing = (['production', 'staging'] as const).filter((name) =>
+    existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)),
+  );
+  if (existing.length === 2) {
+    if (autoAcceptDefaults()) {
+      throw new Error('Both Pulumi.production.yaml and Pulumi.staging.yaml exist: pass --mode (or set INFRA_MODE).');
+    }
+    return select<'production' | 'staging'>({
+      message: 'Which stack?',
+      choices: existing.map((name) => ({ name, value: name })),
     });
   }
   return pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));

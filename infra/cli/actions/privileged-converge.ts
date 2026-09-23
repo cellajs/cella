@@ -14,9 +14,9 @@ import {
   acquireStackLockOrExit,
   type InfraContext,
   promptRequiredInput,
-  promptStackName,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 export interface PrivilegedConvergeOptions {
@@ -27,6 +27,8 @@ export interface PrivilegedConvergeOptions {
    * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config.
    */
   prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined;
+  /** Show the plan (`pulumi preview --diff`) and confirm it once before `up`; `up` then skips its own preview. Declining ends the run with `completed: false`. */
+  confirmPlan?: boolean;
 }
 
 export interface PrivilegedConvergeResult {
@@ -60,7 +62,7 @@ export async function runPrivilegedConverge(
   const bootAccess = identity.bootstrap?.accessKey ?? (await promptRequiredInput('Scaleway bootstrap access key'));
   const bootSecret =
     identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
-  const stack = await promptStackName(context);
+  const stack = stackNameFor(context);
 
   // The state identity (the deprecated SCW_STATE_* override, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
   const stateOverride = identity.state
@@ -140,8 +142,26 @@ export async function runPrivilegedConverge(
 
     const configFile = opts.prepare?.(env, stack);
 
+    if (opts.confirmPlan) {
+      const previewArgs = ['preview', '--stack', stack, '--diff', ...(configFile ? ['--config-file', configFile] : [])];
+      console.info(`\n→ pulumi preview (the plan this run would apply)\n  $ pulumi ${previewArgs.join(' ')}`);
+      const preview = spawnSync('pulumi', previewArgs, { cwd: infraDir, env, stdio: 'inherit' });
+      if (preview.status !== 0) {
+        await releaseLock();
+        console.error(`${warningMark} pulumi preview exited ${preview.status}; nothing applied.`);
+        process.exit(preview.status ?? 1);
+      }
+      if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
+        console.info('Declined; nothing applied.');
+        return { env, stack, completed: false };
+      }
+    }
+
     while (true) {
-      const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, configFile);
+      const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
+        configFile,
+        skipPreview: opts.confirmPlan,
+      });
       if (code === 0) {
         completed = true;
         break;

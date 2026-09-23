@@ -1,4 +1,3 @@
-import { confirm } from '@inquirer/prompts';
 import { pc } from '../../lib/utils/cli-output';
 import type { InfraContext } from '../shared';
 import { printRevokeReminder, runPrivilegedConverge } from './privileged-converge';
@@ -10,25 +9,15 @@ import { printRevokeReminder, runPrivilegedConverge } from './privileged-converg
 export async function runApply(context: InfraContext): Promise<void> {
   console.info(
     pc.dim(
-      '\nApply infra change: ensure registry IAM principals, then pulumi up with a bootstrap key (supplied via env).\n',
+      '\nApply infra change: ensure registry IAM principals, preview the plan with a bootstrap key, confirm, then pulumi up.\n',
     ),
   );
-
-  if (
-    !(await confirm({
-      message: `Swap stack creds to bootstrap key and run \`pulumi up\` on ${context.environment}?`,
-      default: true,
-    }))
-  ) {
-    console.info('Aborted; no changes made.');
-    return;
-  }
 
   console.warn(
     `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run "Apply infra change" to converge.')}`,
   );
 
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
-  await runPrivilegedConverge(context, { operation: 'apply' });
-  printRevokeReminder();
+  const { completed } = await runPrivilegedConverge(context, { operation: 'apply', confirmPlan: true });
+  if (completed) printRevokeReminder();
 }

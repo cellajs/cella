@@ -17,9 +17,9 @@ import {
   envOr,
   type InfraContext,
   promptRequiredInput,
-  promptStackName,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 /**
@@ -55,7 +55,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     promptRequiredInput('Scaleway access key (state-bucket access is enough)'),
   );
   const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, {
     accessKey,

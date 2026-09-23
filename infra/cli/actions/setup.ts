@@ -40,9 +40,9 @@ import {
   inputOrDefault,
   nonInteractive,
   promptRequiredInput,
-  promptStackName,
   pulumiLoginUrl,
   resolveOrCreatePassphrase,
+  stackNameFor,
 } from '../shared';
 
 /** Everything the per-phase helpers below share. */
@@ -471,7 +471,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     context.projectId ||
     (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }));
 
-  const stackName = await promptStackName(context);
+  const stackName = stackNameFor(context);
 
   // Prompt for operator secrets and managed-key decisions only on initial bootstrap; keys are minted after the first infrastructure update creates their containers.
   const isInitialBootstrap = !context.hasCiKey;

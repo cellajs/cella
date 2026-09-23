@@ -99,19 +99,29 @@ export interface PulumiUpResult {
   output: string;
 }
 
+export interface PulumiUpOptions {
+  /** `--config-file` override (the DB-exposure overlay). */
+  configFile?: string;
+  /** Skip Pulumi's own preview: the caller already showed the plan and got a confirmation. */
+  skipPreview?: boolean;
+}
+
 /** Run `pulumi up --yes --non-interactive` in `cwd`. `configFile` swaps the stack config for the DB-exposure overlay; a non-zero exit prints a permission hint when stderr indicates one. */
 export async function runPulumiUpWithHint(
   stack: string,
   cwd: string,
   env: NodeJS.ProcessEnv,
-  configFile?: string,
+  opts: PulumiUpOptions = {},
 ): Promise<PulumiUpResult> {
-  const configFileArgs = configFile ? ['--config-file', configFile] : [];
+  const extraArgs = [
+    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
+    ...(opts.skipPreview ? ['--skip-preview'] : []),
+  ];
   console.info(
-    `\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${configFileArgs.map((a) => ` ${a}`).join('')}`,
+    `\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${extraArgs.map((a) => ` ${a}`).join('')}`,
   );
   // stdout is teed, not inherited, so the Diagnostics section reaches parseOrphanedDeletes; --non-interactive already forces the plain display, so piping changes nothing for the operator.
-  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...configFileArgs], {
+  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...extraArgs], {
     cwd,
     env,
     stdio: ['inherit', 'pipe', 'pipe'],

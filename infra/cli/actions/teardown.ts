@@ -17,9 +17,9 @@ import {
   envOr,
   type InfraContext,
   promptRequiredInput,
-  promptStackName,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 /**
@@ -62,7 +62,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     maskedSecret({ message: 'Scaleway teardown secret key' }),
   );
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase });
   let organizationId: string | undefined;

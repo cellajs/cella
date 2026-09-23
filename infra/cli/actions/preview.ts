@@ -10,9 +10,9 @@ import { maskedSecret } from '../prompts/masked-secret';
 import {
   type InfraContext,
   promptRequiredInput,
-  promptStackName,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 /**
@@ -41,7 +41,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
     identity.standing?.accessKey ?? (await promptRequiredInput('Scaleway access key (read access is enough)'));
   const secretKey = identity.standing?.secretKey ?? (await maskedSecret({ message: 'Scaleway secret key' }));
 
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
   // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API.
   let organizationId: string;
