@@ -32,7 +32,7 @@ if (process.env.FRONTEND_URL) merged.frontendUrl = process.env.FRONTEND_URL;
 if (process.env.BACKEND_URL) merged.backendUrl = process.env.BACKEND_URL;
 if (process.env.BACKEND_AUTH_URL) merged.backendAuthUrl = process.env.BACKEND_AUTH_URL;
 if (process.env.YJS_URL) merged.yjsUrl = process.env.YJS_URL;
-if (process.env.MCP_API_URL) merged.mcpUrl = process.env.MCP_API_URL;
+if (process.env.MCP_URL) merged.mcpUrl = process.env.MCP_URL;
 if (process.env.OAUTH_URL) merged.oauthUrl = process.env.OAUTH_URL;
 
 // Set via env so `pnpm dev:single` or a preview deploy flips it without a config edit.

@@ -25,7 +25,7 @@ interface ConsentDetails {
   /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
   prompt: { name: string; reasons: string[] };
   /** Why the consent screen must refuse; null when the user may accept. */
-  refusal: 'not_a_member' | 'clients_not_allowed' | 'app_not_installed' | null;
+  refusal: 'not_a_member' | 'unregistered_clients_not_allowed' | 'app_not_installed' | null;
 }
 
 /** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
@@ -138,7 +138,7 @@ async function refusalFor(
 
   if (kind === 'cimd') {
     const tenant = await loadActiveTenant(resource.tenantId);
-    return tenant.restrictions.allowConsentedClients ? null : 'clients_not_allowed';
+    return tenant.restrictions.allowUnregisteredClients ? null : 'unregistered_clients_not_allowed';
   }
 
   const [installation] = await baseDb

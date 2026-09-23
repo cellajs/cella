@@ -13,7 +13,7 @@ import { Button } from '~/modules/ui/button';
 
 const refusalLabels: Record<NonNullable<ConsentDetails['refusal']>, TKey> = {
   not_a_member: 'c:oauth_refusal.not_a_member',
-  clients_not_allowed: 'c:oauth_refusal.clients_not_allowed',
+  unregistered_clients_not_allowed: 'c:oauth_refusal.unregistered_clients_not_allowed',
   app_not_installed: 'c:oauth_refusal.app_not_installed',
 };
 

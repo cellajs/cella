@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
-import { MissingScopeError } from 'shared';
+import { MissingAncestorError } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createExpiredToken, createSignedToken } from './helpers';
@@ -84,8 +84,8 @@ beforeAll(async () => {
           ws.close(4003, 'Access denied');
         }
       } catch (err) {
-        if (err instanceof MissingScopeError) {
-          ws.close(4400, 'Missing entity scope');
+        if (err instanceof MissingAncestorError) {
+          ws.close(4400, 'Missing entity ancestor');
         } else {
           ws.close(4503, 'Authorization unavailable');
         }
@@ -216,8 +216,8 @@ describe('Async entity verification (post-upgrade)', () => {
     ws.close();
   });
 
-  it('1.3.4 local check throws MissingScopeError → close 4400', async () => {
-    mockVerify.mockRejectedValueOnce(new MissingScopeError('attachment', 'organization', 'organizationId'));
+  it('1.3.4 local check throws MissingAncestorError → close 4400', async () => {
+    mockVerify.mockRejectedValueOnce(new MissingAncestorError('attachment', 'organization', 'organizationId'));
     const token = createSignedToken('user-1');
     const { closeCode } = await connectWs(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
     expect(closeCode).toBe(4400);

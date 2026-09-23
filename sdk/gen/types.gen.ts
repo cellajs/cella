@@ -425,9 +425,9 @@ export type Tenant = {
       apiPointsPerHour: number;
     };
     /**
-     * Whether users may consent to OAuth clients not installed by an admin
+     * Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)
      */
-    allowConsentedClients: boolean;
+    allowUnregisteredClients: boolean;
   };
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
   createdBy: string | null;
@@ -3970,7 +3970,7 @@ export type UpdateTenantData = {
       quotas?: {
         [key: string]: number;
       };
-      allowConsentedClients?: boolean;
+      allowUnregisteredClients?: boolean;
       rateLimits?: {
         apiPointsPerHour?: number;
       };

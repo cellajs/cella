@@ -82,14 +82,14 @@ export async function findApiKeysByPrincipal(ctx: DbContext, { principalId }: { 
     .orderBy(desc(apiKeysTable.createdAt));
 }
 
-interface ExpireApiKeyOpts {
+interface ScheduleApiKeyExpiryOpts {
   principalId: string;
   id: string;
   expiresAt: string;
 }
 
 /** Sets `expiresAt` on a live key of the principal for the roll overlap, never later than an expiry it already has; null when no such key exists. */
-export async function expireApiKey(ctx: DbContext, { principalId, id, expiresAt }: ExpireApiKeyOpts) {
+export async function scheduleApiKeyExpiry(ctx: DbContext, { principalId, id, expiresAt }: ScheduleApiKeyExpiryOpts) {
   const [row] = await ctx.var.db
     .update(apiKeysTable)
     .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamp)` })

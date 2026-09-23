@@ -104,11 +104,11 @@ export const appServices = defineServices({
       PORT: '4003',
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
-      MCP_API_URL: '${MCP_API_URL}',
+      MCP_URL: '${MCP_URL}',
     },
     // The worker's own public URL, host-routed through the LB.
     bindings: {
-      MCP_API_URL: '@{self.url}',
+      MCP_URL: '@{self.url}',
     },
   },
 

@@ -56,7 +56,7 @@ const fakeSubscriber = (
 
 /**
  * Rows and events must carry the full ancestor scope: `null`, not absent, for contexts the row
- * is not homed under, or `buildSubject` fail-closes with MissingScopeError.
+ * is not homed under, or `buildSubject` fail-closes with MissingAncestorError.
  */
 const nullAncestorScopes = Object.fromEntries(
   appConfig.channelEntityTypes

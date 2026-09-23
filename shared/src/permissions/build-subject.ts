@@ -7,7 +7,7 @@ import { validateAncestorScope } from './validate-ancestor-scope.ts';
 
 /**
  * From database-shaped ancestor id columns, ignoring unrelated properties. `null` marks an
- * unused ancestor. @throws MissingScopeError when a required ancestor id is `undefined`
+ * unused ancestor. @throws MissingAncestorError when a required ancestor id is `undefined`
  */
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,

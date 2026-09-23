@@ -93,7 +93,7 @@ export {
   getPolicyPermissions,
   isRowCondition,
   isUnconditionalCan,
-  MissingScopeError,
+  MissingAncestorError,
   matchesRowCondition,
   type PermissionResult,
   type PredicateActor,

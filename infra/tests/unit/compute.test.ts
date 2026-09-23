@@ -95,7 +95,7 @@ describe('compute module source contracts', () => {
 
   it('contains no inter-service env wiring: service topology lives in registry bindings', () => {
     // CDC and MCP endpoint bindings belong to the service registry and compute only resolves them; no service environment may be hard-coded here.
-    for (const banned of ['API_WS_URL', 'MCP_API_URL', 'mcpUrl']) {
+    for (const banned of ['API_WS_URL', 'MCP_URL', 'mcpUrl']) {
       expect(source, `inter-service env token ${banned} must not appear in compute.ts`).not.toContain(banned);
     }
   });

@@ -1641,10 +1641,10 @@
                 }
               }
             },
-            "allowConsentedClients": {
+            "allowUnregisteredClients": {
               "type": "boolean",
               "required": true,
-              "description": "Whether users may consent to OAuth clients not installed by an admin"
+              "description": "Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)"
             }
           }
         },
@@ -1730,10 +1730,10 @@
                 }
               }
             },
-            "allowConsentedClients": {
+            "allowUnregisteredClients": {
               "type": "boolean",
               "required": true,
-              "description": "Whether users may consent to OAuth clients not installed by an admin"
+              "description": "Whether members may consent to OAuth clients that have no registration (AI clients using a Client ID Metadata Document)"
             }
           }
         },

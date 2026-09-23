@@ -19,7 +19,8 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     ? {
         quotas: { ...existing.restrictions.quotas, ...restrictionsUpdate.quotas },
         rateLimits: { ...existing.restrictions.rateLimits, ...restrictionsUpdate.rateLimits },
-        allowConsentedClients: restrictionsUpdate.allowConsentedClients ?? existing.restrictions.allowConsentedClients,
+        allowUnregisteredClients:
+          restrictionsUpdate.allowUnregisteredClients ?? existing.restrictions.allowUnregisteredClients,
       }
     : undefined;
 

@@ -3,7 +3,7 @@ import { errors, jwtVerify } from 'jose';
 import { type AccessScope, accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getVerificationKeySet } from '#/modules/oauth-server/keystore';
+import { getPublicJwkSet } from '#/modules/oauth-server/keystore';
 import type { IssuedTokenClaims } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
 
@@ -37,7 +37,7 @@ export async function verifyAccessToken(
     audiences.push(resourceUri({ face: 'mcp', tenantId: route.tenantId, organizationId: route.organizationId }));
 
   try {
-    const { payload } = await jwtVerify(jwt, await getVerificationKeySet(), {
+    const { payload } = await jwtVerify(jwt, await getPublicJwkSet(), {
       issuer: appConfig.oauthUrl,
       audience: audiences,
     });

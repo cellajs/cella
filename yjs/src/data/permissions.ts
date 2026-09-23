@@ -89,7 +89,7 @@ export async function resolveEntityScope(
 /**
  * Mirrors the backend `verifyEntityOp`: one RLS-scoped transaction, then the shared permission engine for the `update` action.
  *
- * @throws MissingScopeError if the resolved entity is missing a required ancestor scope.
+ * @throws MissingAncestorError if the resolved entity is missing a required ancestor scope.
  */
 export async function canEditEntity(ctx: DocContext): Promise<boolean> {
   const { entityType } = ctx;

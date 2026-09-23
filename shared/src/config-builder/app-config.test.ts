@@ -29,7 +29,7 @@ describe('appConfig service endpoints', () => {
       FRONTEND_URL: 'https://front.example',
       BACKEND_URL: 'https://api.example',
       YJS_URL: 'wss://yjs.example',
-      MCP_API_URL: 'https://mcp.example',
+      MCP_URL: 'https://mcp.example',
     });
     expect(appConfig.services.frontend.publicUrl).toBe('https://front.example');
     expect(appConfig.services.backend.publicUrl).toBe('https://api.example');

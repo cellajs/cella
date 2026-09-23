@@ -1,14 +1,14 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateApiKeyCacheByAccount } from '#/middlewares/guard/api-key-cache';
-import { loadManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
+import { requireManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
 import { revokeApiKey } from '#/modules/service-accounts/service-accounts-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /** The row stays for the audit trail; the key stops authenticating within the cache window. */
 export async function revokeApiKeyOp(ctx: UserContext, serviceAccountId: string, keyId: string) {
-  const account = await loadManagedServiceAccount(ctx, serviceAccountId);
+  const account = await requireManagedServiceAccount(ctx, serviceAccountId);
   const revoked = await revokeApiKey(ctx, {
     principalId: account.id,
     id: keyId,

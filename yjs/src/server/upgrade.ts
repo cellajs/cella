@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
-import { MissingScopeError } from 'shared';
+import { MissingAncestorError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
 import { type DocContext, YJS_PENDING_QUEUE_CAP } from '../constants';
 import { canEditEntity } from '../data/permissions';
@@ -43,12 +43,12 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
     applyVerifyResult(ws, ctx, allowed);
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;
-    if (err instanceof MissingScopeError) {
-      log.warn(`Entity missing required scope for ${ctx.entityType}:${ctx.entityId}`, {
+    if (err instanceof MissingAncestorError) {
+      log.warn(`Entity missing required ancestor for ${ctx.entityType}:${ctx.entityId}`, {
         missingChannel: err.missingChannel,
         missingKey: err.missingKey,
       });
-      ws.close(4400, 'Missing entity scope');
+      ws.close(4400, 'Missing entity ancestor');
       return;
     }
     log.error(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, { err: err });

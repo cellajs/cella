@@ -87,7 +87,7 @@ Configuration and environment (the backend's `.env` and `appConfig`):
 | Key | Purpose |
 | --- | --- |
 | `services.mcp.enabled` | Runs the worker and the routes; `false` answers 404 |
-| `mcpUrl`, `MCP_API_URL` | The public base, same origin as the API under `/mcp` |
+| `mcpUrl`, `MCP_URL` | The public base, same origin as the API under `/mcp` |
 | `devPorts.mcp`, `PORT` | `MODE=mcp` selects this entry; the dev entry, the infra env and the `singleVM` fold set `PORT` to `devPorts.mcp` (4003), and a bare `PORT` defaults to the API port |
 | `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role |
 | `SCW_AI_API_KEY` | Optional; the app's own AI features only. When set, the worker also needs `DATABASE_ADMIN_URL` for its pg-boss queues |
