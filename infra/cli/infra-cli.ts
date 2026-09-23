@@ -23,6 +23,7 @@ import { runRotatePassphrase } from './actions/rotate-passphrase';
 import { runSecrets } from './actions/secrets';
 import { runSeedDatabase } from './actions/seed-db';
 import { runSetup } from './actions/setup';
+import { runStorePassphrase } from './actions/store-passphrase';
 import { runTeardown } from './actions/teardown';
 import { runUnlock } from './actions/unlock';
 import type { CliMode, InfraContext } from './shared';
@@ -203,6 +204,11 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         value: 'fetch-credentials',
         description: 'Put the admin key in infra/.env.<mode> on this machine (needs a bootstrap key once).',
       },
+      {
+        name: 'Store passphrase in keychain',
+        value: 'store-passphrase',
+        description: 'Keep the Pulumi passphrase in the OS keychain; the env file keeps a reference.',
+      },
       backChoice,
     ],
   });
@@ -350,6 +356,11 @@ if (mode === 'unlock') {
 
 if (mode === 'fetch-credentials') {
   await runFetchCredentials(context);
+  process.exit(0);
+}
+
+if (mode === 'store-passphrase') {
+  await runStorePassphrase(context);
   process.exit(0);
 }
 

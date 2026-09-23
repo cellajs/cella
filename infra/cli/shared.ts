@@ -18,6 +18,7 @@ export type CliMode =
   | 'rotate'
   | 'rotate-passphrase'
   | 'fetch-credentials'
+  | 'store-passphrase'
   | 'apply'
   | 'preview'
   | 'secrets'
