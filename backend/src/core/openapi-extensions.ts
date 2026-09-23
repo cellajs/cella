@@ -40,7 +40,7 @@ export const extensionMap = {
   },
   'x-tool': {
     id: 'xTool',
-    description: 'Tool registration metadata for AI and MCP integrations',
+    description: 'MCP tool registration metadata',
     required: false,
     kind: 'metadata',
   },
@@ -97,11 +97,11 @@ export type ToolInput<Req> = {
 
 /** What the OpenAPI spec shows under `x-tool`; `execute` never leaves the process. */
 export type XToolSpec = {
-  /** Whether this route is exposed as a tool */
+  /** Whether this route is exposed as an MCP tool */
   enabled: boolean;
   /** LLM-friendly description of what this tool does */
   description: string;
-  /** Whether user approval is required before execution (write tools) */
+  /** Whether user approval is required before execution (write MCP tools) */
   approvalRequired: boolean;
   category: string;
   /** The entity the route acts on: with the method it names the scope a token needs (`<entity>:read` | `:write`). */

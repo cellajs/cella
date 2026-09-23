@@ -131,7 +131,7 @@
       {
         "key": "x-tool",
         "id": "xTool",
-        "description": "Tool registration metadata for AI and MCP integrations",
+        "description": "MCP tool registration metadata",
         "required": false,
         "kind": "metadata"
       },
@@ -219,7 +219,7 @@
     },
     {
       "name": "mcp",
-      "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same tool registry.",
+      "description": "Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.",
       "parent": "cella",
       "kind": "module"
     },
@@ -5577,7 +5577,7 @@
         "operationId": "getMyAuth",
         "tags": ["me", "cella"],
         "summary": "Get auth data",
-        "description": "Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.",
+        "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6145,7 +6145,7 @@
                 "example": {
                   "items": [
                     {
-                      "id": "gr_01J9Z2Q0X7ZQ4S5M8N",
+                      "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
                       "clientId": "https://vscode.dev/oauth/client-metadata.json",
                       "clientName": "Visual Studio Code",
                       "scopes": ["attachment:read"],
@@ -8513,7 +8513,7 @@
         "security": [],
         "x-service": "oauth",
         "operationId": "getApiProtectedResourceMetadata",
-        "tags": ["auth", "cella"],
+        "tags": ["oauth-server", "cella"],
         "summary": "Protected resource metadata (API)",
         "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
         "x-guard": ["publicGuard"],
@@ -10997,7 +10997,7 @@
       "get": {
         "security": [],
         "x-service": "mcp",
-        "operationId": "getProtectedResourceMetadata",
+        "operationId": "getMcpProtectedResourceMetadata",
         "tags": ["mcp", "cella"],
         "summary": "Protected resource metadata",
         "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
@@ -11067,7 +11067,7 @@
         "operationId": "handleMcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
-        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+        "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
         "x-guard": ["tokenGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -12613,7 +12613,7 @@
         "operationId": "updateServiceAccount",
         "tags": ["service-accounts", "cella"],
         "summary": "Update service account",
-        "description": "Renames, describes, disables or re-enables a service account. Accounts are never deleted.",
+        "description": "Renames, disables or re-enables a service account. Accounts are never deleted.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createServiceAccount, getProtectedResourceMetadata, handleMcp } from 'sdk';
+import { createServiceAccount, getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -129,7 +129,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('publishes protected resource metadata and challenges a tokenless call with it', async () => {
     const { org } = await orgWithAdmin();
-    const metadata = await call(getProtectedResourceMetadata, {
+    const metadata = await call(getMcpProtectedResourceMetadata, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       headers: defaultHeaders,
     });

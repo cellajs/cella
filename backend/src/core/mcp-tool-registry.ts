@@ -125,7 +125,7 @@ export function registerMcpTool<Req extends ToolRoute['request']>(
   });
 }
 
-/** Every tool any route registered; scope is enforced at call time so a client can discover what to step up to. */
+/** Every MCP tool any route registered; scope is enforced at call time so a client can discover what to step up to. */
 export function getMcpTools(): readonly McpTool[] {
   return tools;
 }

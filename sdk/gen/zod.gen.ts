@@ -1853,7 +1853,7 @@ export const zUpdateAttachmentQuery = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
-export const zGetProtectedResourceMetadataPath = z.object({
+export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });
@@ -1861,7 +1861,7 @@ export const zGetProtectedResourceMetadataPath = z.object({
 /**
  * Protected resource metadata
  */
-export const zGetProtectedResourceMetadataResponse = zProtectedResourceMetadata;
+export const zGetMcpProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
 export const zHandleMcpBody = z.unknown();
 

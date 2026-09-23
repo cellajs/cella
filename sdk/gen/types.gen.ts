@@ -4988,7 +4988,7 @@ export type UpdateAttachmentResponses = {
 
 export type UpdateAttachmentResponse = UpdateAttachmentResponses[keyof UpdateAttachmentResponses];
 
-export type GetProtectedResourceMetadataData = {
+export type GetMcpProtectedResourceMetadataData = {
   body?: never;
   path: {
     tenantId: string;
@@ -4998,7 +4998,7 @@ export type GetProtectedResourceMetadataData = {
   url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource';
 };
 
-export type GetProtectedResourceMetadataErrors = {
+export type GetMcpProtectedResourceMetadataErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -5025,18 +5025,18 @@ export type GetProtectedResourceMetadataErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetProtectedResourceMetadataError =
-  GetProtectedResourceMetadataErrors[keyof GetProtectedResourceMetadataErrors];
+export type GetMcpProtectedResourceMetadataError =
+  GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
 
-export type GetProtectedResourceMetadataResponses = {
+export type GetMcpProtectedResourceMetadataResponses = {
   /**
    * Protected resource metadata
    */
   200: ProtectedResourceMetadata;
 };
 
-export type GetProtectedResourceMetadataResponse =
-  GetProtectedResourceMetadataResponses[keyof GetProtectedResourceMetadataResponses];
+export type GetMcpProtectedResourceMetadataResponse =
+  GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
 
 export type HandleMcpData = {
   body: unknown;

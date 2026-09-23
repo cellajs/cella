@@ -72,5 +72,5 @@ Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; onl
 | Service accounts and keys | `backend/src/modules/service-accounts/` |
 | Scopes | `shared/src/permissions/access-scopes.ts`, mask in `check-access.ts` and, for list queries, `backend/src/permissions/collection-scope.ts` |
 | Authorization server | `backend/src/modules/oauth-server/`, process entry in `oauth/` |
-| MCP | `backend/src/modules/mcp/`, tools registered by `createXRoute` |
+| MCP | `backend/src/modules/mcp/`, MCP tools registered by `createXRoute` |
 | Guards | `backend/src/middlewares/guard/` |

@@ -22,8 +22,8 @@ const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_0
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
-/** The route's tenant and organization ids as the URL carries them; every machine guard binds a apiKey to them. */
-export function routeScope(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
+/** The route's tenant and organization ids as the URL carries them; every machine guard binds a credential to them. */
+export function routeTarget(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
   const tenantId = ctx.req.param('tenantId')?.toLowerCase();
   if (!tenantId)
     throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
@@ -92,7 +92,7 @@ async function resolveApiKey(hash: string) {
 }
 
 /**
- * Authenticates a machine apiKey and sets the actor: a secret API key runs as its service account; a token from
+ * Authenticates a machine credential and sets the actor: a secret API key runs as its service account; a token from
  * the app's own authorization server runs as the consenting user or the account behind it. Tenant resolution stays
  * with `tenantGuard`, which checks the URL against the actor's tenant. Sessions never reach this guard; browsers never
  * pass it.
@@ -107,10 +107,10 @@ export const serviceGuard = xMiddleware(
       'Requires a secret API key or an access token and sets the service account or the consenting user as the actor',
   },
   async (ctx, next) => {
-    const scope = routeScope(ctx);
+    const target = routeTarget(ctx);
     const jwt = bearerJwtFrom(ctx);
     if (jwt) {
-      await setActorFromToken(ctx, jwt, scope);
+      await setActorFromToken(ctx, jwt, target);
       return serviceBurstLimiter(ctx, next);
     }
 
@@ -119,7 +119,7 @@ export const serviceGuard = xMiddleware(
       // RFC 9728: the challenge names where the API face publishes its metadata.
       ctx.header(
         'WWW-Authenticate',
-        `Bearer resource_metadata="${resourceMetadataUrl({ face: 'api', tenantId: scope.tenantId })}"`,
+        `Bearer resource_metadata="${resourceMetadataUrl({ face: 'api', tenantId: target.tenantId })}"`,
       );
       throw unauthorized('missing_api_key');
     }

@@ -44,12 +44,12 @@ export async function verifyAccessToken(
     const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
     if (!claims.sub || !claims.principal_kind || !claims.tenant_id)
       throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
-    const granted = accessScopes.parse(claims.scope);
+    const scopes = accessScopes.parse(claims.scope);
     return {
       principalId: claims.sub,
       kind: claims.principal_kind,
       tenantId: claims.tenant_id,
-      scopes: granted,
+      scopes,
       clientId: claims.client_id ?? '',
     };
   } catch (error) {

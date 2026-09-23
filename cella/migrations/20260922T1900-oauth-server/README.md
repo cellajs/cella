@@ -43,8 +43,8 @@ pnpm infra:compose
    (`createOauthListener`), no separate process.
 4. Infra tests that enumerate the registry (`services.test.ts`, `naming.test.ts`, `print-deploy-env.test.ts`,
    `setup-service-apps.test.ts`, `synth.test.ts`) list `oauth` after `mcp`.
-5. Locale keys: `connected_apps*`, `oauth_consent*`, `oauth_refusal.*`, `scope.<entity>_<read|write>`, two errors. Apps with
-   extra entity scopes add `scope.<entity>_read` / `_write` labels; unknown scopes render raw.
+5. Locale keys: `connected_apps*`, `oauth_consent*`, `oauth_refusal.*`, `scope_read` / `scope_write` (with `{{resource}}` from `c:<entity>_other`), two errors. Apps with
+   extra entity scopes need only their `<entity>_other` plural; unknown scopes render raw.
 6. Operations that must be callable with a token keep `actorGuard`; a user token sets `user` and `memberships` like
    a session would, so `UserContext` operations also work behind `serviceGuard`.
 

@@ -309,7 +309,7 @@ export const resolveCollectionReadFilterForPolicies = ({
   publicGrants,
   hierarchy,
 }: CollectionReadScopeInput): CollectionReadFilter => {
-  // A scoped credential (API key) that lacks the read scope for this type reads nothing, sysadmin or not.
+  // A scoped credential (API key or token) that lacks the `<type>:read` access scope reads nothing, sysadmin or not.
   if (!('anonymous' in actor) && !accessScopes.allows(actor.scopes, entityType, 'read')) {
     return { homeChannelIds: [], conditionalScopes: [] };
   }

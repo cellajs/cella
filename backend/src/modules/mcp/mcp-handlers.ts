@@ -13,7 +13,7 @@ import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
-app.openapi(mcpRoutes.getProtectedResourceMetadata, async (ctx) => {
+app.openapi(mcpRoutes.getMcpProtectedResourceMetadata, async (ctx) => {
   const { tenantId, organizationId } = ctx.req.valid('param');
   const ref = { face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId } as const;
   return ctx.json(
