@@ -5,8 +5,8 @@
 # `--target <name>` (see `target` in infra/config/services.config.ts, threaded
 # through print-deploy-env into .github/workflows/deploy.yml). Shared stages:
 #
-#   base    : node:26-alpine + corepack (pnpm version pinned by the root
-#              package.json `packageManager` field)
+#   base    : node:26-alpine + pnpm from npm, at the version the root
+#              package.json `packageManager` field pins
 #   runtime : node:26-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
 #              the parent of every production target
 #
@@ -25,11 +25,13 @@
 # -----------------------------------------------------------------------------
 FROM node:26-alpine AS base
 
-# pnpm version comes from the root package.json `packageManager` field; corepack
-# fetches it on first use in each stage.
-RUN corepack enable
-
 WORKDIR /app
+
+# pnpm comes from npm at the version pinned by the root package.json
+# `packageManager` field (the pin pnpm/action-setup reads in CI), minus any
+# `+sha` suffix. Node 25+ images no longer ship corepack.
+COPY package.json ./
+RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').packageManager.split('+')[0]")"
 
 # -----------------------------------------------------------------------------
 # Shared: production runtime base (non-root user, release metadata)
