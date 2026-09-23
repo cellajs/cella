@@ -131,7 +131,7 @@
     "@tanstack/router-generator": "^1.167.38",
     "@tanstack/router-plugin": "^1.168.40",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "26.6.2",
+    "@types/node": "^26.6.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",

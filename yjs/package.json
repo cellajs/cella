@@ -42,7 +42,7 @@
     "@blocknote/core": "^0.54.2",
     "@blocknote/server-util": "^0.54.2",
     "@hono/node-server": "^2.1.1",
-    "@types/node": "26.6.2",
+    "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.1",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",

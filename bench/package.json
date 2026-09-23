@@ -20,7 +20,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "26.6.2",
+    "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "artillery": "^2.0.34",
     "artillery-plugin-ensure": "^1.27.0",

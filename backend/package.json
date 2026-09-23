@@ -72,7 +72,7 @@
     "@t3-oss/env-core": "^0.13.11",
     "@types/hast": "^3.0.5",
     "@types/html-to-text": "^9.0.4",
-    "@types/node": "26.6.2",
+    "@types/node": "^26.6.2",
     "@types/oidc-provider": "9.12.1",
     "@types/pg": "^8.23.1",
     "@types/react": "19.3.0",
