@@ -514,7 +514,7 @@ function createRealEffects(): DeployEffects {
       ]);
       const ctx = await controlContextForStack(stack);
       if (!ctx) throw new Error('stack lease: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required');
-      // A CI run queues behind another deploy for a while instead of failing; a dead holder's lease lapses within its lifetime.
+      // A CI run queues behind another deploy for a while; a dead holder's lease lapses within its lifetime.
       const result = await acquireLease({
         s3: ctx.s3,
         bucket: ctx.bucket,

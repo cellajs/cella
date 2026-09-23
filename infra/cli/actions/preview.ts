@@ -68,7 +68,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
   previewEnv[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);
 
-  // --refresh reads every resource live first, so drift outside Pulumi (a rule re-scoped in the console) shows up in the diff instead of hiding behind stale state.
+  // --refresh reads every resource live first, so drift outside Pulumi (a rule re-scoped in the console) is part of the diff.
   console.info(
     `\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`,
   );

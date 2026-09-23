@@ -62,7 +62,7 @@ export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): O
         : 'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated: put the admin application key in SCW_ACCESS_KEY / SCW_SECRET_KEY (it is admitted to the state bucket) and remove the SCW_STATE_* pair.',
     );
   }
-  // `SCW_BOOTSTRAP_KEY` is the misspelling operators reach for; honour it with a nudge rather than silently prompting.
+  // `SCW_BOOTSTRAP_KEY` is the misspelling operators reach for; honour it and nudge them to rename it.
   const bootstrapEnv: NodeJS.ProcessEnv = { ...env };
   if (!bootstrapEnv.SCW_BOOTSTRAP_ACCESS_KEY?.trim() && bootstrapEnv.SCW_BOOTSTRAP_KEY?.trim()) {
     bootstrapEnv.SCW_BOOTSTRAP_ACCESS_KEY = bootstrapEnv.SCW_BOOTSTRAP_KEY;
@@ -179,8 +179,8 @@ export function hoursUntilExpiry(desc: KeyDescription, now = Date.now()): number
 
 /**
  * A bootstrap key must be able to write IAM policies and bootstrap-owned resources: an organization Owner, or a principal granted IAMManager.
- * Engine principals are rejected by name with the exact reason, so a CI or admin key pasted at the bootstrap prompt fails here in a second instead of
- * half-way through `pulumi up`.
+ * Engine principals are rejected by name with the exact reason, so a CI or admin key pasted at the bootstrap prompt fails here, in a second and
+ * before any lock is taken.
  */
 export async function assertBootstrapCapable(opts: {
   pair: KeyPair;

@@ -39,7 +39,7 @@ const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => set
 
 /**
  * Take the stack lock as a renewed lease. The holder extends the expiry every `renewEveryMs`, so an interrupted run's lock lapses on its own within one
- * lifetime and nobody has to unlock by hand; a caller that finds the lock held may wait up to `waitMs` for that lapse instead of exiting.
+ * lifetime; a caller that finds the lock held may wait up to `waitMs` for that lapse.
  */
 export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
   const ttlMs = opts.ttlMs ?? DEFAULT_LEASE_TTL_MS;
