@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { envKeyPair, resolveOperatorIdentity } from './operator-identity';
 
 /** `SCW_CONFIG_PATH` that neutralises the local Scaleway CLI profile: the file is never created, so the SDK finds nothing to load. */
 export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir, '.scw-config-none');
@@ -49,27 +50,20 @@ export interface ProviderEnvInput {
 export function stateKeyOverrideFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): Pick<ProviderEnvInput, 'stateAccessKey' | 'stateSecretKey'> {
-  const stateAccessKey = env.SCW_STATE_ACCESS_KEY?.trim() || undefined;
-  const stateSecretKey = env.SCW_STATE_SECRET_KEY?.trim() || undefined;
-  if (!!stateAccessKey !== !!stateSecretKey) {
-    throw new Error('SCW_STATE_ACCESS_KEY and SCW_STATE_SECRET_KEY must be set together');
-  }
-  return { stateAccessKey, stateSecretKey };
+  const pair = envKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY');
+  return { stateAccessKey: pair?.accessKey, stateSecretKey: pair?.secretKey };
 }
 
 /**
- * State-backend identity for a privileged run. An explicit `SCW_STATE_*` pair wins; otherwise the standing operator key already in the env
- * (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from infra/.env.<mode>, the admin application's key, which the state-bucket policy admits); otherwise
- * empty, and the caller uses the bootstrap key for both sides.
+ * State-backend identity for a privileged run, from {@link resolveOperatorIdentity}: the deprecated `SCW_STATE_*` pair wins, else the standing
+ * operator key (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from infra/.env.<mode>, the admin application's key, which the state-bucket policy admits);
+ * otherwise empty, and the caller uses the bootstrap key for both sides.
  */
 export function stateKeyForPrivilegedRun(
   env: NodeJS.ProcessEnv = process.env,
 ): Pick<ProviderEnvInput, 'stateAccessKey' | 'stateSecretKey'> {
-  const explicit = stateKeyOverrideFromEnv(env);
-  if (explicit.stateAccessKey) return explicit;
-  const stateAccessKey = env.SCW_ACCESS_KEY?.trim() || undefined;
-  const stateSecretKey = env.SCW_SECRET_KEY?.trim() || undefined;
-  return stateAccessKey && stateSecretKey ? { stateAccessKey, stateSecretKey } : {};
+  const state = resolveOperatorIdentity(env).state;
+  return state ? { stateAccessKey: state.accessKey, stateSecretKey: state.secretKey } : {};
 }
 
 /** Build a child environment with explicit Scaleway, S3-state, and Pulumi credentials, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */

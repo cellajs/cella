@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
-import { buildProviderEnv, stateKeyForPrivilegedRun } from '../../lib/scaleway/bootstrap-scw-env';
+import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -11,7 +12,6 @@ import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
-  envOr,
   type InfraContext,
   promptRequiredInput,
   promptStackName,
@@ -56,16 +56,16 @@ export async function runPrivilegedConverge(
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const { projectId, appConfig } = context;
 
-  const bootAccess = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway bootstrap access key'),
-  );
-  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
-  );
+  const identity = resolveOperatorIdentity();
+  const bootAccess = identity.bootstrap?.accessKey ?? (await promptRequiredInput('Scaleway bootstrap access key'));
+  const bootSecret =
+    identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
   const stack = await promptStackName(context);
 
-  // The state identity (explicit SCW_STATE_*, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
-  const stateOverride = stateKeyForPrivilegedRun();
+  // The state identity (the deprecated SCW_STATE_* override, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
+  const stateOverride = identity.state
+    ? { stateAccessKey: identity.state.accessKey, stateSecretKey: identity.state.secretKey }
+    : {};
   const env = buildProviderEnv(infraDir, {
     accessKey: bootAccess,
     secretKey: bootSecret,

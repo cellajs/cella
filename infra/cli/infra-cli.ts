@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import {
   detectComputeDeferred,
   detectDbPublicEndpoint,
@@ -118,6 +119,9 @@ const context = await loadContext();
 }
 
 console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`);
+
+// One line per credential misconfiguration (deprecated SCW_STATE_*, a bootstrap slot holding the standing key, …) before any action trips over it.
+for (const warning of resolveOperatorIdentity().warnings) console.warn(`${warningMark} ${warning}`);
 
 const deferredSince = detectComputeDeferred(context.stackYaml);
 if (deferredSince) {

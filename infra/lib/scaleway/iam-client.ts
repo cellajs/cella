@@ -56,7 +56,7 @@ interface IamPolicy {
 }
 
 /** Every policy in the organization, paged. The list endpoint's `application_id` filter is unreliable, so callers filter by principal client-side. */
-async function listOrganizationPolicies(auth: IamAuth, organizationId: string): Promise<IamPolicy[]> {
+export async function listOrganizationPolicies(auth: IamAuth, organizationId: string): Promise<IamPolicy[]> {
   const pageSize = 100;
   const all: IamPolicy[] = [];
   for (let page = 1; page <= 100; page++) {

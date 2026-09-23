@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
@@ -7,7 +8,6 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
-  envOr,
   type InfraContext,
   promptRequiredInput,
   promptStackName,
@@ -36,10 +36,10 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId, appConfig } = context;
 
-  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway access key (read access is enough)'),
-  );
-  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
+  const identity = resolveOperatorIdentity();
+  const accessKey =
+    identity.standing?.accessKey ?? (await promptRequiredInput('Scaleway access key (read access is enough)'));
+  const secretKey = identity.standing?.secretKey ?? (await maskedSecret({ message: 'Scaleway secret key' }));
 
   const targetStack = await promptStackName(context);
 
@@ -54,14 +54,15 @@ export async function runPreview(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  // Same split identity as Apply when SCW_STATE_* is set; otherwise the supplied key serves both sides, which the standing admin key can.
+  // Same state identity as Apply: the deprecated SCW_STATE_* override, else the standing key, which the admin application's key serves on both sides.
   const previewEnv = buildProviderEnv(infraDir, {
     accessKey,
     secretKey,
     projectId,
     passphrase,
     organizationId,
-    ...stateKeyOverrideFromEnv(),
+    stateAccessKey: identity.state?.accessKey,
+    stateSecretKey: identity.state?.secretKey,
   });
   // The program diffs VM policy rules only under this marker, and that diff is the one an operator is here to see.
   previewEnv[PRIVILEGED_UP_ENV] = '1';
