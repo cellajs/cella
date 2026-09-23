@@ -92,7 +92,7 @@ export type Access<T extends AccessMembership = AccessMembership> =
   | { anonymous: true };
 ```
 
-Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the actor the guard populated (`id`, `bindings`, `scopes`, `isSystemAdmin`) off the request context and yields `{ anonymous: true }` when nobody is signed in. `scopes` is required so a hand-built access states its mask: a session passes `null`; an API key or an access token passes what it was issued with, and the decision is `allowed AND the scope covers the action`. Where scopes come from: [Interoperability](./INTEROPERABILITY.md#access-scopes).
+Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the guard-populated actor (`id`, `bindings`, `scopes`) and `isSystemAdmin` off the request context and yields `{ anonymous: true }` when nobody is signed in. `scopes` is required so a hand-built access states its mask: a session passes `null`; an API key or an access token passes what it was issued with, and the decision is `allowed AND the scope covers the action`. Where scopes come from: [Interoperability](./INTEROPERABILITY.md#access-scopes).
 
 ## The policy consulted
 

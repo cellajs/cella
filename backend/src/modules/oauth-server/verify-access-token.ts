@@ -11,7 +11,7 @@ export interface VerifiedAccessToken {
   principalId: string;
   kind: 'user' | 'service';
   tenantId: string;
-  /** The token's scope set, always a mask: a delegated token never carries a principal's full grants implicitly. */
+  /** The token's scope set, always a mask: a delegated token never carries a principal's full bindings implicitly. */
   scopes: AccessScope[];
   clientId: string;
 }

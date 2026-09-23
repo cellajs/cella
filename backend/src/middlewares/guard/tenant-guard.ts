@@ -34,7 +34,7 @@ export const tenantGuard = xMiddleware(
 
     const tenant = await loadActiveTenant(tenantId);
 
-    // A foothold: a service account holds at least one grant (its grants live in its own tenant); a user has a
+    // A foothold: a service account holds at least one binding (its bindings live in its own tenant); a user has a
     // membership in the tenant, is system admin, or created it (bootstrap, before any organization or membership exists).
     const allowed =
       actor.kind === 'service'

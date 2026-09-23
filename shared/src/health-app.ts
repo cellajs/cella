@@ -9,7 +9,7 @@ interface HealthAppOptions {
 }
 
 /**
- * Shared by backend, cdc and yjs. The load balancer and `wait-for-version` rely on this
+ * Shared by backend, cdc, yjs, mcp and oauth. The load balancer and `wait-for-version` rely on this
  * contract: `GET /health` returns 204, `?depth=full` returns JSON diagnostics with the
  * callback's status, both carrying `X-App-Version` and short-lived caching. Workers serve the
  * returned app directly; the backend mounts it into its route tree.

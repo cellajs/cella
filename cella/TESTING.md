@@ -50,7 +50,7 @@ Packages without database access (`shared`, `infra`, `sdk`, most of `frontend`) 
 
 ## Conventions
 
-A branch that adds migrations runs its suite against a throwaway database (`DB_TEST_PORT=<port>` with a fresh container from the same image), never the shared test database other worktrees migrate. Tests that need the authorization server start it in-process with `backend/tests/oauth-helpers.ts`; no separate process, no network.
+A branch that adds migrations runs its suite against a throwaway database (`DB_TEST_PORT=<port>` with a fresh container from the same image), never the shared test database other worktrees migrate. Tests that need the authorization server start it in-process with `backend/tests/oauth-helpers.ts`: no separate process, it listens on a random loopback port and its tokens verify against the same keystore the guards read.
 
 **Placement.** Pick by scope:
 

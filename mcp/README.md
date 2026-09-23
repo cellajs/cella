@@ -1,10 +1,10 @@
 # MCP worker
 
-This document covers the MCP worker: the app's **Model Context Protocol endpoint**, one per organization, exposing routes that opted in as tools to AI clients.
+This document covers the MCP worker: the app's **Model Context Protocol endpoint**, one per organization, exposing routes that opted in as MCP tools to AI clients.
 
 ### TL;DR
 
-An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. Tools are ordinary routes that carry `x-tool`; their input comes from the route's request schema and they run the same operation the REST handler runs, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
+An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `x-tool`; their input comes from the route's request schema and they run the same operation the REST handler runs, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
 
 ## How it fits
 
@@ -29,12 +29,12 @@ The worker is a `MODE` of the backend image: its own process on `devPorts.mcp`, 
 | --- | --- |
 | `GET …/mcp/.well-known/oauth-protected-resource` | RFC 9728 metadata: the resource identifier, the authorization server, `scopes_supported` |
 | `POST …/mcp` without a token | 401, `WWW-Authenticate: Bearer resource_metadata="…"`: where to read the metadata |
-| `POST …/mcp` with a token for another tenant or organization | 401 `invalid_token`: the audience does not match |
-| `tools/call` outside the token's scopes | 403, `WWW-Authenticate: Bearer error="insufficient_scope", scope="attachment:write"`, plus a JSON-RPC error carrying the scope |
+| `POST …/mcp` with a token for another tenant, or an MCP token for another organization | 401 `invalid_token`: the audience does not match |
+| `tools/call` outside the token's scopes | 403, `WWW-Authenticate: Bearer error="insufficient_scope", scope="attachment:write", resource_metadata="…"`, plus a JSON-RPC error (`-32002`) carrying the scope |
 
-A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries. The step-up on 403 works the same way with a wider scope. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so a consent is always on record.
+A client follows the challenge to the OAuth worker, obtains consent and a token bound to this organization's resource, and retries. The step-up on 403 works the same way with a wider scope. Sessions and API keys are refused here on purpose: the MCP face takes only tokens, so every call traces to a consent or to a service account's `client_credentials` grant.
 
-## Tools are routes
+## MCP tools are routes
 
 A route opts in by carrying `x-tool` on `createXRoute`:
 
@@ -45,6 +45,7 @@ A route opts in by carrying `x-tool` on `createXRoute`:
   approvalRequired: true,
   category: 'attachments',
   entity: 'attachment',
+  // The transaction is server-built, so field timestamps come from the server clock.
   execute: (ctx, { params, body }) => updateAttachmentOp(ctx, params.id, body, { serverOrigin: true }),
 },
 ```
@@ -68,8 +69,8 @@ JSON-RPC 2.0 over Streamable HTTP with JSON responses: `initialize` (echoes the 
 ## Operational constraints
 
 - **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
-- **One organization per endpoint.** The path binds the tenant and organization; the token's audience must match them.
-- **In-process execution.** A tool call passes the MCP route's guards and rate limiter, then the operation's own permission checks; it does not pass the REST route's limiter or `x-service` gate.
+- **One organization per endpoint.** The path binds the tenant and organization; the token's audience must be this organization's MCP resource or the tenant's REST API resource, never another tenant.
+- **In-process execution.** A tool call passes the MCP route's guards (`tokenGuard` applies the per-principal burst limiter), then the operation's own permission checks; it does not pass the REST route's limiter, cache or `x-service` gate.
 - **The AI key is unrelated.** `SCW_AI_API_KEY` switches on the app's own AI features (job queues); the MCP endpoint never needs it.
 - **Tool descriptions are model-facing English.** They are not translated.
 
@@ -87,8 +88,8 @@ Configuration and environment (the backend's `.env` and `appConfig`):
 | --- | --- |
 | `services.mcp.enabled` | Runs the worker and the routes; `false` answers 404 |
 | `mcpUrl`, `MCP_API_URL` | The public base, same origin as the API under `/mcp` |
-| `devPorts.mcp`, `PORT` | Listen port, default 4003; `MODE=mcp` selects this entry |
+| `devPorts.mcp`, `PORT` | `MODE=mcp` selects this entry; the dev entry, the infra env and the `singleVM` fold set `PORT` to `devPorts.mcp` (4003), and a bare `PORT` defaults to the API port |
 | `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role |
-| `SCW_AI_API_KEY` | Optional; the app's own AI features only |
+| `SCW_AI_API_KEY` | Optional; the app's own AI features only. When set, the worker also needs `DATABASE_ADMIN_URL` for its pg-boss queues |
 
 The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the descriptor builder; the registry is `backend/src/core/mcp-tool-registry.ts`; `mcp/src/mcp-worker.ts` is the development entry.

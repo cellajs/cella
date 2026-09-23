@@ -56,7 +56,7 @@ export const createdApiKeySchema = apiKeySchema
 
 const apiKeyInputSchema = z.object({
   name: validNameSchema,
-  /** Mask over the account's grants. Omitted or null = every scope the grants allow. */
+  /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
   scopes: z.array(scopeEnum).min(1).nullable().optional(),
   expiresAt: z.string().datetime().optional(),
 });

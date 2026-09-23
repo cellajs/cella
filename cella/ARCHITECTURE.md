@@ -10,7 +10,7 @@ in React. Live updates, offline support, and tenant isolation are supported out-
 
 ## Overview
 
-Below you see a typical full production stack. However, Yjs is optional and CDC and Yjs can be **cohosted on the backend VM** to reduce costs.
+Below you see a typical full production stack. However, Yjs, OAuth and MCP are optional, and every worker can be **cohosted on the backend VM** to reduce costs.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐

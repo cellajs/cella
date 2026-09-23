@@ -97,6 +97,9 @@ const repoDocRoutes = {
   'cdc/README.md': '/docs/page/architecture/cdc',
   'yjs/README.md': '/docs/page/architecture/yjs',
   'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
+  'cella/INTEROPERABILITY.md': '/docs/page/architecture/interoperability',
+  'oauth/README.md': '/docs/page/architecture/oauth',
+  'mcp/README.md': '/docs/page/architecture/mcp',
   'bench/README.md': '/docs/page/guides/load-testing',
 } as const;
 

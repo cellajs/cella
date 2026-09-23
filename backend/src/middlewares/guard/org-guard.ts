@@ -68,7 +68,7 @@ export const orgGuard = xMiddleware(
     if (!isSystemAdmin && !isInOrganization) {
       throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
     }
-    // A service account's grant is not a membership row; the organization-level membership is a user's only.
+    // A service account's binding is not a membership row; the organization-level membership is a user's only.
     const orgWithMembership = {
       ...organization,
       membership: orgMembership && isMembershipRow(orgMembership) ? orgMembership : null,

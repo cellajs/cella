@@ -34,9 +34,9 @@ The worker is one more `MODE` of the backend image: a process of its own on `dev
 | Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if an admin installed the app in the tenant |
 | Service account | Its own id | Any of its live API keys as the client secret | None: `client_credentials` |
 
-An authorization request lands the browser on `/auth/consent?uid=…`, an app page under the sign-in framing. The page reads the interaction through the worker's JSON routes with the session cookie (a missing session goes through sign-in and back), shows the client's name and logo and the requested scopes as labels, and posts accept or refuse. Three refusals are decided server-side and shown instead of the button: the person is not a member of the resource's tenant, the tenant does not allow consented clients (`restrictions.allowConsentedClients`), or the registered app is not installed there (`service_accounts.oauthClientId`).
+An authorization request lands the browser on `/auth/consent?uid=…`, an app page under the sign-in framing. The page reads the interaction through the worker's JSON routes with the session cookie (a missing session goes through sign-in and back), shows the client's name and logo and the requested scopes as labels, and posts accept or refuse. Three refusals are decided server-side; the page shows the reason and disables Accept: the person is not a member of the resource's tenant, the tenant does not allow consented clients (`restrictions.allowConsentedClients`), or the registered app is not installed there (`service_accounts.oauthClientId`).
 
-A consent is a Grant row bound to one resource with the approved scopes. People list and revoke theirs at `GET` / `DELETE /me/connected-apps`; revoking deletes the grant and every token issued under it.
+A consent is a Grant row bound to one resource with the approved scopes. People list and revoke theirs at `GET /me/connected-apps` and `DELETE /me/connected-apps/{id}`; revoking deletes the grant and every token issued under it.
 
 ## Tokens
 
@@ -48,7 +48,7 @@ A consent is a Grant row bound to one resource with the approved scopes. People 
 | Refresh token | 30 days, rotated on use; grants live 30 days |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the principal), `principal_kind` (`user` or `service`), `tenant_id`, `scope`, `aud` and `iss`. Verification happens in the guard against the published keys, cached for five minutes: no round trip to this worker, no row per token.
+Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the principal), `principal_kind` (`user` or `service`), `tenant_id`, `scope`, `aud` and `iss`. Verification happens in the guard against the public keys in `signing_keys` (every status, so a retired key still verifies), cached in-process for five minutes: no round trip to this worker, no row per token.
 
 ## Keystore
 
@@ -56,11 +56,11 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly job on the API deletes expired rows and consumed rows older than thirty days.
+`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly job registered with the API deletes expired rows and consumed rows older than thirty days. Like every backend job it starts on the instance that runs migrations at boot (`RUN_MIGRATIONS_ON_BOOT`), which production does not set on the app block; until job ownership moves, the sweep runs in development only.
 
 ## Operational constraints
 
-- **Same origin.** Discovery, the consent page cookie and the interaction cookies assume the issuer sits on the app origin. Both discovery documents are served under `/oauth/.well-known/` (the path-appending form MCP clients try last); the RFC 8414 form at the origin root is a proxy rewrite when a client needs it.
+- **Same origin.** Discovery, the consent page cookie and the interaction cookies assume the issuer sits on the app origin. Both discovery documents are served under `/oauth/.well-known/`; MCP clients reach the `openid-configuration` one as their last fallback. The RFC 8414 path-insertion form at the origin root (`/.well-known/oauth-authorization-server/oauth`) is not routed; a client that needs it would need a proxy rewrite.
 - **Reads the app database.** Sessions, memberships, tenants, service accounts and keys are read directly; the worker starts after the API in development for migrations and needs the runtime database role in production.
 - **One process serves consent.** The interaction routes render nothing themselves; the page under `/auth/consent` is the frontend's.
 - **Client secrets are hashes.** A registered app's secret is compared by hash; a service account's client secret is any of its live keys, so revoking a key also ends its `client_credentials` access.
@@ -81,7 +81,7 @@ Configuration and environment (the backend's `.env` and `appConfig`):
 | --- | --- |
 | `services.oauth.enabled` | Runs the worker; `false` also hides the Connected apps card |
 | `oauthUrl`, `OAUTH_URL` | The issuer, same origin as the API under `/oauth` |
-| `devPorts.oauth`, `PORT` | Listen port, default 4004; `MODE=oauth` selects this entry |
+| `devPorts.oauth`, `PORT` | `MODE=oauth` selects this entry; the dev entry, the infra env and the `singleVM` fold set `PORT` to `devPorts.oauth` (4004), and a bare `PORT` defaults to the API port |
 | `COOKIE_SECRET` | Signs the provider's interaction and session cookies |
 | `DATA_ENCRYPTION_KEY` | Encrypts private signing keys at rest |
 | `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role |

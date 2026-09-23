@@ -20,7 +20,7 @@ pnpm seed       # seed test data
 pnpm dev
 ```
 
-Seeded attachments point at files in the shared public development bucket, so they render without S3 or Transloadit keys. Those keys are only needed to upload files of your own. `pnpm dev` also starts the OAuth and MCP workers; the consent page is `/auth/consent` and discovery sits at `/oauth/.well-known/oauth-authorization-server`.
+Seeded attachments point at files in the shared public development bucket, so they render without S3 or Transloadit keys. Those keys are only needed to upload files of your own. `pnpm dev` also starts the OAuth and MCP workers when `appConfig.services.oauth` and `.mcp` are enabled (the template default is off); the consent page is `/auth/consent` and discovery sits at `/oauth/.well-known/oauth-authorization-server`.
 
 ## Check
 

@@ -21,15 +21,15 @@ The OpenAPI contract and the generated SDK are the same for every caller ([Clien
 
 Routes that accept a machine caller say so through their guard. `actorGuard` takes a session cookie, an API key, or an access token; `serviceGuard` takes only keys and tokens. An operation behind either is typed on `ActorContext`, which has no user row, so it cannot accidentally read one. Session-only routes keep `userGuard` ([AGENTS.md](./AGENTS.md#middleware--guards)).
 
-An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant, checked before any lookup, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per account) and the hourly points budget, keyed on the principal.
+An API key travels as `Authorization: Bearer <key>` or `x-api-key`. A request carrying one skips CSRF but is refused when it carries a browser `Origin`: keys are for servers. The tenant in the URL must be the key's own tenant: `tenantGuard` compares the two before loading the tenant row, so a key learns nothing about other tenants. Machine calls pass a burst limiter (30 per second per principal) and, on routes that carry it, the tenant's hourly points budget, keyed on tenant and principal.
 
 ## Face: OAuth
 
-The app is its own authorization server, on the same origin under `/oauth`. A person is sent to a consent screen that names the client and the scopes it asks for; the resulting token acts as that person, masked by those scopes, in one tenant. Two kinds of client exist: MCP clients identify themselves with a Client ID Metadata Document (an HTTPS URL, nothing pre-registered; a tenant can refuse them), and registered apps have a row in `oauth_clients` and are installed per tenant as a service account. People see and revoke their consents under "Connected apps" in their account settings. Mechanics: [OAuth worker](../oauth/README.md).
+The app is its own authorization server, on the same origin under `/oauth`. A person is sent to a consent screen that names the client and the scopes it asks for; the resulting token acts as that person, masked by those scopes, in one tenant. Two kinds of client reach the consent screen: MCP clients identify themselves with a Client ID Metadata Document (an HTTPS URL, nothing pre-registered; a tenant can refuse them), and registered apps have a row in `oauth_clients` and are installed per tenant as a service account carrying the client id (consent refuses an app that is not installed; the installation route is not built yet). A service account is its own `client_credentials` client and needs neither a row nor consent. People see and revoke their consents under "Connected apps" in their account settings. Mechanics: [OAuth worker](../oauth/README.md).
 
 ## Face: MCP
 
-Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives (RFC 9728), consents through the OAuth face, and comes back. Tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents. Mechanics: [MCP worker](../mcp/README.md).
+Each organization has an MCP endpoint that accepts only access tokens. A client with no token is told where the metadata lives (RFC 9728), consents through the OAuth face, and comes back. MCP tools are routes that opted in; a call the token's scopes do not cover answers with the scope to step up to, and the client re-consents. Mechanics: [MCP worker](../mcp/README.md).
 
 ## The substrate
 
@@ -47,7 +47,7 @@ The scope vocabulary is derived from the policy matrix, never listed by hand: ev
 
 ### Tokens
 
-Access tokens are RS256 JWTs the OAuth face signs: `sub` is the principal, `principal_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies them locally against the keystore, so a token costs no database read to check and can never cross tenants. Tokens live an hour; refresh tokens rotate.
+Access tokens are RS256 JWTs the OAuth face signs: `sub` is the principal, `principal_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then loads the principal: a cached read for a user, one row read for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
 
 ### Guards
 
@@ -62,15 +62,15 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the principal, `prin
 
 ### Quotas and limits
 
-Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits for machine callers are keyed on the principal, so one runaway integration cannot spend a person's budget.
+Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the principal: a service account spends its own budget, and an app acting on a person's consent spends that person's.
 
 ## Where to look
 
 | Piece | Path |
 | --- | --- |
-| Principals and provenance | `backend/src/modules/principals/`, `backend/src/db/utils/ids.ts` |
+| Principals and provenance | `backend/src/modules/principals/`, `backend/src/db/utils/ids.ts`, provenance columns in `db/utils/product-columns.ts` and `channel-columns.ts` |
 | Service accounts and keys | `backend/src/modules/service-accounts/` |
-| Scopes | `shared/src/permissions/access-scopes.ts`, mask in `check-access.ts` |
+| Scopes | `shared/src/permissions/access-scopes.ts`, mask in `check-access.ts` and, for list queries, `backend/src/permissions/collection-scope.ts` |
 | Authorization server | `backend/src/modules/oauth-server/`, process entry in `oauth/` |
 | MCP | `backend/src/modules/mcp/`, tools registered by `createXRoute` |
 | Guards | `backend/src/middlewares/guard/` |
