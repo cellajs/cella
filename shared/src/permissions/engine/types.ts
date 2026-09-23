@@ -61,8 +61,8 @@ export interface PermissionDecision<T extends AccessMembership = AccessMembershi
 
 export interface PermissionCheckOptions {
   isSystemAdmin?: boolean;
-  /** Acting user ID. Required by `own` conditions. */
-  userId?: string;
+  /** Acting actor id (a user or a service account). Required by `own` conditions. */
+  actorId?: string;
   /** The `checkAccess*` wrappers inject the configured grants. @see public-read.ts */
   publicGrants?: PublicReadGrants;
   /**

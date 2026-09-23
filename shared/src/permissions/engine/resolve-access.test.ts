@@ -155,7 +155,7 @@ const makeRandomizer = (seed: number) => {
     });
     return {
       memberships,
-      userId: pick(USERS),
+      actorId: pick(USERS),
       isSystemAdmin: random() < 0.05,
     };
   };
@@ -184,7 +184,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
         for (const [index, access] of accesses.entries()) {
           const single = getAllDecisions(policyMatrix, access.memberships, subject, {
             ...baseOptions,
-            userId: access.userId,
+            actorId: access.actorId,
             isSystemAdmin: access.isSystemAdmin,
           });
           const label = `seed=0x${SEED.toString(16)} scenario=${scenario.name} iteration=${iteration} access=${index}`;
@@ -204,13 +204,13 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
     channelIds: { organization: 'org1', project: 'proj1' },
     row: { createdBy: null },
   });
-  const valid: EngineAccess = { memberships: [wideMembership('project', 'proj1', 'member')], userId: 'user1' };
+  const valid: EngineAccess = { memberships: [wideMembership('project', 'proj1', 'member')], actorId: 'user1' };
   const invalid: EngineAccess = {
     memberships: [
       wideMembership('project', 'proj1', 'member'),
       { channelType: 'project', channelId: '', role: 'member' } as unknown as AccessMembership,
     ],
-    userId: 'user2',
+    actorId: 'user2',
   };
 
   it("'deny' fail-closes just the invalid access, order-independent", () => {

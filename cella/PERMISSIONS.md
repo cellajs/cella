@@ -89,7 +89,7 @@ Every `checkAccess*` call takes an explicit `Access`, actor plus memberships:
 
 ```ts
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
+  | { actorId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 ```
 

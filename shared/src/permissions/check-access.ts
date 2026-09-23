@@ -13,11 +13,11 @@ import type {
 
 /**
  * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
- * omitted user id a type error, so no actor-based condition is denied by accident. `userId` is any
- * actor id; `scopes` is the mask of the API key or access token that proved the caller (null or absent = unmasked; a session is never masked).
+ * omitted actor id a type error, so no actor-based condition is denied by accident. `actorId` is a user or
+ * service account id; `scopes` is the mask of the API key or access token that proved the caller (null or absent = unmasked; a session is never masked).
  */
 export type PredicateActor =
-  | { userId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null }
+  | { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 
 /**
@@ -26,7 +26,7 @@ export type PredicateActor =
  * its mask (null = unmasked) and can never fail open by omission.
  */
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
+  | { actorId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 
 /**
@@ -40,7 +40,7 @@ const scopeAllows = (access: Access, entityType: EntityType, action: EntityActio
 const toEngineAccess = <T extends AccessMembership>(access: Access<T>): EngineAccess<T> =>
   'anonymous' in access
     ? { memberships: [] }
-    : { memberships: access.memberships, userId: access.userId, isSystemAdmin: access.isSystemAdmin === true };
+    : { memberships: access.memberships, actorId: access.actorId, isSystemAdmin: access.isSystemAdmin === true };
 
 export interface PermissionResult<T extends AccessMembership = AccessMembership> {
   allowed: boolean;
@@ -69,7 +69,7 @@ const boundOptions = { publicGrants: publicReadGrants, elevatedGrants: hierarchy
 
 const accessOptions = <T extends AccessMembership>(engineAccess: EngineAccess<T>): PermissionCheckOptions => ({
   ...boundOptions,
-  userId: engineAccess.userId,
+  actorId: engineAccess.actorId,
   isSystemAdmin: engineAccess.isSystemAdmin,
 });
 

@@ -88,7 +88,7 @@ describe('productCache: draft veto on cache hit (publishedAt lifecycle)', () => 
   });
 
   it('serves a cached draft to its author', async () => {
-    accessFrom.mockReturnValue({ userId: 'user-1', isSystemAdmin: false, memberships: [] });
+    accessFrom.mockReturnValue({ actorId: 'user-1', isSystemAdmin: false, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -99,7 +99,7 @@ describe('productCache: draft veto on cache hit (publishedAt lifecycle)', () => 
   });
 
   it('falls through for a non-author even though the engine allows the read', async () => {
-    accessFrom.mockReturnValue({ userId: 'user-2', isSystemAdmin: false, memberships: [] });
+    accessFrom.mockReturnValue({ actorId: 'user-2', isSystemAdmin: false, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 
@@ -110,7 +110,7 @@ describe('productCache: draft veto on cache hit (publishedAt lifecycle)', () => 
   });
 
   it('falls through for a system admin too: author-only means author-only', async () => {
-    accessFrom.mockReturnValue({ userId: 'admin-user', isSystemAdmin: true, memberships: [] });
+    accessFrom.mockReturnValue({ actorId: 'admin-user', isSystemAdmin: true, memberships: [] });
     const ctx = mockCtx();
     const next = vi.fn();
 

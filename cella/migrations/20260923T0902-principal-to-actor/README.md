@@ -6,7 +6,9 @@ The stored identity behind a request had two names: `principals` (the supertable
 the token claim) and `actor` (the guard output, `ActorContext`, `actorGuard`, the engine input). The template now uses
 one word for the row and the request value, as it does for `user` and `organization`. `principalsTable` is
 `actorsTable` in `backend/src/modules/actors/`, `PrincipalId` is `ActorId`, `api_keys.principal_id` is `actor_id`, the
-access-token claim `principal_kind` is `actor_kind`, the rate-limit identifier `principalId` is `actorId`.
+access-token claim `principal_kind` is `actor_kind`, the rate-limit identifier `principalId` is `actorId`. The engine's
+access field follows: `Access`, `PredicateActor`, `EngineAccess`, `ConditionActor` and `PermissionCheckOptions` carry
+`actorId` where they carried `userId`, since the value was always any actor id.
 
 ## Blast radius
 
@@ -28,7 +30,8 @@ pnpm exec tsx cella/migrations/20260923T0902-principal-to-actor/principal-to-act
 2. The migrations `backend/drizzle/20260923090555_principal_to_actor/` and the `side_effects` folder after it arrive with the sync; do not regenerate them. If your app added tables with provenance columns, their foreign keys still point at the renamed table (Postgres keeps the reference); rename their `*_principals_id_fkey` constraints by hand if you want the names to match.
 3. Any app table that references `principalsTable` directly, or any test truncate list that names `principals`, is covered by the codemod; check tables declared under a different root.
 4. The codemod also rewrites the word in comments and descriptions; read the diff for "an actor" versus "a actor" and for doubled phrases such as "machine actor: the actor".
-5. Infra code keeps `principal` for Scaleway IAM principals (`infra/lib/scaleway/principals.ts`); the codemod roots exclude `infra/` on purpose.
+5. The engine field `userId` -> `actorId` is not in the codemod: `userId` also names the membership column. Rename it by hand wherever your app builds an `Access`, `PredicateActor`, `EngineAccess` or `ConditionActor` literal, or passes `userId` in `getAllDecisions` options; `pnpm check` lists every site as an excess-property error. Stream subscribers (`SubscriberAccess`) keep `userId`: they are users.
+6. Infra code keeps `principal` for Scaleway IAM principals (`infra/lib/scaleway/principals.ts`); the codemod roots exclude `infra/` on purpose.
 
 ## Verify
 

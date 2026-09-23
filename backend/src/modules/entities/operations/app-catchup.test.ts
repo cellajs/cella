@@ -40,7 +40,7 @@ afterAll(async () => {
 
 describe('answerCatchupViews', () => {
   it('answers an authorized org view with frontier/count summaries', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v1', organizationId: ORG, prefixes: [ORG], entityTypes: [productType], cursor: 30 },
     ]);
 
@@ -51,7 +51,7 @@ describe('answerCatchupViews', () => {
 
   it('answers a view outside the caller memberships without leaking numbers', async () => {
     // The exact non-'ok' status is app-dependent; the shared guarantee is: not 'ok', no numbers.
-    const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v2', organizationId: OTHER_ORG, prefixes: [OTHER_ORG], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -63,7 +63,7 @@ describe('answerCatchupViews', () => {
   });
 
   it('a mixed request answers each view independently', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'a', organizationId: ORG, prefixes: [ORG], entityTypes: [productType], cursor: 37 },
       { key: 'b', organizationId: OTHER_ORG, prefixes: [OTHER_ORG], entityTypes: [productType], cursor: 5 },
     ]);
@@ -75,7 +75,7 @@ describe('answerCatchupViews', () => {
   });
 
   it('a forged prefix pointing at another org is forbidden even with real memberships', async () => {
-    const answers = await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false, scopes: null }, [
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
       { key: 'v3', organizationId: ORG, prefixes: [`${OTHER_ORG}/x`], entityTypes: [productType], cursor: 0 },
     ]);
 
@@ -83,6 +83,8 @@ describe('answerCatchupViews', () => {
   });
 
   it('returns empty for no views', async () => {
-    expect(await answerCatchupViews(orgAdmin, { userId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual([]);
+    expect(await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual(
+      [],
+    );
   });
 });

@@ -15,7 +15,7 @@ vi.mock('#/modules/attachment/helpers/signed-url', () => ({
 }));
 const checkAccessBatch = vi.fn();
 vi.mock('#/permissions', () => ({ checkAccessBatch: (...args: unknown[]) => checkAccessBatch(...args) }));
-vi.mock('#/permissions/access', () => ({ accessFrom: () => ({ userId: 'user-1', memberships: [] }) }));
+vi.mock('#/permissions/access', () => ({ accessFrom: () => ({ actorId: 'user-1', memberships: [] }) }));
 const buildSubjectFromEntity = vi.fn();
 vi.mock('#/permissions/build-subject', () => ({
   buildSubjectFromEntity: (...args: unknown[]) => buildSubjectFromEntity(...args),
@@ -96,7 +96,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'original' }] });
 
     expect(buildSubjectFromEntity).toHaveBeenCalledWith('attachment', attachmentA);
-    expect(checkAccessBatch).toHaveBeenCalledWith({ userId: 'user-1', memberships: [] }, 'read', [{ id: 'att-a' }]);
+    expect(checkAccessBatch).toHaveBeenCalledWith({ actorId: 'user-1', memberships: [] }, 'read', [{ id: 'att-a' }]);
   });
 
   it('falls back to the original key when the requested variant is missing', async () => {

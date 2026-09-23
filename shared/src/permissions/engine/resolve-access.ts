@@ -9,12 +9,12 @@ import { validateSubject } from './validation.ts';
 
 /**
  * One actor's inputs to a decision: memberships plus the two actor fields the engine reads. An
- * anonymous actor is `{ memberships: [] }` with no `userId`, which the `checkAccess*` wrappers
+ * anonymous actor is `{ memberships: [] }` with no `actorId`, which the `checkAccess*` wrappers
  * map their public `Access` union onto.
  */
 export interface EngineAccess<T extends AccessMembership = AccessMembership> {
   memberships: T[];
-  userId?: string;
+  actorId?: string;
   isSystemAdmin?: boolean;
 }
 
@@ -94,7 +94,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
     } else {
       key = '|';
       for (const name of conditionNames) {
-        key += matchesRowCondition(name, conditionRow, { userId: access.userId }) ? '1' : '0';
+        key += matchesRowCondition(name, conditionRow, { actorId: access.actorId }) ? '1' : '0';
       }
       for (const [channelType, channelId] of channelLevels) {
         const held = membershipIndex.get(`${channelType}:${channelId}`);
@@ -116,7 +116,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
         getRoles,
         entityActions,
         access.isSystemAdmin === true,
-        access.userId,
+        access.actorId,
         options?.publicGrants,
         options?.elevatedGrants,
         options?.debug,

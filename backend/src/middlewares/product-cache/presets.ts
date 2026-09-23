@@ -81,7 +81,7 @@ function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached
           : ((createdBy as string | null | undefined) ?? null),
     } as { id: string; createdBy?: string | null };
     const access = accessFrom(ctx);
-    if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.userId)) return false;
+    if (!draftVisibleTo(authRow, 'anonymous' in access ? undefined : access.actorId)) return false;
     const subject = buildSubjectFromEntity(productType, authRow);
     return checkAccess(access, 'read', subject).allowed;
   } catch {

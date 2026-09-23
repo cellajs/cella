@@ -78,8 +78,8 @@ describe('buildSubjectFromEntity: carries the row', () => {
     const row = { ...subject.row, createdBy: subject.createdBy };
 
     // `own`: the actor created it. Public read: the row carries publicAt.
-    expect(matchesRowCondition('own', row, { userId: 'u1' })).toBe(true);
-    expect(matchesRowCondition('own', row, { userId: 'u2' })).toBe(false);
+    expect(matchesRowCondition('own', row, { actorId: 'u1' })).toBe(true);
+    expect(matchesRowCondition('own', row, { actorId: 'u2' })).toBe(false);
     expect(matchesRowCondition('public', row, {})).toBe(true);
 
     // ...and an unpublished row is not public.

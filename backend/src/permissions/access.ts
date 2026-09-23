@@ -15,7 +15,7 @@ export type BindingOf<C extends AccessContext> = NonNullable<C['var']['actor']>[
 /** Actor for compiled-predicate paths: a hand-assembled context without `actor` fail-closes every `'own'` grant. */
 export const actorFrom = (ctx: AccessContext): PredicateActor =>
   ctx.var.actor
-    ? { userId: ctx.var.actor.id, isSystemAdmin: ctx.var.isSystemAdmin, scopes: ctx.var.actor.scopes }
+    ? { actorId: ctx.var.actor.id, isSystemAdmin: ctx.var.isSystemAdmin, scopes: ctx.var.actor.scopes }
     : { anonymous: true };
 
 /**
@@ -25,7 +25,7 @@ export const actorFrom = (ctx: AccessContext): PredicateActor =>
 export const accessFrom = <C extends AccessContext>(ctx: C): Access<BindingOf<C>> =>
   ctx.var.actor
     ? {
-        userId: ctx.var.actor.id,
+        actorId: ctx.var.actor.id,
         isSystemAdmin: ctx.var.isSystemAdmin === true,
         memberships: ctx.var.actor.bindings as BindingOf<C>[],
         scopes: ctx.var.actor.scopes,
