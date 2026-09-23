@@ -1,4 +1,4 @@
-import { index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
@@ -9,11 +9,11 @@ import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
 
-/** Tokens for email verification and invitation. Partitioned by expiresAt via pg_partman (weekly, 30-day retention); Drizzle sees a regular table. */
+/** Tokens for email verification and invitation. Rows expired for over 30 days are swept nightly by maintain_partitions(). */
 export const tokensTable = snakeCase.table(
   'tokens',
   {
-    id: uuid().notNull().$defaultFn(generateId),
+    id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
     singleUseToken: varchar({ length: maxLength.field }),
     type: varchar({ enum: tokenTypeEnum }).notNull(),
@@ -32,7 +32,6 @@ export const tokensTable = snakeCase.table(
     invokedAt: timestamp({ withTimezone: true, mode: 'string' }),
   },
   (table) => [
-    primaryKey({ columns: [table.id, table.expiresAt] }),
     index('tokens_secret_type_idx').on(table.secret, table.type),
     index('tokens_user_id_idx').on(table.userId),
     index('tokens_created_by_idx').on(table.createdBy),

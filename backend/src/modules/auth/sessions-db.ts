@@ -1,4 +1,4 @@
-import { index, integer, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -11,11 +11,11 @@ export type SessionTypes = (typeof sessionTypeEnum)[number];
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
-/** Authenticated session data. Partitioned by expiresAt via pg_partman (weekly, 30-day retention); Drizzle sees a regular table. */
+/** Authenticated session data. Rows expired for over 30 days are swept nightly by maintain_partitions(). */
 export const sessionsTable = snakeCase.table(
   'sessions',
   {
-    id: uuid().notNull().$defaultFn(generateId),
+    id: uuid().primaryKey().$defaultFn(generateId),
     secret: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: sessionTypeEnum }).notNull().default('regular'),
     userId: uuid()
@@ -38,7 +38,6 @@ export const sessionsTable = snakeCase.table(
     expiresAt: timestampColumns.expiresAt,
   },
   (table) => [
-    primaryKey({ columns: [table.id, table.expiresAt] }),
     index('sessions_secret_idx').on(table.secret),
     index('sessions_user_id_idx').on(table.userId),
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),

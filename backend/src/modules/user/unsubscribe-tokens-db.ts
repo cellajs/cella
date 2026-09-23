@@ -1,15 +1,15 @@
-import { index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/** Email unsubscribe tokens, multiple per user, old ones stay valid. Partitioned by createdAt via pg_partman (monthly, 90-day retention). */
+/** Email unsubscribe tokens, multiple per user, old ones stay valid. Rows older than 90 days are swept nightly by maintain_partitions(). */
 export const unsubscribeTokensTable = snakeCase.table(
   'unsubscribe_tokens',
   {
-    id: uuid().notNull().$defaultFn(generateId),
+    id: uuid().primaryKey().$defaultFn(generateId),
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
@@ -18,7 +18,6 @@ export const unsubscribeTokensTable = snakeCase.table(
     createdAt: timestampColumns.createdAt,
   },
   (table) => [
-    primaryKey({ columns: [table.id, table.createdAt] }),
     index('unsubscribe_tokens_secret_idx').on(table.secret),
     index('unsubscribe_tokens_user_id_idx').on(table.userId),
   ],

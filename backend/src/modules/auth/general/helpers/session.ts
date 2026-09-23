@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, ne, or } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, ne } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -46,7 +46,7 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db
-    .select({ id: sessionsTable.id, expiresAt: sessionsTable.expiresAt })
+    .select({ id: sessionsTable.id })
     .from(sessionsTable)
     .where(
       and(
@@ -60,9 +60,12 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
 
   if (excess.length === 0) return;
 
-  await db
-    .delete(sessionsTable)
-    .where(or(...excess.map((s) => and(eq(sessionsTable.id, s.id), eq(sessionsTable.expiresAt, s.expiresAt)))));
+  await db.delete(sessionsTable).where(
+    inArray(
+      sessionsTable.id,
+      excess.map((s) => s.id),
+    ),
+  );
 
   log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
 };
@@ -226,10 +229,10 @@ export const validateSession = async (
   const { session, user } = result;
 
   if (isExpiredDate(session.expiresAt)) {
-    // Fire-and-forget purge of the dead row: a failure must never change the auth outcome, and scoping by expiresAt targets the partition.
+    // Fire-and-forget purge of the dead row: a failure must never change the auth outcome.
     void db
       .delete(sessionsTable)
-      .where(and(eq(sessionsTable.id, session.id), eq(sessionsTable.expiresAt, session.expiresAt)))
+      .where(eq(sessionsTable.id, session.id))
       .catch(() => {});
     throw new AppError(401, 'session_expired', 'warn');
   }

@@ -207,6 +207,15 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         { ignoreChanges: ['permission'] },
       );
 
+      // pg_cron lives only in Scaleway's default `rdb` database; the migrate step schedules the partition maintenance job from there as the admin user.
+      new scaleway.databases.Privilege('admin-cron-privilege', {
+        instanceId: instance.id,
+        databaseName: 'rdb',
+        userName: adminUser.name,
+        permission: 'all',
+        region,
+      });
+
       new scaleway.databases.Privilege(
         'runtime-privilege',
         {

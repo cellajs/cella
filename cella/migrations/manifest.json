@@ -1267,6 +1267,26 @@
     "pnpm check"
    ],
    "summary": "The Docker geoip build stage and backend/scripts/download-geoip.ts are removed; backend/src/lib/geoip.ts downloads the DB-IP Lite databases from GEOIP_SOURCE_URL (default: the geoip/ prefix of the app's public bucket, the shared template bucket in development) at boot and daily, and geolocates GEOIP_DEV_SAMPLE_IP instead of loopback in development. infra/tasks/geoip-refresh.ts publishes the data: pnpm infra → Refresh GeoIP data, the deploy pipeline with a 35-day gate, and the monthly geoip-refresh workflow. print-deploy-env emits public_bucket. The new sign-in notice drops its location line when the country is unknown ({{- location}} plus the email.account_security.location key)."
+   },
+   {
+   "id": "20260923T1200-partition-maintenance-pg-cron",
+   "version": "next",
+   "title": "partition retention moves from pg_partman to maintain_partitions() and pg_cron",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/scripts",
+    "backend/src",
+    "backend/db",
+    "infra/resources"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm check"
+   ],
+   "summary": "pg_partman is removed: Scaleway Managed PostgreSQL never offered it, so production skipped partitioning entirely, and run_maintenance() depended on an in-process timer that production never started. 10-partitions.migration.ts converts activities, seen_by and notifications to native range partitions with a DEFAULT partition and installs the maintain_partitions() procedure (drop past retention, trim DEFAULT, create two intervals ahead, move DEFAULT rows into new ranges); schedule-partition-maintenance.ts registers it as a nightly pg_cron job from the cluster's cron database (rdb on Scaleway, postgres in the dev image) after every migrate and boot-time migration, failing loudly when pg_cron is not loaded. The dev image installs postgresql-17-cron instead of postgresql-17-partman and compose preloads it; infra adds admin-cron-privilege on rdb. db-maintenance.ts (lib and script) and the db-maintenance backend job are deleted; partman-parity.test.ts is partition-parity.test.ts. sessions, tokens and unsubscribe_tokens stop being partitioned: their primary key is id alone (migration 20260923092234_tidy_bruce_banner flattens partitioned copies and swaps the key) and the same procedure sweeps rows older than the retention with a DELETE, so tokens.id can now be referenced by a real foreign key."
   }
  ]
 }

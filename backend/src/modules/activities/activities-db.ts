@@ -24,7 +24,7 @@ export const activitiesTable = snakeCase.table(
     stx: jsonb().$type<StxBase>(),
   },
   (table) => [
-    // Composite PK required for pg_partman partitioning
+    // Composite PK required for range partitioning by created_at
     primaryKey({ columns: [table.id, table.createdAt] }),
     index('activities_created_at_index').on(table.createdAt.desc()),
     // Composite indexes for cursor-based scans
