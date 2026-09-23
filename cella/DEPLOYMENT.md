@@ -230,6 +230,18 @@ Resource modules, layer order, and the infra file layout: [infra/README.md](../i
 
 ## Advanced operations
 
+### GeoIP data
+
+Sign-ins resolve the client IP to a country and network (DB-IP Lite, CC BY 4.0) for the sessions list and the new sign-in notice. The image ships no data: each API process downloads both databases from the `geoip/` prefix of the public bucket at boot and re-checks daily with a conditional GET, so a refresh never needs a release. In development the prefix is the shared template bucket, so local sign-ins show a country out of the box (a sample public address stands in for loopback, `GEOIP_DEV_SAMPLE_IP`).
+
+Three things publish to the prefix, all the same task ([infra/tasks/geoip-refresh.ts](../infra/tasks/geoip-refresh.ts)): the deploy pipeline when the data is missing or older than 35 days, the monthly [GeoIP refresh](../.github/workflows/geoip-refresh.yml) workflow, and by hand:
+
+```bash
+pnpm infra   # → Stack setup → "Refresh GeoIP data"
+```
+
+The task downloads from DB-IP (falling back to the previous month when the new one is not published yet), verifies every archive is a real MMDB and uploads the databases before a `manifest.json` that records the month and checksums. A failed download or a bucket problem costs only the country line; sign-ins never depend on it. `GEOIP_SOURCE_URL=off` disables the refresh, another prefix or bucket overrides the source.
+
 ### Seed the admin by hand
 
 When the magic link for the first admin never arrives and the runtime secrets are right, seed directly.

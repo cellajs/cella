@@ -3,6 +3,7 @@
 | Task | Purpose | Invocation |
 | --- | --- | --- |
 | [`cutover.ts`](./cutover.ts) | `sequenceCutover` re-points traffic to a new VM generation. Side effects (health probe, LB server-list writes) are functions on the plan, so the sequencer is pure and unit tests assert step order. | In-process from the waved rollout in [deploy-run.ts](./deploy-run.ts), between the `pulumi up` create/destroy bookends, never shelled out; by hand via the `isMain` CLI entry point, below. |
+| [`geoip-refresh.ts`](./geoip-refresh.ts) | `sequenceGeoipRefresh` downloads the DB-IP Lite databases, verifies each is a real MMDB archive and publishes them plus a `manifest.json` to the `geoip/` prefix of the public bucket, where API processes fetch them at boot and daily. Pure like the reset sequencer; unit tests assert the month fallback, the staleness gate and that nothing uploads on a bad archive. | "Refresh GeoIP data" in `pnpm infra`; the deploy's "Ensure GeoIP data" step (35-day gate, best-effort); the monthly [geoip-refresh workflow](../../.github/workflows/geoip-refresh.yml); by hand `pnpm --filter infra geoip-refresh --bucket <name> --region <region>`. |
 | [`reset-database.ts`](./reset-database.ts) | `sequenceDatabaseReset` deletes and recreates the app's logical database over the Scaleway RDB API, then re-grants both roles. Pure like the cutover sequencer; unit tests assert step order and every guard. | "Reset database" in `pnpm infra`; live effects in [`cli/actions/reset-database.ts`](../cli/actions/reset-database.ts). |
 
 ## Cutover strategies

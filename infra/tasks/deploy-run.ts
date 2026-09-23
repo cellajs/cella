@@ -48,6 +48,7 @@ export type TaskName =
   | 'mint-generation-keys'
   | 'assert-vm-grants'
   | 'assert-secrets-deliverable'
+  | 'geoip-refresh'
   | 'smoke';
 
 /** One executed step. Steps run in-process via `task`; `exec` is for external binaries (pulumi login/select, docker login). */
@@ -229,6 +230,25 @@ export async function runDeploy(
     const [imagesOutcome, frontendOutcome] = await Promise.allSettled([imagesReady, frontendReady]);
     for (const settled of [imagesOutcome, frontendOutcome]) {
       if (settled.status === 'rejected') throw settled.reason;
+    }
+
+    // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
+    // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
+    if (env.public_bucket) {
+      await step('Ensure GeoIP data', async () => {
+        try {
+          await fx.task('geoip-refresh', [
+            '--bucket',
+            env.public_bucket,
+            '--region',
+            env.region,
+            '--max-age-days',
+            '35',
+          ]);
+        } catch (err) {
+          fx.info(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
+        }
+      });
     }
 
     // Mint this generation's keys and handoff bundles BEFORE the stack update bakes their references into cloud-init.
@@ -456,6 +476,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'mint-generation-keys': async (argv) => (await import('./mint-generation-keys')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
+  'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
 };
 

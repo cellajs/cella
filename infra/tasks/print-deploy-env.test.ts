@@ -44,6 +44,7 @@ describe('buildDeployEnv', () => {
       region: 'nl-ams',
       registry_ns: 'cella',
       frontend_bucket: 'cella-frontend',
+      public_bucket: 'cella-public',
       state_bucket: 'cella-pulumi-state',
       vm_assert_json: JSON.stringify([
         ...principalServices(false).map((svc) => ({
