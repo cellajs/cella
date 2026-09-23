@@ -60,7 +60,7 @@ export async function loadSigningJwks(db: DbOrTx = baseDb): Promise<{ keys: JWK[
 let verifyCache: { at: number; keySet: ReturnType<typeof createLocalJWKSet> } | null = null;
 
 /** Public keys of every status (retired ones keep verifying), as a local JWKS for in-process verification. */
-export async function getVerificationKeySet(): Promise<ReturnType<typeof createLocalJWKSet>> {
+export async function getPublicJwkSet(): Promise<ReturnType<typeof createLocalJWKSet>> {
   if (verifyCache && Date.now() - verifyCache.at < VERIFY_CACHE_MS) return verifyCache.keySet;
   const rows = await baseDb.select({ publicJwk: signingKeysTable.publicJwk }).from(signingKeysTable);
   const keySet = createLocalJWKSet({ keys: rows.map((row) => row.publicJwk as JWK) });
