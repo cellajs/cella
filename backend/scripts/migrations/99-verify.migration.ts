@@ -164,8 +164,12 @@ ${grantChecks}
   -- UNLOGGED
 ${unloggedChecks}
 
-  -- Partitioning and its maintenance procedure
+  -- Partitioning and its maintenance procedure (and nothing partitioned beyond the configs)
 ${partitionChecks}
+  IF EXISTS (
+    SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
+    WHERE c.relnamespace = 'public'::regnamespace AND c.relname NOT IN (${partitionConfigs.map((c) => `'${c.name}'`).join(', ')})
+  ) THEN missing := array_append(missing, 'unexpected-partitioned-table'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = '${MAINTENANCE_PROCEDURE}' AND pronamespace = 'public'::regnamespace) THEN
     missing := array_append(missing, 'procedure:${MAINTENANCE_PROCEDURE}'); END IF;
 

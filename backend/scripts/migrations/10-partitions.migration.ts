@@ -6,9 +6,6 @@ import type { SideEffectBlock, SideEffectProducer } from '../types';
 // Catalog cloning avoids a duplicate schema definition. The parity test verifies each table,
 // partition-column PK, and required non-null control column against Drizzle metadata.
 const cellaPartitionConfigs: PartitionConfig[] = [
-  { name: 'sessions', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
-  { name: 'tokens', partitionColumn: 'expires_at', interval: '1 week', retention: '30 days' },
-  { name: 'unsubscribe_tokens', partitionColumn: 'created_at', interval: '1 month', retention: '90 days' },
   { name: 'activities', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
   { name: 'seen_by', partitionColumn: 'created_at', interval: '1 week', retention: '90 days' },
   // Per-user notification inbox, aligned with seen_by so retention needs no sweep job.
@@ -19,6 +16,16 @@ const cellaPartitionConfigs: PartitionConfig[] = [
 export const partitionConfigs: PartitionConfig[] = [
   ...cellaPartitionConfigs,
   ...appPartitionConfigs.map(({ table, ...config }) => ({ name: getTableName(table), ...config })),
+];
+
+/**
+ * Small tables swept row by row by the same procedure: too small to justify partitions, and a plain
+ * `id` primary key keeps them referenceable. Retention counts from the named column.
+ */
+const sweepConfigs: { name: string; column: string; retention: string }[] = [
+  { name: 'sessions', column: 'expires_at', retention: '30 days' },
+  { name: 'tokens', column: 'expires_at', retention: '30 days' },
+  { name: 'unsubscribe_tokens', column: 'created_at', retention: '90 days' },
 ];
 
 /** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-partition-maintenance.ts). */
@@ -108,12 +115,13 @@ const configRow = (c: PartitionConfig): string =>
  * The maintenance procedure: drops partitions older than the retention window, trims the DEFAULT
  * partition, then creates partitions from the newest upper bound through two intervals ahead.
  * Rows that landed in DEFAULT for a new range are moved out first, because Postgres refuses a
- * partition whose range the DEFAULT partition already holds rows for.
+ * partition whose range the DEFAULT partition already holds rows for. Ends with the row sweeps.
  */
 function generateMaintenanceProcedureSql(): string {
   return `CREATE OR REPLACE PROCEDURE public.${MAINTENANCE_PROCEDURE}() LANGUAGE plpgsql AS $proc$
 DECLARE
   cfg record;
+  sw record;
   child record;
   lo timestamptz;
   hi timestamptz;
@@ -159,6 +167,15 @@ BEGIN
       DROP TABLE moved;
       lo := hi;
     END LOOP;
+  END LOOP;
+
+  -- Plain tables: retention by DELETE
+  FOR sw IN
+    SELECT * FROM (VALUES
+      ${sweepConfigs.map((c) => `('${c.name}', '${c.column}', interval '${c.retention}')`).join(',\n      ')}
+    ) AS t(tbl, col, keep)
+  LOOP
+    EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', sw.tbl, sw.col) USING sw.keep;
   END LOOP;
 END $proc$;`;
 }

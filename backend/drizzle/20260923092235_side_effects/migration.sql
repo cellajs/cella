@@ -227,9 +227,6 @@ END $$;
 -- This is intentional. Standard ALTER TABLE operations (ADD COLUMN, etc.)
 -- work fine on partitioned tables. Only avoid operations that recreate tables.
 --
--- - sessions: partitioned by expires_at (1 week, 30 days retention)
--- - tokens: partitioned by expires_at (1 week, 30 days retention)
--- - unsubscribe_tokens: partitioned by created_at (1 month, 90 days retention)
 -- - activities: partitioned by created_at (1 week, 90 days retention)
 -- - seen_by: partitioned by created_at (1 week, 90 days retention)
 -- - notifications: partitioned by created_at (1 week, 90 days retention)
@@ -245,6 +242,7 @@ DROP SCHEMA IF EXISTS partman CASCADE;
 CREATE OR REPLACE PROCEDURE public.maintain_partitions() LANGUAGE plpgsql AS $proc$
 DECLARE
   cfg record;
+  sw record;
   child record;
   lo timestamptz;
   hi timestamptz;
@@ -252,9 +250,6 @@ DECLARE
 BEGIN
   FOR cfg IN
     SELECT * FROM (VALUES
-      ('sessions', 'expires_at', interval '1 week', interval '30 days'),
-      ('tokens', 'expires_at', interval '1 week', interval '30 days'),
-      ('unsubscribe_tokens', 'created_at', interval '1 month', interval '90 days'),
       ('activities', 'created_at', interval '1 week', interval '90 days'),
       ('seen_by', 'created_at', interval '1 week', interval '90 days'),
       ('notifications', 'created_at', interval '1 week', interval '90 days')
@@ -296,6 +291,17 @@ BEGIN
       lo := hi;
     END LOOP;
   END LOOP;
+
+  -- Plain tables: retention by DELETE
+  FOR sw IN
+    SELECT * FROM (VALUES
+      ('sessions', 'expires_at', interval '30 days'),
+      ('tokens', 'expires_at', interval '30 days'),
+      ('unsubscribe_tokens', 'created_at', interval '90 days')
+    ) AS t(tbl, col, keep)
+  LOOP
+    EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', sw.tbl, sw.col) USING sw.keep;
+  END LOOP;
 END $proc$;
 
 DO $$
@@ -307,207 +313,6 @@ DECLARE
   fk_defs text[];
   trg_defs text[];
 BEGIN
-  -- ==========================================================================
-  -- SESSIONS: convert to partitioned by RANGE (expires_at)
-  -- ==========================================================================
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'sessions' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('expires_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'sessions: primary key (%) must include partition column expires_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'sessions: unique constraints other than the PK cannot be carried onto a table partitioned by expires_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.sessions ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.sessions'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.sessions'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so child partitions get clean names (sessions_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 5.
-    ALTER TABLE sessions RENAME TO sessions_old;
-    EXECUTE 'CREATE TABLE sessions (LIKE sessions_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (expires_at)';
-    EXECUTE 'CREATE TABLE sessions_default PARTITION OF sessions DEFAULT';
-
-    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
-    --    maintain_partitions() below creates the current ranges and moves rows over
-    EXECUTE 'INSERT INTO sessions SELECT * FROM sessions_old';
-
-    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE sessions_old;
-
-    EXECUTE format('ALTER TABLE public.sessions ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'sessions converted to partitioned';
-  END IF;
-
-  -- ==========================================================================
-  -- TOKENS: convert to partitioned by RANGE (expires_at)
-  -- ==========================================================================
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'tokens' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('expires_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'tokens: primary key (%) must include partition column expires_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'tokens: unique constraints other than the PK cannot be carried onto a table partitioned by expires_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.tokens ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.tokens'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.tokens'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so child partitions get clean names (tokens_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 5.
-    ALTER TABLE tokens RENAME TO tokens_old;
-    EXECUTE 'CREATE TABLE tokens (LIKE tokens_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (expires_at)';
-    EXECUTE 'CREATE TABLE tokens_default PARTITION OF tokens DEFAULT';
-
-    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
-    --    maintain_partitions() below creates the current ranges and moves rows over
-    EXECUTE 'INSERT INTO tokens SELECT * FROM tokens_old';
-
-    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE tokens_old;
-
-    EXECUTE format('ALTER TABLE public.tokens ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'tokens converted to partitioned';
-  END IF;
-
-  -- ==========================================================================
-  -- UNSUBSCRIBE_TOKENS: convert to partitioned by RANGE (created_at)
-  -- ==========================================================================
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'unsubscribe_tokens' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('created_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'unsubscribe_tokens: primary key (%) must include partition column created_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'unsubscribe_tokens: unique constraints other than the PK cannot be carried onto a table partitioned by created_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.unsubscribe_tokens ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.unsubscribe_tokens'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.unsubscribe_tokens'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so child partitions get clean names (unsubscribe_tokens_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 5.
-    ALTER TABLE unsubscribe_tokens RENAME TO unsubscribe_tokens_old;
-    EXECUTE 'CREATE TABLE unsubscribe_tokens (LIKE unsubscribe_tokens_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (created_at)';
-    EXECUTE 'CREATE TABLE unsubscribe_tokens_default PARTITION OF unsubscribe_tokens DEFAULT';
-
-    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
-    --    maintain_partitions() below creates the current ranges and moves rows over
-    EXECUTE 'INSERT INTO unsubscribe_tokens SELECT * FROM unsubscribe_tokens_old';
-
-    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE unsubscribe_tokens_old;
-
-    EXECUTE format('ALTER TABLE public.unsubscribe_tokens ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'unsubscribe_tokens converted to partitioned';
-  END IF;
-
   -- ==========================================================================
   -- ACTIVITIES: convert to partitioned by RANGE (created_at)
   -- ==========================================================================
@@ -1280,19 +1085,7 @@ BEGIN
   IF (SELECT relpersistence FROM pg_class WHERE relname = 'product_counters' AND relnamespace = 'public'::regnamespace) IS DISTINCT FROM 'u' THEN
     missing := array_append(missing, 'unlogged:product_counters'); END IF;
 
-  -- Partitioning and its maintenance procedure
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'sessions' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:sessions'); END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'tokens' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:tokens'); END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'unsubscribe_tokens' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:unsubscribe_tokens'); END IF;
+  -- Partitioning and its maintenance procedure (and nothing partitioned beyond the configs)
     IF NOT EXISTS (
       SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
       WHERE c.relname = 'activities' AND c.relnamespace = 'public'::regnamespace
@@ -1305,6 +1098,10 @@ BEGIN
       SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
       WHERE c.relname = 'notifications' AND c.relnamespace = 'public'::regnamespace
     ) THEN missing := array_append(missing, 'partitioned:notifications'); END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
+    WHERE c.relnamespace = 'public'::regnamespace AND c.relname NOT IN ('activities', 'seen_by', 'notifications')
+  ) THEN missing := array_append(missing, 'unexpected-partitioned-table'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'maintain_partitions' AND pronamespace = 'public'::regnamespace) THEN
     missing := array_append(missing, 'procedure:maintain_partitions'); END IF;
 

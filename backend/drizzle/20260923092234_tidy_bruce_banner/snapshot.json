@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "f9006681-61ac-41c0-a972-955af9c1fa71",
+  "id": "0c34773c-cd07-44f9-8f8d-3a9fcc2aacab",
   "prevIds": [
-    "ebb44777-a7b9-4b40-97ba-4d938c6a6414"
+    "f9006681-61ac-41c0-a972-955af9c1fa71"
   ],
   "ddl": [
     {
@@ -7236,28 +7236,6 @@
     {
       "columns": [
         "id",
-        "expires_at"
-      ],
-      "nameExplicit": false,
-      "name": "sessions_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "sessions"
-    },
-    {
-      "columns": [
-        "id",
-        "expires_at"
-      ],
-      "nameExplicit": false,
-      "name": "tokens_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "tokens"
-    },
-    {
-      "columns": [
-        "id",
         "created_at"
       ],
       "nameExplicit": false,
@@ -7287,17 +7265,6 @@
       "entityType": "pks",
       "schema": "public",
       "table": "seen_by"
-    },
-    {
-      "columns": [
-        "id",
-        "created_at"
-      ],
-      "nameExplicit": false,
-      "name": "unsubscribe_tokens_pkey",
-      "entityType": "pks",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
     },
     {
       "columns": [
@@ -7348,6 +7315,26 @@
       "name": "rate_limits_pkey",
       "schema": "public",
       "table": "rate_limits",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "sessions_pkey",
+      "schema": "public",
+      "table": "sessions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "tokens_pkey",
+      "schema": "public",
+      "table": "tokens",
       "entityType": "pks"
     },
     {
@@ -7528,6 +7515,16 @@
       "name": "emails_pkey",
       "schema": "public",
       "table": "emails",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "unsubscribe_tokens_pkey",
+      "schema": "public",
+      "table": "unsubscribe_tokens",
       "entityType": "pks"
     },
     {
