@@ -13,6 +13,7 @@
     "deploy": "tsx tasks/deploy.ts",
     "reap": "tsx tasks/reap.ts",
     "status": "tsx tasks/status.ts",
+    "preflight": "tsx tasks/preflight-privileged.ts",
     "repair-control-store": "tsx tasks/repair-control-store.ts",
     "repair-certs": "tsx tasks/repair-certs.ts",
     "diag": "tsx tasks/diag.ts",

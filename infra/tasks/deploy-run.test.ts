@@ -162,6 +162,7 @@ describe('runDeploy sequencing', () => {
       'task:ensure-state-bucket',
       'exec:pulumi:login',
       'lease:acquire:deploy',
+      'task:preflight-privileged',
       'task:wait-for-images',
       'task:mint-generation-keys',
       'update:production',

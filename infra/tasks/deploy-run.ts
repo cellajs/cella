@@ -41,6 +41,7 @@ export interface DeployOptions {
 export type TaskName =
   | 'ensure-state-bucket'
   | 'install-pulumi-providers'
+  | 'preflight-privileged'
   | 'wait-for-images'
   | 'repair-certs'
   | 'sync-rollout-config'
@@ -173,6 +174,10 @@ export async function runDeploy(
       lease = await fx.lease(stack, 'deploy');
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
+    // Bootstrap-owned changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
+    await step('Preflight privileged changes', () =>
+      fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]),
+    );
 
     const registry = `rg.${env.region}.scw.cloud`;
     await step('Login to container registry', () =>
@@ -461,6 +466,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
+  'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),

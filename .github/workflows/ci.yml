@@ -158,6 +158,53 @@ jobs:
       - name: Run backend tests as runtime_role
         run: pnpm test:core:runtime
 
+  # Bootstrap-owned infra changes (a database privilege, a VM policy rule) need an operator
+  # "Apply infra change" before the release deploys; this read-only preview under the CI key
+  # names them on the release PR instead of failing the production deploy later. Skips when
+  # the production Environment secrets are absent (a fork without a bootstrapped stack).
+  infra-preflight:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment: production
+    env:
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+      PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+    steps:
+      - name: Checkout repo
+        if: env.SCW_ACCESS_KEY != ''
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        if: env.SCW_ACCESS_KEY != ''
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        if: env.SCW_ACCESS_KEY != ''
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 26
+          cache: "pnpm"
+
+      - name: Install Pulumi CLI
+        if: env.SCW_ACCESS_KEY != ''
+        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+        with:
+          pulumi-version: 3.236.0
+
+      - name: Install dependencies
+        if: env.SCW_ACCESS_KEY != ''
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Preflight bootstrap-owned changes
+        if: env.SCW_ACCESS_KEY != ''
+        run: pnpm --filter infra preflight --mode production --login
+
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
     # Same-repo branch only: release-please pushes its branch into this repo, so a
