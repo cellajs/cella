@@ -90,6 +90,8 @@ async function cleanupEntityHierarchy(client: pg.Client, plans: TestEntityHierar
 }
 
 async function seedUser(client: pg.Client, id: string, suffix: string) {
+  // users.id is a foreign key to actors.id, so the actor row comes first
+  await client.query("INSERT INTO actors (id, kind) VALUES ($1, 'user') ON CONFLICT (id) DO NOTHING", [id]);
   await client.query('INSERT INTO users (id, name, slug, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING', [
     id,
     `YJS Authz ${suffix}`,
@@ -196,6 +198,7 @@ describe('Local entity authorization (canEditEntity)', () => {
     await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
     await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
     await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB]]);
+    await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB]]);
     await admin.end();
   });
 
