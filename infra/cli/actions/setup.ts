@@ -22,6 +22,7 @@ import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { writeEnvVar } from '../../lib/utils/env-file';
+import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
@@ -183,6 +184,12 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
       mode: ctx.context.environment,
       region: ctx.appConfig.s3.region,
     });
+    // This machine holds the bootstrap key right now, so it gets the standing key too: every later CLI run (status, preview, the state side of Apply) authenticates with it.
+    const written = writeModeEnvValues(ctx.context.environment, {
+      SCW_ACCESS_KEY: admin.accessKey,
+      SCW_SECRET_KEY: admin.secretKey,
+    });
+    console.info(`  ${checkMark} Admin key written to ${written} (SCW_ACCESS_KEY / SCW_SECRET_KEY)`);
     return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
@@ -208,7 +215,7 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
   if (adminAppId) {
     console.info(
       `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)}\n` +
-        `    ${pc.dim('Its key pair is stored in Secret Manager (admin-key): retrieve it with a bootstrap key for day-2 pulumi/teardown runs.')}`,
+        `    ${pc.dim('Its key pair is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run "Fetch operator credentials" with a bootstrap key.')}`,
     );
   }
   console.info(divider);

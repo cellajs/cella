@@ -15,6 +15,7 @@ import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
+import { runFetchCredentials } from './actions/fetch-credentials';
 import { runGeoipRefresh } from './actions/geoip-refresh';
 import { runPreview } from './actions/preview';
 import { runResetDatabase } from './actions/reset-database';
@@ -197,6 +198,11 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         value: 'secrets',
         description: 'List, set, rotate, or delete the runtime secrets.',
       },
+      {
+        name: 'Fetch operator credentials',
+        value: 'fetch-credentials',
+        description: 'Put the admin key in infra/.env.<mode> on this machine (needs a bootstrap key once).',
+      },
       backChoice,
     ],
   });
@@ -333,6 +339,11 @@ if (mode === 'unexpose-db') {
 
 if (mode === 'unlock') {
   await runUnlock(context);
+  process.exit(0);
+}
+
+if (mode === 'fetch-credentials') {
+  await runFetchCredentials(context);
   process.exit(0);
 }
 
