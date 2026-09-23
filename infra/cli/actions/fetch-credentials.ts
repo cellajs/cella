@@ -1,20 +1,18 @@
 import {
-  assertBootstrapCapable,
   classifyPrincipal,
   describeKey,
   formatKeyLine,
   resolveOperatorIdentity,
 } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/setup-admin-app';
-import { maskedSecret } from '../prompts/masked-secret';
-import { type InfraContext, promptRequiredInput } from '../shared';
+import type { InfraContext } from '../shared';
+import { acquireBootstrapKey } from './bootstrap-key';
 import { printRevokeReminder } from './privileged-converge';
 
 /**
@@ -29,24 +27,15 @@ export async function runFetchCredentials(context: InfraContext): Promise<void> 
     ),
   );
   const identity = resolveOperatorIdentity();
-  const bootAccess = identity.bootstrap?.accessKey ?? (await promptRequiredInput('Scaleway bootstrap access key'));
-  const bootSecret =
-    identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
   const names = principalNames(appConfig.slug, context.environment);
-
-  let organizationId: string;
-  try {
-    organizationId = await resolveOrganizationId(bootSecret, projectId);
-    const { desc, role } = await assertBootstrapCapable({
-      pair: { accessKey: bootAccess, secretKey: bootSecret },
-      names,
-      organizationId,
-    });
-    console.info(`${pc.dim('Bootstrap key:')} ${formatKeyLine(desc, role)}`);
-  } catch (error) {
-    console.error(`${warningMark} ${errorMessage(error)}`);
-    process.exit(1);
-  }
+  const bootstrap = await acquireBootstrapKey({
+    identity,
+    names,
+    projectId,
+    slug: appConfig.slug,
+    mode: context.environment,
+  });
+  const bootSecret = bootstrap.secretKey;
 
   const secrets = createSecretManagerClient({ secretKey: bootSecret, region: appConfig.s3.region, projectId });
   const container = await secrets.getSecretByName(
@@ -89,5 +78,6 @@ export async function runFetchCredentials(context: InfraContext): Promise<void> 
       `  ${pc.dim('SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are no longer needed: remove them from the file.')}`,
     );
   }
-  printRevokeReminder();
+  await bootstrap.release();
+  if (!bootstrap.minted) printRevokeReminder();
 }

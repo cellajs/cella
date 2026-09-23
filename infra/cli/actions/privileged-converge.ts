@@ -3,9 +3,8 @@ import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
-import { assertBootstrapCapable, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
@@ -13,15 +12,14 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
   type InfraContext,
-  promptRequiredInput,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { acquireBootstrapKey } from './bootstrap-key';
 
 export interface PrivilegedConvergeOptions {
   /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
@@ -42,6 +40,8 @@ export interface PrivilegedConvergeOptions {
 export interface PrivilegedConvergeResult {
   env: NodeJS.ProcessEnv;
   stack: string;
+  /** True when the run minted and already revoked its bootstrap key, so no revoke reminder is due. */
+  bootstrapMinted: boolean;
   /** False when the operator declined the retry loop before `up` converged. */
   completed: boolean;
   /** Set only with `verifyAfter`: false when the live grants or privileges still differ from the program after a completed `up`. */
@@ -69,34 +69,17 @@ export async function runPrivilegedConverge(
   const { projectId, appConfig } = context;
 
   const identity = resolveOperatorIdentity();
-  const bootAccess = identity.bootstrap?.accessKey ?? (await promptRequiredInput('Scaleway bootstrap access key'));
-  const bootSecret =
-    identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
+  const bootstrap = await acquireBootstrapKey({
+    identity,
+    names: principalNames(appConfig.slug, context.environment),
+    projectId,
+    slug: appConfig.slug,
+    mode: context.environment,
+  });
+  const bootAccess = bootstrap.accessKey;
+  const bootSecret = bootstrap.secretKey;
+  const organizationId = bootstrap.organizationId;
   const stack = stackNameFor(context);
-
-  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API. Without it the up is a guaranteed failure, so stop before touching the stack.
-  let organizationId: string;
-  try {
-    organizationId = await resolveOrganizationId(bootSecret, projectId);
-  } catch (error) {
-    console.error(
-      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
-    );
-    process.exit(1);
-  }
-
-  // A CI or admin key pasted at the bootstrap prompt fails here, in a second and with the reason, not half-way through `pulumi up`.
-  try {
-    const { desc, role } = await assertBootstrapCapable({
-      pair: { accessKey: bootAccess, secretKey: bootSecret },
-      names: principalNames(appConfig.slug, context.environment),
-      organizationId,
-    });
-    console.info(`${pc.dim('Bootstrap key:')} ${formatKeyLine(desc, role)}`);
-  } catch (error) {
-    console.error(`${warningMark} ${errorMessage(error)}`);
-    process.exit(1);
-  }
 
   // The state identity (the deprecated SCW_STATE_* override, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
   const stateOverride = identity.state
@@ -127,6 +110,7 @@ export async function runPrivilegedConverge(
     if (lockReleased) return;
     lockReleased = true;
     await stackLock.release();
+    await bootstrap.release();
   };
 
   let completed = false;
@@ -178,7 +162,7 @@ export async function runPrivilegedConverge(
       }
       if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
         console.info('Declined; nothing applied.');
-        return { env, stack, completed: false };
+        return { env, stack, completed: false, bootstrapMinted: bootstrap.minted };
       }
     }
 
@@ -247,7 +231,7 @@ export async function runPrivilegedConverge(
     }
   }
 
-  return { env, stack, completed, verified };
+  return { env, stack, completed, verified, bootstrapMinted: bootstrap.minted };
 }
 
 /** Loud reminder to revoke the short-lived bootstrap key after the run. */

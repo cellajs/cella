@@ -152,15 +152,17 @@ export async function listApiKeys(auth: IamAuth, organizationId: string, applica
   return api_keys;
 }
 
-/** Mint a fresh api key on an application. */
+/** Mint a fresh api key on an application or a user, optionally expiring (RFC 3339). */
 export async function createApiKey(
   auth: IamAuth,
-  opts: { applicationId: string; description: string; defaultProjectId: string },
+  opts: { applicationId?: string; userId?: string; description: string; defaultProjectId: string; expiresAt?: string },
 ): Promise<ScwApiKey> {
   return scwFetch<ScwApiKey>(auth, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: opts.applicationId,
+    ...(opts.applicationId ? { application_id: opts.applicationId } : {}),
+    ...(opts.userId ? { user_id: opts.userId } : {}),
     description: opts.description,
     default_project_id: opts.defaultProjectId,
+    ...(opts.expiresAt ? { expires_at: opts.expiresAt } : {}),
   });
 }
 

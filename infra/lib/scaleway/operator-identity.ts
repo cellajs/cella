@@ -30,6 +30,8 @@ export interface OperatorIdentity {
   standing?: KeyPair & { source: 'SCW_*' };
   state?: KeyPair & { source: 'SCW_*' | 'SCW_STATE_*' };
   bootstrap?: KeyPair & { source: 'SCW_BOOTSTRAP_*' };
+  /** `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY`: an organization Owner's standing key, usually a `keychain:`/`op:` reference, from which privileged actions mint a short-lived bootstrap key. */
+  owner?: KeyPair & { source: 'SCW_OWNER_*' };
   /** Deprecated or suspicious configuration, for the CLI to print once. */
   warnings: string[];
 }
@@ -67,6 +69,12 @@ export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): O
     warnings.push('SCW_BOOTSTRAP_KEY is read as SCW_BOOTSTRAP_ACCESS_KEY: rename it.');
   }
   const bootstrap = envKeyPair(bootstrapEnv, 'SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_BOOTSTRAP_SECRET_KEY');
+  const owner = envKeyPair(env, 'SCW_OWNER_ACCESS_KEY', 'SCW_OWNER_SECRET_KEY');
+  if (owner && standing && owner.accessKey === standing.accessKey) {
+    warnings.push(
+      'SCW_OWNER_* holds the same key as SCW_ACCESS_KEY: the Owner key must be your own Personal API Key, not the admin application key.',
+    );
+  }
   if (bootstrap && standing && bootstrap.accessKey === standing.accessKey) {
     warnings.push(
       'SCW_BOOTSTRAP_* holds the same key as SCW_ACCESS_KEY: a bootstrap key must be a separate, short-lived Owner key.',
@@ -80,6 +88,7 @@ export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): O
         ? { ...standing, source: 'SCW_*' }
         : undefined,
     bootstrap: bootstrap ? { ...bootstrap, source: 'SCW_BOOTSTRAP_*' } : undefined,
+    owner: owner ? { ...owner, source: 'SCW_OWNER_*' } : undefined,
     warnings,
   };
 }
