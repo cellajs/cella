@@ -1,7 +1,7 @@
 import { ArrowUpRightIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
+import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
@@ -21,7 +21,7 @@ export type ShowcaseItem = {
 
 function CellaShare({ cellaLoc, totalLoc }: { cellaLoc: number; totalLoc: number }) {
   const { t } = useTranslation();
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
+  const { ref, inView } = useInView({ once: true });
   const percentage = Math.round((cellaLoc / totalLoc) * 100);
   const value = useCountUp(0, inView ? percentage : 0);
 

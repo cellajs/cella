@@ -1,5 +1,4 @@
 import { getTableName, sql } from 'drizzle-orm';
-import format from 'pg-format';
 import type { EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
 import { cdcDb } from '../lib/db';
@@ -145,7 +144,7 @@ export async function applyBatchUnifiedDeltas(
       phase2.push(
         cdcDb
           .execute(sql`
-          UPDATE ${sql.raw(format('%I', tableName))} AS t
+          UPDATE ${sql.identifier(tableName)} AS t
           SET seq = v.seq, stx = t.stx - 'changedFields'
           FROM (VALUES ${sql.join(valuesList, sql`, `)}) AS v(id, seq)
           WHERE t.id = v.id

@@ -1,19 +1,14 @@
-import path from 'node:path';
+import { existsSync } from 'node:fs';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
-import { env as dotenv } from '@dotenv-run/core';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { severityLevels } from '#/schemas/api-error-schemas';
 
-// Resolve root relative to this file so it works regardless of cwd (e.g. vitest workers)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-dotenv({
-  root: path.resolve(__dirname, '../../..'),
-  files: ['.env'],
-});
+// Resolved from this file (src/ or the dist/ bundle), so it works regardless of cwd (e.g. vitest workers).
+// Variables already in the environment win over the file.
+const envFile = new URL('../.env', import.meta.url);
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 export const env = createEnv({
   server: {

@@ -1,4 +1,3 @@
-import { BrevoClient } from '@getbrevo/brevo';
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
@@ -6,10 +5,34 @@ import { sanitizeEmailSubject } from '#/utils/sanitize-email-subject';
 import { render } from '../../emails/renderer/render';
 import type { EmailRecipient, EmailTemplateDef } from '../../emails/types';
 
-const brevoClient = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : undefined;
-if (!brevoClient && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
+if (!env.BREVO_API_KEY && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
 
 const MAX_VERSIONS_PER_CALL = 99;
+
+const BREVO_SEND_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_TIMEOUT_MS = 60_000;
+const BREVO_MAX_RETRIES = 2;
+
+/** Posts to Brevo's transactional endpoint, retrying 408, 429 and 5xx with backoff (Retry-After wins), as its SDK did. */
+async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(BREVO_SEND_URL, {
+      method: 'POST',
+      headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(BREVO_TIMEOUT_MS),
+    });
+    if (res.ok) return;
+
+    const retryable = res.status === 408 || res.status === 429 || res.status >= 500;
+    if (!retryable || attempt >= BREVO_MAX_RETRIES) {
+      throw new Error(`Brevo responded ${res.status}: ${await res.text().catch(() => '')}`);
+    }
+    const retryAfterSeconds = Number.parseInt(res.headers.get('retry-after') ?? '', 10);
+    const delayMs = retryAfterSeconds > 0 ? Math.min(retryAfterSeconds * 1000, 60_000) : 1000 * 2 ** attempt;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
 
 type Mailer = {
   prepareEmails<TStatic, TRecipient extends EmailRecipient>(
@@ -79,11 +102,11 @@ export const mailer: Mailer = {
   },
 
   async sendBatch(subject, html, versions, replyTo) {
-    if (!brevoClient) return;
+    if (!env.BREVO_API_KEY) return;
     if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
     try {
-      await brevoClient.transactionalEmails.sendTransacEmail({
+      await postToBrevo(env.BREVO_API_KEY, {
         subject: sanitizeEmailSubject(subject || `${appConfig.name} message`),
         htmlContent: html,
         sender: { email: appConfig.senderEmail },

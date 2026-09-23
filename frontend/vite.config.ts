@@ -207,7 +207,7 @@ const viteConfig = {
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|sonner|input-otp|qrcode\.react|canvas-confetti|onedollarstats|react-use-downloader|dexie-react-hooks|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|use-debounce|react-error-boundary|react-intersection-observer|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|sonner|input-otp|qrcode\.react|canvas-confetti|onedollarstats|react-use-downloader|dexie-react-hooks|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|use-debounce|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
             {

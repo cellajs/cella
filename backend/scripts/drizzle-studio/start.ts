@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,8 +9,9 @@ import { checkMark } from '../../src/utils/console';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '../..');
 
-// Load .env variables from the parent directory
-dotenv.config({ path: resolve(parentDir, '.env'), quiet: true });
+// Load backend/.env so drizzle.config.ts, run in the child process, sees DATABASE_URL.
+const envFile = resolve(parentDir, '.env');
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 /**
  * Start Drizzle Studio programmatically.

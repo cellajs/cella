@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
@@ -8,6 +7,7 @@ import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
+import { cn } from '~/utils/cn';
 
 const currentYear = new Date().getFullYear();
 const companyName = appConfig.company.name;
@@ -52,7 +52,7 @@ const Credits = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
 
   return (
-    <div className={clsx('pb-12 text-center text-xs', className)}>
+    <div className={cn('pb-12 text-center text-xs', className)}>
       <p>
         © {currentYear}. {productName} {t('c:is_built_by', { companyName })}.
       </p>

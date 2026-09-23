@@ -87,7 +87,7 @@ export const rateLimiter = (
           ? config.points
           : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
 
-      // Fast path: an in-process LRU counter skips the DB while the key is well under budget.
+      // Fast path: an in-process counter skips the DB while the key is well under budget.
       // Auth limiters (failseries, success, fail) always take the DB path for accuracy.
       if (mode === 'limit' && getPointsBudget) {
         const decision = tryFastConsume(rateLimitKey, consumePoints, effectiveBudget);
