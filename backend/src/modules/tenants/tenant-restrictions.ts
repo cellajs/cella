@@ -19,7 +19,7 @@ export type Restrictions = {
   quotas: Quotas;
   rateLimits: RateLimits;
   /** Whether users of this tenant may consent to OAuth clients that are not installed by an admin (MCP clients by CIMD). */
-  allowConsentedClients: boolean;
+  allowUnregisteredClients: boolean;
 };
 
 export const defaultRestrictions = (): Restrictions => {
@@ -36,7 +36,7 @@ export const defaultRestrictions = (): Restrictions => {
     rateLimits: {
       apiPointsPerHour: appConfig.defaultRestrictions.rateLimits.apiPointsPerHour,
     },
-    allowConsentedClients: true,
+    allowUnregisteredClients: true,
   };
 };
 
@@ -61,6 +61,6 @@ export const normalizeRestrictions = (stored?: Partial<Restrictions> | null): Re
   return {
     quotas: { ...defaults.quotas, ...stored?.quotas },
     rateLimits: { ...defaults.rateLimits, ...stored?.rateLimits },
-    allowConsentedClients: stored?.allowConsentedClients ?? defaults.allowConsentedClients,
+    allowUnregisteredClients: stored?.allowUnregisteredClients ?? defaults.allowUnregisteredClients,
   };
 };

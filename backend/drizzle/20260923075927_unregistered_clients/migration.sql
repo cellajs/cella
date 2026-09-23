@@ -1,0 +1,2 @@
+ALTER TABLE "tenants" ALTER COLUMN "restrictions" SET DEFAULT '{"quotas":{"user":1000,"organization":1,"attachment":100,"serviceAccount":20,"apiKey":100},"rateLimits":{"apiPointsPerHour":1000},"allowUnregisteredClients":true}';--> statement-breakpoint
+UPDATE "tenants" SET "restrictions" = (("restrictions"::jsonb - 'allowConsentedClients') || jsonb_build_object('allowUnregisteredClients', COALESCE(("restrictions"->>'allowConsentedClients')::boolean, true)))::json WHERE ("restrictions"::jsonb) ? 'allowConsentedClients';

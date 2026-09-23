@@ -8,7 +8,7 @@ export interface ConsentDetails {
   resource: { face: 'api' | 'mcp'; tenantId: string; organizationId?: string };
   user: { id: string; name: string };
   prompt: { name: string; reasons: string[] };
-  refusal: 'not_a_member' | 'clients_not_allowed' | 'app_not_installed' | null;
+  refusal: 'not_a_member' | 'unregistered_clients_not_allowed' | 'app_not_installed' | null;
 }
 
 /** The interaction routes live on the authorization server, outside the OpenAPI spec, so no SDK function exists. */

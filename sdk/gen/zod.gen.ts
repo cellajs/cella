@@ -356,7 +356,7 @@ export const zTenant = z.object({
     rateLimits: z.object({
       apiPointsPerHour: z.int().gte(0),
     }),
-    allowConsentedClients: z.boolean(),
+    allowUnregisteredClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'])),
   createdBy: z.uuid().nullable(),
@@ -1427,7 +1427,7 @@ export const zUpdateTenantBody = z.object({
   restrictions: z
     .object({
       quotas: z.record(z.string(), z.int().gte(0)).optional(),
-      allowConsentedClients: z.boolean().optional(),
+      allowUnregisteredClients: z.boolean().optional(),
       rateLimits: z
         .object({
           apiPointsPerHour: z.int().gte(0).optional(),

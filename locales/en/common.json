@@ -369,7 +369,7 @@
   "oauth_consent_header": "Authorize {{name}}",
   "oauth_consent_user.text": "You are signed in as {{name}}. You can revoke this access any time from your account settings.",
   "oauth_refusal.app_not_installed": "This app is not installed in your workspace. Ask an admin to install it first.",
-  "oauth_refusal.clients_not_allowed": "Your workspace does not allow connecting external apps and AI clients.",
+  "oauth_refusal.unregistered_clients_not_allowed": "Your workspace does not allow connecting AI clients and other apps that an admin has not installed.",
   "oauth_refusal.not_a_member": "You are not a member of the workspace this app is asking for.",
   "offline": "Offline",
   "offline.load_more": "Can't load more while offline",
