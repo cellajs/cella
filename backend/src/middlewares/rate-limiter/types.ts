@@ -3,7 +3,7 @@ import type { RateLimiterDrizzle, RateLimiterMemory } from 'rate-limiter-flexibl
 import type { Env } from '#/core/context';
 
 export type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';
-export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'principalId' | 'tenantId';
+export type RateLimitIdentifier = 'ip' | 'email' | 'userId' | 'actorId' | 'tenantId';
 /** One key segment: an identifier, or a chain where the first available one wins. An unresolved chain rejects. */
 export type RateLimitKeyPart = RateLimitIdentifier | RateLimitIdentifier[];
 export type Identifiers = Record<RateLimitIdentifier, string | null>;

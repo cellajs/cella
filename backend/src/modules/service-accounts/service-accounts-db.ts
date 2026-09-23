@@ -2,16 +2,16 @@ import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { PrincipalId, ServiceAccountId } from '#/db/utils/ids';
+import type { ActorId, ServiceAccountId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
-import { principalsTable } from '#/modules/principals/principals-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 export const serviceAccountStatuses = ['active', 'disabled'] as const;
 
 /**
- * Machine principals: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`
+ * Service accounts: the actor an API key runs as. Tenant-scoped by construction, holds role bindings in `bindings`
  * and is disabled, never deleted, so provenance keeps pointing at it. An auth table outside RLS: the machine guard
  * resolves it before any tenant context exists.
  */
@@ -29,7 +29,7 @@ export const serviceAccountsTable = snakeCase.table(
     id: uuid()
       .primaryKey()
       .$defaultFn(generateId)
-      .references(() => principalsTable.id, { onDelete: 'cascade' })
+      .references(() => actorsTable.id, { onDelete: 'cascade' })
       .$type<ServiceAccountId>(),
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
@@ -40,12 +40,12 @@ export const serviceAccountsTable = snakeCase.table(
     /** Set when this account is the installation of a registered app in this tenant (D4); its consents hang off it. */
     oauthClientId: varchar({ length: maxLength.field }).references(() => oauthClientsTable.id, { onDelete: 'cascade' }),
     createdBy: uuid()
-      .references(() => principalsTable.id, { onDelete: 'set null' })
-      .$type<PrincipalId>(),
+      .references(() => actorsTable.id, { onDelete: 'set null' })
+      .$type<ActorId>(),
     /** Who last changed name or status; disabling is the security-relevant act here. */
     updatedBy: uuid()
-      .references(() => principalsTable.id, { onDelete: 'set null' })
-      .$type<PrincipalId>(),
+      .references(() => actorsTable.id, { onDelete: 'set null' })
+      .$type<ActorId>(),
     createdAt: timestampColumns.createdAt,
     updatedAt: timestampColumns.updatedAt,
   },

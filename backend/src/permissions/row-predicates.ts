@@ -20,9 +20,9 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: PredicateActor): SQL => {
   switch (name) {
     case 'own': {
-      const userId = 'anonymous' in actor ? undefined : actor.userId;
-      if (!userId) return NEVER;
-      return eq(resolveColumn(table, 'createdBy', name), userId);
+      const actorId = 'anonymous' in actor ? undefined : actor.actorId;
+      if (!actorId) return NEVER;
+      return eq(resolveColumn(table, 'createdBy', name), actorId);
     }
     // Actor-independent (public read): matches for anonymous actors too.
     case 'public':

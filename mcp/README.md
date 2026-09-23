@@ -70,7 +70,7 @@ JSON-RPC 2.0 over Streamable HTTP with JSON responses: `initialize` (echoes the 
 
 - **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
 - **One organization per endpoint.** The path binds the tenant and organization; the token's audience must be this organization's MCP resource or the tenant's REST API resource, never another tenant.
-- **In-process execution.** A tool call passes the MCP route's guards (`tokenGuard` applies the per-principal burst limiter), then the operation's own permission checks; it does not pass the REST route's limiter, cache or `x-service` gate.
+- **In-process execution.** A tool call passes the MCP route's guards (`tokenGuard` applies the per-actor burst limiter), then the operation's own permission checks; it does not pass the REST route's limiter, cache or `x-service` gate.
 - **The AI key is unrelated.** `SCW_AI_API_KEY` switches on the app's own AI features (job queues); the MCP endpoint never needs it.
 - **Tool descriptions are model-facing English.** They are not translated.
 

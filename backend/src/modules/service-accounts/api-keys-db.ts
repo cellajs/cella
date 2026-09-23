@@ -3,24 +3,24 @@ import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle
 import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { PrincipalId } from '#/db/utils/ids';
+import type { ActorId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { principalsTable } from '#/modules/principals/principals-db';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /**
- * Opaque keys of a principal. Only the SHA-256 hash is stored; the plaintext is shown once at creation. A key may
- * only narrow what its principal can do (`scopes`), never widen it. Not under RLS: the machine guard looks a key up by
+ * Opaque keys of an actor. Only the SHA-256 hash is stored; the plaintext is shown once at creation. A key may
+ * only narrow what its actor can do (`scopes`), never widen it. Not under RLS: the machine guard looks a key up by
  * hash before it knows the tenant.
  */
 export const apiKeysTable = snakeCase.table(
   'api_keys',
   {
     id: uuid().primaryKey().$defaultFn(generateId),
-    principalId: uuid()
+    actorId: uuid()
       .notNull()
-      .references(() => principalsTable.id, { onDelete: 'cascade' })
-      .$type<PrincipalId>(),
+      .references(() => actorsTable.id, { onDelete: 'cascade' })
+      .$type<ActorId>(),
     tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id, { onDelete: 'cascade' }),
@@ -29,21 +29,21 @@ export const apiKeysTable = snakeCase.table(
     prefix: varchar({ length: maxLength.field }).notNull(),
     hash: varchar({ length: maxLength.field }).notNull(),
     last4: varchar({ length: 4 }).notNull(),
-    /** Mask over the principal's bindings; null = unmasked. Values come from `accessScopes.all`. */
+    /** Mask over the actor's bindings; null = unmasked. Values come from `accessScopes.all`. */
     scopes: varchar({ length: maxLength.field }).$type<AccessScope>().array(),
     expiresAt: timestamp({ mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),
     revokedBy: uuid()
-      .references(() => principalsTable.id, { onDelete: 'set null' })
-      .$type<PrincipalId>(),
+      .references(() => actorsTable.id, { onDelete: 'set null' })
+      .$type<ActorId>(),
     createdBy: uuid()
-      .references(() => principalsTable.id, { onDelete: 'set null' })
-      .$type<PrincipalId>(),
+      .references(() => actorsTable.id, { onDelete: 'set null' })
+      .$type<ActorId>(),
     createdAt: timestampColumns.createdAt,
   },
   (table) => [
     uniqueIndex('api_keys_hash_idx').on(table.hash),
-    index('api_keys_principal_id_idx').on(table.principalId),
+    index('api_keys_actor_id_idx').on(table.actorId),
     index('api_keys_tenant_id_idx').on(table.tenantId),
   ],
 );

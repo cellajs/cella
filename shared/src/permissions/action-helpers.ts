@@ -18,19 +18,19 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
 >;
 
 /**
- * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor's `userId`
+ * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor id
  * against `entity.createdBy`. The switch is exhaustive over {@link CanState}, so adding a row
  * condition breaks the build here; the frontend never denies a new condition unnoticed.
  */
 export const resolveCan = (
   permission: CanState | undefined,
   entityCreatedBy?: string | null,
-  userId?: string,
+  actorId?: string,
 ): boolean => {
   if (typeof permission !== 'string') return permission === true;
   switch (permission) {
     case 'own':
-      return !!userId && !!entityCreatedBy && entityCreatedBy === userId;
+      return !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
     case 'public':
       // Public read is membership-independent and resolved server-side, so it never reaches the
       // frontend can-map. This arm exists for exhaustiveness and denies by default.

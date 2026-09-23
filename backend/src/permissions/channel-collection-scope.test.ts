@@ -34,7 +34,7 @@ const membership = (channelType: string, channelId: string, role: string): Membe
     role,
   }) as unknown as MembershipBaseModel;
 
-const actor: PredicateActor = { userId: 'actor', isSystemAdmin: false, scopes: null };
+const actor: PredicateActor = { actorId: 'actor', isSystemAdmin: false, scopes: null };
 
 const resolve = (memberships: MembershipBaseModel[], asActor: PredicateActor = actor): ChannelCollectionReadScope =>
   resolveChannelCollectionReadScopeForPolicies({
@@ -48,7 +48,7 @@ const resolve = (memberships: MembershipBaseModel[], asActor: PredicateActor = a
 
 describe('resolveChannelCollectionReadScope', () => {
   it('system admin resolves to unconditional org-wide', () => {
-    const scope = resolve([], { userId: 'admin', isSystemAdmin: true, scopes: null });
+    const scope = resolve([], { actorId: 'admin', isSystemAdmin: true, scopes: null });
     expect(scope).toEqual({ orgWide: 'all', ancestorScopes: [] });
   });
 

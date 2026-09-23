@@ -23,7 +23,7 @@ const roleBindingSchema = z.object({
 /** The route addresses one key of one account. */
 export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validIdSchema });
 
-/** `createdBy` / `updatedBy` stay principal ids: the audit-user hydration resolves users only (service badge is a follow-up). */
+/** `createdBy` / `updatedBy` stay actor ids: the audit-user hydration resolves users only (service badge is a follow-up). */
 export const serviceAccountSchema = z
   .object({
     ...createSelectSchema(serviceAccountsTable).shape,
@@ -31,7 +31,7 @@ export const serviceAccountSchema = z
     bindings: z.array(roleBindingSchema),
   })
   .openapi('ServiceAccount', {
-    description: 'A machine principal: the actor an API key runs as, with its role bindings.',
+    description: 'The actor an API key runs as, with its role bindings.',
     example: mockServiceAccountResponse(),
     'x-tags': schemaTags('service-accounts', 'cella'),
   });

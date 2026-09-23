@@ -119,7 +119,7 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Collaborative editing confers no system-admin bypass, matching the backend materialize endpoint.
     const { allowed } = checkAccess(
-      { userId: ctx.userId, isSystemAdmin: false, memberships, scopes: null },
+      { actorId: ctx.userId, isSystemAdmin: false, memberships, scopes: null },
       'update',
       subject,
     );

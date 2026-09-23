@@ -279,7 +279,7 @@
     },
     {
       "name": "service-accounts",
-      "description": "Machine principals and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
+      "description": "Machine actors and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
       "parent": "cella",
       "kind": "module"
     },
@@ -2613,7 +2613,7 @@
           "createdAt",
           "updatedAt"
         ],
-        "description": "A machine principal: the actor an API key runs as, with its role bindings.",
+        "description": "The actor an API key runs as, with its role bindings.",
         "example": {
           "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
           "tenantId": "yug3pr",
@@ -2654,7 +2654,7 @@
         "description": "A newly issued API key with its plaintext secret.",
         "example": {
           "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-          "principalId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+          "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
           "tenantId": "kr2nrm",
           "name": "connect key",
           "prefix": "cella-development_sk_test_Ab3d",
@@ -2676,7 +2676,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "principalId": {
+          "actorId": {
             "type": "string",
             "format": "uuid"
           },
@@ -2723,7 +2723,7 @@
         },
         "required": [
           "id",
-          "principalId",
+          "actorId",
           "tenantId",
           "name",
           "prefix",
@@ -2738,7 +2738,7 @@
         "description": "An API key of a service account; the secret is never returned after creation.",
         "example": {
           "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
-          "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+          "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
           "tenantId": "maq9vh",
           "name": "reboot key",
           "prefix": "cella-development_sk_test_Ab3d",
@@ -12319,7 +12319,7 @@
         "operationId": "createServiceAccount",
         "tags": ["service-accounts", "cella"],
         "summary": "Create service account",
-        "description": "Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
+        "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -12417,7 +12417,7 @@
                   },
                   "apiKey": {
                     "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-                    "principalId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+                    "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
                     "tenantId": "kr2nrm",
                     "name": "connect key",
                     "prefix": "cella-development_sk_test_Ab3d",
@@ -12781,7 +12781,7 @@
                   "items": [
                     {
                       "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
-                      "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                      "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
                       "tenantId": "maq9vh",
                       "name": "reboot key",
                       "prefix": "cella-development_sk_test_Ab3d",
@@ -12920,7 +12920,7 @@
               "application/json": {
                 "example": {
                   "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-                  "principalId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+                  "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
                   "tenantId": "kr2nrm",
                   "name": "connect key",
                   "prefix": "cella-development_sk_test_Ab3d",
@@ -13019,7 +13019,7 @@
               "application/json": {
                 "example": {
                   "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
-                  "principalId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
+                  "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
                   "tenantId": "maq9vh",
                   "name": "reboot key",
                   "prefix": "cella-development_sk_test_Ab3d",

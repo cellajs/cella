@@ -74,43 +74,43 @@ export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpt
   return value;
 }
 
-export async function findApiKeysByPrincipal(ctx: DbContext, { principalId }: { principalId: string }) {
+export async function findApiKeysByActor(ctx: DbContext, { actorId }: { actorId: string }) {
   return ctx.var.db
     .select(apiKeySafeColumns)
     .from(apiKeysTable)
-    .where(eq(apiKeysTable.principalId, principalId))
+    .where(eq(apiKeysTable.actorId, actorId))
     .orderBy(desc(apiKeysTable.createdAt));
 }
 
 interface ScheduleApiKeyExpiryOpts {
-  principalId: string;
+  actorId: string;
   id: string;
   expiresAt: string;
 }
 
-/** Sets `expiresAt` on a live key of the principal for the roll overlap, never later than an expiry it already has; null when no such key exists. */
-export async function scheduleApiKeyExpiry(ctx: DbContext, { principalId, id, expiresAt }: ScheduleApiKeyExpiryOpts) {
+/** Sets `expiresAt` on a live key of the actor for the roll overlap, never later than an expiry it already has; null when no such key exists. */
+export async function scheduleApiKeyExpiry(ctx: DbContext, { actorId, id, expiresAt }: ScheduleApiKeyExpiryOpts) {
   const [row] = await ctx.var.db
     .update(apiKeysTable)
     .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamp)` })
-    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.principalId, principalId), isNull(apiKeysTable.revokedAt)))
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
     .returning({ id: apiKeysTable.id });
   return row ?? null;
 }
 
 interface RevokeApiKeyOpts {
-  principalId: string;
+  actorId: string;
   id: string;
   revokedAt: string;
   revokedBy: string;
 }
 
 /** Revokes a live key; a second call finds nothing, so the first `revokedAt` stays as the audit timestamp. */
-export async function revokeApiKey(ctx: DbContext, { principalId, id, revokedAt, revokedBy }: RevokeApiKeyOpts) {
+export async function revokeApiKey(ctx: DbContext, { actorId, id, revokedAt, revokedBy }: RevokeApiKeyOpts) {
   const [row] = await ctx.var.db
     .update(apiKeysTable)
     .set({ revokedAt, revokedBy })
-    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.principalId, principalId), isNull(apiKeysTable.revokedAt)))
+    .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
     .returning(apiKeySafeColumns);
   return row ?? null;
 }

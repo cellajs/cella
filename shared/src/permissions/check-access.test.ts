@@ -24,7 +24,7 @@ const subject = (id = 'a1'): SubjectForPermission =>
   }) as never;
 
 const admin = (scopes: readonly AccessScope[] | null): Access => ({
-  userId: 'u1',
+  actorId: 'u1',
   memberships: [membership],
   scopes,
 });
@@ -32,7 +32,7 @@ const admin = (scopes: readonly AccessScope[] | null): Access => ({
 describe('checkAccess with a scoped key or token', () => {
   it('an unscoped access (scopes null, what a session sets) keeps the grants', () => {
     expect(checkAccess(admin(null), 'update', subject()).allowed).toBe(true);
-    expect(checkAccess({ userId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(
+    expect(checkAccess({ actorId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(
       true,
     );
   });

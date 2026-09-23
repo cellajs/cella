@@ -101,7 +101,7 @@ export const checkWithIndices = <T extends AccessMembership>(
   getRoles: (channelType: ChannelEntityType) => readonly string[],
   entityActions: readonly EntityActionType[],
   isSystemAdmin: boolean,
-  userId?: string,
+  actorId?: string,
   publicGrants?: PublicReadGrants,
   elevatedGrants?: ReadonlySet<string>,
   debug?: boolean,
@@ -139,7 +139,7 @@ export const checkWithIndices = <T extends AccessMembership>(
   const channelIds: ResolvedChannelIds = {};
 
   const conditionRow: RowForCondition = { ...subject.row, createdBy: subject.createdBy };
-  const conditionActor: ConditionActor = { userId };
+  const conditionActor: ConditionActor = { actorId };
 
   // Non-elevated grants apply only at the row's home channel; channel subjects keep ancestor
   // elevation. Elevation is per (channelType, role): `${channelType}:${role}` ∈ elevatedGrants.
@@ -242,7 +242,7 @@ export function getAllDecisions<T extends AccessMembership>(
   const isSingle = !Array.isArray(subjects);
   const subjectArray = isSingle ? [subjects] : subjects;
   const isSystemAdmin = options?.isSystemAdmin === true;
-  const userId = options?.userId;
+  const actorId = options?.actorId;
   const publicGrants = options?.publicGrants;
   const elevatedGrants = options?.elevatedGrants;
   const debug = options?.debug === true;
@@ -291,7 +291,7 @@ export function getAllDecisions<T extends AccessMembership>(
       getRoles,
       entityActions,
       isSystemAdmin,
-      userId,
+      actorId,
       publicGrants,
       elevatedGrants,
       debug,

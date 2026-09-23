@@ -79,7 +79,7 @@
   },
   {
     "name": "service-accounts",
-    "description": "Machine principals and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
+    "description": "Machine actors and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
     "count": 6,
     "kind": "module"
   },

@@ -68,7 +68,7 @@ export const extractIdentifiers = async (
     email: null,
     ip: null,
     userId: null,
-    principalId: null,
+    actorId: null,
     tenantId: null,
   };
 
@@ -94,9 +94,9 @@ export const extractIdentifiers = async (
         if (user) results.userId = user.id;
         break;
       }
-      case 'principalId': {
+      case 'actorId': {
         const actor = ctx.var.actor;
-        if (actor) results.principalId = actor.id;
+        if (actor) results.actorId = actor.id;
         break;
       }
       case 'tenantId': {

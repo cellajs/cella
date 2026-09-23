@@ -158,7 +158,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   defaultRestrictions: {
-    /** Hard caps per tenant on entity types and on machine principals and their keys; 0 = unlimited. */
+    /** Hard caps per tenant on entity types and on machine actors and their keys; 0 = unlimited. */
     quotas: Partial<Record<(T['entityTypes'][number] & string) | 'serviceAccount' | 'apiKey', number>>;
     rateLimits: { apiPointsPerHour: number };
   };

@@ -4,8 +4,8 @@
  */
 export type RowConditionName = 'own' | 'public';
 
-/** The acting user for condition evaluation. `userId` is absent for anonymous actors. */
-export type ConditionActor = { userId?: string };
+/** The actor for condition evaluation. `actorId` is absent for anonymous actors. */
+export type ConditionActor = { actorId?: string };
 
 /** `createdBy` comes from `SubjectForPermission`; other fields from its `row`. */
 export type RowForCondition = { createdBy?: string | null } & Record<string, unknown>;
@@ -19,7 +19,7 @@ export const isRowCondition = (value: unknown): value is RowConditionName => val
 export const matchesRowCondition = (name: RowConditionName, row: RowForCondition, actor: ConditionActor): boolean => {
   switch (name) {
     case 'own':
-      return !!actor.userId && !!row.createdBy && row.createdBy === actor.userId;
+      return !!actor.actorId && !!row.createdBy && row.createdBy === actor.actorId;
     case 'public':
       return !!row.publicAt;
   }

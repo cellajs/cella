@@ -75,12 +75,13 @@ The engine **never loads rows**. Callers hand in the row data a decision needs. 
 | **Product** | Owns no roles and inherits from channels (`attachment`). Orders as `[...ancestors]`. Must have a channel parent. |
 | **User entity** | Carries no policies. `configurePermissions` filters it out. |
 | **Membership** | Explicit `user → channel` relation. The engine reads only `{ channelType, channelId, role }` (`AccessMembership`). |
+| **Actor** | Who acts: a user or a service account, one row in `actors` either way. `actor.id` is what provenance columns and the `own` condition compare against. |
 | **Binding** | A role on a channel, whoever holds it: a membership row for a user, a stored binding for a service account. `actor.bindings` is what the guards and the engine read. |
 | **Subject** | What is acted on: entity type, optional id, `channelIds` scope, optionally `row`. |
 | **Policy cell** | `0` (deny), `1` (allow), or a row-condition name (`'own'` in policies: allow on qualifying rows). |
 | **Action** | `create`, `read`, `update`, `delete` (`appConfig.entityActions`). |
 | **Grant source** | Why an action was allowed: `membership`, `relation`, `public`, or `systemAdmin`. |
-| **Access scope** | The mask an API key or access token puts over its principal's bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
+| **Access scope** | The mask an API key or access token puts over its actor's bindings: `<type>:read` or `<type>:write` per entity type with a policy. `null` is unmasked. |
 
 ## The access you present
 
@@ -88,7 +89,7 @@ Every `checkAccess*` call takes an explicit `Access`, actor plus memberships:
 
 ```ts
 export type Access<T extends AccessMembership = AccessMembership> =
-  | { userId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
+  | { actorId: string; isSystemAdmin?: boolean; memberships: T[]; scopes: readonly AccessScope[] | null }
   | { anonymous: true };
 ```
 

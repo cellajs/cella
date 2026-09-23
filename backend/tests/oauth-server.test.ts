@@ -96,7 +96,7 @@ describe('OAuth authorization server', async () => {
     const token = await verifyAccessToken(String(body.access_token), { tenantId: client.org.tenantId });
     expect(token).toMatchObject({
       kind: 'service',
-      principalId: client.clientId,
+      actorId: client.clientId,
       tenantId: client.org.tenantId,
       scopes: ['attachment:read'],
     });

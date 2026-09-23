@@ -2,11 +2,11 @@ import { appConfig, type EntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/** Quotas on machine principals and their keys, beside the entity quotas; one place to extend for a new kind. */
-export const principalQuotaKeys = ['serviceAccount', 'apiKey'] as const;
+/** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
+export const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
 
-/** Hard caps per tenant on entities and on machine principals and their keys. 0 = unlimited. */
-export type QuotaKey = EntityType | (typeof principalQuotaKeys)[number];
+/** Hard caps per tenant on entities and on machine actors and their keys. 0 = unlimited. */
+export type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
 export type Quotas = Record<QuotaKey, number>;
 
 /** Time-windowed throughput limits per user in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
@@ -25,7 +25,7 @@ export type Restrictions = {
 export const defaultRestrictions = (): Restrictions => {
   const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
 
-  const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...principalQuotaKeys];
+  const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
   const quotas = quotaKeys.reduce((acc, key) => {
     acc[key] = defaultQuotas[key] ?? 0;
     return acc;

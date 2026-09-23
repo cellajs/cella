@@ -10,7 +10,7 @@ import { log } from '#/utils/logger';
 export async function revokeApiKeyOp(ctx: UserContext, serviceAccountId: string, keyId: string) {
   const account = await requireManagedServiceAccount(ctx, serviceAccountId);
   const revoked = await revokeApiKey(ctx, {
-    principalId: account.id,
+    actorId: account.id,
     id: keyId,
     revokedAt: getIsoDate(),
     revokedBy: ctx.var.actor.id,

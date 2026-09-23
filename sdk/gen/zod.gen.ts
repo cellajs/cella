@@ -519,7 +519,7 @@ export const zMembership = z.object({
 });
 
 /**
- * A machine principal: the actor an API key runs as, with its role bindings.
+ * The actor an API key runs as, with its role bindings.
  */
 export const zServiceAccount = z.object({
   id: z.uuid(),
@@ -546,7 +546,7 @@ export const zServiceAccount = z.object({
  */
 export const zApiKey = z.object({
   id: z.uuid(),
-  principalId: z.uuid(),
+  actorId: z.uuid(),
   tenantId: z.string().max(24),
   name: z.string().max(255),
   prefix: z.string().max(255),

@@ -37,7 +37,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
     });
     const issued = input.key
       ? await issueApiKey(tx, {
-          principalId: serviceAccount.id,
+          actorId: serviceAccount.id,
           tenantId,
           name: input.key.name,
           scopes: input.key.scopes ?? null,

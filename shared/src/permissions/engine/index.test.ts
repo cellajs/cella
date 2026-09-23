@@ -265,13 +265,13 @@ describe('own permission policy, ownership-scoped access', () => {
     }
   });
 
-  const userId = 'user-actor';
+  const actorId = 'user-actor';
   const otherUserId = 'user-other';
 
   it('grants update/delete when member is the creator (own entity)', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.update).toBe(true);
     expect(can.delete).toBe(true);
@@ -280,7 +280,7 @@ describe('own permission policy, ownership-scoped access', () => {
   it('grants create/read to member regardless of ownership', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -289,7 +289,7 @@ describe('own permission policy, ownership-scoped access', () => {
   it('admin gets full access regardless of createdBy', () => {
     const memberships = [wideMembership('organization', 'org1', 'admin')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.create).toBe(true);
     expect(can.read).toBe(true);
@@ -300,16 +300,16 @@ describe('own permission policy, ownership-scoped access', () => {
   it('denies update/delete when member is NOT the creator', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: otherUserId });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
   });
 
-  it('denies update/delete when userId is not provided in options', () => {
+  it('denies update/delete when actorId is not provided in options', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
-    // No userId in options: own check cannot succeed
+    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
+    // No actorId in options: own check cannot succeed
     const { can } = getAllDecisions(ownPolicies, memberships, subject, { ...wideOverrides });
 
     expect(can.update).toBe(false);
@@ -319,7 +319,7 @@ describe('own permission policy, ownership-scoped access', () => {
   it('denies update/delete when createdBy is null', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: null });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
@@ -328,7 +328,7 @@ describe('own permission policy, ownership-scoped access', () => {
   it('denies update/delete when createdBy is undefined (missing)', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.update).toBe(false);
     expect(can.delete).toBe(false);
@@ -336,8 +336,8 @@ describe('own permission policy, ownership-scoped access', () => {
 
   it('denies everything when membership is for wrong org', () => {
     const memberships = [wideMembership('organization', 'org2', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
-    const { can } = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
+    const { can } = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(can.create).toBe(false);
     expect(can.read).toBe(false);
@@ -356,12 +356,12 @@ describe('own permission, grant attribution', () => {
     }
   });
 
-  const userId = 'user-actor';
+  const actorId = 'user-actor';
 
   it('attributes own-granted actions to the condition name (relation:own)', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(decision.actions.update.allowed).toBe(true);
     expect(decision.actions.update.grantedBy).toHaveLength(1);
@@ -374,8 +374,8 @@ describe('own permission, grant attribution', () => {
 
   it('attributes unconditional grants to membership (not relation)', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1', { createdBy: userId });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const subject = attachmentSubject('att1', 'org1', { createdBy: actorId });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(decision.actions.create.grantedBy).toHaveLength(1);
     expect(decision.actions.create.grantedBy[0]).toEqual({
@@ -389,7 +389,7 @@ describe('own permission, grant attribution', () => {
   it('does not attribute own grants when ownership check fails', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(decision.actions.update.allowed).toBe(false);
     expect(decision.actions.update.grantedBy).toHaveLength(0);
@@ -400,7 +400,7 @@ describe('own permission, grant attribution', () => {
   it('admin gets membership grant (not relation) even with createdBy set', () => {
     const memberships = [wideMembership('organization', 'org1', 'admin')];
     const subject = attachmentSubject('att1', 'org1', { createdBy: 'user-other' });
-    const decision = getAllDecisions(ownPolicies, memberships, subject, { userId, ...wideOverrides });
+    const decision = getAllDecisions(ownPolicies, memberships, subject, { actorId, ...wideOverrides });
 
     expect(decision.actions.update.allowed).toBe(true);
     expect(decision.actions.update.grantedBy[0]).toEqual({
@@ -422,17 +422,17 @@ describe('own permission, batch subjects', () => {
     }
   });
 
-  const userId = 'user-actor';
+  const actorId = 'user-actor';
 
   it('correctly evaluates mixed ownership in batch', () => {
     const memberships = [wideMembership('organization', 'org1', 'member')];
     const subjects: SubjectForPermission[] = [
-      attachmentSubject('att-own', 'org1', { createdBy: userId }),
+      attachmentSubject('att-own', 'org1', { createdBy: actorId }),
       attachmentSubject('att-other', 'org1', { createdBy: 'user-other' }),
       attachmentSubject('att-null', 'org1', { createdBy: null }),
     ];
 
-    const results = getAllDecisions(ownPolicies, memberships, subjects, { userId, ...wideOverrides });
+    const results = getAllDecisions(ownPolicies, memberships, subjects, { actorId, ...wideOverrides });
 
     const ownDecision = results.get('att-own')!;
     expect(ownDecision.can.update).toBe(true);

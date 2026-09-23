@@ -24,12 +24,12 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
     const txCtx = { var: { db: tx } };
     if (input.rollFrom) {
       const expiresAt = new Date(Date.now() + input.rollOverlapDays * DAY_MS).toISOString();
-      const rolled = await scheduleApiKeyExpiry(txCtx, { principalId: account.id, id: input.rollFrom, expiresAt });
+      const rolled = await scheduleApiKeyExpiry(txCtx, { actorId: account.id, id: input.rollFrom, expiresAt });
       if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'apiKey' } });
       log.info('ApiKey rolled', { from: input.rollFrom, overlapEnd: expiresAt });
     }
     return issueApiKey(tx, {
-      principalId: account.id,
+      actorId: account.id,
       tenantId: ctx.var.tenantId,
       name: input.name,
       scopes: input.scopes ?? null,

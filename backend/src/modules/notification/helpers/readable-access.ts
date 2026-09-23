@@ -24,7 +24,7 @@ export async function readableAccess(
   const subject = buildSubjectFromEntity(entityType, row);
   const decisions = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
   accesses.forEach((access, index) => {
-    if (decisions[index]?.allowed) readable.set(access.userId, access);
+    if (decisions[index]?.allowed) readable.set(access.actorId, access);
   });
   return readable;
 }

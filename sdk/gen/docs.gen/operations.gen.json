@@ -2115,7 +2115,7 @@
     "path": "/{tenantId}/{organizationId}/service-accounts",
     "tags": ["service-accounts"],
     "summary": "Create service account",
-    "description": "Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
+    "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,

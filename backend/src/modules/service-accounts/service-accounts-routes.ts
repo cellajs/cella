@@ -21,7 +21,7 @@ import {
   updateServiceAccountBodySchema,
 } from './service-accounts-schema';
 
-/** All routes are user-only: creating and managing machine principals is a human act (D9). */
+/** All routes are user-only: creating and managing machine actors is a human act (D9). */
 export const serviceAccountRoutes = {
   createServiceAccount: createXRoute({
     operationId: 'createServiceAccount',
@@ -32,7 +32,7 @@ export const serviceAccountRoutes = {
     tags: ['service-accounts', 'cella'],
     summary: 'Create service account',
     description:
-      'Creates a machine principal bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.',
+      'Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.',
     request: {
       params: tenantOrgParamSchema,
       body: { required: true, content: { 'application/json': { schema: createServiceAccountBodySchema } } },
