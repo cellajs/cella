@@ -18,7 +18,7 @@ export const productTables = {
 /** App partition entry: the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
 export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };
 
-/** App tables to convert to pg_partman partitions; merged after cella's own entries in the partman migration. */
+/** App tables to convert to range partitions; merged after cella's own entries in the partition migration. */
 export const appPartitionConfigs: AppPartitionConfig[] = [];
 
 /** App tables outside RLS that runtime_role may read and write (application-layer guards), merged into the RLS migration grants. */

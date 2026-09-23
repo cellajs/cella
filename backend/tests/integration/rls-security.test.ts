@@ -45,7 +45,7 @@ let runtimeDb: NodePgDatabase;
 
 let rolesAvailable = false;
 let requiredTablesAvailable = false;
-/** Whether the seen_by table exists (partman-partitioned; may be absent in a minimal test DB). */
+/** Whether the seen_by table exists (partitioned; may be absent in a minimal test DB). */
 let seenByAvailable = false;
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
@@ -450,7 +450,7 @@ const rlsSuiteReady = await (async () => {
 
     await setupTestData();
 
-    // seen_by is partman-partitioned and may be absent in a minimal test DB.
+    // seen_by is partitioned and may be absent in a minimal test DB.
     seenByAvailable = await tableExists('seen_by');
   });
 

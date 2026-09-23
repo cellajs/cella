@@ -63,5 +63,17 @@ export const getAdminDb = (purpose: string): PgDB => {
   return adminConnection;
 };
 
+/**
+ * A one-connection admin pool on another database of the same cluster, for the pg_cron home database
+ * that holds the partition maintenance job. The caller ends it.
+ * @param database - Database name replacing the one in `DATABASE_ADMIN_URL`.
+ */
+export const getAdminDbFor = (database: string): PgDB => {
+  if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required to reach database ${database}`);
+  const url = new URL(env.DATABASE_ADMIN_URL);
+  url.pathname = `/${database}`;
+  return connect(url.toString(), 1);
+};
+
 /** Seeds write as admin so RLS never hides what they insert; the same lazy pool as {@link getAdminDb}. */
 export const getSeedDb = (): DB => getAdminDb('seeds') as DB;

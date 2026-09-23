@@ -4,7 +4,7 @@
 -- The user will handle migration generation and application.
 --
 -- Combined side-effect migration.
--- Blocks (in order): cdc_setup, counter_functions, immutability_setup, partman_setup, rls_setup, unlogged_setup, verify_side_effects
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, partition_setup, rls_setup, unlogged_setup, verify_side_effects
 -- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
 -- whenever ANY block changes, so this file always reflects the full current side-effect state.
 
@@ -27,12 +27,12 @@ BEGIN
   -- 1. Create or update publication
   BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
-      CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants, system_roles, service_accounts, api_keys, oauth_clients;
+      CREATE PUBLICATION cdc_pub FOR TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants, system_roles;
       RAISE NOTICE 'Created publication cdc_pub';
     ELSE
       -- Publication exists: replace with current table list
       RAISE NOTICE 'Publication cdc_pub already exists, syncing tables...';
-      ALTER PUBLICATION cdc_pub SET TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants, system_roles, service_accounts, api_keys, oauth_clients;
+      ALTER PUBLICATION cdc_pub SET TABLE users, organizations, attachments, requests, memberships, inactive_memberships, tenants, system_roles;
       RAISE NOTICE 'Publication tables synced';
     END IF;
   EXCEPTION WHEN OTHERS THEN
@@ -49,9 +49,6 @@ BEGIN
     ALTER TABLE inactive_memberships REPLICA IDENTITY FULL;
     ALTER TABLE tenants REPLICA IDENTITY FULL;
     ALTER TABLE system_roles REPLICA IDENTITY FULL;
-    ALTER TABLE service_accounts REPLICA IDENTITY FULL;
-    ALTER TABLE api_keys REPLICA IDENTITY FULL;
-    ALTER TABLE oauth_clients REPLICA IDENTITY FULL;
     RAISE NOTICE 'REPLICA IDENTITY FULL set on all tracked tables';
   EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'REPLICA IDENTITY setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
@@ -213,13 +210,15 @@ BEGIN
 END $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
--- [partman_setup] pg_partman, partitioned tables
+-- [partition_setup] Partitioned tables and maintain_partitions()
 -- ══════════════════════════════════════════════════════════════════════════
 -- =============================================================================
--- Migration: pg_partman Setup for Token/Session/Activity/SeenBy Tables
+-- Migration: Time-partitioned tables with in-database retention
 -- =============================================================================
--- Converts sessions, tokens, unsubscribe_tokens, activities, and seen_by to
--- partitioned tables managed by pg_partman for automatic time-based cleanup.
+-- Converts the tables below to native range partitions and installs
+-- maintain_partitions(), which pg_cron runs nightly (see
+-- scripts/db/schedule-partition-maintenance.ts) to create partitions ahead
+-- and drop those past retention. No extension is needed in this database.
 --
 -- IMPORTANT: This creates a schema drift between Drizzle and the actual DB:
 -- - Drizzle sees: regular tables with composite PKs
@@ -228,19 +227,82 @@ END $$;
 -- This is intentional. Standard ALTER TABLE operations (ADD COLUMN, etc.)
 -- work fine on partitioned tables. Only avoid operations that recreate tables.
 --
--- - sessions: partitioned by expires_at (1 week, 30 days retention)
--- - tokens: partitioned by expires_at (1 week, 30 days retention)
--- - unsubscribe_tokens: partitioned by created_at (1 month, 90 days retention)
 -- - activities: partitioned by created_at (1 week, 90 days retention)
 -- - seen_by: partitioned by created_at (1 week, 90 days retention)
 -- - notifications: partitioned by created_at (1 week, 90 days retention)
 --
--- Skips ONLY when the pg_partman extension cannot be installed (managed providers
--- without it); the tables then grow unbounded with manual cleanup. Any failure
--- DURING conversion aborts the migration loudly: a swallowed error here previously
+-- Any failure aborts the migration loudly: a swallowed error here previously
 -- shipped databases where nothing was partitioned while everyone believed it was.
--- run_maintenance() is scheduled in-process daily (see src/lib/db-maintenance.ts).
 -- =============================================================================
+
+-- pg_partman managed these partitions before; its partitions stay, its config goes.
+DROP EXTENSION IF EXISTS pg_partman CASCADE;
+DROP SCHEMA IF EXISTS partman CASCADE;
+
+CREATE OR REPLACE PROCEDURE public.maintain_partitions() LANGUAGE plpgsql AS $proc$
+DECLARE
+  cfg record;
+  sw record;
+  child record;
+  lo timestamptz;
+  hi timestamptz;
+  part text;
+BEGIN
+  FOR cfg IN
+    SELECT * FROM (VALUES
+      ('activities', 'created_at', interval '1 week', interval '90 days'),
+      ('seen_by', 'created_at', interval '1 week', interval '90 days'),
+      ('notifications', 'created_at', interval '1 week', interval '90 days')
+    ) AS t(tbl, col, step, keep)
+  LOOP
+    lo := NULL;
+    FOR child IN
+      SELECT c.relname,
+             substring(pg_get_expr(c.relpartbound, c.oid) from 'TO \(''([^'']+)''\)')::timestamptz AS hi
+      FROM pg_inherits i JOIN pg_class c ON c.oid = i.inhrelid
+      WHERE i.inhparent = format('public.%I', cfg.tbl)::regclass
+    LOOP
+      IF child.hi IS NULL THEN
+        -- DEFAULT partition: no range to drop, so age out its rows directly
+        IF cfg.keep IS NOT NULL THEN
+          EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', child.relname, cfg.col) USING cfg.keep;
+        END IF;
+      ELSIF cfg.keep IS NOT NULL AND child.hi < now() - cfg.keep THEN
+        EXECUTE format('DROP TABLE %I', child.relname);
+      ELSE
+        lo := greatest(lo, child.hi);
+      END IF;
+    END LOOP;
+
+    -- Continue from the newest live partition, or start a fresh series at the current period
+    IF lo IS NULL OR lo < now() - coalesce(cfg.keep, interval '0') THEN
+      lo := date_trunc(CASE WHEN cfg.step >= interval '1 month' THEN 'month' ELSE 'week' END, now());
+    END IF;
+
+    WHILE lo < now() + 2 * cfg.step LOOP
+      hi := lo + cfg.step;
+      part := format('%s_p%s', cfg.tbl, to_char(lo, 'YYYYMMDD'));
+      EXECUTE format('CREATE TEMP TABLE moved (LIKE %I)', cfg.tbl);
+      EXECUTE format('WITH d AS (DELETE FROM %I WHERE %I >= $1 AND %I < $2 RETURNING *) INSERT INTO moved SELECT * FROM d',
+        cfg.tbl || '_default', cfg.col, cfg.col) USING lo, hi;
+      EXECUTE format('CREATE TABLE %I PARTITION OF %I FOR VALUES FROM (%L) TO (%L)', part, cfg.tbl, lo, hi);
+      EXECUTE format('INSERT INTO %I SELECT * FROM moved', cfg.tbl);
+      DROP TABLE moved;
+      lo := hi;
+    END LOOP;
+  END LOOP;
+
+  -- Plain tables: retention by DELETE
+  FOR sw IN
+    SELECT * FROM (VALUES
+      ('sessions', 'expires_at', interval '30 days'),
+      ('tokens', 'expires_at', interval '30 days'),
+      ('unsubscribe_tokens', 'created_at', interval '90 days')
+    ) AS t(tbl, col, keep)
+  LOOP
+    EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', sw.tbl, sw.col) USING sw.keep;
+  END LOOP;
+END $proc$;
 
 DO $$
 DECLARE
@@ -251,312 +313,15 @@ DECLARE
   fk_defs text[];
   trg_defs text[];
 BEGIN
-  -- Graceful skip only for extension availability
-  BEGIN
-    CREATE SCHEMA IF NOT EXISTS partman;
-    CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
-  EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'pg_partman not available - skipping partition setup. Manual cleanup will be used.';
-    RETURN;
-  END;
-
-  -- ==========================================================================
-  -- SESSIONS: convert to partitioned by RANGE (expires_at)
-  -- ==========================================================================
-
-  IF EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'sessions' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '30 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.sessions';
-    RAISE NOTICE 'sessions already partitioned: config updated, skipping conversion';
-  ELSE
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('expires_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'sessions: primary key (%) must include partition column expires_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'sessions: unique constraints other than the PK cannot be carried onto a table partitioned by expires_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.sessions ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.sessions'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.sessions'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.sessions'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (sessions_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
-    ALTER TABLE sessions RENAME TO sessions_old;
-    EXECUTE 'CREATE TABLE sessions (LIKE sessions_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (expires_at)';
-
-    -- 4. Register with pg_partman (1 week partitions + DEFAULT) and configure
-    --    retention (30 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.sessions',
-      p_control => 'expires_at',
-      p_interval => '1 week',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '30 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.sessions';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
-    EXECUTE 'INSERT INTO sessions SELECT * FROM sessions_old';
-
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE sessions_old;
-
-    EXECUTE format('ALTER TABLE public.sessions ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'sessions converted to partitioned';
-  END IF;
-
-  -- ==========================================================================
-  -- TOKENS: convert to partitioned by RANGE (expires_at)
-  -- ==========================================================================
-
-  IF EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'tokens' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '30 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.tokens';
-    RAISE NOTICE 'tokens already partitioned: config updated, skipping conversion';
-  ELSE
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('expires_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'tokens: primary key (%) must include partition column expires_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'tokens: unique constraints other than the PK cannot be carried onto a table partitioned by expires_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.tokens ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.tokens'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.tokens'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.tokens'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (tokens_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
-    ALTER TABLE tokens RENAME TO tokens_old;
-    EXECUTE 'CREATE TABLE tokens (LIKE tokens_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (expires_at)';
-
-    -- 4. Register with pg_partman (1 week partitions + DEFAULT) and configure
-    --    retention (30 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.tokens',
-      p_control => 'expires_at',
-      p_interval => '1 week',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '30 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.tokens';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
-    EXECUTE 'INSERT INTO tokens SELECT * FROM tokens_old';
-
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE tokens_old;
-
-    EXECUTE format('ALTER TABLE public.tokens ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'tokens converted to partitioned';
-  END IF;
-
-  -- ==========================================================================
-  -- UNSUBSCRIBE_TOKENS: convert to partitioned by RANGE (created_at)
-  -- ==========================================================================
-
-  IF EXISTS (
-    SELECT 1 FROM pg_partitioned_table pt
-    JOIN pg_class c ON c.oid = pt.partrelid
-    WHERE c.relname = 'unsubscribe_tokens' AND c.relnamespace = 'public'::regnamespace
-  ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.unsubscribe_tokens';
-    RAISE NOTICE 'unsubscribe_tokens already partitioned: config updated, skipping conversion';
-  ELSE
-    -- 1a. Guard: PK must include the partition column
-    SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
-      FROM pg_constraint con
-      JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS x(attnum, ord) ON true
-      JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = x.attnum
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'p';
-    IF pk_cols IS NULL OR NOT ('created_at' = ANY(pk_cols)) THEN
-      RAISE EXCEPTION 'unsubscribe_tokens: primary key (%) must include partition column created_at', pk_cols;
-    END IF;
-
-    -- 1b. Guard: no non-PK unique constraints (cannot exist on the partitioned table)
-    IF EXISTS (
-      SELECT 1 FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'u'
-    ) THEN
-      RAISE EXCEPTION 'unsubscribe_tokens: unique constraints other than the PK cannot be carried onto a table partitioned by created_at';
-    END IF;
-
-    -- 2. Capture PK, FKs, non-constraint indexes, and triggers for replay after the
-    --    swap (earlier blocks may already have attached triggers, e.g. immutability)
-    SELECT pg_get_constraintdef(con.oid) INTO pk_def
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'p';
-    SELECT COALESCE(array_agg(format('ALTER TABLE public.unsubscribe_tokens ADD CONSTRAINT %I %s', con.conname, pg_get_constraintdef(con.oid))), '{}')
-      INTO fk_defs
-      FROM pg_constraint con
-      WHERE con.conrelid = 'public.unsubscribe_tokens'::regclass AND con.contype = 'f';
-    SELECT COALESCE(array_agg(pg_get_indexdef(i.indexrelid)), '{}') INTO idx_defs
-      FROM pg_index i
-      WHERE i.indrelid = 'public.unsubscribe_tokens'::regclass
-        AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid = i.indexrelid);
-    SELECT COALESCE(array_agg(pg_get_triggerdef(t.oid)), '{}') INTO trg_defs
-      FROM pg_trigger t
-      WHERE t.tgrelid = 'public.unsubscribe_tokens'::regclass AND NOT t.tgisinternal;
-
-    -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (unsubscribe_tokens_p...).
-    --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
-    ALTER TABLE unsubscribe_tokens RENAME TO unsubscribe_tokens_old;
-    EXECUTE 'CREATE TABLE unsubscribe_tokens (LIKE unsubscribe_tokens_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (created_at)';
-
-    -- 4. Register with pg_partman (1 month partitions + DEFAULT) and configure
-    --    retention (90 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.unsubscribe_tokens',
-      p_control => 'created_at',
-      p_interval => '1 month',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.unsubscribe_tokens';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
-    EXECUTE 'INSERT INTO unsubscribe_tokens SELECT * FROM unsubscribe_tokens_old';
-
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
-    DROP TABLE unsubscribe_tokens_old;
-
-    EXECUTE format('ALTER TABLE public.unsubscribe_tokens ADD %s', pk_def);
-    FOREACH ddl IN ARRAY fk_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY idx_defs LOOP EXECUTE ddl; END LOOP;
-    FOREACH ddl IN ARRAY trg_defs LOOP EXECUTE ddl; END LOOP;
-
-    RAISE NOTICE 'unsubscribe_tokens converted to partitioned';
-  END IF;
-
   -- ==========================================================================
   -- ACTIVITIES: convert to partitioned by RANGE (created_at)
   -- ==========================================================================
 
-  IF EXISTS (
+  IF NOT EXISTS (
     SELECT 1 FROM pg_partitioned_table pt
     JOIN pg_class c ON c.oid = pt.partrelid
     WHERE c.relname = 'activities' AND c.relnamespace = 'public'::regnamespace
   ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.activities';
-    RAISE NOTICE 'activities already partitioned: config updated, skipping conversion';
-  ELSE
     -- 1a. Guard: PK must include the partition column
     SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
       FROM pg_constraint con
@@ -593,35 +358,18 @@ BEGIN
       WHERE t.tgrelid = 'public.activities'::regclass AND NOT t.tgisinternal;
 
     -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (activities_p...).
+    --    final name, so child partitions get clean names (activities_p...).
     --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
+    --    is created on the new table until the old one is dropped in step 5.
     ALTER TABLE activities RENAME TO activities_old;
     EXECUTE 'CREATE TABLE activities (LIKE activities_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (created_at)';
+    EXECUTE 'CREATE TABLE activities_default PARTITION OF activities DEFAULT';
 
-    -- 4. Register with pg_partman (1 week partitions + DEFAULT) and configure
-    --    retention (90 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.activities',
-      p_control => 'created_at',
-      p_interval => '1 week',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.activities';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
+    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
+    --    maintain_partitions() below creates the current ranges and moves rows over
     EXECUTE 'INSERT INTO activities SELECT * FROM activities_old';
 
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
+    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
     DROP TABLE activities_old;
 
     EXECUTE format('ALTER TABLE public.activities ADD %s', pk_def);
@@ -636,20 +384,11 @@ BEGIN
   -- SEEN_BY: convert to partitioned by RANGE (created_at)
   -- ==========================================================================
 
-  IF EXISTS (
+  IF NOT EXISTS (
     SELECT 1 FROM pg_partitioned_table pt
     JOIN pg_class c ON c.oid = pt.partrelid
     WHERE c.relname = 'seen_by' AND c.relnamespace = 'public'::regnamespace
   ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.seen_by';
-    RAISE NOTICE 'seen_by already partitioned: config updated, skipping conversion';
-  ELSE
     -- 1a. Guard: PK must include the partition column
     SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
       FROM pg_constraint con
@@ -686,35 +425,18 @@ BEGIN
       WHERE t.tgrelid = 'public.seen_by'::regclass AND NOT t.tgisinternal;
 
     -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (seen_by_p...).
+    --    final name, so child partitions get clean names (seen_by_p...).
     --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
+    --    is created on the new table until the old one is dropped in step 5.
     ALTER TABLE seen_by RENAME TO seen_by_old;
     EXECUTE 'CREATE TABLE seen_by (LIKE seen_by_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (created_at)';
+    EXECUTE 'CREATE TABLE seen_by_default PARTITION OF seen_by DEFAULT';
 
-    -- 4. Register with pg_partman (1 week partitions + DEFAULT) and configure
-    --    retention (90 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.seen_by',
-      p_control => 'created_at',
-      p_interval => '1 week',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.seen_by';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
+    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
+    --    maintain_partitions() below creates the current ranges and moves rows over
     EXECUTE 'INSERT INTO seen_by SELECT * FROM seen_by_old';
 
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
+    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
     DROP TABLE seen_by_old;
 
     EXECUTE format('ALTER TABLE public.seen_by ADD %s', pk_def);
@@ -729,20 +451,11 @@ BEGIN
   -- NOTIFICATIONS: convert to partitioned by RANGE (created_at)
   -- ==========================================================================
 
-  IF EXISTS (
+  IF NOT EXISTS (
     SELECT 1 FROM pg_partitioned_table pt
     JOIN pg_class c ON c.oid = pt.partrelid
     WHERE c.relname = 'notifications' AND c.relnamespace = 'public'::regnamespace
   ) THEN
-    -- Already partitioned: refresh retention config only
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.notifications';
-    RAISE NOTICE 'notifications already partitioned: config updated, skipping conversion';
-  ELSE
     -- 1a. Guard: PK must include the partition column
     SELECT array_agg(a.attname::text ORDER BY x.ord) INTO pk_cols
       FROM pg_constraint con
@@ -779,35 +492,18 @@ BEGIN
       WHERE t.tgrelid = 'public.notifications'::regclass AND NOT t.tgisinternal;
 
     -- 3. Move the original aside and create the partitioned table directly under the
-    --    final name, so partman child partitions get clean names (notifications_p...).
+    --    final name, so child partitions get clean names (notifications_p...).
     --    The original's indexes keep their (schema-wide) names: safe, because no index
-    --    is created on the new table until the old one is dropped in step 6.
+    --    is created on the new table until the old one is dropped in step 5.
     ALTER TABLE notifications RENAME TO notifications_old;
     EXECUTE 'CREATE TABLE notifications (LIKE notifications_old INCLUDING ALL EXCLUDING INDEXES) PARTITION BY RANGE (created_at)';
+    EXECUTE 'CREATE TABLE notifications_default PARTITION OF notifications DEFAULT';
 
-    -- 4. Register with pg_partman (1 week partitions + DEFAULT) and configure
-    --    retention (90 days, drop old partitions).
-    --    p_premake => 1: only one interval is guaranteed ahead of now. run_maintenance() runs
-    --    daily and extends the horizon, so with the smallest (weekly) interval that is still a
-    --    7x buffer before writes could fall into the DEFAULT partition. The default premake of 4
-    --    lays down ~2*4+1 partitions per table up front for no benefit here.
-    PERFORM partman.create_parent(
-      p_parent_table => 'public.notifications',
-      p_control => 'created_at',
-      p_interval => '1 week',
-      p_premake => 1
-    );
-
-    UPDATE partman.part_config SET
-      retention = '90 days',
-      retention_keep_table = false,
-      infinite_time_partitions = true
-    WHERE parent_table = 'public.notifications';
-
-    -- 5. Copy data (identical column order via LIKE; out-of-range rows go to DEFAULT)
+    -- 4. Copy data (identical column order via LIKE); every row lands in DEFAULT until
+    --    maintain_partitions() below creates the current ranges and moves rows over
     EXECUTE 'INSERT INTO notifications SELECT * FROM notifications_old';
 
-    -- 6. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
+    -- 5. Drop old (frees index/constraint names), replay PK + FKs + indexes + triggers
     DROP TABLE notifications_old;
 
     EXECUTE format('ALTER TABLE public.notifications ADD %s', pk_def);
@@ -818,7 +514,8 @@ BEGIN
     RAISE NOTICE 'notifications converted to partitioned';
   END IF;
 
-  RAISE NOTICE 'pg_partman setup complete.';
+  CALL public.maintain_partitions();
+  RAISE NOTICE 'Partition setup complete.';
 END $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
@@ -862,7 +559,7 @@ BEGIN
     GRANT SELECT, INSERT, UPDATE, DELETE ON organizations TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON memberships TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON inactive_memberships TO runtime_role;
-    GRANT SELECT, INSERT, UPDATE, DELETE ON actors TO runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON principals TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON service_accounts TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON api_keys TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON oauth_clients TO runtime_role;
@@ -1153,14 +850,14 @@ BEGIN
     missing := array_append(missing, 'grant:inactive_memberships:UPDATE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.inactive_memberships', 'DELETE') THEN
     missing := array_append(missing, 'grant:inactive_memberships:DELETE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.actors', 'SELECT') THEN
-    missing := array_append(missing, 'grant:actors:SELECT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.actors', 'INSERT') THEN
-    missing := array_append(missing, 'grant:actors:INSERT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.actors', 'UPDATE') THEN
-    missing := array_append(missing, 'grant:actors:UPDATE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.actors', 'DELETE') THEN
-    missing := array_append(missing, 'grant:actors:DELETE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.principals', 'SELECT') THEN
+    missing := array_append(missing, 'grant:principals:SELECT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.principals', 'INSERT') THEN
+    missing := array_append(missing, 'grant:principals:INSERT'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.principals', 'UPDATE') THEN
+    missing := array_append(missing, 'grant:principals:UPDATE'); END IF;
+  IF NOT has_table_privilege('runtime_role', 'public.principals', 'DELETE') THEN
+    missing := array_append(missing, 'grant:principals:DELETE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.service_accounts', 'SELECT') THEN
     missing := array_append(missing, 'grant:service_accounts:SELECT'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.service_accounts', 'INSERT') THEN
@@ -1388,20 +1085,7 @@ BEGIN
   IF (SELECT relpersistence FROM pg_class WHERE relname = 'product_counters' AND relnamespace = 'public'::regnamespace) IS DISTINCT FROM 'u' THEN
     missing := array_append(missing, 'unlogged:product_counters'); END IF;
 
-  -- Partitioning (same precondition as the partman block: extension installed)
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_partman') THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'sessions' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:sessions'); END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'tokens' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:tokens'); END IF;
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
-      WHERE c.relname = 'unsubscribe_tokens' AND c.relnamespace = 'public'::regnamespace
-    ) THEN missing := array_append(missing, 'partitioned:unsubscribe_tokens'); END IF;
+  -- Partitioning and its maintenance procedure (and nothing partitioned beyond the configs)
     IF NOT EXISTS (
       SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
       WHERE c.relname = 'activities' AND c.relnamespace = 'public'::regnamespace
@@ -1414,14 +1098,17 @@ BEGIN
       SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
       WHERE c.relname = 'notifications' AND c.relnamespace = 'public'::regnamespace
     ) THEN missing := array_append(missing, 'partitioned:notifications'); END IF;
-  ELSE
-    RAISE NOTICE 'verify: pg_partman not installed - skipping partition assertions.';
-  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_partitioned_table pt JOIN pg_class c ON c.oid = pt.partrelid
+    WHERE c.relnamespace = 'public'::regnamespace AND c.relname NOT IN ('activities', 'seen_by', 'notifications')
+  ) THEN missing := array_append(missing, 'unexpected-partitioned-table'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'maintain_partitions' AND pronamespace = 'public'::regnamespace) THEN
+    missing := array_append(missing, 'procedure:maintain_partitions'); END IF;
 
-  -- CDC publication (11 tracked tables)
+  -- CDC publication (8 tracked tables)
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'cdc_pub') THEN
     missing := array_append(missing, 'publication:cdc_pub');
-  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = 'cdc_pub') <> 11 THEN
+  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = 'cdc_pub') <> 8 THEN
     missing := array_append(missing, 'publication-tables:cdc_pub');
   ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = 'cdc_pub' AND rowfilter IS NOT NULL) <> 0 THEN
     missing := array_append(missing, 'publication-rowfilters:cdc_pub');
