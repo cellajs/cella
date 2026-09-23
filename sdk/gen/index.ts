@@ -139,7 +139,7 @@ export type {
   CreateDomainErrors,
   CreateDomainResponse,
   CreateDomainResponses,
-  CreatedCredential,
+  CreatedApiKey,
   CreateOrganizationsData,
   CreateOrganizationsError,
   CreateOrganizationsErrors,

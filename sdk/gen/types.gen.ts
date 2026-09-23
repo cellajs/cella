@@ -609,7 +609,7 @@ export type ServiceAccount = {
 /**
  * A newly issued API key with its plaintext secret.
  */
-export type CreatedCredential = ApiKey & {
+export type CreatedApiKey = ApiKey & {
   /**
    * The plaintext API key; store it now, it is not shown again.
    */
@@ -5688,7 +5688,7 @@ export type CreateServiceAccountResponses = {
    */
   201: {
     serviceAccount: ServiceAccount;
-    apiKey?: CreatedCredential;
+    apiKey?: CreatedApiKey;
   };
 };
 
@@ -5847,7 +5847,7 @@ export type CreateApiKeyResponses = {
   /**
    * API key was issued
    */
-  201: CreatedCredential;
+  201: CreatedApiKey;
 };
 
 export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];
