@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { assertBootstrapCapable, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
 import {
   deleteApplicationCascade,
   deleteGroup,
@@ -64,7 +66,16 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
 
-  const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase });
+  // The state bucket admits only the admin and CI deploy applications, so the destroy key drives the provider while the standing key serves the state side, as in Apply.
+  const identity = resolveOperatorIdentity();
+  const env = buildProviderEnv(infraDir, {
+    accessKey,
+    secretKey,
+    projectId: context.projectId,
+    passphrase,
+    stateAccessKey: identity.state?.accessKey,
+    stateSecretKey: identity.state?.secretKey,
+  });
   let organizationId: string | undefined;
   try {
     organizationId = await resolveOrganizationId(secretKey, context.projectId);
@@ -74,13 +85,26 @@ export async function runTeardown(context: InfraContext): Promise<void> {
       `${warningMark} Could not resolve organization id (${errorMessage(error)}); IAM cleanup will be skipped.`,
     );
   }
+  if (organizationId) {
+    try {
+      const { desc, role } = await assertBootstrapCapable({
+        pair: { accessKey, secretKey },
+        names: principalNames(appConfig.slug, mode),
+        organizationId,
+      });
+      console.info(`${pc.dim('Teardown key:')} ${formatKeyLine(desc, role)}`);
+    } catch (error) {
+      console.error(`${warningMark} ${errorMessage(error)}`);
+      process.exit(1);
+    }
+  }
 
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey,
-    secretKey,
+    accessKey: identity.state?.accessKey ?? accessKey,
+    secretKey: identity.state?.secretKey ?? secretKey,
     stack: targetStack,
     operation: 'teardown',
   });

@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { assertBootstrapCapable, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -64,6 +65,30 @@ export async function runPrivilegedConverge(
     identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
   const stack = stackNameFor(context);
 
+  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API. Without it the up is a guaranteed failure, so stop before touching the stack.
+  let organizationId: string;
+  try {
+    organizationId = await resolveOrganizationId(bootSecret, projectId);
+  } catch (error) {
+    console.error(
+      `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
+    );
+    process.exit(1);
+  }
+
+  // A CI or admin key pasted at the bootstrap prompt fails here, in a second and with the reason, not half-way through `pulumi up`.
+  try {
+    const { desc, role } = await assertBootstrapCapable({
+      pair: { accessKey: bootAccess, secretKey: bootSecret },
+      names: principalNames(appConfig.slug, context.environment),
+      organizationId,
+    });
+    console.info(`${pc.dim('Bootstrap key:')} ${formatKeyLine(desc, role)}`);
+  } catch (error) {
+    console.error(`${warningMark} ${errorMessage(error)}`);
+    process.exit(1);
+  }
+
   // The state identity (the deprecated SCW_STATE_* override, else the standing key from infra/.env.<mode>, else the bootstrap key) applies to every state-bucket touch (login, lock, `up`), while the bootstrap key drives the resource mutations.
   const stateOverride = identity.state
     ? { stateAccessKey: identity.state.accessKey, stateSecretKey: identity.state.secretKey }
@@ -97,16 +122,7 @@ export async function runPrivilegedConverge(
 
   let completed = false;
   try {
-    // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API. Without it the up is a guaranteed failure, so stop before spending the lock on it.
-    try {
-      env.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(bootSecret, projectId);
-    } catch (error) {
-      await releaseLock();
-      console.error(
-        `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
-      );
-      process.exit(1);
-    }
+    env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
     // Registry principals are bootstrap-owned like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
     console.info(pc.dim('\n→ Ensuring registry IAM principals (vm-<service> + boot applications)…'));
