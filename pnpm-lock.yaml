@@ -138,9 +138,6 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
-      pg-format:
-        specifier: ^1.0.4
-        version: 1.0.4
       pino:
         specifier: ^10.3.1
         version: 10.3.1
@@ -175,15 +172,9 @@ importers:
       '@commander-js/extra-typings':
         specifier: ^15.0.0
         version: 15.0.0(commander@15.0.0)
-      '@dotenv-run/core':
-        specifier: ^1.3.8
-        version: 1.3.8
       '@faker-js/faker':
         specifier: ^10.6.0
         version: 10.6.0
-      '@getbrevo/brevo':
-        specifier: ^6.0.3
-        version: 6.0.3
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.8)
@@ -229,9 +220,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      '@types/pg-format':
-        specifier: ^1.0.5
-        version: 1.0.5
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -259,9 +247,6 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      dotenv:
-        specifier: ^18.0.2
-        version: 18.0.2
       drizzle-kit:
         specifier: 1.0.0-rc.5-ab785fc
         version: 1.0.0-rc.5-ab785fc
@@ -283,9 +268,6 @@ importers:
       isbot:
         specifier: ^5.2.2
         version: 5.2.2
-      lru-cache:
-        specifier: ^11.5.3
-        version: 11.5.3
       maxmind:
         specifier: ^5.0.7
         version: 5.0.7
@@ -342,7 +324,7 @@ importers:
         version: 1.6.9
       transloadit:
         specifier: 4.13.0
-        version: 4.13.0(@types/node@26.6.2)
+        version: 4.13.0(@types/node@26.6.2)(supports-color@8.1.1)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(supports-color@8.1.1)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.1)
@@ -388,9 +370,6 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
-      pg-format:
-        specifier: ^1.0.4
-        version: 1.0.4
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -407,9 +386,6 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
-      '@types/pg-format':
-        specifier: ^1.0.5
-        version: 1.0.5
       artillery:
         specifier: ^2.0.34
         version: 2.0.34(patch_hash=dee4b82651dcd73de88e802853a34e787c43eb9c49d5d360beadcd3513f0e502)(@types/node@26.6.2)(supports-color@8.1.1)
@@ -464,9 +440,6 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
-      pg-format:
-        specifier: ^1.0.4
-        version: 1.0.4
       pg-logical-replication:
         specifier: ^2.5.0
         version: 2.5.0
@@ -486,9 +459,6 @@ importers:
       '@types/node':
         specifier: 26.6.2
         version: 26.6.2
-      '@types/pg-format':
-        specifier: ^1.0.5
-        version: 1.0.5
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -651,9 +621,6 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       cnfast:
         specifier: ^0.2.0
         version: 0.2.0
@@ -741,9 +708,6 @@ importers:
       react-i18next:
         specifier: ^17.0.15
         version: 17.0.15(i18next@26.4.2(typescript@6.0.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3)
-      react-intersection-observer:
-        specifier: ^11.0.1
-        version: 11.0.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react-pdf:
         specifier: ^11.0.0
         version: 11.0.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -989,9 +953,6 @@ importers:
 
   mcp:
     dependencies:
-      dotenv:
-        specifier: ^18.0.2
-        version: 18.0.2
       shared:
         specifier: workspace:*
         version: link:../shared
@@ -1014,9 +975,6 @@ importers:
 
   oauth:
     dependencies:
-      dotenv:
-        specifier: ^18.0.2
-        version: 18.0.2
       shared:
         specifier: workspace:*
         version: link:../shared
@@ -1073,9 +1031,6 @@ importers:
       '@blocknote/core':
         specifier: ^0.54.2
         version: 0.54.2(@types/hast@3.0.5)(y-prosemirror@1.3.7(prosemirror-model@1.25.11)(prosemirror-state@1.4.4)(prosemirror-view@1.42.3)(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32))(y-protocols@1.0.7(yjs@13.6.32))(yjs@13.6.32)
-      '@dotenv-run/core':
-        specifier: ^1.3.8
-        version: 1.3.8
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -2430,9 +2385,6 @@ packages:
   '@date-fns/tz@1.5.0':
     resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
 
-  '@dotenv-run/core@1.3.8':
-    resolution: {integrity: sha512-vspjLjI+V2Rjhxf2vxfbuJWfgxLUauQc4K0MhX7y0+Xr31XLT3XPdgK9IEuew6SVBduO0UCcehy0o9F5Xn7r8A==}
-
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
 
@@ -2878,10 +2830,6 @@ packages:
   '@gar/promise-retry@1.0.3':
     resolution: {integrity: sha512-GmzA9ckNokPypTg10pgpeHNQe7ph+iIKKmhKu3Ob9ANkswreCx7R3cKmY781K8QK3AqVL3xVh9A42JvIAbkkSA==}
     engines: {node: ^20.17.0 || >=22.9.0}
-
-  '@getbrevo/brevo@6.0.3':
-    resolution: {integrity: sha512-yWBLKoHC8P5HLZ8z6iRuqDYLpCRKPTUETnZOLZzNDWGFYL78y4SHOTxQVrKH5ROX7f4q+SQ19LD3GWtJlIuNXA==}
-    engines: {node: '>=18.0.0'}
 
   '@googlemaps/js-api-loader@2.1.3':
     resolution: {integrity: sha512-1t6umwRufEGzIPjHPjPeuuY1dCal0zU2bZeomkf4OA0MprFdlKCnXY3zeFkzDaCvKjwbFubeapm61P5+EbrAoA==}
@@ -6503,9 +6451,6 @@ packages:
   '@types/pako@2.0.4':
     resolution: {integrity: sha512-VWDCbrLeVXJM9fihYodcLiIv0ku+AlOa/TQ1SvYOaBuyrSKgEcro95LJyIsJ4vSo6BXIxOKxiJAat04CmST9Fw==}
 
-  '@types/pg-format@1.0.5':
-    resolution: {integrity: sha512-i+oEEJEC+1I3XAhgqtVp45Faj8MBbV0Aoq4rHsHD7avgLjyDkaWKObd514g0Q/DOUkdxU0P4CQ0iq2KR4SoJcw==}
-
   '@types/pg-pool@2.0.7':
     resolution: {integrity: sha512-U4CwmGVQcbEuqpyju8/ptOKg6gEC+Tqsvj2xS9o1g71bUh8twxnC6ZL5rZKCsGN0iyH0CwgUyc9VR5owNQF9Ng==}
 
@@ -7904,10 +7849,6 @@ packages:
     resolution: {integrity: sha512-BTJ9aZYL3vCfZlZOBLy9v8TUqWGQ0pzFnygKwFZt5udj6viBoFIBviKPUoZLDCPn1FoXffv6McQFDenrm5Krfw==}
     engines: {node: '>=20'}
 
-  dotenv-expand@10.0.0:
-    resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
-    engines: {node: '>=12'}
-
   dotenv-expand@8.0.3:
     resolution: {integrity: sha512-SErOMvge0ZUyWd5B0NXMQlDkN+8r+HhVUsxgOO7IoPDOdDRD2JjExpN6y3KnFR66jsJMwSn1pqIivhU5rcJiNg==}
     engines: {node: '>=12'}
@@ -7919,11 +7860,6 @@ packages:
   dotenv@17.4.2:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
-
-  dotenv@18.0.2:
-    resolution: {integrity: sha512-wl0U3CxC0iobaryqEKpFJxzyp4AxQFYAKj/WWszXZr87vVHLi2yJv2syax5Vxt+u02xqNgE277rsc3lOKg9sPg==}
-    engines: {node: '>=12'}
-    hasBin: true
 
   driftless@2.0.3:
     resolution: {integrity: sha512-hSDKsQphnL4O0XLAiyWQ8EiM9suXH0Qd4gMtwF86b5wygGV8r95w0JcA38FOmx9N3LjFCIHLG2winLPNken4Tg==}
@@ -10502,10 +10438,6 @@ packages:
   pg-connection-string@2.14.0:
     resolution: {integrity: sha512-XwWDGcLRGCXAR8F/AM5bG7Q+A3Wm2s6QeEjlOKZLlH3UYcguiqCWKyWXVag5TLTIjR7oOJUY8kcADaZgWPyLeg==}
 
-  pg-format@1.0.4:
-    resolution: {integrity: sha512-YyKEF78pEA6wwTAqOUaHIN/rWpfzzIuMh9KdAhc3rSLQ/7zkRFcCgYBAEGatDstLyZw4g0s9SNICmaTGnBVeyw==}
-    engines: {node: '>=4.0'}
-
   pg-int8@1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
     engines: {node: '>=4.0.0'}
@@ -10952,15 +10884,6 @@ packages:
       react-native:
         optional: true
       typescript:
-        optional: true
-
-  react-intersection-observer@11.0.1:
-    resolution: {integrity: sha512-BIZ1M40GPSKDIT1MJbXK7SB0BwBaTKr84QfZCs5asKer7YMOYLzMi+RI1F4VStbZLGHoosJmd+aOQDDipUV1gA==}
-    peerDependencies:
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      react-dom:
         optional: true
 
   react-is@17.0.2:
@@ -14589,13 +14512,6 @@ snapshots:
 
   '@date-fns/tz@1.5.0': {}
 
-  '@dotenv-run/core@1.3.8':
-    dependencies:
-      chalk: 4.1.2
-      dotenv: 16.6.1
-      dotenv-expand: 10.0.0
-      find-up: 5.0.0
-
   '@drizzle-team/brocli@0.10.2': {}
 
   '@drizzle-team/brocli@0.12.1': {}
@@ -14884,8 +14800,6 @@ snapshots:
   '@floating-ui/utils@0.2.12': {}
 
   '@gar/promise-retry@1.0.3': {}
-
-  '@getbrevo/brevo@6.0.3': {}
 
   '@googlemaps/js-api-loader@2.1.3':
     dependencies:
@@ -18289,8 +18203,6 @@ snapshots:
 
   '@types/pako@2.0.4': {}
 
-  '@types/pg-format@1.0.5': {}
-
   '@types/pg-pool@2.0.7':
     dependencies:
       '@types/pg': 8.23.1
@@ -18645,9 +18557,9 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(jsdom@30.1.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
+      vitest: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(jsdom@30.1.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
     optionalDependencies:
-      '@vitest/browser': 5.0.1(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))(vitest@5.0.1)
+      '@vitest/browser': 5.0.1(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))(vitest@5.0.1)
 
   '@vitest/expect@3.2.4':
     dependencies:
@@ -18714,7 +18626,7 @@ snapshots:
       pathe: 2.0.3
       sirv: 3.0.2
       tinyrainbow: 3.1.1
-      vitest: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(jsdom@30.1.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
+      vitest: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/coverage-v8@5.0.1)(@vitest/ui@5.0.1)(jsdom@30.1.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -19886,15 +19798,11 @@ snapshots:
     dependencies:
       type-fest: 5.10.0
 
-  dotenv-expand@10.0.0: {}
-
   dotenv-expand@8.0.3: {}
 
   dotenv@16.6.1: {}
 
   dotenv@17.4.2: {}
-
-  dotenv@18.0.2: {}
 
   driftless@2.0.3:
     dependencies:
@@ -22926,8 +22834,6 @@ snapshots:
 
   pg-connection-string@2.14.0: {}
 
-  pg-format@1.0.4: {}
-
   pg-int8@1.0.1: {}
 
   pg-logical-replication@2.5.0:
@@ -23412,12 +23318,6 @@ snapshots:
     optionalDependencies:
       react-dom: 19.3.0(react@19.3.0)
       typescript: 6.0.3
-
-  react-intersection-observer@11.0.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
-    dependencies:
-      react: 19.3.0
-    optionalDependencies:
-      react-dom: 19.3.0(react@19.3.0)
 
   react-is@17.0.2: {}
 
@@ -24585,7 +24485,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  transloadit@4.13.0(@types/node@26.6.2):
+  transloadit@4.13.0(@types/node@26.6.2)(supports-color@8.1.1):
     dependencies:
       '@transloadit/sev-logger': 0.1.9
       '@transloadit/utils': 4.9.0

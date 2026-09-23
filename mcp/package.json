@@ -13,7 +13,6 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "dotenv": "^18.0.2",
     "shared": "workspace:*"
   },
   "devDependencies": {

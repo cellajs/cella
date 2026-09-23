@@ -1,4 +1,4 @@
-import { LRUCache } from '#/lib/lru-cache';
+import { TTLCache } from '#/lib/ttl-cache';
 
 interface PointsEntry {
   /** Local truth: last known DB count plus every fast-path consume since. */
@@ -11,14 +11,14 @@ interface PointsEntry {
 /** Fraction of budget below which requests skip the DB entirely. */
 const FAST_PATH_THRESHOLD = 0.8;
 
-/** LRU capacity: one entry per unique (tenantId:userId) key. */
+/** Capacity: one entry per unique (tenantId:userId) key. Every write renews the TTL, so eviction drops the least recently written. */
 const MAX_ENTRIES = 50_000;
 
 const WINDOW_MS = 60 * 60 * 1000;
 
-const cache = new LRUCache<PointsEntry>({
+const cache = new TTLCache<PointsEntry>({
   maxSize: MAX_ENTRIES,
-  maxTtl: WINDOW_MS,
+  defaultTtl: WINDOW_MS,
 });
 
 /**

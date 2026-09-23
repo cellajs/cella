@@ -4,7 +4,7 @@
   "description": "Drizzle Studio launcher for local database inspection",
   "type": "module",
   "scripts": {
-    "dev": "cross-env DOTENV_CONFIG_QUIET=true tsx ../backend/scripts/drizzle-studio/start.ts",
+    "dev": "tsx ../backend/scripts/drizzle-studio/start.ts",
     "stop": "tsx ../backend/scripts/drizzle-studio/stop.ts"
   },
   "keywords": [

@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
+import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -14,10 +14,7 @@ interface HeroProps {
 export const Hero = ({ title, text, children, chips }: HeroProps) => {
   const { t } = useTranslation();
   const { theme } = useUIStore();
-  const { ref, inView } = useInView({
-    triggerOnce: true,
-    threshold: 0.5,
-  });
+  const { ref, inView } = useInView({ once: true, threshold: 0.5 });
 
   // When a theme color is active, derive gradient from --primary CSS variable so any color in appConfig.theme.colors works automatically
   const hasTheme = theme !== 'none';

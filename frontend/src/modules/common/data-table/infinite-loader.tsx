@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
+import { useInView } from '~/hooks/use-in-view';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 
@@ -24,11 +24,7 @@ export function InfiniteLoader({
   const isOnline = useOnlineManager();
 
   // inView is level-triggered state: a sentinel entering view during a fetch is served once that fetch settles.
-  const { ref: measureRef, inView } = useInView({
-    triggerOnce: false,
-    delay: 50,
-    threshold: 0,
-  });
+  const { ref: measureRef, inView } = useInView();
   useFetchMoreOnDemand({
     demand: inView,
     hasNextPage,

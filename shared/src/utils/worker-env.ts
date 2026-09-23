@@ -1,12 +1,12 @@
-import { env as dotenv } from '@dotenv-run/core';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import process from 'node:process';
 import { z } from 'zod';
 
-/** The one env file for the monorepo. The relative root resolves from the worker's own CWD. */
+/** The one env file for the monorepo, resolved from the worker's own CWD. Variables already in the environment win. */
 export function loadBackendDotenv(): void {
-  dotenv({
-    root: '../backend',
-    files: ['.env'],
-  });
+  const envFile = resolve('../backend/.env');
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
 }
 
 /** Shared by cdc and yjs. Extend with service-specific fields. */

@@ -15,7 +15,6 @@
     "nanoid": "^6.0.1",
     "ora": "^9.4.1",
     "pg": "^8.23.0",
-    "pg-format": "^1.0.4",
     "picocolors": "^1.1.1",
     "shared": "workspace:*",
     "uuidv7": "^1.2.1"
@@ -23,7 +22,6 @@
   "devDependencies": {
     "@types/node": "26.6.2",
     "@types/pg": "^8.23.1",
-    "@types/pg-format": "^1.0.5",
     "artillery": "^2.0.34",
     "artillery-plugin-ensure": "^1.27.0",
     "tsx": "^4.23.15",

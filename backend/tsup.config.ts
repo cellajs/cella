@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup';
 
 /**
  * Packages that have to stay on disk. Everything else is inlined into dist/.
- * - pg-format, papaparse: CJS dynamic requires of data files that do not survive ESM bundling.
+ * - papaparse: CJS dynamic require of a data file that does not survive ESM bundling.
  * - @ngrok/ngrok, @napi-rs/canvas: native addons, loaded by platform-specific .node file.
  * - @opentelemetry/*: the SDK patches modules through the loader registry, so it loads from disk,
  *   and so does anything it instruments. `pg` is here for that reason: PgInstrumentation only ever
@@ -13,7 +13,7 @@ import { defineConfig } from 'tsup';
  *   pino package, and resolves transport targets like 'pino-pretty' by name from the caller, so
  *   neither survives being inlined.
  */
-const KEEP_ON_DISK = String.raw`pg(?:\/|$)|pg-format|papaparse|@ngrok\/ngrok|@napi-rs\/canvas|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|@blocknote\\/server-util|jsdom`;
+const KEEP_ON_DISK = String.raw`pg(?:\/|$)|papaparse|@ngrok\/ngrok|@napi-rs\/canvas|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|@blocknote\\/server-util|jsdom`;
 
 export default defineConfig({
   entry: {
@@ -48,7 +48,6 @@ export default defineConfig({
   external: [
     // CJS dynamic data-file require does not survive ESM bundling.
     // Regexes: a bare name matches the exact specifier, and these are reached through subpaths too.
-    /^pg-format(\/|$)/,
     /^papaparse(\/|$)/,
     // Native addons.
     /^@ngrok\/ngrok(\/|$)/,

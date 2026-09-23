@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useInView } from 'react-intersection-observer';
+import { useInView } from '~/hooks/use-in-view';
 import { counts } from '~/modules/marketing/marketing-config';
 import { publicCountsQueryOptions } from '~/modules/marketing/query';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
@@ -32,7 +32,7 @@ const countsLength = counts.length;
 
 export function Counters() {
   const { t } = useTranslation();
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
+  const { ref, inView } = useInView({ once: true });
 
   const { data } = useQuery(publicCountsQueryOptions());
 
