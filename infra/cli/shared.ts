@@ -31,7 +31,8 @@ export type CliMode =
   | 'expose-db'
   | 'unexpose-db'
   | 'unlock'
-  | 'teardown';
+  | 'teardown'
+  | 'geoip-refresh';
 
 /** Stack information and state, passed to every CLI action handler. */
 export interface InfraContext {

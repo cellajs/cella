@@ -11,6 +11,7 @@ import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import '#/lib/db-maintenance'; // registers the DB maintenance job before jobs start
+import { startGeoipRefresh } from '#/lib/geoip';
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
@@ -59,6 +60,9 @@ const main = async () => {
   }
 
   registerCacheInvalidation();
+
+  // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
+  stopJobs.push(startGeoipRefresh());
 
   server = serve(
     {

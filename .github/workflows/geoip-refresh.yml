@@ -1,0 +1,72 @@
+name: GeoIP refresh
+
+# Publishes the current month's DB-IP Lite databases to the geoip/ prefix of the
+# public bucket (infra/tasks/geoip-refresh.ts). Running API processes re-check
+# the prefix daily, so no release is needed. DB-IP publishes early each month;
+# the task falls back to the previous month when the new one is not up yet.
+# The deploy pipeline runs the same task with a 35-day staleness gate, and
+# `pnpm infra` → Refresh GeoIP data is the manual lever. Uses the Environment's
+# CI deploy key, which the public bucket policy admits for object writes.
+
+on:
+  schedule:
+    - cron: '23 6 3 * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment / stack'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      force:
+        description: 'Publish even when this month is already in the bucket'
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+env:
+  NODE_VERSION: '26'
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment || 'production' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Publish GeoIP data to ${{ inputs.environment || 'production' }}
+        working-directory: infra
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          ENV: ${{ inputs.environment || 'production' }}
+          FORCE: ${{ inputs.force && '--force' || '' }}
+        run: |
+          set -euo pipefail
+          pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref refs/heads/main > /tmp/denv
+          PUBLIC_BUCKET=$(grep '^public_bucket=' /tmp/denv | cut -d= -f2-)
+          REGION=$(grep '^region=' /tmp/denv | cut -d= -f2-)
+          if [ -z "$PUBLIC_BUCKET" ]; then echo "no public bucket in this registry; nothing to refresh"; exit 0; fi
+          echo "bucket: $PUBLIC_BUCKET | region: $REGION"
+          pnpm --silent --filter infra geoip-refresh --bucket "$PUBLIC_BUCKET" --region "$REGION" $FORCE
