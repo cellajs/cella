@@ -91,8 +91,12 @@ export const env = createEnv({
     PII_HASH_SECRET: z.string().min(16, 'PII_HASH_SECRET must be at least 16 characters'),
     DATA_ENCRYPTION_KEY: z.string().min(32, 'DATA_ENCRYPTION_KEY must be at least 32 characters'),
 
+    // GeoIP (lib/geoip.ts): local MMDB paths, the object prefix they download from ('off' disables the refresh; empty
+    // means the geoip/ prefix of the public bucket), and the public address development geolocates for loopback sign-ins.
     GEOIP_COUNTRY_DB_PATH: z.string().default('./geoip/dbip-country-lite.mmdb'),
     GEOIP_ASN_DB_PATH: z.string().default('./geoip/dbip-asn-lite.mmdb'),
+    GEOIP_SOURCE_URL: z.string().default(''),
+    GEOIP_DEV_SAMPLE_IP: z.string().default('8.8.8.8'),
 
     SCW_AI_API_KEY: z.string().optional(),
 

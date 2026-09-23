@@ -14,6 +14,7 @@ import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
+import { runGeoipRefresh } from './actions/geoip-refresh';
 import { runPreview } from './actions/preview';
 import { runResetDatabase } from './actions/reset-database';
 import { runRotatePassphrase } from './actions/rotate-passphrase';
@@ -208,6 +209,12 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
       },
       { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
       {
+        name: 'Refresh GeoIP data',
+        value: 'geoip-refresh',
+        description:
+          "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
+      },
+      {
         name: 'Teardown',
         value: 'teardown',
         description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
@@ -284,6 +291,11 @@ if (mode === 'secrets') {
 
 if (mode === 'reset-database') {
   await runResetDatabase(context);
+  process.exit(0);
+}
+
+if (mode === 'geoip-refresh') {
+  await runGeoipRefresh(context);
   process.exit(0);
 }
 

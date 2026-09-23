@@ -1,22 +1,7 @@
 import { appConfig } from 'shared';
 import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
-
-// fast-redact lacks recursive wildcards, so sensitive keys are listed at root and one level deep.
-// Keep `code` visible because it represents WebSocket close codes in logs.
-const sensitiveKeys = [
-  'secret', // Session secrets, token secrets, TOTP secrets
-  'credentialId', // Passkey credentials
-  'token',
-  'accessToken',
-  'refreshToken',
-  'idToken',
-  'codeVerifier',
-  'sessionToken',
-  'nonce',
-  'password',
-];
-export const redactedFields = sensitiveKeys.flatMap((key) => [key, `*.${key}`]);
+import { redactedFields } from '#/lib/redact-keys';
 
 // NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';

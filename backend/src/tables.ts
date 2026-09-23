@@ -5,7 +5,10 @@ import { channelTables } from '#/db/channel-tables';
 import { productTables } from '#/db/product-tables';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { requestsTable } from '#/modules/requests/requests-db';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -38,6 +41,9 @@ export const resourceTables = {
   inactive_membership: inactiveMembershipsTable,
   tenant: tenantsTable,
   system_role: systemRolesTable,
+  service_account: serviceAccountsTable,
+  api_key: apiKeysTable,
+  oauth_client: oauthClientsTable,
 } as const satisfies Record<ResourceType, TableWithId>;
 
 export type EntityType = keyof typeof entityTables;

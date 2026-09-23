@@ -29,6 +29,7 @@ export const ALLOWED_KEYS = [
   'region',
   'registry_ns',
   'frontend_bucket',
+  'public_bucket',
   'state_bucket',
   'vm_assert_json',
   'enabled_services_json',
@@ -103,6 +104,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     // Empty when the registry implies no SPA bucket (frontend-less app); the
     // deploy skips asset upload + entry publish on ''.
     frontend_bucket: appStorageNeeds(enabled).spaBucket ? naming.frontendBucket : '',
+    public_bucket: appStorageNeeds(enabled).uploadBuckets ? naming.publicBucket : '',
     state_bucket: naming.pulumiStateBucket,
     // One assertion row per principal (exact sets + exact condition, built by
     // the same shared builders the Pulumi program uses so the deploy's

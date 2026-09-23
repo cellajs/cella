@@ -1,6 +1,7 @@
-import { getColumns } from 'drizzle-orm';
+import { getColumns, getTableName } from 'drizzle-orm';
+import { secretColumnsOf } from '#/db/secret-columns';
 import { entityTables, resourceTables } from '#/tables';
-import type { CdcRowData } from '../types';
+import type { CdcRowData, TableMeta } from '../types';
 
 /**
  * Varchar length at or above which a column is stripped from in-memory row data. The publication
@@ -22,12 +23,24 @@ export const excludedRowDataKeys: Set<string> = (() => {
   return keys;
 })();
 
-/** Called in the handlers, after changedFields has been computed. */
-export function compactRowData(rowData: CdcRowData): CdcRowData {
-  if (excludedRowDataKeys.size === 0) return rowData;
+/** Secret columns per tracked table (`secretColumns` in backend/src/db/secret-columns.ts), stripped whatever their length. */
+const secretKeysByTable: ReadonlyMap<string, ReadonlySet<string>> = new Map(
+  [...Object.values(entityTables), ...Object.values(resourceTables)].map((table) => {
+    const name = getTableName(table);
+    return [name, new Set(secretColumnsOf(name))];
+  }),
+);
+
+/**
+ * Called in the handlers, after changedFields has been computed: drops large-text columns and the
+ * table's secret columns, so neither crosses to the backend.
+ */
+export function compactRowData(tableMeta: TableMeta, rowData: CdcRowData): CdcRowData {
+  const secret = secretKeysByTable.get(getTableName(tableMeta.table));
+  if (excludedRowDataKeys.size === 0 && !secret?.size) return rowData;
   const slim: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(rowData)) {
-    if (!excludedRowDataKeys.has(key)) slim[key] = value;
+    if (!excludedRowDataKeys.has(key) && !secret?.has(key)) slim[key] = value;
   }
   return slim as CdcRowData;
 }

@@ -75,8 +75,8 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
   // changedFields is computed, so the large columns can go: nothing downstream reads them.
   return {
     activity,
-    rowData: compactRowData(rowData),
-    oldRowData: oldRowData ? compactRowData(oldRowData) : null,
+    rowData: compactRowData(tableMeta, rowData),
+    oldRowData: oldRowData ? compactRowData(tableMeta, oldRowData) : null,
     movedFrom,
     tableMeta,
   };
