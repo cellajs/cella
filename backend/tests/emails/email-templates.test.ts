@@ -92,3 +92,34 @@ describe('account security email escapes its details', () => {
     expect(html).toContain('<br');
   });
 });
+
+describe('new sign-in notice location line', () => {
+  const details = {
+    timestamp: '2026-01-01 09:30:00 UTC',
+    browser: 'Firefox',
+    os: 'macOS',
+    strategy: 'Passkey',
+    accountUrl: 'https://app.example.test/account',
+  };
+
+  it('names the country when GeoIP resolved one, escaped like every other detail', async () => {
+    const translated = accountSecurityEmail.translate('en', {
+      name: 'Emily',
+      type: 'new-sign-in',
+      details: { ...details, country: 'Nether<lands' },
+    });
+    const html = await render(accountSecurityEmail.component(translated));
+
+    expect(html).toContain('<strong>Location:</strong> Nether&lt;lands (approximate)');
+    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS');
+  });
+
+  it('leaves the line out entirely when no country is known', async () => {
+    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details });
+    const html = await render(accountSecurityEmail.component(translated));
+
+    expect(html).not.toContain('Location');
+    expect(html).not.toContain('unknown');
+    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS<br><strong>Method:</strong> Passkey');
+  });
+});
