@@ -11,5 +11,5 @@ export function handleDelete(tableMeta: TableMeta, message: Pgoutput.MessageDele
 
   const activity = createActivity(tableMeta, rowData, 'delete');
 
-  return { activity, rowData: compactRowData(rowData), oldRowData: null, tableMeta };
+  return { activity, rowData: compactRowData(tableMeta, rowData), oldRowData: null, tableMeta };
 }

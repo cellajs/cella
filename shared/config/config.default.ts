@@ -40,8 +40,20 @@ export const config = {
 
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
-  /** Not entities, but activities are logged for them. */
-  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role'] as const,
+  /**
+   * Not entities, but activities are logged for them. Tenant- or system-owned rows only: rows a user owns
+   * (sessions, identities, passkeys, emails) are self-audited through the account pages and notifications.
+   */
+  resourceTypes: [
+    'request',
+    'membership',
+    'inactive_membership',
+    'tenant',
+    'system_role',
+    'service_account',
+    'api_key',
+    'oauth_client',
+  ] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside

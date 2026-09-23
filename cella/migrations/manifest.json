@@ -1229,6 +1229,24 @@
     "pnpm --filter infra compose:generate"
    ],
    "summary": "MissingScopeError/missing_scope -> MissingAncestorError/missing_ancestor (engine error for an absent ancestor channel id; no longer shares a word with RFC 6750 insufficient_scope); tenant restriction allowConsentedClients -> allowUnregisteredClients and refusal clients_not_allowed -> unregistered_clients_not_allowed (it gates consent to OAuth clients with no registration), with a migration rewriting the column default and stored rows; env MCP_API_URL -> MCP_URL. Tenant wire shape changes: clientCacheVersion v9-tenant-restrictions."
+  },
+  {
+   "id": "20260923T0835-auth-resource-activities",
+   "version": "next",
+   "title": "service accounts, API keys and OAuth clients are activity resources; CDC redacts secret columns",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "cdc/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm sdk"
+   ],
+   "summary": "resourceTypes gains service_account, api_key and oauth_client (resourceTables maps them), so key minting and revocation, account changes and client registration land in activities; user-owned rows (sessions, identities, passkeys, emails) stay out and are covered by notifications. backend/src/tables.ts adds redactedColumns (api_key.hash, oauth_client.secretHash), stripped by compactRowData(tableMeta, rowData) in the CDC worker before the row image reaches the backend, and sensitiveColumnPattern; a CDC test fails when a tracked table has a column ending in hash, secret, jwk, token or password that is not listed. createActivity attributes an update to revokedBy when updatedBy is absent. pnpm generate adds the three tables to cdc_pub with REPLICA IDENTITY FULL."
   }
  ]
 }

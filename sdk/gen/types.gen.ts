@@ -130,7 +130,16 @@ export type StreamNotification = {
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment' | null;
-  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | null;
+  resourceType:
+    | 'request'
+    | 'membership'
+    | 'inactive_membership'
+    | 'tenant'
+    | 'system_role'
+    | 'service_account'
+    | 'api_key'
+    | 'oauth_client'
+    | null;
   subjectId: string | null;
   organizationId: string | null;
   tenantId: string | null;
