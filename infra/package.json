@@ -16,6 +16,7 @@
     "repair-control-store": "tsx tasks/repair-control-store.ts",
     "repair-certs": "tsx tasks/repair-certs.ts",
     "diag": "tsx tasks/diag.ts",
+    "geoip-refresh": "tsx tasks/geoip-refresh.ts",
     "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && tsup boot/src/entry.ts --format cjs --platform node --target node26 --out-dir boot/dist",
     "boot:image": "pnpm run boot:build && docker build -t ${BOOT_IMAGE:-infra-boot:dev} boot",
     "compose:generate": "tsx compose/synth.ts",

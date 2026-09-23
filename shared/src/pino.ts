@@ -181,8 +181,11 @@ interface WorkerLogEnv {
   MAPLE_SECRET_INGEST_KEY?: string;
 }
 
-/** For cdc and yjs: same construction, with the OTel service name `<app-slug>-<suffix>`. */
-export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv): Log =>
+/**
+ * For cdc and yjs: same construction, with the OTel service name `<app-slug>-<suffix>`. `redactPaths` is the
+ * backend's `redactedFields` (lib/redact-keys.ts), so a worker censors the same keys the API does.
+ */
+export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redactPaths: readonly string[]): Log =>
   createLog(
     createLogger({
       level: env.PINO_LOG_LEVEL,
@@ -191,5 +194,6 @@ export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv): Log =
       enableOtelTransport: true,
       mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
       serviceName: `${appConfig.slug}-${serviceSuffix}`,
+      redact: { paths: [...redactPaths], censor: '[REDACTED]' },
     }),
   );

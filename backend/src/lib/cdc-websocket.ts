@@ -80,7 +80,7 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
   // Direct connection, no proxy in between: the peer is the worker
   if (isLoopbackIp(peer) || isVpcIp(peer)) return true;
 
-  // Behind the per-VM ingress the peer is the local Caddy, so trust X-Forwarded-For and check the reported client IP
+  // Behind a local reverse proxy (a compose ingress on the docker bridge) the peer is that proxy, so trust X-Forwarded-For and check the reported client IP
   if (isDockerBridgeIp(peer)) {
     const xff = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
     const client = normalizeIp(xff?.split(',')[0]?.trim() ?? '');

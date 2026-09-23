@@ -38,9 +38,8 @@ const strategyLabels: Record<AuthStrategy, string> = {
   email: 'Email',
 };
 
-/** Country name in the reader's language; GeoIP gives an ISO code, or nothing when its database is absent. */
-const countryName = (code: string | null, language: string) => {
-  if (!code) return 'unknown';
+/** Country name in the reader's language from the ISO code GeoIP gives. */
+const countryName = (code: string, language: string) => {
   try {
     return new Intl.DisplayNames([language], { type: 'region' }).of(code) ?? code;
   } catch {
@@ -95,7 +94,8 @@ export const notifyNewSignIn = async ({
       timestamp: `${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`,
       browser: context.device.browser ?? 'unknown',
       os: context.device.os ?? 'unknown',
-      country: countryName(context.country, user.language),
+      // Omitted when GeoIP has no answer: the template then leaves the location line out entirely.
+      ...(context.country ? { country: countryName(context.country, user.language) } : {}),
       strategy: strategyLabels[strategy],
       accountUrl: `${appConfig.frontendUrl}/account`,
     });

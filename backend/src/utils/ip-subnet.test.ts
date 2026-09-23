@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toRateLimitIp } from '#/utils/ip-subnet';
+import { isPublicIp, toRateLimitIp } from '#/utils/ip-subnet';
 
 describe('toRateLimitIp', () => {
   it('keeps IPv4 addresses as the full host', () => {
@@ -35,5 +35,45 @@ describe('toRateLimitIp', () => {
   it('returns the input unchanged for non-IP values', () => {
     expect(toRateLimitIp('not-an-ip')).toBe('not-an-ip');
     expect(toRateLimitIp('')).toBe('');
+  });
+});
+
+describe('isPublicIp', () => {
+  it('accepts routable IPv4 and IPv6 addresses, mapped or not', () => {
+    expect(isPublicIp('203.0.113.7')).toBe(true);
+    expect(isPublicIp('::ffff:203.0.113.7')).toBe(true);
+    expect(isPublicIp('2001:db8::1')).toBe(true);
+  });
+
+  it('rejects loopback, private, link-local, carrier NAT and unique-local ranges', () => {
+    for (const ip of [
+      '127.0.0.1',
+      '::ffff:127.0.0.1',
+      '10.0.0.4',
+      '172.16.0.1',
+      '172.31.255.255',
+      '192.168.1.1',
+      '169.254.10.10',
+      '100.64.0.1',
+      '::1',
+      '::',
+      'fc00::1',
+      'fd12::1',
+      'fe80::1',
+    ]) {
+      expect(isPublicIp(ip), ip).toBe(false);
+    }
+  });
+
+  it('rejects the public neighbours of those ranges only when they are private', () => {
+    expect(isPublicIp('172.15.0.1')).toBe(true);
+    expect(isPublicIp('172.32.0.1')).toBe(true);
+    expect(isPublicIp('100.63.0.1')).toBe(true);
+    expect(isPublicIp('100.128.0.1')).toBe(true);
+  });
+
+  it('treats invalid input as not public', () => {
+    expect(isPublicIp('')).toBe(false);
+    expect(isPublicIp('not-an-ip')).toBe(false);
   });
 });

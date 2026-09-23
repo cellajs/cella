@@ -76,8 +76,8 @@ storybook-static
 .locales-cache
 .dev-session-cookie
 
-# GeoIP databases (downloaded at build/dev time, not committed)
-backend/geoip/*.mmdb
+# GeoIP databases (downloaded at runtime, not committed)
+backend/geoip/
 
 # Test coverage output
 .coverage/

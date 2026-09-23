@@ -47,6 +47,8 @@ Route-level guards in `backend/src/middlewares/guard/`:
 
 Read/write boundary and table categories: [Multi-tenancy](./MULTI_TENANCY.md).
 
+Secret columns (a hash, a session or token secret, a private key) are declared once, by table name, in `backend/src/db/secret-columns.ts`. Three things derive from it and nothing else lists them: `createSelectSchema` omits them from every response schema, `lib/redact-keys.ts` censors them in backend and worker logs, and the CDC worker strips them from the row image. Adding such a column means one line there; a column whose name ends like a secret but is not one goes in `secretLookingColumns` with its reason. `cdc/src/tests/secret-columns.test.ts` fails on a column in neither map.
+
 ## Error handling
 
 `AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409).

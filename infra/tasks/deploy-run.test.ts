@@ -17,6 +17,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     pulumi_stack: opts.mode,
     region: 'fr-par',
     registry_ns: 'cella-registry',
+    public_bucket: '',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
     vm_assert_json: JSON.stringify([
@@ -119,6 +120,28 @@ describe('parseDeployArgs', () => {
 });
 
 describe('runDeploy sequencing', () => {
+  it('refreshes GeoIP data before the stack update when a public bucket exists, and shrugs off a failure', async () => {
+    const withBucket = async (o: DeployOptions) => ({ ...(await fakeDeployEnv(o)), public_bucket: 'cella-public' });
+
+    const ok = makeFake();
+    await runDeploy(baseOpts, ok.fx, withBucket);
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:wait-for-images'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:mint-generation-keys'));
+
+    const failing = makeFake();
+    const task = failing.fx.task;
+    failing.fx.task = async (name, argv) => {
+      if (name === 'geoip-refresh') throw new Error('db-ip down');
+      return task(name, argv);
+    };
+    await runDeploy(baseOpts, failing.fx, withBucket);
+    expect(failing.ops).toContain('rollout');
+
+    const none = makeFake();
+    await runDeploy(baseOpts, none.fx, fakeDeployEnv);
+    expect(none.ops).not.toContain('task:geoip-refresh');
+  });
+
   it('runs preflights, rollout, verification, entry publish, smoke, then releases the lock', async () => {
     const { fx, ops } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);

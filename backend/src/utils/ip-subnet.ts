@@ -44,3 +44,32 @@ const expandIPv6 = (ip: string): string[] | null => {
     g.toLowerCase().replace(/^0+(?=.)/, ''),
   );
 };
+
+/**
+ * Whether an address can be geolocated at all: loopback, private, link-local, carrier-grade NAT and unique-local ranges
+ * (and their IPv4-mapped forms) are not in any geolocation database. Invalid input counts as not public.
+ */
+export const isPublicIp = (ip: string): boolean => {
+  if (!ip) return false;
+  const normalized = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  if (isIPv4(normalized)) {
+    const [a, b] = normalized.split('.').map(Number);
+    if (a === 10 || a === 127 || a === 0) return false;
+    if (a === 172 && b >= 16 && b <= 31) return false;
+    if (a === 192 && b === 168) return false;
+    if (a === 169 && b === 254) return false;
+    if (a === 100 && b >= 64 && b <= 127) return false;
+    return true;
+  }
+  if (isIPv6(normalized)) {
+    const groups = expandIPv6(normalized);
+    if (!groups) return false;
+    const first = Number.parseInt(groups[0], 16);
+    if (groups.every((g) => g === '0')) return false; // ::
+    if (groups.slice(0, 7).every((g) => g === '0') && groups[7] === '1') return false; // ::1
+    if ((first & 0xfe00) === 0xfc00) return false; // fc00::/7 unique local
+    if ((first & 0xffc0) === 0xfe80) return false; // fe80::/10 link local
+    return true;
+  }
+  return false;
+};
