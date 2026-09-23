@@ -89,12 +89,14 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 
 | Key | Permissions | Lifetime | Where stored |
 | --- | --- | --- | --- |
-| **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes: revoked after each use. Required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). | Password manager only, never on disk |
+| **Bootstrap key** | Owner (via Personal API Key) **or** ProjectManager + IAMManager on a dedicated IAM application | Minutes: revoked after each use. Required for any `pulumi up` that touches bootstrap-owned modules (DB, VPC, private network). The CLI checks the bearer before using one: an engine principal is refused by name. | Password manager only, never on disk. Or let the CLI mint one per run: put your Owner Personal API Key in `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` as a `keychain:` or `op:` reference, and each privileged run mints a 30-minute key and revokes it at the end. |
 | **CI deploy key** (`<slug>-<mode>-ci-deploy`) | Write on compute / LB / private networks / edge / secrets / object storage / registry / DNS. **Read-only** on VPC and RDB (those are bootstrap-owned). Project-scoped. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. |
-| **Admin key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The operator's standing key for status, Preview, and the state side of Apply infra change. | Long-lived. Created by the CLI **Rotate keys** action, stored at `/<slug>-<mode>/engine/admin-key`; mint a key on the application in the console when you need one | `infra/.env.<mode>` as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (0600, never committed) |
+| **Admin key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The operator's standing key for status, Preview, and the state side of Apply infra change. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` (0600, never committed): setup writes it on the bootstrapping machine; anywhere else, **Manage keys & secrets → Fetch operator credentials** reads it from Secret Manager with a bootstrap key. |
 | **Boot + service keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own + shared folders). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
 
-The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)).
+The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). **Store passphrase in keychain** moves this machine's copy into the OS keychain and leaves `keychain:<slug>-<mode>/PULUMI_CONFIG_PASSPHRASE` in the env file; the password-manager copy stays the durable one.
+
+On an operator machine `infra/.env.<mode>` therefore holds two things: the admin key and the passphrase, either as values or as `keychain:` / `op:` references the CLI resolves on load ([env-files.ts](../infra/lib/utils/env-files.ts)). `SCW_STATE_ACCESS_KEY` / `SCW_STATE_SECRET_KEY` are deprecated: the admin key is admitted to the state bucket, and the CLI warns when the pair is still set. On start the CLI prints which principal `SCW_ACCESS_KEY` belongs to, whether the stack is locked, and what is live, so a CI key in the admin slot is visible before any action.
 
 ## CI deploys
 
@@ -149,13 +151,16 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 Most config changes ship through a normal CI deploy, including toggling `appConfig.services.<slug>.enabled`. **Bootstrap-owned** resources (database, VPC, the VM IAM principals and policies) can only be mutated with a temporary bootstrap key: `pnpm infra` → **Apply infra change**, which:
 
-1. Reads the Pulumi passphrase and a fresh bootstrap key from `PULUMI_CONFIG_PASSPHRASE` and `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY`, prompting for whatever is missing ([Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)). The state bucket admits only the admin and CI deploy applications, so the state side uses your standing admin key from `infra/.env.<mode>` (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY`), or `SCW_STATE_ACCESS_KEY` / `SCW_STATE_SECRET_KEY` when set.
+1. Reads the Pulumi passphrase and a bootstrap key: `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` when set, else a key minted from `SCW_OWNER_*` ([Credentials](#credentials)), else a prompt ([Generate a bootstrap API key](#2-generate-a-bootstrap-api-key)). The bearer is checked first: an Owner, or a principal holding IAMManager; a CI, admin, boot or VM key is refused by name. The state side (login, lock, `up`) uses your standing admin key from `infra/.env.<mode>`.
 2. Passes the bootstrap key to the Scaleway provider via `SCW_*` env. It is never written to stack config.
-3. Creates any missing VM IAM application (`<slug>-<mode>-vm-<service>`, `<slug>-<mode>-boot`) for the service registry.
-4. Runs `pulumi up` against the bootstrapped stack without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place. This run also reconciles the VM policy rules, which a CI deploy leaves untouched.
-5. Reminds you to revoke the bootstrap key.
+3. Takes the stack lease (renewed while the run lasts, released on Ctrl-C; a lock left by a dead run lapses within minutes and the CLI waits for that) and creates any missing VM IAM application (`<slug>-<mode>-vm-<service>`, `<slug>-<mode>-boot`) for the service registry.
+4. Shows the plan (`pulumi preview --diff`) and asks once whether to apply it, then runs `pulumi up` without setting `bootstrap:computeDeferred`, so the running VMs and LB stay in place. This run also reconciles the VM policy rules, which a CI deploy leaves untouched.
+5. Verifies the result live: every VM, boot and CI principal holds exactly the declared grant, with the exact secret condition and project scope, and the declared database privileges exist. Pulumi reporting an update is not proof (one update was recorded in state while Scaleway kept the old rule), so a mismatch fails the run. `pnpm infra --debug-provider` keeps the engine and provider log of the `up` under `infra/.debug/` for such a case.
+6. Revokes a minted bootstrap key, or reminds you to revoke a supplied one.
 
-**Preview** in the same menu is the read-only dry run of an Apply infra change; a CI deploy applies the same diff except the VM policy rules. Your standing admin key is enough for it, and the organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`. Run it before an Apply to see exactly what will change.
+**Preview** in the same menu is the read-only dry run of an Apply infra change, refreshed against live state first so drift made outside Pulumi shows up; a CI deploy applies the same diff except the VM policy rules. Your standing admin key is enough for it, and the organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`.
+
+The same preview runs as a **preflight**: first thing in every deploy, and as the `infra-preflight` job on the release PR against the production Environment. It names any pending bootstrap-owned change (a database privilege, a VM policy rule, the VPC) with the Apply command above, so an owed Apply blocks the release PR instead of failing the production deploy after the images have built.
 
 VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service (the `oauth` worker added in #1179 is such an addition), or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
 
@@ -191,7 +196,7 @@ pnpm infra
 1. Picks or creates the Scaleway project (prerequisite 5).
 2. Generates the Pulumi passphrase. **Store it when shown**: it is shown once and unrecoverable (set `PULUMI_CONFIG_PASSPHRASE` beforehand to supply your own).
 3. Creates state storage and initializes Pulumi.
-4. Creates the required credentials.
+4. Creates the required credentials and writes the admin key to `infra/.env.<mode>` on this machine.
 5. Configures GitHub (if `gh` is authenticated).
 6. Optionally runs the first `pulumi up` (registry, DB, and network, but no compute yet).
 7. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app. Declining leaves it to CI (step 4).
@@ -294,6 +299,8 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 2. `pnpm infra` → **Rotate keys**: mints a fresh `<slug>-<mode>-ci-deploy` key and, if `gh` is authenticated, pushes it to the stack's GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. The key is never written to stack config.
 3. The next CI deploy uses the new key. No commit is needed. VM-side keys need no rotation: every deploy mints fresh ones.
 4. **Revoke the bootstrap key** in the Scaleway console.
+
+To put the admin key on another operator machine, run **Manage keys & secrets → Fetch operator credentials** there with a bootstrap key: it reads the custodied pair, confirms it belongs to the admin application, and writes `infra/.env.<mode>`.
 
 ### Passphrase rotation
 
