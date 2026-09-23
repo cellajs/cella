@@ -37,7 +37,6 @@ export const serviceAccountSchema = z
   });
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
-  .omit({ hash: true })
   .extend({ scopes: z.array(scopeEnum).nullable() })
   .openapi('ApiKey', {
     description: 'An API key of a service account; the secret is never returned after creation.',

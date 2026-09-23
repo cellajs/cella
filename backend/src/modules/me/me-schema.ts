@@ -11,14 +11,12 @@ import { booleanTransformSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
-export const sessionSchema = createSelectSchema(sessionsTable)
-  .omit({ secret: true })
-  .extend({
-    isCurrent: z.boolean(),
-    isNewDevice: z
-      .boolean()
-      .openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
-  });
+export const sessionSchema = createSelectSchema(sessionsTable).extend({
+  isCurrent: z.boolean(),
+  isNewDevice: z
+    .boolean()
+    .openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
+});
 
 export const meSchema = z
   .object({
