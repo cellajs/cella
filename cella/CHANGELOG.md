@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/cellajs/cella/compare/0.11.0...0.11.1) (2026-09-23)
+
+
+### 🐞 Bug fixes
+
+* **deploy:** install pnpm from npm, node 26 images no longer ship corepack ([#1192](https://github.com/cellajs/cella/issues/1192)) ([36b1f5a](https://github.com/cellajs/cella/commit/36b1f5a386803597937db70e92631a9c7171c8b2))
+
 ## [0.11.0](https://github.com/cellajs/cella/compare/0.10.4...0.11.0) (2026-09-23)
 
 
