@@ -49,14 +49,17 @@ afterAll(async () => {
     await adminDb.execute(sql`REVOKE INSERT, UPDATE, DELETE ON system_roles FROM runtime_role`).catch(() => {});
     await runtimePool.end().catch(() => {});
   }
-  await adminDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`).catch(() => {});
+  // Cascades to users
+  await adminDb.execute(sql`DELETE FROM actors WHERE id = ${TEST_USER}`).catch(() => {});
 });
 
 // Runtime writes must remain blocked even when database grants are open. Runtime reads
 // and owner-driven `ON DELETE CASCADE` must continue to work.
 (guardSuiteReady ? describe : describe.skip)('system_roles write guard', () => {
   beforeAll(async () => {
-    await adminDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`);
+    await adminDb.execute(sql`DELETE FROM actors WHERE id = ${TEST_USER}`);
+    // users.id is a foreign key to actors.id, so the actor row comes first
+    await adminDb.execute(sql`INSERT INTO actors (id, kind, created_at) VALUES (${TEST_USER}, 'user', now())`);
     await adminDb.execute(sql`
       INSERT INTO users (id, entity_type, name, slug, email, created_at)
       VALUES (${TEST_USER}, 'user', 'Guard Probe', ${`guard-${randomUUID().slice(0, 8)}`}, ${`guard-${randomUUID().slice(0, 8)}@example.com`}, now())
