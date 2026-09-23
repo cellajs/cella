@@ -21,7 +21,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 
   const operation = getFlag(argv, '--operation') ?? 'deploy';
-  const ttlMs = getNumFlag(argv, '--ttl-min', 60) * 60_000;
+  // Deploys and the CLI hold renewed leases (lib/stack/stack-lease.ts); this manual lock is not renewed, so keep its lifetime short.
+  const ttlMs = getNumFlag(argv, '--ttl-min', 5) * 60_000;
   const res = await acquireLock(s3, bucket, key, { owner, operation, ttlMs });
   if (!res.acquired) {
     throw new Error(

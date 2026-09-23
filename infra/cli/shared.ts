@@ -2,15 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
-import {
-  acquireLock,
-  controlActor,
-  lockKey,
-  makeControlClient,
-  releaseLock,
-  stateBucket,
-} from '../lib/stack/control-store';
+import { controlActor, lockKey, makeControlClient, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
+import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
 import { crossMark, pc, warningMark } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { maskedSecret } from './prompts/masked-secret';
@@ -189,14 +183,18 @@ export function pulumiLoginAndSelect(
   spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env, stdio: 'ignore' });
 }
 
-/** Handle to a held stack lock; `release` logs failures and never throws. */
+/** Handle to a held stack lease; `release` logs failures and never throws. */
 export interface StackLockHandle {
   release: () => Promise<void>;
 }
 
+/** How long an operator run waits for another holder's lease to lapse: longer than one lifetime, so a dead run always frees the stack in time. */
+const OPERATOR_LOCK_WAIT_MS = 5 * 60_000;
+
 /**
- * Acquire the S3 conditional-write stack lock so a second operator or CI cannot mutate the stack concurrently, or exit(1) pointing at the "Unlock" action when it is held.
- * A dead run's lock self-expires after the TTL.
+ * Take the stack lease so a second operator or CI cannot mutate the stack concurrently. A live lock held by someone else is waited out (a dead
+ * run's lease lapses within minutes); a holder that keeps renewing wins, and this run exits pointing at the "Unlock" escape hatch.
+ * The lease renews itself while held and is released on Ctrl-C, so an interrupted run leaves nothing behind.
  */
 export async function acquireStackLockOrExit(opts: {
   appConfig: AppConfigType;
@@ -209,24 +207,42 @@ export async function acquireStackLockOrExit(opts: {
   const s3 = await makeControlClient(opts.appConfig.s3.region, opts.accessKey, opts.secretKey);
   const bucket = stateBucket(opts.appConfig.slug);
   const key = lockKey(opts.stack);
-  const owner = controlActor();
-  const lock = await acquireLock(s3, bucket, key, {
-    owner,
+  let lastWaitLine = 0;
+  const result = await acquireLease({
+    s3,
+    bucket,
+    key,
+    owner: controlActor(),
     operation: opts.operation,
-    ttlMs: opts.ttlMs ?? 30 * 60_000,
+    ttlMs: opts.ttlMs,
+    waitMs: OPERATOR_LOCK_WAIT_MS,
+    onWait: (held, remainingMs) => {
+      if (Date.now() - lastWaitLine < 30_000) return;
+      lastWaitLine = Date.now();
+      console.info(
+        `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min for the lease to lapse…`,
+      );
+    },
+    onRenewFailed: (reason, lost) =>
+      console.warn(
+        `${warningMark} stack lease renewal failed (${reason})${lost ? ': this run no longer holds the lock' : ''}`,
+      ),
   });
-  if (!lock.acquired) {
+  if (!result.acquired) {
     console.error(
-      `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(lock.held.owner)} (operation: ${lock.held.operation}, since ${lock.held.acquiredAt}).`,
+      `${warningMark} Stack ${opts.stack} is still locked by ${pc.cyan(result.held.owner)} (operation: ${result.held.operation}, since ${result.held.acquiredAt}).`,
     );
     console.error(`  If that run is dead, clear it with the CLI "Unlock" action or remove s3://${bucket}/${key}.`);
     process.exit(1);
   }
+  const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`${warningMark} ${msg}`) });
   return {
-    release: () =>
-      releaseLock(s3, bucket, key, owner).catch((e) =>
-        console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`),
-      ),
+    release: async () => {
+      uninstall();
+      await result.lease
+        .release()
+        .catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+    },
   };
 }
 

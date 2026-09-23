@@ -386,6 +386,33 @@ export async function releaseLock(s3: S3Like, bucket: string, key: string, owner
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
+export type RenewResult = { renewed: true; info: LockInfo } | { renewed: false; held?: LockInfo };
+
+/**
+ * Extend our own lock's expiry under `If-Match`, so a live holder keeps a short lease alive and a dead one lets it lapse within one TTL.
+ * A lock that is missing, owned by someone else, or replaced between read and write is reported as not renewed and never overwritten.
+ */
+export async function renewLock(
+  s3: S3Like,
+  bucket: string,
+  key: string,
+  owner: string,
+  ttlMs: number,
+  now = Date.now(),
+): Promise<RenewResult> {
+  const { info, etag } = await readLock(s3, bucket, key);
+  if (!info || info.owner !== owner) return { renewed: false, held: info };
+  const next: LockInfo = { ...info, expiresAt: new Date(now + ttlMs).toISOString() };
+  try {
+    await putLock(s3, bucket, key, next, etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
+    return { renewed: true, info: next };
+  } catch (err) {
+    if (!isPreconditionFailed(err)) throw err;
+    const { info: raced } = await readLock(s3, bucket, key);
+    return { renewed: false, held: raced };
+  }
+}
+
 /** Unconditionally remove the lock (the `infra unlock` escape hatch). */
 export async function forceUnlock(s3: S3Like, bucket: string, key: string): Promise<LockInfo | undefined> {
   const { DeleteObjectCommand } = await s3sdk();
