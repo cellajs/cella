@@ -29,6 +29,8 @@ No script: manual.
 4. Rename `authEvents` listeners and emitters from `session.deleted` to `session.revoked`.
 5. Add `revokedAt: null, revokedBy: null, revocationReason: null` to app session mocks; add `isNull(sessionsTable.revokedAt)` to app queries that mean "live session".
 6. Replace the removed locale keys with `c:revoke`, `c:revoke_all` and `success.revoke_resource`; add the `revocation_reason.*`, `revoked`, `expired` and `session_history` keys to app languages.
+7. Passkeys and TOTP say delete everywhere: security mail types `passkey-removed` / `totp-removed` are `passkey-deleted` / `totp-deleted` (with their `backend.json` keys); locale keys `unlink`, `unlink_mfa_last`, `success.passkey_unlinked`, `success.totp_removed`, `passkey_unlink_failed` and `totp_remove_failed` are replaced by `delete`, `delete_mfa_last`, `success.delete_resource`, `passkey_delete_failed` and `totp_delete_failed`.
+8. `emails.lastVerifiedBy` is `lastVerifiedVia` (migration `email_last_verified_via`, a rename hint keeps the data) and `markEmailVerified`, `requireEmailVerified` and `addProvenEmail` take `via` in place of `by`: every other `*By` column names an actor, this one names a proof method.
 
 ## Verify
 

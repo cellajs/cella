@@ -76,7 +76,7 @@ describe('reapUnprovenAccounts', () => {
     expect(released.userId).toBeNull();
 
     const owner = await createTestUser('invited@example.com', false);
-    await markEmailVerified(db, { userId: owner.id, email: owner.email, by: 'magic' });
+    await markEmailVerified(db, { userId: owner.id, email: owner.email, via: 'magic' });
     const [claimed] = await db
       .select()
       .from(inactiveMembershipsTable)

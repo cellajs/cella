@@ -139,11 +139,11 @@ export const useDeletePasskeyMutation = () => {
           passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id),
         };
       });
-      toaster.success(t('c:success.passkey_unlinked'));
+      toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },
     onError(error) {
-      console.error('Error removing passkey:', error);
-      toaster.error(t('error:passkey_unlink_failed'));
+      console.error('Error deleting passkey:', error);
+      toaster.error(t('error:passkey_delete_failed'));
     },
   });
 };
@@ -153,15 +153,15 @@ export const useDeleteTotpMutation = () => {
     mutationKey: meKeys.delete.totp,
     mutationFn: () => deleteTotp(),
     onSuccess: () => {
-      toaster.success(t('c:success.totp_removed'));
+      toaster.success(t('c:success.delete_resource', { resource: t('c:totp') }));
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: false };
       });
     },
     onError(error) {
-      console.error('Error removing totp:', error);
-      toaster.error(t('error:totp_remove_failed'));
+      console.error('Error deleting totp:', error);
+      toaster.error(t('error:totp_delete_failed'));
     },
   });
 };

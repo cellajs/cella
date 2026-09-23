@@ -1,0 +1,1 @@
+ALTER TABLE "emails" RENAME COLUMN "last_verified_by" TO "last_verified_via";

@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { CheckIcon, RotateCcwKeyIcon, UnlinkIcon } from 'lucide-react';
+import { CheckIcon, RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -38,7 +38,7 @@ export function Totp() {
 
   const handleDeleteTOTP = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    if (user.mfaRequired) return toaster.info(t('c:unlink_mfa_last', { method: 'TOTP' }));
+    if (user.mfaRequired) return toaster.info(t('c:delete_mfa_last', { method: 'TOTP' }));
 
     deleteTotp();
   };
@@ -61,8 +61,8 @@ export function Totp() {
           disabled={user.mfaRequired}
           onClick={handleDeleteTOTP}
         >
-          <UnlinkIcon className="mr-2 size-4" />
-          <span>{t('c:unlink')}</span>
+          <TrashIcon className="mr-2 size-4" />
+          <span>{t('c:delete')}</span>
         </Button>
       ) : (
         <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
