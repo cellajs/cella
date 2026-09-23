@@ -14,7 +14,7 @@ import type {
 /**
  * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
  * omitted user id a type error, so no actor-based condition is denied by accident. `userId` is any
- * principal id; `scopes` is a credential's mask (null or absent = unmasked).
+ * principal id; `scopes` is the mask of the API key or access token that proved the caller (null or absent = unmasked; a session is never masked).
  */
 export type PredicateActor =
   | { userId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null }
@@ -30,7 +30,7 @@ export type Access<T extends AccessMembership = AccessMembership> =
   | { anonymous: true };
 
 /**
- * The credential mask: a scoped credential (an API key with `scopes`) may do less than its principal's grants allow,
+ * The scope mask: a scoped API key or access token (one with `scopes`) may do less than its principal's grants allow,
  * never more. Unscoped access (a session, or `scopes: null`) passes untouched.
  */
 const scopeAllows = (access: Access, entityType: EntityType, action: EntityActionType): boolean =>

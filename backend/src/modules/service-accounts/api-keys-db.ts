@@ -29,7 +29,7 @@ export const apiKeysTable = snakeCase.table(
     prefix: varchar({ length: maxLength.field }).notNull(),
     hash: varchar({ length: maxLength.field }).notNull(),
     last4: varchar({ length: 4 }).notNull(),
-    /** Mask over the principal's grants; null = unmasked. Values come from `accessScopes.all`. */
+    /** Mask over the principal's bindings; null = unmasked. Values come from `accessScopes.all`. */
     scopes: varchar({ length: maxLength.field }).$type<AccessScope>().array(),
     expiresAt: timestamp({ mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),

@@ -38,7 +38,7 @@ export type DbContext = {
 };
 
 /**
- * Someone acting inside a tenant, whatever proved them: no user row, so it stays callable from machine credentials.
+ * Someone acting inside a tenant, whatever proved them: no user row, so it stays callable with an API key or an access token.
  * The organization fields are present only behind `orgGuard`; operations that need them take `OrgContext`.
  */
 export type ActorContext = {

@@ -70,7 +70,7 @@ export const mockPendingInvitationResponse = (key = 'pending-invitation:default'
 export const mockPaginatedInvitationsResponse = (count = 2) => mockPaginated(mockPendingInvitationResponse, count);
 
 export const mockConnectedApp = () => ({
-  id: 'gr_01J9Z2Q0X7ZQ4S5M8N',
+  id: '01J9Z2Q0X7ZQ4S5M8NX3F2ABCD',
   clientId: 'https://vscode.dev/oauth/client-metadata.json',
   clientName: 'Visual Studio Code',
   scopes: ['attachment:read'],

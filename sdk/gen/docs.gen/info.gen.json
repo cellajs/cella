@@ -110,7 +110,7 @@
     {
       "key": "x-tool",
       "id": "xTool",
-      "description": "Tool registration metadata for AI and MCP integrations",
+      "description": "MCP tool registration metadata",
       "required": false,
       "kind": "metadata"
     },

@@ -13,7 +13,7 @@ export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | '
 /** The provider caches only static clients; adapter-loaded ones are cached here, dropped when the account changes. */
 const clientCache = new TTLCache<AppClientMetadata>({ maxSize: 1000, defaultTtl: 60_000 });
 
-export const invalidateClientCache = (id: string): void => {
+export const invalidateOauthClientCache = (id: string): void => {
   clientCache.delete(id);
 };
 
@@ -64,7 +64,7 @@ async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
 
 /**
  * `node-oidc-provider`'s adapter over `oidc_payloads`: one row per model instance keyed by (type, id). The `Client`
- * model reads the app's own tables (`clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
+ * model reads the app's own tables (`oauth_clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
  * what the provider no longer reads.
  */
 export class DrizzleAdapter implements Adapter {

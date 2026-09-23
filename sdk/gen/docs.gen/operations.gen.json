@@ -834,7 +834,7 @@
     "path": "/me/auth",
     "tags": ["me"],
     "summary": "Get auth data",
-    "description": "Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.",
+    "description": "Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
@@ -1559,10 +1559,10 @@
   },
   {
     "id": "getApiProtectedResourceMetadata",
-    "hash": "tag/auth/GET/{tenantId}/.well-known/oauth-protected-resource",
+    "hash": "tag/oauth-server/GET/{tenantId}/.well-known/oauth-protected-resource",
     "method": "get",
     "path": "/{tenantId}/.well-known/oauth-protected-resource",
-    "tags": ["auth"],
+    "tags": ["oauth-server"],
     "summary": "Protected resource metadata (API)",
     "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
     "deprecated": false,
@@ -1576,7 +1576,7 @@
       "xCache": []
     },
     "tagsByKind": {
-      "module": ["auth"],
+      "module": ["oauth-server"],
       "owner": ["cella"]
     }
   },
@@ -1856,7 +1856,7 @@
     "entityType": "attachment"
   },
   {
-    "id": "getProtectedResourceMetadata",
+    "id": "getMcpProtectedResourceMetadata",
     "hash": "tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource",
     "method": "get",
     "path": "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource",
@@ -1885,7 +1885,7 @@
     "path": "/{tenantId}/{organizationId}/mcp",
     "tags": ["mcp"],
     "summary": "MCP endpoint",
-    "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
+    "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
@@ -2138,7 +2138,7 @@
     "path": "/{tenantId}/{organizationId}/service-accounts/{id}",
     "tags": ["service-accounts"],
     "summary": "Update service account",
-    "description": "Renames, describes, disables or re-enables a service account. Accounts are never deleted.",
+    "description": "Renames, disables or re-enables a service account. Accounts are never deleted.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,

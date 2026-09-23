@@ -8,7 +8,7 @@
   {
     "name": "auth",
     "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 25,
+    "count": 24,
     "kind": "module"
   },
   {
@@ -19,7 +19,7 @@
   },
   {
     "name": "mcp",
-    "description": "Endpoints exposing the AI capability layer, which is a server-side tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same tool registry.",
+    "description": "Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.",
     "count": 2,
     "kind": "module"
   },
@@ -32,7 +32,7 @@
   {
     "name": "oauth-server",
     "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept by the API's job runner.",
-    "count": 0,
+    "count": 1,
     "kind": "module"
   },
   {

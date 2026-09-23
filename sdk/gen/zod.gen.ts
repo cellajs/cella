@@ -553,7 +553,7 @@ export const zApiKey = z.object({
 /**
  * A newly issued API key with its plaintext secret.
  */
-export const zCreatedCredential = zApiKey.and(
+export const zCreatedApiKey = zApiKey.and(
   z.object({
     secret: z.string(),
   }),
@@ -1853,7 +1853,7 @@ export const zUpdateAttachmentQuery = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
-export const zGetProtectedResourceMetadataPath = z.object({
+export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),
 });
@@ -1861,7 +1861,7 @@ export const zGetProtectedResourceMetadataPath = z.object({
 /**
  * Protected resource metadata
  */
-export const zGetProtectedResourceMetadataResponse = zProtectedResourceMetadata;
+export const zGetMcpProtectedResourceMetadataResponse = zProtectedResourceMetadata;
 
 export const zHandleMcpBody = z.unknown();
 
@@ -2114,7 +2114,7 @@ export const zCreateServiceAccountPath = z.object({
  */
 export const zCreateServiceAccountResponse = z.object({
   serviceAccount: zServiceAccount,
-  apiKey: zCreatedCredential.optional(),
+  apiKey: zCreatedApiKey.optional(),
 });
 
 export const zUpdateServiceAccountBody = z.object({
@@ -2175,7 +2175,7 @@ export const zCreateApiKeyPath = z.object({
 /**
  * API key was issued
  */
-export const zCreateApiKeyResponse = zCreatedCredential;
+export const zCreateApiKeyResponse = zCreatedApiKey;
 
 export const zRevokeApiKeyPath = z.object({
   tenantId: z.string().max(50),

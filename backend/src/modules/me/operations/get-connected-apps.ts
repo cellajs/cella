@@ -1,10 +1,10 @@
 import type { UserContext } from '#/core/context';
 import type { ConnectedApp } from '#/modules/me/me-schema';
-import { findGrantsByAccount } from '#/modules/oauth-server/oauth-server-queries';
+import { findConsentsByUser } from '#/modules/oauth-server/oauth-server-queries';
 
 /** Grants carry `accountId`; the client name comes from the registered app, or from the CIMD URL for MCP clients. */
 export async function getConnectedAppsOp(ctx: UserContext): Promise<{ items: ConnectedApp[] }> {
-  const rows = await findGrantsByAccount(ctx, { accountId: ctx.var.user.id });
+  const rows = await findConsentsByUser(ctx, { userId: ctx.var.user.id });
   const items = rows.map(({ row, clientName }) => {
     const payload = row.payload as { clientId?: string; resources?: Record<string, string> };
     const resources = payload.resources ?? {};

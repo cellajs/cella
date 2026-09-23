@@ -556,7 +556,6 @@
   "subscription": "Subscription",
   "success.archived_resource": "{{resource}} has been archived.",
   "success.cancel_mfa": "Multifactor authentication has been canceled.",
-  "success.connected_app_revoked": "App access has been revoked.",
   "success.create_counted_resources": "{{count}} {{resources}} have been created.",
   "success.create_newsletter": "Newsletter has been sent.",
   "success.create_resource": "{{resource}} has been created.",

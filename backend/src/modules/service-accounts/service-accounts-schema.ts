@@ -48,7 +48,7 @@ export const apiKeySchema = createSelectSchema(apiKeysTable)
 /** Returned once, at creation or roll: the only time the plaintext key exists outside the caller. */
 export const createdApiKeySchema = apiKeySchema
   .extend({ secret: z.string().describe('The plaintext API key; store it now, it is not shown again.') })
-  .openapi('CreatedCredential', {
+  .openapi('CreatedApiKey', {
     description: 'A newly issued API key with its plaintext secret.',
     example: mockCreatedApiKeyResponse(),
     'x-tags': schemaTags('service-accounts', 'cella'),
@@ -56,7 +56,7 @@ export const createdApiKeySchema = apiKeySchema
 
 const apiKeyInputSchema = z.object({
   name: validNameSchema,
-  /** Mask over the account's grants. Omitted or null = every scope the grants allow. */
+  /** Mask over the account's bindings. Omitted or null = every scope the bindings allow. */
   scopes: z.array(scopeEnum).min(1).nullable().optional(),
   expiresAt: z.string().datetime().optional(),
 });

@@ -124,7 +124,7 @@ const meRoutes = {
     tags: ['me', 'cella'],
     summary: 'Get auth data',
     description:
-      'Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.',
+      'Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.',
     responses: {
       200: {
         description: 'User sign-up info',

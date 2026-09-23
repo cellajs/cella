@@ -50,7 +50,7 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
   const subject = rowReadSubject(event);
   if (!subject) return subscribers.map(() => false);
   try {
-    // Stream subscribers hold sessions: never a credential mask.
+    // Stream subscribers hold sessions: never a key or token mask.
     const accesses = subscribers.map((subscriber) => ({ ...subscriber, scopes: null }));
     const results = checkAccessFanout(accesses, 'read', subject, {
       onInvalidMembership: 'deny',

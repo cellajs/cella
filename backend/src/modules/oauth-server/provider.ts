@@ -21,7 +21,7 @@ export type IssuedTokenClaims = { principal_kind: 'user' | 'service'; tenant_id:
 
 /**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
- * need. Grant types: authorization code + PKCE, refresh, client apiKeys. Client auth: none (CIMD public clients)
+ * need. Grant types: authorization code + PKCE, refresh, client credentials. Client auth: none (CIMD public clients)
  * and client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
  * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
  */

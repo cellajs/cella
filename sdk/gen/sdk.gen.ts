@@ -116,6 +116,9 @@ import type {
   GetDomainsData,
   GetDomainsErrors,
   GetDomainsResponses,
+  GetMcpProtectedResourceMetadataData,
+  GetMcpProtectedResourceMetadataErrors,
+  GetMcpProtectedResourceMetadataResponses,
   GetMeData,
   GetMeErrors,
   GetMembersData,
@@ -149,9 +152,6 @@ import type {
   GetPresignedUrlsData,
   GetPresignedUrlsErrors,
   GetPresignedUrlsResponses,
-  GetProtectedResourceMetadataData,
-  GetProtectedResourceMetadataErrors,
-  GetProtectedResourceMetadataResponses,
   GetPublicCountsData,
   GetPublicCountsErrors,
   GetPublicCountsResponses,
@@ -364,6 +364,8 @@ import {
   zGetDomainResponse,
   zGetDomainsPath,
   zGetDomainsResponse,
+  zGetMcpProtectedResourceMetadataPath,
+  zGetMcpProtectedResourceMetadataResponse,
   zGetMembersPath,
   zGetMembersQuery,
   zGetMembersResponse,
@@ -385,8 +387,6 @@ import {
   zGetPresignedUrlsBody,
   zGetPresignedUrlsPath,
   zGetPresignedUrlsResponse,
-  zGetProtectedResourceMetadataPath,
-  zGetProtectedResourceMetadataResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
   zGetRequestsQuery,
@@ -1772,7 +1772,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
 /**
  * Get auth data
  *
- * Returns authentication related data of current user, including sessions, OAuth accounts, and sign in options.
+ * Returns authentication related data of current user, including sessions, passkeys, TOTP and the enabled sign-in providers.
  *
  * **GET /me/auth** ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/auth) ·· [getMyAuth](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/auth) ·· _me_cella_
  *
@@ -3005,7 +3005,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
  *
  * RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
  *
- * **GET /{tenantId}/.well-known/oauth-protected-resource** ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/{tenantId}/.well-known/oauth-protected-resource) ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/.well-known/oauth-protected-resource) ·· _auth_cella_
+ * **GET /{tenantId}/.well-known/oauth-protected-resource** ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=oauth-server#tag/oauth-server/GET/{tenantId}/.well-known/oauth-protected-resource) ·· [getApiProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/.well-known/oauth-protected-resource) ·· _oauth-server_cella_
  *
  * @param {getApiProtectedResourceMetadataData} options
  * @param {string} options.path.tenantid - `string`
@@ -3601,19 +3601,24 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
  *
  * RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
  *
- * **GET /{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource** ·· [getProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· [getProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· _mcp_cella_
+ * **GET /{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource** ·· [getMcpProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· [getMcpProtectedResourceMetadata](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource) ·· _mcp_cella_
  *
- * @param {getProtectedResourceMetadataData} options
+ * @param {getMcpProtectedResourceMetadataData} options
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
-export const getProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
-  options: Options<GetProtectedResourceMetadataData, ThrowOnError>,
-): RequestResult<GetProtectedResourceMetadataResponses, GetProtectedResourceMetadataErrors, ThrowOnError, 'data'> =>
+export const getMcpProtectedResourceMetadata = <ThrowOnError extends boolean = true>(
+  options: Options<GetMcpProtectedResourceMetadataData, ThrowOnError>,
+): RequestResult<
+  GetMcpProtectedResourceMetadataResponses,
+  GetMcpProtectedResourceMetadataErrors,
+  ThrowOnError,
+  'data'
+> =>
   (options.client ?? client).get<
-    GetProtectedResourceMetadataResponses,
-    GetProtectedResourceMetadataErrors,
+    GetMcpProtectedResourceMetadataResponses,
+    GetMcpProtectedResourceMetadataErrors,
     ThrowOnError,
     'data'
   >({
@@ -3621,11 +3626,11 @@ export const getProtectedResourceMetadata = <ThrowOnError extends boolean = true
       await z
         .object({
           body: z.never().optional(),
-          path: zGetProtectedResourceMetadataPath,
+          path: zGetMcpProtectedResourceMetadataPath,
           query: z.never().optional(),
         })
         .parseAsync(data),
-    responseValidator: async (data) => await zGetProtectedResourceMetadataResponse.parseAsync(data),
+    responseValidator: async (data) => await zGetMcpProtectedResourceMetadataResponse.parseAsync(data),
     responseStyle: 'data',
     url: '/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource',
     ...options,
@@ -3634,7 +3639,7 @@ export const getProtectedResourceMetadata = <ThrowOnError extends boolean = true
 /**
  * MCP endpoint
  *
- * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the tools modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.
+ * Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.
  *
  * **POST /{tenantId}/{organizationId}/mcp** ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=mcp#tag/mcp/POST/{tenantId}/{organizationId}/mcp) ·· [handleMcp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/mcp) ·· _mcp_cella_
  *
@@ -4114,7 +4119,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
 /**
  * Update service account
  *
- * Renames, describes, disables or re-enables a service account. Accounts are never deleted.
+ * Renames, disables or re-enables a service account. Accounts are never deleted.
  *
  * **PUT /{tenantId}/{organizationId}/service-accounts/{id}** ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=service-accounts#tag/service-accounts/PUT/{tenantId}/{organizationId}/service-accounts/{id}) ·· [updateServiceAccount](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/service-accounts/{id}) ·· _service-accounts_cella_
  *

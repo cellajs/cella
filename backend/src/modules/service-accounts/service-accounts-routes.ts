@@ -80,7 +80,7 @@ export const serviceAccountRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['service-accounts', 'cella'],
     summary: 'Update service account',
-    description: 'Renames, describes, disables or re-enables a service account. Accounts are never deleted.',
+    description: 'Renames, disables or re-enables a service account. Accounts are never deleted.',
     request: {
       params: idInTenantOrgParamSchema,
       body: { required: true, content: { 'application/json': { schema: updateServiceAccountBodySchema } } },

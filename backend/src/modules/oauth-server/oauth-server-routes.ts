@@ -21,7 +21,7 @@ const oauthServerRoutes = {
     method: 'get',
     path: '/{tenantId}/.well-known/oauth-protected-resource',
     xGuard: [publicGuard],
-    tags: ['auth', 'cella'],
+    tags: ['oauth-server', 'cella'],
     summary: 'Protected resource metadata (API)',
     description:
       'RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.',

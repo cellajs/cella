@@ -43,7 +43,7 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
     createdAt: mockPastIsoDate(),
   }));
 
-export const mockCreatedApiKeyResponse = (key = 'createdCredential:default') => ({
+export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({
   ...mockApiKeyResponse(key),
   secret: exampleSecret,
 });
