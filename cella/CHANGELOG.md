@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.11.0](https://github.com/cellajs/cella/compare/0.10.4...0.11.0) (2026-09-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** principal becomes actor ([#1187](https://github.com/cellajs/cella/issues/1187))
+
+### 🎉 New features
+
+* **activities:** track service accounts, API keys and OAuth clients; redact secret columns in CDC ([#1184](https://github.com/cellajs/cella/issues/1184)) ([c80ac5e](https://github.com/cellajs/cella/commit/c80ac5ec1c65783ecb0931562aef77d3963392ee))
+* **auth:** new sign-in notice, built on a devices table ([#1171](https://github.com/cellajs/cella/issues/1171)) ([6cf3304](https://github.com/cellajs/cella/commit/6cf3304f01c3116c5378d79126adf09592b3d3bd))
+* **auth:** principals, service accounts, authorization server and MCP (Phases A, B, D, E) ([#1179](https://github.com/cellajs/cella/issues/1179)) ([e163bcf](https://github.com/cellajs/cella/commit/e163bcfac0926e3c26b78e586d15cff7824d3220))
+* geoip databases refresh from the public bucket, not the image ([#1185](https://github.com/cellajs/cella/issues/1185)) ([58b3af7](https://github.com/cellajs/cella/commit/58b3af777738ca85fffda39864ef25bf073ed461))
+* **me:** sessions list flags sessions from a new browser ([#1174](https://github.com/cellajs/cella/issues/1174)) ([db2888c](https://github.com/cellajs/cella/commit/db2888c094c687b1bd883a85c8bf10cee8cdf389))
+
+
+### 🐞 Bug fixes
+
+* **cdc:** held acknowledgment is sent when the WebSocket returns ([#1173](https://github.com/cellajs/cella/issues/1173)) ([d6bad75](https://github.com/cellajs/cella/commit/d6bad75b87346ad4847e224f144f8f00b1509692))
+* **cdc:** idle worker confirms the keepalive position; seed lines carry durations ([#1169](https://github.com/cellajs/cella/issues/1169)) ([6a4c536](https://github.com/cellajs/cella/commit/6a4c53665a8ac3085ebe6cf1d5bf1f7ac91dcc1d))
+* **tests:** read attachment provenance as admin in the mcp tests ([#1191](https://github.com/cellajs/cella/issues/1191)) ([d3efc97](https://github.com/cellajs/cella/commit/d3efc973f017797e10a3276eec6cd3d1f66049b3))
+* **tests:** seed actor rows before raw user inserts ([#1189](https://github.com/cellajs/cella/issues/1189)) ([37b4fd9](https://github.com/cellajs/cella/commit/37b4fd991249b74a258e98a14a479fc25ac92760))
+
+
+### 🔧 Small improvements
+
+* **auth:** devices keeps only what is read ([#1176](https://github.com/cellajs/cella/issues/1176)) ([803bfeb](https://github.com/cellajs/cella/commit/803bfeb964a1240a97b07b0d718df913a2ce0a81))
+* **auth:** identities are keyed on (kind, issuer, subject) ([#1172](https://github.com/cellajs/cella/issues/1172)) ([b075179](https://github.com/cellajs/cella/commit/b0751794a2df6018487973fc3400303e8ec4321d))
+* **auth:** principal becomes actor ([#1187](https://github.com/cellajs/cella/issues/1187)) ([749952d](https://github.com/cellajs/cella/commit/749952d2a2ce069589b957e10cabdda2a2d703fb))
+* **auth:** round 3 renames: MissingAncestorError, allowUnregisteredClients, MCP_URL ([#1183](https://github.com/cellajs/cella/issues/1183)) ([4b12e59](https://github.com/cellajs/cella/commit/4b12e599a605e0e5f692e943edb52a69eb85972d))
+* **data-grid:** adopt upstream beta.60 signals ([#1181](https://github.com/cellajs/cella/issues/1181)) ([4bd3d5d](https://github.com/cellajs/cella/commit/4bd3d5daf0bf50b1675f012411a1ccb39e719cfb))
+* **db:** one secret-column registry feeds response schemas, log redaction and the CDC row image ([#1186](https://github.com/cellajs/cella/issues/1186)) ([a3282d9](https://github.com/cellajs/cella/commit/a3282d9192e804e8cbd0017254705258a72aeec7))
+* **db:** partition retention via maintain_partitions() and pg_cron, drop pg_partman ([#1188](https://github.com/cellajs/cella/issues/1188)) ([e10f768](https://github.com/cellajs/cella/commit/e10f768e6a81fd99278717e3f9162f248ad0b558))
+
+
+### 📖 Documentation
+
+* interoperability page, OAuth and MCP worker pages, naming round 2 ([#1182](https://github.com/cellajs/cella/issues/1182)) ([c9c98fe](https://github.com/cellajs/cella/commit/c9c98fe066d4baaf6853e1a756d39c4768e1e5e2))
+
+
+### 🧹 Chores
+
+* **deps:** move to Node.js 26 and update dependencies ([#1175](https://github.com/cellajs/cella/issues/1175)) ([dc0a018](https://github.com/cellajs/cella/commit/dc0a018f31393d43331c38c7f149e6f87cd79f16))
+* **deps:** replace thinly used packages, drop unused ones ([#1190](https://github.com/cellajs/cella/issues/1190)) ([eeada89](https://github.com/cellajs/cella/commit/eeada89b8634c300508099a93bc20e82bf9b3129))
+* **template:** no product name in identifiers and wire strings ([#1180](https://github.com/cellajs/cella/issues/1180)) ([23970b7](https://github.com/cellajs/cella/commit/23970b70e64a4df110240a6ce11b37ca4ac395ad))
+
 ## [0.10.4](https://github.com/cellajs/cella/compare/0.10.3...0.10.4) (2026-09-18)
 
 
