@@ -1,41 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeLockS3 } from '../../tests/helpers/fake-lock-s3';
 import type { LockInfo } from './control-store';
 import { acquireLease, installSignalRelease } from './stack-lease';
-
-/** Stateful single-object S3 mock honouring If-None-Match/If-Match, as in control-store.test.ts. */
-function makeLockS3(initial?: LockInfo) {
-  let obj: { body: string; etag: string } | undefined = initial
-    ? { body: JSON.stringify(initial), etag: '"e1"' }
-    : undefined;
-  let counter = 1;
-  const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' });
-  const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, string> }) => {
-    const kind = cmd.constructor.name;
-    const input = cmd.input;
-    if (kind === 'GetObjectCommand') {
-      if (!obj) throw Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
-      return { Body: { transformToString: async () => obj!.body }, ETag: obj.etag };
-    }
-    if (kind === 'PutObjectCommand') {
-      if (input.IfNoneMatch === '*' && obj) throw fail412();
-      if (input.IfMatch && (!obj || obj.etag !== input.IfMatch)) throw fail412();
-      obj = { body: input.Body ?? '', etag: `"e${++counter}"` };
-      return { ETag: obj.etag };
-    }
-    if (kind === 'DeleteObjectCommand') {
-      obj = undefined;
-      return {};
-    }
-    throw new Error(`unexpected command ${kind}`);
-  });
-  return {
-    s3: { send } as any,
-    current: () => (obj ? (JSON.parse(obj.body) as LockInfo) : undefined),
-    overwrite: (info: LockInfo) => {
-      obj = { body: JSON.stringify(info), etag: `"e${++counter}"` };
-    },
-  };
-}
 
 const T0 = 1_000_000;
 
@@ -44,7 +10,7 @@ describe('acquireLease', () => {
   afterEach(() => vi.useRealTimers());
 
   it('acquires a free lock and renews it on the cadence', async () => {
-    const { s3, current } = makeLockS3();
+    const { s3, currentInfo } = makeLockS3();
     const res = await acquireLease({
       s3,
       bucket: 'b',
@@ -57,14 +23,14 @@ describe('acquireLease', () => {
     });
     expect(res.acquired).toBe(true);
     if (!res.acquired) return;
-    expect(current()?.expiresAt).toBe(new Date(T0 + 60_000).toISOString());
+    expect(currentInfo()?.expiresAt).toBe(new Date(T0 + 60_000).toISOString());
     await vi.advanceTimersByTimeAsync(10_000);
-    expect(current()?.expiresAt).toBe(new Date(T0 + 10_000 + 60_000).toISOString());
+    expect(currentInfo()?.expiresAt).toBe(new Date(T0 + 10_000 + 60_000).toISOString());
     expect(res.lease.lost).toBe(false);
     await res.lease.release();
-    expect(current()).toBeUndefined();
+    expect(currentInfo()).toBeUndefined();
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(current()).toBeUndefined();
+    expect(currentInfo()).toBeUndefined();
   });
 
   it('waits for a live lock to lapse, then takes it', async () => {
@@ -74,7 +40,7 @@ describe('acquireLease', () => {
       acquiredAt: '',
       expiresAt: new Date(T0 + 15_000).toISOString(),
     };
-    const { s3, current } = makeLockS3(held);
+    const { s3, currentInfo } = makeLockS3(held);
     const waits: number[] = [];
     const sleep = async (ms: number) => {
       await vi.advanceTimersByTimeAsync(ms);
@@ -93,7 +59,7 @@ describe('acquireLease', () => {
       onWait: (_held, remaining) => waits.push(remaining),
     });
     expect(res.acquired).toBe(true);
-    expect(current()?.owner).toBe('operator:a');
+    expect(currentInfo()?.owner).toBe('operator:a');
     expect(waits.length).toBe(2);
     if (res.acquired) await res.lease.release();
   });
@@ -125,7 +91,7 @@ describe('acquireLease', () => {
   });
 
   it('marks the lease lost when a renewal finds another owner, and then never deletes their lock', async () => {
-    const { s3, current, overwrite } = makeLockS3();
+    const { s3, currentInfo, overwrite } = makeLockS3();
     const reasons: string[] = [];
     const res = await acquireLease({
       s3,
@@ -149,7 +115,7 @@ describe('acquireLease', () => {
     expect(res.lease.lost).toBe(true);
     expect(reasons[0]).toMatch(/held by operator:b/);
     await res.lease.release();
-    expect(current()?.owner).toBe('operator:b');
+    expect(currentInfo()?.owner).toBe('operator:b');
   });
 });
 

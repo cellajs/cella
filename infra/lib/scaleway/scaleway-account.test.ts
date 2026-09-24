@@ -1,24 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeFetch } from '../../tests/helpers/fake-fetch';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from './scaleway-account';
 
-type FetchArgs = { url: string; init: RequestInit };
-
 /** Fetch mock matching by (method, url-substring); mirrors scaleway-iam.test.ts. */
-function makeFetch(routes: Array<{ method: string; match: string; body: unknown; status?: number }>) {
-  const calls: FetchArgs[] = [];
-  const fn = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = typeof input === 'string' ? input : input.toString();
-    const method = (init.method ?? 'GET').toUpperCase();
-    calls.push({ url, init });
-    const route = routes.find((r) => r.method === method && url.includes(r.match));
-    if (!route) return new Response(`no mock for ${method} ${url}`, { status: 599 });
-    return new Response(JSON.stringify(route.body), {
-      status: route.status ?? 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  });
-  return { fn, calls };
-}
 
 const ORG_ENV_NAMES = ['SCW_DEFAULT_ORGANIZATION_ID', 'SCW_ORGANIZATION_ID'] as const;
 const savedOrgEnv = Object.fromEntries(ORG_ENV_NAMES.map((name) => [name, process.env[name]]));

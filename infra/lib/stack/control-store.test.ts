@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { makeLockS3 } from '../../tests/helpers/fake-lock-s3';
 import {
   acquireLock,
   type ControlState,
@@ -149,33 +150,6 @@ describe('writeControlState', () => {
 
 /** Stateful single-object S3 mock honouring If-None-Match/If-Match preconditions,
  *  so the lock's create-if-absent and stale-break paths are exercised for real. */
-function makeLockS3(initial?: LockInfo) {
-  let obj: { body: string; etag: string } | undefined = initial
-    ? { body: JSON.stringify(initial), etag: '"e1"' }
-    : undefined;
-  let counter = 1;
-  const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' });
-  const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, string> }) => {
-    const kind = cmd.constructor.name;
-    const input = cmd.input;
-    if (kind === 'GetObjectCommand') {
-      if (!obj) throw Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
-      return { Body: { transformToString: async () => obj!.body }, ETag: obj.etag };
-    }
-    if (kind === 'PutObjectCommand') {
-      if (input.IfNoneMatch === '*' && obj) throw fail412();
-      if (input.IfMatch && (!obj || obj.etag !== input.IfMatch)) throw fail412();
-      obj = { body: input.Body ?? '', etag: `"e${++counter}"` };
-      return { ETag: obj.etag };
-    }
-    if (kind === 'DeleteObjectCommand') {
-      obj = undefined;
-      return {};
-    }
-    throw new Error(`unexpected command ${kind}`);
-  });
-  return { s3: { send } as any, current: () => obj };
-}
 
 describe('lock keys', () => {
   it('derives a sibling lock key', () => {
