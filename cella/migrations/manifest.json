@@ -1332,9 +1332,9 @@
    "summary": "A session ends the way an API key does: sessions gains revokedAt, revokedBy (actor; null for the server's housekeeping) and revocationReason (sign_out, other_session, mfa_enabled, session_cap, replaced), and the row stays until the nightly sweep, so the sessions list shows revoked and expired sessions of the last 30 days. revokeSessions (auth-queries.ts) replaces deleteSession and deleteSessionsByIds; validateSession answers 401 session_revoked; the route deleteMySessions is revokeMySessions and returns the revoked rows; the auth event session.deleted is session.revoked. Locale keys terminate, terminate_all, success.session_terminated and success.sessions_terminated are removed in favour of revoke, revoke_all and success.revoke_resource; revocation_reason.*, revoked, expired and session_history are added. Three nullable columns (migration 20260923232124_session_revocation); no clientCacheVersion bump. Passkeys and TOTP say delete everywhere (mail types passkey-deleted / totp-deleted, locale keys delete_mfa_last, passkey_delete_failed, totp_delete_failed; unlink, unlink_mfa_last, success.passkey_unlinked, success.totp_removed, passkey_unlink_failed, totp_remove_failed removed), and emails.lastVerifiedBy is lastVerifiedVia (markEmailVerified takes via) because every other *By column names an actor."
   },
   {
-   "id": "20260923T2343-infra-operator-credentials",
+   "id": "20260923T2343-infra-operator-keys",
    "version": "next",
-   "title": "Operator credentials and privileged runs in the infra CLI",
+   "title": "Operator API keys and privileged runs in the infra CLI",
    "kind": "manual",
    "syncBreaking": false,
    "clientCacheBump": false,
@@ -1344,7 +1344,7 @@
     "infra"
    ],
    "requires": [],
-   "summary": "infra/.env.<mode> now holds the admin application key (SCW_ACCESS_KEY / SCW_SECRET_KEY; setup writes it, the new Fetch operator credentials action does elsewhere) and SCW_STATE_* is deprecated. Apply validates the bootstrap key, previews and confirms once, verifies live grants and database privileges afterwards, and can mint a disposable bootstrap key from SCW_OWNER_*. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once."
+   "summary": "Keys are named after their Scaleway bearer: the Owner API key (SCW_OWNER_*, your own key as organization Owner; a durable one mints a 30-minute key per privileged run) and the admin application key (SCW_ADMIN_* in infra/.env.<mode>; setup writes it, Fetch admin application key does elsewhere). SCW_BOOTSTRAP_* and SCW_STATE_* are read for one release with rename warnings. Apply validates the key, previews and confirms once, and verifies live grants and database privileges afterwards. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once."
   }
  ]
 }

@@ -18,7 +18,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 **Releases can't break what is running.** Fresh servers per release.
 
-**Secure by default.** No machine logins, descending credentials.
+**Secure by default.** No machine logins, descending keys.
 
 **Observable by default.** One OpenTelemetry trace per deploy.
 
@@ -26,7 +26,7 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 
 ## How it works
 
-**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one pasted bootstrap key ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
+**Setup** (`pnpm infra`) is a wizard that takes an empty Scaleway account to a live, TLS'd, health-checked app in one sitting from one Owner API key ([fresh installation](../cella/DEPLOYMENT.md#fresh-installation)).
 
 **Release** is one command, triggered by a published GitHub release, a manual dispatch, or any other CI:
 
@@ -36,7 +36,7 @@ pnpm --filter infra run deploy --mode <production|staging> --sha <sha> [--build]
 
 It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). `--build` also bakes and pushes the images, for self-contained laptop and bring-your-own-CI deploys. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
 
-**Manage** is the same `pnpm infra` entrypoint on an existing stack: an operator menu for resume (re-sync config and GitHub secrets), key and passphrase rotation, privileged `pulumi up` on protected infra, drift preview, runtime secrets, database actions, stale-lock clearing and [teardown](../cella/DEPLOYMENT.md#teardown) ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
+**Manage** is the same `pnpm infra` entrypoint on an existing stack: an operator menu for resume (re-sync config and GitHub secrets), key and passphrase rotation, privileged `pulumi up` (database, VPC, IAM), drift preview, runtime secrets, database actions, stale-lock clearing and [teardown](../cella/DEPLOYMENT.md#teardown) ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
 
 ## Core philosophy
 
@@ -44,12 +44,12 @@ Three rules:
 
 1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Exception: `singleVM` replaces the backend host in place, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
 2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
-3. **Least-privilege credentials, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([credential tiers](../cella/DEPLOYMENT.md#credentials)).
+3. **Least-privilege keys, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([key tiers](../cella/DEPLOYMENT.md#credentials)).
 
 ## Security boundaries
 
-- **The CI key never writes IAM policy** (no `IAMPolicyManager`): granting permissions self-escalates to full admin, so identity administration is a transient human action with a **bootstrap key**, used once and revoked. CI does manage applications and keys org-wide through one unconditioned `IAMApplicationManager` rule (to rotate service keys every deploy): an api-key POST carries no `resource.id`, so a conditioned rule 403s ([lib/scaleway/permissions.ts](lib/scaleway/permissions.ts)).
-- **The admin app** is the standing human principal: `s3:*` via bucket policies plus read-only on every infra surface, no IAM write; its key lives in the operator's `infra/.env.<mode>` and, as the custody copy, in the `admin-key` secret, never in git or GitHub.
+- **The CI key never writes IAM policy** (no `IAMPolicyManager`): granting permissions self-escalates to full admin, so identity administration is a human action with the **Owner API key**: a privileged run mints a 30-minute key from it and revokes that at the end. CI does manage applications and keys org-wide through one unconditioned `IAMApplicationManager` rule (to rotate service keys every deploy): an api-key POST carries no `resource.id`, so a conditioned rule 403s ([lib/scaleway/permissions.ts](lib/scaleway/permissions.ts)).
+- **The admin application** is the day-2 human principal: `s3:*` via bucket policies plus read-only on every infra surface, no IAM write; its key lives in the operator's `infra/.env.<mode>` (`SCW_ADMIN_*`) and, as the custody copy, in the `admin-key` secret, never in git or GitHub.
 - **VM keys are per service and per deploy**, path-conditioned (`resource.name.startsWith`). Cloud-init carries only the **boot key**; the service key arrives in a **single-access** Secret Manager bundle. A consumed bundle on first boot halts the VM as an interception signal; reboots reuse the on-disk pair.
 - **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). Uploads buckets are versioned and CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user data.
 - **Secret folders are the boundary:** `/<slug>-<mode>/<service>/`, `/shared/`, `/handoff/`, `/engine/` (unreadable from VMs).
@@ -91,9 +91,9 @@ Each check reports `ok | warn | missing | error | unknown`. `unknown` means "cou
 
 Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `rollout`, `secrets.required`, `live.<service>`, `live.components`, `dns.zone`, `stores.<storeId>`. `live.components` reads the primary service's `/health?depth=full` with the smoke step's verdict rule (`lib/health-components.ts`): only-degraded components warn, an unhealthy one errors. Providers: `lib/status/providers/`; registered stores add `validate()` checks.
 
-## Credentials files
+## Key files
 
-Operator credentials load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. A value of the form `keychain:<service>/<account>` or `op:op://…` is resolved on load from the OS keychain or the 1Password CLI, so the file can hold pointers instead of secrets. Every CLI action reads its keys through one resolver ([lib/scaleway/operator-identity.ts](lib/scaleway/operator-identity.ts)): the standing admin key, the state identity, and a bootstrap key supplied or minted from `SCW_OWNER_*`. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. The key to put there is the admin application's (`<slug>-<mode>-admin`): every read-only set plus the state bucket, enough for status, Preview and the state side of a privileged run. A bare `infra/.env` is never read, and the CLI says so when it finds one. Day-2 only: privileged rituals (bootstrap, migrations) use session-ephemeral shell exports and delete temporary env files afterwards.
+Operator keys load in a fixed order ([lib/utils/env-files.ts](lib/utils/env-files.ts)): `backend/.env`, then the repo-root `.env` (existing environment variables win over both), then **`infra/.env.<mode>`**, which OVERRIDES the ambient env so a staging run cannot inherit production values. A value of the form `keychain:<service>/<account>` or `op:op://…` is resolved on load from the OS keychain or the 1Password CLI, so the file can hold pointers instead of secrets. Every CLI action reads its keys through one resolver ([lib/scaleway/operator-identity.ts](lib/scaleway/operator-identity.ts)): the admin application key (`SCW_ADMIN_*`), the Owner API key (`SCW_OWNER_*`, prompted when absent) and, for diagnostics only, the `SCW_*` pair the process was started with. The mode file holds a live secret key and the Pulumi passphrase; the CLI tightens it to `0600` on sight. The admin application's key (`<slug>-<mode>-admin`) covers every read-only set plus the state bucket, enough for status, Preview and the state side of a privileged run. A bare `infra/.env` is never read, and the CLI says so when it finds one.
 
 ## Extending
 
@@ -117,7 +117,10 @@ One name per concept across code and docs:
 | **promote / reap** | Mark a generation `active` in the control object / destroy a displaced one. |
 | **control object** | `control/<stack>.json` in the state bucket; per-service `active` and `pendingSha`. |
 | **stack lock** | `control/<stack>.lock.json`; conditional write serializing deploys and operator actions. |
-| **bootstrap** | One-time operator setup of state storage and credentials; not VM boot. |
+| **setup / bootstrap** | The first-ever `pnpm infra` run for a stack (state storage, principals, base infra) and the markers it leaves (`infra:bootstrapComplete`, `bootstrap:computeDeferred`); not VM boot. |
+| **Owner API key** | Your own Scaleway user key as organization Owner, or an application key holding IAMManager (`SCW_OWNER_*`). Privileged runs use it or mint a 30-minute key from it. |
+| **admin application key** | The key of `<slug>-<mode>-admin`, the read-only day-2 principal; `SCW_ADMIN_*` in `infra/.env.<mode>`. |
+| **privileged** | A run or resource that needs the Owner API key: database, VPC, private network, IAM policies, the state-bucket policy. |
 | **boot runner** | The `infra-boot` container run at first boot ([boot/](boot/)): hydrate, pull, migrate, start compose, report. |
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |
