@@ -1,5 +1,5 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { SideMenu, SideMenuController, useExtension, useExtensionState } from '@blocknote/react';
+import { SideMenu, SideMenuController, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
 import { GripVerticalIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
@@ -57,6 +57,7 @@ function DragHandle({
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
   titleLevel: CustomBlockNoteMenuProps['titleLevel'];
 }) {
+  const portalElement = usePortalElement();
   const [menuOpen, setMenuOpen] = useState(false);
   const isDragging = useRef(false);
 
@@ -111,11 +112,7 @@ function DragHandle({
       }}
     >
       <DropdownMenuTrigger render={gripButton} />
-      <DropdownMenuContent
-        container={editor.portalElement}
-        side="left"
-        className="bn-menu-dropdown bn-drag-handle-menu"
-      >
+      <DropdownMenuContent container={portalElement} side="left" className="bn-menu-dropdown bn-drag-handle-menu">
         <ResetBlockTypeItem
           editor={editor}
           allowedTypes={allowedTypes}

@@ -148,7 +148,7 @@ function SelectContent({
   sideOffset?: number;
   alignOffset?: number;
   alignItemWithTrigger?: boolean;
-  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals selects into editor.portalElement
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals selects into the element usePortalElement() returns
   container?: SelectPrimitive.Portal.Props['container'];
 }) {
   return (
