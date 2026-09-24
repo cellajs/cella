@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import {
   generatePassphrase,
   supportsStdinPassphraseRotation,
@@ -10,13 +11,11 @@ import {
 } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
   confirmPassphraseStored,
-  envOr,
   type InfraContext,
-  promptRequiredInput,
+  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
   stackNameFor,
@@ -51,10 +50,8 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway access key (state-bucket access is enough)'),
-  );
-  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
+  // The state identity is enough: the admin key from infra/.env.<mode> (the deprecated SCW_STATE_* pair still wins while set).
+  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().state, 'admin');
   const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, {

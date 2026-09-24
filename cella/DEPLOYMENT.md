@@ -315,7 +315,7 @@ To put the admin key on another operator machine, run **Manage keys & secrets �
 
 ### Teardown
 
-`pnpm infra` → **Teardown** deletes every resource to stop billing without holding owner-tier credentials ([Credentials](#credentials)): it prompts for a transient bootstrap-grade key (`SCW_TEARDOWN_*` env for unattended runs), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
+`pnpm infra` → **Teardown** deletes every resource to stop billing: it takes a bootstrap key the way Apply infra change does (supplied, minted from `SCW_OWNER_*`, or prompted; [Credentials](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to re-bootstrap a still-running stack. Live resources stay.
 

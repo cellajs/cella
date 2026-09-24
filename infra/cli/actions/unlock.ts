@@ -1,8 +1,7 @@
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { forceUnlock, lockKey, makeControlClient, peekLock, stateBucket } from '../../lib/stack/control-store';
 import { pc } from '../../lib/utils/cli-output';
-import { maskedSecret } from '../prompts/masked-secret';
-import { type InfraContext, promptRequiredInput, stackNameFor } from '../shared';
+import { type InfraContext, keyPairOrPrompt, stackNameFor } from '../shared';
 
 /** Clear a stale conditional-write stack lock left by an interrupted apply or deploy. Use only when no other apply or deploy is in progress. */
 export async function runUnlock(context: InfraContext): Promise<void> {
@@ -10,10 +9,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const targetStack = stackNameFor(context);
 
   // The same state identity Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
-  const state = resolveOperatorIdentity().state;
-  const accessKey =
-    state?.accessKey ?? (await promptRequiredInput('Scaleway access key (admitted to the state bucket)'));
-  const secretKey = state?.secretKey ?? (await maskedSecret({ message: 'Scaleway secret key' }));
+  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().state, 'admin');
 
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));

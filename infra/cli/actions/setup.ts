@@ -8,6 +8,7 @@ import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { fetchAppRulesByName } from '../../lib/scaleway/iam-client';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { principalNames } from '../../lib/scaleway/principals';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
@@ -37,10 +38,9 @@ import {
   autoAcceptDefaults,
   confirmOrDefault,
   createStepRunner,
-  envOr,
   inputOrDefault,
+  keyPairOrPrompt,
   nonInteractive,
-  promptRequiredInput,
   pulumiLoginUrl,
   resolveOrCreatePassphrase,
   stackNameFor,
@@ -468,11 +468,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   );
 
   // Provider authentication and all IAM / Secret-Manager work use an operator bootstrap key read from SCW_* env (childEnv below), not from stack config.
-  const scwAccessKey = await envOr('SCW_BOOTSTRAP_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway bootstrap access key'),
-  );
-  const scwSecretKey = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
+  const { accessKey: scwAccessKey, secretKey: scwSecretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().bootstrap,
+    'bootstrap',
   );
   const scwProjectId =
     context.projectId ||

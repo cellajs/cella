@@ -6,10 +6,9 @@ import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
   type InfraContext,
-  promptRequiredInput,
+  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
   stackNameFor,
@@ -37,9 +36,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
   const { projectId, appConfig } = context;
 
   const identity = resolveOperatorIdentity();
-  const accessKey =
-    identity.standing?.accessKey ?? (await promptRequiredInput('Scaleway access key (read access is enough)'));
-  const secretKey = identity.standing?.secretKey ?? (await maskedSecret({ message: 'Scaleway secret key' }));
+  const { accessKey, secretKey } = await keyPairOrPrompt(identity.standing, 'admin');
 
   const targetStack = stackNameFor(context);
 

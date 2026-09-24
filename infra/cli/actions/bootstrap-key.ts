@@ -10,8 +10,7 @@ import type { PrincipalNames } from '../../lib/scaleway/principals';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { maskedSecret } from '../prompts/masked-secret';
-import { promptRequiredInput } from '../shared';
+import { keyPairOrPrompt } from '../shared';
 
 /** Lifetime of a bootstrap key minted for one run. */
 export const MINTED_BOOTSTRAP_TTL_MS = 30 * 60_000;
@@ -35,7 +34,6 @@ export async function acquireBootstrapKey(opts: {
   projectId: string;
   slug: string;
   mode: string;
-  prompt?: boolean;
 }): Promise<BootstrapKey> {
   const { identity, names, projectId } = opts;
 
@@ -87,8 +85,7 @@ export async function acquireBootstrapKey(opts: {
     };
   }
 
-  const accessKey = identity.bootstrap?.accessKey ?? (await promptRequiredInput('Scaleway bootstrap access key'));
-  const secretKey = identity.bootstrap?.secretKey ?? (await maskedSecret({ message: 'Scaleway bootstrap secret key' }));
+  const { accessKey, secretKey } = await keyPairOrPrompt(identity.bootstrap, 'bootstrap');
   let organizationId: string;
   try {
     organizationId = await resolveOrganizationId(secretKey, projectId);

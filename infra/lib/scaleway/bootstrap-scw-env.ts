@@ -1,5 +1,4 @@
 import { resolve } from 'node:path';
-import { envKeyPair, resolveOperatorIdentity } from './operator-identity';
 
 /** `SCW_CONFIG_PATH` that neutralises the local Scaleway CLI profile: the file is never created, so the SDK finds nothing to load. */
 export const scwConfigPathNone = (infraDir: string): string => resolve(infraDir, '.scw-config-none');
@@ -44,26 +43,6 @@ export interface ProviderEnvInput {
   stateSecretKey?: string;
   /** Optional Scaleway organization id (`SCW_DEFAULT_ORGANIZATION_ID`). */
   organizationId?: string;
-}
-
-/** State-backend credential override for split-identity runs: the state-bucket policy admits only the admin and CI principals, so a bootstrap-key run 403s on `pulumi login` without an admitted key on the `AWS_*` side. */
-export function stateKeyOverrideFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): Pick<ProviderEnvInput, 'stateAccessKey' | 'stateSecretKey'> {
-  const pair = envKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY');
-  return { stateAccessKey: pair?.accessKey, stateSecretKey: pair?.secretKey };
-}
-
-/**
- * State-backend identity for a privileged run, from {@link resolveOperatorIdentity}: the deprecated `SCW_STATE_*` pair wins, else the standing
- * operator key (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from infra/.env.<mode>, the admin application's key, which the state-bucket policy admits);
- * otherwise empty, and the caller uses the bootstrap key for both sides.
- */
-export function stateKeyForPrivilegedRun(
-  env: NodeJS.ProcessEnv = process.env,
-): Pick<ProviderEnvInput, 'stateAccessKey' | 'stateSecretKey'> {
-  const state = resolveOperatorIdentity(env).state;
-  return state ? { stateAccessKey: state.accessKey, stateSecretKey: state.secretKey } : {};
 }
 
 /** Build a child environment with explicit Scaleway, S3-state, and Pulumi credentials, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */

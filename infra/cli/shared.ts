@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
+import type { KeyPair } from '../lib/scaleway/operator-identity';
 import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
 import { controlActor, lockKey, makeControlClient, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
@@ -81,23 +82,13 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
   return input({ message: opts.message, default: opts.default });
 }
 
-/** First set variable from `envName` (a single name or ordered fallbacks), prompting when none are set. */
-export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
-  const names = Array.isArray(envName) ? envName : [envName];
-  for (const name of names) {
-    const value = process.env[name];
-    if (value) return value;
-  }
-  return prompt();
-};
-
 /**
  * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
  * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => maskedSecret({ message: 'Pulumi passphrase' }));
+  if (!canVerify) return process.env.PULUMI_CONFIG_PASSPHRASE || maskedSecret({ message: 'Pulumi passphrase' });
 
   const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE;
   if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
@@ -154,9 +145,15 @@ export function stackNameFor(context: Pick<InfraContext, 'environment'>): string
   return process.env.INFRA_STACK_NAME?.trim() || `organization/infra/${context.environment}`;
 }
 
-/** A required free-text prompt (used for Scaleway access keys). */
-export function promptRequiredInput(message: string): Promise<string> {
-  return input({ message, validate: (value) => !!value.trim() || '(required)' });
+/** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`admin`, `bootstrap`). */
+export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string): Promise<KeyPair> {
+  if (pair) return pair;
+  const accessKey = await input({
+    message: `Scaleway ${label} access key`,
+    validate: (value) => !!value.trim() || '(required)',
+  });
+  const secretKey = await maskedSecret({ message: `Scaleway ${label} secret key` });
+  return { accessKey, secretKey };
 }
 
 /** S3-backend login URL for the app's Pulumi state bucket. */
@@ -174,7 +171,7 @@ export function pulumiLoginAndSelect(
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ACCESS_KEY / SCW_SECRET_KEY, or set SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY to a key of one of those.`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ACCESS_KEY / SCW_SECRET_KEY (Manage keys & secrets → Fetch operator credentials).`,
     );
     process.exit(login.status ?? 1);
   }

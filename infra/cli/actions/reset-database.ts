@@ -1,5 +1,7 @@
 import { input } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -11,8 +13,9 @@ import {
   sequenceDatabaseReset,
   serialConsoleSteps,
 } from '../../tasks/reset-database';
-import { maskedSecret } from '../prompts/masked-secret';
-import { envOr, type InfraContext } from '../shared';
+import type { InfraContext } from '../shared';
+import { acquireBootstrapKey } from './bootstrap-key';
+import { printRevokeReminder } from './privileged-converge';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
@@ -59,12 +62,15 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
-  // Only the secret key is needed: the Scaleway API authenticates with X-Auth-Token alone.
-  const bootSecret = await envOr('SCW_BOOTSTRAP_SECRET_KEY', () =>
-    maskedSecret({ message: 'Scaleway bootstrap secret key' }),
-  );
-
-  const client = createRdbClient({ secretKey: bootSecret, region });
+  // A bootstrap-owned write, so the same key flow as Apply: supplied, minted from SCW_OWNER_*, or prompted, and validated first.
+  const bootstrap = await acquireBootstrapKey({
+    identity: resolveOperatorIdentity(),
+    names: principalNames(appConfig.slug, context.environment),
+    projectId: context.projectId,
+    slug: appConfig.slug,
+    mode: context.environment,
+  });
+  const client = createRdbClient({ secretKey: bootstrap.secretKey, region });
   const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 
   try {
@@ -103,7 +109,10 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
     console.info(serialConsoleSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
+    await bootstrap.release();
+    if (!bootstrap.minted) printRevokeReminder();
   } catch (error) {
+    await bootstrap.release();
     if (error instanceof ResetIrrecoverableError) {
       console.error(`\n${restoreHint(error, region)}\n`);
       process.exit(1);
