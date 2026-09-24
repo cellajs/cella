@@ -7,7 +7,7 @@ import { deriveInfra } from '../../lib/naming';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
-import { fetchAppRulesByName } from '../../lib/scaleway/iam-client';
+import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { principalNames } from '../../lib/scaleway/principals';
@@ -16,7 +16,6 @@ import {
   ensureBootstrapDnsGrant,
   removeBootstrapDnsGrant,
   resolveOrganizationId,
-  revokeApiKey,
 } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
@@ -683,7 +682,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
           });
     if (revokeNow) {
       try {
-        await withSpinner('Revoking bootstrap key', () => revokeApiKey(scwSecretKey, scwAccessKey));
+        await withSpinner('Revoking bootstrap key', () => deleteApiKey({ secretKey: scwSecretKey }, scwAccessKey));
         console.info(`${checkMark} Bootstrap key ${scwAccessKey} revoked.`);
       } catch (error) {
         console.warn(

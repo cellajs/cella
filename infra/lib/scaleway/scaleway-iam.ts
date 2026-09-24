@@ -1,11 +1,17 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
 import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
+import {
+  createApiKey,
+  deleteApiKey,
+  getApiKey,
+  IAM_BASE,
+  listApiKeys,
+  resolveApplicationIdByName,
+  resolveOrganizationIdViaProject,
+} from './iam-client';
 import { DNS_PERMISSION_SETS } from './permissions';
 import { principalNames, principalTags } from './principals';
 import { scwFetch, scwSend } from './scw-fetch';
-
-const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
 /** A Scaleway permissions_denied error (403), regardless of resource. */
 function isPermissionDenied(error: unknown): boolean {
@@ -24,11 +30,6 @@ interface ScwApp {
 interface ScwPolicy {
   id: string;
   name: string;
-}
-interface ScwApiKey {
-  access_key: string;
-  secret_key: string;
-  application_id: string;
 }
 
 /** A single IAM policy rule, scoped to either a project or the organization. */
@@ -74,25 +75,9 @@ export interface ScopedKeyResult {
   organizationId: string;
 }
 
-/** Resolve the organization id from a project id via the Account API. Throws with guidance when it cannot be resolved. */
+/** The organization id: the env value wins (either variable name), since a project-scoped bootstrap key may lack the Account read; else the project's owner via the Account API. */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  // Env-provided id wins (either variable name): a project-scoped bootstrap key may lack the Account read the API fallback needs.
-  const fromEnv = resolveOrganizationIdFromEnv();
-  if (fromEnv) return fromEnv;
-  // GET /account/v3/projects/{id} returns the Project object directly, not wrapped in { project: ... }.
-  const project = await scwFetch<{ organization_id?: string }>(
-    { secretKey },
-    'GET',
-    `${ACCOUNT_BASE}/projects/${projectId}`,
-  );
-  if (!project?.organization_id) {
-    throw new Error(
-      `Could not resolve organization_id from project ${projectId}. ` +
-        `Response: ${JSON.stringify(project)}. ` +
-        'Re-run with SCW_DEBUG=1 for full request/response traces, or pass SCW_DEFAULT_ORGANIZATION_ID explicitly.',
-    );
-  }
-  return project.organization_id;
+  return resolveOrganizationIdFromEnv() ?? resolveOrganizationIdViaProject({ secretKey }, projectId);
 }
 
 /** Provision (or rotate) a scoped IAM application, policy and API key. Scaleway reveals `secret_key` only at creation, so the caller must persist it immediately. */
@@ -108,12 +93,8 @@ export async function provisionScopedKey(
   const appName = mode ? `${slug}-${mode}-${config.suffix}` : `${slug}-${config.suffix}`;
   const policyName = `${appName}-policy`;
 
-  const { applications } = await scwFetch<{ applications: ScwApp[] }>(
-    { secretKey: callerSecretKey },
-    'GET',
-    `${IAM_BASE}/applications?name=${encodeURIComponent(appName)}&organization_id=${organizationId}&page_size=20`,
-  );
-  let app = applications.find((a) => a.name === appName);
+  const existingId = await resolveApplicationIdByName({ secretKey: callerSecretKey }, organizationId, appName);
+  let app: ScwApp | undefined = existingId ? { id: existingId, name: appName } : undefined;
   if (app) {
     log(`  ${checkMark} Reusing IAM application: ${app.name} (${app.id})`);
   } else {
@@ -179,23 +160,21 @@ export async function provisionScopedKey(
   }
 
   // Mint before purging: Scaleway reveals each secret only at creation, and purge-then-mint leaves the principal keyless when the mint fails.
-  const apiKey = await scwFetch<ScwApiKey>({ secretKey: callerSecretKey }, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: app.id,
-    description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`,
-    default_project_id: projectId,
-  });
+  const apiKey = await createApiKey(
+    { secretKey: callerSecretKey },
+    {
+      applicationId: app.id,
+      description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`,
+      defaultProjectId: projectId,
+    },
+  );
   log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
 
   // Purge replaced keys so reruns do not accumulate unusable keys.
   try {
-    const { api_keys: existingKeys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
-      { secretKey: callerSecretKey },
-      'GET',
-      `${IAM_BASE}/api-keys?application_id=${app.id}&organization_id=${organizationId}&page_size=100`,
-    );
-    for (const key of existingKeys) {
+    for (const key of await listApiKeys({ secretKey: callerSecretKey }, organizationId, app.id)) {
       if (key.access_key === apiKey.access_key) continue;
-      await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`);
+      await deleteApiKey({ secretKey: callerSecretKey }, key.access_key);
       log(`  ${tildeMark} Removed orphan API key: ${key.access_key}`);
     }
   } catch (error) {
@@ -209,25 +188,6 @@ export async function provisionScopedKey(
     applicationId: app.id,
     organizationId,
   };
-}
-
-/** Delete an API key. Scaleway allows a key to delete itself, so the wizard revokes the bootstrap key as its last call. */
-export async function revokeApiKey(callerSecretKey: string, accessKey: string): Promise<void> {
-  await scwSend({ secretKey: callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${accessKey}`);
-}
-
-/** Find an IAM application id by exact name within an organization, or undefined. Requires IAMReadOnly; lets a caller resolve a principal without a persisted id. */
-export async function findApplicationIdByName(
-  secretKey: string,
-  organizationId: string,
-  name: string,
-): Promise<string | undefined> {
-  const { applications = [] } = await scwFetch<{ applications?: ScwApp[] }>(
-    { secretKey },
-    'GET',
-    `${IAM_BASE}/applications?organization_id=${organizationId}&name=${encodeURIComponent(name)}&page_size=20`,
-  );
-  return applications.find((app) => app.name === name)?.id;
 }
 
 /** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
@@ -332,14 +292,9 @@ export async function deleteApplicationCascade(opts: {
   log?: (msg: string) => void;
 }): Promise<void> {
   const log = opts.log ?? ((msg) => console.info(msg));
-  const { api_keys = [] } = await scwFetch<{ api_keys?: Array<{ access_key: string }> }>(
-    { secretKey: opts.callerSecretKey },
-    'GET',
-    `${IAM_BASE}/api-keys?application_id=${opts.applicationId}&organization_id=${opts.organizationId}&page_size=100`,
-  );
-  for (const key of api_keys) {
-    await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/api-keys/${key.access_key}`);
-  }
+  const auth = { secretKey: opts.callerSecretKey };
+  const apiKeys = await listApiKeys(auth, opts.organizationId, opts.applicationId);
+  for (const key of apiKeys) await deleteApiKey(auth, key.access_key);
   // The list endpoint's application_id filter is unreliable; filter client-side on the principal each item carries.
   const { policies = [] } = await scwFetch<{ policies?: Array<ScwPolicy & { application_id?: string }> }>(
     { secretKey: opts.callerSecretKey },
@@ -350,7 +305,7 @@ export async function deleteApplicationCascade(opts: {
     await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${policy.id}`);
   }
   await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/applications/${opts.applicationId}`);
-  log(`  ${tildeMark} Deleted IAM application ${opts.applicationId} (${api_keys.length} key(s))`);
+  log(`  ${tildeMark} Deleted IAM application ${opts.applicationId} (${apiKeys.length} key(s))`);
 }
 
 /** Delete the per-mode IAM group (after its members are gone). */
@@ -389,11 +344,7 @@ export async function ensureBootstrapDnsGrant(opts: {
   log?: (msg: string) => void;
 }): Promise<boolean> {
   const log = opts.log ?? ((msg) => console.info(msg));
-  const key = await scwFetch<{ application_id?: string | null }>(
-    { secretKey: opts.callerSecretKey },
-    'GET',
-    `${IAM_BASE}/api-keys/${opts.accessKey}`,
-  );
+  const key = await getApiKey({ secretKey: opts.callerSecretKey }, opts.accessKey);
   if (!key.application_id) return false;
 
   const policyName = `${opts.slug}-bootstrap-dns`;

@@ -8,7 +8,8 @@ import {
   type S3Client,
 } from '@aws-sdk/client-s3';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
-import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
+import { getApiKey } from '../lib/scaleway/iam-client';
+import type { ScwAuth } from '../lib/scaleway/scw-fetch';
 import { isMain } from '../lib/utils/is-main';
 
 export type EnsureResult = 'exists' | 'created';
@@ -33,12 +34,7 @@ export function keyProjectMismatch(
 
 /** The key's own `default_project_id`, via IAM self-inspection. */
 export async function keyPreferredProject(auth: ScwAuth, accessKey: string): Promise<string> {
-  const key = await scwFetch<{ default_project_id: string }>(
-    auth,
-    'GET',
-    `https://api.scaleway.com/iam/v1alpha1/api-keys/${accessKey}`,
-  );
-  return key.default_project_id;
+  return (await getApiKey(auth, accessKey)).default_project_id ?? '';
 }
 
 /**

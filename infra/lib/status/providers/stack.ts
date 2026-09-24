@@ -1,5 +1,6 @@
+import { resolveApplicationIdByName } from '../../scaleway/iam-client';
 import { principalNames } from '../../scaleway/principals';
-import { findApplicationIdByName, resolveOrganizationId } from '../../scaleway/scaleway-iam';
+import { resolveOrganizationId } from '../../scaleway/scaleway-iam';
 import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
 
@@ -50,7 +51,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
       // engine principal is granted (an unresolvable org degrades the check to unknown, never an error).
       const organizationId = await resolveOrganizationId(session.secretKey, session.projectId);
       const name = principalNames(session.appConfig.slug, session.mode).admin;
-      return { adminAppId: (await findApplicationIdByName(session.secretKey, organizationId, name)) ?? null };
+      return { adminAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
     } catch {
       return undefined;
     }

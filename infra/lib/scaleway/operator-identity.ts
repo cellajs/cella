@@ -1,6 +1,6 @@
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
-import { IAM_BASE, type IamAuth, listOrganizationPolicies } from './iam-client';
+import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies } from './iam-client';
 import type { PrincipalNames } from './principals';
 import { scwFetch } from './scw-fetch';
 
@@ -107,21 +107,13 @@ export interface KeyDescription {
   description?: string;
 }
 
-interface ScwApiKeyRecord {
-  access_key: string;
-  description?: string;
-  expires_at?: string | null;
-  application_id?: string | null;
-  user_id?: string | null;
-}
-
 /**
  * Describe an API key by asking IAM who bears it, authenticating with the key itself (every engine principal and every Owner key holds IAM read).
  * A key that cannot read IAM throws: it is neither an engine principal nor bootstrap-capable, and the caller says so.
  */
 export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike } = {}): Promise<KeyDescription> {
   const auth: IamAuth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
-  const record = await scwFetch<ScwApiKeyRecord>(auth, 'GET', `${IAM_BASE}/api-keys/${pair.accessKey}`);
+  const record = await getApiKey(auth, pair.accessKey);
   const base = {
     accessKey: pair.accessKey,
     expiresAt: record.expires_at ?? undefined,

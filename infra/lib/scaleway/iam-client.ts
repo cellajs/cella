@@ -3,7 +3,7 @@ import { resolveFetch } from '../utils/fetch-like';
 import { scwFetch, scwSend } from './scw-fetch';
 
 export const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
+export const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
 /** Auth shape shared with scwFetch, so callers injecting a fetch and callers mocking the scw-fetch module both work. */
 export interface IamAuth {
@@ -26,11 +26,28 @@ export interface ScwApiKey {
   created_at?: string;
 }
 
+/** An api key as IAM describes it (no secret): its bearer is exactly one of `user_id` / `application_id`. */
+export interface ScwApiKeyRecord {
+  access_key: string;
+  description?: string;
+  expires_at?: string | null;
+  application_id?: string | null;
+  user_id?: string | null;
+  default_project_id?: string;
+}
+
+/** Describe one api key. A key may describe itself, so this is the self-inspection every principal can perform. */
+export async function getApiKey(auth: IamAuth, accessKey: string): Promise<ScwApiKeyRecord> {
+  return scwFetch<ScwApiKeyRecord>(auth, 'GET', `${IAM_BASE}/api-keys/${accessKey}`);
+}
+
 /** Resolve the organization id owning a project (the api-key-free path). */
 export async function resolveOrganizationIdViaProject(auth: IamAuth, projectId: string): Promise<string> {
   const project = await scwFetch<{ organization_id?: string }>(auth, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`);
   if (!project?.organization_id) {
-    throw new Error(`Could not resolve organization_id from project ${projectId}. Pass --organization-id explicitly.`);
+    throw new Error(
+      `Could not resolve organization_id from project ${projectId}: set SCW_DEFAULT_ORGANIZATION_ID (or pass --organization-id).`,
+    );
   }
   return project.organization_id;
 }
