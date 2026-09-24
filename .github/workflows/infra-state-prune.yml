@@ -52,13 +52,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
-        with:
-          pulumi-version: 3.236.0
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Install Pulumi CLI (at the SDK version)
+        uses: ./.github/actions/pulumi-cli
 
       - name: Prune ${{ inputs.urn }} from ${{ inputs.environment }} state
         working-directory: infra

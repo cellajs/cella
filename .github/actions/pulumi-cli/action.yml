@@ -1,0 +1,16 @@
+name: Install the Pulumi CLI at the SDK version
+description: >-
+  Installs the Pulumi CLI at the exact version of the @pulumi/pulumi SDK the infra workspace resolves, so a dependency
+  update moves both and no workflow carries a version of its own. Run it after `pnpm install`.
+runs:
+  using: composite
+  steps:
+    - name: Read the @pulumi/pulumi SDK version
+      id: sdk
+      shell: bash
+      run: echo "version=$(node -p "require('./infra/node_modules/@pulumi/pulumi/package.json').version")" >> "$GITHUB_OUTPUT"
+
+    - name: Install Pulumi CLI ${{ steps.sdk.outputs.version }}
+      uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
+      with:
+        pulumi-version: ${{ steps.sdk.outputs.version }}

@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
@@ -8,6 +7,7 @@ import { loadStackContext } from '../lib/stack/stack-context';
 import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output';
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
+import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
 import { runFetchAdminKey } from './actions/fetch-admin-key';
@@ -89,12 +89,16 @@ async function loadContext(): Promise<InfraContext> {
 
 printHeader('infra cli');
 
-if (spawnSync('pulumi', ['version'], { stdio: 'ignore' }).status !== 0) {
+const pulumiVersion = installedPulumiVersion();
+if (!pulumiVersion) {
   failWithHint('pulumi CLI not found', {
     command: 'brew install pulumi/tap/pulumi',
     description: 'the infra CLI needs Pulumi for every stack operation',
   });
 }
+// CI runs the CLI at the SDK version (.github/actions/pulumi-cli); a laptop that trails it sees a nag from Pulumi and, in the worst case, a state written by a newer engine.
+const pulumiLag = pulumiCliLagWarning(pulumiVersion, sdkPulumiVersion());
+if (pulumiLag) console.warn(`${warningMark} ${pulumiLag}`);
 
 const context = await loadContext();
 
