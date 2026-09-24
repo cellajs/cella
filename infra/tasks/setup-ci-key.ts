@@ -1,7 +1,7 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { CI_RULE_SHAPES } from '../lib/scaleway/permissions';
+import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
 import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
 import { isMain } from '../lib/utils/is-main';
@@ -101,7 +101,7 @@ if (isMain(import.meta.url)) {
   });
   if (synced) {
     console.info(
-      `\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Then revoke the bootstrap key.')}`,
+      `\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Revoke the key you ran this with if it was minted for it.')}`,
     );
   } else {
     console.error(

@@ -1,5 +1,7 @@
 import { gunzipSync } from 'node:zlib';
-import { isMain } from '../lib/utils/is-main';
+import type { KeyPair } from '../lib/scaleway/operator-identity';
+import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag, getNumFlag } from './args';
 
 export type GeoipKind = 'country' | 'asn';
@@ -130,18 +132,11 @@ export async function sequenceGeoipRefresh(plan: GeoipRefreshPlan): Promise<Geoi
   return { published: true, manifest };
 }
 
-/** Live effects: DB-IP over HTTPS, the bucket over the S3 API with the SCW key in the environment (admin or CI deploy). */
-export async function createLiveEffects(opts: { bucket: string; region: string; prefix: string }) {
-  const { S3Client, GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({
-    region: opts.region,
-    endpoint: `https://s3.${opts.region}.scw.cloud`,
-    credentials: {
-      accessKeyId: process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: false,
-  });
+/** Live effects: DB-IP over HTTPS, the bucket over the S3 API with `key` (the CLI's admin application key) or the SCW key in the environment (a deploy). */
+export async function createLiveEffects(opts: { bucket: string; region: string; prefix: string; key?: KeyPair }) {
+  const { GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = opts.key ?? deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
   return {
     fetchDatabase: async (url: string) => {
       const res = await fetch(url);
@@ -175,7 +170,7 @@ export async function createLiveEffects(opts: { bucket: string; region: string; 
  * CLI: `tsx infra/tasks/geoip-refresh.ts --bucket <name> --region <region> [--prefix geoip] [--month YYYY-MM]
  * [--force] [--max-age-days N]`. Needs SCW_ACCESS_KEY / SCW_SECRET_KEY (or AWS_*) with write access to the bucket.
  */
-export async function main(argv = process.argv.slice(2)): Promise<void> {
+export async function main(argv = process.argv.slice(2), opts: { key?: KeyPair } = {}): Promise<void> {
   const bucket = getFlag(argv, '--bucket');
   const region = getFlag(argv, '--region');
   if (!bucket || !region) {
@@ -184,7 +179,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const prefix = getFlag(argv, '--prefix') ?? DEFAULT_PREFIX;
   const maxAgeRaw = getFlag(argv, '--max-age-days');
-  const effects = await createLiveEffects({ bucket, region, prefix });
+  const effects = await createLiveEffects({ bucket, region, prefix, key: opts.key });
   const result = await sequenceGeoipRefresh({
     bucket,
     prefix,
@@ -203,9 +198,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   );
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`✖ ${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

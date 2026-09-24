@@ -10,7 +10,7 @@ export type SecretsFacts = string[];
 export const secretsProvider: StatusProvider<SecretsFacts> = {
   domain: 'secrets',
   async gather(session) {
-    if (!session.credentialsAvailable || !session.secretKey || !session.projectId) return undefined;
+    if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
       const client = createSecretManagerClient({
         secretKey: session.secretKey,
@@ -29,7 +29,7 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
   evaluate(facts, session) {
     const secrets = check('secrets.required', 'Runtime secrets', 'scaleway');
     return [
-      probed(secrets, session.credentialsAvailable, facts, 'could not read Secret Manager', (missing) =>
+      probed(secrets, session.scalewayKeyAvailable, facts, 'could not read Secret Manager', (missing) =>
         missing.length === 0
           ? secrets.ok('all required secrets set')
           : secrets.missing(`unset required secret(s): ${missing.join(', ')}`, manageSecrets),

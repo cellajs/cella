@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 
 const infraDir = resolve(__dirname, '../..');
 const resourcesDir = resolve(infraDir, 'resources');
@@ -65,9 +66,11 @@ describe('database resource', () => {
   });
 
   it('two role-based DB users exist (admin, runtime)', () => {
-    expect(db).toMatch(/name:\s*['"]admin_role['"]/);
-    expect(db).toMatch(/name:\s*['"]runtime_role['"]/);
-    expect(db).not.toMatch(/name:\s*['"]cdc_role['"]/);
+    // The names come from lib/scaleway/db-privileges.ts, shared with the post-Apply verifier; the contract is on the values.
+    expect(POSTGRES_ROLE_NAMES).toEqual({ admin: 'admin_role', runtime: 'runtime_role' });
+    expect(db).toMatch(/name:\s*POSTGRES_ROLE_NAMES\.admin/);
+    expect(db).toMatch(/name:\s*POSTGRES_ROLE_NAMES\.runtime/);
+    expect(db).not.toMatch(/cdc_role/);
   });
 
   it('generated passwords have at least 32 chars and special-char floor', () => {

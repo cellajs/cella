@@ -1,4 +1,4 @@
-import { scwS3Endpoint } from '../scaleway/scw-fetch';
+import { makeS3Client } from '../scaleway/s3-client';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
@@ -229,16 +229,24 @@ export async function writeControlState(
 
 // Orchestrator helpers: read process.env and build a client, so not part of the pure core above.
 
-/** Build an S3 client for the state bucket with explicit credentials. */
+/** Build an S3 client for the state bucket with an explicit key. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
-  const { S3Client } = await s3sdk();
-  // The cast keeps the SDK behind S3Like so tests can pass a plain fake.
-  return new S3Client({
-    region,
-    endpoint: scwS3Endpoint(region),
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
-  }) as unknown as S3Like;
+  return (await makeS3Client(region, accessKey, secretKey)) as unknown as S3Like;
+}
+
+/** The `pulumi login` URL of the state bucket: the S3 backend at Scaleway's regional endpoint. */
+export function stateBackendUrl(bucket: string, region: string): string {
+  return `s3://${bucket}?endpoint=s3.${region}.scw.cloud&region=${region}`;
+}
+
+/** Map the SCW_* pair a CI job supplies onto the AWS_* names the S3 state backend and the aws CLI read, and pin both region conventions. Existing values win. */
+export function adoptStateBackendEnv(region?: string, env: NodeJS.ProcessEnv = process.env): void {
+  env.AWS_ACCESS_KEY_ID ??= env.SCW_ACCESS_KEY ?? '';
+  env.AWS_SECRET_ACCESS_KEY ??= env.SCW_SECRET_KEY ?? '';
+  if (region) {
+    env.AWS_DEFAULT_REGION ??= region;
+    env.SCW_DEFAULT_REGION ??= region;
+  }
 }
 
 /** Identifies the writer in `updatedBy`: CI run or local operator. */
@@ -259,7 +267,7 @@ export interface ControlContext {
 
 /**
  * Resolve a stack's control-object context from the environment: sets APP_MODE from the stack's short name, builds the S3 client, derives bucket and keys. Returns null when no credentials are present.
- * AWS_* credentials take precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
+ * The AWS_* pair takes precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
  */
 export async function controlContextForStack(
   stack: string,
@@ -269,7 +277,7 @@ export async function controlContextForStack(
   const accessKey = fromAws ? process.env.AWS_ACCESS_KEY_ID : process.env.SCW_ACCESS_KEY;
   const secretKey = fromAws ? process.env.AWS_SECRET_ACCESS_KEY : process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) {
-    log('control-store: no S3 credentials (SCW_* or AWS_*); cannot read/write rollout state');
+    log('control-store: no S3 key (SCW_* or AWS_*); cannot read/write rollout state');
     return null;
   }
   process.env.APP_MODE ??= stack.split('/').pop();
@@ -384,6 +392,33 @@ export async function releaseLock(s3: S3Like, bucket: string, key: string, owner
   const { info } = await readLock(s3, bucket, key);
   if (!info || info.owner !== owner) return;
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+}
+
+export type RenewResult = { renewed: true; info: LockInfo } | { renewed: false; held?: LockInfo };
+
+/**
+ * Extend our own lock's expiry under `If-Match`, so a live holder keeps a short lease alive and a dead one lets it lapse within one TTL.
+ * A lock that is missing, owned by someone else, or replaced between read and write is reported as not renewed and never overwritten.
+ */
+export async function renewLock(
+  s3: S3Like,
+  bucket: string,
+  key: string,
+  owner: string,
+  ttlMs: number,
+  now = Date.now(),
+): Promise<RenewResult> {
+  const { info, etag } = await readLock(s3, bucket, key);
+  if (!info || info.owner !== owner) return { renewed: false, held: info };
+  const next: LockInfo = { ...info, expiresAt: new Date(now + ttlMs).toISOString() };
+  try {
+    await putLock(s3, bucket, key, next, etag ? { ifMatch: etag } : { ifNoneMatch: '*' });
+    return { renewed: true, info: next };
+  } catch (err) {
+    if (!isPreconditionFailed(err)) throw err;
+    const { info: raced } = await readLock(s3, bucket, key);
+    return { renewed: false, held: raced };
+  }
 }
 
 /** Unconditionally remove the lock (the `infra unlock` escape hatch). */

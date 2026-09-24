@@ -3,7 +3,7 @@ import { resolveFetch } from '../utils/fetch-like';
 import { scwFetch, scwSend } from './scw-fetch';
 
 export const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
+export const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
 /** Auth shape shared with scwFetch, so callers injecting a fetch and callers mocking the scw-fetch module both work. */
 export interface IamAuth {
@@ -15,6 +15,9 @@ export interface GrantedRule {
   policyName: string;
   permissionSets: string[];
   condition: string;
+  /** Rule scope: the project ids it applies to, or the organization when it is organization-wide. */
+  projectIds?: string[];
+  organizationId?: string;
 }
 
 export interface ScwApiKey {
@@ -23,11 +26,28 @@ export interface ScwApiKey {
   created_at?: string;
 }
 
+/** An api key as IAM describes it (no secret): its bearer is exactly one of `user_id` / `application_id`. */
+export interface ScwApiKeyRecord {
+  access_key: string;
+  description?: string;
+  expires_at?: string | null;
+  application_id?: string | null;
+  user_id?: string | null;
+  default_project_id?: string;
+}
+
+/** Describe one api key. A key may describe itself, so this is the self-inspection every principal can perform. */
+export async function getApiKey(auth: IamAuth, accessKey: string): Promise<ScwApiKeyRecord> {
+  return scwFetch<ScwApiKeyRecord>(auth, 'GET', `${IAM_BASE}/api-keys/${accessKey}`);
+}
+
 /** Resolve the organization id owning a project (the api-key-free path). */
 export async function resolveOrganizationIdViaProject(auth: IamAuth, projectId: string): Promise<string> {
   const project = await scwFetch<{ organization_id?: string }>(auth, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`);
   if (!project?.organization_id) {
-    throw new Error(`Could not resolve organization_id from project ${projectId}. Pass --organization-id explicitly.`);
+    throw new Error(
+      `Could not resolve organization_id from project ${projectId}: set SCW_DEFAULT_ORGANIZATION_ID (or pass --organization-id).`,
+    );
   }
   return project.organization_id;
 }
@@ -56,7 +76,7 @@ interface IamPolicy {
 }
 
 /** Every policy in the organization, paged. The list endpoint's `application_id` filter is unreliable, so callers filter by principal client-side. */
-async function listOrganizationPolicies(auth: IamAuth, organizationId: string): Promise<IamPolicy[]> {
+export async function listOrganizationPolicies(auth: IamAuth, organizationId: string): Promise<IamPolicy[]> {
   const pageSize = 100;
   const all: IamPolicy[] = [];
   for (let page = 1; page <= 100; page++) {
@@ -103,16 +123,21 @@ export async function fetchGrantedRules(
   );
   const collected: GrantedRule[] = [];
   for (const policy of bound) {
-    const { rules = [] } = await scwFetch<{ rules?: Array<{ permission_set_names?: string[]; condition?: string }> }>(
-      auth,
-      'GET',
-      `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`,
-    );
+    const { rules = [] } = await scwFetch<{
+      rules?: Array<{
+        permission_set_names?: string[];
+        condition?: string;
+        project_ids?: string[];
+        organization_id?: string;
+      }>;
+    }>(auth, 'GET', `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`);
     for (const rule of rules) {
       collected.push({
         policyName: policy.name,
         permissionSets: rule.permission_set_names ?? [],
         condition: rule.condition ?? '',
+        projectIds: rule.project_ids,
+        organizationId: rule.organization_id,
       });
     }
   }
@@ -144,15 +169,17 @@ export async function listApiKeys(auth: IamAuth, organizationId: string, applica
   return api_keys;
 }
 
-/** Mint a fresh api key on an application. */
+/** Mint a fresh api key on an application or a user, optionally expiring (RFC 3339). */
 export async function createApiKey(
   auth: IamAuth,
-  opts: { applicationId: string; description: string; defaultProjectId: string },
+  opts: { applicationId?: string; userId?: string; description: string; defaultProjectId: string; expiresAt?: string },
 ): Promise<ScwApiKey> {
   return scwFetch<ScwApiKey>(auth, 'POST', `${IAM_BASE}/api-keys`, {
-    application_id: opts.applicationId,
+    ...(opts.applicationId ? { application_id: opts.applicationId } : {}),
+    ...(opts.userId ? { user_id: opts.userId } : {}),
     description: opts.description,
     default_project_id: opts.defaultProjectId,
+    ...(opts.expiresAt ? { expires_at: opts.expiresAt } : {}),
   });
 }
 

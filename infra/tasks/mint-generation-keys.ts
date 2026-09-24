@@ -10,7 +10,7 @@ import {
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { handoffServicePath } from '../lib/scaleway/secret-paths';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /**
@@ -48,7 +48,7 @@ export interface GenerationKeys {
 async function resolveAppId(auth: IamAuth, organizationId: string, name: string): Promise<string> {
   const id = await resolveApplicationIdByName(auth, organizationId, name);
   if (!id)
-    throw new Error(`mint-generation-keys: IAM application '${name}' not found: run the infra CLI bootstrap first.`);
+    throw new Error(`mint-generation-keys: IAM application '${name}' not found: run the pnpm infra setup first.`);
   return id;
 }
 
@@ -83,7 +83,7 @@ async function pruneStaleKeys(
   }
 }
 
-/** Delete every key on a dormant principal: a registry service outside the deployed set has no VM to hand a key to, so any key on it is an unmonitored credential. */
+/** Delete every key on a dormant principal: a registry service outside the deployed set has no VM to hand a key to, so any key on it is an unmonitored key. */
 async function purgeDormantKeys(
   auth: IamAuth,
   organizationId: string,
@@ -98,7 +98,7 @@ async function purgeDormantKeys(
 }
 
 /**
- * Per-deploy credential mint (D3/REQ-7/REQ-10), run as CI under the unconditioned org-wide IAMApplicationManager grant: key CRUD on the registry's service and boot apps, no app or policy creation.
+ * Per-deploy key mint (D3/REQ-7/REQ-10), run as CI under the unconditioned org-wide IAMApplicationManager grant: key CRUD on the registry's service and boot apps, no app or policy creation.
  *  0. Dormant principals (registry services outside the deployed set) get every key deleted last; a missing dormant application only logs, since the deploy's grant assertion reports it with guidance.
  *  1. Mint a fresh boot-fetcher key (registry pull and handoff-read only, baked into cloud-init) and prune stale ones.
  *  2. Per service: mint a fresh service key, stage it as a SINGLE-ACCESS secret under /handoff/<service>/ so a VM whose read fails knows the bundle was
@@ -217,9 +217,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   });
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

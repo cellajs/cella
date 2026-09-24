@@ -33,7 +33,7 @@ export interface RolloutRuntimeOptions {
 /**
  * The live RolloutRuntime: full-stack Pulumi updates, the S3 control object,
  * the Scaleway LB REST API, and public health polling. Control-object access is
- * lazily resolved; without S3 credentials rollout state is not recorded (reads
+ * lazily resolved; without an S3 key rollout state is not recorded (reads
  * return undefined, writes are skipped with a warning).
  */
 export function createRolloutRuntime(options: RolloutRuntimeOptions): RolloutRuntime {

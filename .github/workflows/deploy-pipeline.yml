@@ -210,7 +210,7 @@ jobs:
 
       # Only the workspaces the deploy command touches (it builds the frontend
       # in-process): fewer packages and lifecycle scripts in the one job that
-      # holds the deploy credentials.
+      # holds the deploy secrets.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared... --filter frontend...
 

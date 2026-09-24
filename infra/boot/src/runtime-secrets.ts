@@ -9,7 +9,7 @@ export interface HydrateRuntimeSecretsOptions {
   secretKey: string;
   region: string;
   outputPath: string;
-  /** Extra env lines appended verbatim (e.g. the v2 S3 credential export). */
+  /** Extra env lines appended verbatim (e.g. the v2 S3 key export). */
   extraLines?: readonly string[];
   fetchImpl?: FetchLike;
 }

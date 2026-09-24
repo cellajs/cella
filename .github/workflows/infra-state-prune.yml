@@ -2,14 +2,14 @@ name: Infra state prune (one-off)
 
 # Manual, surgical `pulumi state delete` for a single URN. Needed when a stack
 # has a resource in Pulumi state that the program no longer declares AND that
-# the CI key cannot delete via the provider API (a bootstrap-owned resource,
+# the CI key cannot delete via the provider API (a privileged resource,
 # e.g. an RDB ACL). Pruning it from state is an S3-only operation the CI key
 # CAN do (it has state-bucket access; it just lacks the provider write). The
 # live resource must already be gone, or this orphans it. The operator
 # confirms that before running.
 #
 # One-off by nature: keep it, but expect to use it rarely. Uses the same
-# Environment secrets as the deploy so it needs no extra credentials.
+# Environment secrets as the deploy so it needs no extra key.
 
 on:
   workflow_dispatch:

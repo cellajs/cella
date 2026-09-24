@@ -1,6 +1,6 @@
 // CI deploy key (`<slug>-ci-deploy`): project scope
 
-/** Permission sets granted to the CI deploy key at project scope. The `…ReadOnly` entries are bootstrap-owned: CI refreshes but may not mutate them. */
+/** Permission sets granted to the CI deploy key at project scope. The `…ReadOnly` entries are privileged resources: CI refreshes but may not mutate them. */
 export const PROJECT_PERMISSION_SETS = [
   // Write: touched by routine CI deploys.
   'BlockStorageFullAccess', // block volumes attached to instances (split from InstancesFullAccess upstream)
@@ -11,7 +11,7 @@ export const PROJECT_PERMISSION_SETS = [
   'ObjectStorageFullAccess', // frontend bucket uploads, policy refresh
   'PrivateNetworksFullAccess', // VM PN attachments (write required by InstancesFullAccess replacements)
   'SecretManagerFullAccess', // secret version rotation
-  // Read-only: bootstrap-owned, refreshed but not mutated by CI.
+  // Read-only: privileged resources, refreshed but not mutated by CI.
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
 ] as const;
@@ -27,7 +27,7 @@ export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const;
 
-// Admin app (`<slug>-<mode>-admin`): the standing human principal
+// Admin app (`<slug>-<mode>-admin`): the day-2 human principal
 
 /**
  * Project-scoped sets for the admin application, the principal a human authenticates as for day-2 operations.
@@ -85,10 +85,10 @@ export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
 ];
 
 /**
- * Resource-token fragments that are bootstrap-owned and NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a human bootstrap `pulumi up`, never widening the CI key.
+ * Resource-token fragments of the privileged resources, the ones NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a privileged `pulumi up` with the Owner API key, never widening the CI key.
  * Matched as a case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
  */
-export const BOOTSTRAP_OWNED_FRAGMENTS = [
+export const PRIVILEGED_RESOURCE_FRAGMENTS = [
   'private_network', // VPC private network; CI is read-only
   'vpc', // the VPC itself
   'rdb', // managed PostgreSQL (rdb_instance, rdb_acl, rdb_user, …)
@@ -97,8 +97,8 @@ export const BOOTSTRAP_OWNED_FRAGMENTS = [
   'policy', // VM IAM policies; IAM write is forbidden for the CI key (perm-escalation)
 ] as const;
 
-/** True when a Scaleway resource token names a bootstrap-owned resource. */
-export function isBootstrapOwned(resource: string): boolean {
+/** True when a Scaleway resource token names a privileged resource. */
+export function isPrivilegedResource(resource: string): boolean {
   const token = resource.toLowerCase();
-  return BOOTSTRAP_OWNED_FRAGMENTS.some((fragment) => token.includes(fragment));
+  return PRIVILEGED_RESOURCE_FRAGMENTS.some((fragment) => token.includes(fragment));
 }

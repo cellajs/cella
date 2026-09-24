@@ -7,7 +7,7 @@ import {
 } from '../lib/stack/control-store';
 import { errorMessage } from '../lib/utils/errors';
 import { isRecord } from '../lib/utils/guards';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /** A GenRef is valid only with a string id and sha plus a numeric seq. */
@@ -124,9 +124,4 @@ export async function repairControlStore(argv = process.argv.slice(2)): Promise<
   console.info(`[repair-control-store] repaired s3://${bucket}/${key}`);
 }
 
-if (isMain(import.meta.url)) {
-  repairControlStore().catch((err) => {
-    console.error(errorMessage(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, repairControlStore);

@@ -10,7 +10,8 @@ import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import type { InfraContext } from '../shared';
 import { parseAclInput } from './db-exposure-acl';
-import { printRevokeReminder, runPrivilegedConverge } from './privileged-converge';
+import { printRevokeReminder } from './owner-key';
+import { runPrivilegedConverge } from './privileged-converge';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
@@ -95,17 +96,17 @@ async function convergeOrExit(
   context: InfraContext,
   operation: string,
   prepare: (env: NodeJS.ProcessEnv, stack: string) => string | undefined,
-): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
-  const { env, stack, completed } = await runPrivilegedConverge(context, { operation, prepare });
+): Promise<{ env: NodeJS.ProcessEnv; stack: string; ownerKeyPasted: boolean }> {
+  const { env, stack, completed, ownerKeyPasted } = await runPrivilegedConverge(context, { operation, prepare });
   if (!completed) {
     console.error(`${crossMark} converge did not complete; stack config may be partially applied. Re-run to finish.`);
     process.exit(1);
   }
-  return { env, stack };
+  return { env, stack, ownerKeyPasted };
 }
 
 /**
- * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with a bootstrap key, print the admin DSN.
+ * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the Owner API key, print the admin DSN.
  * The endpoint is internet-reachable but restricted to the ACL; run "Stop public DB exposure" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
@@ -141,7 +142,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     return;
   }
 
-  const { env, stack } = await convergeOrExit(context, 'expose-db', (e, s) => {
+  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'expose-db', (e, s) => {
     const overlay = writeExposureOverlay(context.stackPath, context.environment);
     pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
     // Encrypt the ACL: it records the operator's source IP and must not sit in plaintext in the overlay.
@@ -172,7 +173,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
       );
   }
   console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`);
-  printRevokeReminder();
+  if (ownerKeyPasted) printRevokeReminder();
 }
 
 /** Close the database's public endpoint: clear the opt-in config, tear down the load balancer and ACL, verify the database is private-only again. */
@@ -183,7 +184,7 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
     return;
   }
 
-  const { env, stack } = await convergeOrExit(context, 'unexpose-db', (e, s) => {
+  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'unexpose-db', (e, s) => {
     // Compat: stacks predating the overlay hold the exposure keys in the committed config and must have them removed for the converge to close the endpoint.
     // Overlay-based exposure needs no config change: converging the committed file, which lacks the keys, is the close.
     if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY);
@@ -200,5 +201,5 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }
-  printRevokeReminder();
+  if (ownerKeyPasted) printRevokeReminder();
 }

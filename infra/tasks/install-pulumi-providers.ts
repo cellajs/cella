@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { retry } from '../lib/utils/retry';
 
 const require = createRequire(import.meta.url);
@@ -38,9 +38,4 @@ export async function main(): Promise<void> {
   if (res.status !== 0) throw new Error(`pulumi plugin ls failed with exit ${res.status}`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`::error::${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

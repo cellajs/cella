@@ -84,3 +84,6 @@ backend/geoip/
 coverage/
 *.lcov
 .nyc_output/
+
+# infra operator debug captures (pnpm infra --debug-provider)
+infra/.debug/

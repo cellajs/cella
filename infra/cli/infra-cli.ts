@@ -2,18 +2,15 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
-import {
-  detectComputeDeferred,
-  detectDbPublicEndpoint,
-  detectStackState,
-  pickStackShort,
-} from '../lib/stack/bootstrap-stack-state';
+import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
+import { detectComputeDeferred, detectDbPublicEndpoint, pickStackShort } from '../lib/stack/bootstrap-stack-state';
+import { loadStackContext } from '../lib/stack/stack-context';
 import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output';
-import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
+import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
+import { runFetchAdminKey } from './actions/fetch-admin-key';
 import { runGeoipRefresh } from './actions/geoip-refresh';
 import { runPreview } from './actions/preview';
 import { runResetDatabase } from './actions/reset-database';
@@ -21,6 +18,7 @@ import { runRotatePassphrase } from './actions/rotate-passphrase';
 import { runSecrets } from './actions/secrets';
 import { runSeedDatabase } from './actions/seed-db';
 import { runSetup } from './actions/setup';
+import { runStorePassphrase } from './actions/store-passphrase';
 import { runTeardown } from './actions/teardown';
 import { runUnlock } from './actions/unlock';
 import type { CliMode, InfraContext } from './shared';
@@ -31,8 +29,9 @@ loadBaseEnvFiles();
 
 /**
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
- * otherwise the first existing stack file wins (production before staging), and with no stack file an interactive install asks, defaulting to staging.
- * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production credentials from backend/.env.
+ * otherwise the only existing stack file wins silently, two existing stack files ask once (and fail non-interactively), and with no stack
+ * file an interactive install asks, defaulting to staging.
+ * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
  */
 async function resolveMode(): Promise<'production' | 'staging'> {
   const flagIndex = process.argv.indexOf('--mode');
@@ -63,37 +62,29 @@ async function resolveMode(): Promise<'production' | 'staging'> {
       ],
     });
   }
+  const existing = (['production', 'staging'] as const).filter((name) =>
+    existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)),
+  );
+  if (existing.length === 2) {
+    if (autoAcceptDefaults()) {
+      throw new Error('Both Pulumi.production.yaml and Pulumi.staging.yaml exist: pass --mode (or set INFRA_MODE).');
+    }
+    return select<'production' | 'staging'>({
+      message: 'Which stack?',
+      choices: existing.map((name) => ({ name, value: name })),
+    });
+  }
   return pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
 }
 
 async function loadContext(): Promise<InfraContext> {
   const environment = await resolveMode();
-  loadModeEnvFile(environment, (message) => console.info(pc.dim(message)));
-  const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`);
-  const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
-  const state = detectStackState({ yamlText: stackYaml });
-
-  // The config reads APP_MODE during module evaluation, so the CLI-selected stack must be set first; it is authoritative for child tasks.
-  process.env.APP_MODE = environment;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
-
-  // Project id scopes all Scaleway API calls, so resolve it once from the env files loaded above.
-  // Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env. Every other state fails fast.
-  const projectId = resolveProjectId();
-  if (!projectId && state !== 'fresh') {
+  const stack = await loadStackContext(environment, (message) => console.info(pc.dim(message)));
+  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env.
+  if (!stack.projectId && stack.state !== 'fresh') {
     throw new Error('SCW_PROJECT_ID is not set: add it to backend/.env before running the infra CLI.');
   }
-
-  return {
-    environment,
-    stackPath,
-    stackYaml,
-    state,
-    hasCiKey: state === 'bootstrapped',
-    appConfig,
-    projectId: projectId ?? '',
-  };
+  return { ...stack, hasCiKey: stack.state === 'bootstrapped' };
 }
 
 printHeader('infra cli');
@@ -118,6 +109,10 @@ const context = await loadContext();
 }
 
 console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`);
+
+// One line per key misconfiguration (a superseded name in the env file, SCW_OWNER_* holding the admin key, …) before any action trips over it.
+for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings])
+  console.warn(`${warningMark} ${warning}`);
 
 const deferredSince = detectComputeDeferred(context.stackYaml);
 if (deferredSince) {
@@ -168,7 +163,8 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
       {
         name: 'Rotate keys',
         value: 'rotate',
-        description: 'Replace the CI deploy key with a fresh one.',
+        description:
+          'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
       },
       {
         name: 'Rotate passphrase',
@@ -179,6 +175,17 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         name: 'Manage runtime secrets',
         value: 'secrets',
         description: 'List, set, rotate, or delete the runtime secrets.',
+      },
+      {
+        name: 'Fetch admin application key',
+        value: 'fetch-admin-key',
+        description:
+          'Put the admin application key in infra/.env.<mode> on this machine (needs your Owner API key once).',
+      },
+      {
+        name: 'Store passphrase in keychain',
+        value: 'store-passphrase',
+        description: 'Keep the Pulumi passphrase in the OS keychain; the env file keeps a reference.',
       },
       backChoice,
     ],
@@ -194,7 +201,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
         name: 'Apply infra change',
         value: 'apply',
         description:
-          'Apply bootstrap-owned changes: registry IAM principals and policies, database, VPC, network (needs a bootstrap key).',
+          'Apply privileged changes: registry IAM principals and policies, database, VPC, network (needs your Owner API key).',
       },
       {
         name: 'Preview',
@@ -266,6 +273,12 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
   }
 }
 
+// What an operator wants to know before choosing: is the stack locked, what is live, and which key this machine holds. Bounded, best-effort.
+if (context.state === 'bootstrapped' && !nonInteractive()) {
+  const { printQuickFacts } = await import('../tasks/status');
+  await printQuickFacts(context);
+}
+
 const mode: Exclude<CliMode, 'status'> =
   context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context);
 
@@ -316,6 +329,16 @@ if (mode === 'unexpose-db') {
 
 if (mode === 'unlock') {
   await runUnlock(context);
+  process.exit(0);
+}
+
+if (mode === 'fetch-admin-key') {
+  await runFetchAdminKey(context);
+  process.exit(0);
+}
+
+if (mode === 'store-passphrase') {
+  await runStorePassphrase(context);
   process.exit(0);
 }
 

@@ -3,7 +3,7 @@ import { runtimeSecrets } from '../lib/runtime-secrets';
 import { serviceNames } from '../lib/services';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { parseJsonBody } from '../lib/utils/json';
 import { parseServiceRows } from '../lib/utils/service-rows';
 import { getFlag } from './args';
@@ -170,9 +170,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

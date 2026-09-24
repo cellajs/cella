@@ -1,9 +1,7 @@
-import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
+import { ACCOUNT_BASE, getApiKey } from './iam-client';
+import { resolveOrganizationIdFromEnv } from './provider-env';
 import { resolveOrganizationId } from './scaleway-iam';
 import { scwFetch } from './scw-fetch';
-
-const IAM_BASE = 'https://api.scaleway.com/iam/v1alpha1';
-const ACCOUNT_BASE = 'https://api.scaleway.com/account/v3';
 
 /** A Scaleway project as returned by the Account API. */
 export interface ScwProject {
@@ -21,11 +19,7 @@ export interface ScwProject {
 export async function resolveOrganizationIdFromKey(secretKey: string, accessKey: string): Promise<string> {
   const fromEnv = resolveOrganizationIdFromEnv();
   if (fromEnv) return fromEnv;
-  const key = await scwFetch<{ default_project_id?: string }>(
-    { secretKey },
-    'GET',
-    `${IAM_BASE}/api-keys/${accessKey}`,
-  );
+  const key = await getApiKey({ secretKey }, accessKey);
   if (!key.default_project_id) {
     throw new Error(`API key ${accessKey} has no default_project_id; pass SCW_DEFAULT_ORGANIZATION_ID explicitly.`);
   }

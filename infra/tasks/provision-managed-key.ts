@@ -39,7 +39,7 @@ function runtimeSecretById(id: string): RuntimeSecretDefinition {
 
 /**
  * Mints or rotates a scoped IAM key into Pulumi-owned runtime-secret containers.
- * Every target is verified before key creation, avoiding orphan credentials and out-of-band
+ * Every target is verified before key creation, avoiding orphan keys and out-of-band
  * containers. New versions disable prior values; the named IAM application is reused.
  */
 export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Promise<ProvisionManagedKeyResult> {

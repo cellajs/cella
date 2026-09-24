@@ -1,24 +1,23 @@
 import { spawnSync } from 'node:child_process';
-import { buildProviderEnv, stateKeyOverrideFromEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
-  envOr,
   type InfraContext,
-  promptRequiredInput,
-  promptStackName,
+  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 /**
  * Read-only `pulumi preview` of what "Apply infra change" would apply, authenticating the provider from SCW_* env, not stack config, so it also
- * validates that env-based auth resolves. The standing admin key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
- * It builds the same environment as the privileged converge (organization id, state identity, privileged marker). A CI deploy applies the same
+ * validates that env-based auth resolves. The admin application key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
+ * It builds the same environment as the privileged converge (organization id, privileged marker). A CI deploy applies the same
  * diff except the VM policy rules, which only a privileged run reconciles, so one simulation covers both.
  */
 export async function runPreview(context: InfraContext): Promise<void> {
@@ -36,12 +35,12 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId, appConfig } = context;
 
-  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway access key (read access is enough)'),
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
   );
-  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
 
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
   // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API.
   let organizationId: string;
@@ -54,23 +53,17 @@ export async function runPreview(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  // Same split identity as Apply when SCW_STATE_* is set; otherwise the supplied key serves both sides, which the standing admin key can.
-  const previewEnv = buildProviderEnv(infraDir, {
-    accessKey,
-    secretKey,
-    projectId,
-    passphrase,
-    organizationId,
-    ...stateKeyOverrideFromEnv(),
-  });
+  // The admin application key serves both sides: the provider reads and the state bucket, which admits it.
+  const previewEnv = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase, organizationId });
   // The program diffs VM policy rules only under this marker, and that diff is the one an operator is here to see.
   previewEnv[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);
 
+  // --refresh reads every resource live first, so drift outside Pulumi (a rule re-scoped in the console) is part of the diff.
   console.info(
-    `\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff`,
+    `\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`,
   );
-  const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff'], {
+  const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff', '--refresh'], {
     cwd: infraDir,
     env: previewEnv,
     stdio: 'inherit',

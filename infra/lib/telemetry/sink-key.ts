@@ -8,7 +8,7 @@ import { secretManagerPath } from '../scaleway/secret-paths';
  * Manager, so CI deploys export telemetry without a dedicated CI secret (the
  * deploy key already has secret read access; the VM fleet reads the same
  * secret). Which secret is the app's choice (config/telemetry.config.ts).
- * Returns undefined when credentials are absent or the secret is not seeded.
+ * Returns undefined when no key is present or the secret is not seeded.
  */
 export async function sinkIngestKeyFromSecretManager(): Promise<string | undefined> {
   const secretKey = process.env.SCW_SECRET_KEY;

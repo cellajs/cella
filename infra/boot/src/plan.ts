@@ -42,7 +42,7 @@ export interface BootPlan {
     scwSecretKeyFile: string;
   };
   /**
-   * Fetch the real service key from a single-access handoff bundle using the baked boot credentials, cache-first on reboots.
+   * Fetch the real service key from a single-access handoff bundle using the baked boot key, cache-first on reboots.
    * A failed fetch on FIRST boot means the bundle was already consumed, which is an interception signal and halts the boot. Absent = the baked key does everything.
    */
   serviceKeyHandoff?: ServiceKeyHandoff;

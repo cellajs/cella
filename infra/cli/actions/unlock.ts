@@ -1,18 +1,27 @@
-import { forceUnlock, lockKey, makeControlClient, stateBucket } from '../../lib/stack/control-store';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { forceUnlock, lockKey, makeControlClient, peekLock, stateBucket } from '../../lib/stack/control-store';
 import { pc } from '../../lib/utils/cli-output';
-import { maskedSecret } from '../prompts/masked-secret';
-import { envOr, type InfraContext, promptRequiredInput, promptStackName } from '../shared';
+import { type InfraContext, keyPairOrPrompt, stackNameFor } from '../shared';
 
 /** Clear a stale conditional-write stack lock left by an interrupted apply or deploy. Use only when no other apply or deploy is in progress. */
 export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
-  // Any Scaleway key with write access to the state bucket works.
-  const accessKey = await envOr('SCW_ACCESS_KEY', () => promptRequiredInput('Scaleway access key'));
-  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
+  // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
+  );
 
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey);
+  const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
+  if (held) {
+    const expired = Date.parse(held.expiresAt) <= Date.now();
+    console.info(
+      `Lock held by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}, ${expired ? 'already expired' : `expires ${held.expiresAt}`}).`,
+    );
+  }
   const removed = await forceUnlock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
   if (removed) {
     console.info(

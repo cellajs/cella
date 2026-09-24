@@ -3,10 +3,12 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
+import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { errorMessage } from '../lib/utils/errors';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { scrubSecretEnv } from '../lib/utils/scrub-secret-env';
 import { getFlag } from './args';
@@ -19,7 +21,7 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 /**
  * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
  * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
- * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* credentials can run it.
+ * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* key can run it.
  */
 export interface DeployOptions {
   mode: string;
@@ -40,8 +42,8 @@ export interface DeployOptions {
 /** Deploy step tasks runnable in-process (tasks/<name>.ts, main(argv) throws on failure). */
 export type TaskName =
   | 'ensure-state-bucket'
-  | 'stack-lock'
   | 'install-pulumi-providers'
+  | 'preflight-privileged'
   | 'wait-for-images'
   | 'repair-certs'
   | 'sync-rollout-config'
@@ -57,6 +59,8 @@ export interface DeployEffects {
   initTelemetry(init: { mode: string; sha: string }): Promise<void>;
   /** Run a task module's main(argv) in-process; throws on failure. */
   task(name: TaskName, argv?: string[]): Promise<void>;
+  /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
+  lease(stack: string, operation: 'deploy' | 'reap'): Promise<{ release(): Promise<void> }>;
   /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async so concurrent steps (registry wait, asset upload) keep progressing while a build runs. */
   exec(
     cmd: string,
@@ -121,12 +125,8 @@ export async function runDeploy(
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
-  // Downstream tools read AWS_*/region conventions; derive them once here.
-  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
-  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
-  // The aws CLI (diag's S3 reader) refuses to run without a region.
-  process.env.AWS_DEFAULT_REGION ??= env.region;
-  process.env.SCW_DEFAULT_REGION ??= env.region;
+  // Downstream tools (the state backend, diag's aws CLI reader) read AWS_* and region conventions; derived once here.
+  adoptStateBackendEnv(env.region);
 
   const startedAtIso = new Date().toISOString();
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
@@ -160,19 +160,22 @@ export async function runDeploy(
     }
   };
 
-  let lockHeld = false;
+  let lease: { release(): Promise<void> } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
   try {
     await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
     await step('Login to S3 state backend', () =>
-      fx.exec('pulumi', ['login', `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`]),
+      fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]),
     );
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
-      await fx.task('stack-lock', ['acquire', '--stack', stack, '--operation', 'deploy', '--ttl-min', '60']);
-      lockHeld = true;
+      lease = await fx.lease(stack, 'deploy');
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
+    // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
+    await step('Preflight privileged changes', () =>
+      fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]),
+    );
 
     const registry = `rg.${env.region}.scw.cloud`;
     await step('Login to container registry', () =>
@@ -218,7 +221,7 @@ export async function runDeploy(
           fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
             env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) },
             // The Vite build runs a large third-party plugin graph; deny it the
-            // deploy's cloud credentials so a compromised build dep cannot exfiltrate them.
+            // deploy's cloud keys so a compromised build dep cannot exfiltrate them.
             secretless: true,
           }),
         );
@@ -286,6 +289,7 @@ export async function runDeploy(
           '--organization-id',
           process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
           ...(row.dormant ? ['--dormant'] : []),
+          ...(row.condition ? ['--project-scope'] : []),
         ]);
       }
     });
@@ -357,11 +361,7 @@ export async function runDeploy(
     outcome = 'error';
     throw err;
   } finally {
-    if (lockHeld) {
-      await fx
-        .task('stack-lock', ['release', '--stack', stack])
-        .catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`));
-    }
+    await lease?.release().catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`));
     deploySpan?.end(outcome);
     telemetry?.event(
       outcome === 'ok' ? deployEvents.completed : deployEvents.failed,
@@ -397,30 +397,19 @@ export async function runReap(
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
-  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
-  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
-  process.env.AWS_DEFAULT_REGION ??= env.region;
-  process.env.SCW_DEFAULT_REGION ??= env.region;
+  adoptStateBackendEnv(env.region);
 
-  let lockHeld = false;
+  let lease: { release(): Promise<void> } | undefined;
   try {
-    await fx.exec('pulumi', [
-      'login',
-      `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`,
-    ]);
+    await fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]);
     await fx.exec('pulumi', ['stack', 'select', stack]);
-    await fx.task('stack-lock', ['acquire', '--stack', stack, '--operation', 'reap', '--ttl-min', '30']);
-    lockHeld = true;
+    lease = await fx.lease(stack, 'reap');
     await fx.task('install-pulumi-providers');
     fx.info(`[reap] converging '${stack}' on promoted generations (destroys displaced VMs)`);
     await fx.update(stack);
     fx.info('[reap] displaced generations reaped');
   } finally {
-    if (lockHeld) {
-      await fx
-        .task('stack-lock', ['release', '--stack', stack])
-        .catch((err) => fx.info(`[reap] lock release failed: ${errorMessage(err)}`));
-    }
+    await lease?.release().catch((err) => fx.info(`[reap] lock release failed: ${errorMessage(err)}`));
   }
 }
 
@@ -438,16 +427,9 @@ const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
 ];
 
 async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({
-    region: opts.region,
-    endpoint: `https://s3.${opts.region}.scw.cloud`,
-    credentials: {
-      accessKeyId: process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: false,
-  });
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
   for (const file of ENTRY_FILES) {
     const path = resolve(opts.distDir, file.name);
     if (!existsSync(path)) continue;
@@ -468,8 +450,8 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
-  'stack-lock': async (argv) => (await import('./stack-lock')).main(argv),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
+  'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
@@ -510,8 +492,46 @@ function createRealEffects(): DeployEffects {
       });
     },
     task: (name, argv = []) => taskRunners[name](argv),
+    async lease(stack, operation) {
+      const [{ controlActor, controlContextForStack }, { acquireLease, installSignalRelease }] = await Promise.all([
+        import('../lib/stack/control-store'),
+        import('../lib/stack/stack-lease'),
+      ]);
+      const ctx = await controlContextForStack(stack);
+      if (!ctx) throw new Error('stack lease: SCW_ACCESS_KEY/SCW_SECRET_KEY (or AWS_*) required');
+      // A CI run queues behind another deploy for a while; a dead holder's lease lapses within its lifetime.
+      const result = await acquireLease({
+        s3: ctx.s3,
+        bucket: ctx.bucket,
+        key: ctx.lockKey,
+        owner: controlActor(),
+        operation,
+        ttlMs: 5 * 60_000,
+        renewEveryMs: 60_000,
+        waitMs: 10 * 60_000,
+        pollMs: 15_000,
+        onWait: (held, remainingMs) =>
+          console.info(
+            `[${operation}] stack locked by ${held.owner} (${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min`,
+          ),
+        onRenewFailed: (reason, lost) =>
+          console.warn(`[${operation}] lease renewal failed: ${reason}${lost ? ' (lock lost)' : ''}`),
+      });
+      if (!result.acquired) {
+        throw new Error(
+          `stack ${stack} is locked by ${result.held.owner} (operation: ${result.held.operation}, since ${result.held.acquiredAt}). If that run is dead, clear it with the infra CLI "Unlock" action.`,
+        );
+      }
+      const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`[${operation}] ${msg}`) });
+      return {
+        release: async () => {
+          uninstall();
+          await result.lease.release();
+        },
+      };
+    },
     exec(cmd, args, opts = {}) {
-      // `secretless` strips the deploy's credentials (Scaleway keys, Pulumi
+      // `secretless` strips the deploy's secrets (Scaleway keys, Pulumi
       // passphrase, GitHub token) from the child's environment before layering
       // opts.env on top, so an untrusted build (the frontend Vite plugin graph)
       // cannot read them. The default path is unchanged: full env inheritance.
@@ -576,9 +596,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   await runDeploy(parseDeployArgs(argv), createRealEffects());
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(errorMessage(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

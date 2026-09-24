@@ -32,8 +32,8 @@ export interface PlacedServices {
 }
 
 /**
- * Apply singleVM placement to any service list: the enabled set for compute, LB and key minting; the full registry for bootstrap-owned IAM.
- * Bootstrap-owned IAM (principals, policies, conditions) follows the registry, so an `enabled` toggle changes compute only and needs no privileged up.
+ * Apply singleVM placement to any service list: the enabled set for compute, LB and key minting; the full registry for privileged IAM.
+ * Privileged IAM (principals, policies, conditions) follows the registry, so an `enabled` toggle changes compute only and needs no privileged up.
  */
 export function placeServices(definitions: readonly ServiceDefinition[], singleVM: boolean): PlacedServices {
   if (!singleVM) return { vm: definitions, coHosted: [], collocated: [] };
@@ -110,7 +110,7 @@ export function secretScopeSlugs(
   return [service, ...placed.coHosted.map((s) => s.slug), ...placed.collocated.map((s) => s.slug)];
 }
 
-/** Services owning an IAM principal and policy: every registry service under split-VM, only the host under singleVM. Registry-derived on purpose, so `enabled` never touches bootstrap-owned IAM; a registry service outside the deployed set is a dormant principal that must hold no key. */
+/** Services owning an IAM principal and policy: every registry service under split-VM, only the host under singleVM. Registry-derived on purpose, so `enabled` never touches privileged IAM; a registry service outside the deployed set is a dormant principal that must hold no key. */
 export function principalServices(singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(services, singleVM).vm;
 }

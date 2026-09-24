@@ -1,31 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { makeFetch } from '../../tests/helpers/fake-fetch';
 import { createSecretManagerClient } from './scaleway-secret-manager';
-
-type FetchArgs = { url: string; init: RequestInit };
-
-function makeFetch(routes: Array<{ method: string; match: string; body: unknown; status?: number }>) {
-  const calls: FetchArgs[] = [];
-  const fn = vi.fn(async (input: string | URL | Request, init: RequestInit = {}) => {
-    const url = typeof input === 'string' ? input : input.toString();
-    const method = (init.method ?? 'GET').toUpperCase();
-    calls.push({ url, init });
-
-    const route = routes.find((candidate) => candidate.method === method && url.includes(candidate.match));
-    if (!route) {
-      return new Response(`no mock for ${method} ${url}`, { status: 599 });
-    }
-
-    if (route.status === 204) {
-      return new Response(null, { status: 204 });
-    }
-
-    return new Response(JSON.stringify(route.body), {
-      status: route.status ?? 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  });
-  return { fn, calls };
-}
 
 const baseOptions = {
   secretKey: 'caller-secret',

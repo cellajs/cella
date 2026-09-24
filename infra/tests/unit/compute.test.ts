@@ -9,7 +9,7 @@ const generationsSource = readFileSync(resolve(__dirname, '../../resources/gener
 const envSuppliersSource = readFileSync(resolve(__dirname, '../../config/env-suppliers.config.ts'), 'utf-8');
 const source = computeSource + composeEnvSource + generationsSource;
 
-// Static checks pin structural compute contracts without rendering Pulumi: closed ingress, VM reader credentials, immutable generations, registry-driven resources.
+// Static checks pin structural compute contracts without rendering Pulumi: closed ingress, VM reader keys, immutable generations, registry-driven resources.
 describe('compute module source contracts', () => {
   it('SecurityGroup defaults to drop on ingress', () => {
     expect(source).toMatch(/inboundDefaultPolicy:\s*['"]drop['"]/);
@@ -43,9 +43,9 @@ describe('compute module source contracts', () => {
     }
   });
 
-  it('uses VM reader credentials (vmAccessKey/vmSecretKey) from helpers, not the operator scaleway key', () => {
+  it('uses VM reader keys (vmAccessKey/vmSecretKey) from helpers, not the admin or CI key', () => {
     // The VM reader identity has registry, secret-metadata, and secret-value read grants only.
-    // Infrastructure helpers are the sole credential source for compute.
+    // Infrastructure helpers are the sole key source for compute.
     expect(source).toMatch(/vmAccessKey|vmSecretKey/);
     expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]secretKey['"]\)/);
     expect(source).not.toMatch(/Config\(['"]scaleway['"]\)\.requireSecret\(['"]accessKey['"]\)/);

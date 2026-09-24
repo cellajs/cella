@@ -1,7 +1,7 @@
 import { managedKeysConfig } from '../config/managed-keys.config';
 import { type RuntimeSecretId, runtimeSecrets } from './runtime-secrets';
 
-/** Which half of a minted Scaleway IAM key a managed key routes into a runtime secret: a single-token credential uses only `secretKey`, an access/secret pair uses both. */
+/** Which half of a minted Scaleway IAM key a managed key routes into a runtime secret: a single-token key uses only `secretKey`, an access/secret pair uses both. */
 export type MintedKeyField = 'accessKey' | 'secretKey';
 
 /** One managed key's app-owned data from `managed-keys.config.ts`. The `id` is the config object key; `ManagedKeyDefinition` is the flattened shape. */
@@ -16,7 +16,7 @@ export interface ManagedKeyConfig {
   policyDescription: string;
   /** Project-scoped permission sets granted to the minted key's policy. */
   permissionSets: readonly string[];
-  /** Bootstrap opt-in prompt. Minting is ALWAYS operator-confirmed, never silent. */
+  /** Setup opt-in prompt. Minting is ALWAYS operator-confirmed, never silent. */
   prompt: { message: string; default: boolean };
   /** Routes each minted key half to the runtime secret that stores it, keyed by `RuntimeSecretId` so a typo is a compile error. */
   assign: Partial<Record<MintedKeyField, RuntimeSecretId>>;
@@ -41,7 +41,7 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
   ...definition,
 }));
 
-// Fail fast at load time: a misconfiguration here becomes a bad IAM call or a mis-seeded secret at bootstrap.
+// Fail fast at load time: a misconfiguration here becomes a bad IAM call or a mis-seeded secret at setup.
 {
   const operatorSecretIds = new Set(
     runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id),

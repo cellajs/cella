@@ -3,7 +3,7 @@ import { nonInteractive } from '../../cli/shared';
 import { checkMark, pc, tildeMark, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { isMain } from '../utils/is-main';
-import { resolveProjectId } from './bootstrap-scw-env';
+import { resolveProjectId } from './provider-env';
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1';
 const CHALLENGE_NAME = '_scaleway-challenge';
@@ -103,7 +103,7 @@ export async function ensureDnsZone(opts: {
       : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
       console.info(
-        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run bootstrap to retry.`,
+        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`,
       );
       return { status: 'skipped' };
     }

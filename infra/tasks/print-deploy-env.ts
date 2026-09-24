@@ -1,21 +1,7 @@
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
-import {
-  BACKEND_S3_PERMISSION_SETS,
-  BOOT_PROJECT_PERMISSION_SETS,
-  CI_RULE_SHAPES,
-  SERVICE_SECRET_PERMISSION_SETS,
-} from '../lib/scaleway/permissions';
-import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import {
-  appStorageNeeds,
-  deployedServices,
-  enabledServices,
-  principalSecretScopeSlugs,
-  principalServices,
-  serviceEndpoints,
-} from '../lib/services';
+import { buildVmAssertRows } from '../lib/scaleway/vm-assert-rows';
+import { appStorageNeeds, deployedServices, enabledServices, serviceEndpoints } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
@@ -106,37 +92,7 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     frontend_bucket: appStorageNeeds(enabled).spaBucket ? naming.frontendBucket : '',
     public_bucket: appStorageNeeds(enabled).uploadBuckets ? naming.publicBucket : '',
     state_bucket: naming.pulumiStateBucket,
-    // One assertion row per principal (exact sets + exact condition, built by
-    // the same shared builders the Pulumi program uses so the deploy's
-    // assert-vm-grants step compares strings, not semantics), consumed by the
-    // deploy's grant-verification step. Principals follow the registry; a
-    // registry service outside the deployed set is dormant and must hold no key.
-    vm_assert_json: JSON.stringify([
-      ...principalServices(appConfig.singleVM ?? false).map((svc) => ({
-        app: principalNames(appConfig.slug, appConfig.mode).vmService(svc.slug),
-        sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-        condition: serviceKeyCondition(
-          appConfig.slug,
-          appConfig.mode,
-          principalSecretScopeSlugs(appConfig.singleVM ?? false, svc.slug),
-        ),
-        dormant: !deployedSlugs.has(svc.slug),
-      })),
-      {
-        app: principalNames(appConfig.slug, appConfig.mode).boot,
-        sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
-        condition: bootKeyCondition(appConfig.slug, appConfig.mode),
-      },
-      // The CI app asserts its own grant too: exact set union (missing sets
-      // fail deploys later and non-read-only extras are an escalation).
-      // condition '' skips the secret-condition check; CI rules are
-      // unconditioned by design (see CI_RULE_SHAPES).
-      {
-        app: principalNames(appConfig.slug, appConfig.mode).ciDeploy,
-        sets: CI_RULE_SHAPES.flatMap((shape) => [...shape.permissionSets]),
-        condition: '',
-      },
-    ]),
+    vm_assert_json: JSON.stringify(buildVmAssertRows(appConfig)),
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),

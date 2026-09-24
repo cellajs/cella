@@ -15,15 +15,15 @@ export interface SetupAdminAppOptions extends ProvisionScopedKeyOptions {
 export type AdminAppResult = ScopedKeyResult;
 
 /**
- * Provision the standing `<slug>-<mode>-admin` application WITH a real key
+ * Provision the day-2 `<slug>-<mode>-admin` application WITH a real key
  * (the operator app it replaces was keyless, so out of the box no human could
- * run `pulumi` against a bootstrapped stack). Grants: Object Storage full +
+ * run `pulumi` against a set-up stack). Grants: Object Storage full +
  * read-only on every infra surface `pulumi preview --refresh` touches, never
- * IAM write; structural changes stay on the transient bootstrap key.
+ * IAM write; structural changes stay on the Owner API key.
  *
  * Custody: the key pair is stored in Secret Manager (`admin-key` under the
  * stack's folder) so "Rotate keys" covers it and a later operator can retrieve
- * it with a bootstrap key. It is never printed, never in git, never a GitHub
+ * it with the Owner API key. It is never printed, never in git, never a GitHub
  * secret.
  */
 export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAppResult> {
@@ -48,7 +48,7 @@ export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAp
     // Engine folder: outside the VM secret condition, so a VM must never be
     // able to read the admin key.
     path: engineSecretPath(opts.slug, opts.mode),
-    description: 'Admin IAM key pair (bucket access + infra reads), retrieve with a bootstrap key when needed',
+    description: 'Admin IAM key pair (bucket access + infra reads), retrieve with the Owner API key when needed',
   });
   await client.putSecretValue({
     secretId: container.id,

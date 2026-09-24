@@ -1,31 +1,31 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import {
   deleteApplicationCascade,
   deleteGroup,
   listManagedPrincipals,
   removeBootstrapDnsGrant,
-  resolveOrganizationId,
 } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
-  envOr,
   type InfraContext,
-  promptRequiredInput,
-  promptStackName,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
+import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
 
 /**
  * Destroy an environment: state-backend login, AWS_ and SCW_ env mapping, stack selection, `destroy --refresh`, then optional IAM principal cleanup.
- * The destroy phase needs full project write (a bootstrap-grade key), which the admin key lacks; the IAM cleanup additionally needs IAMManager.
- * Production stacks require typing `<slug>-production`, and their frontend/private buckets carry `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
+ * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes the Owner API key the way Apply does (from SCW_OWNER_*
+ * or a prompt, validated first). Production stacks require typing `<slug>-production`, and their frontend/private buckets carry
+ * `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
  */
 export async function runTeardown(context: InfraContext): Promise<void> {
   const { appConfig } = context;
@@ -50,37 +50,50 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     return;
   }
 
-  // Named credential pair for the destroy phase: SCW_TEARDOWN_* allows unattended runs, and interactive runs are told which key quality is needed.
-  console.info(
-    `\n${pc.dim('Credentials: a key with FULL PROJECT WRITE (a bootstrap key works; the admin key cannot destroy compute/VPC/DB).')}\n` +
-      `${pc.dim(`Reads env ${pc.bold('SCW_TEARDOWN_ACCESS_KEY')}/${pc.bold('SCW_TEARDOWN_SECRET_KEY')} first, then prompts.`)}`,
-  );
-  const accessKey = await envOr(['SCW_TEARDOWN_ACCESS_KEY', 'SCW_BOOTSTRAP_ACCESS_KEY'], () =>
-    promptRequiredInput('Scaleway teardown access key'),
-  );
-  const secretKey = await envOr(['SCW_TEARDOWN_SECRET_KEY', 'SCW_BOOTSTRAP_SECRET_KEY'], () =>
-    maskedSecret({ message: 'Scaleway teardown secret key' }),
-  );
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
-  const targetStack = await promptStackName(context);
-
-  const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase });
-  let organizationId: string | undefined;
+  const identity = resolveOperatorIdentity();
+  const ownerKey = await acquireOwnerKey({
+    identity,
+    names: principalNames(appConfig.slug, mode),
+    projectId: context.projectId,
+    slug: appConfig.slug,
+    mode,
+  });
   try {
-    organizationId = await resolveOrganizationId(secretKey, context.projectId);
-    env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
-  } catch (error) {
-    console.warn(
-      `${warningMark} Could not resolve organization id (${errorMessage(error)}); IAM cleanup will be skipped.`,
-    );
+    await destroyStack(context, ownerKey, identity.admin);
+  } finally {
+    await ownerKey.release();
   }
+  if (ownerKey.pasted) printRevokeReminder();
+}
 
+async function destroyStack(
+  context: InfraContext,
+  ownerKey: OwnerKey,
+  admin: { accessKey: string; secretKey: string } | undefined,
+): Promise<void> {
+  const { appConfig } = context;
+  const mode = context.environment;
+  const confirmToken = `${appConfig.slug}-${mode}`;
+  const { accessKey, secretKey, organizationId } = ownerKey;
+  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
+  const targetStack = stackNameFor(context);
+
+  // The state bucket admits only the admin and CI deploy applications, so the Owner API key drives the provider while the admin application key serves the state side, as in Apply.
+  const env = buildProviderEnv(infraDir, {
+    accessKey,
+    secretKey,
+    projectId: context.projectId,
+    passphrase,
+    organizationId,
+    stateAccessKey: admin?.accessKey,
+    stateSecretKey: admin?.secretKey,
+  });
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey,
-    secretKey,
+    accessKey: admin?.accessKey ?? accessKey,
+    secretKey: admin?.secretKey ?? secretKey,
     stack: targetStack,
     operation: 'teardown',
   });
@@ -116,7 +129,6 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
   // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing. Needs IAMManager + IAMReadOnly on the same key.
-  if (!organizationId) return;
   const cleanupIam = await confirm({
     message: `Also delete the IAM principals (group ${confirmToken}, its applications, keys, and policies)? Requires IAMManager on this key.`,
     default: mode !== 'production',

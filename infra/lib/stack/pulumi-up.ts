@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { isBootstrapOwned } from '../scaleway/permissions';
+import { createWriteStream } from 'node:fs';
+import { isPrivilegedResource } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
@@ -40,16 +41,16 @@ function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
 }
 
 export type PermissionHint =
-  | { kind: 'bootstrap-owned'; resource: string }
+  | { kind: 'privileged'; resource: string }
   | { kind: 'ci-grantable'; resource: string }
   | undefined;
 
-/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as bootstrap-owned or CI-grantable. */
+/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as privileged or CI-grantable. */
 export function classifyPermissionError(stderr: string): PermissionHint {
   const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i);
   if (!m?.[1]) return undefined;
   const resource = m[1];
-  return isBootstrapOwned(resource) ? { kind: 'bootstrap-owned', resource } : { kind: 'ci-grantable', resource };
+  return isPrivilegedResource(resource) ? { kind: 'privileged', resource } : { kind: 'ci-grantable', resource };
 }
 
 /** Detect a "secret ... already exists" conflict: the container is live in Scaleway but missing from Pulumi state, so `up` fails recreating it. Returns the secret name when the error text carries one. */
@@ -99,19 +100,40 @@ export interface PulumiUpResult {
   output: string;
 }
 
+export interface PulumiUpOptions {
+  /** `--config-file` override (the DB-exposure overlay). */
+  configFile?: string;
+  /** Skip Pulumi's own preview: the caller already showed the plan and got a confirmation. */
+  skipPreview?: boolean;
+  /** Capture engine and provider logs (`--logflow -v=9`) into this file: the record of every API call the provider made, for a "reported but not applied" update. */
+  debugLogPath?: string;
+}
+
+/** The exact `pulumi up` argument list for the options, so the debug and skip-preview forms are testable without spawning Pulumi. */
+export function pulumiUpArgs(stack: string, opts: PulumiUpOptions = {}): string[] {
+  return [
+    'up',
+    '--stack',
+    stack,
+    '--yes',
+    '--non-interactive',
+    ...(opts.configFile ? ['--config-file', opts.configFile] : []),
+    ...(opts.skipPreview ? ['--skip-preview'] : []),
+    ...(opts.debugLogPath ? ['--logtostderr', '--logflow', '-v=9'] : []),
+  ];
+}
+
 /** Run `pulumi up --yes --non-interactive` in `cwd`. `configFile` swaps the stack config for the DB-exposure overlay; a non-zero exit prints a permission hint when stderr indicates one. */
 export async function runPulumiUpWithHint(
   stack: string,
   cwd: string,
   env: NodeJS.ProcessEnv,
-  configFile?: string,
+  opts: PulumiUpOptions = {},
 ): Promise<PulumiUpResult> {
-  const configFileArgs = configFile ? ['--config-file', configFile] : [];
-  console.info(
-    `\n→ pulumi up (base infra)\n  $ pulumi up --stack ${stack} --yes --non-interactive${configFileArgs.map((a) => ` ${a}`).join('')}`,
-  );
+  const args = pulumiUpArgs(stack, opts);
+  console.info(`\n→ pulumi up (base infra)\n  $ pulumi ${args.join(' ')}`);
   // stdout is teed, not inherited, so the Diagnostics section reaches parseOrphanedDeletes; --non-interactive already forces the plain display, so piping changes nothing for the operator.
-  const child = spawn('pulumi', ['up', '--stack', stack, '--yes', '--non-interactive', ...configFileArgs], {
+  const child = spawn('pulumi', args, {
     cwd,
     env,
     stdio: ['inherit', 'pipe', 'pipe'],
@@ -121,13 +143,18 @@ export async function runPulumiUpWithHint(
     stdoutBuf += chunk.toString();
     process.stdout.write(chunk);
   });
+  // With a debug log the verbose engine/provider stream goes to the file only; the terminal keeps Pulumi's normal output on stdout.
+  const debugStream = opts.debugLogPath ? createWriteStream(opts.debugLogPath, { flags: 'a' }) : undefined;
+  if (opts.debugLogPath) console.info(`  ${pc.dim(`engine + provider log: ${opts.debugLogPath}`)}`);
   let stderrBuf = '';
   child.stderr?.on('data', (chunk: Buffer) => {
     stderrBuf += chunk.toString();
-    process.stderr.write(chunk);
+    if (debugStream) debugStream.write(chunk);
+    else process.stderr.write(chunk);
   });
 
   const exitCode = await waitForExitCode(child);
+  await new Promise<void>((resolve) => (debugStream ? debugStream.end(resolve) : resolve()));
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
     if (dup) {
@@ -142,13 +169,13 @@ export async function runPulumiUpWithHint(
     const hint = classifyPermissionError(stderrBuf);
     if (hint) {
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);
-      if (hint.kind === 'bootstrap-owned')
+      if (hint.kind === 'privileged')
         console.error(
-          `  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`,
+          `  A privileged resource. Re-run pnpm infra and choose ${pc.italic('"Apply infra change"')} to apply it with your Owner API key.`,
         );
       else
         console.error(
-          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run bootstrap and choose ${pc.italic('"Rotate keys"')}.`,
+          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run pnpm infra and choose ${pc.italic('"Rotate keys"')}.`,
         );
     }
   }

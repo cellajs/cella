@@ -7,9 +7,11 @@ import {
   PutBucketVersioningCommand,
   type S3Client,
 } from '@aws-sdk/client-s3';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
-import { type ScwAuth, scwFetch } from '../lib/scaleway/scw-fetch';
-import { isMain } from '../lib/utils/is-main';
+import { getApiKey } from '../lib/scaleway/iam-client';
+import { resolveProjectId } from '../lib/scaleway/provider-env';
+import { makeS3Client } from '../lib/scaleway/s3-client';
+import type { ScwAuth } from '../lib/scaleway/scw-fetch';
+import { runIfMain } from '../lib/utils/is-main';
 
 export type EnsureResult = 'exists' | 'created';
 
@@ -33,12 +35,7 @@ export function keyProjectMismatch(
 
 /** The key's own `default_project_id`, via IAM self-inspection. */
 export async function keyPreferredProject(auth: ScwAuth, accessKey: string): Promise<string> {
-  const key = await scwFetch<{ default_project_id: string }>(
-    auth,
-    'GET',
-    `https://api.scaleway.com/iam/v1alpha1/api-keys/${accessKey}`,
-  );
-  return key.default_project_id;
+  return (await getApiKey(auth, accessKey)).default_project_id ?? '';
 }
 
 /**
@@ -87,7 +84,7 @@ export const NONCURRENT_VERSION_RETENTION_DAYS = 90;
 /**
  * Converge the state bucket onto its hardened configuration: versioning so every checkpoint write is recoverable, SSE-ONE default encryption (AES-256,
  * Scaleway-managed keys), and a lifecycle rule bounding noncurrent-version growth. Idempotent, so pre-existing buckets converge too.
- * AccessDenied is tolerated: once resources/state-bucket-policy.ts is applied, bucket-config writes are reserved to the operator principal and the CI key's attempt 403s.
+ * AccessDenied is tolerated: once resources/state-bucket-policy.ts is applied, bucket-config writes are reserved to the admin application and the CI key's attempt 403s.
  */
 export async function hardenStateBucket(
   s3: S3Client,
@@ -150,7 +147,7 @@ export async function hardenStateBucket(
   if (applied.length > 0) log(`State bucket hardening applied: ${applied.join(', ')}`);
   if (denied.length > 0) {
     log(
-      `State bucket hardening skipped (${denied.join(', ')}): bucket policy reserves bucket-config writes to the operator principal.`,
+      `State bucket hardening skipped (${denied.join(', ')}): bucket policy reserves bucket-config writes to the admin application.`,
     );
   }
   return { applied, denied };
@@ -176,7 +173,6 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
 }
 
 export async function main(): Promise<void> {
-  const { S3Client } = await import('@aws-sdk/client-s3');
   const accessKey = process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set');
@@ -197,12 +193,7 @@ export async function main(): Promise<void> {
     console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: skipping the key-preferred-project preflight.');
   }
 
-  const s3 = new S3Client({
-    region,
-    endpoint: `https://s3.${region}.scw.cloud`,
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
-  });
+  const s3 = await makeS3Client(region, accessKey, secretKey);
   const result = await ensureStateBucket(s3, bucketName);
   if (expectedProjectId) await assertBucketProject(s3, bucketName, expectedProjectId);
   await hardenStateBucket(s3, bucketName);
@@ -210,9 +201,4 @@ export async function main(): Promise<void> {
   else console.info(`Created Pulumi state bucket: s3://${bucketName} (${region})`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

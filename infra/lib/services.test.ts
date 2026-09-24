@@ -113,7 +113,7 @@ describe('placeServices (placement is independent of enablement)', () => {
   });
 });
 
-describe('registry view: bootstrap-owned IAM ignores enablement', () => {
+describe('registry view: privileged IAM ignores enablement', () => {
   it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
     expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'frontend']);
   });

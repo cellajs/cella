@@ -20,11 +20,11 @@ export interface ServiceAppsResult {
 /**
  * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`) and
  * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
- * their POLICIES are Pulumi-managed (resources/vm-iam.ts, bootstrap-owned) and
+ * their POLICIES are Pulumi-managed (resources/vm-iam.ts, privileged) and
  * their KEYS are minted per deploy by CI (tasks/mint-generation-keys.ts) under
  * the unconditioned org-wide IAMApplicationManager grant (the boundary is the
  * absent IAMPolicyManager). Runs with an IAMManager-capable key; the returned
- * ids gate the presence of the CI key-mint rule, so bootstrap runs this before
+ * ids gate the presence of the CI key-mint rule, so setup runs this before
  * setup-ci-key. Idempotent: an existing application is reused by name.
  */
 export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<ServiceAppsResult> {
@@ -54,7 +54,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   };
 }
 
-/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Bootstrap and "Apply infra change" share it, so a registry change converges in one privileged run. */
+/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Setup and "Apply infra change" share it, so a registry change converges in one privileged run. */
 export async function ensureRegistryPrincipals(
   opts: Omit<SetupServiceAppsOptions, 'services'> & { singleVM: boolean },
 ): Promise<ServiceAppsResult> {

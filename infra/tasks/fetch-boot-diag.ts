@@ -66,7 +66,7 @@ export function emptyBootDiagGuidance(slug = '<slug>'): string[] {
     'boot-diag is empty: no VM has ever uploaded diagnostics (every boot uploads, even a healthy one).',
     'Two known causes:',
     `  1. The boot runner never ran (cloud-init or launcher failure). Open the VM's serial console in the Scaleway web console and look for ::${slug}:: markers and "BOOT FAILED (exit N)".`,
-    '  2. Uploads are denied: a boot principal provisioned before the IAM v2 model carries no Object Storage permission set, and Scaleway does not honor bucket-policy-only grants, so every boot-diag PUT fails. Re-run the infra CLI "Stack setup" apply with a bootstrap key; the current boot principal carries ObjectStorageObjectsWrite.',
+    '  2. Uploads are denied: a boot principal provisioned before the IAM v2 model carries no Object Storage permission set, and Scaleway does not honor bucket-policy-only grants, so every boot-diag PUT fails. Re-run the infra CLI "Apply infra change" with your Owner API key; the current boot principal carries ObjectStorageObjectsWrite.',
   ];
 }
 

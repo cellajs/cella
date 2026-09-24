@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyDuplicateSecretError, parseOrphanedDeletes } from './pulumi-up';
+import { classifyDuplicateSecretError, parseOrphanedDeletes, pulumiUpArgs } from './pulumi-up';
 
 describe('classifyDuplicateSecretError', () => {
   it('detects a duplicate-secret conflict and extracts the name', () => {
@@ -35,5 +35,34 @@ describe('parseOrphanedDeletes', () => {
   it('excludes deletes that failed for other reasons', () => {
     const urn = 'urn:pulumi:production::infra::scaleway:secrets/secret:Secret::secret-admin-email';
     expect(parseOrphanedDeletes(`error: deleting ${urn}: \n  * 403 forbidden`)).toEqual([]);
+  });
+});
+
+describe('pulumiUpArgs', () => {
+  it('is the plain non-interactive up by default', () => {
+    expect(pulumiUpArgs('organization/infra/production')).toEqual([
+      'up',
+      '--stack',
+      'organization/infra/production',
+      '--yes',
+      '--non-interactive',
+    ]);
+  });
+  it('adds the overlay, the skipped preview and the verbose engine flow for a debug capture', () => {
+    expect(
+      pulumiUpArgs('s', { configFile: '/tmp/overlay.yaml', skipPreview: true, debugLogPath: '/tmp/x.log' }),
+    ).toEqual([
+      'up',
+      '--stack',
+      's',
+      '--yes',
+      '--non-interactive',
+      '--config-file',
+      '/tmp/overlay.yaml',
+      '--skip-preview',
+      '--logtostderr',
+      '--logflow',
+      '-v=9',
+    ]);
   });
 });

@@ -2,7 +2,7 @@
 export interface PrincipalNames {
   /** IAM group holding every application of this app×mode. */
   group: string;
-  /** CI deploy application (GitHub Actions credential). */
+  /** CI deploy application (the key GitHub Actions deploys with). */
   ciDeploy: string;
   /** Human admin application: bucket access plus infra reads. */
   admin: string;

@@ -73,7 +73,7 @@ describe('assertVmGrants', () => {
   });
 
   it('tolerates an EXTRA read-only set as benign drift (warns, does not fail)', async () => {
-    // The VM policy is bootstrap-owned (CI cannot reconcile it), so a benign
+    // The VM policy is privileged (CI cannot reconcile it), so a benign
     // read-only over-grant must not wedge deploys; only escalations (write/
     // broad grants) do. Mirrors the live cella-vm-reader carrying a lingering
     // ObjectStorageReadOnly.
@@ -278,5 +278,51 @@ describe('assertVmGrants', () => {
     ]);
 
     await expect(assertVmGrants({ ...baseOpts, fetchImpl })).rejects.toThrow(/403.*forbidden/);
+  });
+});
+
+describe('assertVmGrants project scope', () => {
+  const policies = {
+    match: '/iam/v1alpha1/policies?',
+    body: { policies: [{ id: 'pol-1', name: 'vm-policy', application_id: 'vm-app' }], total_count: 1 },
+  };
+
+  it('fails an organization-scoped rule when a project scope is required', async () => {
+    const fetchImpl = makeFetch([
+      NO_GROUPS,
+      policies,
+      {
+        match: '/iam/v1alpha1/rules?policy_id=pol-1',
+        body: { rules: [{ permission_set_names: [...REQUIRED], organization_id: 'org-1' }] },
+      },
+    ]);
+    const result = await assertVmGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl });
+    expect(result.ok).toBe(false);
+    expect(result.misscopedRules).toEqual([
+      'vm-policy [ContainerRegistryReadOnly, SecretManagerReadOnly, SecretManagerSecretAccess] scope=organization org-1',
+    ]);
+  });
+
+  it('passes a rule scoped to exactly the required project, and ignores scope without the option', async () => {
+    const scoped = makeFetch([
+      NO_GROUPS,
+      policies,
+      {
+        match: '/iam/v1alpha1/rules?policy_id=pol-1',
+        body: { rules: [{ permission_set_names: [...REQUIRED], project_ids: ['proj-1'] }] },
+      },
+    ]);
+    expect((await assertVmGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl: scoped })).ok).toBe(true);
+    const orgWide = makeFetch([
+      NO_GROUPS,
+      policies,
+      {
+        match: '/iam/v1alpha1/rules?policy_id=pol-1',
+        body: { rules: [{ permission_set_names: [...REQUIRED], organization_id: 'org-1' }] },
+      },
+    ]);
+    const result = await assertVmGrants({ ...baseOpts, fetchImpl: orgWide });
+    expect(result.ok).toBe(true);
+    expect(result.misscopedRules).toEqual([]);
   });
 });

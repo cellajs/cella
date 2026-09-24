@@ -2,7 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { syncGithubEnvironment } from '../../lib/github-sync';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import {
   generatePassphrase,
   supportsStdinPassphraseRotation,
@@ -10,16 +11,14 @@ import {
 } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
-import { maskedSecret } from '../prompts/masked-secret';
 import {
   acquireStackLockOrExit,
   confirmPassphraseStored,
-  envOr,
   type InfraContext,
-  promptRequiredInput,
-  promptStackName,
+  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
+  stackNameFor,
 } from '../shared';
 
 /**
@@ -30,7 +29,7 @@ import {
 export async function runRotatePassphrase(context: InfraContext): Promise<void> {
   if (!context.stackYaml || !/^encryptionsalt:/m.test(context.stackYaml)) {
     console.error(
-      `${warningMark} "Rotate passphrase" requires an existing stack with encrypted state (state=${context.state}). A fresh bootstrap generates its own passphrase.`,
+      `${warningMark} "Rotate passphrase" requires an existing stack with encrypted state (state=${context.state}). A fresh setup generates its own passphrase.`,
     );
     process.exit(1);
   }
@@ -45,17 +44,17 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(
     pc.dim(
-      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched; any key with state-bucket access works (no bootstrap key needed).\n',
+      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched; the admin application key is enough (no Owner API key needed).\n',
     ),
   );
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const accessKey = await envOr('SCW_ACCESS_KEY', () =>
-    promptRequiredInput('Scaleway access key (state-bucket access is enough)'),
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
   );
-  const secretKey = await envOr('SCW_SECRET_KEY', () => maskedSecret({ message: 'Scaleway secret key' }));
-  const targetStack = await promptStackName(context);
+  const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, {
     accessKey,

@@ -15,7 +15,7 @@ export function sharedSecretPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/shared/`;
 }
 
-/** Folder for engine-internal credentials. Outside the VM condition on purpose: a VM must never read the admin key. */
+/** Folder for engine-internal keys. Outside the VM condition on purpose: a VM must never read the admin key. */
 export function engineSecretPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/engine/`;
 }
@@ -40,7 +40,7 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for one service application: value reads only under its own folders plus shared, leaving engine credentials and sibling stacks unreadable.
+ * Condition for one service application: value reads only under its own folders plus shared, leaving engine keys and sibling stacks unreadable.
  * String equality matters: assert-vm-grants compares the live rule condition against this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services.
  */
 export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {

@@ -1,16 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
-import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
-import {
-  acquireLock,
-  controlActor,
-  lockKey,
-  makeControlClient,
-  releaseLock,
-  stateBucket,
-} from '../lib/stack/control-store';
+import type { KeyPair } from '../lib/scaleway/operator-identity';
+import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
+import type { StackContext } from '../lib/stack/stack-context';
+import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
 import { crossMark, pc, warningMark } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { maskedSecret } from './prompts/masked-secret';
@@ -23,6 +18,8 @@ export type CliMode =
   | 'resume'
   | 'rotate'
   | 'rotate-passphrase'
+  | 'fetch-admin-key'
+  | 'store-passphrase'
   | 'apply'
   | 'preview'
   | 'secrets'
@@ -35,15 +32,8 @@ export type CliMode =
   | 'geoip-refresh';
 
 /** Stack information and state, passed to every CLI action handler. */
-export interface InfraContext {
-  environment: Environment;
-  stackPath: string;
-  stackYaml?: string;
-  state: StackState;
+export interface InfraContext extends StackContext {
   hasCiKey: boolean;
-  appConfig: EngineConfig;
-  /** Scaleway project id. Empty only on a fresh install without SCW_PROJECT_ID; the setup wizard resolves it. */
-  projectId: string;
 }
 
 export interface StepOptions {
@@ -57,7 +47,7 @@ export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE =
 
 /**
  * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
- * They differ only for required inputs such as the bootstrap key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
+ * They differ only for required inputs such as the Owner API key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
  */
 export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
 
@@ -85,23 +75,13 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
   return input({ message: opts.message, default: opts.default });
 }
 
-/** First set variable from `envName` (a single name or ordered fallbacks), prompting when none are set. */
-export const envOr = async (envName: string | string[], prompt: () => Promise<string>) => {
-  const names = Array.isArray(envName) ? envName : [envName];
-  for (const name of names) {
-    const value = process.env[name];
-    if (value) return value;
-  }
-  return prompt();
-};
-
 /**
  * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
  * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return envOr('PULUMI_CONFIG_PASSPHRASE', () => maskedSecret({ message: 'Pulumi passphrase' }));
+  if (!canVerify) return process.env.PULUMI_CONFIG_PASSPHRASE || maskedSecret({ message: 'Pulumi passphrase' });
 
   const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE;
   if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
@@ -133,7 +113,7 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
 }
 
 /**
- * Bootstrap-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
+ * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
  * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
 export async function resolveOrCreatePassphrase(
@@ -153,23 +133,25 @@ export async function resolveOrCreatePassphrase(
   return { passphrase, generated: true };
 }
 
-/** The "Pulumi stack name" prompt every action shares. */
-export function promptStackName(context: InfraContext): Promise<string> {
-  return inputOrDefault({
-    message: 'Pulumi stack name',
-    envName: 'INFRA_STACK_NAME',
-    default: `organization/infra/${context.environment}`,
-  });
+/** The stack name every action targets: derived from the mode on the DIY backend (`organization/infra/<mode>`); `INFRA_STACK_NAME` overrides it for unusual layouts. Never prompted. */
+export function stackNameFor(context: Pick<InfraContext, 'environment'>): string {
+  return process.env.INFRA_STACK_NAME?.trim() || `organization/infra/${context.environment}`;
 }
 
-/** A required free-text prompt (used for Scaleway access keys). */
-export function promptRequiredInput(message: string): Promise<string> {
-  return input({ message, validate: (value) => !!value.trim() || '(required)' });
+/** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`Scaleway Owner API key`); `hint` says where to get one. */
+export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, hint?: string): Promise<KeyPair> {
+  if (pair) return pair;
+  const accessKey = await input({
+    message: `${label}, access key${hint ? ` (${hint})` : ''}`,
+    validate: (value) => !!value.trim() || '(required)',
+  });
+  const secretKey = await maskedSecret({ message: `${label}, secret key` });
+  return { accessKey, secretKey };
 }
 
 /** S3-backend login URL for the app's Pulumi state bucket. */
 export function pulumiLoginUrl(appConfig: AppConfigType): string {
-  return `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`;
+  return stateBackendUrl(stateBucket(appConfig.slug), appConfig.s3.region);
 }
 
 /** `pulumi login` (exits on failure) plus a best-effort `pulumi stack select` against the S3 state backend; the caller may still be about to init the stack. */
@@ -182,21 +164,25 @@ export function pulumiLoginAndSelect(
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ACCESS_KEY / SCW_SECRET_KEY, or set SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY to a key of one of those.`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (Manage keys & secrets → Fetch admin application key).`,
     );
     process.exit(login.status ?? 1);
   }
   spawnSync('pulumi', ['stack', 'select', targetStack], { cwd: infraDir, env, stdio: 'ignore' });
 }
 
-/** Handle to a held stack lock; `release` logs failures and never throws. */
+/** Handle to a held stack lease; `release` logs failures and never throws. */
 export interface StackLockHandle {
   release: () => Promise<void>;
 }
 
+/** How long an operator run waits for another holder's lease to lapse: longer than one lifetime, so a dead run always frees the stack in time. */
+const OPERATOR_LOCK_WAIT_MS = 5 * 60_000;
+
 /**
- * Acquire the S3 conditional-write stack lock so a second operator or CI cannot mutate the stack concurrently, or exit(1) pointing at the "Unlock" action when it is held.
- * A dead run's lock self-expires after the TTL.
+ * Take the stack lease so a second operator or CI cannot mutate the stack concurrently. A live lock held by someone else is waited out (a dead
+ * run's lease lapses within minutes); a holder that keeps renewing wins, and this run exits pointing at the "Unlock" escape hatch.
+ * The lease renews itself while held and is released on Ctrl-C, so an interrupted run leaves nothing behind.
  */
 export async function acquireStackLockOrExit(opts: {
   appConfig: AppConfigType;
@@ -209,24 +195,42 @@ export async function acquireStackLockOrExit(opts: {
   const s3 = await makeControlClient(opts.appConfig.s3.region, opts.accessKey, opts.secretKey);
   const bucket = stateBucket(opts.appConfig.slug);
   const key = lockKey(opts.stack);
-  const owner = controlActor();
-  const lock = await acquireLock(s3, bucket, key, {
-    owner,
+  let lastWaitLine = 0;
+  const result = await acquireLease({
+    s3,
+    bucket,
+    key,
+    owner: controlActor(),
     operation: opts.operation,
-    ttlMs: opts.ttlMs ?? 30 * 60_000,
+    ttlMs: opts.ttlMs,
+    waitMs: OPERATOR_LOCK_WAIT_MS,
+    onWait: (held, remainingMs) => {
+      if (Date.now() - lastWaitLine < 30_000) return;
+      lastWaitLine = Date.now();
+      console.info(
+        `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min for the lease to lapse…`,
+      );
+    },
+    onRenewFailed: (reason, lost) =>
+      console.warn(
+        `${warningMark} stack lease renewal failed (${reason})${lost ? ': this run no longer holds the lock' : ''}`,
+      ),
   });
-  if (!lock.acquired) {
+  if (!result.acquired) {
     console.error(
-      `${warningMark} Stack ${opts.stack} is locked by ${pc.cyan(lock.held.owner)} (operation: ${lock.held.operation}, since ${lock.held.acquiredAt}).`,
+      `${warningMark} Stack ${opts.stack} is still locked by ${pc.cyan(result.held.owner)} (operation: ${result.held.operation}, since ${result.held.acquiredAt}).`,
     );
     console.error(`  If that run is dead, clear it with the CLI "Unlock" action or remove s3://${bucket}/${key}.`);
     process.exit(1);
   }
+  const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`${warningMark} ${msg}`) });
   return {
-    release: () =>
-      releaseLock(s3, bucket, key, owner).catch((e) =>
-        console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`),
-      ),
+    release: async () => {
+      uninstall();
+      await result.lease
+        .release()
+        .catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+    },
   };
 }
 

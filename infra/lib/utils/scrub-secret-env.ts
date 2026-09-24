@@ -1,5 +1,5 @@
 /**
- * Remove credential-bearing variables from an environment map.
+ * Remove secret-bearing variables from an environment map.
  *
  * The deploy job holds Scaleway keys, the Pulumi passphrase, and a GitHub token
  * in its process environment (injected as job env in deploy-pipeline.yml). Those

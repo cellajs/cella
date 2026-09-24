@@ -74,10 +74,10 @@ describe('validateStateBucketPolicy', () => {
     (kind === 'DeleteObjectCommand' && Boolean(input.VersionId)) || kind === 'PutBucketVersioningCommand';
 
   it('reports all checks passing when the operator is unrestricted and CI is denied version deletes', async () => {
-    const operatorS3 = client();
+    const adminS3 = client();
     const ciS3 = client(ciDenials);
     const checks = await validateStateBucketPolicy({
-      operatorS3,
+      adminS3,
       ciS3,
       bucket: 'cella-pulumi-state',
       probeKey: 'probe',
@@ -88,10 +88,10 @@ describe('validateStateBucketPolicy', () => {
   });
 
   it('fails the denial check when the CI key can still delete versions', async () => {
-    const operatorS3 = client();
+    const adminS3 = client();
     const ciS3 = client((kind) => kind === 'PutBucketVersioningCommand'); // version delete NOT denied
     const checks = await validateStateBucketPolicy({
-      operatorS3,
+      adminS3,
       ciS3,
       bucket: 'cella-pulumi-state',
       probeKey: 'probe',
@@ -103,10 +103,10 @@ describe('validateStateBucketPolicy', () => {
   });
 
   it('fails an allowed check when the operator has lost read access', async () => {
-    const operatorS3 = client((kind) => kind === 'GetObjectCommand');
+    const adminS3 = client((kind) => kind === 'GetObjectCommand');
     const ciS3 = client(ciDenials);
     const checks = await validateStateBucketPolicy({
-      operatorS3,
+      adminS3,
       ciS3,
       bucket: 'cella-pulumi-state',
       probeKey: 'probe',

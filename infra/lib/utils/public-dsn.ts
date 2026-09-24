@@ -4,7 +4,7 @@
  * an exposure window cannot MITM admin-role traffic. Drops `uselibpqcompat`
  * (a node-postgres compat flag libpq rejects as an unknown parameter). Only
  * the query string is touched: the userinfo may carry percent-encoded
- * credentials that a full URL round-trip would re-encode.
+ * user and password that a full URL round-trip would re-encode.
  */
 export function hardenPublicDsn(dsn: string, caFilePath: string): string {
   const [base, query = ''] = dsn.split('?');
