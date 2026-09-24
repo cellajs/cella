@@ -28,6 +28,9 @@ export interface PreviewStep {
   /** Property paths the update touches, e.g. `rules[0].condition`. */
   detailedDiff?: Record<string, { kind: string }>;
   diffReasons?: string[];
+  /** The resource as state holds it (the provider diffs against its outputs) and as the program declares it. */
+  oldState?: { inputs?: Record<string, unknown>; outputs?: Record<string, unknown> };
+  newState?: { inputs?: Record<string, unknown>; outputs?: Record<string, unknown> };
 }
 
 export interface PendingPrivilegedChange {
@@ -36,6 +39,22 @@ export interface PendingPrivilegedChange {
   resource: string;
   /** Changed property paths for an update, empty otherwise. */
   paths: string[];
+  /** Old (state outputs) and new (program inputs) value per changed path; IAM policies only, whose rules hold no secret. */
+  values?: Array<{ path: string; old: unknown; new: unknown }>;
+}
+
+/** Read a `detailedDiff` path such as `rules[0].condition` out of a state object; undefined when any segment is missing. */
+export function readPath(obj: unknown, path: string): unknown {
+  let current: unknown = obj;
+  for (const part of path.split('.')) {
+    const match = part.match(/^([^[]+)((?:\[\d+\])*)$/);
+    if (!match) return undefined;
+    current = (current as Record<string, unknown> | undefined)?.[match[1] as string];
+    for (const index of (match[2] as string).matchAll(/\[(\d+)\]/g)) {
+      current = (current as unknown[] | undefined)?.[Number(index[1])];
+    }
+  }
+  return current;
 }
 
 /** URN `urn:pulumi:<stack>::<project>::<type>::<name>` → its type and name. */
@@ -73,10 +92,23 @@ export function classifyPreviewSteps(steps: PreviewStep[]): {
       continue;
     }
     const { type, name } = splitUrn(step.urn);
-    privileged.push({ op: step.op, resource: `${type}::${name}`, paths: Object.keys(step.detailedDiff ?? {}).sort() });
+    const paths = Object.keys(step.detailedDiff ?? {}).sort();
+    // A policy's rules carry no secret, and the old value is what Pulumi will overwrite: an update Scaleway never kept shows up here as stale outputs.
+    const values =
+      type.startsWith('scaleway:iam/') && paths.length > 0 && (step.oldState || step.newState)
+        ? paths.map((path) => ({
+            path,
+            old: readPath(step.oldState?.outputs, path),
+            new: readPath(step.newState?.inputs, path),
+          }))
+        : undefined;
+    privileged.push({ op: step.op, resource: `${type}::${name}`, paths, ...(values ? { values } : {}) });
   }
   return { privileged, ciApplicable };
 }
+
+const showValue = (value: unknown): string =>
+  value === undefined ? '(unset)' : typeof value === 'string' ? value : JSON.stringify(value);
 
 /** The exact operator command for the mode. */
 export function applyHint(mode: string): string {
@@ -89,6 +121,9 @@ export function formatPending(mode: string, pending: PendingPrivilegedChange[]):
     lines.push(
       `  ${change.op.padEnd(7)} ${change.resource}${change.paths.length ? `  (${change.paths.join(', ')})` : ''}`,
     );
+    for (const value of change.values ?? []) {
+      lines.push(`          ${value.path}: ${showValue(value.old)} → ${showValue(value.new)}`);
+    }
   }
   lines.push(`  Run first: ${applyHint(mode)}`);
   return lines.join('\n');

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyHint, classifyPreviewSteps, formatPending, isPrivilegedUrn, splitUrn } from './preflight-privileged';
+import {
+  applyHint,
+  classifyPreviewSteps,
+  formatPending,
+  isPrivilegedUrn,
+  readPath,
+  splitUrn,
+} from './preflight-privileged';
 
 const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
 
@@ -43,6 +50,35 @@ describe('classifyPreviewSteps', () => {
       { op: 'update', resource: 'scaleway:iam/policy:Policy::vm-backend-policy', paths: ['rules[0].condition'] },
     ]);
     expect(ciApplicable).toBe(2);
+  });
+  it('shows old and new values for IAM policy rule paths, from state outputs and program inputs', () => {
+    const { privileged } = classifyPreviewSteps([
+      {
+        op: 'update',
+        urn: urn('scaleway:iam/policy:Policy', 'vm-backend-policy'),
+        detailedDiff: { 'rules[0].condition': { kind: 'update' } },
+        oldState: { outputs: { rules: [{ condition: 'a || b' }] } },
+        newState: { inputs: { rules: [{ condition: 'a || b || c' }] } },
+      },
+      {
+        op: 'update',
+        urn: urn('scaleway:databases/privilege:Privilege', 'p'),
+        detailedDiff: { permission: { kind: 'update' } },
+        oldState: { outputs: { permission: 'readonly' } },
+        newState: { inputs: { permission: 'all' } },
+      },
+    ]);
+    expect(privileged[0]?.values).toEqual([{ path: 'rules[0].condition', old: 'a || b', new: 'a || b || c' }]);
+    expect(privileged[1]?.values).toBeUndefined();
+    const text = formatPending('production', privileged);
+    expect(text).toContain('rules[0].condition: a || b → a || b || c');
+    expect(text).not.toContain('readonly');
+  });
+  it('reads bracketed paths and tolerates missing segments', () => {
+    expect(readPath({ rules: [{ condition: 'x' }] }, 'rules[0].condition')).toBe('x');
+    expect(readPath({ rules: [] }, 'rules[0].condition')).toBeUndefined();
+    expect(readPath(undefined, 'rules[0].condition')).toBeUndefined();
+    expect(readPath({ a: { b: [[1, 2]] } }, 'a.b[0][1]')).toBe(2);
   });
   it('formats the operator command with the mode', () => {
     const text = formatPending('production', [
