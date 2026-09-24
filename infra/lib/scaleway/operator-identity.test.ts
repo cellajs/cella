@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FetchLike } from '../utils/fetch-like';
 import {
-  assertBootstrapCapable,
+  assertIamManager,
   classifyPrincipal,
   describeKey,
   envKeyPair,
@@ -36,59 +36,72 @@ describe('envKeyPair', () => {
 });
 
 describe('resolveOperatorIdentity', () => {
-  it('uses the standing key for state when no override is set', () => {
-    const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWADMIN', SCW_SECRET_KEY: 's' });
-    expect(id.standing).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_*' });
-    expect(id.state).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_*' });
-    expect(id.bootstrap).toBeUndefined();
+  it('reads the admin application key from SCW_ADMIN_* and the Owner API key from SCW_OWNER_*', () => {
+    const id = resolveOperatorIdentity({
+      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
+      SCW_ADMIN_SECRET_KEY: 's',
+      SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
+      SCW_OWNER_SECRET_KEY: 'o',
+    });
+    expect(id.admin).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_ADMIN_*' });
+    expect(id.owner).toEqual({ accessKey: 'SCWOWNER', secretKey: 'o', source: 'SCW_OWNER_*' });
+    expect(id.ambient).toBeUndefined();
     expect(id.warnings).toEqual([]);
   });
-  it('treats a half-set standing pair as absent, with a warning, instead of aborting', () => {
-    const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWX' });
-    expect(id.standing).toBeUndefined();
-    expect(id.state).toBeUndefined();
+  it("keeps the process's SCW_* pair apart as ambient, never as the admin key", () => {
+    const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWCI', SCW_SECRET_KEY: 'c' });
+    expect(id.admin).toBeUndefined();
+    expect(id.ambient).toEqual({ accessKey: 'SCWCI', secretKey: 'c' });
+  });
+  it('treats a half-set pair as absent, with a warning, instead of aborting', () => {
+    const id = resolveOperatorIdentity({ SCW_ADMIN_ACCESS_KEY: 'SCWX' });
+    expect(id.admin).toBeUndefined();
     expect(id.warnings[0]).toMatch(/must be set together.*ignoring/);
   });
-  it('lets a deprecated SCW_STATE_* pair win for state, with a warning', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ACCESS_KEY: 'SCWADMIN',
-      SCW_SECRET_KEY: 's',
-      SCW_STATE_ACCESS_KEY: 'SCWCI',
+  it('reads a deprecated SCW_STATE_* pair as the admin key with a rename warning, and ignores it next to SCW_ADMIN_*', () => {
+    const legacy = resolveOperatorIdentity({ SCW_STATE_ACCESS_KEY: 'SCWST', SCW_STATE_SECRET_KEY: 't' });
+    expect(legacy.admin).toEqual({ accessKey: 'SCWST', secretKey: 't', source: 'SCW_STATE_*' });
+    expect(legacy.warnings[0]).toMatch(/deprecated: rename them to SCW_ADMIN_ACCESS_KEY/);
+    const both = resolveOperatorIdentity({
+      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
+      SCW_ADMIN_SECRET_KEY: 's',
+      SCW_STATE_ACCESS_KEY: 'SCWST',
       SCW_STATE_SECRET_KEY: 't',
     });
-    expect(id.state).toEqual({ accessKey: 'SCWCI', secretKey: 't', source: 'SCW_STATE_*' });
-    expect(id.warnings[0]).toMatch(/deprecated/);
+    expect(both.admin?.accessKey).toBe('SCWADMIN');
+    expect(both.warnings[0]).toMatch(/ignored because SCW_ADMIN_\* is set/);
   });
-  it('flags a SCW_STATE_* pair that merely repeats the standing key', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ACCESS_KEY: 'SCWX',
-      SCW_SECRET_KEY: 's',
-      SCW_STATE_ACCESS_KEY: 'SCWX',
-      SCW_STATE_SECRET_KEY: 's',
+  it('reads a deprecated SCW_BOOTSTRAP_* pair as the Owner API key, honouring the SCW_BOOTSTRAP_KEY misspelling', () => {
+    expect(resolveOperatorIdentity({ SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' }).owner).toEqual({
+      accessKey: 'SCWB',
+      secretKey: 'b',
+      source: 'SCW_BOOTSTRAP_*',
     });
-    expect(id.warnings[0]).toMatch(/repeat/);
-  });
-  it('reads the bootstrap pair, honouring the SCW_BOOTSTRAP_KEY misspelling with a nudge', () => {
-    expect(
-      resolveOperatorIdentity({ SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' }).bootstrap,
-    ).toEqual({ accessKey: 'SCWB', secretKey: 'b', source: 'SCW_BOOTSTRAP_*' });
     const alias = resolveOperatorIdentity({ SCW_BOOTSTRAP_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' });
-    expect(alias.bootstrap?.accessKey).toBe('SCWB');
-    expect(alias.warnings[0]).toMatch(/rename/);
-  });
-  it('warns when the bootstrap pair is the standing key', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ACCESS_KEY: 'SCWX',
-      SCW_SECRET_KEY: 's',
-      SCW_BOOTSTRAP_ACCESS_KEY: 'SCWX',
-      SCW_BOOTSTRAP_SECRET_KEY: 's',
+    expect(alias.owner?.accessKey).toBe('SCWB');
+    expect(alias.warnings[0]).toMatch(/read as SCW_OWNER_ACCESS_KEY/);
+    const both = resolveOperatorIdentity({
+      SCW_OWNER_ACCESS_KEY: 'SCWO',
+      SCW_OWNER_SECRET_KEY: 'o',
+      SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB',
+      SCW_BOOTSTRAP_SECRET_KEY: 'b',
     });
-    expect(id.warnings[0]).toMatch(/separate, short-lived Owner key/);
+    expect(both.owner?.accessKey).toBe('SCWO');
+    expect(both.warnings[0]).toMatch(/SCW_BOOTSTRAP_\* is ignored/);
+  });
+  it('warns when the Owner API key slot holds the admin application key', () => {
+    const id = resolveOperatorIdentity({
+      SCW_ADMIN_ACCESS_KEY: 'SCWX',
+      SCW_ADMIN_SECRET_KEY: 's',
+      SCW_OWNER_ACCESS_KEY: 'SCWX',
+      SCW_OWNER_SECRET_KEY: 's',
+    });
+    expect(id.warnings[0]).toMatch(/same key as SCW_ADMIN_\*/);
   });
 });
 
 describe('describeKey / classifyPrincipal', () => {
-  it('describes an application key and classifies engine principals by name', async () => {
+  it('describes an application key and classifies engine applications by name', async () => {
     const fetchImpl = makeFetch([
       {
         match: '/api-keys/SCWCI',
@@ -123,14 +136,14 @@ describe('describeKey / classifyPrincipal', () => {
   });
 });
 
-describe('assertBootstrapCapable', () => {
+describe('assertIamManager', () => {
   const org = 'org-1';
   it('accepts an Owner key without consulting policies', async () => {
     const fetchImpl = makeFetch([
       { match: '/api-keys/SCWU', body: { access_key: 'SCWU', user_id: 'u-1' } },
       { match: '/users/u-1', body: { email: 'flip@example.com', type: 'owner' } },
     ]);
-    const { role } = await assertBootstrapCapable({
+    const { role } = await assertIamManager({
       pair: { accessKey: 'SCWU', secretKey: 's' },
       names,
       organizationId: org,
@@ -138,19 +151,19 @@ describe('assertBootstrapCapable', () => {
     });
     expect(role).toBe('owner');
   });
-  it('rejects an engine principal by name with the reason', async () => {
+  it('rejects an application the engine created by name with the reason', async () => {
     const fetchImpl = makeFetch([
       { match: '/api-keys/SCWCI', body: { access_key: 'SCWCI', application_id: 'app-ci' } },
       { match: '/applications/app-ci', body: { name: 'cella-production-ci-deploy' } },
     ]);
     await expect(
-      assertBootstrapCapable({ pair: { accessKey: 'SCWCI', secretKey: 's' }, names, organizationId: org, fetchImpl }),
-    ).rejects.toThrow(/CI deploy application.*not a bootstrap key/);
+      assertIamManager({ pair: { accessKey: 'SCWCI', secretKey: 's' }, names, organizationId: org, fetchImpl }),
+    ).rejects.toThrow(/CI deploy application.*not an Owner API key/);
   });
   it('accepts an application holding IAMManager and rejects one without', async () => {
     const base = [
       { match: '/api-keys/SCWA', body: { access_key: 'SCWA', application_id: 'app-x' } },
-      { match: '/applications/app-x', body: { name: 'ops-bootstrap' } },
+      { match: '/applications/app-x', body: { name: 'ops-privileged' } },
     ];
     const withGrant = makeFetch([
       ...base,
@@ -161,7 +174,7 @@ describe('assertBootstrapCapable', () => {
       { match: '/rules?policy_id=p-1', body: { rules: [{ permission_set_names: ['ProjectManager', 'IAMManager'] }] } },
     ]);
     await expect(
-      assertBootstrapCapable({
+      assertIamManager({
         pair: { accessKey: 'SCWA', secretKey: 's' },
         names,
         organizationId: org,
@@ -177,7 +190,7 @@ describe('assertBootstrapCapable', () => {
       { match: '/rules?policy_id=p-1', body: { rules: [{ permission_set_names: ['IAMReadOnly'] }] } },
     ]);
     await expect(
-      assertBootstrapCapable({
+      assertIamManager({
         pair: { accessKey: 'SCWA', secretKey: 's' },
         names,
         organizationId: org,
@@ -188,7 +201,7 @@ describe('assertBootstrapCapable', () => {
   it('explains a key that cannot read IAM at all', async () => {
     const fetchImpl = makeFetch([{ match: '/api-keys/SCWV', body: { message: 'permissions_denied' }, status: 403 }]);
     await expect(
-      assertBootstrapCapable({ pair: { accessKey: 'SCWV', secretKey: 's' }, names, organizationId: org, fetchImpl }),
+      assertIamManager({ pair: { accessKey: 'SCWV', secretKey: 's' }, names, organizationId: org, fetchImpl }),
     ).rejects.toThrow(/cannot describe itself in IAM/);
   });
 });

@@ -8,8 +8,11 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
   const targetStack = stackNameFor(context);
 
-  // The same state identity Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
-  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().state, 'admin');
+  // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
+  );
 
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));

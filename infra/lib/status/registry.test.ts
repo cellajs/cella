@@ -68,7 +68,7 @@ function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
     appConfig: {} as ProbeSession['appConfig'],
     stackState: 'bootstrapped',
     projectId: 'proj-1',
-    credentialsAvailable: true,
+    scalewayKeyAvailable: true,
     hasDomain: true,
     scalewayFacts: async () => ({}),
     ...overrides,
@@ -134,10 +134,10 @@ describe('report envelope (public contract)', () => {
   });
 });
 
-describe('credential degradation', () => {
-  it('scaleway-tier checks are unknown (not error) without credentials', () => {
+describe('key degradation', () => {
+  it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
     const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), {
-      credentialsAvailable: false,
+      scalewayKeyAvailable: false,
     });
     for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
       const check = find(report.checks, id);

@@ -1,5 +1,5 @@
-import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
 import { ACCOUNT_BASE, getApiKey } from './iam-client';
+import { resolveOrganizationIdFromEnv } from './provider-env';
 import { resolveOrganizationId } from './scaleway-iam';
 import { scwFetch } from './scw-fetch';
 

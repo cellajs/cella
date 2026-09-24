@@ -45,10 +45,10 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
   domain: 'identity',
   async gather(session) {
     if (session.stackState !== 'bootstrapped') return undefined;
-    if (!session.credentialsAvailable || !session.secretKey || !session.projectId) return undefined;
+    if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
       // The resolver reads SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID before falling back to the Account API, which no
-      // engine principal is granted (an unresolvable org degrades the check to unknown, never an error).
+      // engine-created application is granted (an unresolvable org degrades the check to unknown, never an error).
       const organizationId = await resolveOrganizationId(session.secretKey, session.projectId);
       const name = principalNames(session.appConfig.slug, session.mode).admin;
       return { adminAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
@@ -66,7 +66,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
     if (session.stackState === 'bootstrapped') {
       const admin = check('identity.adminApp', 'Admin app', 'scaleway');
       checks.push(
-        probed(admin, session.credentialsAvailable, facts, 'could not read IAM applications', ({ adminAppId }) =>
+        probed(admin, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ adminAppId }) =>
           adminAppId
             ? admin.ok(adminAppId)
             : admin.warn(

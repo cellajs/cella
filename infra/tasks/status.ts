@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import {
   classifyPrincipal,
   describeKey,
@@ -13,6 +12,7 @@ import {
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
 import { principalNames } from '../lib/scaleway/principals';
+import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
   type ControlState,
@@ -49,14 +49,21 @@ function isNoSuchBucket(err: unknown): boolean {
 }
 
 /**
- * Build the probe session the providers draw on: resolved stack context,
- * credentials, and one memoized best-effort control-store read shared by the
- * state and live providers.
+ * Build the probe session the providers draw on: resolved stack context, the
+ * key to probe with (the admin application key, else the key the process was
+ * started with), and one memoized best-effort control-store read shared by
+ * the state and live providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
-  const accessKey = process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID;
-  const secretKey = process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY;
-  const credentialsAvailable = Boolean(accessKey && secretKey);
+  const identity = resolveOperatorIdentity();
+  const aws =
+    process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+      ? { accessKey: process.env.AWS_ACCESS_KEY_ID, secretKey: process.env.AWS_SECRET_ACCESS_KEY }
+      : undefined;
+  const key = identity.admin ?? identity.ambient ?? aws;
+  const accessKey = key?.accessKey;
+  const secretKey = key?.secretKey;
+  const scalewayKeyAvailable = Boolean(accessKey && secretKey);
   let hasDomain = false;
   try {
     hasDomain = deriveInfra(ctx.appConfig).hasDomain;
@@ -68,7 +75,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
   const scalewayFacts = (): Promise<ScalewayFacts> => {
     memo ??= (async () => {
       const out: ScalewayFacts = {};
-      if (!credentialsAvailable || !accessKey || !secretKey) return out;
+      if (!scalewayKeyAvailable || !accessKey || !secretKey) return out;
       try {
         const s3 = await makeControlClient(ctx.appConfig.s3.region, accessKey, secretKey);
         const bucket = stateBucket(ctx.appConfig.slug);
@@ -114,7 +121,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     stackState: ctx.stackState,
     stackYaml: ctx.stackYaml,
     projectId: ctx.projectId ?? resolveProjectId(),
-    credentialsAvailable,
+    scalewayKeyAvailable,
     accessKey,
     secretKey,
     hasDomain,
@@ -205,12 +212,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
 runIfMain(import.meta.url, main);
 
+/** Which env pair the CLI found its key in: the admin application key from infra/.env.<mode>, or the process's own SCW_* pair. */
+export type KeySlot = 'admin' | 'ambient';
+
 /** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
 export interface QuickFacts {
   lock?: LockInfo;
   control?: ControlState;
-  /** The standing key's bearer and role, when the key can describe itself. */
-  standing?: { desc: KeyDescription; role: PrincipalRole };
+  /** The key's bearer and role, when it can describe itself, and the slot it came from. */
+  key?: { desc: KeyDescription; role: PrincipalRole; slot: KeySlot };
   /** Probes that did not answer within the budget or errored, by name. */
   unavailable: string[];
 }
@@ -236,11 +246,13 @@ export async function collectQuickFacts(
   const budgetMs = opts.budgetMs ?? 4_000;
   const facts: QuickFacts = { unavailable: [] };
   const identity = resolveOperatorIdentity();
+  const slot: KeySlot | undefined = identity.admin ? 'admin' : identity.ambient ? 'ambient' : undefined;
+  const key = identity.admin ?? identity.ambient;
   const bucket = stateBucket(ctx.appConfig.slug);
 
   const stateProbe = async () => {
-    if (!identity.state) return;
-    const s3 = await makeControlClient(ctx.appConfig.s3.region, identity.state.accessKey, identity.state.secretKey);
+    if (!key) return;
+    const s3 = await makeControlClient(ctx.appConfig.s3.region, key.accessKey, key.secretKey);
     const [lock, control] = await Promise.all([
       peekLock(s3, bucket, lockKey(ctx.environment)),
       readControlState(s3, bucket, controlKey(ctx.environment)).then((result) => result.state),
@@ -249,31 +261,34 @@ export async function collectQuickFacts(
     facts.control = control;
   };
   const keyProbe = async () => {
-    if (!identity.standing) return;
-    const desc = await describeKey(identity.standing);
-    facts.standing = { desc, role: classifyPrincipal(desc, principalNames(ctx.appConfig.slug, ctx.environment)) };
+    if (!key || !slot) return;
+    const desc = await describeKey(key);
+    facts.key = { desc, role: classifyPrincipal(desc, principalNames(ctx.appConfig.slug, ctx.environment)), slot };
   };
   await Promise.all([
     within(
       budgetMs,
       stateProbe().catch(() => facts.unavailable.push('state bucket')),
     ).then((v) => {
-      if (v === undefined && identity.state && !facts.control && !facts.unavailable.includes('state bucket'))
+      if (v === undefined && key && !facts.control && !facts.unavailable.includes('state bucket'))
         facts.unavailable.push('state bucket');
     }),
     within(
       budgetMs,
       keyProbe().catch(() => facts.unavailable.push('key lookup')),
     ).then((v) => {
-      if (v === undefined && identity.standing && !facts.standing && !facts.unavailable.includes('key lookup'))
+      if (v === undefined && key && !facts.key && !facts.unavailable.includes('key lookup'))
         facts.unavailable.push('key lookup');
     }),
   ]);
   return facts;
 }
 
-/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. */
-export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; hasStandingKey?: boolean } = {}): string[] {
+/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`. */
+export function formatQuickFacts(
+  facts: QuickFacts,
+  opts: { now?: number; configured?: KeySlot | 'none' } = {},
+): string[] {
   const now = opts.now ?? Date.now();
   const lines: string[] = [];
   if (facts.lock) {
@@ -296,8 +311,9 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; hasSta
       : '';
     lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
   }
-  if (facts.standing) {
-    const { desc, role } = facts.standing;
+  const fetchHint = 'Manage keys & secrets → Fetch admin application key';
+  if (facts.key) {
+    const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);
     const expiry =
       hours === undefined
@@ -307,16 +323,19 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; hasSta
           : hours < 48
             ? ` — expires in ${Math.max(1, Math.round(hours))}h`
             : '';
-    const mark = role === 'admin' && !(hours !== undefined && hours < 48) ? pc.green('●') : warningMark;
-    lines.push(`${mark} Key: SCW_ACCESS_KEY ${formatKeyLine(desc, role)}${expiry}`);
-    if (role !== 'admin') {
+    const healthy = slot === 'admin' && role === 'admin' && !(hours !== undefined && hours < 48);
+    const label = slot === 'admin' ? 'Admin application key:' : 'Ambient key: SCW_ACCESS_KEY';
+    lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);
+    if (slot === 'ambient') {
       lines.push(
-        `  ${pc.dim('The standing slot should hold the admin application key: Manage keys & secrets → Fetch operator credentials.')}`,
+        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; put the admin application key in infra/.env.<mode> as SCW_ADMIN_* (${fetchHint}).`)}`,
       );
+    } else if (role !== 'admin') {
+      lines.push(`  ${pc.dim(`SCW_ADMIN_* should hold the admin application key: ${fetchHint}.`)}`);
     }
-  } else if (opts.hasStandingKey === false) {
+  } else if (opts.configured === 'none') {
     lines.push(
-      `${warningMark} Key: no SCW_ACCESS_KEY / SCW_SECRET_KEY in infra/.env.<mode> (Manage keys & secrets → Fetch operator credentials)`,
+      `${warningMark} Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`,
     );
   }
   if (facts.unavailable.length > 0)
@@ -337,7 +356,8 @@ export async function printQuickFacts(context: {
       projectId: context.projectId || undefined,
     }),
   );
-  const hasStandingKey = Boolean(resolveOperatorIdentity().standing);
-  for (const line of formatQuickFacts(facts, { hasStandingKey })) console.info(line);
+  const identity = resolveOperatorIdentity();
+  const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';
+  for (const line of formatQuickFacts(facts, { configured })) console.info(line);
   console.info('');
 }

@@ -1,7 +1,7 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { CI_RULE_SHAPES } from '../lib/scaleway/permissions';
+import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
 import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
 import { isMain } from '../lib/utils/is-main';

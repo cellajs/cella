@@ -60,7 +60,7 @@ export async function expectDenied(name: string, run: () => Promise<unknown>): P
 }
 
 export interface ValidateOptions {
-  operatorS3: S3Client;
+  adminS3: S3Client;
   ciS3: S3Client;
   bucket: string;
   probeKey: string;
@@ -68,7 +68,7 @@ export interface ValidateOptions {
 }
 
 /**
- * Drive the H3 probe against the live bucket and return every check: the operator principal must
+ * Drive the H3 probe against the live bucket and return every check: the admin application must
  * keep full read/write, and the CI deploy key must retain read/write plus plain (recoverable)
  * DeleteObject while being denied `s3:DeleteObjectVersion` and `s3:PutBucketVersioning`. The probe
  * object lives under a dedicated prefix and is removed in a best-effort cleanup that also restores
@@ -76,25 +76,25 @@ export interface ValidateOptions {
  * the bucket with versioning suspended.
  */
 export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<PolicyCheck[]> {
-  const { operatorS3, ciS3, bucket, probeKey } = opts;
+  const { adminS3, ciS3, bucket, probeKey } = opts;
   const log = opts.log ?? ((msg: string) => console.info(msg));
   const checks: PolicyCheck[] = [];
 
   // Operator seeds two versions so a concrete noncurrent version exists for the CI denial check.
-  const put1 = await operatorS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-v1' }));
+  const put1 = await adminS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-v1' }));
   const noncurrentVersionId = put1.VersionId;
-  await operatorS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-v2' }));
+  await adminS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-v2' }));
 
   // (b) Operator keeps full read/write.
-  checks.push(await expectAllowed('operator: ListBucket', () => operatorS3.send(new ListBucketsCommand({}))));
+  checks.push(await expectAllowed('operator: ListBucket', () => adminS3.send(new ListBucketsCommand({}))));
   checks.push(
     await expectAllowed('operator: GetObject', () =>
-      operatorS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey })),
+      adminS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey })),
     ),
   );
   checks.push(
     await expectAllowed('operator: PutObject', () =>
-      operatorS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-op-write' })),
+      adminS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-op-write' })),
     ),
   );
 
@@ -144,12 +144,12 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
   // Best-effort cleanup with the operator key: purge every probe version + delete marker, then
   // restore versioning to Enabled in case the CI suspend attempt unexpectedly went through.
   try {
-    const listed = await operatorS3.send(new ListObjectVersionsCommand({ Bucket: bucket, Prefix: probeKey }));
+    const listed = await adminS3.send(new ListObjectVersionsCommand({ Bucket: bucket, Prefix: probeKey }));
     for (const v of [...(listed.Versions ?? []), ...(listed.DeleteMarkers ?? [])]) {
       if (v.Key && v.VersionId)
-        await operatorS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: v.Key, VersionId: v.VersionId }));
+        await adminS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: v.Key, VersionId: v.VersionId }));
     }
-    await operatorS3.send(
+    await adminS3.send(
       new PutBucketVersioningCommand({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }),
     );
   } catch (err) {
@@ -162,13 +162,11 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
 export async function main(): Promise<void> {
   const ciAccess = process.env.SCW_ACCESS_KEY;
   const ciSecret = process.env.SCW_SECRET_KEY;
-  const opAccess = process.env.SCW_OPERATOR_ACCESS_KEY;
-  const opSecret = process.env.SCW_OPERATOR_SECRET_KEY;
+  const adminAccess = process.env.SCW_ADMIN_ACCESS_KEY;
+  const adminSecret = process.env.SCW_ADMIN_SECRET_KEY;
   if (!ciAccess || !ciSecret) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY (the CI deploy key) must be set');
-  if (!opAccess || !opSecret) {
-    throw new Error(
-      'SCW_OPERATOR_ACCESS_KEY and SCW_OPERATOR_SECRET_KEY must be set (an API key on the operator IAM application)',
-    );
+  if (!adminAccess || !adminSecret) {
+    throw new Error('SCW_ADMIN_ACCESS_KEY and SCW_ADMIN_SECRET_KEY must be set (the admin application key)');
   }
 
   // Defaults to the staging stack: H3 validates the policy on staging before production cutover.
@@ -182,11 +180,11 @@ export async function main(): Promise<void> {
   const probeKey = `.policy-validation-probe/${crypto.randomUUID()}`;
   console.info(`Validating state-bucket policy on s3://${bucket} (${region})`);
   console.info(`  CI key:       ${ciAccess}`);
-  console.info(`  Operator key: ${opAccess}`);
+  console.info(`  Admin key:    ${adminAccess}`);
   console.info(`  Probe object: ${probeKey}\n`);
 
   const checks = await validateStateBucketPolicy({
-    operatorS3: await makeS3Client(region, opAccess, opSecret),
+    adminS3: await makeS3Client(region, adminAccess, adminSecret),
     ciS3: await makeS3Client(region, ciAccess, ciSecret),
     bucket,
     probeKey,

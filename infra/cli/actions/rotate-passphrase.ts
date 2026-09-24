@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { syncGithubEnvironment } from '../../lib/github-sync';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import {
   generatePassphrase,
   supportsStdinPassphraseRotation,
@@ -29,7 +29,7 @@ import {
 export async function runRotatePassphrase(context: InfraContext): Promise<void> {
   if (!context.stackYaml || !/^encryptionsalt:/m.test(context.stackYaml)) {
     console.error(
-      `${warningMark} "Rotate passphrase" requires an existing stack with encrypted state (state=${context.state}). A fresh bootstrap generates its own passphrase.`,
+      `${warningMark} "Rotate passphrase" requires an existing stack with encrypted state (state=${context.state}). A fresh setup generates its own passphrase.`,
     );
     process.exit(1);
   }
@@ -44,14 +44,16 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(
     pc.dim(
-      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched; any key with state-bucket access works (no bootstrap key needed).\n',
+      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched; the admin application key is enough (no Owner API key needed).\n',
     ),
   );
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  // The state identity is enough: the admin key from infra/.env.<mode> (the deprecated SCW_STATE_* pair still wins while set).
-  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().state, 'admin');
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
+  );
   const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, {

@@ -9,7 +9,7 @@ import { getFlag } from './args';
 
 /**
  * Pulumi resource types only a bootstrap key may write: the database and its privileges, IAM, the VPC and private network, and the state bucket's
- * own policy (bucket-config writes on it are reserved to the operator principal). Matched as URN-type prefixes; everything else a CI deploy applies itself.
+ * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
  */
 const PRIVILEGED_URN_TYPES = [
   'scaleway:databases/',

@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
@@ -16,8 +16,8 @@ import {
 
 /**
  * Read-only `pulumi preview` of what "Apply infra change" would apply, authenticating the provider from SCW_* env, not stack config, so it also
- * validates that env-based auth resolves. The standing admin key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
- * It builds the same environment as the privileged converge (organization id, state identity, privileged marker). A CI deploy applies the same
+ * validates that env-based auth resolves. The admin application key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
+ * It builds the same environment as the privileged converge (organization id, privileged marker). A CI deploy applies the same
  * diff except the VM policy rules, which only a privileged run reconciles, so one simulation covers both.
  */
 export async function runPreview(context: InfraContext): Promise<void> {
@@ -35,8 +35,10 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId, appConfig } = context;
 
-  const identity = resolveOperatorIdentity();
-  const { accessKey, secretKey } = await keyPairOrPrompt(identity.standing, 'admin');
+  const { accessKey, secretKey } = await keyPairOrPrompt(
+    resolveOperatorIdentity().admin,
+    'Scaleway admin application key',
+  );
 
   const targetStack = stackNameFor(context);
 
@@ -51,16 +53,8 @@ export async function runPreview(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  // Same state identity as Apply: the deprecated SCW_STATE_* override, else the standing key, which the admin application's key serves on both sides.
-  const previewEnv = buildProviderEnv(infraDir, {
-    accessKey,
-    secretKey,
-    projectId,
-    passphrase,
-    organizationId,
-    stateAccessKey: identity.state?.accessKey,
-    stateSecretKey: identity.state?.secretKey,
-  });
+  // The admin application key serves both sides: the provider reads and the state bucket, which admits it.
+  const previewEnv = buildProviderEnv(infraDir, { accessKey, secretKey, projectId, passphrase, organizationId });
   // The program diffs VM policy rules only under this marker, and that diff is the one an operator is here to see.
   previewEnv[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);

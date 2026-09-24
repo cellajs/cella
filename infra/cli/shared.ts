@@ -18,7 +18,7 @@ export type CliMode =
   | 'resume'
   | 'rotate'
   | 'rotate-passphrase'
-  | 'fetch-credentials'
+  | 'fetch-admin-key'
   | 'store-passphrase'
   | 'apply'
   | 'preview'
@@ -47,7 +47,7 @@ export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE =
 
 /**
  * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
- * They differ only for required inputs such as the bootstrap key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
+ * They differ only for required inputs such as the Owner API key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
  */
 export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
 
@@ -113,7 +113,7 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
 }
 
 /**
- * Bootstrap-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
+ * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
  * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
 export async function resolveOrCreatePassphrase(
@@ -138,14 +138,14 @@ export function stackNameFor(context: Pick<InfraContext, 'environment'>): string
   return process.env.INFRA_STACK_NAME?.trim() || `organization/infra/${context.environment}`;
 }
 
-/** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`admin`, `bootstrap`). */
-export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string): Promise<KeyPair> {
+/** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`Scaleway Owner API key`); `hint` says where to get one. */
+export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, hint?: string): Promise<KeyPair> {
   if (pair) return pair;
   const accessKey = await input({
-    message: `Scaleway ${label} access key`,
+    message: `${label}, access key${hint ? ` (${hint})` : ''}`,
     validate: (value) => !!value.trim() || '(required)',
   });
-  const secretKey = await maskedSecret({ message: `Scaleway ${label} secret key` });
+  const secretKey = await maskedSecret({ message: `${label}, secret key` });
   return { accessKey, secretKey };
 }
 
@@ -164,7 +164,7 @@ export function pulumiLoginAndSelect(
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ACCESS_KEY / SCW_SECRET_KEY (Manage keys & secrets → Fetch operator credentials).`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (Manage keys & secrets → Fetch admin application key).`,
     );
     process.exit(login.status ?? 1);
   }

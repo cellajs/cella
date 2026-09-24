@@ -32,20 +32,20 @@ export function resolveOrganizationIdFromEnv(env: NodeJS.ProcessEnv = process.en
 
 /** Inputs for {@link buildProviderEnv}. */
 export interface ProviderEnvInput {
-  /** Scaleway provider credentials (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY`). */
+  /** The key the Scaleway provider authenticates with (`SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the provider reads). */
   accessKey: string;
   secretKey: string;
   projectId: string;
   /** Pulumi state passphrase (`PULUMI_CONFIG_PASSPHRASE`). */
   passphrase: string;
-  /** Credentials for the S3-protocol Pulumi state backend (`AWS_*`). Default to the provider credentials; override only when the backend needs a separate key. */
+  /** The key for the S3-protocol Pulumi state backend (`AWS_*`). Defaults to the provider key; set it when the state bucket admits a different one (the admin application key). */
   stateAccessKey?: string;
   stateSecretKey?: string;
   /** Optional Scaleway organization id (`SCW_DEFAULT_ORGANIZATION_ID`). */
   organizationId?: string;
 }
 
-/** Build a child environment with explicit Scaleway, S3-state, and Pulumi credentials, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */
+/** Build a child environment with an explicit Scaleway key, state-backend key and Pulumi passphrase, with local Scaleway profiles disabled so operator configuration cannot shadow the supplied identity. */
 export function buildProviderEnv(infraDir: string, input: ProviderEnvInput): NodeJS.ProcessEnv {
   const { accessKey, secretKey, projectId, passphrase, organizationId } = input;
   const stateAccessKey = input.stateAccessKey ?? accessKey;

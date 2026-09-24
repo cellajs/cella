@@ -10,7 +10,7 @@ import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
-import { runFetchCredentials } from './actions/fetch-credentials';
+import { runFetchAdminKey } from './actions/fetch-admin-key';
 import { runGeoipRefresh } from './actions/geoip-refresh';
 import { runPreview } from './actions/preview';
 import { runResetDatabase } from './actions/reset-database';
@@ -31,7 +31,7 @@ loadBaseEnvFiles();
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
  * otherwise the only existing stack file wins silently, two existing stack files ask once (and fail non-interactively), and with no stack
  * file an interactive install asks, defaulting to staging.
- * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production credentials from backend/.env.
+ * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
  */
 async function resolveMode(): Promise<'production' | 'staging'> {
   const flagIndex = process.argv.indexOf('--mode');
@@ -110,8 +110,9 @@ const context = await loadContext();
 
 console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`);
 
-// One line per credential misconfiguration (deprecated SCW_STATE_*, a bootstrap slot holding the standing key, …) before any action trips over it.
-for (const warning of resolveOperatorIdentity().warnings) console.warn(`${warningMark} ${warning}`);
+// One line per key misconfiguration (a superseded name in the env file, SCW_OWNER_* holding the admin key, …) before any action trips over it.
+for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings])
+  console.warn(`${warningMark} ${warning}`);
 
 const deferredSince = detectComputeDeferred(context.stackYaml);
 if (deferredSince) {
@@ -162,7 +163,8 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
       {
         name: 'Rotate keys',
         value: 'rotate',
-        description: 'Replace the CI deploy key with a fresh one.',
+        description:
+          'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
       },
       {
         name: 'Rotate passphrase',
@@ -175,9 +177,10 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         description: 'List, set, rotate, or delete the runtime secrets.',
       },
       {
-        name: 'Fetch operator credentials',
-        value: 'fetch-credentials',
-        description: 'Put the admin key in infra/.env.<mode> on this machine (needs a bootstrap key once).',
+        name: 'Fetch admin application key',
+        value: 'fetch-admin-key',
+        description:
+          'Put the admin application key in infra/.env.<mode> on this machine (needs your Owner API key once).',
       },
       {
         name: 'Store passphrase in keychain',
@@ -198,7 +201,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
         name: 'Apply infra change',
         value: 'apply',
         description:
-          'Apply bootstrap-owned changes: registry IAM principals and policies, database, VPC, network (needs a bootstrap key).',
+          'Apply privileged changes: registry IAM principals and policies, database, VPC, network (needs your Owner API key).',
       },
       {
         name: 'Preview',
@@ -329,8 +332,8 @@ if (mode === 'unlock') {
   process.exit(0);
 }
 
-if (mode === 'fetch-credentials') {
-  await runFetchCredentials(context);
+if (mode === 'fetch-admin-key') {
+  await runFetchAdminKey(context);
   process.exit(0);
 }
 

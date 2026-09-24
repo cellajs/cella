@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
-import { buildProviderEnv } from '../../lib/scaleway/bootstrap-scw-env';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
+import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import {
   deleteApplicationCascade,
   deleteGroup,
@@ -19,13 +19,12 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
-import { acquireBootstrapKey } from './bootstrap-key';
-import { printRevokeReminder } from './privileged-converge';
+import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
 
 /**
  * Destroy an environment: state-backend login, AWS_ and SCW_ env mapping, stack selection, `destroy --refresh`, then optional IAM principal cleanup.
- * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes a bootstrap key the way Apply does (supplied, minted from
- * SCW_OWNER_*, or prompted; validated first). Production stacks require typing `<slug>-production`, and their frontend/private buckets carry
+ * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes the Owner API key the way Apply does (from SCW_OWNER_*
+ * or a prompt, validated first). Production stacks require typing `<slug>-production`, and their frontend/private buckets carry
  * `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
  */
 export async function runTeardown(context: InfraContext): Promise<void> {
@@ -52,7 +51,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
 
   const identity = resolveOperatorIdentity();
-  const bootstrap = await acquireBootstrapKey({
+  const ownerKey = await acquireOwnerKey({
     identity,
     names: principalNames(appConfig.slug, mode),
     projectId: context.projectId,
@@ -60,41 +59,41 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     mode,
   });
   try {
-    await destroyStack(context, bootstrap, identity.state);
+    await destroyStack(context, ownerKey, identity.admin);
   } finally {
-    await bootstrap.release();
+    await ownerKey.release();
   }
-  if (!bootstrap.minted) printRevokeReminder();
+  if (ownerKey.pasted) printRevokeReminder();
 }
 
 async function destroyStack(
   context: InfraContext,
-  bootstrap: Awaited<ReturnType<typeof acquireBootstrapKey>>,
-  state: { accessKey: string; secretKey: string } | undefined,
+  ownerKey: OwnerKey,
+  admin: { accessKey: string; secretKey: string } | undefined,
 ): Promise<void> {
   const { appConfig } = context;
   const mode = context.environment;
   const confirmToken = `${appConfig.slug}-${mode}`;
-  const { accessKey, secretKey, organizationId } = bootstrap;
+  const { accessKey, secretKey, organizationId } = ownerKey;
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
 
-  // The state bucket admits only the admin and CI deploy applications, so the destroy key drives the provider while the standing key serves the state side, as in Apply.
+  // The state bucket admits only the admin and CI deploy applications, so the Owner API key drives the provider while the admin application key serves the state side, as in Apply.
   const env = buildProviderEnv(infraDir, {
     accessKey,
     secretKey,
     projectId: context.projectId,
     passphrase,
     organizationId,
-    stateAccessKey: state?.accessKey,
-    stateSecretKey: state?.secretKey,
+    stateAccessKey: admin?.accessKey,
+    stateSecretKey: admin?.secretKey,
   });
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey: state?.accessKey ?? accessKey,
-    secretKey: state?.secretKey ?? secretKey,
+    accessKey: admin?.accessKey ?? accessKey,
+    secretKey: admin?.secretKey ?? secretKey,
     stack: targetStack,
     operation: 'teardown',
   });

@@ -11,7 +11,7 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
     return session.scalewayFacts();
   },
   evaluate(facts, session) {
-    const creds = session.credentialsAvailable;
+    const creds = session.scalewayKeyAvailable;
     const bucket = check('state.bucket', 'State bucket', 'scaleway');
     const lock = check('state.lock', 'Stack lock', 'scaleway');
     const rollout = check('rollout', 'Rollout', 'scaleway');

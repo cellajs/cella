@@ -8,36 +8,38 @@ import { principalNames } from '../../lib/scaleway/principals';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
-import { writeModeEnvValues } from '../../lib/utils/env-files';
+import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/setup-admin-app';
 import type { InfraContext } from '../shared';
-import { acquireBootstrapKey } from './bootstrap-key';
-import { printRevokeReminder } from './privileged-converge';
+import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 /**
- * Put the standing admin key on this machine: read the `admin-key` pair setup custodied in Secret Manager with a bootstrap key, confirm it really
- * belongs to the admin application, and write it to infra/.env.<mode>. The one bootstrap moment a new operator machine needs.
+ * Put the admin application key on this machine: read the `admin-key` pair setup custodied in Secret Manager with the Owner API key, confirm it
+ * really belongs to the admin application, and write it to infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY. The one privileged
+ * moment a new operator machine needs.
  */
-export async function runFetchCredentials(context: InfraContext): Promise<void> {
+export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(
     pc.dim(
-      '\nFetch operator credentials: read the admin application key from Secret Manager with a bootstrap key and write it to infra/.env.<mode>.\n',
+      '\nFetch admin application key: read it from Secret Manager with your Owner API key and write it to infra/.env.<mode>.\n',
     ),
   );
-  const identity = resolveOperatorIdentity();
   const names = principalNames(appConfig.slug, context.environment);
-  const bootstrap = await acquireBootstrapKey({
-    identity,
+  const ownerKey = await acquireOwnerKey({
+    identity: resolveOperatorIdentity(),
     names,
     projectId,
     slug: appConfig.slug,
     mode: context.environment,
   });
-  const bootSecret = bootstrap.secretKey;
 
-  const secrets = createSecretManagerClient({ secretKey: bootSecret, region: appConfig.s3.region, projectId });
+  const secrets = createSecretManagerClient({
+    secretKey: ownerKey.secretKey,
+    region: appConfig.s3.region,
+    projectId,
+  });
   const container = await secrets.getSecretByName(
     ADMIN_KEY_SECRET_NAME,
     engineSecretPath(appConfig.slug, context.environment),
@@ -59,7 +61,7 @@ export async function runFetchCredentials(context: InfraContext): Promise<void> 
     process.exit(1);
   }
 
-  // Trust but verify: the secret is expected to hold the admin application's key, nothing else goes into the standing slot.
+  // Trust but verify: the secret is expected to hold the admin application's key, nothing else goes into SCW_ADMIN_*.
   const desc = await describeKey(pair);
   const role = classifyPrincipal(desc, names);
   if (role !== 'admin') {
@@ -68,16 +70,17 @@ export async function runFetchCredentials(context: InfraContext): Promise<void> 
     );
     process.exit(1);
   }
-  const written = writeModeEnvValues(context.environment, {
-    SCW_ACCESS_KEY: pair.accessKey,
-    SCW_SECRET_KEY: pair.secretKey,
-  });
-  console.info(`${checkMark} ${formatKeyLine(desc, role)}\n  written to ${written} as SCW_ACCESS_KEY / SCW_SECRET_KEY`);
-  if (identity.state?.source === 'SCW_STATE_*') {
-    console.info(
-      `  ${pc.dim('SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are no longer needed: remove them from the file.')}`,
-    );
+  const written = writeModeEnvValues(
+    context.environment,
+    { SCW_ADMIN_ACCESS_KEY: pair.accessKey, SCW_ADMIN_SECRET_KEY: pair.secretKey },
+    { remove: LEGACY_ADMIN_KEY_NAMES },
+  );
+  console.info(
+    `${checkMark} ${formatKeyLine(desc, role)}\n  written to ${written.path} as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY`,
+  );
+  if (written.removed.length > 0) {
+    console.info(`  ${pc.dim(`Removed the superseded ${written.removed.join(', ')} from the file.`)}`);
   }
-  await bootstrap.release();
-  if (!bootstrap.minted) printRevokeReminder();
+  await ownerKey.release();
+  if (ownerKey.pasted) printRevokeReminder();
 }

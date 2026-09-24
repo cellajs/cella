@@ -21,24 +21,63 @@ export function loadBaseEnvFiles(): void {
   }
 }
 
-/** Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key and Pulumi passphrase, so it is tightened to 0600 on sight. */
-export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): void {
+/** The names a mode env file used for the admin application key before 0.12: read as `SCW_ADMIN_*` with a rename warning, removed by the actions that write the admin key. */
+export const LEGACY_ADMIN_KEY_NAMES = [
+  'SCW_ACCESS_KEY',
+  'SCW_SECRET_KEY',
+  'SCW_STATE_ACCESS_KEY',
+  'SCW_STATE_SECRET_KEY',
+] as const;
+
+/**
+ * The values a parsed mode env file exports, and the warnings it earns. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
+ * the file: in it they meant the admin application key, which now travels as `SCW_ADMIN_*`, and in the process env they keep meaning the key the
+ * process was started with (a CI runner, a shell export).
+ */
+export function modeEnvValues(
+  parsed: Record<string, string>,
+  mode: string,
+): { values: Record<string, string>; warnings: string[] } {
+  const values = { ...parsed };
+  const warnings: string[] = [];
+  const legacy = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY'] as const;
+  if (legacy.some((name) => name in values)) {
+    if ('SCW_ADMIN_ACCESS_KEY' in values || 'SCW_ADMIN_SECRET_KEY' in values) {
+      warnings.push(
+        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are ignored because SCW_ADMIN_* is set; remove them.`,
+      );
+    } else {
+      if (values.SCW_ACCESS_KEY !== undefined) values.SCW_ADMIN_ACCESS_KEY = values.SCW_ACCESS_KEY;
+      if (values.SCW_SECRET_KEY !== undefined) values.SCW_ADMIN_SECRET_KEY = values.SCW_SECRET_KEY;
+      warnings.push(
+        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; rename them (Manage keys & secrets → Fetch admin application key rewrites the file).`,
+      );
+    }
+    for (const name of legacy) delete values[name];
+  }
+  return { values, warnings };
+}
+
+/**
+ * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key
+ * and the Pulumi passphrase, so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names).
+ */
+export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): string[] {
   // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
   const strayEnvPath = resolve(infraDir, '.env');
   if (existsSync(strayEnvPath))
-    log(
-      `${strayEnvPath} is not read: mode-scoped credentials live in infra/.env.${mode} (infra/README.md, Credentials files).`,
-    );
+    log(`${strayEnvPath} is not read: mode-scoped keys live in infra/.env.${mode} (infra/README.md, Key files).`);
   const modeEnvPath = resolve(infraDir, `.env.${mode}`);
-  if (!existsSync(modeEnvPath)) return;
+  if (!existsSync(modeEnvPath)) return [];
   const fileMode = statSync(modeEnvPath).mode;
   if ((fileMode & 0o077) !== 0) {
     chmodSync(modeEnvPath, 0o600);
-    log(`Tightened ${modeEnvPath} to 600 (was ${(fileMode & 0o777).toString(8)}): it carries live credentials.`);
+    log(`Tightened ${modeEnvPath} to 600 (was ${(fileMode & 0o777).toString(8)}): it carries a live secret key.`);
   }
-  for (const [key, value] of Object.entries(parseEnvFile(modeEnvPath)))
-    process.env[key] = resolveSecretReference(key, value);
+  const { values, warnings } = modeEnvValues(parseEnvFile(modeEnvPath), mode);
+  for (const [key, value] of Object.entries(values)) process.env[key] = resolveSecretReference(key, value);
   log(`Loaded ${modeEnvPath} (mode-scoped env, overrides ambient values)`);
+  return warnings;
 }
 
 /** Minimal command runner, injectable for tests. */
@@ -129,30 +168,48 @@ export function modeEnvPath(mode: string): string {
 /**
  * Write (or update) values in a dotenv-style file, keeping every other line and comment as it is, creating the file mode 0600.
  * Values are written unquoted on one line each; a newline in a value is refused, as `isEnvFileDeliverable` would.
+ * `remove` drops the named keys (superseded names); the ones actually found are returned.
  */
-export function writeEnvValues(path: string, values: Record<string, string>): void {
+export function writeEnvValues(
+  path: string,
+  values: Record<string, string>,
+  opts: { remove?: readonly string[] } = {},
+): string[] {
   for (const [key, value] of Object.entries(values)) {
     if (/[\r\n]/.test(value)) throw new Error(`${key}: a value cannot span lines in ${path}`);
   }
   const lines = existsSync(path) ? readFileSync(path, 'utf8').split('\n') : [];
   if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
   const pending = new Map(Object.entries(values));
-  const out = lines.map((line) => {
+  const removable = new Set(opts.remove ?? []);
+  const removed: string[] = [];
+  const out: string[] = [];
+  for (const line of lines) {
     const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/);
     const key = match?.[1];
-    if (!key || !pending.has(key)) return line;
-    const value = pending.get(key) as string;
+    if (key && removable.has(key)) {
+      removed.push(key);
+      continue;
+    }
+    if (!key || !pending.has(key)) {
+      out.push(line);
+      continue;
+    }
+    out.push(`${key}=${pending.get(key) as string}`);
     pending.delete(key);
-    return `${key}=${value}`;
-  });
+  }
   for (const [key, value] of pending) out.push(`${key}=${value}`);
   writeFileSync(path, `${out.join('\n')}\n`, { mode: 0o600 });
   chmodSync(path, 0o600);
+  return removed;
 }
 
-/** Write values into `infra/.env.<mode>`, the file `loadModeEnvFile` reads. */
-export function writeModeEnvValues(mode: string, values: Record<string, string>): string {
+/** Write values into `infra/.env.<mode>`, the file `loadModeEnvFile` reads; `remove` drops superseded names. */
+export function writeModeEnvValues(
+  mode: string,
+  values: Record<string, string>,
+  opts: { remove?: readonly string[] } = {},
+): { path: string; removed: string[] } {
   const path = modeEnvPath(mode);
-  writeEnvValues(path, values);
-  return path;
+  return { path, removed: writeEnvValues(path, values, opts) };
 }

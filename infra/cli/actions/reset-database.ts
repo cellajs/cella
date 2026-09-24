@@ -14,8 +14,7 @@ import {
   serialConsoleSteps,
 } from '../../tasks/reset-database';
 import type { InfraContext } from '../shared';
-import { acquireBootstrapKey } from './bootstrap-key';
-import { printRevokeReminder } from './privileged-converge';
+import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
@@ -44,8 +43,8 @@ function describeTarget(target: ResetTarget, region: string): string {
 }
 
 /**
- * "Reset database": delete + recreate this app's logical database over the Scaleway API with a
- * bootstrap key, then re-grant both roles. The same-name recreate preserves Pulumi state without
+ * "Reset database": delete + recreate this app's logical database over the Scaleway API with the
+ * Owner API key, then re-grant both roles. The same-name recreate preserves Pulumi state without
  * exposing the database.
  */
 export async function runResetDatabase(context: InfraContext): Promise<void> {
@@ -62,15 +61,15 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
-  // A bootstrap-owned write, so the same key flow as Apply: supplied, minted from SCW_OWNER_*, or prompted, and validated first.
-  const bootstrap = await acquireBootstrapKey({
+  // A privileged write, so the same key flow as Apply: the Owner API key from SCW_OWNER_* or a prompt, validated first.
+  const ownerKey = await acquireOwnerKey({
     identity: resolveOperatorIdentity(),
     names: principalNames(appConfig.slug, context.environment),
     projectId: context.projectId,
     slug: appConfig.slug,
     mode: context.environment,
   });
-  const client = createRdbClient({ secretKey: bootstrap.secretKey, region });
+  const client = createRdbClient({ secretKey: ownerKey.secretKey, region });
   const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 
   try {
@@ -109,10 +108,10 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
     console.info(serialConsoleSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
-    await bootstrap.release();
-    if (!bootstrap.minted) printRevokeReminder();
+    await ownerKey.release();
+    if (ownerKey.pasted) printRevokeReminder();
   } catch (error) {
-    await bootstrap.release();
+    await ownerKey.release();
     if (error instanceof ResetIrrecoverableError) {
       console.error(`\n${restoreHint(error, region)}\n`);
       process.exit(1);

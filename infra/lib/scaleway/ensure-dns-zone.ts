@@ -3,7 +3,7 @@ import { nonInteractive } from '../../cli/shared';
 import { checkMark, pc, tildeMark, warningMark } from '../utils/cli-output';
 import { errorMessage } from '../utils/errors';
 import { isMain } from '../utils/is-main';
-import { resolveProjectId } from './bootstrap-scw-env';
+import { resolveProjectId } from './provider-env';
 
 const BASE = 'https://api.scaleway.com/domain/v2beta1';
 const CHALLENGE_NAME = '_scaleway-challenge';

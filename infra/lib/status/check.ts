@@ -58,16 +58,17 @@ export function check(id: string, title: string, credential: CredentialTier = 'n
   };
 }
 
-/** Evaluate a `scaleway`-tier probe result: `unknown` without credentials or
+/** Evaluate a `scaleway`-tier probe result: `unknown` without a key or
  *  when the gatherer left the value undefined (the probe could not run). */
 export function probed<T>(
   builder: CheckBuilder,
-  credentialsAvailable: boolean,
+  scalewayKeyAvailable: boolean,
   value: T | undefined,
   unknownDetail: string,
   evaluate: (value: T) => Check,
 ): Check {
-  if (!credentialsAvailable) return builder.unknown('no SCW_*/AWS_* credentials available to this run');
+  if (!scalewayKeyAvailable)
+    return builder.unknown('no Scaleway key available to this run (SCW_ADMIN_*, SCW_* or AWS_*)');
   if (value === undefined) return builder.unknown(unknownDetail);
   return evaluate(value);
 }

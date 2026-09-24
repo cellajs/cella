@@ -1,5 +1,4 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
-import { resolveOrganizationIdFromEnv } from './bootstrap-scw-env';
 import {
   createApiKey,
   deleteApiKey,
@@ -11,6 +10,7 @@ import {
 } from './iam-client';
 import { DNS_PERMISSION_SETS } from './permissions';
 import { principalNames, principalTags } from './principals';
+import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch, scwSend } from './scw-fetch';
 
 /** A Scaleway permissions_denied error (403), regardless of resource. */

@@ -9,9 +9,6 @@ export interface KeyPair {
   secretKey: string;
 }
 
-/** Which env pair supplied a key, for diagnostics. */
-export type KeySource = 'SCW_*' | 'SCW_STATE_*' | 'SCW_BOOTSTRAP_*';
-
 /** All-or-nothing env pair: a half-set pair is a configuration error, never a fallback (an access key from one pair with the secret of another produced unexplainable 403s). */
 export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar: string): KeyPair | undefined {
   const accessKey = env[accessVar]?.trim() || undefined;
@@ -21,22 +18,22 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 }
 
 /**
- * Every credential an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
- * - `standing`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` from infra/.env.<mode>, the admin application's key. Provider reads and the state bucket.
- * - `state`: the identity for every state-bucket touch (login, lock, control object). The deprecated `SCW_STATE_*` override wins, else the standing key.
- * - `bootstrap`: `SCW_BOOTSTRAP_ACCESS_KEY` / `SCW_BOOTSTRAP_SECRET_KEY` when supplied via env; privileged actions prompt otherwise.
+ * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
+ * - `admin`: `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` from infra/.env.<mode>, the admin application's key: provider reads and the state bucket.
+ * - `owner`: `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY`, the Owner API key (usually a `keychain:`/`op:` reference). Privileged actions use it,
+ *   or mint a short-lived key from it, and prompt for one when it is absent.
+ * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI runner, a shell export): shown in diagnostics, never written to the env file.
+ * Deprecated pairs are read for one more release with a rename warning: `SCW_STATE_*` as the admin key, `SCW_BOOTSTRAP_*` as the Owner API key.
  */
 export interface OperatorIdentity {
-  standing?: KeyPair & { source: 'SCW_*' };
-  state?: KeyPair & { source: 'SCW_*' | 'SCW_STATE_*' };
-  bootstrap?: KeyPair & { source: 'SCW_BOOTSTRAP_*' };
-  /** `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY`: an organization Owner's standing key, usually a `keychain:`/`op:` reference, from which privileged actions mint a short-lived bootstrap key. */
-  owner?: KeyPair & { source: 'SCW_OWNER_*' };
+  admin?: KeyPair & { source: 'SCW_ADMIN_*' | 'SCW_STATE_*' };
+  owner?: KeyPair & { source: 'SCW_OWNER_*' | 'SCW_BOOTSTRAP_*' };
+  ambient?: KeyPair;
   /** Deprecated or suspicious configuration, for the CLI to print once. */
   warnings: string[];
 }
 
-/** Like {@link envKeyPair}, but a half-set pair is reported through `warnings` and treated as absent: the standing key is optional (actions prompt), so it must not abort the CLI at startup. */
+/** Like {@link envKeyPair}, but a half-set pair is reported through `warnings` and treated as absent: every pair is optional (actions prompt), so none may abort the CLI at startup. */
 function optionalKeyPair(
   env: NodeJS.ProcessEnv,
   accessVar: string,
@@ -53,44 +50,50 @@ function optionalKeyPair(
 
 export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): OperatorIdentity {
   const warnings: string[] = [];
-  const standing = optionalKeyPair(env, 'SCW_ACCESS_KEY', 'SCW_SECRET_KEY', warnings);
-  const stateOverride = envKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY');
-  if (stateOverride) {
+
+  const adminPair = optionalKeyPair(env, 'SCW_ADMIN_ACCESS_KEY', 'SCW_ADMIN_SECRET_KEY', warnings);
+  let admin: OperatorIdentity['admin'] = adminPair ? { ...adminPair, source: 'SCW_ADMIN_*' } : undefined;
+  const statePair = optionalKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY', warnings);
+  if (statePair) {
+    if (admin) {
+      warnings.push(
+        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated and ignored because SCW_ADMIN_* is set: remove the SCW_STATE_* pair.',
+      );
+    } else {
+      admin = { ...statePair, source: 'SCW_STATE_*' };
+      warnings.push(
+        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated: rename them to SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (the admin application key).',
+      );
+    }
+  }
+
+  const ambient = optionalKeyPair(env, 'SCW_ACCESS_KEY', 'SCW_SECRET_KEY', warnings);
+
+  const ownerPair = optionalKeyPair(env, 'SCW_OWNER_ACCESS_KEY', 'SCW_OWNER_SECRET_KEY', warnings);
+  let owner: OperatorIdentity['owner'] = ownerPair ? { ...ownerPair, source: 'SCW_OWNER_*' } : undefined;
+  // `SCW_BOOTSTRAP_*` named this key until 0.12, and `SCW_BOOTSTRAP_KEY` is the misspelling operators reached for.
+  const legacyEnv: NodeJS.ProcessEnv = { ...env };
+  if (!legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY?.trim() && legacyEnv.SCW_BOOTSTRAP_KEY?.trim()) {
+    legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY = legacyEnv.SCW_BOOTSTRAP_KEY;
+  }
+  const legacyOwner = optionalKeyPair(legacyEnv, 'SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_BOOTSTRAP_SECRET_KEY', warnings);
+  if (legacyOwner) {
+    if (owner) {
+      warnings.push('SCW_BOOTSTRAP_* is ignored because SCW_OWNER_* is set: remove the SCW_BOOTSTRAP_* pair.');
+    } else {
+      owner = { ...legacyOwner, source: 'SCW_BOOTSTRAP_*' };
+      warnings.push(
+        'SCW_BOOTSTRAP_* is read as SCW_OWNER_ACCESS_KEY / SCW_OWNER_SECRET_KEY (the Owner API key): rename it.',
+      );
+    }
+  }
+
+  if (owner && admin && owner.accessKey === admin.accessKey) {
     warnings.push(
-      stateOverride.accessKey === standing?.accessKey
-        ? 'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY repeat SCW_ACCESS_KEY / SCW_SECRET_KEY: remove the SCW_STATE_* pair, it is no longer needed.'
-        : 'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated: put the admin application key in SCW_ACCESS_KEY / SCW_SECRET_KEY (it is admitted to the state bucket) and remove the SCW_STATE_* pair.',
+      'SCW_OWNER_* holds the same key as SCW_ADMIN_*: the Owner API key is your own user key as organization Owner, not the admin application key.',
     );
   }
-  // `SCW_BOOTSTRAP_KEY` is the misspelling operators reach for; honour it and nudge them to rename it.
-  const bootstrapEnv: NodeJS.ProcessEnv = { ...env };
-  if (!bootstrapEnv.SCW_BOOTSTRAP_ACCESS_KEY?.trim() && bootstrapEnv.SCW_BOOTSTRAP_KEY?.trim()) {
-    bootstrapEnv.SCW_BOOTSTRAP_ACCESS_KEY = bootstrapEnv.SCW_BOOTSTRAP_KEY;
-    warnings.push('SCW_BOOTSTRAP_KEY is read as SCW_BOOTSTRAP_ACCESS_KEY: rename it.');
-  }
-  const bootstrap = envKeyPair(bootstrapEnv, 'SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_BOOTSTRAP_SECRET_KEY');
-  const owner = envKeyPair(env, 'SCW_OWNER_ACCESS_KEY', 'SCW_OWNER_SECRET_KEY');
-  if (owner && standing && owner.accessKey === standing.accessKey) {
-    warnings.push(
-      'SCW_OWNER_* holds the same key as SCW_ACCESS_KEY: the Owner key must be your own Personal API Key, not the admin application key.',
-    );
-  }
-  if (bootstrap && standing && bootstrap.accessKey === standing.accessKey) {
-    warnings.push(
-      'SCW_BOOTSTRAP_* holds the same key as SCW_ACCESS_KEY: a bootstrap key must be a separate, short-lived Owner key.',
-    );
-  }
-  return {
-    standing: standing ? { ...standing, source: 'SCW_*' } : undefined,
-    state: stateOverride
-      ? { ...stateOverride, source: 'SCW_STATE_*' }
-      : standing
-        ? { ...standing, source: 'SCW_*' }
-        : undefined,
-    bootstrap: bootstrap ? { ...bootstrap, source: 'SCW_BOOTSTRAP_*' } : undefined,
-    owner: owner ? { ...owner, source: 'SCW_OWNER_*' } : undefined,
-    warnings,
-  };
+  return { admin, owner, ambient, warnings };
 }
 
 /** Who bears an API key: an organization Owner, a member user, or an IAM application. */
@@ -108,8 +111,8 @@ export interface KeyDescription {
 }
 
 /**
- * Describe an API key by asking IAM who bears it, authenticating with the key itself (every engine principal and every Owner key holds IAM read).
- * A key that cannot read IAM throws: it is neither an engine principal nor bootstrap-capable, and the caller says so.
+ * Describe an API key by asking IAM who bears it, authenticating with the key itself (every application the engine creates and every Owner key
+ * holds IAM read). A key that cannot read IAM throws: it is neither an engine application nor an Owner API key, and the caller says so.
  */
 export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike } = {}): Promise<KeyDescription> {
   const auth: IamAuth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
@@ -169,12 +172,15 @@ export function hoursUntilExpiry(desc: KeyDescription, now = Date.now()): number
   return (Date.parse(desc.expiresAt) - now) / 3_600_000;
 }
 
+/** Where an Owner API key comes from, for every message that tells the operator how to get one. */
+export const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your user → API keys)';
+
 /**
- * A bootstrap key must be able to write IAM policies and bootstrap-owned resources: an organization Owner, or a principal granted IAMManager.
- * Engine principals are rejected by name with the exact reason, so a CI or admin key pasted at the bootstrap prompt fails here, in a second and
- * before any lock is taken.
+ * A privileged run must be able to write IAM policies and privileged resources: an organization Owner, or a principal granted IAMManager.
+ * Applications the engine created are rejected by name with the exact reason, so a CI or admin key pasted at the Owner API key prompt fails
+ * here, in a second and before any lock is taken.
  */
-export async function assertBootstrapCapable(opts: {
+export async function assertIamManager(opts: {
   pair: KeyPair;
   names: PrincipalNames;
   organizationId: string;
@@ -185,13 +191,13 @@ export async function assertBootstrapCapable(opts: {
     desc = await describeKey(opts.pair, { fetchImpl: opts.fetchImpl });
   } catch (error) {
     throw new Error(
-      `The supplied bootstrap key cannot describe itself in IAM (${error instanceof Error ? error.message : String(error)}). A bootstrap key is a fresh Personal API Key of an organization Owner, or a key of an application holding ProjectManager + IAMManager.`,
+      `The supplied key cannot describe itself in IAM (${error instanceof Error ? error.message : String(error)}). An Owner API key is ${OWNER_KEY_HOWTO}, or the key of an application holding ProjectManager + IAMManager.`,
     );
   }
   const role = classifyPrincipal(desc, opts.names);
   if (role === 'ci-deploy' || role === 'admin' || role === 'boot' || role === 'vm-service') {
     throw new Error(
-      `${formatKeyLine(desc, role)} is an engine principal, not a bootstrap key. It cannot write IAM policies or database privileges. Generate a fresh Personal API Key as an organization Owner (console → user menu → API keys) and paste that.`,
+      `${formatKeyLine(desc, role)} is an application the engine created, not an Owner API key: it cannot write IAM policies or database privileges. Use ${OWNER_KEY_HOWTO}.`,
     );
   }
   if (role === 'owner') return { desc, role };
@@ -209,6 +215,6 @@ export async function assertBootstrapCapable(opts: {
     if (rules.some((rule) => (rule.permission_set_names ?? []).includes('IAMManager'))) return { desc, role };
   }
   throw new Error(
-    `${formatKeyLine(desc, role)} holds no IAMManager grant, so it cannot reconcile VM policies. Use an organization Owner's Personal API Key, or grant the application ProjectManager + IAMManager.`,
+    `${formatKeyLine(desc, role)} holds no IAMManager grant, so it cannot reconcile VM policies. Use ${OWNER_KEY_HOWTO}, or grant the application ProjectManager + IAMManager.`,
   );
 }

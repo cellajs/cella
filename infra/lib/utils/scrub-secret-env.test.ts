@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { isSecretEnvKey, scrubSecretEnv } from './scrub-secret-env';
 
 describe('isSecretEnvKey', () => {
-  it('flags the deploy credential vars', () => {
+  it('flags the deploy secret vars', () => {
     for (const key of [
       'SCW_ACCESS_KEY',
       'SCW_SECRET_KEY',
+      'SCW_ADMIN_SECRET_KEY',
+      'SCW_OWNER_SECRET_KEY',
       'SCW_DEFAULT_PROJECT_ID',
       'PULUMI_CONFIG_PASSPHRASE',
       'GITHUB_TOKEN',

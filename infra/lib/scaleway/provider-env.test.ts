@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveOrganizationIdFromEnv, scwConfigPathNone } from './bootstrap-scw-env';
+import { resolveOrganizationIdFromEnv, scwConfigPathNone } from './provider-env';
 
 describe('scwConfigPathNone', () => {
   it('resolves relative to infraDir', () => {
