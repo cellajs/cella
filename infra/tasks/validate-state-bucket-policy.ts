@@ -9,7 +9,7 @@ import {
   type S3Client,
 } from '@aws-sdk/client-s3';
 import { makeS3Client } from '../lib/scaleway/s3-client';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 
 /** One key-vs-action probe and whether its outcome matched the policy expectation. */
 export interface PolicyCheck {
@@ -205,9 +205,4 @@ export async function main(): Promise<void> {
   console.info(`\n✓ All ${checks.length} checks passed: state-bucket policy validated (H3 (b) + (c)).`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

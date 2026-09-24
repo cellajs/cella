@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { adoptStateBackendEnv, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
@@ -159,9 +159,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   console.info(`✓ no bootstrap-owned change pending (${ciApplicable} CI-applicable change(s) in the plan)`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

@@ -1,5 +1,4 @@
-import { errorMessage } from '../lib/utils/errors';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { parseServiceRows } from '../lib/utils/service-rows';
 import { getFlag } from './args';
 import { type RolloutRuntime, runWavedRollout, type WavedRolloutPlan } from './rollout';
@@ -72,9 +71,4 @@ export async function main(
   await runWavedRollout(plan, makeRuntime({ stack: args.stack }));
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(errorMessage(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

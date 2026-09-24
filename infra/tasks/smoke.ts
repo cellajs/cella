@@ -8,7 +8,7 @@ import {
 } from '../lib/health-components';
 import { sleep as defaultSleep } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { pollUntil } from '../lib/utils/retry';
 import { parseServiceRows } from '../lib/utils/service-rows';
 import { getFlag } from './args';
@@ -322,9 +322,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (failed.length > 0) throw new Error(`${failed.length} smoke check(s) failed`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`::error::${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

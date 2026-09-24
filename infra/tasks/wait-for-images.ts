@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import type { ServiceName } from '../compose/compose';
 import { imageServiceNames } from '../lib/services';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { pollUntil } from '../lib/utils/retry';
 import { parseServiceRows } from '../lib/utils/service-rows';
 import { getFlag, getNumFlag, sleep } from './args';
@@ -179,9 +179,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (!outcome.ok) throw new Error(`Images never appeared: ${outcome.missing.join(', ')}`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`::error::${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

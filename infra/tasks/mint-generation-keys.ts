@@ -10,7 +10,7 @@ import {
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { handoffServicePath } from '../lib/scaleway/secret-paths';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /**
@@ -217,9 +217,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   });
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

@@ -1,6 +1,6 @@
 import { gunzipSync } from 'node:zlib';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag, getNumFlag } from './args';
 
 export type GeoipKind = 'country' | 'asn';
@@ -197,9 +197,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   );
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`✖ ${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

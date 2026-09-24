@@ -29,7 +29,7 @@ import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
@@ -203,12 +203,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   printReport(report, { json });
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);
 
 /** The cheap facts printed on CLI start, before any menu: what is locked, what is live, and which key this machine authenticates with. */
 export interface QuickFacts {

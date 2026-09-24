@@ -11,7 +11,7 @@ import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { getApiKey } from '../lib/scaleway/iam-client';
 import { makeS3Client } from '../lib/scaleway/s3-client';
 import type { ScwAuth } from '../lib/scaleway/scw-fetch';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 
 export type EnsureResult = 'exists' | 'created';
 
@@ -201,9 +201,4 @@ export async function main(): Promise<void> {
   else console.info(`Created Pulumi state bucket: s3://${bucketName} (${region})`);
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

@@ -6,7 +6,7 @@ import {
   resolveOrganizationIdViaProject,
 } from '../lib/scaleway/iam-client';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /** Permission sets that decrypt or enumerate secret values/metadata. */
@@ -204,9 +204,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);

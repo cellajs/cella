@@ -8,7 +8,7 @@ import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-stor
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { errorMessage } from '../lib/utils/errors';
-import { isMain } from '../lib/utils/is-main';
+import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { scrubSecretEnv } from '../lib/utils/scrub-secret-env';
 import { getFlag } from './args';
@@ -596,9 +596,4 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   await runDeploy(parseDeployArgs(argv), createRealEffects());
 }
 
-if (isMain(import.meta.url)) {
-  main().catch((err) => {
-    console.error(errorMessage(err));
-    process.exit(1);
-  });
-}
+runIfMain(import.meta.url, main);
