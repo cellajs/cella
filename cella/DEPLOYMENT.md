@@ -173,7 +173,7 @@ VM IAM principals and policies follow the **service registry** ([config/services
 ### 1. Prerequisites
 
 1. A domain, set as `appConfig.domain`, registered as external at https://console.scaleway.com/domains/external.
-2. The Pulumi CLI:
+2. The Pulumi CLI, at least at the version of the `@pulumi/pulumi` package in `infra/package.json` (CI installs exactly that version, and `pnpm infra` warns when yours is older):
 
    ```bash
    brew install pulumi/tap/pulumi

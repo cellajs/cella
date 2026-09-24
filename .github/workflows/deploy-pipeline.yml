@@ -203,16 +203,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
-        with:
-          pulumi-version: 3.236.0
-
       # Only the workspaces the deploy command touches (it builds the frontend
       # in-process): fewer packages and lifecycle scripts in the one job that
       # holds the deploy secrets.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared... --filter frontend...
+
+      - name: Install Pulumi CLI (at the SDK version)
+        uses: ./.github/actions/pulumi-cli
 
       - name: Deploy ${{ needs.setup.outputs.image_tag }} to ${{ needs.setup.outputs.environment }}
         env:
@@ -253,13 +251,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
-        with:
-          pulumi-version: 3.236.0
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Install Pulumi CLI (at the SDK version)
+        uses: ./.github/actions/pulumi-cli
 
       - name: Reap displaced generations in ${{ needs.setup.outputs.environment }}
         env:

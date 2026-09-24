@@ -227,15 +227,13 @@ jobs:
           node-version: 26
           cache: "pnpm"
 
-      - name: Install Pulumi CLI
-        if: env.SCW_ACCESS_KEY != ''
-        uses: pulumi/actions@8e5e406f4007fca908480587cb9893c07090f58d # v7.0.0
-        with:
-          pulumi-version: 3.236.0
-
       - name: Install dependencies
         if: env.SCW_ACCESS_KEY != ''
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Install Pulumi CLI (at the SDK version)
+        if: env.SCW_ACCESS_KEY != ''
+        uses: ./.github/actions/pulumi-cli
 
       - name: Preflight privileged changes
         if: env.SCW_ACCESS_KEY != ''
