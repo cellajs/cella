@@ -704,6 +704,20 @@
                   },
                   "createdAt": { "type": "string", "required": true },
                   "expiresAt": { "type": "string", "required": true },
+                  "revokedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "revokedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "revocationReason": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                  },
                   "isCurrent": { "type": "boolean", "required": true },
                   "isNewDevice": {
                     "type": "boolean",
@@ -771,6 +785,9 @@
               "ipCountry": null,
               "ipAsn": null,
               "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
+              "revokedAt": null,
+              "revokedBy": null,
+              "revocationReason": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -1043,16 +1060,99 @@
     ]
   },
   {
-    "operationId": "deleteMySessions",
+    "operationId": "revokeMySessions",
     "responses": [
       {
         "status": 200,
-        "description": "Success",
+        "description": "Sessions were revoked",
         "contentType": "application/json",
         "schema": {
           "type": "object",
           "properties": {
-            "data": { "type": "array", "required": true },
+            "data": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "required": true, "format": "uuid" },
+                  "type": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["regular", "impersonation", "mfa"]
+                  },
+                  "userId": { "type": "string", "required": true, "format": "uuid" },
+                  "deviceName": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["desktop", "mobile"]
+                  },
+                  "deviceOs": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "browser": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 255
+                  },
+                  "authStrategy": {
+                    "type": "string",
+                    "required": true,
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "ipHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipSubnetHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "ipCountry": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 2
+                  },
+                  "ipAsn": {
+                    "type": ["integer", "null"],
+                    "required": true,
+                    "minimum": -2147483648,
+                    "maximum": 2147483647
+                  },
+                  "deviceIdHash": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "maxLength": 64
+                  },
+                  "createdAt": { "type": "string", "required": true },
+                  "expiresAt": { "type": "string", "required": true },
+                  "revokedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "revokedBy": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "revocationReason": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                  }
+                }
+              }
+            },
             "rejectedIds": {
               "type": "array",
               "required": true,

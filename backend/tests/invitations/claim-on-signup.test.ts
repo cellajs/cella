@@ -73,7 +73,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     await inviteToNewOrganization(3);
     const user = await handleCreateUser({ var: { db } }, { newUser: newcomer });
 
-    expect(await markEmailVerified(db, { userId: user.id, email: invitedEmail, by: 'magic' })).toBe(true);
+    expect(await markEmailVerified(db, { userId: user.id, email: invitedEmail, via: 'magic' })).toBe(true);
 
     const pending = await pendingFor(invitedEmail);
     expect(pending).toHaveLength(3);
@@ -86,7 +86,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const someone = { email: 'someone-else@example.com', slug: 'someone', name: 'Someone', firstName: 'Someone' };
     const user = await handleCreateUser({ var: { db } }, { newUser: someone });
 
-    await markEmailVerified(db, { userId: user.id, email: someone.email, by: 'magic' });
+    await markEmailVerified(db, { userId: user.id, email: someone.email, via: 'magic' });
 
     const [untouched] = await pendingFor(invitedEmail);
     expect(untouched.userId).toBeNull();

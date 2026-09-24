@@ -68,7 +68,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 
   const { id } = ctx.req.valid('param');
 
-  // Remove passkey and conditionally disable MFA atomically
+  // Delete passkey and conditionally disable MFA atomically
   await baseDb.transaction(async (tx) => {
     await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
 
@@ -80,7 +80,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
     }
   });
 
-  sendAccountSecurityEmail(user, 'passkey-removed');
+  sendAccountSecurityEmail(user, 'passkey-deleted');
 
   return ctx.body(null, 204);
 });

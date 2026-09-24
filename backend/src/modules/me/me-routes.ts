@@ -7,6 +7,7 @@ import {
   meAuthDataSchema,
   mePendingInvitationSchema,
   meSchema,
+  sessionBaseSchema,
   toggleMfaBodySchema,
   uploadTokenQuerySchema,
   uploadTokenSchema,
@@ -133,15 +134,16 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  deleteMySessions: createXRoute({
-    operationId: 'deleteMySessions',
+  revokeMySessions: createXRoute({
+    operationId: 'revokeMySessions',
     method: 'delete',
     path: '/sessions',
     xGuard: [userGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['me', 'cella'],
-    summary: 'Terminate sessions',
-    description: 'Ends one or more sessions for the current user based on provided session IDs.',
+    summary: 'Revoke sessions',
+    description:
+      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
     request: {
       required: true,
       body: {
@@ -151,8 +153,8 @@ const meRoutes = {
 
     responses: {
       200: {
-        description: 'Success',
-        content: { 'application/json': { schema: batchResponseSchema() } },
+        description: 'Sessions were revoked',
+        content: { 'application/json': { schema: batchResponseSchema(sessionBaseSchema) } },
       },
       ...errorResponseRefs,
     },

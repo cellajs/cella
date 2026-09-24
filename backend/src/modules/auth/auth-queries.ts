@@ -1,7 +1,8 @@
 import { and, desc, eq, getColumns, gt, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { type SessionRevocationReason, sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -94,12 +95,13 @@ interface FindLatestSessionByUserOpts {
   userId: string;
 }
 
+/** The user's newest session that is not revoked: what stopping an impersonation hands the admin's browser back to. */
 export const findLatestSessionByUser = async (ctx: DbContext, { userId }: FindLatestSessionByUserOpts) => {
   const { db } = ctx.var;
   const [session] = await db
     .select()
     .from(sessionsTable)
-    .where(eq(sessionsTable.userId, userId))
+    .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt)))
     .orderBy(desc(sessionsTable.expiresAt))
     .limit(1);
   return session;
@@ -130,14 +132,25 @@ export const insertInvitationToken = async (ctx: DbContext, { values }: InsertIn
   return db.insert(tokensTable).values(values);
 };
 
-interface DeleteSessionOpts {
-  sessionId: string;
-  userId: string;
+interface RevokeSessionsOpts {
+  /** Which sessions; the live-row condition is added here. */
+  filters: SQL[];
+  reason: SessionRevocationReason;
+  /** Null when the server revokes during a sign-in. */
+  revokedBy: ActorId | null;
 }
 
-export const deleteSession = async (ctx: DbContext, { sessionId, userId }: DeleteSessionOpts) => {
+/**
+ * Stamps the live sessions matching the filters and returns them, secret stripped. A revoked session is never
+ * re-stamped, so the first revocation is the one the sessions list shows; the row itself stays until the sweep.
+ */
+export const revokeSessions = async (ctx: DbContext, { filters, reason, revokedBy }: RevokeSessionsOpts) => {
   const { db } = ctx.var;
-  return db.delete(sessionsTable).where(and(eq(sessionsTable.id, sessionId), eq(sessionsTable.userId, userId)));
+  return db
+    .update(sessionsTable)
+    .set({ revokedAt: getIsoDate(), revokedBy, revocationReason: reason })
+    .where(and(isNull(sessionsTable.revokedAt), ...filters))
+    .returning(sessionSafeColumns);
 };
 
 interface InsertPasskeyOpts {

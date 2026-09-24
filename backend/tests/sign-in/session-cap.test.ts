@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -36,11 +36,18 @@ async function insertSession(userId: string, type: SessionTypes, createdAtMs: nu
   return id;
 }
 
-const regularIds = (userId: string) =>
+/** Ids of the user's sessions that still authenticate: revoked rows stay in the table but no longer count. */
+const liveIds = (userId: string, type?: SessionTypes) =>
   db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), eq(sessionsTable.type, 'regular')))
+    .where(
+      and(
+        eq(sessionsTable.userId, userId),
+        isNull(sessionsTable.revokedAt),
+        type ? eq(sessionsTable.type, type) : undefined,
+      ),
+    )
     .then((rows) => new Set(rows.map((r) => r.id)));
 
 describe('per-user session cap (A1)', () => {
@@ -52,14 +59,19 @@ describe('per-user session cap (A1)', () => {
 
     await evictExcessSessions(user.id);
 
-    const remaining = await regularIds(user.id);
+    const remaining = await liveIds(user.id, 'regular');
     // Called just before an insert, it leaves cap-1 so the new row brings the total to exactly the cap.
     expect(remaining.size).toBe(TEST_CAP - 1);
-    // Survivors are the NEWEST cap-1; the oldest are gone.
+    // Survivors are the NEWEST cap-1; the oldest are revoked.
     expect(remaining.has(ids[4])).toBe(true);
     expect(remaining.has(ids[3])).toBe(true);
     expect(remaining.has(ids[0])).toBe(false);
     expect(remaining.has(ids[1])).toBe(false);
+
+    // The evicted rows stay, stamped as the server's own housekeeping.
+    const [evicted] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, ids[0]));
+    expect(evicted).toMatchObject({ revocationReason: 'session_cap', revokedBy: null });
+    expect(evicted.revokedAt).not.toBeNull();
   });
 
   it('counts mfa sessions toward the cap and never touches impersonation sessions', async () => {
@@ -72,8 +84,7 @@ describe('per-user session cap (A1)', () => {
 
     await evictExcessSessions(user.id);
 
-    const all = await db.select({ id: sessionsTable.id }).from(sessionsTable).where(eq(sessionsTable.userId, user.id));
-    const ids = new Set(all.map((r) => r.id));
+    const ids = await liveIds(user.id);
     expect(mfaIds.filter((id) => ids.has(id))).toEqual(mfaIds.slice(-(TEST_CAP - 1)));
     // The impersonation row is the oldest of all and still survives.
     expect(ids.has(imperId)).toBe(true);
@@ -86,6 +97,6 @@ describe('per-user session cap (A1)', () => {
 
     await evictExcessSessions(user.id);
 
-    expect((await regularIds(user.id)).size).toBe(TEST_CAP - 1);
+    expect((await liveIds(user.id, 'regular')).size).toBe(TEST_CAP - 1);
   });
 });

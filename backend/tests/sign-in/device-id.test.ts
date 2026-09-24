@@ -65,10 +65,15 @@ describe('device id on sign-in', async () => {
     const deviceCookie = setCookieLine(first, 'device-id')?.split(';')[0];
     await signIn(user, deviceCookie);
 
+    // The earlier session stays as a revoked row; only the newer one authenticates.
     const sessions = await sessionsOf(user.id);
-    expect(sessions).toHaveLength(1);
-    expect(sessions[0].id).not.toBe(firstSession.id);
-    expect(sessions[0].deviceIdHash).toBe(firstSession.deviceIdHash);
+    expect(sessions).toHaveLength(2);
+    const earlier = sessions.find((session) => session.id === firstSession.id);
+    const newer = sessions.find((session) => session.id !== firstSession.id);
+    expect(earlier).toMatchObject({ revocationReason: 'replaced', revokedBy: null });
+    expect(earlier?.revokedAt).not.toBeNull();
+    expect(newer?.revokedAt).toBeNull();
+    expect(newer?.deviceIdHash).toBe(firstSession.deviceIdHash);
   });
 
   it('keeps sessions from different browsers side by side', async () => {

@@ -7,7 +7,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { authEvents } from '#/modules/auth/auth-events';
-import { deleteSession, findInvitationToken, findLatestSessionByUser } from '#/modules/auth/auth-queries';
+import { findInvitationToken, findLatestSessionByUser, revokeSessions } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
@@ -17,6 +17,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -177,10 +178,14 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
   const { session: currentSession } = await validateSession(sessionToken);
 
-  await deleteSession(ctx, { sessionId: currentSession.id, userId: currentSession.userId });
+  await revokeSessions(ctx, {
+    filters: [eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)],
+    reason: 'sign_out',
+    revokedBy: currentSession.userId,
+  });
 
   invalidateCache.user(currentSession.userId);
-  authEvents.emit('session.deleted', { userId: currentSession.userId, sessionIds: [currentSession.id] });
+  authEvents.emit('session.revoked', { userId: currentSession.userId, sessionIds: [currentSession.id] });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);

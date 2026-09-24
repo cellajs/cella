@@ -78,7 +78,7 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
-  // Remove TOTP and conditionally disable MFA atomically
+  // Delete TOTP and conditionally disable MFA atomically
   await baseDb.transaction(async (tx) => {
     await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
 
@@ -90,7 +90,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
     }
   });
 
-  sendAccountSecurityEmail(user, 'totp-removed');
+  sendAccountSecurityEmail(user, 'totp-deleted');
 
   return ctx.body(null, 204);
 });

@@ -416,7 +416,7 @@ describe('OAuth Authentication', async () => {
       expect(verifiedAccount.verified).toBe(true);
 
       const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
-      expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedBy: 'github' });
+      expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedVia: 'github' });
       // The primary is untouched.
       const [primary] = await db.select().from(emailsTable).where(eq(emailsTable.email, 'local-account@example.com'));
       expect(primary.userId).toBe(user.id);
