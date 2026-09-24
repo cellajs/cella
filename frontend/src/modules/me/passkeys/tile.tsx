@@ -1,4 +1,4 @@
-import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, UnlinkIcon } from 'lucide-react';
+import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -11,12 +11,12 @@ import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
   passkey: Passkey;
-  handleUnlinkPasskey: (id: string) => void;
+  handleDeletePasskey: (id: string) => void;
   isPending: boolean;
   onlyPasskeyLeft: boolean;
 }
 
-export function PasskeyTile({ passkey, handleUnlinkPasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) {
+export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) {
   const { t } = useTranslation();
   const user = useCurrentUser();
 
@@ -80,10 +80,10 @@ export function PasskeyTile({ passkey, handleUnlinkPasskey, isPending, onlyPassk
           className="ml-auto text-sm"
           loading={isPending}
           disabled={user.mfaRequired && onlyPasskeyLeft}
-          onClick={() => handleUnlinkPasskey(passkey.id)}
+          onClick={() => handleDeletePasskey(passkey.id)}
         >
-          <UnlinkIcon />
-          <span className="ml-1 max-md:hidden">{t('c:unlink')}</span>
+          <TrashIcon />
+          <span className="ml-1 max-md:hidden">{t('c:delete')}</span>
         </Button>
       </CardContent>
     </Card>

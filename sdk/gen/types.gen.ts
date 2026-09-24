@@ -324,6 +324,9 @@ export type MeAuthData = {
     deviceIdHash: string | null;
     createdAt: string;
     expiresAt: string;
+    revokedAt: string | null;
+    revokedBy: string | null;
+    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -2591,7 +2594,7 @@ export type GetMyInvitationsResponses = {
 
 export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
 
-export type DeleteMySessionsData = {
+export type RevokeMySessionsData = {
   body?: {
     ids: Array<string>;
   };
@@ -2600,7 +2603,7 @@ export type DeleteMySessionsData = {
   url: '/me/sessions';
 };
 
-export type DeleteMySessionsErrors = {
+export type RevokeMySessionsErrors = {
   /**
    * Bad request: problem processing request.
    */
@@ -2627,14 +2630,33 @@ export type DeleteMySessionsErrors = {
   429: TooManyRequestsError;
 };
 
-export type DeleteMySessionsError = DeleteMySessionsErrors[keyof DeleteMySessionsErrors];
+export type RevokeMySessionsError = RevokeMySessionsErrors[keyof RevokeMySessionsErrors];
 
-export type DeleteMySessionsResponses = {
+export type RevokeMySessionsResponses = {
   /**
-   * Success
+   * Sessions were revoked
    */
   200: {
-    data: Array<unknown>;
+    data: Array<{
+      id: string;
+      type: 'regular' | 'impersonation' | 'mfa';
+      userId: string;
+      deviceName: string | null;
+      deviceType: 'desktop' | 'mobile';
+      deviceOs: string | null;
+      browser: string | null;
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic';
+      ipHash: string | null;
+      ipSubnetHash: string | null;
+      ipCountry: string | null;
+      ipAsn: number | null;
+      deviceIdHash: string | null;
+      createdAt: string;
+      expiresAt: string;
+      revokedAt: string | null;
+      revokedBy: string | null;
+      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+    }>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -2648,7 +2670,7 @@ export type DeleteMySessionsResponses = {
   };
 };
 
-export type DeleteMySessionsResponse = DeleteMySessionsResponses[keyof DeleteMySessionsResponses];
+export type RevokeMySessionsResponse = RevokeMySessionsResponses[keyof RevokeMySessionsResponses];
 
 export type DeleteMyMembershipData = {
   body?: never;

@@ -1,6 +1,7 @@
-import { and, eq, getColumns, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, getColumns, isNotNull, isNull, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
+import { revokeSessions } from '#/modules/auth/auth-queries';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -36,30 +37,20 @@ interface UpdateUserMfaOpts {
   mfaRequired: boolean;
 }
 
-/** Deletes regular sessions when enabling MFA. */
+/** Revokes every regular session when enabling MFA; the caller mints the mfa session that replaces them. */
 export const updateUserMfa = async (ctx: UserContext, { mfaRequired }: UpdateUserMfaOpts) => {
   const { db, userId } = ctx.var;
   const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, userId)).returning();
 
   if (updatedUser.mfaRequired) {
-    await db
-      .delete(sessionsTable)
-      .where(and(eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')));
+    await revokeSessions(ctx, {
+      filters: [eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')],
+      reason: 'mfa_enabled',
+      revokedBy: userId,
+    });
   }
 
   return updatedUser;
-};
-
-interface DeleteSessionsByIdsOpts {
-  sessionIds: string[];
-}
-
-export const deleteSessionsByIds = async (ctx: UserContext, { sessionIds }: DeleteSessionsByIdsOpts) => {
-  const { db, userId } = ctx.var;
-  return db
-    .delete(sessionsTable)
-    .where(and(inArray(sessionsTable.id, sessionIds), eq(sessionsTable.userId, userId)))
-    .returning({ id: sessionsTable.id });
 };
 
 export interface UpdateMeOpts {

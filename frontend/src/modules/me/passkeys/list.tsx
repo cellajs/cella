@@ -21,10 +21,10 @@ export function PasskeysList() {
   } = useSuspenseQuery(meAuthQueryOptions());
   const hasPasskey = passkeys.length > 0;
 
-  const handleUnlinkPasskey = (id: string) => {
+  const handleDeletePasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     if (user.mfaRequired && passkeys.length <= 1)
-      return toaster.info(t('c:unlink_mfa_last', { method: 'the last passkey' }));
+      return toaster.info(t('c:delete_mfa_last', { method: 'the last passkey' }));
     deletePasskey({ path: { id } });
   };
   return (
@@ -44,7 +44,7 @@ export function PasskeysList() {
             <PasskeyTile
               passkey={passkey}
               key={passkey.id}
-              handleUnlinkPasskey={handleUnlinkPasskey}
+              handleDeletePasskey={handleDeletePasskey}
               isPending={isPending}
               onlyPasskeyLeft={passkeys.length === 1}
             />

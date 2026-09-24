@@ -275,6 +275,9 @@ export const zMeAuthData = z.object({
       deviceIdHash: z.string().max(64).nullable(),
       createdAt: z.string(),
       expiresAt: z.string(),
+      revokedAt: z.string().nullable(),
+      revokedBy: z.uuid().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
       isCurrent: z.boolean(),
       isNewDevice: z.boolean(),
     }),
@@ -1076,15 +1079,36 @@ export const zGetMyInvitationsResponse = z.object({
   total: z.number(),
 });
 
-export const zDeleteMySessionsBody = z.object({
+export const zRevokeMySessionsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),
 });
 
 /**
- * Success
+ * Sessions were revoked
  */
-export const zDeleteMySessionsResponse = z.object({
-  data: z.array(z.unknown()),
+export const zRevokeMySessionsResponse = z.object({
+  data: z.array(
+    z.object({
+      id: z.uuid(),
+      type: z.enum(['regular', 'impersonation', 'mfa']),
+      userId: z.uuid(),
+      deviceName: z.string().max(255).nullable(),
+      deviceType: z.enum(['desktop', 'mobile']),
+      deviceOs: z.string().max(255).nullable(),
+      browser: z.string().max(255).nullable(),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic']),
+      ipHash: z.string().max(64).nullable(),
+      ipSubnetHash: z.string().max(64).nullable(),
+      ipCountry: z.string().max(2).nullable(),
+      ipAsn: z.int().gte(-2147483648).lte(2147483647).nullable(),
+      deviceIdHash: z.string().max(64).nullable(),
+      createdAt: z.string(),
+      expiresAt: z.string(),
+      revokedAt: z.string().nullable(),
+      revokedBy: z.uuid().nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+    }),
+  ),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
 });

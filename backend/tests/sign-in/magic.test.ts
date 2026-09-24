@@ -265,7 +265,7 @@ describe('Magic link authentication', async () => {
   describe('Proven secondary address', () => {
     it('signs in to the account that proved the address, creating no second user', async () => {
       const user = await createUser(signUpUser.email);
-      await addProvenEmail(db, { userId: user.id, email: 'work@example.com', by: 'github' });
+      await addProvenEmail(db, { userId: user.id, email: 'work@example.com', via: 'github' });
 
       const { response: res } = await call(sendMagicLink, {
         body: { email: 'work@example.com' },

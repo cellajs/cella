@@ -123,7 +123,7 @@ describe('Membership Invitation', async () => {
   it('binds an invitation sent to a proven secondary address of an existing user', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
     const existingUser = await createTestUser('primary@example.com');
-    await addProvenEmail(db, { userId: existingUser.id, email: 'work@example.com', by: 'github' });
+    await addProvenEmail(db, { userId: existingUser.id, email: 'work@example.com', via: 'github' });
 
     const { response: res, data } = await makeInviteRequest(
       organization.tenantId,

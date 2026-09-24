@@ -1441,6 +1441,17 @@
                 "expiresAt": {
                   "type": "string"
                 },
+                "revokedAt": {
+                  "type": ["string", "null"]
+                },
+                "revokedBy": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
+                "revocationReason": {
+                  "type": ["string", "null"],
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                },
                 "isCurrent": {
                   "type": "boolean"
                 },
@@ -1465,6 +1476,9 @@
                 "deviceIdHash",
                 "createdAt",
                 "expiresAt",
+                "revokedAt",
+                "revokedBy",
+                "revocationReason",
                 "isCurrent",
                 "isNewDevice"
               ]
@@ -1542,6 +1556,9 @@
               "ipCountry": null,
               "ipAsn": null,
               "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
+              "revokedAt": null,
+              "revokedBy": null,
+              "revocationReason": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -3261,7 +3278,7 @@
         "operationId": "signOut",
         "tags": ["auth", "cella"],
         "summary": "Sign out",
-        "description": "Signs out the current user and clears the active session.",
+        "description": "Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5616,6 +5633,9 @@
                       "ipCountry": null,
                       "ipAsn": null,
                       "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
+                      "revokedAt": null,
+                      "revokedBy": null,
+                      "revocationReason": null,
                       "isCurrent": true,
                       "isNewDevice": false
                     }
@@ -5796,10 +5816,10 @@
             "cookieAuth": []
           }
         ],
-        "operationId": "deleteMySessions",
+        "operationId": "revokeMySessions",
         "tags": ["me", "cella"],
-        "summary": "Terminate sessions",
-        "description": "Ends one or more sessions for the current user based on provided session IDs.",
+        "summary": "Revoke sessions",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5825,7 +5845,7 @@
         },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Sessions were revoked",
             "content": {
               "application/json": {
                 "schema": {
@@ -5833,7 +5853,101 @@
                   "properties": {
                     "data": {
                       "type": "array",
-                      "prefixItems": []
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": ["regular", "impersonation", "mfa"]
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "deviceName": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "deviceType": {
+                            "type": "string",
+                            "enum": ["desktop", "mobile"]
+                          },
+                          "deviceOs": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "browser": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                          },
+                          "authStrategy": {
+                            "type": "string",
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                          },
+                          "ipHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipSubnetHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "ipCountry": {
+                            "type": ["string", "null"],
+                            "maxLength": 2
+                          },
+                          "ipAsn": {
+                            "type": ["integer", "null"],
+                            "minimum": -2147483648,
+                            "maximum": 2147483647
+                          },
+                          "deviceIdHash": {
+                            "type": ["string", "null"],
+                            "maxLength": 64
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "string"
+                          },
+                          "revokedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "revokedBy": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
+                          },
+                          "revocationReason": {
+                            "type": ["string", "null"],
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "userId",
+                          "deviceName",
+                          "deviceType",
+                          "deviceOs",
+                          "browser",
+                          "authStrategy",
+                          "ipHash",
+                          "ipSubnetHash",
+                          "ipCountry",
+                          "ipAsn",
+                          "deviceIdHash",
+                          "createdAt",
+                          "expiresAt",
+                          "revokedAt",
+                          "revokedBy",
+                          "revocationReason"
+                        ]
+                      }
                     },
                     "rejectedIds": {
                       "type": "array",

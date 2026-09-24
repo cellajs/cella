@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, inArray, ne } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, ne } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,6 +8,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
+import { revokeSessions } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
@@ -40,9 +41,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
 };
 
 /**
- * Evicts the user's oldest active sessions before inserting one. Regular and mfa sessions count together, since an mfa session is the
- * full session of a user with MFA on; impersonation is left alone. Selecting both partition-key columns before deletion lets
- * PostgreSQL prune the target partition; concurrent sign-ins may exceed the cap by one.
+ * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
+ * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
+ * sign-ins may exceed the cap by one.
  */
 export const evictExcessSessions = async (userId: string): Promise<void> => {
   const excess = await db
@@ -53,6 +54,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
         eq(sessionsTable.userId, userId),
         ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
+        isNull(sessionsTable.revokedAt),
       ),
     )
     .orderBy(desc(sessionsTable.createdAt))
@@ -60,14 +62,21 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
 
   if (excess.length === 0) return;
 
-  await db.delete(sessionsTable).where(
-    inArray(
-      sessionsTable.id,
-      excess.map((s) => s.id),
-    ),
+  await revokeSessions(
+    { var: { db } },
+    {
+      filters: [
+        inArray(
+          sessionsTable.id,
+          excess.map((s) => s.id),
+        ),
+      ],
+      reason: 'session_cap',
+      revokedBy: null,
+    },
   );
 
-  log.info('Evicted sessions beyond per-user cap', { userId, count: excess.length });
+  log.info('Revoked sessions beyond per-user cap', { userId, count: excess.length });
 };
 
 /** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
@@ -152,16 +161,19 @@ export const createSession = async (
   if (type !== 'impersonation') {
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
-      await db
-        .delete(sessionsTable)
-        .where(
-          and(
+      await revokeSessions(
+        { var: { db } },
+        {
+          filters: [
             eq(sessionsTable.userId, user.id),
             eq(sessionsTable.deviceIdHash, session.deviceIdHash),
             ne(sessionsTable.type, 'impersonation'),
             gt(sessionsTable.expiresAt, getIsoDate()),
-          ),
-        );
+          ],
+          reason: 'replaced',
+          revokedBy: null,
+        },
+      );
     }
     await evictExcessSessions(user.id);
   }
@@ -214,7 +226,7 @@ export const setUserSession = async (
   if (type !== 'impersonation') log.info('User signed in', { strategy });
 };
 
-/** Returns the session (secret stripped) and its user; throws when the session is missing or expired. */
+/** Returns the session (secret stripped) and its user; throws when the session is missing, revoked or expired. The sweep removes dead rows. */
 export const validateSession = async (
   hashedSessionToken: string,
 ): Promise<{ session: SessionModel; user: UserWithCounters }> => {
@@ -228,14 +240,8 @@ export const validateSession = async (
 
   const { session, user } = result;
 
-  if (isExpiredDate(session.expiresAt)) {
-    // Fire-and-forget purge of the dead row: a failure must never change the auth outcome.
-    void db
-      .delete(sessionsTable)
-      .where(eq(sessionsTable.id, session.id))
-      .catch(() => {});
-    throw new AppError(401, 'session_expired', 'warn');
-  }
+  if (session.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
+  if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
   const { secret: _, ...safeSession } = session;
   return { session: safeSession, user };

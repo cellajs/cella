@@ -11,7 +11,11 @@ import { booleanTransformSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
-export const sessionSchema = createSelectSchema(sessionsTable).extend({
+/** A session row as stored, secret omitted: what a revoke returns. */
+export const sessionBaseSchema = createSelectSchema(sessionsTable);
+
+/** A session as the account page lists it. */
+export const sessionSchema = sessionBaseSchema.extend({
   isCurrent: z.boolean(),
   isNewDevice: z
     .boolean()

@@ -22,7 +22,8 @@ export const emailsTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     verifiedAt: timestamp({ mode: 'string' }), // First inbox proof
-    lastVerifiedBy: varchar({ length: maxLength.field }), // Most recent proof: 'magic' or the provider whose verification link was clicked
+    /** How the most recent proof came in: 'magic' or the provider whose verification link was clicked. Not an actor. */
+    lastVerifiedVia: varchar({ length: maxLength.field }),
     lastVerifiedAt: timestamp({ mode: 'string' }),
   },
   (table) => [index('emails_user_id_idx').on(table.userId)],

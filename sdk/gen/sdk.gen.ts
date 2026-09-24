@@ -62,9 +62,6 @@ import type {
   DeleteMyMembershipData,
   DeleteMyMembershipErrors,
   DeleteMyMembershipResponses,
-  DeleteMySessionsData,
-  DeleteMySessionsErrors,
-  DeleteMySessionsResponses,
   DeleteOrganizationsData,
   DeleteOrganizationsErrors,
   DeleteOrganizationsResponses,
@@ -229,6 +226,9 @@ import type {
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
+  RevokeMySessionsData,
+  RevokeMySessionsErrors,
+  RevokeMySessionsResponses,
   SelfCreateTenantData,
   SelfCreateTenantErrors,
   SelfCreateTenantResponses,
@@ -332,8 +332,6 @@ import {
   zDeleteMeResponse,
   zDeleteMyMembershipQuery,
   zDeleteMyMembershipResponse,
-  zDeleteMySessionsBody,
-  zDeleteMySessionsResponse,
   zDeleteOrganizationsBody,
   zDeleteOrganizationsPath,
   zDeleteOrganizationsResponse,
@@ -438,6 +436,8 @@ import {
   zRevokeApiKeyResponse,
   zRevokeConnectedAppPath,
   zRevokeConnectedAppResponse,
+  zRevokeMySessionsBody,
+  zRevokeMySessionsResponse,
   zSelfCreateTenantBody,
   zSelfCreateTenantResponse,
   zSendMagicLinkBody,
@@ -774,7 +774,7 @@ export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
 /**
  * Sign out
  *
- * Signs out the current user and clears the active session.
+ * Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.
  *
  * **POST /auth/sign-out** ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sign-out) ·· [signOut](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/sign-out) ·· _auth_cella_
  *
@@ -1840,29 +1840,29 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Terminate sessions
+ * Revoke sessions
  *
- * Ends one or more sessions for the current user based on provided session IDs.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.
  *
- * **DELETE /me/sessions** ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [deleteMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
+ * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *
- * @param {deleteMySessionsData} options
+ * @param {revokeMySessionsData} options
  * @param {any[]=} options.body.ids - `any[]` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
-export const deleteMySessions = <ThrowOnError extends boolean = true>(
-  options?: Options<DeleteMySessionsData, ThrowOnError>,
-): RequestResult<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).delete<DeleteMySessionsResponses, DeleteMySessionsErrors, ThrowOnError, 'data'>({
+export const revokeMySessions = <ThrowOnError extends boolean = true>(
+  options?: Options<RevokeMySessionsData, ThrowOnError>,
+): RequestResult<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).delete<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: zDeleteMySessionsBody.optional(),
+          body: zRevokeMySessionsBody.optional(),
           path: z.never().optional(),
           query: z.never().optional(),
         })
         .parseAsync(data),
-    responseValidator: async (data) => await zDeleteMySessionsResponse.parseAsync(data),
+    responseValidator: async (data) => await zRevokeMySessionsResponse.parseAsync(data),
     responseStyle: 'data',
     security: [
       {

@@ -1,8 +1,10 @@
-import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { getTableColumns } from 'drizzle-orm';
+import { index, integer, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
-import type { UserId } from '#/db/utils/ids';
+import type { ActorId, UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { usersTable } from '#/modules/user/user-db';
 
 export const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
@@ -11,7 +13,25 @@ export type SessionTypes = (typeof sessionTypeEnum)[number];
 export const authStrategiesEnum = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
 export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
-/** Authenticated session data. Rows expired for over 30 days are swept nightly by maintain_partitions(). */
+/**
+ * Why a session was revoked before its expiry. The owner's acts: `sign_out` from the session itself, `other_session`
+ * from another of their sessions, `mfa_enabled` because enabling MFA drops every regular session. The server's
+ * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`, `replaced` by a newer sign-in from the
+ * same browser.
+ */
+export const sessionRevocationReasons = [
+  'sign_out',
+  'other_session',
+  'mfa_enabled',
+  'session_cap',
+  'replaced',
+] as const;
+export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
+
+/**
+ * Authenticated session data. A revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows
+ * what ended and why; expiry needs no stamp. Rows expired for over 30 days are swept nightly by maintain_partitions().
+ */
 export const sessionsTable = snakeCase.table(
   'sessions',
   {
@@ -36,6 +56,12 @@ export const sessionsTable = snakeCase.table(
     deviceIdHash: varchar({ length: 64 }),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
+    revokedAt: timestamp({ mode: 'string' }),
+    /** The actor whose request revoked the session; null when the server did it during a sign-in. */
+    revokedBy: uuid()
+      .references(() => actorsTable.id, { onDelete: 'set null' })
+      .$type<ActorId>(),
+    revocationReason: varchar({ enum: sessionRevocationReasons }),
   },
   (table) => [
     index('sessions_secret_idx').on(table.secret),
@@ -45,6 +71,10 @@ export const sessionsTable = snakeCase.table(
     index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
   ],
 );
+
+const { secret: _secret, ...safeColumns } = getTableColumns(sessionsTable);
+/** Every column but the secret: what any response may carry. */
+export const sessionSafeColumns = safeColumns;
 
 /** Raw session model including sensitive secret field - use only when secret access is required. */
 export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;

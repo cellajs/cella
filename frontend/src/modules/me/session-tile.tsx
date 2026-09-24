@@ -1,4 +1,4 @@
-import { ChevronDownIcon, MonitorIcon, ShieldCheckIcon, SmartphoneIcon, ZapOffIcon } from 'lucide-react';
+import { ChevronDownIcon, MonitorIcon, ShieldCheckIcon, SmartphoneIcon, UnplugIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '~/modules/me/types';
@@ -11,16 +11,23 @@ interface SessionTileProps {
   session: Session;
   /** Session from the same device as the current session (matched on deviceIdHash). */
   isCurrentDevice?: boolean;
-  handleDeleteSessions: (sessionIds: string[]) => void;
-  isPending: boolean;
+  /** Absent in the history list: a revoked or expired session has nothing left to revoke. */
+  handleRevoke?: (sessionIds: string[]) => void;
+  isPending?: boolean;
 }
 
-export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, isPending }: SessionTileProps) {
+export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending }: SessionTileProps) {
   const { t, i18n } = useTranslation();
 
   const [expanded, setExpanded] = useState(false);
 
   const DeviceIcon = session.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
+
+  const isRevoked = session.revokedAt !== null;
+  const isExpired = !isRevoked && new Date(session.expiresAt).getTime() <= Date.now();
+  const isLive = !isRevoked && !isExpired;
+  // The period ends when the session stopped authenticating.
+  const endedAt = session.revokedAt ?? session.expiresAt;
 
   const countryName = session.ipCountry
     ? (() => {
@@ -34,7 +41,7 @@ export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, is
 
   return (
     <Card
-      className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2"
+      className={`group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2 ${isLive ? '' : 'opacity-70'}`}
       data-expanded={expanded}
     >
       <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
@@ -64,13 +71,28 @@ export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, is
                   {t('c:new_device')}
                 </Badge>
               )}
+              {isRevoked && (
+                <Badge size="xs" variant="secondary">
+                  {t('c:revoked')}
+                </Badge>
+              )}
+              {isExpired && (
+                <Badge size="xs" variant="secondary">
+                  {t('c:expired')}
+                </Badge>
+              )}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm md:gap-x-5">
             <p className="truncate" aria-describedby={t('c:period')}>
-              {dateShort(session.createdAt)} - {dateShort(session.expiresAt)}
+              {dateShort(session.createdAt)} - {dateShort(endedAt)}
             </p>
+            {session.revocationReason && (
+              <p className="truncate" aria-describedby={t('c:revoked')}>
+                {t(`c:revocation_reason.${session.revocationReason}`)}
+              </p>
+            )}
             {session.authStrategy && (
               <p
                 className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline"
@@ -113,16 +135,16 @@ export function SessionTile({ session, isCurrentDevice, handleDeleteSessions, is
           </div>
         </div>
 
-        {!session.isCurrent && (
+        {isLive && !session.isCurrent && handleRevoke && (
           <Button
             variant="plain"
             size="sm"
             className="ml-auto text-sm"
             disabled={isPending}
-            onClick={() => handleDeleteSessions([session.id])}
+            onClick={() => handleRevoke([session.id])}
           >
-            <ZapOffIcon />
-            <span className="ml-1 max-md:hidden">{t('c:terminate')}</span>
+            <UnplugIcon />
+            <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
           </Button>
         )}
       </CardContent>

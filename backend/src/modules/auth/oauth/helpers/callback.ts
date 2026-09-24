@@ -243,9 +243,9 @@ const verifyCallbackFlow = async ({
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
     if (verifyToken.email === user.email) {
-      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email, by: provider });
+      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email, via: provider });
     } else {
-      await addProvenEmail(tx, { userId: user.id, email: verifyToken.email, by: provider });
+      await addProvenEmail(tx, { userId: user.id, email: verifyToken.email, via: provider });
     }
   });
 
