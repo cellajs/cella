@@ -135,7 +135,7 @@ describe('mintGenerationKeys', () => {
     expect(logs.some((line) => line.includes('dormant application cella-production-vm-mcp not found'))).toBe(true);
   });
 
-  it('a staging failure aborts with ZERO api keys pruned (old generation keeps its credentials)', async () => {
+  it('a staging failure aborts with ZERO api keys pruned (old generation keeps its keys)', async () => {
     failStagingFor = 'handoff-frontend';
     await expect(mintGenerationKeys(options(join(outDir, 'fail.json')))).rejects.toThrow(/staging failed/);
     expect(ops.some((op) => op.startsWith('delete:ak-'))).toBe(false);

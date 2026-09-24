@@ -194,10 +194,10 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: docker run --rm base-check pnpm --version
 
-  # Bootstrap-owned infra changes (a database privilege, a VM policy rule) need an operator
+  # Privileged infra changes (a database privilege, a VM policy rule) need an operator
   # "Apply infra change" before the release deploys; this read-only preview under the CI key
   # names them on the release PR, where an owed Apply blocks the merge. Skips when
-  # the production Environment secrets are absent (an app without a bootstrapped stack).
+  # the production Environment secrets are absent (an app without a set-up stack).
   infra-preflight:
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
     runs-on: ubuntu-latest
@@ -237,7 +237,7 @@ jobs:
         if: env.SCW_ACCESS_KEY != ''
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
-      - name: Preflight bootstrap-owned changes
+      - name: Preflight privileged changes
         if: env.SCW_ACCESS_KEY != ''
         run: pnpm --filter infra preflight --mode production --login
 

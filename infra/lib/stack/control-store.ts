@@ -229,7 +229,7 @@ export async function writeControlState(
 
 // Orchestrator helpers: read process.env and build a client, so not part of the pure core above.
 
-/** Build an S3 client for the state bucket with explicit credentials. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
+/** Build an S3 client for the state bucket with an explicit key. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
   return (await makeS3Client(region, accessKey, secretKey)) as unknown as S3Like;
 }
@@ -267,7 +267,7 @@ export interface ControlContext {
 
 /**
  * Resolve a stack's control-object context from the environment: sets APP_MODE from the stack's short name, builds the S3 client, derives bucket and keys. Returns null when no credentials are present.
- * AWS_* credentials take precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
+ * The AWS_* pair takes precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
  */
 export async function controlContextForStack(
   stack: string,
@@ -277,7 +277,7 @@ export async function controlContextForStack(
   const accessKey = fromAws ? process.env.AWS_ACCESS_KEY_ID : process.env.SCW_ACCESS_KEY;
   const secretKey = fromAws ? process.env.AWS_SECRET_ACCESS_KEY : process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) {
-    log('control-store: no S3 credentials (SCW_* or AWS_*); cannot read/write rollout state');
+    log('control-store: no S3 key (SCW_* or AWS_*); cannot read/write rollout state');
     return null;
   }
   process.env.APP_MODE ??= stack.split('/').pop();

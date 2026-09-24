@@ -123,7 +123,7 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   const version = await ctx.client.putSecretValue({
     secretId: existing.id,
     value: generateRandomRuntimeSecret(),
-    description: 'Rotated by bootstrap manage secrets',
+    description: 'Rotated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
   ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`);
@@ -175,7 +175,7 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const version = await ctx.client.putSecretValue({
     secretId: existingSecret.id,
     value,
-    description: 'Updated by bootstrap manage secrets',
+    description: 'Updated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
   ctx.log(
@@ -306,6 +306,8 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
 }
 
 if (isMain(import.meta.url)) {
-  process.stderr.write('Run this task through bootstrap so prompts and stack context stay aligned.\n');
+  process.stderr.write(
+    'Run this task through the infra CLI (Manage runtime secrets) so prompts and stack context stay aligned.\n',
+  );
   process.exit(1);
 }

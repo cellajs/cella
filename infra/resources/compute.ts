@@ -30,7 +30,7 @@ import { secretIds } from './secrets';
 import { bootDiagBucketName } from './storage';
 import { vmIamPolicies } from './vm-iam';
 
-/** This deploy's minted credentials, from tasks/mint-generation-keys.ts via INFRA_GENERATION_KEYS_FILE. Absent on apply/preview ups, where pre-existing generations ignore cloudInit changes; planning a new generation without it is refused. */
+/** This deploy's minted keys, from tasks/mint-generation-keys.ts via INFRA_GENERATION_KEYS_FILE. Absent on apply/preview ups, where pre-existing generations ignore cloudInit changes; planning a new generation without it is refused. */
 interface GenerationKeysFile {
   bootAccessKey: string;
   bootSecretKey: string;
@@ -162,7 +162,7 @@ function buildCloudInit(
     .all([
       envLines,
       buildRuntimeSecretsManifest(service.secretConsumers),
-      // Boot fetcher credentials: minimal-privilege key, never the operator or CI key.
+      // Boot fetcher key: minimal privilege, never the admin or CI key.
       vmAccessKey,
       vmSecretKey,
       registryEndpoint,
@@ -254,7 +254,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   if (!genPrivateIp)
     throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
-  // A new generation must carry its minted handoff reference: no keys file means the mint step did not run, so refuse the plan and never bake an empty credential.
+  // A new generation must carry its minted handoff reference: no keys file means the mint step did not run, so refuse the plan and never bake an empty key.
   if (!generation.preexisting && !generationKeys) {
     throw new Error(
       `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it runs mint-generation-keys first).`,

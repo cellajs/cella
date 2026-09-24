@@ -75,7 +75,7 @@ export interface ScopedKeyResult {
   organizationId: string;
 }
 
-/** The organization id: the env value wins (either variable name), since a project-scoped bootstrap key may lack the Account read; else the project's owner via the Account API. */
+/** The organization id: the env value wins (either variable name), since a project-scoped key may lack the Account read; else the project's owner via the Account API. */
 export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
   return resolveOrganizationIdFromEnv() ?? resolveOrganizationIdViaProject({ secretKey }, projectId);
 }
@@ -236,7 +236,7 @@ export async function ensureGroupMembership(opts: {
     group = await findGroup(opts.callerSecretKey, opts.organizationId, groupName);
   } catch (error) {
     if (!isPermissionDenied(error)) throw error;
-    // Write-only bootstrap key (IAMManager without IAMReadOnly): create directly and tolerate the duplicate.
+    // A write-only key (IAMManager without IAMReadOnly): create directly and tolerate the duplicate.
   }
   if (!group) {
     try {
@@ -319,7 +319,7 @@ export async function deleteGroup(opts: {
   if (group) await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/groups/${group.id}`);
 }
 
-/** Remove the org-wide `<slug>-bootstrap-dns` policy: the widest standing grant the engine creates, and it must not outlive the bootstrap key. */
+/** Remove the org-wide `<slug>-bootstrap-dns` policy: the widest grant the engine creates, and it must not outlive the setup that needed it. */
 export async function removeBootstrapDnsGrant(opts: {
   callerSecretKey: string;
   organizationId: string;
@@ -335,7 +335,7 @@ export async function removeBootstrapDnsGrant(opts: {
   return true;
 }
 
-/** Ensure the bootstrap key's IAM application carries org-wide DNS, needed when the zone lives in a sibling project. No-ops for user-owned keys and when the policy exists. */
+/** Ensure the setup key's IAM application carries org-wide DNS, needed when the zone lives in a sibling project. No-ops for user-owned keys (an Owner API key) and when the policy exists. */
 export async function ensureBootstrapDnsGrant(opts: {
   callerSecretKey: string;
   accessKey: string;
@@ -363,7 +363,7 @@ export async function ensureBootstrapDnsGrant(opts: {
       organization_id: opts.organizationId,
       application_id: key.application_id,
       description:
-        'Org-wide DNS for the bootstrap key: first provisioning up writes records in the org-shared zone (auto-generated; revoke with the bootstrap key)',
+        'Org-wide DNS for the setup key: first provisioning up writes records in the org-shared zone (auto-generated; removed when setup completes)',
       rules: [{ permission_set_names: [...DNS_PERMISSION_SETS], organization_id: opts.organizationId }],
     });
     log(`  Created bootstrap DNS grant '${policyName}' (org-wide DomainsDNSFullAccess)`);

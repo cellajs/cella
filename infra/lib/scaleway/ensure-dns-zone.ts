@@ -103,7 +103,7 @@ export async function ensureDnsZone(opts: {
       : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
       console.info(
-        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run bootstrap to retry.`,
+        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`,
       );
       return { status: 'skipped' };
     }

@@ -10,7 +10,7 @@ export interface VerifyPrivilegedUpOptions {
   appConfig: EngineConfig;
   projectId: string;
   organizationId: string;
-  /** A key with IAM read and RDB read (the bootstrap key qualifies). */
+  /** A key with IAM read and RDB read (the Owner API key qualifies). */
   secretKey: string;
   fetchImpl?: FetchLike;
   log?: (msg: string) => void;

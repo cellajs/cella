@@ -41,7 +41,7 @@ export async function fetchServiceKey(opts: FetchServiceKeyOptions): Promise<Ser
   if (!res.ok) {
     throw new Error(
       `SECURITY: service-key handoff fetch failed (${res.status}) and no cached key exists. ` +
-        'The single-access bundle was already consumed or is missing: possible credential interception. ' +
+        'The single-access bundle was already consumed or is missing: possible key interception. ' +
         'Halting boot; investigate before redeploying (a redeploy stages a fresh bundle).',
     );
   }

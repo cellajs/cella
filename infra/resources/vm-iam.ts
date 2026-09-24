@@ -39,7 +39,7 @@ function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: 
   return resolved.apply((id) => {
     if (!id)
       throw new Error(
-        `IAM application for ${label} not found: run the infra CLI bootstrap first, or "Apply infra change" after a registry change.`,
+        `IAM application for ${label} not found: run the pnpm infra setup first, or "Apply infra change" after a registry change.`,
       );
     return id;
   });
@@ -81,7 +81,7 @@ export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(
 );
 
 /**
- * Pulumi-managed IAM policies for the VM-side principals. Bootstrap-owned: IAM policy write is forbidden to the CI key, so a bootstrap-key up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
+ * Pulumi-managed IAM policies for the VM-side principals. Privileged: IAM policy write is forbidden to the CI key, so a privileged up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
  * One policy per service app (secret read conditioned to its own and shared folders) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
  * Principals and conditions follow the service registry, not the enabled set: a service toggle changes compute only, while a registry change or a `singleVM` flip needs a privileged up.
  * CI ups ignore `rules` (they would 403 on the IAM write, and the provider shows a phantom ~rules from its condition empty-vs-unset asymmetry); a privileged up (CLI "Apply infra change") reconciles them, which is how a changed secret scope reaches the live policy.

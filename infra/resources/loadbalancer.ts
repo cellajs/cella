@@ -372,7 +372,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   };
 }
 
-// Skipped while compute is deferred on a fresh bootstrap: without VMs the LB has no backends to route to.
+// Skipped while compute is deferred on a fresh provision: without VMs the LB has no backends to route to.
 const outputs: LoadBalancerOutputs = sizing.computeEnabled
   ? provisionLoadBalancer()
   : { serviceUrls: {}, lbId: pulumi.output(undefined), lbBackendIds: pulumi.output({} as Record<string, string>) };

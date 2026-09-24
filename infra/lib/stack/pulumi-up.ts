@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { isBootstrapOwned } from '../scaleway/permissions';
+import { isPrivilegedResource } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
 
@@ -41,16 +41,16 @@ function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
 }
 
 export type PermissionHint =
-  | { kind: 'bootstrap-owned'; resource: string }
+  | { kind: 'privileged'; resource: string }
   | { kind: 'ci-grantable'; resource: string }
   | undefined;
 
-/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as bootstrap-owned or CI-grantable. */
+/** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as privileged or CI-grantable. */
 export function classifyPermissionError(stderr: string): PermissionHint {
   const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i);
   if (!m?.[1]) return undefined;
   const resource = m[1];
-  return isBootstrapOwned(resource) ? { kind: 'bootstrap-owned', resource } : { kind: 'ci-grantable', resource };
+  return isPrivilegedResource(resource) ? { kind: 'privileged', resource } : { kind: 'ci-grantable', resource };
 }
 
 /** Detect a "secret ... already exists" conflict: the container is live in Scaleway but missing from Pulumi state, so `up` fails recreating it. Returns the secret name when the error text carries one. */
@@ -169,13 +169,13 @@ export async function runPulumiUpWithHint(
     const hint = classifyPermissionError(stderrBuf);
     if (hint) {
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);
-      if (hint.kind === 'bootstrap-owned')
+      if (hint.kind === 'privileged')
         console.error(
-          `  Looks bootstrap-owned. Re-run bootstrap and choose ${pc.italic('"Apply infra change"')} to apply with a bootstrap key.`,
+          `  A privileged resource. Re-run pnpm infra and choose ${pc.italic('"Apply infra change"')} to apply it with your Owner API key.`,
         );
       else
         console.error(
-          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run bootstrap and choose ${pc.italic('"Rotate keys"')}.`,
+          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run pnpm infra and choose ${pc.italic('"Rotate keys"')}.`,
         );
     }
   }

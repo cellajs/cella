@@ -17,8 +17,8 @@ const SECRET_PERMISSION_SETS = new Set([
 ]);
 
 /**
- * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the VM policy is bootstrap-owned
- * (vm-iam.ts `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until a manual bootstrap Apply.
+ * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the VM policy is privileged
+ * (vm-iam.ts `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until a manual Apply.
  * Any non-read-only extra set is an escalation on the VM key and stays fatal until an operator strips it.
  */
 const isBenignExtraSet = (set: string): boolean => set.endsWith('ReadOnly');
@@ -38,7 +38,7 @@ export interface AssertVmGrantsOptions {
    * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned one. That is a FAILURE here, not a warning.
    */
   requiredSecretCondition?: string;
-  /** A registry principal with no deployed VM. It keeps its policy but must hold ZERO API keys: any key on it is an unmonitored credential, a FAILURE. */
+  /** A registry principal with no deployed VM. It keeps its policy but must hold ZERO API keys: any key on it is an unmonitored key, a FAILURE. */
   dormant?: boolean;
   /** Every rule must be scoped to exactly this project: an organization-wide rule (a console edit's default) reaches every project, a FAILURE. */
   requiredProjectId?: string;
@@ -119,7 +119,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key)
     : [];
 
-  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a key on a dormant principal is an unmonitored credential. Extra read-only sets only warn (see isBenignExtraSet).
+  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a key on a dormant principal is an unmonitored key. Extra read-only sets only warn (see isBenignExtraSet).
   const ok =
     missing.length === 0 &&
     extraFatal.length === 0 &&
@@ -138,7 +138,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     );
   if (extraBenign.length > 0)
     log(
-      `⚠ VM application has extra read-only grant(s) (benign drift; reconcile via a bootstrap "Apply infra change"): ${extraBenign.join(', ')}`,
+      `⚠ VM application has extra read-only grant(s) (benign drift; reconcile via "Apply infra change"): ${extraBenign.join(', ')}`,
     );
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';

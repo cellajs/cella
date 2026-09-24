@@ -68,7 +68,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
     provision(ctx: ProvisionContext): ProvisionedStore {
       const { scaleway, naming, zone, isProduction, privateNetworkId, configuredOrRandomSecret } = ctx;
 
-      // Stable resource identity for the live credential; renaming re-rolls it.
+      // Stable resource identity for the live password; renaming re-rolls it.
       const password = configuredOrRandomSecret('redisPassword', 'redis-password');
 
       const cluster = new scaleway.redis.Cluster(

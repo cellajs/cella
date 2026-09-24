@@ -21,7 +21,7 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 /**
  * The whole deploy after image builds, in order: preflights, stack lock, base stack update, waved rollout, public version verification,
  * atomic frontend entry publish, smoke checks, and boot diagnostics on failure.
- * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* credentials can run it.
+ * CI (.github/workflows/deploy.yml) is a thin trigger around this; anything that supplies the SCW_* key can run it.
  */
 export interface DeployOptions {
   mode: string;
@@ -172,7 +172,7 @@ export async function runDeploy(
       lease = await fx.lease(stack, 'deploy');
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
-    // Bootstrap-owned changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
+    // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
     await step('Preflight privileged changes', () =>
       fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]),
     );
@@ -221,7 +221,7 @@ export async function runDeploy(
           fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
             env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) },
             // The Vite build runs a large third-party plugin graph; deny it the
-            // deploy's cloud credentials so a compromised build dep cannot exfiltrate them.
+            // deploy's cloud keys so a compromised build dep cannot exfiltrate them.
             secretless: true,
           }),
         );
@@ -531,7 +531,7 @@ function createRealEffects(): DeployEffects {
       };
     },
     exec(cmd, args, opts = {}) {
-      // `secretless` strips the deploy's credentials (Scaleway keys, Pulumi
+      // `secretless` strips the deploy's secrets (Scaleway keys, Pulumi
       // passphrase, GitHub token) from the child's environment before layering
       // opts.env on top, so an untrusted build (the frontend Vite plugin graph)
       // cannot read them. The default path is unchanged: full env inheritance.

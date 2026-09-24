@@ -1,7 +1,7 @@
 /** Env marker the infra CLI's privileged converge sets on its `pulumi up` child. Absent on CI ups, which run with the read-only CI key. */
 export const PRIVILEGED_UP_ENV = 'INFRA_PRIVILEGED_UP';
 
-/** Whether the running Pulumi program holds a bootstrap key that may write IAM. */
+/** Whether the running Pulumi program holds a key that may write IAM (a privileged run with the Owner API key). */
 export function isPrivilegedUp(env: NodeJS.ProcessEnv = process.env): boolean {
   return env[PRIVILEGED_UP_ENV] === '1';
 }

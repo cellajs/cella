@@ -25,7 +25,7 @@ export interface WaitForPrivateNetworkOptions {
   retryDelayMs?: number;
 }
 
-async function readCredential(path: string): Promise<string> {
+async function readKeyFile(path: string): Promise<string> {
   return (await readFile(path, 'utf-8')).trim();
 }
 
@@ -134,8 +134,8 @@ export async function boot(opts: BootOptions): Promise<void> {
   const exec = opts.exec ?? execCommand;
   const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'));
   const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha });
-  const accessKey = await readCredential(plan.credentials.scwAccessKeyFile);
-  const secretKey = await readCredential(plan.credentials.scwSecretKeyFile);
+  const accessKey = await readKeyFile(plan.credentials.scwAccessKeyFile);
+  const secretKey = await readKeyFile(plan.credentials.scwSecretKeyFile);
   // Build-only until secret hydration delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
   const telemetry: Telemetry = createTelemetry({
     resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },

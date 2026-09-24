@@ -26,7 +26,7 @@ describe('isPrivilegedUrn', () => {
 });
 
 describe('classifyPreviewSteps', () => {
-  it('lists pending bootstrap-owned mutations with their changed paths and counts the rest', () => {
+  it('lists pending privileged mutations with their changed paths and counts the rest', () => {
     const { privileged, ciApplicable } = classifyPreviewSteps([
       { op: 'same', urn: urn('scaleway:iam/policy:Policy', 'vm-boot-policy') },
       { op: 'create', urn: urn('scaleway:databases/privilege:Privilege', 'admin-cron-privilege') },
@@ -48,7 +48,7 @@ describe('classifyPreviewSteps', () => {
     const text = formatPending('production', [
       { op: 'create', resource: 'scaleway:databases/privilege:Privilege::p', paths: [] },
     ]);
-    expect(text).toContain('1 bootstrap-owned change(s) pending');
+    expect(text).toContain('1 privileged change(s) pending');
     expect(text).toContain(applyHint('production'));
     expect(applyHint('staging')).toBe('pnpm infra --mode staging  →  Stack setup  →  Apply infra change');
   });

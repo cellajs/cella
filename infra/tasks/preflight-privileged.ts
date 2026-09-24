@@ -8,7 +8,7 @@ import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
 /**
- * Pulumi resource types only a bootstrap key may write: the database and its privileges, IAM, the VPC and private network, and the state bucket's
+ * Pulumi resource types only a privileged run (the Owner API key) may write: the database and its privileges, IAM, the VPC and private network, and the state bucket's
  * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
  */
 const PRIVILEGED_URN_TYPES = [
@@ -59,7 +59,7 @@ const MUTATING_OPS = new Set([
   'import',
 ]);
 
-/** The bootstrap-owned changes a preview would apply, i.e. the ones a CI deploy cannot make and an operator Apply must run first. */
+/** The privileged changes a preview would apply, i.e. the ones a CI deploy cannot make and an operator Apply must run first. */
 export function classifyPreviewSteps(steps: PreviewStep[]): {
   privileged: PendingPrivilegedChange[];
   ciApplicable: number;
@@ -84,7 +84,7 @@ export function applyHint(mode: string): string {
 }
 
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {
-  const lines = [`✗ ${pending.length} bootstrap-owned change(s) pending; a CI deploy cannot apply them:`];
+  const lines = [`✗ ${pending.length} privileged change(s) pending; a CI deploy cannot apply them:`];
   for (const change of pending) {
     lines.push(
       `  ${change.op.padEnd(7)} ${change.resource}${change.paths.length ? `  (${change.paths.join(', ')})` : ''}`,
@@ -119,7 +119,7 @@ export async function runPrivilegedPreview(
 }
 
 /**
- * Standalone entry: `pnpm --filter infra preflight --mode <m> [--login]`. Exit 2 with the operator command when a bootstrap-owned change is pending,
+ * Standalone entry: `pnpm --filter infra preflight --mode <m> [--login]`. Exit 2 with the operator command when a privileged change is pending,
  * 0 when a CI deploy can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
  */
 export async function main(argv = process.argv.slice(2)): Promise<void> {
@@ -145,7 +145,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const stackFile = resolve(infraDir, `Pulumi.${mode}.yaml`);
   if (!existsSync(stackFile) || !/^encryptionsalt:/m.test(readFileSync(stackFile, 'utf8'))) {
-    console.info(`[preflight] no bootstrapped Pulumi.${mode}.yaml: nothing to check`);
+    console.info(`[preflight] no set-up Pulumi.${mode}.yaml: nothing to check`);
     return;
   }
 
@@ -156,7 +156,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  console.info(`✓ no bootstrap-owned change pending (${ciApplicable} CI-applicable change(s) in the plan)`);
+  console.info(`✓ no privileged change pending (${ciApplicable} CI-applicable change(s) in the plan)`);
 }
 
 runIfMain(import.meta.url, main);

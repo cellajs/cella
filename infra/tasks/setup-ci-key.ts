@@ -101,7 +101,7 @@ if (isMain(import.meta.url)) {
   });
   if (synced) {
     console.info(
-      `\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Then revoke the bootstrap key.')}`,
+      `\n${checkMark} SCW_* secrets pushed to the GitHub "${environment}" Environment. ${pc.dim('Revoke the key you ran this with if it was minted for it.')}`,
     );
   } else {
     console.error(

@@ -29,7 +29,7 @@ describe('formatPostgresUrl', () => {
     expect(formatPostgresUrl('u', 'p', 'h', '6432', 'd')).toContain('@h:6432/d');
   });
 
-  it('percent-encodes credentials that contain URI metacharacters', () => {
+  it('percent-encodes a user and password that contain URI metacharacters', () => {
     const url = formatPostgresUrl('user@org', 'p@ss:w/rd?#&', 'h', 5432, 'd');
     expect(url).toBe('postgresql://user%40org:p%40ss%3Aw%2Frd%3F%23%26@h:5432/d?sslmode=require&uselibpqcompat=true');
   });

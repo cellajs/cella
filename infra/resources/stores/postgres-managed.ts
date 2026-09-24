@@ -21,7 +21,7 @@ export interface PostgresManagedConfig {
 }
 
 /**
- * Assemble a PostgreSQL DSN from plain string parts. User and password are percent-encoded so credentials cannot break out of the userinfo segment.
+ * Assemble a PostgreSQL DSN from plain string parts. User and password are percent-encoded so neither can break out of the userinfo segment.
  * Always pins `sslmode=require&uselibpqcompat=true`: Scaleway private endpoints use self-signed certs, so libpq-compat mode encrypts without cert verification.
  */
 export function formatPostgresUrl(
@@ -106,7 +106,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       // Shared with the reset task via `naming`.
       const dbSlug = naming.dbName;
 
-      // One password per role, from a stack config secret or generated. The `<role>-password` resource names are the Pulumi identities of the live credentials; renaming re-rolls them.
+      // One password per role, from a stack config secret or generated. The `<role>-password` resource names are the Pulumi identities of the live passwords; renaming re-rolls them.
       function rolePassword(name: string): pulumi.Output<string> {
         return configuredOrRandomSecret(`${name}Password`, `${name}-password`);
       }
@@ -250,7 +250,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       const connectionStringAdmin = buildConnectionString(adminUser.name, adminPassword);
       // Runtime connection for backend API requests (subject to RLS).
       const connectionStringRuntime = buildConnectionString(runtimeUser.name, runtimePassword);
-      // CDC uses admin credentials: Scaleway grants the REPLICATION attribute, required to open a logical replication slot, only to isAdmin users.
+      // CDC connects as the admin role: Scaleway grants the REPLICATION attribute, required to open a logical replication slot, only to isAdmin users.
       const connectionStringCdc = buildConnectionString(adminUser.name, adminPassword);
 
       // Optional public admin DSN, preferring the endpoint hostname over its IP. Disabled or unavailable endpoints yield an empty string.
