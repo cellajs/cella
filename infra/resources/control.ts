@@ -1,4 +1,5 @@
 import * as pulumi from '@pulumi/pulumi';
+import { makeS3Client } from '../lib/scaleway/s3-client';
 import {
   type ControlState,
   controlKey,
@@ -21,13 +22,7 @@ async function loadControlState(): Promise<ControlState> {
   }
 
   try {
-    const { S3Client } = await import('@aws-sdk/client-s3');
-    const s3 = new S3Client({
-      region,
-      endpoint: `https://s3.${region}.scw.cloud`,
-      credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-      forcePathStyle: false,
-    });
+    const s3 = await makeS3Client(region, accessKey, secretKey);
     // One control object per deployment, keyed by the stack (= mode).
     const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode));
     return state;

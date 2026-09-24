@@ -6,8 +6,9 @@ import {
   ListObjectVersionsCommand,
   PutBucketVersioningCommand,
   PutObjectCommand,
-  S3Client,
+  type S3Client,
 } from '@aws-sdk/client-s3';
+import { makeS3Client } from '../lib/scaleway/s3-client';
 import { isMain } from '../lib/utils/is-main';
 
 /** One key-vs-action probe and whether its outcome matched the policy expectation. */
@@ -158,15 +159,6 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
   return checks;
 }
 
-function makeS3(region: string, accessKeyId: string, secretAccessKey: string): S3Client {
-  return new S3Client({
-    region,
-    endpoint: `https://s3.${region}.scw.cloud`,
-    credentials: { accessKeyId, secretAccessKey },
-    forcePathStyle: false,
-  });
-}
-
 export async function main(): Promise<void> {
   const ciAccess = process.env.SCW_ACCESS_KEY;
   const ciSecret = process.env.SCW_SECRET_KEY;
@@ -194,8 +186,8 @@ export async function main(): Promise<void> {
   console.info(`  Probe object: ${probeKey}\n`);
 
   const checks = await validateStateBucketPolicy({
-    operatorS3: makeS3(region, opAccess, opSecret),
-    ciS3: makeS3(region, ciAccess, ciSecret),
+    operatorS3: await makeS3Client(region, opAccess, opSecret),
+    ciS3: await makeS3Client(region, ciAccess, ciSecret),
     bucket,
     probeKey,
   });

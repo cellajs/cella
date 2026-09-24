@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
@@ -13,12 +13,7 @@ import {
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
 import { principalNames } from '../lib/scaleway/principals';
-import {
-  detectComputeDeferred,
-  detectStackState,
-  pickStackShort,
-  type StackState,
-} from '../lib/stack/bootstrap-stack-state';
+import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
 import {
   type ControlState,
   controlKey,
@@ -29,10 +24,11 @@ import {
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
+import { loadStackContext } from '../lib/stack/stack-context';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
 import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
+import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -199,19 +195,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   const json = argv.includes('--json');
 
-  // Same loading order as the CLI; silent so `--json` output stays parseable.
   loadBaseEnvFiles();
-  loadModeEnvFile(mode);
-  process.env.APP_MODE = mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
-
-  const stackPath = resolve(infraDir, `Pulumi.${mode}.yaml`);
-  const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
-  const stackState = detectStackState({ yamlText: stackYaml });
-
+  const { appConfig, state: stackState, stackYaml, projectId } = await loadStackContext(mode);
   const report = await withSpinner('Checking infra status', () =>
-    buildReport({ mode, appConfig, stackState, stackYaml, projectId: resolveProjectId() }),
+    buildReport({ mode, appConfig, stackState, stackYaml, projectId: projectId || undefined }),
   );
   printReport(report, { json });
 }

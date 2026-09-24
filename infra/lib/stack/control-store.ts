@@ -1,4 +1,4 @@
-import { scwS3Endpoint } from '../scaleway/scw-fetch';
+import { makeS3Client } from '../scaleway/s3-client';
 import { errorMessage } from '../utils/errors';
 import { isRecord } from '../utils/guards';
 
@@ -229,16 +229,24 @@ export async function writeControlState(
 
 // Orchestrator helpers: read process.env and build a client, so not part of the pure core above.
 
-/** Build an S3 client for the state bucket with explicit credentials. */
+/** Build an S3 client for the state bucket with explicit credentials. The cast keeps the SDK behind S3Like so tests can pass a plain fake. */
 export async function makeControlClient(region: string, accessKey: string, secretKey: string): Promise<S3Like> {
-  const { S3Client } = await s3sdk();
-  // The cast keeps the SDK behind S3Like so tests can pass a plain fake.
-  return new S3Client({
-    region,
-    endpoint: scwS3Endpoint(region),
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
-  }) as unknown as S3Like;
+  return (await makeS3Client(region, accessKey, secretKey)) as unknown as S3Like;
+}
+
+/** The `pulumi login` URL of the state bucket: the S3 backend at Scaleway's regional endpoint. */
+export function stateBackendUrl(bucket: string, region: string): string {
+  return `s3://${bucket}?endpoint=s3.${region}.scw.cloud&region=${region}`;
+}
+
+/** Map the SCW_* pair a CI job supplies onto the AWS_* names the S3 state backend and the aws CLI read, and pin both region conventions. Existing values win. */
+export function adoptStateBackendEnv(region?: string, env: NodeJS.ProcessEnv = process.env): void {
+  env.AWS_ACCESS_KEY_ID ??= env.SCW_ACCESS_KEY ?? '';
+  env.AWS_SECRET_ACCESS_KEY ??= env.SCW_SECRET_KEY ?? '';
+  if (region) {
+    env.AWS_DEFAULT_REGION ??= region;
+    env.SCW_DEFAULT_REGION ??= region;
+  }
 }
 
 /** Identifies the writer in `updatedBy`: CI run or local operator. */

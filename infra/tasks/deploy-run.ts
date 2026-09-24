@@ -3,6 +3,8 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
+import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { errorMessage } from '../lib/utils/errors';
@@ -123,12 +125,8 @@ export async function runDeploy(
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
-  // Downstream tools read AWS_*/region conventions; derive them once here.
-  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
-  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
-  // The aws CLI (diag's S3 reader) refuses to run without a region.
-  process.env.AWS_DEFAULT_REGION ??= env.region;
-  process.env.SCW_DEFAULT_REGION ??= env.region;
+  // Downstream tools (the state backend, diag's aws CLI reader) read AWS_* and region conventions; derived once here.
+  adoptStateBackendEnv(env.region);
 
   const startedAtIso = new Date().toISOString();
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
@@ -167,7 +165,7 @@ export async function runDeploy(
   try {
     await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
     await step('Login to S3 state backend', () =>
-      fx.exec('pulumi', ['login', `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`]),
+      fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]),
     );
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
@@ -399,17 +397,11 @@ export async function runReap(
   const env = await loadDeployEnv(opts);
   const stack = env.pulumi_stack;
 
-  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
-  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
-  process.env.AWS_DEFAULT_REGION ??= env.region;
-  process.env.SCW_DEFAULT_REGION ??= env.region;
+  adoptStateBackendEnv(env.region);
 
   let lease: { release(): Promise<void> } | undefined;
   try {
-    await fx.exec('pulumi', [
-      'login',
-      `s3://${env.state_bucket}?endpoint=s3.${env.region}.scw.cloud&region=${env.region}`,
-    ]);
+    await fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]);
     await fx.exec('pulumi', ['stack', 'select', stack]);
     lease = await fx.lease(stack, 'reap');
     await fx.task('install-pulumi-providers');
@@ -435,16 +427,9 @@ const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
 ];
 
 async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({
-    region: opts.region,
-    endpoint: `https://s3.${opts.region}.scw.cloud`,
-    credentials: {
-      accessKeyId: process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: false,
-  });
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
   for (const file of ENTRY_FILES) {
     const path = resolve(opts.distDir, file.name);
     if (!existsSync(path)) continue;

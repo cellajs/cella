@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 
 // The deploy command owns asset semantics (the SST StaticSite pattern): the
 // hashed bundle uploads before the rollout, entry files publish only after
@@ -82,16 +83,9 @@ export interface UploadAssetsOptions {
  */
 export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{ uploaded: number; skipped: number }> {
   const log = opts.log ?? ((message: string) => console.info(message));
-  const { S3Client, ListObjectsV2Command, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({
-    region: opts.region,
-    endpoint: `https://s3.${opts.region}.scw.cloud`,
-    credentials: {
-      accessKeyId: process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: false,
-  });
+  const { ListObjectsV2Command, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
 
   // One paginated listing replaces a HeadObject round trip per key: existence
   // answers the hashed paths, the listed ETag answers the stable-named ones

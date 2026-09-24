@@ -1,4 +1,5 @@
 import { gunzipSync } from 'node:zlib';
+import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag, getNumFlag } from './args';
 
@@ -132,16 +133,9 @@ export async function sequenceGeoipRefresh(plan: GeoipRefreshPlan): Promise<Geoi
 
 /** Live effects: DB-IP over HTTPS, the bucket over the S3 API with the SCW key in the environment (admin or CI deploy). */
 export async function createLiveEffects(opts: { bucket: string; region: string; prefix: string }) {
-  const { S3Client, GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
-  const s3 = new S3Client({
-    region: opts.region,
-    endpoint: `https://s3.${opts.region}.scw.cloud`,
-    credentials: {
-      accessKeyId: process.env.SCW_ACCESS_KEY ?? process.env.AWS_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.SCW_SECRET_KEY ?? process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    },
-    forcePathStyle: false,
-  });
+  const { GetObjectCommand, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
   return {
     fetchDatabase: async (url: string) => {
       const res = await fetch(url);

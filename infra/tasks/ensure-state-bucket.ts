@@ -9,6 +9,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { getApiKey } from '../lib/scaleway/iam-client';
+import { makeS3Client } from '../lib/scaleway/s3-client';
 import type { ScwAuth } from '../lib/scaleway/scw-fetch';
 import { isMain } from '../lib/utils/is-main';
 
@@ -172,7 +173,6 @@ export async function assertBucketProject(s3: S3Client, bucketName: string, expe
 }
 
 export async function main(): Promise<void> {
-  const { S3Client } = await import('@aws-sdk/client-s3');
   const accessKey = process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.SCW_SECRET_KEY;
   if (!accessKey || !secretKey) throw new Error('SCW_ACCESS_KEY and SCW_SECRET_KEY must be set');
@@ -193,12 +193,7 @@ export async function main(): Promise<void> {
     console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: skipping the key-preferred-project preflight.');
   }
 
-  const s3 = new S3Client({
-    region,
-    endpoint: `https://s3.${region}.scw.cloud`,
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
-  });
+  const s3 = await makeS3Client(region, accessKey, secretKey);
   const result = await ensureStateBucket(s3, bucketName);
   if (expectedProjectId) await assertBucketProject(s3, bucketName, expectedProjectId);
   await hardenStateBucket(s3, bucketName);

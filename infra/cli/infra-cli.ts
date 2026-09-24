@@ -2,16 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
-import { resolveProjectId } from '../lib/scaleway/bootstrap-scw-env';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
-import {
-  detectComputeDeferred,
-  detectDbPublicEndpoint,
-  detectStackState,
-  pickStackShort,
-} from '../lib/stack/bootstrap-stack-state';
+import { detectComputeDeferred, detectDbPublicEndpoint, pickStackShort } from '../lib/stack/bootstrap-stack-state';
+import { loadStackContext } from '../lib/stack/stack-context';
 import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output';
-import { loadBaseEnvFiles, loadModeEnvFile } from '../lib/utils/env-files';
+import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { runApply } from './actions/apply';
 import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
@@ -84,32 +79,12 @@ async function resolveMode(): Promise<'production' | 'staging'> {
 
 async function loadContext(): Promise<InfraContext> {
   const environment = await resolveMode();
-  loadModeEnvFile(environment, (message) => console.info(pc.dim(message)));
-  const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`);
-  const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;
-  const state = detectStackState({ yamlText: stackYaml });
-
-  // The config reads APP_MODE during module evaluation, so the CLI-selected stack must be set first; it is authoritative for child tasks.
-  process.env.APP_MODE = environment;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const appConfig = await loadEngineConfig();
-
-  // Project id scopes all Scaleway API calls, so resolve it once from the env files loaded above.
-  // Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env. Every other state fails fast.
-  const projectId = resolveProjectId();
-  if (!projectId && state !== 'fresh') {
+  const stack = await loadStackContext(environment, (message) => console.info(pc.dim(message)));
+  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env.
+  if (!stack.projectId && stack.state !== 'fresh') {
     throw new Error('SCW_PROJECT_ID is not set: add it to backend/.env before running the infra CLI.');
   }
-
-  return {
-    environment,
-    stackPath,
-    stackYaml,
-    state,
-    hasCiKey: state === 'bootstrapped',
-    appConfig,
-    projectId: projectId ?? '',
-  };
+  return { ...stack, hasCiKey: stack.state === 'bootstrapped' };
 }
 
 printHeader('infra cli');

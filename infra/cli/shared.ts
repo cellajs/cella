@@ -2,9 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
-import type { Environment, StackState } from '../lib/stack/bootstrap-stack-state';
-import { controlActor, lockKey, makeControlClient, stateBucket } from '../lib/stack/control-store';
+import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
+import type { StackContext } from '../lib/stack/stack-context';
 import { acquireLease, installSignalRelease } from '../lib/stack/stack-lease';
 import { crossMark, pc, warningMark } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
@@ -32,15 +32,8 @@ export type CliMode =
   | 'geoip-refresh';
 
 /** Stack information and state, passed to every CLI action handler. */
-export interface InfraContext {
-  environment: Environment;
-  stackPath: string;
-  stackYaml?: string;
-  state: StackState;
+export interface InfraContext extends StackContext {
   hasCiKey: boolean;
-  appConfig: EngineConfig;
-  /** Scaleway project id. Empty only on a fresh install without SCW_PROJECT_ID; the setup wizard resolves it. */
-  projectId: string;
 }
 
 export interface StepOptions {
@@ -158,7 +151,7 @@ export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string):
 
 /** S3-backend login URL for the app's Pulumi state bucket. */
 export function pulumiLoginUrl(appConfig: AppConfigType): string {
-  return `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`;
+  return stateBackendUrl(stateBucket(appConfig.slug), appConfig.s3.region);
 }
 
 /** `pulumi login` (exits on failure) plus a best-effort `pulumi stack select` against the S3 state backend; the caller may still be about to init the stack. */

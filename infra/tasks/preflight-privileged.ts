@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { adoptStateBackendEnv, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
 import { isMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -127,15 +128,13 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   process.env.APP_MODE = mode;
   const stack = getFlag(argv, '--stack') ?? `organization/infra/${mode}`;
   // The S3 state backend reads AWS_*; a CI job supplies only SCW_*.
-  process.env.AWS_ACCESS_KEY_ID ??= process.env.SCW_ACCESS_KEY ?? '';
-  process.env.AWS_SECRET_ACCESS_KEY ??= process.env.SCW_SECRET_KEY ?? '';
+  adoptStateBackendEnv();
 
   if (argv.includes('--login')) {
     const { loadEngineConfig } = await import('../config/engine-config');
-    const { stateBucket } = await import('../lib/stack/control-store');
     const { spawnSync } = await import('node:child_process');
     const appConfig = await loadEngineConfig();
-    const url = `s3://${stateBucket(appConfig.slug)}?endpoint=s3.${appConfig.s3.region}.scw.cloud&region=${appConfig.s3.region}`;
+    const url = stateBackendUrl(stateBucket(appConfig.slug), appConfig.s3.region);
     for (const args of [
       ['login', url],
       ['stack', 'select', stack],
