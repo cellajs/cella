@@ -38,8 +38,10 @@ export async function updateOrganizationOp(
     if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
   }
 
-  // Validate media URLs in welcomeText are from trusted sources (CDN only)
-  if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
+  // Media in the welcome text may reference only this organization's uploads.
+  if (input.welcomeText) {
+    assertBlockMediaUrls(input.welcomeText as string, organization.id, 'organization', 'welcomeText');
+  }
 
   const values = { ...input, updatedAt: getIsoDate(), updatedBy: actorId };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });

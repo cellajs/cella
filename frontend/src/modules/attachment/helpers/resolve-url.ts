@@ -1,4 +1,5 @@
 import type { Attachment } from 'sdk';
+import { parseMediaRef } from 'shared/utils/media-ref';
 import {
   type CloudFileVariant,
   getCloudUrl,
@@ -59,28 +60,33 @@ interface RefContext {
 }
 
 /**
- * Resolves slashed public keys through the CDN and attachment ids through local storage or a presigned URL, or '' when unresolvable.
+ * Resolves a media block reference by its media grammar kind, or '' when it renders nothing: an attachment id through
+ * local storage or a presigned URL, a key under the document's organization through the CDN, an asset URL as stored.
  * Local blob URLs come from the storage service's shared cache, so a ref keeps one stable URL and the service owns revocation.
  */
 export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {}): Promise<string> {
-  if (!ref.length) return '';
+  // Stored documents and Yjs updates are client input: a non-string would reach the renderer coerced to a URL.
+  if (typeof ref !== 'string' || !ref.length) return '';
 
-  // Attachment ids are UUIDs; public cloud keys contain slashes and already point at the preview key stored at upload time.
-  if (ref.includes('/')) return getPublicFileUrl(ref);
+  const media = parseMediaRef(ref, { organizationId: ctx.organizationId });
+  if (media.kind === 'invalid') return '';
+  if (media.kind === 'asset') return media.url;
+  // Public keys already point at the preview key stored at upload time.
+  if (media.kind === 'orgKey') return getPublicFileUrl(media.key);
 
   // Inline images use the mid-size preview; video, audio and documents keep the converted variant to stay playable.
-  const cached = findAttachmentInCache(ref);
+  const cached = findAttachmentInCache(media.id);
   const variant: CloudFileVariant = cached?.contentType?.startsWith('image/') ? 'preview' : 'converted';
 
-  const localUrl = await attachmentStorage.getSharedBlobUrl(ref, variant, true);
+  const localUrl = await attachmentStorage.getSharedBlobUrl(media.id, variant, true);
   if (localUrl) return localUrl;
 
   const tenantId = cached?.tenantId ?? ctx.tenantId;
   const organizationId = cached?.organizationId ?? ctx.organizationId;
   if (!tenantId || !organizationId) {
-    console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId for id:', ref);
+    console.error('[BlockNote] Cannot resolve private file URL: no tenantId/organizationId for id:', media.id);
     return '';
   }
 
-  return getPrivateFileUrlById(ref, variant, tenantId, organizationId);
+  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId);
 }

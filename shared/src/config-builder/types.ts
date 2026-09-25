@@ -219,6 +219,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultBodyLimit: number;
 
   s3: S3ConfigInput;
+  /** Origin of the media asset CDN; empty while none is configured. */
+  mediaAssetOrigin: string;
   uppy: { defaultRestrictions: UppyRestrictionsConfig };
   localBlobStorage: LocalBlobStorageConfig;
 

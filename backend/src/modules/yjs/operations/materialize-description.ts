@@ -73,7 +73,9 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
     },
   } as unknown as UserContext;
 
-  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description);
+  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description, {
+    organizationId: row.organizationId,
+  });
   if (sanitized) {
     log.warn('Yjs materialization sanitized untrusted media URLs', {
       entityType,

@@ -1,21 +1,9 @@
 import { appConfig } from 'shared';
+import { isOrganizationKey } from 'shared/utils/media-ref';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 
 /** An offline upload keeps its local blob URL, or nothing, until it syncs: neither names a stored object. */
 const isLocalKey = (key: string) => key === '' || key.startsWith('blob:');
-
-/** `.` and `..` segments, also percent-encoded: a URL resolving the key would climb out of the prefix. */
-const isDotSegment = (segment: string) => ['.', '..'].includes(segment.toLowerCase().replaceAll('%2e', '.'));
-
-/**
- * Whether `key` lies under the organization's upload prefix. The upload token signs `<organizationId>/<userId>` as the
- * storage path, so every object the app stores for an organization starts there; a leading slash is tolerated.
- */
-export function isOrganizationKey(key: string, organizationId: string): boolean {
-  const path = key.startsWith('/') ? key.slice(1) : key;
-  if (!path.startsWith(`${organizationId}/`) || path.includes('\\')) return false;
-  return !path.split('/').some(isDotSegment);
-}
 
 /** The app's own bucket for a file of this visibility. */
 export const appBucketFor = (publicBucket: boolean) =>

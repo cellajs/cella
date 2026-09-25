@@ -249,6 +249,9 @@ export const config = {
   /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
+  /** Media asset CDN origin (re-hosted images referenced by URL); empty while no asset service is configured */
+  mediaAssetOrigin: '',
+
   /** Uppy upload widget default restrictions */
   uppy: {
     defaultRestrictions: {

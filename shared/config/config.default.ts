@@ -230,6 +230,12 @@ export const config = {
 
   uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
 
+  /**
+   * Origin of the media asset CDN, which serves re-hosted images as immutable content-hash objects. A media block may
+   * reference an asset by URL there. Empty while no asset service is configured, so no URL passes as an asset.
+   */
+  mediaAssetOrigin: '',
+
   uppy: {
     defaultRestrictions: {
       maxFileSize: 10 * 1024 * 1024,

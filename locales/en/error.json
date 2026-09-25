@@ -203,7 +203,7 @@
   "unsubscribe_failed.text": "Could not unsubscribe. Please try again or contact support.",
   "unsupported_oauth": "Provider unsupported",
   "unsupported_oauth.text": "This authentication provider is currently not supported. Please use another authentication method.",
-  "untrusted_media_url": "Some media URLs are from untrusted sources and will be rejected on save.",
+  "untrusted_media_url": "Media linked from other sites is not shown and will be rejected on save. Upload it instead.",
   "update_resource": "{{resource}} could not be updated. Try again later.",
   "user_mismatch": "User mismatch",
   "user_mismatch.text": "You are already signed in as a user. And this user doesn't match with the link you used.",
