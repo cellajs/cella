@@ -32,6 +32,10 @@ export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
 export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
+/** How a session last proved its user's presence again: a second factor, or an emailed link for a user without one. */
+export const stepUpProofs = ['passkey', 'totp', 'email'] as const;
+export type StepUpProof = (typeof stepUpProofs)[number];
+
 /**
  * Authenticated session data. `secret` holds the hash of the random token in the session's cookie, never the token. A
  * revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows what ended and why; expiry needs
@@ -69,6 +73,9 @@ export const sessionsTable = snakeCase.table(
     revocationReason: varchar({ enum: sessionRevocationReasons }),
     /** An impersonation's admin session: where the admin's browser returns, and without which it never authenticates. */
     impersonatorSessionId: uuid().references((): AnyPgColumn => sessionsTable.id, { onDelete: 'cascade' }),
+    /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
+    steppedUpAt: timestamp({ withTimezone: true, mode: 'string' }),
+    steppedUpVia: varchar({ enum: stepUpProofs }),
   },
   (table) => [
     index('sessions_secret_idx').on(table.secret),

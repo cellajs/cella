@@ -281,6 +281,8 @@ export const zMeAuthData = z.object({
         .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
         .nullable(),
       impersonatorSessionId: z.uuid().nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
       isCurrent: z.boolean(),
       isNewDevice: z.boolean(),
     }),
@@ -596,12 +598,12 @@ export const zCheckEmailResponse = z.object({
 });
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
   token: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
   id: z.string().max(50),
 });
 
@@ -811,6 +813,58 @@ export const zMicrosoftCallbackQuery = z.object({
   code: z.string(),
   state: z.string(),
 });
+
+/**
+ * Step-up state
+ */
+export const zGetStepUpResponse = z.object({
+  steppedUp: z.boolean(),
+  methods: z.array(z.enum(['passkey', 'totp', 'email', 'sign_in'])),
+});
+
+export const zStepUpBody = z.object({
+  passkeyData: z
+    .object({
+      id: z.string(),
+      rawId: z.string(),
+      response: z.object({
+        clientDataJSON: z.string(),
+        authenticatorData: z.string(),
+        signature: z.string(),
+        userHandle: z.string().optional(),
+      }),
+      authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+      clientExtensionResults: z.unknown().optional(),
+      type: z.enum(['public-key']),
+    })
+    .optional(),
+  totpCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
+});
+
+/**
+ * Session stepped up
+ */
+export const zStepUpResponse = z.void();
+
+/**
+ * Challenge issued
+ */
+export const zGetStepUpPasskeyChallengeResponse = z.object({
+  challenge: z.string(),
+  credentialIds: z.array(z.string()),
+});
+
+export const zSendStepUpLinkBody = z.object({
+  redirect: z.string().optional(),
+});
+
+/**
+ * Link sent
+ */
+export const zSendStepUpLinkResponse = z.void();
 
 export const zGetDomainsPath = z.object({
   tenantId: z.string().max(50),
@@ -1118,6 +1172,8 @@ export const zRevokeMySessionsResponse = z.object({
         .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
         .nullable(),
       impersonatorSessionId: z.uuid().nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
     }),
   ),
   rejectedIds: z.array(z.string()),

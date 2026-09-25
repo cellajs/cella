@@ -85,6 +85,10 @@
             "name": "mfaToggle",
             "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
           },
+          "stepUpLimiter": {
+            "name": "stepUp",
+            "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up"
+          },
           "magicLinkLimiter": {
             "name": "magicLink",
             "description": "Max 2 magic link emails per 30 min per email address"
@@ -1475,6 +1479,13 @@
                   "type": ["string", "null"],
                   "format": "uuid"
                 },
+                "steppedUpAt": {
+                  "type": ["string", "null"]
+                },
+                "steppedUpVia": {
+                  "type": ["string", "null"],
+                  "enum": ["passkey", "totp", "email", null]
+                },
                 "isCurrent": {
                   "type": "boolean"
                 },
@@ -1503,6 +1514,8 @@
                 "revokedBy",
                 "revocationReason",
                 "impersonatorSessionId",
+                "steppedUpAt",
+                "steppedUpVia",
                 "isCurrent",
                 "isNewDevice"
               ]
@@ -1584,6 +1597,8 @@
               "revokedBy": null,
               "revocationReason": null,
               "impersonatorSessionId": null,
+              "steppedUpAt": null,
+              "steppedUpVia": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -2932,7 +2947,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
             },
             "required": true,
             "name": "type",
@@ -2994,7 +3009,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
             },
             "required": true,
             "name": "type",
@@ -4539,6 +4554,271 @@
         }
       }
     },
+    "/auth/step-up": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getStepUp",
+        "tags": ["auth", "cella"],
+        "summary": "Get step-up state",
+        "description": "Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Step-up state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "steppedUp": {
+                      "type": "boolean",
+                      "description": "The session proved its user presence recently enough for account-security actions."
+                    },
+                    "methods": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": ["passkey", "totp", "email", "sign_in"]
+                      },
+                      "description": "What the user can offer to step up; empty while impersonating."
+                    }
+                  },
+                  "required": ["steppedUp", "methods"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "stepUp",
+        "tags": ["auth", "cella"],
+        "summary": "Step up with a second factor",
+        "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["stepUpLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "passkeyData": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "rawId": {
+                        "type": "string"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "signature": {
+                            "type": "string"
+                          },
+                          "userHandle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["clientDataJSON", "authenticatorData", "signature"]
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": ["cross-platform", "platform"]
+                      },
+                      "clientExtensionResults": {},
+                      "type": {
+                        "type": "string",
+                        "enum": ["public-key"]
+                      }
+                    },
+                    "required": ["id", "rawId", "response", "type"]
+                  },
+                  "totpCode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Session stepped up"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/step-up/passkey-challenge": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getStepUpPasskeyChallenge",
+        "x-strategy": "passkey",
+        "tags": ["auth", "cella"],
+        "summary": "Get a step-up passkey challenge",
+        "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["passkeyChallengeLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Challenge issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challenge": {
+                      "type": "string"
+                    },
+                    "credentialIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["challenge", "credentialIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/step-up/link": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "sendStepUpLink",
+        "tags": ["auth", "cella"],
+        "summary": "Email a step-up link",
+        "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["spamLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "redirect": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Link sent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/tenants/{tenantId}/domains": {
       "get": {
         "security": [
@@ -5802,6 +6082,8 @@
                       "revokedBy": null,
                       "revocationReason": null,
                       "impersonatorSessionId": null,
+                      "steppedUpAt": null,
+                      "steppedUpVia": null,
                       "isCurrent": true,
                       "isNewDevice": false
                     }
@@ -6103,6 +6385,13 @@
                           "impersonatorSessionId": {
                             "type": ["string", "null"],
                             "format": "uuid"
+                          },
+                          "steppedUpAt": {
+                            "type": ["string", "null"]
+                          },
+                          "steppedUpVia": {
+                            "type": ["string", "null"],
+                            "enum": ["passkey", "totp", "email", null]
                           }
                         },
                         "required": [
@@ -6124,7 +6413,9 @@
                           "revokedAt",
                           "revokedBy",
                           "revocationReason",
-                          "impersonatorSessionId"
+                          "impersonatorSessionId",
+                          "steppedUpAt",
+                          "steppedUpVia"
                         ]
                       }
                     },

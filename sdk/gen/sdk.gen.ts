@@ -166,6 +166,12 @@ import type {
   GetServiceAccountsData,
   GetServiceAccountsErrors,
   GetServiceAccountsResponses,
+  GetStepUpData,
+  GetStepUpErrors,
+  GetStepUpPasskeyChallengeData,
+  GetStepUpPasskeyChallengeErrors,
+  GetStepUpPasskeyChallengeResponses,
+  GetStepUpResponses,
   GetTenantsData,
   GetTenantsErrors,
   GetTenantsResponses,
@@ -243,6 +249,9 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
+  SendStepUpLinkData,
+  SendStepUpLinkErrors,
+  SendStepUpLinkResponses,
   SignInWithPasskeyData,
   SignInWithPasskeyErrors,
   SignInWithPasskeyResponses,
@@ -258,6 +267,9 @@ import type {
   StartOAuthConnectData,
   StartOAuthConnectErrors,
   StartOAuthConnectResponses,
+  StepUpData,
+  StepUpErrors,
+  StepUpResponses,
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
@@ -401,6 +413,8 @@ import {
   zGetServiceAccountsPath,
   zGetServiceAccountsQuery,
   zGetServiceAccountsResponse,
+  zGetStepUpPasskeyChallengeResponse,
+  zGetStepUpResponse,
   zGetTenantsQuery,
   zGetTenantsResponse,
   zGetTokenDataPath,
@@ -455,6 +469,8 @@ import {
   zSendNewsletterBody,
   zSendNewsletterQuery,
   zSendNewsletterResponse,
+  zSendStepUpLinkBody,
+  zSendStepUpLinkResponse,
   zSignInWithPasskeyBody,
   zSignInWithPasskeyResponse,
   zSignInWithTotpBody,
@@ -463,6 +479,8 @@ import {
   zStartImpersonationBody,
   zStartImpersonationResponse,
   zStartOAuthConnectResponse,
+  zStepUpBody,
+  zStepUpResponse,
   zStopImpersonationResponse,
   zSystemInviteBody,
   zSystemInviteResponse,
@@ -1401,6 +1419,162 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
     responseStyle: 'data',
     url: '/auth/microsoft/callback',
     ...options,
+  });
+
+/**
+ * Get step-up state
+ *
+ * Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.
+ *
+ * **GET /auth/step-up** ·· [getStepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/step-up) ·· [getStepUp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/step-up) ·· _auth_cella_
+ *
+ * @param {getStepUpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getStepUp = <ThrowOnError extends boolean = true>(
+  options?: Options<GetStepUpData, ThrowOnError>,
+): RequestResult<GetStepUpResponses, GetStepUpErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetStepUpResponses, GetStepUpErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetStepUpResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up',
+    ...options,
+  });
+
+/**
+ * Step up with a second factor
+ *
+ * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.
+ *
+ * **POST /auth/step-up** ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up) ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up) ·· _auth_cella_
+ *
+ * @param {stepUpData} options
+ * @param {object} options.body.passkeyData - `object`
+ * @param {string=} options.body.totpCode - `string` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const stepUp = <ThrowOnError extends boolean = true>(
+  options: Options<StepUpData, ThrowOnError>,
+): RequestResult<StepUpResponses, StepUpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<StepUpResponses, StepUpErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zStepUpBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zStepUpResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get a step-up passkey challenge
+ *
+ * Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.
+ *
+ * **POST /auth/step-up/passkey-challenge** ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/passkey-challenge) ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/passkey-challenge) ·· _auth_cella_
+ *
+ * @param {getStepUpPasskeyChallengeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
+  options?: Options<GetStepUpPasskeyChallengeData, ThrowOnError>,
+): RequestResult<GetStepUpPasskeyChallengeResponses, GetStepUpPasskeyChallengeErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<
+    GetStepUpPasskeyChallengeResponses,
+    GetStepUpPasskeyChallengeErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetStepUpPasskeyChallengeResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up/passkey-challenge',
+    ...options,
+  });
+
+/**
+ * Email a step-up link
+ *
+ * For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.
+ *
+ * **POST /auth/step-up/link** ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/link) ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/link) ·· _auth_cella_
+ *
+ * @param {sendStepUpLinkData} options
+ * @param {string=} options.body.redirect - `string` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const sendStepUpLink = <ThrowOnError extends boolean = true>(
+  options?: Options<SendStepUpLinkData, ThrowOnError>,
+): RequestResult<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSendStepUpLinkBody.optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSendStepUpLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up/link',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
 
 /**

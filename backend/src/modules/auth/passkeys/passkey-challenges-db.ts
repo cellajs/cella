@@ -4,8 +4,11 @@ import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
-/** What a challenge was issued for: registering a passkey, signing in with one, or the second factor of MFA. */
-export const passkeyChallengePurposes = ['registration', 'authentication', 'mfa'] as const;
+/**
+ * What a challenge was issued for: registering a passkey, signing in with one, the second factor of MFA, or a step-up
+ * of a signed-in session. A response answers only a challenge of its own purpose.
+ */
+export const passkeyChallengePurposes = ['registration', 'authentication', 'mfa', 'step-up'] as const;
 export type PasskeyChallengePurpose = (typeof passkeyChallengePurposes)[number];
 
 /**
@@ -20,7 +23,7 @@ export const passkeyChallengesTable = snakeCase.table(
     id: uuid().primaryKey().$defaultFn(generateId),
     challengeHash: varchar({ length: 64 }).notNull(),
     purpose: varchar({ enum: passkeyChallengePurposes }).notNull(),
-    // The account an mfa challenge was issued for; null where the passkey names the account.
+    // The account an mfa or step-up challenge was issued for; null where the passkey names the account.
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),

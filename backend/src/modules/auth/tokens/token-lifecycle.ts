@@ -27,7 +27,7 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
   Partial<
     Pick<
       InsertTokenModel,
-      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp'
+      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId'
     >
   >;
 
@@ -50,6 +50,7 @@ const replacementSubjects = {
       ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
       : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
   account: (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
+  session: (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
   none: () => undefined,
 } satisfies Record<TokenReplacement, (token: NewToken) => SQL | undefined>;
 
@@ -90,6 +91,7 @@ export const issueTokens = async (
         inactiveMembershipId: token.inactiveMembershipId ?? null,
         redirectPath: token.redirectPath ?? null,
         pendingSignUp: token.pendingSignUp ?? null,
+        sessionId: token.sessionId ?? null,
         secret: hashToken(rawToken),
         expiresAt: createDate(tokenPolicies[token.type].ttl),
       })),

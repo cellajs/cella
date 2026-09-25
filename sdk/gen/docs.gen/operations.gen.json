@@ -621,6 +621,98 @@
     }
   },
   {
+    "id": "getStepUp",
+    "hash": "tag/auth/GET/auth/step-up",
+    "method": "get",
+    "path": "/auth/step-up",
+    "tags": ["auth"],
+    "summary": "Get step-up state",
+    "description": "Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "stepUp",
+    "hash": "tag/auth/POST/auth/step-up",
+    "method": "post",
+    "path": "/auth/step-up",
+    "tags": ["auth"],
+    "summary": "Step up with a second factor",
+    "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["stepUpLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getStepUpPasskeyChallenge",
+    "hash": "tag/auth/POST/auth/step-up/passkey-challenge",
+    "method": "post",
+    "path": "/auth/step-up/passkey-challenge",
+    "tags": ["auth"],
+    "summary": "Get a step-up passkey challenge",
+    "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["passkeyChallengeLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "sendStepUpLink",
+    "hash": "tag/auth/POST/auth/step-up/link",
+    "method": "post",
+    "path": "/auth/step-up/link",
+    "tags": ["auth"],
+    "summary": "Email a step-up link",
+    "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["spamLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "getDomains",
     "hash": "tag/tenants/GET/tenants/{tenantId}/domains",
     "method": "get",

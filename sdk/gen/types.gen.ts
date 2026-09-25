@@ -335,6 +335,8 @@ export type MeAuthData = {
       | 'impersonation_stopped'
       | null;
     impersonatorSessionId: string | null;
+    steppedUpAt: string | null;
+    steppedUpVia: 'passkey' | 'totp' | 'email' | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -757,7 +759,7 @@ export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
     token: string;
   };
   query?: never;
@@ -796,7 +798,7 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
     id: string;
   };
   query?: never;
@@ -1908,6 +1910,216 @@ export type MicrosoftCallbackErrors = {
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
+export type GetStepUpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/step-up';
+};
+
+export type GetStepUpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetStepUpError = GetStepUpErrors[keyof GetStepUpErrors];
+
+export type GetStepUpResponses = {
+  /**
+   * Step-up state
+   */
+  200: {
+    /**
+     * The session proved its user presence recently enough for account-security actions.
+     */
+    steppedUp: boolean;
+    /**
+     * What the user can offer to step up; empty while impersonating.
+     */
+    methods: Array<'passkey' | 'totp' | 'email' | 'sign_in'>;
+  };
+};
+
+export type GetStepUpResponse = GetStepUpResponses[keyof GetStepUpResponses];
+
+export type StepUpData = {
+  body: {
+    passkeyData?: {
+      id: string;
+      rawId: string;
+      response: {
+        clientDataJSON: string;
+        authenticatorData: string;
+        signature: string;
+        userHandle?: string;
+      };
+      authenticatorAttachment?: 'cross-platform' | 'platform';
+      clientExtensionResults?: unknown;
+      type: 'public-key';
+    };
+    totpCode?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/step-up';
+};
+
+export type StepUpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type StepUpError = StepUpErrors[keyof StepUpErrors];
+
+export type StepUpResponses = {
+  /**
+   * Session stepped up
+   */
+  204: void;
+};
+
+export type StepUpResponse = StepUpResponses[keyof StepUpResponses];
+
+export type GetStepUpPasskeyChallengeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/step-up/passkey-challenge';
+};
+
+export type GetStepUpPasskeyChallengeErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetStepUpPasskeyChallengeError = GetStepUpPasskeyChallengeErrors[keyof GetStepUpPasskeyChallengeErrors];
+
+export type GetStepUpPasskeyChallengeResponses = {
+  /**
+   * Challenge issued
+   */
+  200: {
+    challenge: string;
+    credentialIds: Array<string>;
+  };
+};
+
+export type GetStepUpPasskeyChallengeResponse =
+  GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
+
+export type SendStepUpLinkData = {
+  body?: {
+    redirect?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/step-up/link';
+};
+
+export type SendStepUpLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SendStepUpLinkError = SendStepUpLinkErrors[keyof SendStepUpLinkErrors];
+
+export type SendStepUpLinkResponses = {
+  /**
+   * Link sent
+   */
+  204: void;
+};
+
+export type SendStepUpLinkResponse = SendStepUpLinkResponses[keyof SendStepUpLinkResponses];
+
 export type GetDomainsData = {
   body?: never;
   path: {
@@ -2797,6 +3009,8 @@ export type RevokeMySessionsResponses = {
         | 'impersonation_stopped'
         | null;
       impersonatorSessionId: string | null;
+      steppedUpAt: string | null;
+      steppedUpVia: 'passkey' | 'totp' | 'email' | null;
     }>;
     /**
      * Identifiers of items that could not be processed

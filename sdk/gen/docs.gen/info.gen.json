@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 99,
+  "documentedOperationCount": 103,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -75,6 +75,10 @@
         "mfaToggleLimiter": {
           "name": "mfaToggle",
           "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
+        },
+        "stepUpLimiter": {
+          "name": "stepUp",
+          "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up"
         },
         "magicLinkLimiter": {
           "name": "magicLink",

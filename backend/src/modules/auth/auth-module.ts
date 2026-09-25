@@ -5,6 +5,7 @@ import { scheduleReapUnprovenAccounts } from './jobs/reap-unproven-accounts';
 import { authMagicLinkHandlers } from './magic/magic-handlers';
 import { authOAuthHandlers } from './oauth/oauth-handlers';
 import { authPasskeysHandlers } from './passkeys/passkeys-handlers';
+import { authStepUpHandlers } from './step-up/step-up-handlers';
 import { authTotpHandlers } from './totps/totps-handlers';
 
 defineBackendModule({
@@ -25,5 +26,6 @@ defineBackendModule({
     { path: '/auth/', app: authTotpHandlers },
     { path: '/auth/', app: authPasskeysHandlers },
     { path: '/auth/', app: authOAuthHandlers },
+    { path: '/auth/', app: authStepUpHandlers },
   ],
 });

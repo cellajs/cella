@@ -5,6 +5,7 @@ import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/identities-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
@@ -39,6 +40,8 @@ export const tokensTable = snakeCase.table(
     inactiveMembershipId: uuid(),
     redirectPath: varchar({ length: maxLength.field }),
     pendingSignUp: jsonb().$type<PendingSignUp>(),
+    /** The session a token is bound to: a step-up link stamps only this session. */
+    sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),

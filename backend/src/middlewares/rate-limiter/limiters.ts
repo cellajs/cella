@@ -44,6 +44,12 @@ export const mfaToggleLimiter = rateLimiter('failseries', 'mfaToggle', ['userId'
   description: 'Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle',
 });
 
+/** Keyed per account like the MFA toggle's; a proof that verifies clears the series. */
+export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204] },
+  description: 'Blocks the account for 30 min after 5 failed second-factor checks on step-up',
+});
+
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   limits: { points: 2, duration: 60 * 30, blockDuration: 0 },
   description: 'Max 2 magic link emails per 30 min per email address',

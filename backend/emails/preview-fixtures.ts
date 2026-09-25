@@ -9,6 +9,7 @@ import {
   oauthVerificationEmail,
   requestInfoEmail,
   requestResponseEmail,
+  stepUpEmail,
   systemInviteEmail,
   welcomeEmailTemplate,
 } from './index';
@@ -36,6 +37,7 @@ const previewTemplates = {
   newsletter: newsletterEmail,
   'request-was-sent': requestResponseEmail,
   'request-was-sent-admin': requestInfoEmail,
+  'step-up': stepUpEmail,
   // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
 } satisfies Record<string, EmailTemplateDef<any, any>>;
 

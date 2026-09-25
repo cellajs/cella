@@ -195,7 +195,7 @@ export const config = {
   enabledOAuthProviders: ['github'] as const,
 
   /** Token types used for verification flows */
-  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect'] as const,
+  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
   /** Max concurrent sessions per user (regular and mfa); oldest beyond it are evicted on sign-in (bloat/abuse guard). */
   maxSessionsPerUser: 10,

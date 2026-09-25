@@ -9,9 +9,17 @@ type SameSite = 'lax' | 'strict';
  * - `identity`: those of its identity, or of the provider account signing up (a verification link).
  * - `invitation`: those of its membership invitation, or of its address for a system invitation.
  * - `account`: those of its account (a connect pin: one per account at a time).
+ * - `session`: those bound to its session (a step-up link: one per session at a time).
  * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
  */
-export const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'none'] as const;
+export const tokenReplacements = [
+  'address-or-account',
+  'identity',
+  'invitation',
+  'account',
+  'session',
+  'none',
+] as const;
 export type TokenReplacement = (typeof tokenReplacements)[number];
 
 /**
@@ -52,6 +60,7 @@ export type TokenPolicy =
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
  *   site started, reads them. The others are Strict.
  * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
+ * - `step-up` confirms, from the inbox, a step-up of the session that asked for it; see `openStepUpLink`.
  */
 export const tokenPolicies = {
   invitation: {
@@ -80,6 +89,14 @@ export const tokenPolicies = {
   },
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict', replaces: 'none' },
   'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax', replaces: 'account' },
+  'step-up': {
+    carrier: 'link',
+    ttl: new TimeSpan(10, 'm'),
+    singleUseWindow: new TimeSpan(5, 'm'),
+    sameSite: 'strict',
+    replaces: 'session',
+    unboundOpener: 'address-owner',
+  },
 } as const satisfies Record<TokenType, TokenPolicy>;
 
 type TokenTypeCarriedBy<C extends TokenPolicy['carrier']> = {

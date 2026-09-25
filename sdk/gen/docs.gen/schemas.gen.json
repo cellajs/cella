@@ -715,6 +715,15 @@
                 "required": true,
                 "format": "uuid"
               },
+              "steppedUpAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "steppedUpVia": {
+                "type": ["string", "null"],
+                "required": true,
+                "enum": ["passkey", "totp", "email", null]
+              },
               "isCurrent": { "type": "boolean", "required": true },
               "isNewDevice": {
                 "type": "boolean",
@@ -791,6 +800,8 @@
           "revokedBy": null,
           "revocationReason": null,
           "impersonatorSessionId": null,
+          "steppedUpAt": null,
+          "steppedUpVia": null,
           "isCurrent": true,
           "isNewDevice": false
         }

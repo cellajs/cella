@@ -187,7 +187,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["oauth-verification", "invitation", "magic"]
+            "enum": ["oauth-verification", "invitation", "magic", "step-up"]
           },
           "token": { "type": "string", "required": true }
         }
@@ -279,7 +279,7 @@
           "type": {
             "type": "string",
             "required": true,
-            "enum": ["oauth-verification", "invitation", "magic"]
+            "enum": ["oauth-verification", "invitation", "magic", "step-up"]
           },
           "id": { "type": "string", "required": true, "maxLength": 50 }
         }
@@ -1746,6 +1746,281 @@
           "code": { "type": "string", "required": true },
           "state": { "type": "string", "required": true }
         }
+      }
+    }
+  },
+  {
+    "operationId": "getStepUp",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Step-up state",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "steppedUp": {
+              "type": "boolean",
+              "required": true,
+              "description": "The session proved its user presence recently enough for account-security actions."
+            },
+            "methods": {
+              "type": "array",
+              "required": true,
+              "description": "What the user can offer to step up; empty while impersonating.",
+              "itemType": "string",
+              "enum": ["passkey", "totp", "email", "sign_in"]
+            }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "stepUp",
+    "responses": [
+      { "status": 204, "description": "Session stepped up" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "passkeyData": {
+            "type": "object",
+            "required": false,
+            "properties": {
+              "id": { "type": "string", "required": true },
+              "rawId": { "type": "string", "required": true },
+              "response": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "clientDataJSON": { "type": "string", "required": true },
+                  "authenticatorData": { "type": "string", "required": true },
+                  "signature": { "type": "string", "required": true },
+                  "userHandle": { "type": "string", "required": false }
+                }
+              },
+              "authenticatorAttachment": {
+                "type": "string",
+                "required": false,
+                "enum": ["cross-platform", "platform"]
+              },
+              "clientExtensionResults": { "type": "object", "required": false },
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["public-key"]
+              }
+            }
+          },
+          "totpCode": { "type": "string", "required": false }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "getStepUpPasskeyChallenge",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Challenge issued",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "challenge": { "type": "string", "required": true },
+            "credentialIds": { "type": "array", "required": true, "itemType": "string" }
+          },
+          "contentType": "application/json"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ]
+  },
+  {
+    "operationId": "sendStepUpLink",
+    "responses": [
+      { "status": 204, "description": "Link sent" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "body": {
+        "type": "object",
+        "properties": {
+          "redirect": { "type": "string", "required": false }
+        },
+        "required": false,
+        "contentType": "application/json"
       }
     }
   }
