@@ -2,7 +2,7 @@ import { trace } from '@opentelemetry/api';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { appConfig } from 'shared';
+import { appConfig, type Severity } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { getIsoDate } from '#/utils/iso-date';
@@ -63,47 +63,72 @@ function isPoolTimeoutError(err: unknown): boolean {
   return msg.includes('timeout exceeded when trying to connect') || msg.includes('Cannot use a pool after calling end');
 }
 
-/** Global error handler for Hono API routes. */
-export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
-  // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`
-  const safePath = scrubPath(ctx.req.path);
+/** What a client may see of a thrown value: status, type and a message that never carries server internals. */
+export interface ClientError {
+  message: string;
+  name: string;
+  status: number;
+  /** Error key from `locales/en/error.json` (or an app's `appError.json`). */
+  type: string;
+  severity: Severity;
+  entityType?: AppError['entityType'];
+  meta?: AppError['meta'];
+  /** The error came from an `AppError` thrown with `willRedirect`: answer with a redirect to its error page. */
+  willRedirect: boolean;
+}
+
+/** Request facts for the error's log line (`path`, `method`, `userId`, `organizationId`, an MCP `tool`); unset ones are left out. */
+export type ErrorLogFields = Record<string, string | undefined>;
+
+export interface ToClientErrorOptions {
+  /** Keep a 5xx error's own message. Default: every mode but production; a caller answering a third party passes false. */
+  exposeServerMessage?: boolean;
+}
+
+/**
+ * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through; a Postgres
+ * error with a known code maps to its status and a fixed message; pool exhaustion answers 503; anything else is a 500
+ * whose message (for a failed query: the SQL and its parameters) stays in the log unless `exposeServerMessage`.
+ * @param err - The thrown value.
+ * @param logFields - Request facts for the log line.
+ * @param options - Message exposure; defaults to hiding 5xx messages in production.
+ * @returns The client-facing error.
+ */
+export function toClientError(
+  err: unknown,
+  logFields: ErrorLogFields = {},
+  { exposeServerMessage = !isProduction }: ToClientErrorOptions = {},
+): ClientError {
+  const fields = Object.fromEntries(Object.entries(logFields).filter(([, value]) => value !== undefined));
+  const hideIfServerError = (status: number, message: string) =>
+    status >= 500 && !exposeServerMessage ? 'Internal server error' : message;
 
   if (isPoolTimeoutError(err)) {
-    log.error('Database pool exhausted', { err, path: safePath, method: ctx.req.method });
-    return ctx.json(
-      {
-        message: 'Service temporarily unavailable, please retry',
-        status: 503,
-        type: 'server_error' as const,
-        severity: 'error' as const,
-        path: safePath,
-        method: ctx.req.method,
-        timestamp: getIsoDate(),
-      },
-      503,
-    );
+    log.error('Database pool exhausted', { err, ...fields });
+    return {
+      message: 'Service temporarily unavailable, please retry',
+      name: 'ApiError',
+      status: 503,
+      type: 'server_error',
+      severity: 'error',
+      willRedirect: false,
+    };
   }
 
-  // Handle Hono's built-in HTTPException (e.g. from CSRF middleware)
+  // Hono's built-in HTTPException (e.g. from CSRF middleware)
   if (err instanceof HTTPException) {
-    const status = err.status as ContentfulStatusCode;
-    log.warn(`HTTPException ${status}`, { err, path: safePath, method: ctx.req.method });
-    return ctx.json(
-      {
-        message: err.message || 'Request rejected',
-        status,
-        type: status === 403 ? 'forbidden' : 'server_error',
-        severity: 'warn',
-        path: safePath,
-        method: ctx.req.method,
-        timestamp: getIsoDate(),
-      },
-      status,
-    );
+    log.warn(`HTTPException ${err.status}`, { err, ...fields });
+    return {
+      message: hideIfServerError(err.status, err.message || 'Request rejected'),
+      name: 'ApiError',
+      status: err.status,
+      type: err.status === 403 ? 'forbidden' : 'server_error',
+      severity: 'warn',
+      willRedirect: false,
+    };
   }
 
   const isAppError = err instanceof AppError;
-
   const pgError = !isAppError ? extractPgError(err) : null;
   const pgMappedError = pgError
     ? ((pgError.constraint ? PG_CONSTRAINT_MAP[pgError.constraint] : undefined) ?? PG_ERROR_MAP[pgError.code])
@@ -112,61 +137,68 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const severity = isAppError ? err.severity : pgMappedError ? 'warn' : 'error';
   const type = isAppError ? err.type : (pgMappedError?.type ?? 'server_error');
   const status = isAppError ? err.status : (pgMappedError?.status ?? 500);
-  const name = err.name ?? 'ApiError';
+  const name = (err instanceof Error && err.name) || 'ApiError';
   const entityType = isAppError ? err.entityType : undefined;
   const meta = isAppError ? err.meta : undefined;
-  const willRedirect = isAppError ? err.willRedirect : false;
-
-  const message = pgMappedError?.message ?? err.message;
-
-  const user = ctx.get('user');
-  const organization = ctx.get('organization');
-  const detailsRequired = severitiesRequiringDetails.has(severity);
-
-  // Correlates browser tracing, server spans, and logs; falls back to request ID when no span records
-  const logId = trace.getActiveSpan()?.spanContext().traceId ?? ctx.get('requestId');
-  const timestamp = getIsoDate();
+  const message = pgMappedError?.message ?? (err instanceof Error ? err.message : String(err));
 
   // Error type joins the message so deduplication separates AppError kinds; warn and above retain stack and context
   log[severity](
     `${name}: ${type}`,
-    detailsRequired
+    severitiesRequiringDetails.has(severity)
       ? {
           err,
           status,
           type,
           entityType,
-          path: safePath,
-          method: ctx.req.method,
-          ...(user && { userId: user.id }),
-          ...(organization && { organizationId: organization.id }),
+          ...fields,
           ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
           ...(meta && { meta }),
         }
       : undefined,
   );
 
-  if (willRedirect) {
-    const redirectUrl = new URL(meta?.errorPagePath || '/error', appConfig.frontendUrl);
-    redirectUrl.searchParams.set('error', type);
-    redirectUrl.searchParams.set('severity', severity);
-    return ctx.redirect(redirectUrl, 302);
-  }
-
-  const clientError = {
-    message: isProduction && status >= 500 ? 'Internal server error' : message,
+  return {
+    message: hideIfServerError(status, message),
     name,
     status,
     type,
     severity,
     entityType,
-    logId,
-    requestId: ctx.get('requestId'),
+    meta,
+    willRedirect: isAppError ? err.willRedirect : false,
+  };
+}
+
+/** Global error handler for Hono API routes. */
+export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
+  // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`
+  const safePath = scrubPath(ctx.req.path);
+  const clientError = toClientError(err, {
     path: safePath,
     method: ctx.req.method,
-    timestamp,
-    meta,
-  };
+    userId: ctx.get('user')?.id,
+    organizationId: ctx.get('organization')?.id,
+  });
 
-  return ctx.json(clientError, clientError.status as ContentfulStatusCode);
+  if (clientError.willRedirect) {
+    const redirectUrl = new URL(clientError.meta?.errorPagePath || '/error', appConfig.frontendUrl);
+    redirectUrl.searchParams.set('error', clientError.type);
+    redirectUrl.searchParams.set('severity', clientError.severity);
+    return ctx.redirect(redirectUrl, 302);
+  }
+
+  const { willRedirect: _willRedirect, ...body } = clientError;
+  return ctx.json(
+    {
+      ...body,
+      // Correlates browser tracing, server spans, and logs; falls back to request ID when no span records
+      logId: trace.getActiveSpan()?.spanContext().traceId ?? ctx.get('requestId'),
+      requestId: ctx.get('requestId'),
+      path: safePath,
+      method: ctx.req.method,
+      timestamp: getIsoDate(),
+    },
+    clientError.status as ContentfulStatusCode,
+  );
 };
