@@ -1,10 +1,12 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { generateRandomCodeVerifier, generateRandomState } from 'oauth4webapi';
-import { github, githubCallback, google, googleCallback, microsoft, microsoftCallback } from 'sdk';
+import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
+import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -64,6 +66,7 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
 }));
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
 vi.mock('#/modules/auth/general/helpers/session', async () => (await import('../test-utils')).sessionMock());
+vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
 beforeAll(async () => {
   mockFetchRequest();
@@ -598,6 +601,151 @@ describe('OAuth Authentication', async () => {
       expect(match).toBeTruthy();
       expect(match![1]).toBeTruthy();
       expect(match![1].length).toBeGreaterThan(0);
+    });
+  });
+  describe('Sign-up: no account before the inbox is proven', () => {
+    const providerEmail = 'github-user@example.com';
+    const verifyState = 'mock-state-verify-sign-up';
+
+    const signUpCallback = () => {
+      const state = 'mock-state-sign-up';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+    };
+
+    /** The raw token at the end of the verification link in the last mail handed to the mailer. */
+    const mailedVerificationToken = () => {
+      const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { verificationLink?: string } | undefined;
+      const rawToken = statics?.verificationLink?.split('/').at(-1) ?? '';
+      expect(rawToken).not.toBe('');
+      return rawToken;
+    };
+
+    /** Opens the verification link in a signed-out browser, which keeps its single-use cookie. */
+    const openVerificationLink = async (rawToken: string) => {
+      vi.mocked(getParsedSessionCookie).mockRejectedValueOnce(new Error('no session'));
+      return call(invokeToken, { path: { type: 'oauth-verification', token: rawToken }, headers: defaultHeaders });
+    };
+
+    /** The provider's callback for the verify round trip, in the browser that opened the link. */
+    const verifyCallback = () => {
+      mockCookieStore.set(`oauth-state-${verifyState}`, JSON.stringify({ type: 'verify' }));
+      return call(githubCallback, { query: { state: verifyState, code: 'mock-auth-code' }, headers: defaultHeaders });
+    };
+
+    const accountsFor = (email: string) => db.select().from(usersTable).where(eq(usersTable.email, email));
+    const verificationTokens = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'));
+
+    it('must not create an account via an OAuth sign-up whose address is unproven', async () => {
+      const { response: res } = await signUpCallback();
+
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification/signup');
+      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+      expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+
+      // The sign-up waits on the verification token alone.
+      expect(await verificationTokens()).toEqual([
+        expect.objectContaining({
+          email: providerEmail,
+          userId: null,
+          identityId: null,
+          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
+        }),
+      ]);
+    });
+
+    it('creates the account once the mailed link and the same provider account prove it (positive control)', async () => {
+      await signUpCallback();
+      const opened = await openVerificationLink(mailedVerificationToken());
+      expect(opened.response.status).toBe(302);
+      const verifyStart = new URL(opened.response.headers.get('location') ?? '');
+      expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
+      expect(verifyStart.searchParams.get('type')).toBe('verify');
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+
+      // The verify round trip starts where the link redirected, which pins its state in this browser.
+      const statesBefore = new Set(mockCookieStore.keys());
+      const started = await call(github, { query: { type: 'verify' }, headers: defaultHeaders });
+      expect(started.response.status).toBe(302);
+      const stateKey = [...mockCookieStore.keys()].find(
+        (key) => key.startsWith('oauth-state-') && !statesBefore.has(key),
+      );
+      const state = stateKey?.replace('oauth-state-', '') ?? '';
+
+      const { response: res } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+      expect(res.status).toBe(302);
+      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+
+      const [account] = await accountsFor(providerEmail);
+      expect(account).toBeDefined();
+      const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
+      expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
+      const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
+      expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
+      // The verification is spent with the sign-up.
+      expect(await verificationTokens()).toHaveLength(0);
+    });
+
+    it('must not complete an OAuth sign-up via another provider account', async () => {
+      await signUpCallback();
+      await openVerificationLink(mailedVerificationToken());
+
+      const { transformGithubUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
+      vi.mocked(transformGithubUserData).mockReturnValueOnce({
+        id: 'another-github-user-id',
+        slug: 'someone',
+        email: providerEmail,
+        name: 'Someone',
+        emailVerified: true,
+        thumbnailUrl: 'https://avatar.url',
+        firstName: 'Some',
+        lastName: 'One',
+      });
+
+      const { response: res, error } = await verifyCallback();
+      expect(res.status).toBe(400);
+      expect((error as { type: string }).type).toBe('oauth_failed');
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+    });
+
+    it('must not complete an OAuth sign-up in a browser that did not open the mailed link', async () => {
+      await signUpCallback();
+
+      const { response: res, error } = await verifyCallback();
+      expect(res.status).toBe(400);
+      expect((error as { type: string }).type).toBe('invalid_token');
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+      expect(await verificationTokens()).toHaveLength(1);
+    });
+
+    it('refuses to complete a sign-up when an account took the address meanwhile', async () => {
+      await signUpCallback();
+      await openVerificationLink(mailedVerificationToken());
+      const holder = await createUser(providerEmail);
+
+      const { response: res, error } = await verifyCallback();
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_email_exists');
+      expect((await accountsFor(providerEmail)).map((user) => user.id)).toEqual([holder.id]);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+    });
+
+    it('keeps one live sign-up per provider account', async () => {
+      await signUpCallback();
+      await signUpCallback();
+
+      const tokens = await db
+        .select()
+        .from(tokensTable)
+        .where(and(eq(tokensTable.type, 'oauth-verification'), eq(tokensTable.email, providerEmail)));
+      expect(tokens).toHaveLength(1);
     });
   });
 });

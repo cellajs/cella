@@ -7,7 +7,11 @@ import { TimeSpan } from '#/utils/time-span';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-/** How long a sign-up may sit without its link being clicked. A magic link lives 15 minutes and a verification mail two hours, so a week is generous. */
+/**
+ * How long an account may sit unproven. Sign-ups create their account only when the mailed link is clicked; an OAuth
+ * sign-up through an invitation creates it first and waits on a verification mail that lives two hours, so a week is
+ * generous.
+ */
 const UNPROVEN_ACCOUNT_TTL = new TimeSpan(7, 'd');
 const BATCH_SIZE = 500;
 

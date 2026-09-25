@@ -11,7 +11,8 @@ import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-d
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
-import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
+import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 import type { UserModel } from '#/modules/user/user-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
@@ -28,6 +29,12 @@ type OAuthFlowResult =
       type: 'unverified';
       identity: IdentityModel;
       reason: 'signup' | 'signin' | 'connect' | 'invite';
+    }
+  | {
+      /** A sign-up without an account: it waits on the verification mail sent to the provider's address. */
+      type: 'pending';
+      signUp: PendingSignUp;
+      email: string;
     };
 
 interface BaseCallbackProps {
@@ -123,18 +130,13 @@ const authCallbackFlow = async ({
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
-  // No user match → create a new user and OAuth account atomically
-  const newIdentity = await db.transaction(async (tx) => {
-    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createIdentity(tx, {
-      userId: user.id,
-      issuer: provider,
-      subject: providerUser.id,
-      email: providerUser.email,
-    });
-  });
-
-  return { type: 'unverified', identity: newIdentity, reason: 'signup' };
+  // No account until the provider's address is proven: the sign-up waits on its verification mail.
+  const { name, slug, firstName } = providerUser;
+  return {
+    type: 'pending',
+    signUp: { issuer: provider, subject: providerUser.id, name, slug, firstName },
+    email: providerUser.email,
+  };
 };
 
 /**
@@ -220,6 +222,11 @@ const verifyCallbackFlow = async ({
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   const verifyToken = await readBoundToken(ctx, 'oauth-verification');
 
+  const { pendingSignUp } = verifyToken;
+  if (pendingSignUp) {
+    return completeSignUp({ ctx, verifyToken, signUp: pendingSignUp, providerUser, provider, identity });
+  }
+
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 
   if (
@@ -255,12 +262,69 @@ const verifyCallbackFlow = async ({
   return { type: 'verified', user, identity };
 };
 
+/**
+ * Finishes an OAuth sign-up in the browser that opened its verification mail, once the same provider account signed
+ * in again: the click proved the inbox, so the account is created now with its address and identity verified, in one
+ * transaction that spends the verification. An account or identity that appeared meanwhile ends the sign-up.
+ */
+const completeSignUp = async ({
+  ctx,
+  verifyToken,
+  signUp,
+  providerUser,
+  provider,
+  identity,
+}: {
+  ctx: Context<Env>;
+  verifyToken: TokenRecord;
+  signUp: PendingSignUp;
+  providerUser: TransformedUser;
+  provider: EnabledOAuthProvider;
+  identity: IdentityModel | null;
+}): Promise<OAuthFlowResult> => {
+  const { email } = verifyToken;
+  if (signUp.issuer !== provider || signUp.subject !== providerUser.id || email !== providerUser.email) {
+    throw new AppError(400, 'oauth_failed', 'error');
+  }
+
+  if (identity) throw new AppError(409, 'oauth_conflict', 'error');
+  if (await findUserByEmail({ var: { db } }, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
+
+  const created = await db.transaction(async (tx) => {
+    // Of two concurrent completions only the one that spends the verification creates the account.
+    const spent = await spendCookieToken(ctx, 'oauth-verification', { db: tx });
+    if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
+
+    const { name, slug, firstName } = signUp;
+    const user = await handleCreateUser(
+      { var: { db: tx } },
+      { newUser: { email, name, slug, firstName }, emailVerified: false },
+    );
+    await requireEmailVerified(tx, { userId: user.id, email, via: provider });
+    const newIdentity = await createIdentity(
+      tx,
+      { userId: user.id, issuer: provider, subject: signUp.subject, email },
+      { verified: true },
+    );
+    return { userId: user.id, identity: newIdentity };
+  });
+
+  const user = await findUserById({ var: { db } }, { id: created.userId });
+  return { type: 'verified', user, identity: created.identity };
+};
+
 type NewIdentity = Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> & { email: UserModel['email'] };
 
-const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity): Promise<IdentityModel> => {
+/** Links a provider account; unverified unless an inbox proof in the same flow already stands for it. */
+const createIdentity = async (
+  dbOrTx: DbOrTx,
+  values: NewIdentity,
+  { verified = false }: { verified?: boolean } = {},
+): Promise<IdentityModel> => {
+  const now = getIsoDate();
   const [identity] = await dbOrTx
     .insert(identitiesTable)
-    .values({ ...values, verified: false })
+    .values({ ...values, verified, ...(verified && { verifiedAt: now, lastUsedAt: now }) })
     .returning();
 
   return identity;
@@ -290,21 +354,27 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 const processCallbackResult = async (
   info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string },
 ) => {
-  const { ctx, type, identity, provider, redirectAfter } = info;
+  const { ctx, provider, redirectAfter } = info;
   // Stored on the verification token; null means "use the default path" at the final hop.
   const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
 
-  if (type === 'verified') {
+  if (info.type === 'verified') {
     return finishSignIn(ctx, info.user, provider, redirectAfter);
   }
-  // Awaited so the verification token is persisted before the redirect to the "check your email" page.
-  await sendOAuthVerificationEmail({
-    userId: identity.userId,
-    identityId: identity.id,
-    redirectPath: redirectAfterPath,
-  });
 
-  const redirectUrl = new URL(`/auth/email-verification/${info.reason}?provider=${provider}`, appConfig.frontendUrl);
+  // Awaited so the verification token is persisted before the redirect to the "check your email" page.
+  if (info.type === 'pending') {
+    await sendOAuthVerificationEmail({ signUp: info.signUp, email: info.email, redirectPath: redirectAfterPath });
+  } else {
+    await sendOAuthVerificationEmail({
+      userId: info.identity.userId,
+      identityId: info.identity.id,
+      redirectPath: redirectAfterPath,
+    });
+  }
+
+  const reason = info.type === 'pending' ? 'signup' : info.reason;
+  const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);
 };

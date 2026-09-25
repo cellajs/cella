@@ -4,6 +4,8 @@ import type { DbOrTx } from '#/db/db';
 import { tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
 import { getIsoDate } from '#/utils/iso-date';
 
+export type { PendingSignUp } from '#/modules/auth/tokens-db';
+
 /** A token row without its secrets: the hashes of the raw value and of the single-use value stay in this module. */
 export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
 

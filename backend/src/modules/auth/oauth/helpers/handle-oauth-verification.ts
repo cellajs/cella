@@ -7,13 +7,18 @@ import { baseDb as db } from '#/db/db';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 
-export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenRecord) => {
+/** The provider the verification returns to: the signing-up provider account's, or the identity's. */
+const verificationIssuer = async (token: TokenRecord) => {
+  if (token.pendingSignUp) return token.pendingSignUp.issuer;
   if (!token.userId || !token.identityId) throw new AppError(500, 'server_error', 'error');
 
   const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, token.identityId)).limit(1);
   if (!identity) throw new AppError(400, 'invalid_request', 'warn');
+  return identity.issuer;
+};
 
-  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${identity.issuer}`);
+export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenRecord) => {
+  const verificationURL = new URL(`${appConfig.backendAuthUrl}/${await verificationIssuer(token)}`);
 
   verificationURL.searchParams.set('tokenId', token.id);
   verificationURL.searchParams.set('type', 'verify');

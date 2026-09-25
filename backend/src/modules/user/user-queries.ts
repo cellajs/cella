@@ -85,7 +85,8 @@ interface FindUnprovenUserIdsOpts {
 
 /**
  * Accounts nobody ever proved or used: no verified address, no verified identity, never signed in, no session, no
- * membership, no system role. They come from sign-ups whose link was never clicked, and hold their address hostage.
+ * membership, no system role. They come from an invitation's OAuth sign-up whose verification mail was never clicked,
+ * and hold their address hostage.
  */
 export const findUnprovenUserIds = async (ctx: DbContext, { createdBefore, limit }: FindUnprovenUserIdsOpts) => {
   const { db } = ctx.var;

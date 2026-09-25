@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, type SQL } from 'drizzle-orm';
+import { and, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -19,12 +19,18 @@ import { createDate } from '#/utils/time-span';
 
 /** What a new token records besides its secret and expiry, which issuing sets. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
-  Partial<Pick<InsertTokenModel, 'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath'>>;
+  Partial<
+    Pick<
+      InsertTokenModel,
+      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp'
+    >
+  >;
 
 /**
  * The earlier tokens a new one replaces, so only the newest link for a subject works: a magic link per address and
- * per account, a verification link per identity, an invitation link per membership invitation, or per address for a
- * system invitation. Other types replace nothing: every sign-in holds its own second-factor challenge.
+ * per account, a verification link per identity or per provider account signing up, an invitation link per membership
+ * invitation, or per address for a system invitation. Other types replace nothing: every sign-in holds its own
+ * second-factor challenge.
  */
 const replacedBy = (token: NewToken): SQL | undefined => {
   const sameType = eq(tokensTable.type, token.type);
@@ -36,8 +42,16 @@ const replacedBy = (token: NewToken): SQL | undefined => {
           ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId))
           : eq(tokensTable.email, token.email),
       );
-    case 'oauth-verification':
-      return token.identityId ? and(sameType, eq(tokensTable.identityId, token.identityId)) : undefined;
+    case 'oauth-verification': {
+      if (token.identityId) return and(sameType, eq(tokensTable.identityId, token.identityId));
+      const { pendingSignUp } = token;
+      if (!pendingSignUp) return undefined;
+      return and(
+        sameType,
+        sql`${tokensTable.pendingSignUp}->>'issuer' = ${pendingSignUp.issuer}`,
+        sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
+      );
+    }
     case 'invitation':
       return and(
         sameType,
@@ -80,6 +94,7 @@ export const issueTokens = async (
         identityId: token.identityId ?? null,
         inactiveMembershipId: token.inactiveMembershipId ?? null,
         redirectPath: token.redirectPath ?? null,
+        pendingSignUp: token.pendingSignUp ?? null,
         secret: hashToken(rawToken),
         expiresAt: createDate(tokenPolicies[token.type].ttl),
       })),
