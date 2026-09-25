@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { isRecord } from '../../lib/utils/guards';
 
 export const supportedSchemaVersion = 1;
@@ -124,11 +125,14 @@ function assertKnownTopLevel(obj: Record<string, unknown>): void {
   }
 }
 
-function assertAllowedPath(path: string): void {
-  const allowedPrefixes = ['/opt/app/', '/var/log/'];
-  // App config and secrets live under a single `/etc/<name>/` subdirectory (the app slug, or 'runtime-secrets'), so accept any single kebab-case segment.
-  const etcSubdir = /^\/etc\/[a-z0-9-]+\//;
-  if (allowedPrefixes.some((prefix) => path.startsWith(prefix)) || etcSubdir.test(path)) return;
+/**
+ * A plan names files in three places: the app directory, the boot log, and the plan's own config directory
+ * (`/etc/<slug>`, the only /etc directory the launcher mounts). A path must already be in normal form, so `..`, `.` and
+ * `//` segments cannot climb out of an allowed prefix.
+ */
+function assertAllowedPath(path: string, configDir: string): void {
+  const allowedPrefixes = ['/opt/app/', '/var/log/', `${configDir}/`];
+  if (posix.normalize(path) === path && allowedPrefixes.some((prefix) => path.startsWith(prefix))) return;
   throw new Error(`boot plan: path '${path}' is outside the allowed boot paths`);
 }
 
@@ -158,7 +162,9 @@ export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifes
   });
 }
 
-export function parseBootPlanJson(json: string): BootPlan {
+/** Parse and validate the boot plan read from `planPath`; the plan's own directory is the one /etc directory it may name. */
+export function parseBootPlanJson(json: string, planPath: string): BootPlan {
+  const configDir = posix.dirname(posix.normalize(planPath));
   const parsed = JSON.parse(json) as unknown;
   if (!isRecord(parsed)) throw new Error('boot plan: root must be an object');
   assertKnownTopLevel(parsed);
@@ -181,7 +187,7 @@ export function parseBootPlanJson(json: string): BootPlan {
   const scwSecretKeyFile = stringField(credentials, 'scwSecretKeyFile');
   const logFile = stringField(bootDiagnostics, 'logFile');
   const composeFile = stringField(docker, 'composeFile');
-  for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path);
+  for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path, configDir);
 
   const traceparent =
     typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
@@ -190,7 +196,7 @@ export function parseBootPlanJson(json: string): BootPlan {
   if (parsed.serviceKeyHandoff !== undefined) {
     const handoff = objectField(parsed, 'serviceKeyHandoff');
     const cacheFile = stringField(handoff, 'cacheFile');
-    assertAllowedPath(cacheFile);
+    assertAllowedPath(cacheFile, configDir);
     serviceKeyHandoff = { secretId: stringField(handoff, 'secretId'), cacheFile };
   }
   const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env');

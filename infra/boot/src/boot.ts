@@ -132,7 +132,7 @@ async function sinkKeyFromRuntimeEnv(path: string, keyEnvVar: string): Promise<s
 
 export async function boot(opts: BootOptions): Promise<void> {
   const exec = opts.exec ?? execCommand;
-  const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'));
+  const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'), opts.planPath);
   const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha });
   const accessKey = await readKeyFile(plan.credentials.scwAccessKeyFile);
   const secretKey = await readKeyFile(plan.credentials.scwSecretKeyFile);
