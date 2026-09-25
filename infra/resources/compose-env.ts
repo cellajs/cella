@@ -66,21 +66,21 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
         return currentGenBindingIp(slug);
       case 'port':
         return String(definition.healthPort);
-      // Stable address through the LB's ACL-guarded internal frontend, so consumers never bake a generation IP; the folded-worker loopback shortcut collapses host and port to the in-process app.
+      // Stable address through the LB's ACL-guarded internal frontend, so consumers never bake a generation IP; the folded-worker loopback shortcut collapses host and port to the in-process internal listener.
       case 'internalHost':
-        if (slug === loopbackSlug) return '127.0.0.1';
-        if (!definition.internalRoute)
+        if (definition.internalPort === undefined)
           throw new Error(
-            `compute: binding @{${target}.internalHost} on '${selfSlug}': service '${slug}' has no internalRoute.`,
+            `compute: binding @{${target}.internalHost} on '${selfSlug}': service '${slug}' has no internalPort.`,
           );
+        if (slug === loopbackSlug) return '127.0.0.1';
         return lbInternalAddress;
       case 'internalPort':
-        if (slug === loopbackSlug) return String(definition.healthPort);
-        if (!definition.internalRoute)
+        if (definition.internalPort === undefined)
           throw new Error(
-            `compute: binding @{${target}.internalPort} on '${selfSlug}': service '${slug}' has no internalRoute.`,
+            `compute: binding @{${target}.internalPort} on '${selfSlug}': service '${slug}' has no internalPort.`,
           );
-        return String(internalLbPort(definition.healthPort));
+        if (slug === loopbackSlug) return String(definition.internalPort);
+        return String(internalLbPort(definition.internalPort));
       case 'url': {
         const endpoint = endpointBySlug.get(slug);
         if (!endpoint)

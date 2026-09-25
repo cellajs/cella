@@ -125,5 +125,5 @@ One name per concept across code and docs:
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |
 | **boot diagnostics** | Logs and JSONL events a VM uploads at boot. |
-| **internal route** | Private, ACL-guarded LB frontend: a stable in-network address across cutovers. |
+| **internal route** | Private, ACL-guarded LB frontend forwarding to a service's `internalPort` listener: a stable in-network address across cutovers, which no public pool reaches. |
 | **engine config** | The injected app description ([config/engine-config.ts](config/engine-config.ts)); defaults to `appConfig`. |

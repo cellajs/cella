@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     ports:
       - '4000:4000'
+      - '4005:4005'
       - '4001:4001'
       - '4002:4002'
       - '4003:4003'
@@ -24,9 +25,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       RUN_JOBS: 'true'
+      INTERNAL_PORT: '4005'
       RUN_MIGRATIONS_ON_BOOT: 'false'
       API_WS_URL: ${API_WS_URL}
       CDC_HEALTH_PORT: '4001'
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
       YJS_PORT: '4002'
       MCP_URL: ${MCP_URL}
       OAUTH_URL: ${OAUTH_URL}
@@ -51,7 +54,7 @@ services:
       drainPolicy: requests
       lbRoute: path
       pathPrefix: /api
-      internalRoute: true
+      internalPort: 4005
       dockerfile: Dockerfile
       target: backend
       s3Access: true
@@ -70,6 +73,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       RUN_JOBS: 'true'
+      INTERNAL_PORT: '4005'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
@@ -122,6 +126,7 @@ services:
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
       BACKEND_URL: ${BACKEND_URL}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
       YJS_PORT: '4002'
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4002/health']
@@ -145,6 +150,8 @@ services:
       dockerfile: Dockerfile
       target: yjs
       coHosted: true
+      bindings:
+        BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   mcp:
     image: ${REGISTRY}/backend:${MCP_TAG:-latest}
     profiles: [mcp]

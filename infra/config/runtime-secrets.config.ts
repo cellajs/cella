@@ -41,6 +41,15 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'random',
     services: ['backend', 'yjs', 'mcp'],
   },
+  yjsRelaySecret: {
+    secretName: 'yjs-relay-secret',
+    description: "Authenticates the Yjs relay on the backend's internal materialize route",
+    envVar: 'YJS_RELAY_SECRET',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'random',
+    services: ['backend', 'yjs', 'mcp'],
+  },
   piiHashSecret: {
     secretName: 'pii-hash-secret',
     description: 'HMAC pepper for hashing PII-derived identifiers',

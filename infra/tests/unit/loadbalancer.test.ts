@@ -96,8 +96,18 @@ describe('loadbalancer module: registry-driven wiring', () => {
 
 // Internal routes: private, ACL-guarded frontends giving in-network consumers a stable address that follows every cutover.
 describe('loadbalancer module: internal routes', () => {
-  it('derives internal routes from the registry internalRoute knob', () => {
-    expect(src).toMatch(/enabledServices\(appConfig\.services\)\.filter\(\(s\) => s\.internalRoute\)/);
+  it('derives internal routes from the registry internalPort knob', () => {
+    expect(src).toMatch(/enabledServices\(appConfig\.services\)\.flatMap\(\(s\) =>\s*s\.internalPort === undefined/);
+  });
+
+  it('forwards the internal listener port from the private pool only, and the app port from the public pools', () => {
+    // Exactly two forward targets exist: public pools reach the app port, the ACL-guarded pool the internal listener.
+    expect(src.match(/forwardPort:\s*[^,\n]+/g)).toEqual([
+      'forwardPort: service.healthPort',
+      'forwardPort: internalPort',
+    ]);
+    const internalBlock = src.match(/internal-lb-backend[\s\S]*?ignoreChanges: \['serverIps'\]/)?.[0] ?? '';
+    expect(internalBlock).toContain('forwardPort: internalPort');
   });
 
   it('keeps the DHCP private-network attachment and resolves the LB IP from IPAM', () => {
@@ -119,7 +129,7 @@ describe('loadbalancer module: internal routes', () => {
 
   it('guards every internal frontend with allow-private-subnet then deny-all ACLs', () => {
     expect(src).toMatch(/new scaleway\.loadbalancers\.Frontend\(`\$\{service\.slug\}-internal-frontend`/);
-    expect(src).toMatch(/inboundPort: internalLbPort\(service\.healthPort\)/);
+    expect(src).toMatch(/inboundPort: internalLbPort\(internalPort\)/);
     expect(src).toMatch(/action: \{ type: 'allow' \}/);
     expect(src).toMatch(/ipSubnets: \[privateNetworkSubnet\]/);
     expect(src).toMatch(/action: \{ type: 'deny' \}/);

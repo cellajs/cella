@@ -65,8 +65,8 @@ export interface ServiceMeta {
   pathPrefix?: PathPrefix;
   /** Long-lived LB timeouts (1h server/tunnel) for WebSocket services. */
   lbWebsockets?: boolean;
-  /** Private ACL-guarded LB frontend giving in-network consumers a stable, cutover-following address. */
-  internalRoute?: boolean;
+  /** Port of the service's internal listener, reached only through the private ACL-guarded LB frontend (a stable, cutover-following address). */
+  internalPort?: number;
   /** Service whose image this one reuses (mcp reuses backend); no own image built. */
   reusesImageOf?: string;
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */
@@ -146,11 +146,13 @@ export interface AppServiceConfig {
   /** Keep LB connections long-lived (1h server/tunnel timeouts) for services speaking WebSockets through the LB. Only meaningful with `lbRoute`. */
   lbWebsockets?: boolean;
   /**
-   * Expose this service on a private, ACL-guarded LB frontend so consumers inside the private network
-   * reach it at a stable address that follows every cutover (`@{<slug>.internalHost}:@{<slug>.internalPort}`).
-   * The internal pool gets WebSocket-grade timeouts; only private-network sources pass the frontend's ACLs.
+   * Port of the service's internal listener, a second listener beside `port` that serves only server-to-server routes.
+   * A private, ACL-guarded LB frontend forwards to it, so consumers inside the private network reach it at a stable
+   * address that follows every cutover (`@{<slug>.internalHost}:@{<slug>.internalPort}`); the public LB pools never
+   * forward to it. The internal pool gets WebSocket-grade timeouts and health-checks this port; only private-network
+   * sources pass the frontend's ACLs. Must differ from every service's `port` and `internalPort`.
    */
-  internalRoute?: boolean;
+  internalPort?: number;
   /** Service whose image this one reuses, so CI builds no separate image for it (mcp reuses the backend image at the same SHA). */
   reusesImageOf?: string;
   /** Dockerfile path for services that build their own image. Omit when `reusesImageOf` is set. */

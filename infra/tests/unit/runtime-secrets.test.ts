@@ -85,6 +85,7 @@ describe('runtime secret registry', () => {
       'DATABASE_URL',
       'DATABASE_SSL_CA',
       'YJS_SECRET',
+      'YJS_RELAY_SECRET',
       'MAPLE_SECRET_INGEST_KEY',
     ]);
     expect(runtimeSecretsForConsumer('frontend')).toEqual([]);

@@ -196,7 +196,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
 
   const defaultBackend = backends.get(defaultService.slug)!;
 
-  // A private, ACL-guarded frontend per `internalRoute` service gives in-network consumers a stable address that follows every cutover.
+  // A private, ACL-guarded frontend per `internalPort` service gives in-network consumers a stable address that follows every cutover.
   // The LB keeps its DHCP-assigned private-network IP: recreating the attachment severs LB-to-VM traffic.
   // Resolved through the IPAM REST API because the provider's getIps invoke rejects these filters with a detail-less "invalid argument(s)".
   const lbPrivateIp = lb.id.apply(async (lbId) => {
@@ -217,16 +217,18 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   publishLbInternalAddress(lbPrivateIp);
 
   const internalBackends = new Map<string, scaleway.loadbalancers.Backend>();
-  const internalServices = enabledServices(appConfig.services).filter((s) => s.internalRoute);
-  for (const service of internalServices) {
-    // Its own pool over the same generation IPs, with 1h timeouts and session kill on mark-down so internal WebSocket consumers re-dial the new generation.
+  const internalServices = enabledServices(appConfig.services).flatMap((s) =>
+    s.internalPort === undefined ? [] : [{ service: s, internalPort: s.internalPort }],
+  );
+  for (const { service, internalPort } of internalServices) {
+    // Its own pool over the same generation IPs, forwarding to (and health-checking) the internal listener only, with 1h timeouts and session kill on mark-down so internal WebSocket consumers re-dial the new generation.
     const internalBackend = new scaleway.loadbalancers.Backend(
       `${service.slug}-internal-lb-backend`,
       {
         lbId: lb.id,
         name: naming.resource(`${service.slug}-internal`),
         forwardProtocol: 'http',
-        forwardPort: service.healthPort,
+        forwardPort: internalPort,
         serverIps: serviceGenerationIps(service.slug),
         onMarkedDownAction: 'shutdown_sessions',
         healthCheckHttp: { uri: healthContract.path, code: service.healthExpectStatus },
@@ -246,7 +248,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       lbId: lb.id,
       name: naming.resource(`${service.slug}-internal`),
       backendId: internalBackend.id,
-      inboundPort: internalLbPort(service.healthPort),
+      inboundPort: internalLbPort(internalPort),
     });
 
     // The frontend also listens on the LB's public IP, so the ACL pair admits private-network sources and denies everything else.
