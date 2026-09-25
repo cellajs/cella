@@ -71,18 +71,18 @@ A client's Step1 is answered with the diff of the merged document, followed by t
 
 Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content.
 
-Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/yjs/materialize` on behalf of the last editor in the window, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `4xx` for a product without one.
+Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/yjs/materialize` on behalf of the last editor in the window, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
 
 | Result | Behavior |
 | --- | --- |
 | `2xx` | Compact: replace the base, delete the merged rows |
-| `4xx` | Permanent: entity deleted, access revoked, or no materializer registered. Compact without a re-post |
-| `5xx` or network failure | Keep the log; the next window, cleanup or sweep retries |
-| Unparseable merged state | Compact without a write, so corrupt data cannot block cleanup |
+| `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret, the editor's access or the entity's scope can change. Keep the log; the next window, cleanup or sweep retries |
+| Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps the rows without retrying |
+| Unparseable merged state | Permanent, never posted. Keep the log |
 
 ### Disconnect and recovery
 
-After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows, or reschedules on a retryable failure.
+After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows once the log is written or empty. A retryable failure reschedules cleanup; a permanent one keeps the rows for the next session or the startup sweep.
 
 A startup sweep runs the same compaction over sessions a crash orphaned: session rows older than the grace period with no younger log row. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
 
@@ -95,7 +95,7 @@ Clients need no unload handlers or final flush: an update is durable before peer
 | A client loses its connection | Client falls back to solo REST/offline. Everything it sent is logged; the next handshake uploads what it had not. |
 | The backend is unavailable | Materialization is retried on the next window, at cleanup, or by the sweep; the log stays until the backend recovers |
 | The relay restarts | Clients reconnect with complete documents. The startup sweep compacts orphaned sessions. |
-| Entity deleted or access revoked | Permanent materialization failure. Cleanup does not resurrect the entity. |
+| Entity deleted or access revoked | Materialization is refused and retried; the rows stay until a write succeeds. Cleanup does not resurrect the entity. |
 | SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
 
 ## Operational constraints

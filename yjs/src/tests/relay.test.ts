@@ -313,25 +313,28 @@ describe('compaction', () => {
     expect(readMap(storage.bases.get(`${c.entityType}:${c.entityId}`)!)).toEqual({ a: 1 });
   });
 
-  it('retry keeps the log for the next window; permanent and unparseable compact without a re-post', async () => {
+  it('only a written window compacts: retry, permanent and unparseable all keep the log for the next one', async () => {
     const { ctx: c, ws, collab } = session();
+    const key = `${c.entityType}:${c.entityId}`;
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
     expect(await runCompaction(collab)).toBe('retry');
-    expect(storage.compactState).not.toHaveBeenCalled();
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
-
     vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
     expect(await runCompaction(collab)).toBe('permanent');
-    expect(storage.compactState).toHaveBeenCalledTimes(1);
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(1);
 
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
     vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
     expect(await runCompaction(collab)).toBe('permanent');
     expect(postMaterialize).toHaveBeenCalledTimes(2);
-    expect(storage.compactState).toHaveBeenCalledTimes(2);
+    expect(storage.compactState).not.toHaveBeenCalled();
+
+    // The next written window carries every edit the earlier ones kept.
+    expect(await runCompaction(collab)).toBe('ok');
+    expect(storage.logs.get(key)).toHaveLength(0);
+    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1, b: 2 });
   });
 
   it('nothing logged means nothing written, and a thrown storage error counts as retry', async () => {

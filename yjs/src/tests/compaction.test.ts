@@ -60,22 +60,23 @@ describe('compactDocument', () => {
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
-  it('permanent compacts without a later re-post', async () => {
+  it('permanent leaves the base and the log untouched, so the base only holds written state', async () => {
+    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(ctx, mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
     expect(await compactDocument(ctx)).toBe('permanent');
-    expect(storage.logs.get(key)).toHaveLength(0);
-    expect(await compactDocument(ctx)).toBe('empty');
-    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
   });
 
-  it('unparseable state compacts into the base without a write, so cleanup is never blocked', async () => {
+  it('unparseable state is never posted and keeps the log', async () => {
     await storage.appendUpdate(ctx, mapUpdate('a', 1));
     vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
     expect(await compactDocument(ctx)).toBe('permanent');
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(0);
-    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1 });
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(1);
   });
 
   it('deletes only the rows it read, so a concurrent append survives', async () => {

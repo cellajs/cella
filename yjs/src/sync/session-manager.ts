@@ -69,7 +69,11 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
   return collab;
 }
 
-/** When the last client leaves, a grace period runs before the log is compacted and the session rows are deleted. */
+/**
+ * When the last client leaves, a grace period runs before the log is compacted and the session rows
+ * are deleted. Rows go only once the log is written or empty: a retryable failure keeps them and
+ * retries, a permanent refusal keeps them for the next session or the startup sweep.
+ */
 export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
   const key = collabKey(entityType, entityId);
   const collab = collabSessions.get(key);
@@ -86,7 +90,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       collab.compactTimer = undefined;
     }
 
-    const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'done'> => {
+    const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'kept' | 'done'> => {
       if (collab.clients.size > 0) return 'rejoined';
 
       let result: Awaited<ReturnType<typeof compactDocument>>;
@@ -96,8 +100,9 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
         log.error(`Cleanup compaction failed for ${key}`, { err });
         result = 'retry';
       }
-      // A transient backend failure keeps the rows: the log is durable, so the retry loses nothing.
+      // An unwritten log keeps the rows: they hold edits the entity has not received.
       if (result === 'retry') return 'retry';
+      if (result === 'permanent') return 'kept';
 
       try {
         await deleteDoc(collab.ctx);
@@ -113,6 +118,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
       return;
     }
+    if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping session rows for the next session`);
     collabSessions.delete(key);
   };
 

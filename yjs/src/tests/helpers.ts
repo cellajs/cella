@@ -4,6 +4,7 @@ import * as encoding from 'lib0/encoding';
 import { vi } from 'vitest';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
+import type { StaleDocRow } from '../data/storage';
 
 const DELIMITER = '.';
 const SIGNATURE_LENGTH = 16;
@@ -178,7 +179,7 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       bases.delete(key(ctx));
       logs.delete(key(ctx));
     }),
-    listStaleDocs: vi.fn(async () => []),
+    listStaleDocs: vi.fn(async (): Promise<StaleDocRow[]> => []),
   };
   return store;
 }

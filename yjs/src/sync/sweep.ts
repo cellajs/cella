@@ -7,8 +7,9 @@ import { getCollab } from './session-manager';
 /**
  * Finishes sessions a relay crash left behind: every stale session row goes through the same
  * compaction as a normal cleanup (the log is durable, so an unmaterialized edit is written now),
- * then its rows are deleted; a retryable failure leaves the rows for a later boot. Listing runs per
- * tenant inside tenant-scoped transactions, so the sweep sees rows under the RLS-subject runtime role.
+ * then its rows are deleted; a log the backend did not write leaves the rows for a later boot.
+ * Listing runs per tenant inside tenant-scoped transactions, so the sweep sees rows under the
+ * RLS-subject runtime role.
  */
 export async function runStartupSweep(): Promise<void> {
   let stale: Awaited<ReturnType<typeof listStaleDocs>>;
@@ -35,8 +36,8 @@ export async function runStartupSweep(): Promise<void> {
       log.warn(`Startup sweep: compaction failed for ${doc.entityType}:${doc.entityId}, keeping rows`, { err });
       continue;
     }
-    if (result === 'retry') {
-      log.warn(`Startup sweep: materialize unavailable for ${doc.entityType}:${doc.entityId}, keeping rows`);
+    if (result === 'retry' || result === 'permanent') {
+      log.warn(`Startup sweep: log not written for ${doc.entityType}:${doc.entityId} (${result}), keeping rows`);
       continue;
     }
 

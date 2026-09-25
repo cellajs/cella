@@ -8,12 +8,13 @@ import { postMaterialize, stateToBlocksJson } from './materialize';
 export type CompactionResult = 'empty' | 'ok' | 'permanent' | 'retry';
 
 /**
- * Folds the update log into the base state and writes the result to the entity through the
- * backend. The caller holds the document lock. Materialization comes first: on `retry` the log
- * stays intact so the next window, cleanup or sweep repeats the attempt; on `ok` and `permanent`
- * the base is replaced and exactly the rows that were read are deleted, so an update appended
- * during the POST survives for the next round. Unparseable state can never converge: it compacts
- * into the base (still durable) without a write.
+ * Writes the merged document to the entity through the backend, then folds the update log into
+ * the base state. The caller holds the document lock. Only a written window folds: on `ok` the
+ * base is replaced and exactly the rows that were read are deleted, so an update appended during
+ * the POST survives for the next round. Every other outcome leaves base and log untouched, so the
+ * base only ever holds written state and the log every edit the entity has not received; cleanup
+ * and sweep rely on this to delete a document only after `ok` or `empty`. Unparseable state is
+ * never posted and counts as `permanent`.
  */
 export async function compactDocument(ctx: DocContext): Promise<CompactionResult> {
   const [base, rows] = await Promise.all([loadBase(ctx), readLog(ctx)]);
@@ -27,8 +28,7 @@ export async function compactDocument(ctx: DocContext): Promise<CompactionResult
 
   const json = stateToBlocksJson(merged);
   if (json === null) {
-    log.error(`Compaction: unparseable state for ${ctx.entityType}:${ctx.entityId}, compacting without a write`);
-    await compactState(ctx, merged, ids);
+    log.error(`Compaction: unparseable state for ${ctx.entityType}:${ctx.entityId}, keeping the log`);
     return 'permanent';
   }
 
@@ -42,8 +42,8 @@ export async function compactDocument(ctx: DocContext): Promise<CompactionResult
     }
   }
   const result = await postMaterialize(ctx, editedBy, json);
-  if (result === 'retry') return 'retry';
+  if (result !== 'ok') return result;
 
   await compactState(ctx, merged, ids);
-  return result;
+  return 'ok';
 }

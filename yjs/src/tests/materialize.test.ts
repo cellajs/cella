@@ -39,12 +39,16 @@ describe('postMaterialize', () => {
     });
   });
 
-  it('classifies 4xx as permanent and 5xx as retry', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 403 });
-    expect(await postMaterialize(ctx, 'user-1', '[]')).toBe('permanent');
-
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 503 });
-    expect(await postMaterialize(ctx, 'user-1', '[]')).toBe('retry');
+  it('classifies a rejected request as permanent, and refusals that can change and 5xx as retry', async () => {
+    for (const status of [400, 413, 422]) {
+      fetchMock.mockResolvedValueOnce({ ok: false, status });
+      expect(await postMaterialize(ctx, 'user-1', '[]'), `status ${status}`).toBe('permanent');
+    }
+    // Access, scope and secret refusals can change: an editor who lost access must not cost the log.
+    for (const status of [401, 403, 404, 409, 429, 503]) {
+      fetchMock.mockResolvedValueOnce({ ok: false, status });
+      expect(await postMaterialize(ctx, 'user-1', '[]'), `status ${status}`).toBe('retry');
+    }
   });
 
   it('classifies network errors as retry', async () => {

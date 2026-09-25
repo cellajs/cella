@@ -47,9 +47,16 @@ describe('runStartupSweep', () => {
     expect(deleteDoc).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the rows when materialization is retry-class or compaction throws', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' })]);
-    vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockRejectedValueOnce(new Error('db down'));
+  it('keeps the rows when the log was not written or compaction throws', async () => {
+    vi.mocked(listStaleDocs).mockResolvedValueOnce([
+      staleRow(),
+      staleRow({ entityId: 'entity-2' }),
+      staleRow({ entityId: 'entity-3' }),
+    ]);
+    vi.mocked(compactDocument)
+      .mockResolvedValueOnce('retry')
+      .mockResolvedValueOnce('permanent')
+      .mockRejectedValueOnce(new Error('db down'));
     await runStartupSweep();
     expect(deleteDoc).not.toHaveBeenCalled();
   });
