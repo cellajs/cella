@@ -4,7 +4,7 @@
 -- The user will handle migration generation and application.
 --
 -- Combined side-effect migration.
--- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_invariants, partition_setup, rls_setup, unlogged_setup, verify_side_effects
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, verify_side_effects
 -- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
 -- whenever ANY block changes, so this file always reflects the full current side-effect state.
 
@@ -213,9 +213,9 @@ BEGIN
 END $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
--- [membership_invariants] Membership invariants, an organization keeps an admin
+-- [membership_rules] Membership rules, an organization keeps an admin
 -- ══════════════════════════════════════════════════════════════════════════
--- Membership invariants
+-- Membership rules
 -- An organization keeps at least one 'admin' membership.
 
 CREATE OR REPLACE FUNCTION memberships_keep_org_admin()

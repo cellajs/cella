@@ -14,7 +14,7 @@ async function run(): Promise<SideEffectBlock> {
   // The organization's most privileged role, from the app's own role vocabulary.
   const [adminRole] = hierarchy.getRoles('organization');
 
-  const migrationSql = `-- Membership invariants
+  const migrationSql = `-- Membership rules
 -- An organization keeps at least one '${adminRole}' membership.
 
 CREATE OR REPLACE FUNCTION ${keepOrganizationAdminConstraint}()
@@ -54,14 +54,14 @@ CREATE CONSTRAINT TRIGGER ${keepOrganizationAdminConstraint}
 `;
 
   return {
-    tag: 'membership_invariants',
-    title: 'Membership invariants, an organization keeps an admin',
+    tag: 'membership_rules',
+    title: 'Membership rules, an organization keeps an admin',
     sql: migrationSql,
     notes: [`Trigger: ${keepOrganizationAdminConstraint} (admin role '${adminRole}')`],
   };
 }
 
 export const sideEffect: SideEffectProducer = {
-  name: 'Membership invariants',
+  name: 'Membership rules',
   produce: run,
 };
