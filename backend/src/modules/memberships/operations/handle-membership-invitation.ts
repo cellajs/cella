@@ -73,6 +73,7 @@ export async function handleMembershipInvitationOp(
         .update(inactiveMembershipsTable)
         .set({ rejectedAt: getIsoDate() })
         .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
 

@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
-import { handleMembershipInvitation } from 'sdk';
+import { handleMembershipInvitation, invokeToken } from 'sdk';
 import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
@@ -119,6 +120,35 @@ describe('Invitation response', async () => {
       .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(rejectedInactive).toHaveLength(1);
     expect(rejectedInactive[0].rejectedAt).toBeDefined();
+  });
+
+  it("retires a rejected invitation's emailed link", async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const { inactiveMembership, rawToken } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
+
+    const { response: res } = await respondToInvitation(
+      inactiveMembership.id,
+      'reject',
+      await createTestSession(invitedUser),
+    );
+    expect(res.status).toBe(200);
+
+    expect(
+      await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id)),
+    ).toHaveLength(0);
+    const { response, error } = await call(invokeToken, {
+      path: { type: 'invitation', token: rawToken },
+      headers: defaultHeaders,
+    });
+    expect(response.status).toBe(401);
+    expect((error as { type: string }).type).toBe('invitation_not_found');
   });
 
   it('should reject for non-existent invitation', async () => {
