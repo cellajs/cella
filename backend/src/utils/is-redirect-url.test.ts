@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { maxLength } from '#/db/utils/constraints';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 
 describe('isValidRedirectPath', () => {
@@ -8,6 +9,10 @@ describe('isValidRedirectPath', () => {
 
   it('preserves query and hash', () => {
     expect(isValidRedirectPath('/home?tab=members#top')).toBe('/home?tab=members#top');
+  });
+
+  it('keeps an encoded query intact', () => {
+    expect(isValidRedirectPath('/search?q=a%26b')).toBe('/search?q=a%26b');
   });
 
   it('rejects non-string input', () => {
@@ -25,9 +30,17 @@ describe('isValidRedirectPath', () => {
     expect(isValidRedirectPath('//evil.example/path')).toBe(false);
   });
 
+  it('must not open-redirect via dot segments that normalize to a scheme-relative URL', () => {
+    expect(isValidRedirectPath('/..//evil.example')).toBe(false);
+    expect(isValidRedirectPath('/.//evil.example')).toBe(false);
+    expect(isValidRedirectPath('/%2e%2e//evil.example')).toBe(false);
+  });
+
   it('rejects backslash authority tricks', () => {
     expect(isValidRedirectPath('/\\evil.example')).toBe(false);
     expect(isValidRedirectPath('\\\\evil.example')).toBe(false);
+    expect(isValidRedirectPath('/./\\evil.example')).toBe(false);
+    expect(isValidRedirectPath('/..%5c%5cevil.example')).toBe(false);
   });
 
   it('rejects encoded double-slash bypasses', () => {
@@ -52,10 +65,17 @@ describe('isValidRedirectPath', () => {
   });
 
   it('normalizes traversal that stays same-origin', () => {
-    // `/../etc` resolves back to an origin-relative path, never escaping the origin.
-    const result = isValidRedirectPath('/../etc');
-    expect(result).not.toBe(false);
-    expect(typeof result).toBe('string');
-    expect((result as string).startsWith('/')).toBe(true);
+    expect(isValidRedirectPath('/../etc')).toBe('/etc');
+  });
+
+  it('caps the result at the stored column length', () => {
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field - 1)}`)).toBe(`/${'a'.repeat(maxLength.field - 1)}`);
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field)}`)).toBe(false);
+  });
+
+  it('returns a path that validates to itself', () => {
+    const once = isValidRedirectPath('/a b?q=a%26b#c');
+    expect(once).toBe('/a%20b?q=a%26b#c');
+    expect(isValidRedirectPath(once)).toBe(once);
   });
 });
