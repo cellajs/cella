@@ -3,18 +3,12 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
-import { authEvents } from '#/modules/auth/auth-events';
-import {
-  deleteTokenByRawValue,
-  findInvitationToken,
-  findLatestSessionByUser,
-  revokeSessions,
-} from '#/modules/auth/auth-queries';
+import { deleteTokenByRawValue, findInvitationToken, findLatestSessionByUser } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -23,7 +17,6 @@ import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accep
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -138,12 +131,21 @@ app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
   const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
   const { session } = await validateSession(sessionToken);
 
-  // Only continue if session is impersonation
-  if (!adminUserId) throw new AppError(400, 'invalid_request', 'error');
+  // Only an impersonation session stops: it ends here, and the browser returns to the admin's own session.
+  if (!adminUserId || session.type !== 'impersonation') throw new AppError(400, 'invalid_request', 'error');
+
+  await endSessions(ctx, {
+    userId: session.userId,
+    sessionIds: [session.id],
+    reason: 'impersonation_stopped',
+    by: adminUserId,
+  });
 
   const adminsLastSession = await findLatestSessionByUser(ctx, { userId: adminUserId });
 
-  if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
+  if (!adminsLastSession || isExpiredDate(adminsLastSession.expiresAt)) {
+    throw new AppError(401, 'unauthorized', 'warn');
+  }
 
   const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
   const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
@@ -182,14 +184,12 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
   const { session: currentSession } = await validateSession(sessionToken);
 
-  await revokeSessions(ctx, {
-    filters: [eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)],
+  await endSessions(ctx, {
+    userId: currentSession.userId,
+    sessionIds: [currentSession.id],
     reason: 'sign_out',
-    revokedBy: currentSession.userId,
+    by: currentSession.userId,
   });
-
-  invalidateCache.user(currentSession.userId);
-  authEvents.emit('session.revoked', { userId: currentSession.userId, sessionIds: [currentSession.id] });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);

@@ -494,6 +494,7 @@
   "retry_resend_invitation.text": "Please check your inbox before requesting another invite.",
   "revert": "Revert",
   "revert_handle": "Revert to current handle",
+  "revocation_reason.impersonation_stopped": "Impersonation stopped",
   "revocation_reason.mfa_enabled": "Signed out when MFA was enabled",
   "revocation_reason.other_session": "Signed out from another device",
   "revocation_reason.replaced": "Replaced by a new sign-in",

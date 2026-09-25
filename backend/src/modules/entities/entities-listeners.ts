@@ -6,9 +6,10 @@ import {
   dispatchMoveOuts,
   dispatchToAppStream,
 } from '#/modules/entities/helpers/dispatch-to-stream';
+import { closeAppStream, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
-import { streamSubscriberManager, writeError } from './stream';
+import { streamSubscriberManager } from './stream';
 import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 // Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
@@ -27,17 +28,15 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Closes the streams bound to a revoked session; without this they stay live until the client reconnects.
-// The client treats the `unauthorized` code as permanent and opens its circuit.
-authEvents.on('session.revoked', async ({ userId, sessionIds }) => {
+// Closes the streams bound to ended sessions, each with the code that tells the client whether to reconnect.
+authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
   const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
+  const payload = streamErrorForEnding(reason);
   for (const subscriber of subscribers) {
-    if (!sessionIds.includes(subscriber.sessionId)) continue;
-    await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session revoked' });
-    streamSubscriberManager.unregister(subscriber.id);
-    // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
-    subscriber.stream.abort();
-    await subscriber.stream.close();
+    if (sessionIds !== 'all' && !sessionIds.includes(subscriber.sessionId)) continue;
+    await closeAppStream(subscriber, payload).catch((error) => {
+      log.error('Failed to close the stream of an ended session', { error, subscriberId: subscriber.id });
+    });
   }
 });
 

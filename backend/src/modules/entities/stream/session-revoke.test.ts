@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { authEvents } from '#/modules/auth/auth-events';
 import '#/modules/entities/entities-listeners';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -25,22 +25,49 @@ const register = (sessionId: string) => {
   return stream;
 };
 
-describe('session.revoked closes the streams bound to that session', () => {
-  it('writes the permanent error and ends only that session; other sessions of the user stay live', async () => {
+const errorEvent = (code: string, message: string) => ({ event: 'error', data: JSON.stringify({ code, message }) });
+const registeredIds = () => streamSubscriberManager.getByChannel(`user:${USER}`).map((s) => s.id);
+
+afterEach(() => {
+  for (const id of registeredIds()) streamSubscriberManager.unregister(id);
+});
+
+describe('session.revoked closes the streams bound to the ended sessions', () => {
+  it('writes the final error and ends only that session; other sessions of the user stay live', async () => {
     const ended = register('session-1');
     const kept = register('session-2');
 
-    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-1'] });
+    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-1'], reason: 'sign_out' });
     await vi.waitFor(() => expect(ended.closed).toBe(true));
 
-    expect(ended.written).toEqual([
-      { event: 'error', data: JSON.stringify({ code: 'unauthorized', message: 'Session revoked' }) },
-    ]);
+    expect(ended.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
     expect(ended.aborted).toBe(true);
-    expect(streamSubscriberManager.getByChannel(`user:${USER}`).map((s) => s.id)).toEqual(['session-2']);
+    expect(registeredIds()).toEqual(['session-2']);
     expect(kept.written).toEqual([]);
     expect(kept.closed).toBe(false);
+  });
 
-    streamSubscriberManager.unregister('session-2');
+  it('tells a stream whose browser holds a newer session to reconnect', async () => {
+    const replaced = register('session-1');
+    const stopped = register('session-2');
+
+    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-1'], reason: 'replaced' });
+    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-2'], reason: 'impersonation_stopped' });
+    await vi.waitFor(() => expect(replaced.closed && stopped.closed).toBe(true));
+
+    expect(replaced.written).toEqual([errorEvent('session_replaced', 'Session replaced')]);
+    expect(stopped.written).toEqual([errorEvent('session_replaced', 'Session replaced')]);
+  });
+
+  it('closes every stream of the user for an ending of all sessions', async () => {
+    const first = register('session-1');
+    const second = register('session-2');
+
+    authEvents.emit('session.revoked', { userId: USER, sessionIds: 'all', reason: 'user_deleted' });
+    await vi.waitFor(() => expect(first.closed && second.closed).toBe(true));
+
+    expect(first.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
+    expect(second.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
+    expect(registeredIds()).toEqual([]);
   });
 });

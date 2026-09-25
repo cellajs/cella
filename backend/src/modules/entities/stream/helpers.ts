@@ -1,7 +1,17 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 
-/** Stable codes so a client can react beyond a generic transport failure. */
-export type StreamErrorCode = 'unauthorized' | 'forbidden' | 'tenant_revoked' | 'server_shutdown' | 'internal';
+/**
+ * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized`,
+ * `forbidden` and `tenant_revoked` as final; `session_replaced` means the browser holds a newer session to reconnect
+ * with.
+ */
+export type StreamErrorCode =
+  | 'unauthorized'
+  | 'forbidden'
+  | 'tenant_revoked'
+  | 'session_replaced'
+  | 'server_shutdown'
+  | 'internal';
 
 export interface StreamErrorPayload {
   code: StreamErrorCode;

@@ -277,7 +277,9 @@ export const zMeAuthData = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z
+        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
+        .nullable(),
       isCurrent: z.boolean(),
       isNewDevice: z.boolean(),
     }),
@@ -1106,7 +1108,9 @@ export const zRevokeMySessionsResponse = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z
+        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
+        .nullable(),
     }),
   ),
   rejectedIds: z.array(z.string()),

@@ -15,9 +15,9 @@ export type AuthStrategy = (typeof authStrategiesEnum)[number];
 
 /**
  * Why a session was revoked before its expiry. The owner's acts: `sign_out` from the session itself, `other_session`
- * from another of their sessions, `mfa_enabled` because enabling MFA drops every regular session. The server's
- * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`, `replaced` by a newer sign-in from the
- * same browser.
+ * from another of their sessions, `mfa_enabled` because enabling MFA drops every other regular session. The server's
+ * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
+ * browser: a sign-in, or the mfa session that enabling MFA mints. `impersonation_stopped` when the admin stops.
  */
 export const sessionRevocationReasons = [
   'sign_out',
@@ -25,8 +25,12 @@ export const sessionRevocationReasons = [
   'mfa_enabled',
   'session_cap',
   'replaced',
+  'impersonation_stopped',
 ] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
+
+/** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
+export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
 /**
  * Authenticated session data. A revoked session keeps its row, stamped with `revokedAt`, so the sessions list shows

@@ -5,6 +5,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
@@ -61,9 +62,16 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     });
   }
 
-  // Update MFA flag and invalidate sessions atomically
+  // The flag and the sessions it ends change together.
   const updatedUser = await baseDb.transaction(async (tx) => {
-    return updateUserMfa({ var: { ...ctx.var, db: tx } }, { mfaRequired });
+    const txCtx = { var: { ...ctx.var, db: tx } };
+    const updated = await updateUserMfa(txCtx, { mfaRequired });
+    if (updated.mfaRequired) {
+      // This browser's session gives way to the mfa session minted below; every other regular session ends.
+      await endSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
+      await endSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
+    }
+    return updated;
   });
 
   invalidateCache.user(user.id);
@@ -114,7 +122,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUser(ctx);
 
-  invalidateCache.user(user.id);
+  await endSessions(ctx, { userId: user.id, all: true, reason: 'user_deleted', by: user.id });
   deleteAuthCookie(ctx, 'session');
   log.info('User deleted');
 

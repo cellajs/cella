@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, inArray, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,9 +8,9 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
-import { revokeSessions } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
@@ -40,13 +40,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   return deviceId;
 };
 
-/**
- * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
- * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
- * sign-ins may exceed the cap by one.
- */
-export const evictExcessSessions = async (userId: string): Promise<void> => {
-  const excess = await db
+/** The user's live sessions that are not impersonations, newest first, optionally only those of one browser. */
+const liveOwnSessions = (userId: string, deviceIdHash?: string) =>
+  db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
     .where(
@@ -55,28 +51,22 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
         ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
         isNull(sessionsTable.revokedAt),
+        deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined,
       ),
     )
-    .orderBy(desc(sessionsTable.createdAt))
-    .offset(appConfig.maxSessionsPerUser - 1);
+    .orderBy(desc(sessionsTable.createdAt));
 
+/**
+ * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
+ * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
+ * sign-ins may exceed the cap by one.
+ */
+export const evictExcessSessions = async (userId: string): Promise<void> => {
+  const excess = await liveOwnSessions(userId).offset(appConfig.maxSessionsPerUser - 1);
   if (excess.length === 0) return;
 
-  await revokeSessions(
-    { var: { db } },
-    {
-      filters: [
-        inArray(
-          sessionsTable.id,
-          excess.map((s) => s.id),
-        ),
-      ],
-      reason: 'session_cap',
-      revokedBy: null,
-    },
-  );
-
-  log.info('Revoked sessions beyond per-user cap', { userId, count: excess.length });
+  const sessionIds = excess.map((s) => s.id);
+  await endSessions({ var: { db } }, { userId, sessionIds, reason: 'session_cap', by: null });
 };
 
 /** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
@@ -161,19 +151,8 @@ export const createSession = async (
   if (type !== 'impersonation') {
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
-      await revokeSessions(
-        { var: { db } },
-        {
-          filters: [
-            eq(sessionsTable.userId, user.id),
-            eq(sessionsTable.deviceIdHash, session.deviceIdHash),
-            ne(sessionsTable.type, 'impersonation'),
-            gt(sessionsTable.expiresAt, getIsoDate()),
-          ],
-          reason: 'replaced',
-          revokedBy: null,
-        },
-      );
+      const sessionIds = (await liveOwnSessions(user.id, session.deviceIdHash)).map((s) => s.id);
+      await endSessions({ var: { db } }, { userId: user.id, sessionIds, reason: 'replaced', by: null });
     }
     await evictExcessSessions(user.id);
   }

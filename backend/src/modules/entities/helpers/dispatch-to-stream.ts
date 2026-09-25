@@ -14,7 +14,7 @@ import type { AppStreamEvent, AppStreamProductEvent } from '../stream/types';
 /** An authenticated subscriber; receives membership, product and org events via org channels. */
 export interface AppStreamSubscriber extends CursoredSubscriber {
   userId: string;
-  /** The session this connection authenticated with; its deletion closes the stream. */
+  /** The session this connection authenticated with; its ending closes the stream. */
   sessionId: string;
   organizationIds: Set<string>;
   isSystemAdmin: boolean;

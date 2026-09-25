@@ -1,9 +1,8 @@
 import { and, desc, eq, getColumns, gt, isNull, type SQL } from 'drizzle-orm';
 import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
-import type { ActorId } from '#/db/utils/ids';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { type SessionRevocationReason, sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -140,27 +139,6 @@ interface DeleteTokenByRawValueOpts {
 export const deleteTokenByRawValue = async (ctx: DbContext, { type, token }: DeleteTokenByRawValueOpts) => {
   const { db } = ctx.var;
   return db.delete(tokensTable).where(and(eq(tokensTable.secret, hashToken(token)), eq(tokensTable.type, type)));
-};
-
-interface RevokeSessionsOpts {
-  /** Which sessions; the live-row condition is added here. */
-  filters: SQL[];
-  reason: SessionRevocationReason;
-  /** Null when the server revokes during a sign-in. */
-  revokedBy: ActorId | null;
-}
-
-/**
- * Stamps the live sessions matching the filters and returns them, secret stripped. A revoked session is never
- * re-stamped, so the first revocation is the one the sessions list shows; the row itself stays until the sweep.
- */
-export const revokeSessions = async (ctx: DbContext, { filters, reason, revokedBy }: RevokeSessionsOpts) => {
-  const { db } = ctx.var;
-  return db
-    .update(sessionsTable)
-    .set({ revokedAt: getIsoDate(), revokedBy, revocationReason: reason })
-    .where(and(isNull(sessionsTable.revokedAt), ...filters))
-    .returning(sessionSafeColumns);
 };
 
 interface InsertPasskeyOpts {

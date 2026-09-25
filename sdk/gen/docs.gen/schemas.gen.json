@@ -700,7 +700,15 @@
               "revocationReason": {
                 "type": ["string", "null"],
                 "required": true,
-                "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                "enum": [
+                  "sign_out",
+                  "other_session",
+                  "mfa_enabled",
+                  "session_cap",
+                  "replaced",
+                  "impersonation_stopped",
+                  null
+                ]
               },
               "isCurrent": { "type": "boolean", "required": true },
               "isNewDevice": {

@@ -326,7 +326,14 @@ export type MeAuthData = {
     expiresAt: string;
     revokedAt: string | null;
     revokedBy: string | null;
-    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+    revocationReason:
+      | 'sign_out'
+      | 'other_session'
+      | 'mfa_enabled'
+      | 'session_cap'
+      | 'replaced'
+      | 'impersonation_stopped'
+      | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -2735,7 +2742,14 @@ export type RevokeMySessionsResponses = {
       expiresAt: string;
       revokedAt: string | null;
       revokedBy: string | null;
-      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+      revocationReason:
+        | 'sign_out'
+        | 'other_session'
+        | 'mfa_enabled'
+        | 'session_cap'
+        | 'replaced'
+        | 'impersonation_stopped'
+        | null;
     }>;
     /**
      * Identifiers of items that could not be processed

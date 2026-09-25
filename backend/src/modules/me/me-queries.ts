@@ -1,8 +1,6 @@
 import { and, eq, getColumns, isNotNull, isNull, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
-import { revokeSessions } from '#/modules/auth/auth-queries';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -37,19 +35,10 @@ interface UpdateUserMfaOpts {
   mfaRequired: boolean;
 }
 
-/** Revokes every regular session when enabling MFA; the caller mints the mfa session that replaces them. */
+/** Sets the MFA flag; the caller ends the sessions that enabling it replaces. */
 export const updateUserMfa = async (ctx: UserContext, { mfaRequired }: UpdateUserMfaOpts) => {
   const { db, userId } = ctx.var;
   const [updatedUser] = await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, userId)).returning();
-
-  if (updatedUser.mfaRequired) {
-    await revokeSessions(ctx, {
-      filters: [eq(sessionsTable.userId, updatedUser.id), eq(sessionsTable.type, 'regular')],
-      reason: 'mfa_enabled',
-      revokedBy: userId,
-    });
-  }
-
   return updatedUser;
 };
 
