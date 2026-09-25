@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type Provider from 'oidc-provider';
+import { vi } from 'vitest';
 import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
@@ -21,6 +22,24 @@ export async function startTestOauthServer(): Promise<TestOauthServer> {
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const issuer = `http://127.0.0.1:${(server.address() as AddressInfo).port}/oauth`;
   return { provider, issuer, close: () => new Promise((resolve) => server.close(() => resolve())) };
+}
+
+/**
+ * Answers the provider's fetch of a Client ID Metadata Document from memory, keyed by the `client_id` URL; every other
+ * request goes out as usual. Returns the restore function.
+ */
+export function serveClientMetadataDocuments(documents: Record<string, Record<string, unknown>>): () => void {
+  const realFetch = globalThis.fetch;
+  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const document = documents[url];
+    if (!document) return realFetch(input, init);
+    return new Response(JSON.stringify({ client_id: url, ...document }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  });
+  return () => spy.mockRestore();
 }
 
 export async function clientCredentialsToken(
@@ -58,14 +77,25 @@ class CookieJar {
 
 const base64url = (buffer: Buffer) => buffer.toString('base64url');
 
+export interface AuthorizationInput {
+  clientId: string;
+  redirectUri: string;
+  scope: string;
+  resource: string;
+  sessionCookie: string;
+}
+
+type TokenResponse = { status: number; body: Record<string, unknown> };
+
 /**
- * The authorization code flow with PKCE as a public client, consenting through the app's interaction routes with the
- * user's session cookie: what an MCP client and the consent page do together.
+ * The authorization request with PKCE as a public client, consenting (accept) through the app's interaction routes with
+ * the user's session cookie, up to the redirect back to the client: what an MCP client and the consent page do together.
+ * `failure` holds the details answer when it is not 200, or the error the redirect carries.
  */
-export async function authorizationCodeToken(
+export async function authorizationCode(
   issuer: string,
-  input: { clientId: string; redirectUri: string; scope: string; resource: string; sessionCookie: string },
-): Promise<{ status: number; body: Record<string, unknown>; consent: Record<string, unknown> }> {
+  input: AuthorizationInput,
+): Promise<{ code: string | null; verifier: string; consent: Record<string, unknown>; failure: TokenResponse | null }> {
   const origin = new URL(issuer).origin;
   const jar = new CookieJar([input.sessionCookie]);
   const verifier = base64url(randomBytes(32));
@@ -93,7 +123,8 @@ export async function authorizationCodeToken(
 
   const details = await fetch(`${origin}/oauth/interaction/${uid}/details`, { headers: { Cookie: jar.header() } });
   const consent = (await details.json()) as Record<string, unknown>;
-  if (details.status !== 200) return { status: details.status, body: consent, consent };
+  if (details.status !== 200)
+    return { code: null, verifier, consent, failure: { status: details.status, body: consent } };
 
   const decision = await fetch(`${origin}/oauth/interaction/${uid}/consent`, {
     method: 'POST',
@@ -119,24 +150,55 @@ export async function authorizationCodeToken(
     if (next.startsWith(input.redirectUri)) {
       const params = new URL(next).searchParams;
       if (params.get('state') !== state) throw new Error('state mismatch');
-      if (params.get('error')) return { status: 400, body: Object.fromEntries(params), consent };
+      if (params.get('error'))
+        return { code: null, verifier, consent, failure: { status: 400, body: Object.fromEntries(params) } };
       code = params.get('code');
     } else {
       location = next.startsWith('/') ? `${origin}${next}` : next;
     }
   }
   if (!code) throw new Error('No authorization code after 5 hops');
+  return { code, verifier, consent, failure: null };
+}
 
-  const token = await fetch(`${issuer}/token`, {
+async function tokenRequest(issuer: string, params: Record<string, string>): Promise<TokenResponse> {
+  const response = await fetch(`${issuer}/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: input.redirectUri,
-      client_id: input.clientId,
-      code_verifier: verifier,
-    }),
+    body: new URLSearchParams(params),
   });
-  return { status: token.status, body: (await token.json()) as Record<string, unknown>, consent };
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
+/** The code exchange of a public client (PKCE, no client authentication). */
+export function exchangeCode(
+  issuer: string,
+  input: { clientId: string; redirectUri: string; code: string; verifier: string },
+): Promise<TokenResponse> {
+  return tokenRequest(issuer, {
+    grant_type: 'authorization_code',
+    code: input.code,
+    redirect_uri: input.redirectUri,
+    client_id: input.clientId,
+    code_verifier: input.verifier,
+  });
+}
+
+/** The refresh_token grant of a public client; the provider rotates the refresh token on every use. */
+export function refreshAccessToken(issuer: string, input: { clientId: string; refreshToken: string }) {
+  return tokenRequest(issuer, {
+    grant_type: 'refresh_token',
+    refresh_token: input.refreshToken,
+    client_id: input.clientId,
+  });
+}
+
+/** Consent and code exchange in one go; a refusal on the way comes back as `status` and `body`. */
+export async function authorizationCodeToken(
+  issuer: string,
+  input: AuthorizationInput,
+): Promise<{ status: number; body: Record<string, unknown>; consent: Record<string, unknown> }> {
+  const { code, verifier, consent, failure } = await authorizationCode(issuer, input);
+  if (failure || !code) return { ...(failure ?? { status: 400, body: {} }), consent };
+  return { ...(await exchangeCode(issuer, { ...input, code, verifier })), consent };
 }

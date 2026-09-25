@@ -1,3 +1,4 @@
+import { z } from '@hono/zod-openapi';
 import { and, eq } from 'drizzle-orm';
 import type { Adapter, AdapterPayload } from 'oidc-provider';
 import { baseDb } from '#/db/db';
@@ -43,6 +44,8 @@ async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
     };
   }
   // A service account is its own client_credentials client; its secret keys are the client secrets (compared by hash).
+  // Its id is a UUID: any other id (a metadata document URL) would make the uuid column refuse the query.
+  if (!z.uuid().safeParse(id).success) return undefined;
   const [account] = await baseDb
     .select()
     .from(serviceAccountsTable)
