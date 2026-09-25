@@ -55,6 +55,28 @@ describe('toValidatedCidr', () => {
     }
   });
 
+  it('must not open the database to all of IPv4 via an IPv4-mapped IPv6 range', () => {
+    // IPv4 clients match the database ACL through these addresses, so they carry the IPv4 rules.
+    for (const entry of ['::ffff:0.0.0.0/96', '::ffff:0:0/96', '::fffe:0:0/95', '::ffff:0.0.0.0/97']) {
+      expect(toValidatedCidr(entry).ok, entry).toBe(false);
+      expect(toValidatedCidr(entry, { allowWide: true }).ok, entry).toBe(false);
+    }
+    // A mapped /112 is an IPv4 /16: wider than /24, though longer than the IPv6 minimum.
+    expect(toValidatedCidr('::ffff:198.51.0.0/112')).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining('/24'),
+    });
+    // Positive control: a narrow mapped range becomes the IPv4 range it names.
+    expect(toValidatedCidr('::ffff:198.51.100.7')).toEqual({ ok: true, cidr: '198.51.100.7/32' });
+    expect(toValidatedCidr('::ffff:198.51.100.0/120')).toEqual({ ok: true, cidr: '198.51.100.0/24' });
+  });
+
+  it('must not open the whole internet via the host bits of a wide range', () => {
+    // 0.0.0.1/1 is 0.0.0.0/1: an entry is judged by the network it names.
+    expect(toValidatedCidr('0.0.0.1/1', { allowWide: true }).ok).toBe(false);
+    expect(toValidatedCidr('198.51.100.7/24')).toEqual({ ok: true, cidr: '198.51.100.0/24' });
+  });
+
   it('normalizes IPv6 entries', () => {
     expect(toValidatedCidr('2001:DB8:0:0::1')).toEqual({ ok: true, cidr: '2001:db8::1/128' });
     expect(toValidatedCidr('2001:db8:1234::/48')).toEqual({ ok: true, cidr: '2001:db8:1234::/48' });
@@ -76,5 +98,25 @@ describe('parseAclInput', () => {
 
   it('fails when empty', () => {
     expect(parseAclInput('   ').ok).toBe(false);
+  });
+
+  it('must not open the whole internet via entries that together cover it', () => {
+    // Two halves of IPv4 (the network of 0.0.0.1/1 is 0.0.0.0/1).
+    expect(parseAclInput('0.0.0.1/1, 128.0.0.0/1', { allowWide: true }).ok).toBe(false);
+    // More than one entry could open: three quarters of IPv4, directly or through a mapped range, or of IPv6.
+    for (const acl of ['128.0.0.0/1, 64.0.0.0/2', '128.0.0.0/1, ::ffff:64.0.0.0/98', '8000::/1, 4000::/2']) {
+      expect(parseAclInput(acl, { allowWide: true }), acl).toMatchObject({
+        ok: false,
+        reason: expect.stringContaining('more than half'),
+      });
+    }
+  });
+
+  it('accepts a wide range that stays within half an address family (positive control)', () => {
+    expect(parseAclInput('128.0.0.0/1', { allowWide: true })).toEqual({ ok: true, cidrs: ['128.0.0.0/1'] });
+    expect(parseAclInput('128.0.0.0/2, 64.0.0.0/2', { allowWide: true })).toEqual({
+      ok: true,
+      cidrs: ['128.0.0.0/2', '64.0.0.0/2'],
+    });
   });
 });
