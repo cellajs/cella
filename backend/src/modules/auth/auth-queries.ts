@@ -1,4 +1,5 @@
 import { and, desc, eq, getColumns, gt, isNull, type SQL } from 'drizzle-orm';
+import type { TokenType } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
@@ -8,6 +9,7 @@ import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encr
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
+import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
 interface FindCredentialIdsByUserOpts {
@@ -126,6 +128,18 @@ export const insertInvitationToken = async (ctx: DbContext, { values }: InsertIn
   const { db } = ctx.var;
   const [token] = await db.insert(tokensTable).values(values).returning({ id: tokensTable.id });
   return token;
+};
+
+interface DeleteTokenByRawValueOpts {
+  type: TokenType;
+  /** The unhashed token a cookie or link carried. */
+  token: string;
+}
+
+/** Deletes the token behind a raw value, so the flow it stands for can no longer be completed. */
+export const deleteTokenByRawValue = async (ctx: DbContext, { type, token }: DeleteTokenByRawValueOpts) => {
+  const { db } = ctx.var;
+  return db.delete(tokensTable).where(and(eq(tokensTable.secret, hashToken(token)), eq(tokensTable.type, type)));
 };
 
 interface RevokeSessionsOpts {

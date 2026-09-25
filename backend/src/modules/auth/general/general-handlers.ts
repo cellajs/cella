@@ -7,7 +7,12 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { authEvents } from '#/modules/auth/auth-events';
-import { findInvitationToken, findLatestSessionByUser, revokeSessions } from '#/modules/auth/auth-queries';
+import {
+  deleteTokenByRawValue,
+  findInvitationToken,
+  findLatestSessionByUser,
+  revokeSessions,
+} from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
@@ -157,14 +162,15 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.signOut, async (ctx) => {
-  const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
-
-  if (confirmMfa) {
+  // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
+  const confirmMfaToken = await getAuthCookie(ctx, 'confirm-mfa');
+  if (confirmMfaToken) {
     deleteAuthCookie(ctx, 'confirm-mfa');
-
+    await deleteTokenByRawValue(ctx, { type: 'confirm-mfa', token: confirmMfaToken });
     log.info('User mfa canceled');
 
-    return ctx.body(null, 204);
+    // Canceling from the MFA page carries no session cookie: ending the challenge is then the whole sign-out.
+    if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
   }
 
   const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
