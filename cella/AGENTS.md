@@ -39,6 +39,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
 - `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
+- `stepUpGuard`: after `userGuard` on account-security routes (factors, MFA, provider connect, account deletion): the session must have proven its user's presence again within ten minutes (a factor the user holds, else a fresh sign-in or an emailed link), never an impersonation; else 403 `step_up_required` naming the methods.
 - Also: `sysAdminGuard`, `relatableGuard`.
 
 ### Database access patterns
@@ -55,7 +56,7 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Auth
 
-Six sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+Seven sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `step-up/` (proving presence again before account-security actions), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome; a link type also has its handler in `general/helpers/link-handlers.ts`). Sessions: `general/helpers/session.ts` (`resolveSession` reads the app session from any request context). Cookies: `general/helpers/cookie.ts`.
 
 Machine access ([Interoperability](/docs/page/architecture/interoperability)): `actors/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
 
