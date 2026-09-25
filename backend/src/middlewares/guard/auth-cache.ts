@@ -4,7 +4,8 @@ import type { UserWithCounters } from '#/modules/user/helpers/select';
 
 export interface SessionCacheEntry {
   user: UserWithCounters;
-  isSystemAdmin: boolean;
+  /** Holds the admin system role. The rights also need an allowlisted request address, so they are never cached. */
+  hasSystemRole: boolean;
 }
 
 export type MembershipCacheEntry = (MembershipBaseModel & { createdBy: string | null })[];

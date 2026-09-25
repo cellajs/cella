@@ -33,7 +33,7 @@ export const userGuard = xMiddleware(
         ctx.set('userId', cachedSession.user.id);
         ctx.set('sessionToken', sessionToken);
         ctx.set('sessionId', sessionId);
-        ctx.set('isSystemAdmin', cachedSession.isSystemAdmin);
+        ctx.set('isSystemAdmin', cachedSession.hasSystemRole && isSystemAccessAllowed(ctx));
         ctx.set('db', baseDb);
 
         // Memberships cached separately with longer TTL (keyed by userId)
@@ -66,35 +66,26 @@ export const userGuard = xMiddleware(
       ctx.set('sessionToken', sessionToken);
       ctx.set('sessionId', session.id);
 
-      const systemAccessAllowed = isSystemAccessAllowed(ctx);
-
-      const { memberships, isSystemAdmin } = await baseDb.transaction(async (tx) => {
+      // The role is read whatever the address, so the cached entry is right for every request that hits it.
+      const { memberships, hasSystemRole } = await baseDb.transaction(async (tx) => {
         const [memberships, [systemRoleRecord]] = await Promise.all([
           tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-          // Only query system roles when system access is allowed for this request
-          ...(systemAccessAllowed
-            ? [
-                tx
-                  .select({ role: systemRolesTable.role })
-                  .from(systemRolesTable)
-                  .where(eq(systemRolesTable.userId, user.id))
-                  .limit(1),
-              ]
-            : [Promise.resolve([])]),
+          tx
+            .select({ role: systemRolesTable.role })
+            .from(systemRolesTable)
+            .where(eq(systemRolesTable.userId, user.id))
+            .limit(1),
         ]);
 
-        return {
-          memberships,
-          isSystemAdmin: systemAccessAllowed && systemRoleRecord?.role === 'admin',
-        };
+        return { memberships, hasSystemRole: systemRoleRecord?.role === 'admin' };
       });
 
       ctx.set('memberships', memberships);
       ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
-      ctx.set('isSystemAdmin', isSystemAdmin);
+      ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
       ctx.set('db', baseDb);
 
-      setSessionCache(session.id, user.id, { user, isSystemAdmin });
+      setSessionCache(session.id, user.id, { user, hasSystemRole });
       setMembershipCache(user.id, memberships);
 
       await next();
