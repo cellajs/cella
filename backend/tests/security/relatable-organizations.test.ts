@@ -3,6 +3,7 @@ import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
@@ -61,6 +62,27 @@ describe('Organizations of another user (relatableUserId)', async () => {
 
   afterAll(async () => await clearSecurityTestData());
 
+  /** A membership of `userId` in `org`, with its own role, menu order and archive state. */
+  const createOrgMembership = async (
+    userId: string,
+    org: { id: string; tenantId: string },
+    role: typeof memberRole,
+    displayOrder: number,
+    archived = false,
+  ) =>
+    db.insert(membershipsTable).values({
+      id: generateId(),
+      userId,
+      channelId: org.id,
+      organizationId: org.id,
+      tenantId: org.tenantId,
+      channelType: 'organization',
+      role,
+      displayOrder,
+      archived,
+      createdBy: userId,
+    });
+
   it("must not list another tenant's organization via relatableUserId", async () => {
     const { data, response } = await listAs(viewer, target.id);
     expect(response.status).toBe(200);
@@ -107,6 +129,45 @@ describe('Organizations of another user (relatableUserId)', async () => {
       expect(status).toBe(400);
       expect(body.type).toBe('form.invalid_format');
     }
+  });
+
+  it("must not filter or order by another user's archive, role or menu order via relatableUserId", async () => {
+    // Two more organizations the viewer shares with the target, named against the target's menu order.
+    const alpha = await createTestOrganization({ name: 'Alpha shared' });
+    const bravo = await createTestOrganization({ name: 'Bravo shared' });
+    for (const org of [alpha, bravo]) {
+      await createOrgMembership(viewer.id, org, memberRole, 1);
+    }
+    // The target archived Alpha, holds another role there, and put Bravo first in their menu.
+    await createOrgMembership(target.id, alpha, previewedRole, 2, true);
+    await createOrgMembership(target.id, bravo, memberRole, 1);
+    for (const user of [viewer, target]) invalidateCache.user(user.id);
+    const pair = [alpha.id, bravo.id];
+
+    const listFor = async (query: Record<string, string>) => {
+      const { data, response } = await call(getOrganizations, {
+        query: { relatableUserId: target.id, ...query },
+        headers: { ...defaultHeaders, Cookie: viewer.sessionCookie },
+      });
+      expect(response.status).toBe(200);
+      return (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
+    };
+
+    expect(await listFor({ excludeArchived: 'true' })).toEqual(pair);
+    expect(await listFor({ role: memberRole })).toEqual(pair);
+    expect(await listFor({ sort: 'displayOrder', order: 'asc' })).toEqual(pair);
+
+    // The user's own list does follow their archive, role and menu order (positive control).
+    const ownFor = async (query: Record<string, string>) => {
+      const { data } = await call(getOrganizations, {
+        query: { relatableUserId: target.id, ...query },
+        headers: { ...defaultHeaders, Cookie: target.sessionCookie },
+      });
+      return (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
+    };
+    expect(await ownFor({ excludeArchived: 'true' })).toEqual([bravo.id]);
+    expect(await ownFor({ role: memberRole })).toEqual([bravo.id]);
+    expect(await ownFor({ sort: 'displayOrder', order: 'asc' })).toEqual([bravo.id, alpha.id]);
   });
 
   it('must not list anything for a user who shares no organization', async () => {
