@@ -1,5 +1,5 @@
 import type { z } from '@hono/zod-openapi';
-import i18n from 'i18next';
+import { i18n } from '#/lib/i18n';
 import type { locales } from '#/lib/i18n-locales';
 import type { apiErrorSchema } from '#/schemas';
 

@@ -11,7 +11,7 @@ import {
   SafeHtml,
 } from '../components';
 import { Column, Row } from '../components/primitives';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
@@ -28,10 +28,10 @@ const appName = appConfig.name;
 export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemInviteRecipient>()({
   translate(lng, { senderName, senderThumbnailUrl }) {
     return {
-      subject: i18n.t('backend:email.system_invite.subject', { lng, appName }),
-      previewText: i18n.t('backend:email.system_invite.preview', { appName, lng }),
+      subject: i18n.t('backend:email.system_invite.subject', { lng, appName, ...plainText }),
+      previewText: i18n.t('backend:email.system_invite.preview', { appName, lng, ...plainText }),
       headerHtml: i18n.t('backend:email.system_invite.title', { appName, lng }),
-      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}' }),
+      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}', ...plainText }),
       bodyHtml: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }),
       inviteExpires: i18n.t('backend:email.invite_expires', { lng }),
       buttonText: i18n.t('c:join', { lng }),

@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import welcomeConfig from '../../../json/text-blocks.json';
 import { EmailAvatar, EmailBody, EmailContainer, EmailFooter, EmailLogo, EmailText } from '../components';
 import { Column, Link, Row } from '../components/primitives';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { avatarRowStyle, greetingStyle, smallTextStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
@@ -21,7 +21,7 @@ export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, W
     return {
       subject: withAppName(welcomeEmail.subject),
       previewText: withAppName(welcomeEmail.subject),
-      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}' }),
+      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}', ...plainText }),
       intro: welcomeEmail.intro.map(withAppName),
       stepsHeading: withAppName(welcomeEmail.stepsHeading),
       steps: welcomeEmail.steps,

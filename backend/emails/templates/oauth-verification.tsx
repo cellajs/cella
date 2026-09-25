@@ -9,7 +9,7 @@ import {
   EmailText,
   SafeHtml,
 } from '../components';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
@@ -28,10 +28,10 @@ export const oauthVerificationEmail = defineEmailTemplate<
 >()({
   translate(lng, { name, verificationLink, providerEmail, providerName }) {
     return {
-      subject: i18n.t('backend:email.oauth_verification.subject', { lng, appName }),
-      previewText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
-      headerText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
-      hiText: name ? i18n.t('backend:email.hi', { lng, name }) : '',
+      subject: i18n.t('backend:email.oauth_verification.subject', { lng, appName, ...plainText }),
+      previewText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName, ...plainText }),
+      headerText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName, ...plainText }),
+      hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t('backend:email.oauth_verification.text', {
         lng,
         appName,
@@ -40,7 +40,7 @@ export const oauthVerificationEmail = defineEmailTemplate<
         providerName,
         name,
       }),
-      buttonText: i18n.t('backend:email.oauth_verification.verify', { lng, providerName }),
+      buttonText: i18n.t('backend:email.oauth_verification.verify', { lng, providerName, ...plainText }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       verificationLink,
     };

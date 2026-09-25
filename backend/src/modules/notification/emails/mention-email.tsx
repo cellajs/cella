@@ -9,7 +9,7 @@ import {
   SafeHtml,
 } from '../../../../emails/components';
 import { Link } from '../../../../emails/components/primitives';
-import { i18n } from '../../../../emails/i18n';
+import { i18n, plainText } from '../../../../emails/i18n';
 import { smallTextStyle } from '../../../../emails/styles';
 import { defineEmailTemplate, type EmailRecipient } from '../../../../emails/types';
 
@@ -36,10 +36,10 @@ type MentionRecipient = EmailRecipient & {
 export const mentionEmail = defineEmailTemplate<MentionStatic, MentionRecipient>()({
   translate(lng, { actorName, channelName }) {
     return {
-      subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName }),
-      previewText: i18n.t('c:email.mention.preview', { lng, actorName }),
+      subject: i18n.t('c:email.mention.subject', { lng, actorName, channelName, ...plainText }),
+      previewText: i18n.t('c:email.mention.preview', { lng, actorName, ...plainText }),
       headerHtml: i18n.t('c:email.mention.title', { lng, actorName }),
-      inText: i18n.t('c:email.mention.in', { lng, channelName }),
+      inText: i18n.t('c:email.mention.in', { lng, channelName, ...plainText }),
       buttonText: i18n.t('c:email.mention.button', { lng }),
       unsubscribeText: i18n.t('c:email.unsubscribe_mentions', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),

@@ -14,10 +14,12 @@ const initOptions: InitOptions = {
   load: 'languageOnly',
   fallbackLng: appConfig.defaultLanguage,
   interpolation: {
-    escapeValue: false, // React escapes by default
+    escapeValue: false, // Texts land in JSON responses; the email templates escape through their own instance
   },
   defaultNS: 'backend',
 };
 
-/** Email templates call i18n.t() directly, so no React bindings are needed. */
+/** The API's instance, for error messages and schema texts; emails use `backend/emails/i18n.ts`. */
 i18n.init(initOptions);
+
+export { i18n };

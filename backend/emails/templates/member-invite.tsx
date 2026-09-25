@@ -11,7 +11,7 @@ import {
   SafeHtml,
 } from '../components';
 import { Column, Row } from '../components/primitives';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
@@ -30,10 +30,10 @@ const appName = appConfig.name;
 export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberInviteRecipient>()({
   translate(lng, { senderName, senderThumbnailUrl, entityName, role }) {
     return {
-      subject: i18n.t('backend:email.member_invite.subject', { lng, entityName }),
-      previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, appName }),
+      subject: i18n.t('backend:email.member_invite.subject', { lng, entityName, ...plainText }),
+      previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, appName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_invite.title', { lng, entityName }),
-      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}' }),
+      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}', ...plainText }),
       bodyHtml: i18n.t('backend:email.member_invite.text', { lng, entityName, appName, senderName, role }),
       buttonText: i18n.t('c:accept', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),

@@ -50,7 +50,7 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
     sections.push({
       channelId,
       channelName: channelNames.get(channelId) ?? '',
-      lines: visible.map((row) => describeRow(row.type, contextNames.get(row.contextId ?? '') ?? '', lng)),
+      lines: visible.map((row) => describeDigestRow(row.type, contextNames.get(row.contextId ?? '') ?? '', lng)),
       overflow: Math.max(0, channelRows.length - visible.length),
     });
   }
@@ -59,12 +59,16 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
 }
 
 /**
- * One digest line, from `c:email.digest_line.<type>` (apps add theirs to `app.json`) with the
+ * One digest line as HTML, from `c:email.digest_line.<type>` (apps add theirs to `app.json`) with the
  * generic line as fallback. Kept short: the email links through and never reproduces the thread.
+ * The title is interpolated escaped; any markup around it lives in the translation string.
+ * @param type - Notification type, selecting the line's translation key.
+ * @param contextTitle - Title of the item the notification is about; empty renders as `-`.
+ * @param lng - Recipient language.
+ * @returns The line, safe to place in the digest's HTML list.
  */
-function describeRow(type: string, contextTitle: string, lng: string): string {
-  const title = `<strong>${escapeString(contextTitle || '-')}</strong>`;
-  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title });
+export function describeDigestRow(type: string, contextTitle: string, lng: string): string {
+  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-' });
 }
 
 /** Digest sections as sanitised HTML, because Brevo per-recipient params are strings only. */

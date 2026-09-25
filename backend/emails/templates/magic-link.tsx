@@ -9,7 +9,7 @@ import {
   EmailText,
   SafeHtml,
 } from '../components';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient } from '../types';
 
@@ -25,10 +25,10 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
   translate(lng, { magicLinkUrl, name, isNewUser }) {
     const keyBase = isNewUser ? 'backend:email.magic_link.signup' : 'backend:email.magic_link';
     return {
-      subject: i18n.t(`${keyBase}.subject`, { lng, appName }),
-      previewText: i18n.t(`${keyBase}.preview`, { appName, lng }),
-      headerText: i18n.t(`${keyBase}.title`, { appName, lng }),
-      hiText: name ? i18n.t('backend:email.hi', { lng, name }) : '',
+      subject: i18n.t(`${keyBase}.subject`, { lng, appName, ...plainText }),
+      previewText: i18n.t(`${keyBase}.preview`, { appName, lng, ...plainText }),
+      headerText: i18n.t(`${keyBase}.title`, { appName, lng, ...plainText }),
+      hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t(`${keyBase}.text`, { lng, appName }),
       buttonText: i18n.t(isNewUser ? 'c:sign_up' : 'c:sign_in', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
