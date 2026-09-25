@@ -9,14 +9,14 @@ import type { MeUser } from '~/modules/me/types';
 
 type LastUser = Pick<MeUser, 'id' | 'email'>;
 
-export const yjsTokenKey = (entityType: ProductEntityType, tenantId: string) => `${entityType}:${tenantId}`;
+export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => `${entityType}:${entityId}`;
 
 interface UserStoreState {
   /** Current user. `null` while signed out; set by the authenticated route guard. */
   user: MeUser | null;
   isSystemAdmin: boolean;
   lastUser: LastUser | null; // Identity of the last signed-out user
-  yjsTokens: Record<string, string>; // Map of "entityType:tenantId" → signed Yjs token (not persisted)
+  yjsTokens: Record<string, string>; // Map of "entityType:entityId" → signed Yjs token (not persisted)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Also updates lastUser
   setIsSystemAdmin: (isSystemAdmin: boolean) => void;
   setLastUser: (lastUser: LastUser) => void;

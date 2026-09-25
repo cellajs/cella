@@ -7,7 +7,7 @@ import { defaultHook } from '#/utils/default-hook';
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(yjsRoutes.getYjsToken, async (ctx) => {
-  const data = getYjsTokenOp(ctx.var.user.id, ctx.var.memberships, ctx.req.valid('query'));
+  const data = await getYjsTokenOp(ctx, ctx.req.valid('query'));
   return ctx.json(data, 200);
 });
 

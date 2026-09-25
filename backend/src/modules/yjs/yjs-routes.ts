@@ -1,13 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { userGuard } from '#/middlewares/guard';
+import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { errorResponseRefs, maxLength, productEntityTypeSchema } from '#/schemas';
+import { errorResponseRefs, productEntityTypeSchema, tenantOrgParamSchema, validIdSchema } from '#/schemas';
 
 const yjsTokenQuerySchema = z.object({
   entityType: productEntityTypeSchema,
-  tenantId: z.string().max(maxLength.id),
-  organizationId: z.string().max(maxLength.id),
+  entityId: validIdSchema,
 });
 
 const yjsTokenResponseSchema = z.object({
@@ -19,14 +18,15 @@ const yjsRoutes = {
     method: 'get',
     path: '/token',
     'x-service': 'yjs',
-    xGuard: [userGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['yjs', 'cella'],
     operationId: 'getYjsToken',
     summary: 'Get Yjs token',
     description:
-      'Returns a context-scoped, Ed25519-signed token for a specific entity type. The Yjs relay worker verifies it with the public key alone, without a backend callback, and cannot mint one.',
+      'Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.',
     request: {
+      params: tenantOrgParamSchema,
       query: yjsTokenQuerySchema,
     },
     responses: {

@@ -15,6 +15,7 @@ const KEY_DERIVATION_INFO = 'yjs-token-ed25519';
 export const yjsTokenPayloadSchema = z.object({
   userId: z.string(),
   entityType: z.string(),
+  entityId: z.string(),
   tenantId: z.string(),
   organizationId: z.string().nullable(),
   exp: z.number(),
@@ -53,8 +54,8 @@ export function yjsTokenVerifyKey(publicKey: string): KeyObject {
 }
 
 /**
- * The token embeds the tenant scope and product entity type the user may edit, so the relay
- * verifies access locally with no call back to the backend.
+ * The token names the one entity the user may edit and its tenant scope, so the relay verifies
+ * access locally with no call back to the backend.
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>, signingKey: KeyObject, ttlMs: number): string {
   const payload: YjsTokenPayload = {

@@ -64,6 +64,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
       entityType="attachment"
       entityId={attachment.id}
       tenantId={tenantId}
+      organizationId={organizationId}
       canEdit={canEdit}
       editable={canEdit}
       description={attachment.description}

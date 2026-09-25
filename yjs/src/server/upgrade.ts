@@ -13,12 +13,14 @@ import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 
-/** Rejects at the HTTP level for malformed requests, mismatched tokens and rate limits. A browser cannot read the body or code of a failed upgrade and sees close 1006, so anything the client must react to (an expired token) closes after the handshake. */
-function rejectUpgrade(socket: Duplex, code: number, reason: string): void {
+const statusText = { 400: 'Bad Request', 403: 'Forbidden', 429: 'Too Many Requests' } as const;
+
+/** Rejects at the HTTP level for malformed requests (400), a token for another document (403) and rate limits (429). A browser cannot read the body or code of a failed upgrade and sees close 1006, so anything the client must react to (an expired token) closes after the handshake. */
+function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: number, reason: string): void {
   if (socket.destroyed) return;
   const body = JSON.stringify({ code, reason });
   socket.end(
-    `HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`,
+    `HTTP/1.1 ${status} ${statusText[status]}\r\nContent-Type: application/json\r\nContent-Length: ${Buffer.byteLength(body)}\r\nConnection: close\r\n\r\n${body}`,
   );
 }
 
@@ -69,7 +71,7 @@ export function setupUpgradeHandler(
 
     if (!token || !rawEntityType || !tenantId) {
       log.warn('WS upgrade missing params', { hasToken: !!token, entityType: rawEntityType, hasTenantId: !!tenantId });
-      rejectUpgrade(socket, 4400, 'Missing params');
+      rejectUpgrade(socket, 400, 4400, 'Missing params');
       return;
     }
 
@@ -90,26 +92,33 @@ export function setupUpgradeHandler(
 
     if (payload.entityType !== rawEntityType) {
       log.warn('Token entityType mismatch', { tokenType: payload.entityType, requestedType: rawEntityType });
-      rejectUpgrade(socket, 4003, 'Token not valid for this entity type');
+      rejectUpgrade(socket, 403, 4003, 'Token not valid for this entity type');
       return;
     }
 
     if (payload.tenantId !== tenantId) {
       log.warn('Token tenantId mismatch', { tokenTenant: payload.tenantId, requestedTenant: tenantId });
-      rejectUpgrade(socket, 4003, 'Token not valid for this tenant');
-      return;
-    }
-
-    const allowed = await checkConnectionRate(payload.userId);
-    if (!allowed) {
-      rejectUpgrade(socket, 4429, 'Too many connections');
+      rejectUpgrade(socket, 403, 4003, 'Token not valid for this tenant');
       return;
     }
 
     const entityId = url.pathname.replace(/^\/+/, '') || undefined;
 
     if (!entityId) {
-      rejectUpgrade(socket, 4400, 'Missing entityId');
+      rejectUpgrade(socket, 400, 4400, 'Missing entityId');
+      return;
+    }
+
+    // A token names one document: it opens no other.
+    if (payload.entityId !== entityId) {
+      log.warn('Token entityId mismatch', { tokenEntity: payload.entityId, requestedEntity: entityId });
+      rejectUpgrade(socket, 403, 4003, 'Token not valid for this entity');
+      return;
+    }
+
+    const allowed = await checkConnectionRate(payload.userId);
+    if (!allowed) {
+      rejectUpgrade(socket, 429, 4429, 'Too many connections');
       return;
     }
 

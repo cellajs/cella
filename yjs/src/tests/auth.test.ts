@@ -7,6 +7,7 @@ const RELAY_SECRET = 'test-yjs-relay-secret-for-unit-tests';
 const claims = () => ({
   userId: 'user-1',
   entityType: 'task',
+  entityId: 'entity-1',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
   exp: Date.now() + 60_000,

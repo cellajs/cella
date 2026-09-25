@@ -1529,19 +1529,6 @@ export const zGetUserResponse = zUserBase.and(
   }),
 );
 
-export const zGetYjsTokenQuery = z.object({
-  entityType: z.enum(['attachment']),
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-/**
- * Yjs auth token
- */
-export const zGetYjsTokenResponse = z.object({
-  token: z.string(),
-});
-
 export const zGetApiProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
 });
@@ -2226,3 +2213,20 @@ export const zRevokeApiKeyPath = z.object({
  * API key was revoked
  */
 export const zRevokeApiKeyResponse = zApiKey;
+
+export const zGetYjsTokenPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zGetYjsTokenQuery = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+});
+
+/**
+ * Yjs auth token
+ */
+export const zGetYjsTokenResponse = z.object({
+  token: z.string(),
+});

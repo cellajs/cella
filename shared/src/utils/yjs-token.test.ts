@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { signYjsToken, verifyYjsToken, yjsTokenPublicKey, yjsTokenSigningKey, yjsTokenVerifyKey } from './yjs-token';
 
 const material = 'backend-key-material-of-at-least-32-chars';
-const claims = { userId: 'user-1', entityType: 'attachment', tenantId: 'tenant-1', organizationId: 'org-1' };
+const claims = {
+  userId: 'user-1',
+  entityType: 'attachment',
+  entityId: 'entity-1',
+  tenantId: 'tenant-1',
+  organizationId: 'org-1',
+};
 
 describe('yjs token keys', () => {
   it('verifies with the public key what the key material signs (positive control)', () => {

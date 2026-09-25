@@ -4260,57 +4260,6 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
-export type GetYjsTokenData = {
-  body?: never;
-  path?: never;
-  query: {
-    entityType: 'attachment';
-    tenantId: string;
-    organizationId: string;
-  };
-  url: '/yjs/token';
-};
-
-export type GetYjsTokenErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
-
-export type GetYjsTokenResponses = {
-  /**
-   * Yjs auth token
-   */
-  200: {
-    token: string;
-  };
-};
-
-export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
-
 export type GetApiProtectedResourceMetadataData = {
   body?: never;
   path: {
@@ -6022,3 +5971,56 @@ export type RevokeApiKeyResponses = {
 };
 
 export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];
+
+export type GetYjsTokenData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityType: 'attachment';
+    entityId: string;
+  };
+  url: '/{tenantId}/{organizationId}/yjs/token';
+};
+
+export type GetYjsTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
+
+export type GetYjsTokenResponses = {
+  /**
+   * Yjs auth token
+   */
+  200: {
+    token: string;
+  };
+};
+
+export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];

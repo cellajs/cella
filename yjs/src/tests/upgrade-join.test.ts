@@ -79,7 +79,7 @@ const clientCount = (entityId: string) => getCollab(entityType, entityId)?.clien
 /** An open client socket on the document; `received` collects every frame the relay sends it. */
 async function open(userId: string, entityId: string) {
   usedDocs.add(entityId);
-  const token = createSignedToken({ userId, entityType });
+  const token = createSignedToken({ userId, entityType, entityId });
   const ws = new WsWebSocket(`${baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=tenant-1`);
   const received: Uint8Array[] = [];
   ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));

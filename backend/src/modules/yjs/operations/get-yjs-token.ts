@@ -1,28 +1,25 @@
 import type { ProductEntityType } from 'shared';
-import { AppError } from '#/core/error';
-import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import type { OrgContext } from '#/core/context';
+import { getValidProduct } from '#/permissions/get-valid-product';
 import { signYjsToken } from '../helpers/token-signer';
 
 /**
- * Signs a Yjs token for the caller in an organization they are a member of. The signed tenant is the organization's
- * own, taken from the membership: the relay scopes the session by it, so a query naming another tenant is refused.
+ * Signs a Yjs token for one product entity the caller may update. The claims come from the entity row as the guards
+ * scoped it: a foreign tenant is refused by tenantGuard, a row outside the request's tenant and organization reads as
+ * 404, and a row the caller may not update answers 403. The relay trusts every claim, so none is taken from the query.
+ * @param ctx - A user acting in a resolved organization.
+ * @param params - The entity to edit.
+ * @returns The signed token.
  */
-export function getYjsTokenOp(
-  userId: string,
-  memberships: MembershipBaseModel[],
-  params: { entityType: ProductEntityType; tenantId: string; organizationId: string },
-) {
-  const { entityType, tenantId, organizationId } = params;
-
-  // Org-level gate only: per-entity access is enforced by the relay worker running the shared permission engine.
-  const membership = memberships.find((m) => m.organizationId === organizationId);
-  if (!membership || membership.tenantId !== tenantId) throw new AppError(403, 'forbidden', 'warn', { entityType });
+export async function getYjsTokenOp(ctx: OrgContext, params: { entityType: ProductEntityType; entityId: string }) {
+  const { entity } = await getValidProduct(ctx, params.entityId, params.entityType, 'update');
 
   const token = signYjsToken({
-    userId,
-    entityType,
-    tenantId: membership.tenantId,
-    organizationId,
+    userId: ctx.var.actor.id,
+    entityType: params.entityType,
+    entityId: entity.id,
+    tenantId: entity.tenantId,
+    organizationId: entity.organizationId,
   });
 
   return { token };

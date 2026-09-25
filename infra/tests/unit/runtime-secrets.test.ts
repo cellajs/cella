@@ -116,7 +116,7 @@ describe('runtime secret registry', () => {
     expect(publicKey?.derivedFrom?.secretId).toBe(privateKey?.id);
     const material = 'key-material-of-at-least-thirty-two-chars';
     const token = signYjsToken(
-      { userId: 'u', entityType: 'attachment', tenantId: 't', organizationId: null },
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
       yjsTokenSigningKey(material),
       60_000,
     );

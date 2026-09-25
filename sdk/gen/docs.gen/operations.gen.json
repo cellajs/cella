@@ -1581,29 +1581,6 @@
     "entityType": "user"
   },
   {
-    "id": "getYjsToken",
-    "hash": "tag/yjs/GET/yjs/token",
-    "method": "get",
-    "path": "/yjs/token",
-    "tags": ["yjs"],
-    "summary": "Get Yjs token",
-    "description": "Returns a context-scoped, Ed25519-signed token for a specific entity type. The Yjs relay worker verifies it with the public key alone, without a backend callback, and cannot mint one.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["yjs"],
-      "owner": ["cella"]
-    }
-  },
-  {
     "id": "getApiProtectedResourceMetadata",
     "hash": "tag/oauth-server/GET/{tenantId}/.well-known/oauth-protected-resource",
     "method": "get",
@@ -2266,6 +2243,29 @@
     },
     "tagsByKind": {
       "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getYjsToken",
+    "hash": "tag/yjs/GET/{tenantId}/{organizationId}/yjs/token",
+    "method": "get",
+    "path": "/{tenantId}/{organizationId}/yjs/token",
+    "tags": ["yjs"],
+    "summary": "Get Yjs token",
+    "description": "Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
       "owner": ["cella"]
     }
   }

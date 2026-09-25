@@ -6,6 +6,7 @@ import { toWsUrl } from 'shared/utils/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
+import { yjsTokenKeys } from '~/modules/common/blocknote/query';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
@@ -62,7 +63,8 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   }
 
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
-  const tokenKey = yjsTokenKey(entityType, tenantId);
+  // The session is the entity's document, and a token opens that one document only.
+  const tokenKey = yjsTokenKey(entityType, editSessionId);
   const token = useUserStore.getState().yjsTokens[tokenKey];
   if (!token) throw new Error(`[yjs] No token available for ${tokenKey}`);
 
@@ -79,11 +81,17 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     else provider.disconnect();
   });
 
-  // Keep provider params on the latest token so a reconnect after sleep uses a fresh one.
-  const unsubToken = useUserStore.subscribe((state) => {
+  // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
+  const unsubToken = useUserStore.subscribe((state, prevState) => {
     const newToken = state.yjsTokens[tokenKey];
-    if (newToken && provider.params) {
-      (provider.params as Record<string, string>).token = newToken;
+    if (newToken) {
+      if (provider.params) (provider.params as Record<string, string>).token = newToken;
+      return;
+    }
+    // Withdrawn (access revoked, the entity gone, or signed out): stop reconnecting with a token that cannot come back.
+    if (prevState.yjsTokens[tokenKey] && provider.shouldConnect) {
+      provider.disconnect();
+      if (state.user) toaster.warning(i18n.t('error:no_permission_for_sync.text'));
     }
   });
 
@@ -96,10 +104,10 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   const handleConnectionClose = (event: CloseEvent | null) => {
     if (!event || event.code === 1000) return;
 
-    // TOKEN_INVALID is recoverable: the relay closes after the handshake so this code arrives; refetching the token updates the provider params before y-websocket's backoff reconnects, so give up only after MAX_TOKEN_FAILURES.
+    // TOKEN_INVALID is recoverable: the relay closes after the handshake so this code arrives, and when a token expires; refetching the token updates the provider params before y-websocket's backoff reconnects, so give up only after MAX_TOKEN_FAILURES.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
       tokenFailures++;
-      void queryClient.invalidateQueries({ queryKey: ['yjs', 'token', entityType, tenantId] });
+      void queryClient.invalidateQueries({ queryKey: yjsTokenKeys.entity(entityType, editSessionId) });
       if (tokenFailures < MAX_TOKEN_FAILURES) return;
       console.warn(`[yjs] Circuit breaker: ${tokenFailures} consecutive token failures for ${editSessionId}`);
     }

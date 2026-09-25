@@ -11,6 +11,7 @@ import type { StaleDocRow } from '../data/storage';
 interface TokenOptions {
   userId: string;
   entityType?: string;
+  entityId?: string;
   tenantId?: string;
   organizationId?: string | null;
   exp?: number;
@@ -31,6 +32,7 @@ export function createSignedToken(opts: string | TokenOptions, exp?: number): st
   const payload = {
     userId: o.userId,
     entityType: o.entityType ?? 'task',
+    entityId: o.entityId ?? 'entity-1',
     tenantId: o.tenantId ?? 'tenant-1',
     organizationId: o.organizationId ?? 'org-1',
     exp: o.exp ?? Date.now() + 30 * 60 * 1000,

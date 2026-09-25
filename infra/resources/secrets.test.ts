@@ -29,7 +29,7 @@ describe('secrets module', () => {
     expect(versions['secret-version-yjs-token-private-key']).toBe(material);
     // The relay's key verifies what the backend signs from the same material.
     const token = signYjsToken(
-      { userId: 'u', entityType: 'attachment', tenantId: 't', organizationId: null },
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
       yjsTokenSigningKey(material),
       60_000,
     );

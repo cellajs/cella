@@ -7,8 +7,8 @@ import {
 } from 'shared/utils/yjs-token';
 import { env } from '#/env';
 
-/** Token TTL: 30 minutes */
-const TOKEN_TTL_MS = 30 * 60 * 1000;
+/** Token TTL: 5 minutes. The relay closes a socket when its token expires, so revoked access reaches open sockets within it. */
+const TOKEN_TTL_MS = 5 * 60 * 1000;
 
 export interface YjsTokenPayload extends Omit<SharedYjsTokenPayload, 'entityType'> {
   entityType: ProductEntityType;
@@ -16,7 +16,7 @@ export interface YjsTokenPayload extends Omit<SharedYjsTokenPayload, 'entityType
 
 let signingKey: KeyObject | undefined;
 
-/** Ed25519-signed token embedding the channel entity and product entity type the user may edit, so the relay verifies access without a backend call and cannot mint one. */
+/** Ed25519-signed token naming the entity the user may edit and its scope, so the relay verifies access without a backend call and cannot mint one. */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>): string {
   signingKey ??= yjsTokenSigningKey(env.YJS_TOKEN_PRIVATE_KEY);
   return signToken(params, signingKey, TOKEN_TTL_MS);

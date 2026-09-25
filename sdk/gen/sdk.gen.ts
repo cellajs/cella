@@ -410,6 +410,7 @@ import {
   zGetUserResponse,
   zGetUsersQuery,
   zGetUsersResponse,
+  zGetYjsTokenPath,
   zGetYjsTokenQuery,
   zGetYjsTokenResponse,
   zGithubCallbackQuery,
@@ -3024,44 +3025,6 @@ export const getUser = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Get Yjs token
- *
- * Returns a context-scoped, Ed25519-signed token for a specific entity type. The Yjs relay worker verifies it with the public key alone, without a backend callback, and cannot mint one.
- *
- * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
- *
- * @param {getYjsTokenData} options
- * @param {enum} options.query.entitytype - `enum`
- * @param {string} options.query.tenantid - `string`
- * @param {string} options.query.organizationid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getYjsToken = <ThrowOnError extends boolean = true>(
-  options: Options<GetYjsTokenData, ThrowOnError>,
-): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetYjsTokenQuery,
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/yjs/token',
-    ...options,
-  });
-
-/**
  * Protected resource metadata (API)
  *
  * RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.
@@ -4342,5 +4305,44 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}',
+    ...options,
+  });
+
+/**
+ * Get Yjs token
+ *
+ * Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.
+ *
+ * **GET /{tenantId}/{organizationId}/yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/{tenantId}/{organizationId}/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/yjs/token) ·· _yjs_cella_
+ *
+ * @param {getYjsTokenData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {string} options.query.entityid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getYjsToken = <ThrowOnError extends boolean = true>(
+  options: Options<GetYjsTokenData, ThrowOnError>,
+): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetYjsTokenPath,
+          query: zGetYjsTokenQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/token',
     ...options,
   });

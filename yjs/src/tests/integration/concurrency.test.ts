@@ -122,7 +122,7 @@ afterAll(async () => {
 
 /** A synced y-websocket client on the document. */
 async function connectClient(entityId: string, doc = new Y.Doc()) {
-  const token = createSignedToken({ userId, entityType, tenantId, organizationId });
+  const token = createSignedToken({ userId, entityType, entityId, tenantId, organizationId });
   const provider = new WebsocketProvider(baseUrl, entityId, doc, {
     params: { token, entityType, tenantId },
     WebSocketPolyfill: WsWebSocket as never,

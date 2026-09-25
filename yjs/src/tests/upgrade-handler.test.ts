@@ -104,6 +104,7 @@ describe('setupUpgradeHandler', () => {
       JSON.stringify({
         userId: 'user-1',
         entityType: 'task',
+        entityId: 'entity-1',
         tenantId: 'tenant-1',
         organizationId: 'org-1',
         exp: Date.now() + 60_000,
@@ -125,11 +126,19 @@ describe('setupUpgradeHandler', () => {
     expect(error?.message).toContain('400');
   });
 
-  it('still rejects a token for another tenant at the HTTP level', async () => {
+  it('must not open a document with a token for another tenant', async () => {
     const token = createSignedToken({ userId: 'user-1', tenantId: 'tenant-2' });
     const { error } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
 
-    expect(error?.message).toContain('400');
+    expect(error?.message).toContain('403');
+  });
+
+  it('must not open a document with a token for another entity', async () => {
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-2' });
+    const { error, closeCode } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
+
+    expect(closeCode).toBeUndefined();
+    expect(error?.message).toContain('403');
   });
 
   it('accepts a valid token', async () => {
@@ -154,7 +163,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
 
   it('sync frames sent before verification wait for it and then apply in arrival order, one at a time', async () => {
     verifyGate.delayMs = 60;
-    const token = createSignedToken({ userId: 'user-1' });
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-order' });
     const ws = new WsWebSocket(`${baseUrl}/entity-order?token=${token}&entityType=task&tenantId=tenant-1`);
     await new Promise<void>((resolve) => ws.on('open', () => resolve()));
 
@@ -186,7 +195,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
   it('denied verification closes the socket and never applies the queued sync frames', async () => {
     verifyGate.delayMs = 30;
     verifyGate.allowed = false;
-    const token = createSignedToken({ userId: 'user-1' });
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-denied' });
     const ws = new WsWebSocket(`${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`);
     const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
     await new Promise<void>((resolve) => ws.on('open', () => resolve()));
