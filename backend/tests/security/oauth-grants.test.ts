@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid';
 import {
   createApiKey,
   createServiceAccount,
+  deleteMe,
+  deleteUsers,
   getAttachments,
   getConnectedApps,
   revokeApiKey,
@@ -26,7 +28,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse } from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse } from '../helpers';
 import {
   authorizationCode,
   authorizationCodeToken,
@@ -176,6 +178,43 @@ describe('OAuth grants', async () => {
       expect(refused.body.error).toBe('invalid_grant');
       // The refused grant is deleted with every token issued under it: the client must ask the person again.
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+    });
+
+    it('must not keep a deleted account acting via its grant', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      // Positive control, which also caches the grant's verdict at the guard.
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      const deleted = await call(deleteMe, { headers: { ...defaultHeaders, Cookie: ctx.member.sessionCookie } });
+      expect(deleted.response.status).toBe(204);
+
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+      const refused = await refresh(grant.refresh);
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe('invalid_grant');
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+    });
+
+    it('must not keep an account a system admin deleted acting via its grant', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      const sysAdmin = await createSystemAdminUser(`sysadmin-${nanoid(8)}@security-test.com`);
+      const deleted = await call(deleteUsers, {
+        body: { ids: [ctx.member.id] },
+        headers: { ...defaultHeaders, Cookie: await createTestSession(sysAdmin) },
+      });
+      expect(deleted.response.status).toBe(200);
+
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+      expect((await refresh(grant.refresh)).body.error).toBe('invalid_grant');
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
     });
 
     it('must not refresh the grant of a deleted user via a deletion path that skips the account routes', async () => {

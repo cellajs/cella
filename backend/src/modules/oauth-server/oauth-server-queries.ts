@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
@@ -26,6 +26,11 @@ export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: { g
     )
     .limit(1);
   return grant;
+}
+
+/** Everything the authorization server holds for these users (grants, codes, refresh tokens, sessions): an account deletion. */
+export async function deleteConsentsOfUsers(ctx: DbContext, { userIds }: { userIds: string[] }): Promise<void> {
+  if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));
 }
 
 /** The grant and every token issued under it, in one transaction; the client must ask again. */

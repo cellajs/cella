@@ -1,6 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { deleteUsersByIds, findUsersByIds } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
@@ -16,6 +17,7 @@ export async function deleteUsersOp(ctx: UserContext, ids: string[]) {
 
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUsersByIds(ctx, { ids: foundIds });
+  await deleteConsentsOfUsers(ctx, { userIds: foundIds });
 
   for (const id of foundIds) {
     await endSessions(ctx, { userId: id, all: true, reason: 'user_deleted', by: ctx.var.user.id });

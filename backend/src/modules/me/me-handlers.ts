@@ -25,6 +25,7 @@ import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-a
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
+import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -121,6 +122,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUser(ctx);
+  await deleteConsentsOfUsers(ctx, { userIds: [user.id] });
 
   await endSessions(ctx, { userId: user.id, all: true, reason: 'user_deleted', by: user.id });
   deleteAuthCookie(ctx, 'session');

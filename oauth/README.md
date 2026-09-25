@@ -36,7 +36,7 @@ The worker is one more `MODE` of the backend image: a process of its own on `dev
 
 An authorization request lands the browser on `/auth/consent?uid=…`, an app page under the sign-in framing. The page reads the interaction through the worker's JSON routes with the session cookie (a missing session goes through sign-in and back), shows the client's name and logo and the requested scopes as labels, and posts accept or refuse. Three refusals are decided server-side, by the grant policy (`grant-policy.ts`); the page shows the reason and disables Accept, and a posted accept is refused all the same: the person is not a member of the resource's tenant, the tenant does not allow consented clients (`restrictions.allowUnregisteredClients`), or the registered app is not installed there (`service_accounts.oauthClientId`).
 
-A consent is a Grant row bound to one resource with the approved scopes. It holds only while the grant policy says so: every code exchange and refresh asks again, reading the `users` row (actors outlive users), and a refused grant is deleted with every token issued under it. People list and revoke theirs at `GET /me/connected-apps` and `DELETE /me/connected-apps/{id}`; revoking deletes the grant and every token issued under it.
+A consent is a Grant row bound to one resource with the approved scopes. It holds only while the grant policy says so: every code exchange and refresh asks again, reading the `users` row (actors outlive users), and a refused grant is deleted with every token issued under it. People list and revoke theirs at `GET /me/connected-apps` and `DELETE /me/connected-apps/{id}`; revoking deletes the grant and every token issued under it. Deleting an account, by its owner or a system admin, deletes all of them.
 
 ## Tokens
 
