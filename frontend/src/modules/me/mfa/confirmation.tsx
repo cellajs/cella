@@ -1,94 +1,31 @@
-import { FingerprintPatternIcon, ShieldMinusIcon, SmartphoneIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
-import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
-export function ConfirmDisableMfa() {
+/** Confirms turning MFA on or off; a session that is not stepped up first proves the user's second factor. */
+export function ConfirmMfaToggle({ mfaRequired }: { mfaRequired: boolean }) {
   const { t } = useTranslation();
   const { remove: removeDialog } = useDialoger();
 
-  const [openConfirmation, setOpenConfirmation] = useState(false);
+  const { mutate: toggleMfa, isPending } = useToggleMfaMutation();
+
+  const closeDialog = () => removeDialog('mfa-confirmation');
 
   return (
-    <>
-      {!openConfirmation && (
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton
-            variant="destructive"
-            icon={<ShieldMinusIcon />}
-            onClick={() => setOpenConfirmation(true)}
-            aria-label={'disable'}
-          >
-            {t('c:disable')}
-          </SubmitButton>
-
-          <Button type="reset" variant="secondary" aria-label="Cancel" onClick={() => removeDialog()}>
-            {t('c:cancel')}
-          </Button>
-        </div>
-      )}
-      {openConfirmation && <ConfirmMfaOptions mfaRequired={false} />}
-    </>
-  );
-}
-
-export function ConfirmMfaOptions({ mfaRequired }: { mfaRequired: boolean }) {
-  const { t } = useTranslation();
-  const { remove: removeDialog } = useDialoger();
-
-  const { mutateAsync: toggleMfa } = useToggleMfaMutation();
-
-  const totpTriggerRef = useRef<HTMLButtonElement | null>(null);
-
-  const [isOpen, setIsOpen] = useState(false);
-
-  const onPasskyConfirm = async () => {
-    const { assertion } = await getPasskeyVerifyCredential({ type: 'authentication' });
-    toggleMfa({ mfaRequired, passkeyData: assertion });
-    removeDialog();
-  };
-
-  const onTotpConfirm = async ({ code: totpCode }: { code: string }) => {
-    await toggleMfa({ mfaRequired, totpCode });
-    removeDialog();
-  };
-
-  return (
-    <>
-      {!isOpen && (
-        <div className="flex flex-col gap-2">
-          <Button type="button" onClick={() => onPasskyConfirm()} variant="plain" className="w-full gap-1.5 truncate">
-            <FingerprintPatternIcon />
-            <span className="truncate">
-              {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
-            </span>
-          </Button>
-          <Button
-            ref={totpTriggerRef}
-            type="button"
-            onClick={() => setIsOpen(true)}
-            variant="plain"
-            className="w-full gap-1.5 truncate"
-          >
-            <SmartphoneIcon />
-            <span className="truncate">
-              {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
-            </span>
-          </Button>
-        </div>
-      )}
-
-      {isOpen && (
-        <TotpConfirmationForm
-          onSubmit={onTotpConfirm}
-          onCancel={() => useDialoger.getState().remove('mfa-confirmation')}
-          label={t('c:totp_verify')}
-        />
-      )}
-    </>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <SubmitButton
+        variant={mfaRequired ? 'default' : 'destructive'}
+        icon={mfaRequired ? <ShieldCheckIcon /> : <ShieldMinusIcon />}
+        loading={isPending}
+        onClick={() => toggleMfa({ mfaRequired }, { onSuccess: closeDialog })}
+      >
+        {t(mfaRequired ? 'c:enable_resource' : 'c:disable_resource', { resource: t('c:mfa_short') })}
+      </SubmitButton>
+      <Button type="reset" variant="secondary" onClick={closeDialog}>
+        {t('c:cancel')}
+      </Button>
+    </div>
   );
 }

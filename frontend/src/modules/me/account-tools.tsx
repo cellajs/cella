@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { startOAuthConnect, type User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
+import { withStepUp } from '~/modules/auth/step-up';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
@@ -71,7 +72,7 @@ export function AccountAuthenticationCard() {
   // The backend pins the provider's callback to this account first; the browser then leaves for the provider.
   const { mutate: connectProvider } = useMutation({
     mutationFn: async (_provider: EnabledOAuthProvider) => {
-      await startOAuthConnect();
+      await withStepUp(() => startOAuthConnect());
     },
     onMutate: (provider) => setLoadingProvider(provider),
     onSuccess: (_data, provider) => {
