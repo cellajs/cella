@@ -22,6 +22,8 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
   '23502': { status: 400, type: 'invalid_request', message: 'Required field is missing' },
   // Check constraint violations
   '23514': { status: 400, type: 'invalid_request', message: 'Value violates constraint' },
+  // Invalid text representation: a value that cannot be read as its column type, such as a malformed id in a path
+  '22P02': { status: 400, type: 'invalid_request', message: 'Malformed identifier or value' },
   // RLS policy violations (insufficient_privilege)
   '42501': { status: 403, type: 'forbidden', message: 'Access denied by security policy' },
   // Serialization failure (concurrent update)
