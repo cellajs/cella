@@ -1,16 +1,21 @@
-import pino from 'pino';
+import { createLogger } from 'shared/pino';
 import { describe, expect, it } from 'vitest';
-import { redactedFields } from '#/lib/redact-keys';
+import { backendRedactPaths } from '#/lib/pino';
 
 const CENSOR = '[REDACTED]';
 
-/** Pino logger writing to an in-memory buffer with the real `redactedFields`, so the production config is tested. */
+/** A logger built through the shared `createLogger` with the backend's own redact paths, writing to memory. */
 const collectLog = (obj: object): Record<string, unknown> => {
   const lines: string[] = [];
-  const stream = { write: (line: string) => lines.push(line) };
-  const logger = pino({ redact: { paths: redactedFields, censor: CENSOR } }, stream);
+  const logger = createLogger({
+    level: 'info',
+    isProduction: true,
+    isTest: false,
+    redactPaths: backendRedactPaths,
+    destination: { write: (line: string) => lines.push(line) },
+  });
   logger.info(obj);
-  return JSON.parse(lines[0]);
+  return JSON.parse(lines[0]!);
 };
 
 describe('pino log redaction', () => {
@@ -58,6 +63,25 @@ describe('pino log redaction', () => {
     expect(key.secretHash).toBe(CENSOR);
     expect(key.privateJwk).toBe(CENSOR);
     expect(key.singleUseToken).toBe(CENSOR);
+  });
+
+  it('redacts the auth headers of a logged request', () => {
+    const logged = collectLog({
+      msg: 'req',
+      req: { headers: { authorization: 'Bearer sk_live', cookie: 'app-session=abc', 'user-agent': 'ua' } },
+    });
+    const headers = (logged.req as { headers: Record<string, unknown> }).headers;
+
+    expect(headers.authorization).toBe(CENSOR);
+    expect(headers.cookie).toBe(CENSOR);
+    expect(headers['user-agent']).toBe('ua');
+  });
+
+  it('scrubs a token out of a logged request url', () => {
+    const logged = collectLog({ msg: 'GET', url: '/auth/invoke-token/magic/tok_live?next=%2F', status: 302 });
+
+    expect(logged.url).toBe('/auth/invoke-token/magic/[REDACTED]?next=%2F');
+    expect(logged.status).toBe(302);
   });
 
   it('does not redact non-sensitive keys, including websocket close `code`', () => {

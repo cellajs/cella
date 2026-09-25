@@ -2,6 +2,7 @@ import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
+import { scrubUrl } from './utils/scrub-url.ts';
 
 export type { Logger } from 'pino';
 
@@ -12,7 +13,8 @@ interface CreateLoggerOptions {
   level?: string;
   isProduction: boolean;
   isTest: boolean;
-  redact?: pino.LoggerOptions['redact'];
+  /** Keys censored in every line (fast-redact paths): secret columns and transport keys. Required, so no logger skips it. */
+  redactPaths: readonly string[];
   formatters?: pino.LoggerOptions['formatters'];
   transportOptions?: Record<string, unknown>;
   /** With a `mapleSecretIngestKey` set, ships structured logs to Maple.dev alongside the console output, in dev and production alike. */
@@ -21,18 +23,21 @@ interface CreateLoggerOptions {
   mapleSecretIngestKey?: string;
   /** Reported as `service.name` on exported logs; match the service's tracing serviceName. */
   serviceName?: string;
+  /** Writes every line here and builds no console or Maple target (tests). */
+  destination?: pino.DestinationStream;
 }
 
 export const createLogger = ({
   level,
   isProduction,
   isTest,
-  redact,
+  redactPaths,
   formatters,
   transportOptions,
   enableOtelTransport,
   mapleSecretIngestKey,
   serviceName,
+  destination: injectedDestination,
 }: CreateLoggerOptions): pino.Logger => {
   // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers.
   const consoleTarget: pino.TransportTargetOptions = isProduction
@@ -51,7 +56,7 @@ export const createLogger = ({
   // the endpoint and ingest key passed explicitly. Enabled in dev too, so logs reach Maple in the
   // production shape while the console keeps pretty output.
   const otelTarget: pino.TransportTargetOptions | undefined =
-    !isTest && enableOtelTransport && mapleSecretIngestKey
+    !injectedDestination && !isTest && enableOtelTransport && mapleSecretIngestKey
       ? {
           target: 'pino-opentelemetry-transport',
           options: {
@@ -75,18 +80,23 @@ export const createLogger = ({
       : undefined;
 
   // Without OTel: raw stdout in production (no worker thread), pretty transport in dev.
-  const destination = otelTarget
-    ? pino.transport({ targets: [consoleTarget, otelTarget] })
-    : isProduction
-      ? undefined
-      : pino.transport(consoleTarget);
+  const destination =
+    injectedDestination ??
+    (otelTarget
+      ? pino.transport({ targets: [consoleTarget, otelTarget] })
+      : isProduction
+        ? undefined
+        : pino.transport(consoleTarget));
 
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
       // Pino convention: an Error under `err` expands to { type, message, stack }, keeping nested
-      // `cause` chains, which is where Drizzle puts pg errors.
-      serializers: { err: pino.stdSerializers.errWithCause },
+      // `cause` chains, which is where Drizzle puts pg errors. A logged `url` goes through `scrubUrl`.
+      serializers: {
+        err: pino.stdSerializers.errWithCause,
+        url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url),
+      },
       // Tag each line with the active OTel span so Maple joins logs to traces, including those
       // started by the frontend's traceparent.
       mixin() {
@@ -99,7 +109,7 @@ export const createLogger = ({
         ...(!otelTarget && { level: (label) => ({ level: label.toUpperCase() }) }),
         ...formatters,
       },
-      ...(redact && { redact }),
+      redact: { paths: [...redactPaths], censor: '[REDACTED]' },
     },
     destination,
   );
@@ -194,6 +204,6 @@ export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redact
       enableOtelTransport: true,
       mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
       serviceName: `${appConfig.slug}-${serviceSuffix}`,
-      redact: { paths: [...redactPaths], censor: '[REDACTED]' },
+      redactPaths,
     }),
   );
