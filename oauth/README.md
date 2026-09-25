@@ -32,7 +32,7 @@ The worker is one more `MODE` of the backend image: a process of its own on `dev
 | --- | --- | --- | --- |
 | MCP client (Claude Desktop, VS Code) | A Client ID Metadata Document: `client_id` is the HTTPS URL of its metadata | Nothing (public client, PKCE) | The person, if the tenant allows consented clients |
 | Registered app (a portfolio site, a partner) | A row in `oauth_clients` | Its secret, or nothing when public | The person, if an admin installed the app in the tenant |
-| Service account | Its own id | Any of its live API keys as the client secret | None: `client_credentials` |
+| Service account | Its own id | Any of its live API keys as the client secret; the token stays within that key's scopes | None: `client_credentials` |
 
 An authorization request lands the browser on `/auth/consent?uid=…`, an app page under the sign-in framing. The page reads the interaction through the worker's JSON routes with the session cookie (a missing session goes through sign-in and back), shows the client's name and logo and the requested scopes as labels, and posts accept or refuse. Three refusals are decided server-side; the page shows the reason and disables Accept: the person is not a member of the resource's tenant, the tenant does not allow consented clients (`restrictions.allowUnregisteredClients`), or the registered app is not installed there (`service_accounts.oauthClientId`).
 

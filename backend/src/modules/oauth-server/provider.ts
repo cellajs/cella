@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-provider';
-import { accessScopes, appConfig } from 'shared';
+import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -15,6 +15,27 @@ import { log } from '#/utils/logger';
 
 const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
+
+/**
+ * The scopes of the secret key a service account presented at the token endpoint, per request (null: an unscoped key).
+ * Client authentication records it; the resource lookup that follows caps the token at it.
+ */
+const presentedKeyScopes = new WeakMap<object, readonly AccessScope[] | null>();
+
+/**
+ * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
+ * stays within the key it authenticated with (`write` covers `read`, as on the API); other clients may ask for all.
+ */
+function grantableScopes(ctx: object, client: unknown): readonly AccessScope[] {
+  if ((client as { client_kind?: string } | undefined)?.client_kind !== 'service') return accessScopes.all;
+  // No recorded key means client authentication did not run for this request: grant nothing.
+  if (!presentedKeyScopes.has(ctx)) return [];
+  const keyScopes = presentedKeyScopes.get(ctx);
+  return accessScopes.all.filter((scope) => {
+    const [type, verb] = scope.split(':') as [AccessScopedEntityType, 'read' | 'write'];
+    return accessScopes.allows(keyScopes, type, verb === 'read' ? 'read' : 'update');
+  });
+}
 
 /** Claims this server adds to every access token; the guard reads them to build the actor. */
 export type IssuedTokenClaims = { actor_kind: 'user' | 'service'; tenant_id: string };
@@ -51,11 +72,11 @@ export async function createProvider(): Promise<Provider> {
         // Every token names its resource; a request without one gets `invalid_target` at the guard, never a broad token.
         defaultResource: () => undefined,
         useGrantedResource: () => true,
-        getResourceServerInfo: (_ctx, resourceIndicator) => {
+        getResourceServerInfo: (ctx, resourceIndicator, client) => {
           const resource = parseResource(resourceIndicator);
           if (!resource) throw new InvalidTarget();
           return {
-            scope: accessScopes.all.join(' '),
+            scope: grantableScopes(ctx, client).join(' '),
             audience: resourceIndicator,
             accessTokenFormat: 'jwt',
             accessTokenTTL: HOUR,
@@ -112,7 +133,7 @@ export async function createProvider(): Promise<Provider> {
   provider.proxy = true;
 
   // Secrets are never stored in plaintext: a registered app's secret is compared by hash, a service account's client
-  // secret is any of its live secret keys.
+  // secret is any of its live secret keys, whose scopes then cap the token (`grantableScopes`).
   provider.Client.prototype.compareClientSecret = async function compare(
     this: { clientId: string; clientSecret?: string; client_kind?: string },
     actual: string,
@@ -120,10 +141,14 @@ export async function createProvider(): Promise<Provider> {
     const presented = hashToken(actual);
     if (this.client_kind === 'service') {
       const keys = await baseDb
-        .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt })
+        .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt, scopes: apiKeysTable.scopes })
         .from(apiKeysTable)
         .where(and(eq(apiKeysTable.actorId, this.clientId), isNull(apiKeysTable.revokedAt)));
-      return keys.some((key) => (!key.expiresAt || !isExpiredDate(key.expiresAt)) && safeEqual(key.hash, presented));
+      const key = keys.find((k) => (!k.expiresAt || !isExpiredDate(k.expiresAt)) && safeEqual(k.hash, presented));
+      if (!key) return false;
+      const ctx = Provider.ctx;
+      if (ctx) presentedKeyScopes.set(ctx, key.scopes ?? null);
+      return true;
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);
   };
