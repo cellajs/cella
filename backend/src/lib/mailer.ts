@@ -13,6 +13,27 @@ const BREVO_SEND_URL = 'https://api.brevo.com/v3/smtp/email';
 const BREVO_TIMEOUT_MS = 60_000;
 const BREVO_MAX_RETRIES = 2;
 
+/** A Brevo tag opener (`{{`, `{%`, `{#`), or a placeholder `{{params.key}}` whose key the next group captures. */
+const BREVO_TAG_OPENER = /\{\{params\.([A-Za-z0-9_]+)\}\}|\{(?=[{%#])/g;
+
+/**
+ * Brevo renders `subject` and `htmlContent` as templates and HTML-escapes every `params` value by default. Text
+ * rendered here (a name, a title, a message) must never open a tag of its own: it could print a param unescaped
+ * (`|safe`), switch escaping off, hide the rest of the mail or break the send. Every opener except the mailer's own
+ * `{{params.<key>}}` placeholders loses its first brace to a character reference, or in plain text to a brace plus a
+ * zero-width space, so the text still reads as typed.
+ * @param content - Rendered HTML or a plain-text subject.
+ * @param paramKeys - Keys of the params every message version carries.
+ * @param format - `html` for the body, `text` for the subject.
+ */
+export function neutralizeBrevoTags(content: string, paramKeys: readonly string[], format: 'html' | 'text'): string {
+  const brace = format === 'html' ? '&#123;' : '{\u200B';
+  return content.replace(BREVO_TAG_OPENER, (match, key: string | undefined) => {
+    if (key !== undefined && paramKeys.includes(key)) return match;
+    return `${brace}${match.slice(1)}`;
+  });
+}
+
 /** Posts to Brevo's transactional endpoint, retrying 408, 429 and 5xx with backoff (Retry-After wins), as its SDK did. */
 async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   for (let attempt = 0; ; attempt++) {
@@ -105,10 +126,11 @@ export const mailer: Mailer = {
     if (!env.BREVO_API_KEY) return;
     if (appConfig.mode === 'test' && !env.TEST_SEND_EMAILS) return;
 
+    const paramKeys = Object.keys(versions[0]?.params ?? {});
     try {
       await postToBrevo(env.BREVO_API_KEY, {
-        subject: sanitizeEmailSubject(subject || `${appConfig.name} message`),
-        htmlContent: html,
+        subject: neutralizeBrevoTags(sanitizeEmailSubject(subject || `${appConfig.name} message`), paramKeys, 'text'),
+        htmlContent: neutralizeBrevoTags(html, paramKeys, 'html'),
         sender: { email: appConfig.senderEmail },
         replyTo: { email: replyTo || appConfig.supportEmail },
         messageVersions: versions,
