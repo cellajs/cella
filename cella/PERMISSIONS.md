@@ -173,8 +173,8 @@ Two row columns sit beside the engine: drafts (`publishedAt`) are visible to the
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member or tenant creator), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler |
-| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft |
+| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member, system admin, or the tenant's creator while it has no organization), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler. A missing tenant, an inactive one and one without access get the same 403 |
+| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft. `getValidProduct` answers 404 for a row the caller may not read, and 403 only for an action denied on a readable row |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |
 | Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying |
