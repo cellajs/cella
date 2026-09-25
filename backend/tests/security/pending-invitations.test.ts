@@ -42,8 +42,12 @@ describe('Pending invitations list', async () => {
     admin = await createOrgUser(call, organization.tenantId, organization.id, 'pending-admin', adminRole);
     member = await createOrgUser(call, organization.tenantId, organization.id, 'pending-member');
 
-    const newcomer = await createInvitation({ organization, email: 'newcomer@example.com', createdBy: admin.id });
-    const existing = await createTestUser('has-account@example.com');
+    const newcomer = await createInvitation({
+      organization,
+      email: 'pending-newcomer@security-test.com',
+      createdBy: admin.id,
+    });
+    const existing = await createTestUser('pending-has-account@security-test.com');
     const existingInvite = await createInvitation({
       organization,
       email: existing.email,
@@ -60,7 +64,10 @@ describe('Pending invitations list', async () => {
     const { status, items } = await listPending(member);
     expect(status).toBe(200);
     // Decision 5: the invitations themselves stay visible to members.
-    expect(items.map((item) => item.email).sort()).toEqual(['has-account@example.com', 'newcomer@example.com']);
+    expect(items.map((item) => item.email).sort()).toEqual([
+      'pending-has-account@security-test.com',
+      'pending-newcomer@security-test.com',
+    ]);
     for (const item of items) expect(item).not.toHaveProperty('tokenId');
   });
 
