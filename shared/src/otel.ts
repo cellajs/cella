@@ -113,7 +113,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const traceExporter = options.traceExporter ?? (hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined);
 
   // Skip NodeSDK startup when there is nothing to export and no local span processor.
-  if (!traceExporter && !hasMaple && spanProcessors.length === 0) {
+  if (!traceExporter && spanProcessors.length === 0) {
     return {
       sdk: undefined,
       meterProvider,
