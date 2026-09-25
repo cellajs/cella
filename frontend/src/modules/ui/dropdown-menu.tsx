@@ -33,7 +33,7 @@ function DropdownMenuContent({
     anchor?: Element | null | RefObject<Element | null>;
     collisionPadding?: number;
     finalFocus?: MenuPrimitive.Popup.Props['finalFocus'];
-    // `container` is part of @blocknote/shadcn's component contract: BlockNote portals menus into editor.portalElement
+    // `container` is part of @blocknote/shadcn's component contract: BlockNote portals menus into the element usePortalElement() returns
     container?: MenuPrimitive.Portal.Props['container'];
   }) {
   return (

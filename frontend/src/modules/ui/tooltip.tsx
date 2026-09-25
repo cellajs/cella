@@ -43,7 +43,7 @@ export function TooltipContent({
   side?: 'top' | 'bottom' | 'left' | 'right';
   align?: 'start' | 'center' | 'end';
   hideWhenDetached?: boolean;
-  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals tooltips into editor.portalElement
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals tooltips into the element usePortalElement() returns
   container?: TooltipPrimitive.Portal.Props['container'];
   children?: ReactNode;
   hidden?: boolean;

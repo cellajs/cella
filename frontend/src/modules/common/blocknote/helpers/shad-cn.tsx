@@ -11,7 +11,7 @@ import * as Tabs from '~/modules/ui/tabs';
 import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 
-// Both sides speak Base UI: triggers take `render` props and popup content takes a `container` (editor.portalElement).
+// Both sides speak Base UI: triggers take `render` props and popup content takes a `container` (the element usePortalElement() returns).
 // The cast is needed because this kit narrows some Base UI prop types and uses different cva variant unions.
 export const shadCNComponents = {
   Button,

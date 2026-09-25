@@ -1,15 +1,16 @@
-import { TextAlignButton, useComponentsContext } from '@blocknote/react';
+import { TextAlignButton, useComponentsContext, usePortalElement } from '@blocknote/react';
 import { ChevronDownIcon, MoveHorizontalIcon } from 'lucide-react';
 
 type BasicTextAlign = React.ComponentProps<typeof TextAlignButton>['textAlignment'];
 
 export function CustomTextAlignSelect() {
   const Components = useComponentsContext()!;
+  const portalElement = usePortalElement();
 
   const variants = ['left', 'center', 'right', 'justify'] satisfies BasicTextAlign[];
 
   return (
-    <Components.Generic.Menu.Root>
+    <Components.Generic.Menu.Root portalElement={portalElement}>
       <Components.Generic.Menu.Trigger>
         <Components.FormattingToolbar.Button
           className="bn-dropdown-button"

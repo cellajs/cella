@@ -1,3 +1,4 @@
+import { Dexie } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './attachments-db';
@@ -82,7 +83,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
     }
 
     if (newEntries.length > 0) {
-      await attachmentsDb.downloadQueue.bulkAdd(newEntries);
+      await addNew(newEntries);
     }
 
     if (resetIds.length > 0) {
@@ -91,6 +92,16 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
     }
   } catch (error) {
     console.error('[DownloadQueue] Failed to enqueue:', error);
+  }
+}
+
+/** Adds rows, tolerating keys an overlapping `enqueue` inserted after our lookup; the existing row is the dedupe outcome we want. */
+async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
+  try {
+    await attachmentsDb.downloadQueue.bulkAdd(entries);
+  } catch (error) {
+    // Outside a transaction bulkAdd keeps the rows that succeeded, so only a non-duplicate failure is a real error.
+    if (!(error instanceof Dexie.BulkError) || error.failures.some((f) => f.name !== 'ConstraintError')) throw error;
   }
 }
 

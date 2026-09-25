@@ -82,9 +82,12 @@ function resolveExtensionless(specifier, parentDir) {
   return null;
 }
 
-// --- Node.js loader hooks ---
+// --- Node.js loader hooks (synchronous, see module.registerHooks) ---
 
-export async function resolve(specifier, context, nextResolve) {
+export function resolve(specifier, context, nextResolve) {
+  // These hooks also see require() calls; dependencies keep standard resolution so a .ts shipped next to a .js never wins.
+  if (context.parentURL?.includes('/node_modules/')) return nextResolve(specifier, context);
+
   if (specifier.startsWith('#') && context.parentURL) {
     const parentDir = dirname(fileURLToPath(context.parentURL));
     const result = resolvePathAlias(specifier, parentDir);
@@ -100,7 +103,7 @@ export async function resolve(specifier, context, nextResolve) {
   return nextResolve(specifier, context);
 }
 
-export async function load(url, context, nextLoad) {
+export function load(url, context, nextLoad) {
   if (url.endsWith('.json') && !context.importAttributes?.type) {
     return nextLoad(url, { ...context, importAttributes: { ...context.importAttributes, type: 'json' } });
   }

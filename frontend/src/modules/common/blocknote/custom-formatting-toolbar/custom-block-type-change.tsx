@@ -6,6 +6,7 @@ import {
   useComponentsContext,
   useDictionary,
   useEditorState,
+  usePortalElement,
   useSelectedBlocks,
 } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
@@ -23,6 +24,7 @@ export function CustomBlockTypeSelect({
 }) {
   const Components = useComponentsContext()!;
   const dict = useDictionary();
+  const portalElement = usePortalElement();
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
 
   const selectedBlocks = useSelectedBlocks(editor);
@@ -85,7 +87,7 @@ export function CustomBlockTypeSelect({
   if (!shouldShow || !editor.isEditable) return null;
 
   return (
-    <Components.Generic.Menu.Root>
+    <Components.Generic.Menu.Root portalElement={portalElement}>
       <Components.Generic.Menu.Trigger>
         <Components.FormattingToolbar.Button
           className="bn-dropdown-button"

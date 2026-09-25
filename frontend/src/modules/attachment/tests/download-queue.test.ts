@@ -164,6 +164,20 @@ describe('downloadQueue', () => {
       expect(count).toBe(1);
     });
 
+    it('overlapping enqueues of the same attachments add each row once without failing', async () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await Promise.all([
+        downloadQueue.enqueue([makeAttachment()], 'org-1'),
+        downloadQueue.enqueue([makeAttachment(), makeAttachment({ id: 'att-2' })], 'org-1'),
+      ]);
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(await attachmentsDb.downloadQueue.count()).toBe(2);
+      expect((await attachmentsDb.downloadQueue.get('att-2'))?.status).toBe('pending');
+      errorSpy.mockRestore();
+    });
+
     it('skipped entries with No originalKey get reset when key arrives', async () => {
       await attachmentsDb.downloadQueue.add(makeQueueEntry({ status: 'skipped', skipReason: 'No originalKey' }));
 

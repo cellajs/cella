@@ -31,7 +31,7 @@ export function PopoverContent({
   anchor?: Element | null | React.RefObject<Element | null>;
   collisionPadding?: number;
   finalFocus?: PopoverPrimitive.Popup.Props['finalFocus'];
-  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals popovers into editor.portalElement
+  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals popovers into the element usePortalElement() returns
   container?: PopoverPrimitive.Portal.Props['container'];
   children?: React.ReactNode;
 } & Omit<React.ComponentPropsWithoutRef<'div'>, 'className'>) {
