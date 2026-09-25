@@ -4,8 +4,10 @@ import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
 import { generateId } from 'shared/utils/entity-id';
 import { verifyYjsToken, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { getAdminDb } from '#/db/db';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, type ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -107,6 +109,29 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     expect(viaOwnPath.response.status).toBe(404);
     expect((viaOwnPath.error as ErrorResponse).type).toBe('not_found');
     expect(viaOwnPath.data).toBeUndefined();
+  });
+
+  it('must not sign a system admin a token the relay would refuse: collaboration confers no system-admin bypass', async () => {
+    const admin = await createSystemAdminUser('yjs-token-sysadmin@security-test.com');
+    const adminCookie = await createTestSession(admin);
+    const { data, error, response } = await tokenFor(adminCookie, ownScope(), ownersAttachment.id);
+    expect(response.status).toBe(403);
+    expect((error as ErrorResponse).type).toBe('forbidden');
+    expect(data).toBeUndefined();
+
+    // Positive control: a system admin whose membership grants update gets one, as the relay would accept.
+    const member = await createOrganizationAdminUser(
+      'yjs-token-sysadmin-member@security-test.com',
+      owner.organization.id,
+      'admin',
+      true,
+      owner.tenantId,
+    );
+    await getAdminDb('yjs token test')
+      .insert(systemRolesTable)
+      .values({ id: member.id, userId: member.id, role: 'admin' });
+    const memberCookie = await createTestSession(member);
+    expect((await tokenFor(memberCookie, ownScope(), ownersAttachment.id)).response.status).toBe(200);
   });
 
   it('must not sign a token for an entity that does not exist', async () => {
