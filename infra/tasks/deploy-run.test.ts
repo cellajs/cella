@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type DeployEffects,
   type DeployOptions,
+  execEnv,
   parseDeployArgs,
   parseReapArgs,
   runDeploy,
@@ -60,6 +61,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
   const ops: string[] = [];
   const rolloutArgs: string[][] = [];
   const grantArgs: string[][] = [];
+  const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init');
@@ -81,6 +83,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     },
     exec: async (cmd, args, execOpts) => {
       ops.push(`exec:${cmd}:${args[0]}${execOpts?.allowFailure ? ':allow-failure' : ''}`);
+      execCalls.push({ cmd, args: [...args], opts: execOpts });
     },
     update: async (stack) => {
       ops.push(`update:${stack}`);
@@ -105,7 +108,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, grantArgs };
+  return { fx, ops, rolloutArgs, grantArgs, execCalls };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
@@ -349,5 +352,59 @@ describe('runReap sequencing', () => {
       /stack update failed/,
     );
     expect(ops.at(-1)).toBe('lease:release');
+  });
+});
+
+describe('frontend build process', () => {
+  /** The deploy job's environment: cloud keys, the state passphrase and the GitHub token beside ordinary runner vars. */
+  const deployJobEnv = {
+    PATH: '/usr/bin',
+    HOME: '/home/runner',
+    CI: 'true',
+    SCW_ACCESS_KEY: 'SCWDEPLOYACCESSKEY01',
+    SCW_SECRET_KEY: 'scw-deploy-secret-value',
+    SCW_DEFAULT_PROJECT_ID: 'scw-project-id-value',
+    SCW_DEFAULT_ORGANIZATION_ID: 'scw-organization-id-value',
+    PULUMI_CONFIG_PASSPHRASE: 'pulumi-passphrase-value',
+    GITHUB_TOKEN: 'ghs_deploy_token_value',
+    AWS_SECRET_ACCESS_KEY: 'aws-secret-access-key-value',
+  };
+  const deploySecrets = Object.entries(deployJobEnv).filter(([key]) => !['PATH', 'HOME', 'CI'].includes(key));
+
+  it('must not hand a deploy secret to the frontend build via its environment', async () => {
+    const { fx, execCalls } = makeFake();
+    // No --dist: the deploy command builds the frontend itself, as an operator run does.
+    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
+
+    const build = execCalls.find((call) => call.cmd === 'pnpm' && call.args.join(' ') === '--filter frontend build');
+    expect(build).toBeDefined();
+    const buildEnv = execEnv(deployJobEnv, build?.opts ?? {});
+    for (const [key, value] of deploySecrets) {
+      expect(buildEnv, key).not.toHaveProperty(key);
+      expect(Object.values(buildEnv)).not.toContain(value);
+    }
+    // Positive control: the build still receives its config and the runner basics.
+    expect(buildEnv).toMatchObject({
+      APP_MODE: 'production',
+      BACKEND_URL: 'https://www.cellajs.com/api',
+      FRONTEND_URL: 'https://www.cellajs.com',
+      PATH: '/usr/bin',
+    });
+  });
+
+  it('keeps the deploy secrets for the steps that use them', async () => {
+    const { fx, execCalls } = makeFake();
+    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
+
+    const login = execCalls.find((call) => call.cmd === 'pulumi' && call.args[0] === 'login');
+    expect(login).toBeDefined();
+    expect(execEnv(deployJobEnv, login?.opts ?? {})).toMatchObject(Object.fromEntries(deploySecrets));
+  });
+
+  it('runs no frontend build in the deploy process when CI hands it a prebuilt dist', async () => {
+    const { fx, execCalls } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+
+    expect(execCalls.filter((call) => call.args.includes('frontend'))).toEqual([]);
   });
 });

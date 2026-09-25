@@ -418,6 +418,19 @@ export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
   await runReap(parseReapArgs(argv), createRealEffects());
 }
 
+/**
+ * The environment `exec` hands a child. `secretless` strips the deploy's secrets (Scaleway keys, Pulumi passphrase,
+ * GitHub token) before `env` layers on top, so an untrusted build (the frontend Vite plugin graph) cannot read them;
+ * without it the child inherits the whole environment.
+ */
+export function execEnv(
+  parentEnv: NodeJS.ProcessEnv,
+  opts: { env?: Record<string, string>; secretless?: boolean },
+): NodeJS.ProcessEnv {
+  const baseEnv = opts.secretless ? scrubSecretEnv(parentEnv) : parentEnv;
+  return opts.env ? { ...baseEnv, ...opts.env } : baseEnv;
+}
+
 // Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware log grouping. Every ordering and failure decision lives in runDeploy.
 
 const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
@@ -531,17 +544,12 @@ function createRealEffects(): DeployEffects {
       };
     },
     exec(cmd, args, opts = {}) {
-      // `secretless` strips the deploy's secrets (Scaleway keys, Pulumi
-      // passphrase, GitHub token) from the child's environment before layering
-      // opts.env on top, so an untrusted build (the frontend Vite plugin graph)
-      // cannot read them. The default path is unchanged: full env inheritance.
-      const baseEnv = opts.secretless ? scrubSecretEnv(process.env) : process.env;
       // spawn, not spawnSync: a synchronous child blocks the event loop, which
       // serialized the "concurrent" registry wait behind the frontend build.
       return new Promise((done, fail) => {
         const child = spawn(cmd, args, {
           cwd: infraDir,
-          env: opts.env ? { ...baseEnv, ...opts.env } : baseEnv,
+          env: execEnv(process.env, opts),
           stdio: [opts.stdin === undefined ? 'inherit' : 'pipe', 'inherit', 'inherit'],
         });
         if (opts.stdin !== undefined) child.stdin?.end(opts.stdin);
