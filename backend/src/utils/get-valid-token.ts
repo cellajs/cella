@@ -19,6 +19,22 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 export const singleUseWindow = (tokenType: TokenModel['type']) =>
   new TimeSpan(tokenType === 'invitation' ? 30 : 5, 'm');
 
+/**
+ * Whether this browser holds the single-use cookie minted for this token. Any cookie of the token's type is not proof:
+ * it can come from the holder's own link. Read fresh, as a concurrent redemption may have minted it after this request
+ * read the row.
+ */
+const holdsSingleUse = async (ctx: Context<Env>, tokenType: TokenModel['type'], tokenId: string) => {
+  const cookie = await getAuthCookie(ctx, tokenType);
+  if (!cookie) return false;
+  const [row] = await db
+    .select({ singleUseToken: tokensTable.singleUseToken })
+    .from(tokensTable)
+    .where(eq(tokensTable.id, tokenId))
+    .limit(1);
+  return !!row?.singleUseToken && row.singleUseToken === hashToken(cookie);
+};
+
 type BaseProps = {
   ctx: Context<Env>;
   token: string;
@@ -58,10 +74,9 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
     throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
-  // Invoked but not expired: only a surviving single-use cookie keeps it usable.
-  if (tokenRecord.invokedAt) {
-    const singleUseToken = await getAuthCookie(ctx, tokenType);
-    if (!singleUseToken) throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
+  // Invoked but not expired: only this token's own single-use cookie keeps it usable.
+  if (tokenRecord.invokedAt && !(await holdsSingleUse(ctx, tokenType, tokenRecord.id))) {
+    throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
   }
 
   // Compare-and-swap on `invokedAt IS NULL`: of two concurrent redemptions exactly one mints a session.
@@ -81,10 +96,11 @@ export const getValidToken = async ({ ctx, token, tokenType, invokeToken = true 
     // CAS won: hand the RAW single-use token back so the caller can set the cookie.
     if (invokedTokenRecord) return { ...invokedTokenRecord, singleUseToken: rawSingleUseToken };
 
-    // CAS lost: tolerate only while the caller still presents a valid single-use cookie, otherwise it is spent.
+    // CAS lost: tolerate only while the caller presents this token's own single-use cookie, otherwise it is spent.
     // Returning a null `singleUseToken` keeps the caller from re-setting the cookie.
-    const singleUseCookie = await getAuthCookie(ctx, tokenType);
-    if (!singleUseCookie) throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
+    if (!(await holdsSingleUse(ctx, tokenType, tokenRecord.id))) {
+      throw new AppError(401, `${tokenRecord.type}_expired`, 'warn');
+    }
     return { ...tokenRecord, singleUseToken: null };
   }
 
