@@ -3,6 +3,7 @@ import type { EnabledOAuthProvider } from 'shared';
 import { AppError } from '#/core/error';
 import type { DbOrTx } from '#/db/db';
 import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -26,14 +27,22 @@ const proofStamps = (via: EmailProof, now: string) => ({
 /**
  * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user has no row for the address: the caller
  * proved ownership of an address the account does not hold, which is drift to surface, never to ignore.
+ *
+ * A proof of an address still unverified adopts the account: whoever created it proved nothing, so the provider
+ * identities nobody verified are dropped, and a sign-up someone else started leaves no provider account on it.
  */
 export const markEmailVerified = async (db: DbOrTx, { userId, email, via }: EmailProofOpts): Promise<boolean> => {
-  const [stamped] = await db
-    .update(emailsTable)
-    .set(proofStamps(via, getIsoDate()))
-    .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, userId)))
-    .returning({ id: emailsTable.id });
-  if (!stamped) return false;
+  const onAddress = and(eq(emailsTable.email, email), eq(emailsTable.userId, userId));
+  const [before] = await db.select({ verified: emailsTable.verified }).from(emailsTable).where(onAddress);
+  if (!before) return false;
+
+  await db.update(emailsTable).set(proofStamps(via, getIsoDate())).where(onAddress);
+
+  if (!before.verified) {
+    await db
+      .delete(identitiesTable)
+      .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.verified, false)));
+  }
 
   // The inbox is proven, so the invitations waiting for this address are this user's. Idempotent, one cheap lookup.
   await claimEmailForUser({ var: { db } }, { userId, email });

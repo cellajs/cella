@@ -6,8 +6,9 @@ import {
   markEmailVerified,
   requireEmailVerified,
 } from '#/modules/auth/general/helpers/mark-email-verified';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { createTestUser } from '../helpers';
+import { createTestUser, linkIdentity } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
 afterEach(async () => await clearDatabase());
@@ -61,6 +62,27 @@ describe('markEmailVerified', () => {
     // Another account's address is never touched.
     expect(await markEmailVerified(db, { userId: user.id, email: other.email, via: 'magic' })).toBe(false);
     expect((await emailRow(other.email)).verified).toBe(false);
+  });
+
+  it('drops the unverified identities of an account it adopts, and keeps the verified ones', async () => {
+    const user = await createTestUser('adopted@example.com', false);
+    await linkIdentity(user, { verified: false, subject: 'unverified-subject' });
+    const verified = await linkIdentity(user, { verified: true, subject: 'verified-subject' });
+
+    await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' });
+
+    const remaining = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, user.id));
+    expect(remaining.map((identity) => identity.id)).toEqual([verified.id]);
+  });
+
+  it("keeps a proven account's unverified identities: a pending connection is not an adoption", async () => {
+    const user = await createTestUser('proven@example.com');
+    const pending = await linkIdentity(user, { verified: false, subject: 'pending-subject' });
+
+    await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' });
+
+    const remaining = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, user.id));
+    expect(remaining.map((identity) => identity.id)).toEqual([pending.id]);
   });
 
   it('fails a verification flow on an address the account does not hold', async () => {

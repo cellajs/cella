@@ -7,13 +7,14 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { identitiesTable } from '#/modules/auth/identities-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { authCookie, createTestOrganization, createTestSession, createTestUser, linkIdentity } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -350,5 +351,55 @@ describe('magic-link sign-up', async () => {
     const { error, response } = await openLink(first.rawToken, first.requestedHere);
     expect(response.status).toBe(401);
     expect((error as { type: string }).type).toBe('magic_not_found');
+  });
+});
+
+/**
+ * An account whose address nobody proved may carry a provider identity nobody verified: before sign-ups waited on the
+ * inbox, anyone could create such an account on someone else's address. The owner's first inbox proof adopts the
+ * account and drops those identities with it.
+ */
+describe('adopting an unproven account', async () => {
+  const call = await createAppClient();
+
+  beforeAll(() => mockFetchRequest());
+  afterEach(async () => await clearSecurityTestData());
+
+  const address = (label: string) => `${label}-${nanoid(6)}@security-test.com`.toLowerCase();
+  const identityRow = async (id: string) =>
+    (await db.select().from(identitiesTable).where(eq(identitiesTable.id, id)))[0];
+
+  /** Opens a fresh magic link for `user` in the browser that asked for it. */
+  const signInByMagicLink = async (user: { id: string; email: string }) => {
+    const { raw, row } = await magicLink(user);
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
+    });
+    expect(response.status).toBe(302);
+    expect(sessionCookieSet(response)).toBe(true);
+  };
+
+  it("must not keep an unverified provider identity on an account adopted via its owner's magic link", async () => {
+    const owner = await createTestUser(address('owner'), false);
+    const planted = await linkIdentity(owner, { verified: false, subject: 'planted-github-id' });
+
+    await signInByMagicLink(owner);
+
+    expect(await identityRow(planted.id)).toBeUndefined();
+    const [adopted] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
+    expect(adopted).toMatchObject({ verified: true, lastVerifiedVia: 'magic' });
+  });
+
+  it("keeps verified identities, and an already proven account's pending connection (positive control)", async () => {
+    const owner = await createTestUser(address('owner'), false);
+    const verified = await linkIdentity(owner, { verified: true, subject: 'owner-github-id' });
+    await signInByMagicLink(owner);
+    expect(await identityRow(verified.id)).toBeDefined();
+
+    const proven = await createTestUser(address('proven'));
+    const pendingConnection = await linkIdentity(proven, { verified: false, subject: 'proven-github-id' });
+    await signInByMagicLink(proven);
+    expect(await identityRow(pendingConnection.id)).toBeDefined();
   });
 });
