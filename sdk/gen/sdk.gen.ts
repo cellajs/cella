@@ -844,7 +844,7 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
 /**
  * Get pending magic link
  *
- * For a magic link opened in a browser that did not request it: the masked address it signs in, so the holder can recognize it before confirming.
+ * For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.
  *
  * **GET /auth/magic/pending** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/magic/pending) ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/magic/pending) ·· _auth_cella_
  *

@@ -37,20 +37,13 @@ export const findOpenableMagicLink = async (rawToken: string) => {
  * scanner, signs nobody in and is not used up. Returns the redirect to that page, or null to open the link directly.
  */
 export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken: string) => {
-  if (await getAuthCookie(ctx, 'magic')) return null;
-
   const token = await findLinkToken({ type: 'magic', rawToken });
-  // An unknown link takes the direct path, which refuses it the same way it always has.
-  if (!token || (await getAuthCookie(ctx, 'magic-requested')) === token.id) return null;
+  // An unknown link takes the direct path, which refuses it the same way it always has. So does an opened one: only the
+  // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
+  if (!token || token.invokedAt) return null;
+  if ((await getAuthCookie(ctx, 'magic-requested')) === token.id) return null;
 
   await findOpenableMagicLink(rawToken);
   await setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);
   return ctx.redirect(new URL(confirmSignInPath, appConfig.frontendUrl), 302);
-};
-
-/** An address shown to a browser that holds a link but has not proven the inbox: enough to recognize, not to read. */
-export const maskEmail = (email: string) => {
-  const at = email.lastIndexOf('@');
-  if (at <= 0) return '•••';
-  return `${email[0]}•••${email.slice(at)}`;
 };

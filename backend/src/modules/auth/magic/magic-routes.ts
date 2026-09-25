@@ -40,7 +40,7 @@ const authMagicLinkRoutes = {
     tags: ['auth', 'cella'],
     summary: 'Get pending magic link',
     description:
-      'For a magic link opened in a browser that did not request it: the masked address it signs in, so the holder can recognize it before confirming.',
+      'For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.',
     responses: {
       200: {
         description: 'Masked address of the held link',

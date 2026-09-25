@@ -8,11 +8,7 @@ import { mailer } from '#/lib/mailer';
 import { hasPendingInvitation } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
-import {
-  findOpenableMagicLink,
-  maskEmail,
-  rememberMagicLinkRequest,
-} from '#/modules/auth/magic/helpers/magic-link-browser';
+import { findOpenableMagicLink, rememberMagicLinkRequest } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { invokeToken, issueToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -82,7 +78,8 @@ app.openapi(authMagicLinkRoutes.getPendingMagicLink, async (ctx) => {
   if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
 
   const token = await findOpenableMagicLink(rawToken);
-  return ctx.json({ email: maskEmail(token.email) }, 200);
+  // The full address: a masked one looks alike for two accounts on one domain, so a planted link would pass unnoticed.
+  return ctx.json({ email: token.email }, 200);
 });
 
 app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {

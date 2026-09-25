@@ -120,6 +120,21 @@ describe('magic link opened in another browser', async () => {
     expect(await openedAt(row.id)).toBeNull();
   });
 
+  it("must not skip the confirmation via another link's single-use cookie", async () => {
+    const attacker = await newUser();
+    const { raw, row } = await magicLink(attacker);
+
+    // The victim's browser opened a link of its own minutes ago, so it holds a validly signed `magic` cookie.
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic', nanoid(40)) },
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(confirmPage);
+    expect(sessionCookieSet(response)).toBe(false);
+    expect(await openedAt(row.id)).toBeNull();
+  });
+
   it('must not let a link scanner use up the link', async () => {
     const user = await newUser();
     const { raw, row } = await magicLink(user);
@@ -158,7 +173,7 @@ describe('magic link opened in another browser', async () => {
     expect(await openedAt(row.id)).toBeNull();
   });
 
-  it('shows the masked address and signs in after the confirmation (positive control)', async () => {
+  it('shows the address and signs in after the confirmation (positive control)', async () => {
     const user = await newUser();
     const { raw, row } = await magicLink(user);
 
@@ -168,7 +183,7 @@ describe('magic link opened in another browser', async () => {
 
     const pending = await call(getPendingMagicLink, { headers: { ...defaultHeaders, Cookie: held! } });
     expect(pending.response.status).toBe(200);
-    expect((pending.data as { email: string }).email).toBe(`m•••${user.email.slice(user.email.indexOf('@'))}`);
+    expect((pending.data as { email: string }).email).toBe(user.email);
 
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held! } });
     expect(confirmed.response.status).toBe(302);
@@ -322,7 +337,7 @@ describe('magic-link sign-up', async () => {
     expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
   });
 
-  it('shows the masked address of a sign-up link opened elsewhere, and creates the account on confirmation', async () => {
+  it('shows the address of a sign-up link opened elsewhere, and creates the account on confirmation', async () => {
     const email = newcomer();
     const { rawToken } = await requestLink(email);
 
@@ -331,7 +346,7 @@ describe('magic-link sign-up', async () => {
     expect((await rowsFor(email)).users).toHaveLength(0);
 
     const pending = await call(getPendingMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
-    expect((pending.data as { email: string }).email).toBe(`n•••${email.slice(email.indexOf('@'))}`);
+    expect((pending.data as { email: string }).email).toBe(email);
 
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
     expect(confirmed.response.status).toBe(302);
