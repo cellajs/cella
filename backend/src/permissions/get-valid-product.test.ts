@@ -74,13 +74,26 @@ describe('getValidProduct request scope', () => {
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when the row is in scope but the engine denies the action', async () => {
+  it('returns 403 when the row is in scope and readable but the engine denies the action', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(row() as never);
-    vi.mocked(checkAccess).mockReturnValue({ allowed: false } as ReturnType<typeof checkAccess>);
+    vi.mocked(checkAccess).mockImplementation(
+      (_access, action) => ({ allowed: action === 'read' }) as ReturnType<typeof checkAccess>,
+    );
     await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'update')).rejects.toMatchObject({
       status: 403,
       type: 'forbidden',
     });
+  });
+
+  it('reads a row the engine denies reading as 404, whatever the action', async () => {
+    vi.mocked(resolveEntity).mockResolvedValue(row() as never);
+    vi.mocked(checkAccess).mockReturnValue({ allowed: false } as ReturnType<typeof checkAccess>);
+    for (const action of ['read', 'update', 'delete'] as const) {
+      await expect(getValidProduct(ctx(), 'att-1', 'attachment', action)).rejects.toMatchObject({
+        status: 404,
+        type: 'not_found',
+      });
+    }
   });
 
   it('returns the row when it is in scope and allowed, reading through tenantRead on bare baseDb', async () => {
