@@ -43,6 +43,7 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
     sessionId: `session-${userId}`,
     organizationIds: new Set([ORG]),
     isSystemAdmin: false,
+    systemAccessAllowed: false,
     memberships,
     cursor: null,
   };

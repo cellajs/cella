@@ -48,6 +48,7 @@ const fakeSubscriber = (
     sessionId: `session-${userId}`,
     organizationIds: new Set(organizationIds),
     isSystemAdmin: false,
+    systemAccessAllowed: false,
     memberships,
     cursor: null,
   };

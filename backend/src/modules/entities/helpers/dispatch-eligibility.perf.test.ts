@@ -42,6 +42,7 @@ const makeSubscribers = (count: number, organizationId: string): AppStreamSubscr
       sessionId: `session-${userId}`,
       organizationIds: new Set([organizationId, ...OTHER_ORGS]),
       isSystemAdmin: false,
+      systemAccessAllowed: false,
       memberships: [
         membership(organizationId, role, userId),
         membership(OTHER_ORGS[0], 'member' as EntityRole, userId),

@@ -82,8 +82,12 @@ const staleStreamError = (
       return { code: 'unauthorized', message: 'Impersonation ended' };
     }
   }
-  if (subscriber.isSystemAdmin && !systemAdmins.has(subscriber.userId)) {
-    return { code: 'access_changed', message: 'System role removed' };
+  // The stream reads as system admin while the user holds the role and it connected from an allowed address.
+  if (subscriber.isSystemAdmin !== (subscriber.systemAccessAllowed && systemAdmins.has(subscriber.userId))) {
+    return {
+      code: 'access_changed',
+      message: subscriber.isSystemAdmin ? 'System role removed' : 'System role granted',
+    };
   }
   return null;
 };
@@ -104,8 +108,8 @@ const readSessionStates = (ids: string[]) =>
 /**
  * Re-checks the session behind every open app stream and closes the streams it no longer backs: the session expired,
  * was revoked where no event reached this process (another instance) or went with its user, an impersonation's admin
- * lost their session or system role, or the stream reads as system admin after the role was removed. Gaining the role
- * waits for the next connect. Streams without a session, which an app may register, are left alone.
+ * lost their session or system role, or the system role was removed or granted since the stream connected (the
+ * client reconnects on `access_changed`). Streams without a session, which an app may register, are left alone.
  *
  * @returns How many streams it closed.
  */
@@ -121,7 +125,7 @@ export async function sweepAppStreamSessions(): Promise<number> {
 
   const adminIds = [
     ...new Set([
-      ...subscribers.filter((s) => s.isSystemAdmin).map((s) => s.userId),
+      ...subscribers.filter((s) => s.isSystemAdmin || s.systemAccessAllowed).map((s) => s.userId),
       ...impersonators.map((s) => s.userId),
     ]),
   ];

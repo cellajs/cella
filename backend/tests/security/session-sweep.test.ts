@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
+import { env } from '#/env';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
@@ -17,6 +18,7 @@ import {
   insertSession,
   openStream,
   openUnreadStream,
+  type TestSession,
 } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -113,6 +115,48 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
 
     // The session still holds, so the client reconnects and the stream is rebuilt without system-admin reads.
     await expectClosedWith(demotedStream, 'access_changed');
+    expectStillOpen(admin.id, adminStream);
+  });
+
+  it('tells a stream to reconnect once its user gains the system role, so it gets system-admin reads', async () => {
+    const [promoted, regular] = [
+      await createTestUser('promoted@security-test.com'),
+      await createTestUser('regular@security-test.com'),
+    ];
+    const [promotedSession, regularSession] = [await insertSession(promoted), await insertSession(regular)];
+    const promotedStream = await openStream(promoted.id, promotedSession);
+    const regularStream = await openStream(regular.id, regularSession);
+
+    // system_roles is written by operators, outside the API.
+    await getAdminDb('test arrange')
+      .insert(systemRolesTable)
+      .values({ id: promoted.id, userId: promoted.id, role: 'admin', createdAt: new Date().toISOString() });
+
+    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+
+    await expectClosedWith(promotedStream, 'access_changed');
+    expectStillOpen(regular.id, regularStream);
+  });
+
+  it('keeps an admin stream from an address the role may not be used from, with no reconnect loop', async () => {
+    const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
+    Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' });
+    onTestFinished(() => void Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistBefore }));
+
+    const admin = await createSystemAdminUser('remote-admin@security-test.com');
+    const [adminSession, revoked] = [await insertSession(admin), await insertSession(admin)];
+    const fromElsewhere = (session: TestSession) => ({
+      ...session,
+      headers: { ...session.headers, 'x-forwarded-for': '10.0.0.2' },
+    });
+    const adminStream = await openStream(admin.id, fromElsewhere(adminSession));
+    const revokedStream = await openStream(admin.id, fromElsewhere(revoked));
+
+    await stamp(revoked.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
+    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+
+    // The sweep ran and found the role; the stream never read as system admin from this address, so nothing changed.
+    await expectClosedWith(revokedStream, 'unauthorized');
     expectStillOpen(admin.id, adminStream);
   });
 

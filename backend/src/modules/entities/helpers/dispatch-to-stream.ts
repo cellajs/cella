@@ -18,6 +18,8 @@ export interface AppStreamSubscriber extends CursoredSubscriber {
   sessionId: string;
   organizationIds: Set<string>;
   isSystemAdmin: boolean;
+  /** Whether it connected from an address allowed system access: with the role, it reads as system admin. */
+  systemAccessAllowed: boolean;
   memberships: MembershipBaseModel[];
 }
 

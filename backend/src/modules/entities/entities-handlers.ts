@@ -9,6 +9,7 @@ import { checkSlugOp } from '#/modules/entities/operations/check-slug';
 import { actorFrom } from '#/permissions/access';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
+import { isSystemAccessAllowed } from '#/utils/system-access';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
 import { ensureAppStreamSessionSweep } from './helpers/session-streams';
 import { keepAlive, streamSubscriberManager, writeOffset } from './stream';
@@ -52,6 +53,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       sessionId,
       organizationIds,
       isSystemAdmin,
+      systemAccessAllowed: isSystemAccessAllowed(ctx),
       memberships,
       cursor,
     };
