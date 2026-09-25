@@ -2819,7 +2819,7 @@ export type GetUploadTokenData = {
   path?: never;
   query: {
     organizationId?: string;
-    templateId: 'avatar' | 'cover' | 'attachment';
+    templateId: 'avatar' | 'cover' | 'attachment' | 'newsletter';
   };
   url: '/me/upload-token';
 };

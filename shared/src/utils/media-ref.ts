@@ -14,7 +14,10 @@ export type MediaRef =
 
 /** The document a reference sits in. */
 export interface MediaRefContext {
-  /** Organization whose upload prefix an `orgKey` must lie under; without one no key is valid. */
+  /**
+   * Organization whose upload prefix an `orgKey` must lie under (a system document, such as a newsletter, passes the
+   * system upload prefix); without one no key is valid.
+   */
   organizationId?: string | null;
 }
 

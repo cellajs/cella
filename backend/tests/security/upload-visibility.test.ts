@@ -1,21 +1,29 @@
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders } from '../fixtures';
+import { createSystemAdminUser, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-/** The part of a signed upload token that decides where Transloadit stores the files. */
-interface StoreStep {
-  acl: string;
-  credentials: string;
+/** A signed assembly step: `exported` stores the files (`acl`, `credentials`, `path`), the others process them. */
+interface AssemblyStep {
+  acl?: string;
+  credentials?: string;
+  path?: string;
+  use?: string | string[];
+  robot?: string;
+  format?: string;
 }
 
 interface UploadTokenBody {
   publicBucket: boolean;
-  params: { steps: { exported: StoreStep } } | null;
+  sub: string;
+  params: { steps: Record<string, AssemblyStep> } | null;
+  /** Error type, on a refusal. */
+  type?: string;
 }
 
 /**
@@ -29,10 +37,10 @@ describe('Upload visibility', async () => {
   let tenant: TestTenant;
 
   /** Raw request: the client-chosen `publicBucket` is no longer part of the typed query. */
-  const requestToken = async (query: Record<string, string>) => {
+  const requestToken = async (query: Record<string, string>, cookie = tenant.sessionCookie) => {
     const response = await baseApp.fetch(
       new Request(`http://localhost/me/upload-token?${new URLSearchParams(query)}`, {
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+        headers: { ...defaultHeaders, Cookie: cookie },
       }),
     );
     return { status: response.status, body: (await response.json()) as UploadTokenBody };
@@ -74,5 +82,48 @@ describe('Upload visibility', async () => {
         credentials: appConfig.s3.publicBucket,
       });
     }
+  });
+
+  describe('system uploads (newsletter images)', () => {
+    /** With and without an organization id, which is no part of a system upload. */
+    const systemQueries = (): Record<string, string>[] => [
+      { templateId: 'newsletter' },
+      { templateId: 'newsletter', organizationId: tenant.organization.id },
+    ];
+
+    it('must not get a system upload token via a session without the system role', async () => {
+      // The tenant user administers an organization but holds no system role.
+      for (const query of systemQueries()) {
+        const { status, body } = await requestToken(query);
+        expect(status).toBe(403);
+        expect(body.type).toBe('no_sysadmin');
+      }
+    });
+
+    it('gives a system admin a public, re-encoded upload under the system prefix (positive control)', async () => {
+      const admin = await createSystemAdminUser('upload-visibility-sysadmin@security-test.com');
+      const cookie = await createTestSession(admin);
+
+      // The prefix stays the system one, also when the request names an organization.
+      for (const query of systemQueries()) {
+        const { status, body } = await requestToken(query, cookie);
+        expect(status).toBe(200);
+        expect(body.publicBucket).toBe(true);
+        expect(body.sub).toBe(`system/${admin.id}`);
+
+        const steps = body.params?.steps ?? {};
+        expect(steps.exported).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucket });
+        expect(steps.exported?.path?.startsWith(`/system/${admin.id}/`)).toBe(true);
+        // Every stored file is an image the pipeline re-encoded, never the upload as sent.
+        const stored = [steps.exported?.use ?? []].flat();
+        expect(stored.length).toBeGreaterThan(0);
+        for (const step of stored) {
+          expect(steps[step], step).toMatchObject({
+            robot: '/image/resize',
+            format: expect.stringMatching(/^(?:jpg|png|webp)$/),
+          });
+        }
+      }
+    });
   });
 });

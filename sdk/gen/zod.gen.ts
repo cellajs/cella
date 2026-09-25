@@ -1129,7 +1129,7 @@ export const zDeleteMyMembershipResponse = z.void();
 
 export const zGetUploadTokenQuery = z.object({
   organizationId: z.uuid().optional(),
-  templateId: z.enum(['avatar', 'cover', 'attachment']),
+  templateId: z.enum(['avatar', 'cover', 'attachment', 'newsletter']),
 });
 
 /**

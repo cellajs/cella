@@ -6179,7 +6179,7 @@
         "operationId": "getUploadToken",
         "tags": ["me", "cella"],
         "summary": "Get upload token",
-        "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars and covers are public, attachments private.",
+        "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -6196,7 +6196,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["avatar", "cover", "attachment"]
+              "enum": ["avatar", "cover", "attachment", "newsletter"]
             },
             "required": true,
             "name": "templateId",

@@ -230,7 +230,7 @@ export const config = {
     host: 's3.nl-ams.scw.cloud',
   } as S3ConfigInput,
 
-  uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
+  uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
 
   /**
    * Origin of the media asset CDN, which serves re-hosted images as immutable content-hash objects. A media block may

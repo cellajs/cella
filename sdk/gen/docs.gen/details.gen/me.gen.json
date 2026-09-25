@@ -1408,7 +1408,7 @@
           "templateId": {
             "type": "string",
             "required": true,
-            "enum": ["avatar", "cover", "attachment"]
+            "enum": ["avatar", "cover", "attachment", "newsletter"]
           }
         }
       }

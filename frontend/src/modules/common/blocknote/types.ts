@@ -3,6 +3,7 @@ import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { Attachment } from 'sdk';
+import type { UploadTemplateId } from 'shared';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import type { Member } from '~/modules/memberships/types';
 
@@ -50,17 +51,21 @@ export type IconType = (
   },
 ) => React.ReactElement;
 
-/** How an upload is referenced: by attachment id, or in a public mode by cloud key when the attachment template stores publicly (the template decides). */
+/** How an upload is referenced: by attachment id, or by cloud key when its upload template stores publicly (the template decides). */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
 
-/** Attachment modes require a tenantId for persistence and private reads. */
+/**
+ * Attachment modes upload through the attachment template and require a tenantId for persistence and private reads.
+ * `public-no-attachment` persists no row: it uploads through its own public `templateId` and the block keeps the key.
+ */
 export type BaseUppyFilePanelProps = {
+  /** Storage prefix of the document's media: its organization id, or `systemUploadPrefix` for a system document. */
   organizationId: string;
   onComplete?: (attachments: Attachment[]) => void | Promise<void>;
   onError?: (error: Error) => void;
 } & (
-  | { mediaMode: 'public-no-attachment'; tenantId?: string }
-  | { mediaMode: 'public-attachment' | 'private-attachment'; tenantId: string }
+  | { mediaMode: 'public-no-attachment'; templateId: UploadTemplateId; tenantId?: string }
+  | { mediaMode: 'public-attachment' | 'private-attachment'; templateId?: never; tenantId: string }
 );
 
 export type CommonBlockNoteProps = {

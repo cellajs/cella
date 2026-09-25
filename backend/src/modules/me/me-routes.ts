@@ -208,7 +208,7 @@ const meRoutes = {
     tags: ['me', 'cella'],
     summary: 'Get upload token',
     description:
-      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars and covers are public, attachments private.',
+      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',
     request: { query: uploadTokenQuerySchema },
     responses: {
       200: {
