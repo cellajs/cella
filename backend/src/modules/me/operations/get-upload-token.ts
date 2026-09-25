@@ -13,6 +13,12 @@ interface GetUploadTokenOpts {
 export function getUploadTokenOp(ctx: UserContext, { publicBucket, organizationId, templateId }: GetUploadTokenOpts) {
   const user = ctx.var.user;
 
+  // The organization id becomes the upload's storage prefix, which attachments must name: members only.
+  const isMember = ctx.var.memberships.some((membership) => membership.organizationId === organizationId);
+  if (organizationId && !isMember && !ctx.var.isSystemAdmin) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
+  }
+
   const sub = [organizationId, user.id].filter((part): part is string => typeof part === 'string').join('/');
 
   if (!env.TRANSLOADIT_KEY || !env.TRANSLOADIT_SECRET) {

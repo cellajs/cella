@@ -34,13 +34,14 @@ const bodyChannelIdColumns = (): BodyChannelIdColumns => {
   return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
 };
 
-const attachmentBody = (id: string) => ({
+/** A create body keyed under the organization's upload prefix, in the app's private bucket. */
+const attachmentBody = (id: string, organizationId: string) => ({
   id,
   filename: 'cross-tenant.pdf',
   contentType: 'application/pdf',
   size: '1024',
-  keys: { original: `test/cross-tenant-${id}.pdf` },
-  bucketName: 'test-bucket',
+  keys: { original: `${organizationId}/test/cross-tenant-${id}.pdf` },
+  bucketName: appConfig.s3.privateBucket,
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
   ...bodyChannelIdColumns(),
   stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
@@ -136,7 +137,7 @@ describe('Cross-tenant API isolation', async () => {
     it('should reject User A creating attachment in Tenant B with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000001')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000001', tenantB.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       expect(response.status).toBe(403);
@@ -156,7 +157,7 @@ describe('Cross-tenant API isolation', async () => {
     it('should reject User B creating attachment in Tenant A with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000002')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000002', tenantA.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
       expect(response.status).toBe(403);
@@ -182,7 +183,7 @@ describe('Cross-tenant API isolation', async () => {
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody(presignAttachmentId)],
+        body: [attachmentBody(presignAttachmentId, tenantA.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       expect(response.status).toBe(201);
