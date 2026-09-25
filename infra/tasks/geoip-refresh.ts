@@ -1,6 +1,7 @@
 import { gunzipSync } from 'node:zlib';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
+import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { getFlag, getNumFlag } from './args';
 
@@ -173,10 +174,7 @@ export async function createLiveEffects(opts: { bucket: string; region: string; 
 export async function main(argv = process.argv.slice(2), opts: { key?: KeyPair } = {}): Promise<void> {
   const bucket = getFlag(argv, '--bucket');
   const region = getFlag(argv, '--region');
-  if (!bucket || !region) {
-    process.stderr.write('geoip-refresh requires --bucket and --region\n');
-    process.exit(2);
-  }
+  if (!bucket || !region) throw new ExitCodeError('geoip-refresh requires --bucket and --region', 2);
   const prefix = getFlag(argv, '--prefix') ?? DEFAULT_PREFIX;
   const maxAgeRaw = getFlag(argv, '--max-age-days');
   const effects = await createLiveEffects({ bucket, region, prefix, key: opts.key });

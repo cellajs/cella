@@ -185,6 +185,36 @@ describe('runDeploy sequencing', () => {
     expect(ops).not.toContain('boot-diag');
   });
 
+  it('stops before the stack update when the preflight finds a pending privileged change', async () => {
+    const { main: preflight } = await import('./preflight-privileged');
+    const { fx, ops } = makeFake();
+    const task = fx.task;
+    // The real preflight task, reading a preview that holds a privileged change.
+    fx.task = async (name, argv = []) => {
+      if (name !== 'preflight-privileged') return task(name, argv);
+      ops.push(`task:${name}`);
+      await preflight(argv, {
+        stackIsSetUp: () => true,
+        preview: async () => [
+          {
+            op: 'update',
+            urn: 'urn:pulumi:production::infra::scaleway:iam/policy:Policy::vm-backend-policy',
+            detailedDiff: { 'rules[0].condition': { kind: 'update' } },
+          },
+        ],
+      });
+    };
+    const exitCodeBefore = process.exitCode;
+
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/privileged change\(s\) pending/);
+    expect(ops).toContain('task:preflight-privileged');
+    expect(ops).not.toContain('update:production');
+    expect(ops).not.toContain('rollout');
+    expect(ops.at(-1)).toBe('lease:release');
+    // The failure travels as the thrown error; the process exit code stays the entry point's business.
+    expect(process.exitCode).toBe(exitCodeBefore);
+  });
+
   it('collects boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
     const { fx, ops } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);

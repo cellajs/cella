@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   type GeoipManifest,
   type GeoipRefreshPlan,
+  main,
   monthOf,
   sequenceGeoipRefresh,
   verifyMmdbArchive,
@@ -139,5 +140,12 @@ describe('monthOf', () => {
   it('formats UTC months and shifts across year boundaries', () => {
     expect(monthOf(new Date('2026-09-23T10:00:00Z'))).toBe('2026-09');
     expect(monthOf(new Date('2026-01-15T00:00:00Z'), -1)).toBe('2025-12');
+  });
+});
+
+describe('main', () => {
+  it('refuses to run without a bucket and region by throwing exit code 2, never exiting in-process', async () => {
+    await expect(main([])).rejects.toMatchObject({ name: 'ExitCodeError', exitCode: 2 });
+    await expect(main(['--bucket', 'b'])).rejects.toMatchObject({ exitCode: 2 });
   });
 });
