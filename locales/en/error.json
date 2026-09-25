@@ -101,6 +101,8 @@
   "magic_expired.text": "This link has expired. Please request a new magic link on the sign in page.",
   "magic_not_found": "Magic link not found",
   "magic_not_found.text": "This link is invalid or has already been used. Please check if there is a more recent link in your email or request a new one.",
+  "magic_opened": "Link already opened",
+  "magic_opened.text": "This sign-in link was opened a moment ago, perhaps in another tab or window. If that signed you in, carry on there. If not, sign in again to get a new link.",
   "maybe_bot": "Suspicious activity.",
   "maybe_bot.text": "We have detected unusual activity. Please try again or contact support.",
   "membership_not_found": "Membership not found",

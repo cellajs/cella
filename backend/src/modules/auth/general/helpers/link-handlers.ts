@@ -2,7 +2,10 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
-import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
+import {
+  explainOpenedMagicLink,
+  holdMagicLinkOutsideItsBrowser,
+} from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { openStepUpLink } from '#/modules/auth/step-up/helpers/step-up-link';
@@ -23,7 +26,9 @@ export const linkHandlers = {
     if (held) return held;
 
     // A sign-up link creates its account at this click, which proves the inbox.
-    const token = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner });
+    const token = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner }).catch((err) =>
+      explainOpenedMagicLink(err, rawToken),
+    );
     return handleMagicLink(ctx, token);
   },
   'oauth-verification': async (ctx, rawToken) =>

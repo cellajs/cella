@@ -31,6 +31,20 @@ export const findOpenableMagicLink = async (rawToken: string) => {
 };
 
 /**
+ * Refines the refusal of an opened magic link that is still in its window. Only the browser holding the link's
+ * single-use cookie gets back in, and a second click from a mail client never carries that Strict cookie: such a click
+ * hears that the link was opened already, a notice, not that it expired.
+ * @throws AppError 401 `magic_opened` (info) for such a link, else `err` as it was.
+ */
+export const explainOpenedMagicLink = async (err: unknown, rawToken: string): Promise<never> => {
+  if (err instanceof AppError && err.type === 'magic_expired') {
+    const token = await findLinkToken({ type: 'magic', rawToken });
+    if (token?.invokedAt && !isExpiredDate(token.expiresAt)) throw new AppError(401, 'magic_opened', 'info');
+  }
+  throw err;
+};
+
+/**
  * A magic link signs in whoever opens it, so it does so directly only in the browser that asked for it, or that opened it
  * before (the redemption then proves that with the link's own single-use cookie). Anywhere else the link is held in this
  * browser and its holder confirms on the app's own page: a link planted in someone's browser, or fetched by an email

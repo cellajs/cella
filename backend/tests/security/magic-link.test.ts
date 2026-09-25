@@ -88,6 +88,56 @@ describe('magic link replay', async () => {
       headers: { ...defaultHeaders, Cookie: authCookie('magic', nanoid(40)) },
     });
     expect(response.status).toBe(401);
+    expect((error as { type: string }).type).toBe('magic_opened');
+    expect(sessionCookieSet(response)).toBe(false);
+  });
+
+  it('tells a second click from the mail client that the link was opened, not that it expired', async () => {
+    const user = await createTestUser(`double-click-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row } = await magicLink(user);
+    // A click in a mail client is a navigation from another site: only the Lax request marker comes along.
+    const click = () =>
+      call(invokeToken, {
+        path: { type: 'magic', token: raw },
+        headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
+      });
+
+    const first = await click();
+    expect(first.response.status).toBe(302);
+    expect(sessionCookieSet(first.response)).toBe(true);
+
+    const second = await click();
+    expect(second.response.status).toBe(401);
+    expect(second.error).toMatchObject({ type: 'magic_opened', severity: 'info' });
+    expect(sessionCookieSet(second.response)).toBe(false);
+
+    // Two clicks at once: one signs in, the other hears the same.
+    const next = await magicLink(user);
+    const overlapping = await Promise.all(
+      [0, 1].map(() =>
+        call(invokeToken, {
+          path: { type: 'magic', token: next.raw },
+          headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', next.row.id) },
+        }),
+      ),
+    );
+    expect(overlapping.map(({ response }) => response.status).sort()).toEqual([302, 401]);
+    expect(overlapping.find(({ response }) => response.status === 401)?.error).toMatchObject({ type: 'magic_opened' });
+  });
+
+  it('still refuses an opened link past its window as expired', async () => {
+    const user = await createTestUser(`window-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row } = await magicLink(user, { singleUse: nanoid(40) });
+    await db
+      .update(tokensTable)
+      .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
+      .where(eq(tokensTable.id, row.id));
+
+    const { error, response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: defaultHeaders,
+    });
+    expect(response.status).toBe(401);
     expect((error as { type: string }).type).toBe('magic_expired');
     expect(sessionCookieSet(response)).toBe(false);
   });
