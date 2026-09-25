@@ -155,6 +155,19 @@ describe('handleMessage: sync step 1', () => {
     expect(serverVector.size).toBe(2);
   });
 
+  it('must not lose the document to a logged row that will not merge: a joining client still gets the rest', async () => {
+    const { ctx: c, scope, key, ws } = session();
+    storage.bases.set(key, mapUpdate('base', true));
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('logged', 1));
+    // Logged before the relay refused undecodable updates.
+    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+
+    await expect(
+      handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc()))),
+    ).resolves.toBeUndefined();
+    expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({ base: true, logged: 1 });
+  });
+
   it('corrupted stored state: falls back to sending the full state without a pull', async () => {
     const { ctx: c, key, ws } = session();
     storage.bases.set(key, new Uint8Array([1, 2, 3]));
@@ -196,6 +209,33 @@ describe('handleMessage: sync update', () => {
     const full = new Uint8Array([0, 1, ...encodeVarUint8Array(mapUpdate('k', 1))]);
     await handleMessage(c, ws as never, full);
     expect(storage.appendUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('must not log or relay an update Yjs cannot decode, and closes its sender with 4400', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    await handleMessage(c, ws as never, buildSyncUpdate(new Uint8Array([1, 2, 3])));
+
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toBeUndefined();
+    expect(peer.sent).toHaveLength(0);
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed update' });
+
+    // Positive control: a decodable update from a peer is logged.
+    await handleMessage(c, peer as never, buildSyncUpdate(mapUpdate('k', 1)));
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(peer.closed).toBeNull();
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('must not fail on a sync frame whose payload is cut short, and closes its sender with 4400', async () => {
+    const { ctx: c, ws } = session();
+    // A payload length whose continuation byte never arrives.
+    await expect(handleMessage(c, ws as never, new Uint8Array([0, 2, 0x85]))).resolves.toBeUndefined();
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed update' });
   });
 
   it('a burst of dependent updates dispatched without awaiting all reach the log, and one compaction merges them', async () => {

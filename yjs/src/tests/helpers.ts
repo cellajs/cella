@@ -109,14 +109,19 @@ export async function flushMicrotasks(rounds = 50): Promise<void> {
   for (let i = 0; i < rounds; i++) await Promise.resolve();
 }
 
-/** Minimal fake WebSocket for unit tests. */
+/** Minimal fake WebSocket for unit tests; `closed` records the close the relay sent, if any. */
 export function mockWebSocket(overrides?: { readyState?: number }): MockWebSocket {
   return {
     readyState: overrides?.readyState ?? 1,
     OPEN: 1,
     sent: [] as Uint8Array[],
+    closed: null,
     send(data: Uint8Array) {
       this.sent.push(data);
+    },
+    close(code?: number, reason?: string) {
+      this.closed = { code, reason };
+      this.readyState = 2;
     },
   };
 }
@@ -125,7 +130,9 @@ export interface MockWebSocket {
   readyState: number;
   OPEN: number;
   sent: Uint8Array[];
+  closed: { code?: number; reason?: string } | null;
   send(data: Uint8Array): void;
+  close(code?: number, reason?: string): void;
 }
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
@@ -135,6 +142,7 @@ export const storageMock = () => ({
   appendUpdate: vi.fn().mockResolvedValue(undefined),
   readLog: vi.fn().mockResolvedValue([]),
   compactState: vi.fn().mockResolvedValue(undefined),
+  discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
@@ -178,6 +186,13 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[]) => {
       await wait('compactState');
       bases.set(key(doc), merged);
+      logs.set(
+        key(doc),
+        (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
+      );
+    }),
+    discardLogRows: vi.fn(async (doc: DocKey, ids: number[]) => {
+      await wait('discardLogRows');
       logs.set(
         key(doc),
         (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),

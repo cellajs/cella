@@ -1,7 +1,7 @@
 import type { DocScope } from '../constants';
-import { compactState, type LogRow, loadBase, readLog } from '../data/storage';
+import { compactState, discardLogRows, type LogRow, loadBase, readLog } from '../data/storage';
 import { log } from '../lib/pino';
-import { mergeState } from './document-state';
+import { mergeLog } from './document-state';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /** Editors a materialize request names at most, so its size stays bounded however many sockets wrote. */
@@ -28,19 +28,35 @@ export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry';
  * the next round. Every other outcome leaves base and log untouched, so the base only ever holds
  * written state and the log every edit the entity has not received; cleanup and sweep rely on
  * this to delete a document only after `ok`, `empty` or `gone` (the entity no longer exists).
- * Unparseable state, or a log crediting no editor, is never posted and counts as `permanent`.
+ * Unparseable state, or a log crediting no editor, is never posted and counts as `permanent`. A row no merge
+ * accepts (logged before the relay refused undecodable updates, or one that decodes but will not merge) is
+ * discarded first, with its sender logged: it carries no edit anyone can apply, and kept it would fail every window.
  */
 export async function compactDocument(scope: DocScope): Promise<CompactionResult> {
-  const [base, rows] = await Promise.all([loadBase(scope), readLog(scope)]);
-  if (rows.length === 0) return 'empty';
+  const [base, logged] = await Promise.all([loadBase(scope), readLog(scope)]);
+  if (logged.length === 0) return 'empty';
 
-  const merged = mergeState(
-    base,
-    rows.map((row) => row.payload),
-  ) as Uint8Array;
+  const { state, rejected } = mergeLog(base, logged);
+  if (rejected.length > 0) {
+    for (const row of rejected) {
+      log.error(
+        `Compaction: discarding log row ${row.id} of ${scope.entityType}:${scope.entityId}, which does not merge`,
+        {
+          userId: row.userId,
+          bytes: row.payload.length,
+        },
+      );
+    }
+    await discardLogRows(
+      scope,
+      rejected.map((row) => row.id),
+    );
+  }
+  const rows = logged.filter((row) => !rejected.includes(row));
+  if (rows.length === 0 || !state) return 'empty';
   const ids = rows.map((row) => row.id);
 
-  const json = stateToBlocksJson(merged);
+  const json = stateToBlocksJson(state);
   if (json === null) {
     log.error(`Compaction: unparseable state for ${scope.entityType}:${scope.entityId}, keeping the log`);
     return 'permanent';
@@ -55,6 +71,6 @@ export async function compactDocument(scope: DocScope): Promise<CompactionResult
   const result = await postMaterialize(scope, editors, json);
   if (result !== 'ok') return result;
 
-  await compactState(scope, merged, ids);
+  await compactState(scope, state, ids);
   return 'ok';
 }

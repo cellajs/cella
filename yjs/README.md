@@ -44,7 +44,7 @@ Entity authorization runs after the socket opens, via an RLS-scoped read of the 
 | --- | --- |
 | `4001` | Invalid or expired token, or the socket's token expired |
 | `4003` | Entity access denied |
-| `4400` | Missing or invalid entity scope |
+| `4400` | Missing or invalid entity scope, or a sync frame or update Yjs cannot decode |
 | `4503` | Authorization unavailable |
 
 ## Session lifecycle
@@ -70,7 +70,7 @@ A client's Step1 is answered with the diff of the merged document, followed by t
 
 ### Ordering, append, broadcast, compaction
 
-Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content.
+Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content. An update Yjs cannot decode is never logged or relayed: its socket closes with 4400.
 
 Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener with the window's editors, newest first, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check as the newest editor who may still update the entity. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
 
@@ -81,6 +81,7 @@ Three seconds after the last received update the log is compacted, under the doc
 | `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret or the editors' access can change. Keep the log; the next window, cleanup or sweep retries |
 | Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps the rows without retrying |
 | Unparseable merged state | Permanent, never posted. Keep the log |
+| A log row no merge accepts | Discarded before the window is merged, with its sender logged, so it never blocks the document; a joining client gets the rest |
 
 ### Disconnect and recovery
 

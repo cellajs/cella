@@ -43,6 +43,34 @@ describe('compactDocument', () => {
     expect(storage.logs.get(key)).toHaveLength(0);
   });
 
+  it('must not let one logged row that will not merge block the document: it is discarded and the rest is written', async () => {
+    storage.bases.set(key, mapUpdate('seed', true));
+    await storage.appendUpdate(scope, 'user-a', mapUpdate('a', 1));
+    // Logged before the relay refused undecodable updates.
+    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+    await storage.appendUpdate(scope, 'user-b', mapUpdate('b', 2));
+
+    expect(await compactDocument(scope)).toBe('ok');
+    // The row's sender wrote nothing, so it is not credited.
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]');
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
+    expect(storage.logs.get(key)).toHaveLength(0);
+
+    // Positive control: the next window compacts normally.
+    await storage.appendUpdate(scope, 'user-a', mapUpdate('c', 3));
+    expect(await compactDocument(scope)).toBe('ok');
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2, c: 3 });
+  });
+
+  it('a window whose only rows will not merge writes nothing and keeps nothing', async () => {
+    storage.bases.set(key, mapUpdate('seed', true));
+    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+    expect(await compactDocument(scope)).toBe('empty');
+    expect(postMaterialize).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(0);
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
+  });
+
   it('must not credit anyone but a sender in the log: a window without one is kept, never posted', async () => {
     await storage.appendUpdate(scope, '', mapUpdate('a', 1));
     expect(await compactDocument(scope)).toBe('permanent');

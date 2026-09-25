@@ -9,7 +9,7 @@ import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
-import { isEmptyUpdate, mergeState } from './document-state';
+import { classifyUpdate, mergeLog } from './document-state';
 import { broadcastToCollab, type CollabSession, getCollab, withDocLock } from './session-manager';
 
 export const YMessage = { Sync: 0, Awareness: 1 } as const;
@@ -39,6 +39,12 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
+/** Closes a socket whose sync frame or update no decoder accepts: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
+function refuseMalformed(scope: DocScope, userId: string, ws: WebSocket): void {
+  log.warn(`Malformed update refused for ${scope.entityType}:${scope.entityId}`, { userId });
+  ws.close(4400, 'Malformed update');
+}
+
 /**
  * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
  * authorization, so they run in arrival order; awareness is ephemeral, relayed only from an
@@ -54,15 +60,21 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
   if (messageType === YMessage.Sync) {
     if (!scope) return;
 
-    const syncType = decoding.readVarUint(decoder);
+    let syncType: number;
+    let payload: Uint8Array;
+    try {
+      syncType = decoding.readVarUint(decoder);
+      payload = decoding.readVarUint8Array(decoder);
+    } catch {
+      refuseMalformed(scope, ctx.userId, ws);
+      return;
+    }
 
     if (syncType === YSync.Step1) {
       log.trace(`Sync step 1 from ${scope.entityType}:${scope.entityId}`, { bytes: data.length });
-      const clientStateVector = decoding.readVarUint8Array(decoder);
-      await handleSyncStep1(scope, ws, clientStateVector);
+      await handleSyncStep1(scope, ws, payload);
     } else if (syncType === YSync.Step2 || syncType === YSync.Update) {
-      const update = decoding.readVarUint8Array(decoder);
-      await handleSyncUpdate(scope, ctx.userId, ws, update, data);
+      await handleSyncUpdate(scope, ctx.userId, ws, payload, data);
     }
   } else if (messageType === YMessage.Awareness) {
     if (!scope || ws.readyState !== ws.OPEN) return;
@@ -75,18 +87,14 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
   }
 }
 
-/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update, merged once. */
+/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update that merges; compaction discards the rest. */
 async function loadDocumentState(scope: DocScope): Promise<Uint8Array | null> {
   let base = await loadBase(scope);
   if (base === null) {
     // Fresh session: the server seeds from the stored description, so clients never seed it.
     base = await ensureDoc(scope, descriptionToYUpdate(await loadEntityDescription(scope)));
   }
-  const rows = await readLog(scope);
-  return mergeState(
-    base,
-    rows.map((row) => row.payload),
-  );
+  return mergeLog(base, await readLog(scope)).state;
 }
 
 /**
@@ -113,7 +121,7 @@ async function handleSyncStep1(scope: DocScope, ws: WebSocket, clientStateVector
   }
 }
 
-/** Logs the update durably under its sender, then broadcasts it to peers and schedules compaction. */
+/** Logs the update durably under its sender, then broadcasts it to peers and schedules compaction; one Yjs cannot decode closes its sender. */
 async function handleSyncUpdate(
   scope: DocScope,
   userId: string,
@@ -121,8 +129,11 @@ async function handleSyncUpdate(
   update: Uint8Array,
   rawMessage: Uint8Array,
 ): Promise<void> {
+  const kind = classifyUpdate(update);
   // A client's Step2 reply carries nothing when it holds nothing the relay lacks.
-  if (isEmptyUpdate(update)) return;
+  if (kind === 'empty') return;
+  // Logged, it would break every later merge of the document.
+  if (kind === 'malformed') return refuseMalformed(scope, userId, ws);
 
   const collab = getCollab(scope);
   if (!collab) return;

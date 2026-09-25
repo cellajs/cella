@@ -3,7 +3,15 @@ import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DocScope } from '../../constants';
-import { appendUpdate, compactState, deleteDoc, ensureDoc, loadBase, readLog } from '../../data/storage';
+import {
+  appendUpdate,
+  compactState,
+  deleteDoc,
+  discardLogRows,
+  ensureDoc,
+  loadBase,
+  readLog,
+} from '../../data/storage';
 import { mergeState } from '../../sync/document-state';
 import { mapUpdate, readMap } from '../helpers';
 
@@ -30,6 +38,7 @@ const ids = {
   compaction: '10000000-0000-4000-a000-000000000003',
   nonexistent: '10000000-0000-4000-a000-000000000004',
   rls: '10000000-0000-4000-a000-000000000005',
+  discard: '10000000-0000-4000-a000-000000000006',
 };
 
 /** Seeds the rows the RLS context needs so `set_config` does not trigger FK violations; runs as the superuser, which bypasses RLS. */
@@ -130,6 +139,24 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const base = readMap((await loadBase(c))!);
     expect(Object.keys(base)).toHaveLength(20);
     await deleteDoc(c);
+  });
+
+  it('discardLogRows deletes exactly the rows it was given, in the document it names', async () => {
+    const c = ctx(ids.discard);
+    const other = ctx(ids.compaction);
+    await ensureDoc(c, null);
+    await appendUpdate(c, testUserId, mapUpdate('a', 1));
+    await appendUpdate(c, testUserId, new Uint8Array([1, 2, 3]));
+    await appendUpdate(other, testUserId, mapUpdate('elsewhere', true));
+    const [kept, bad] = await readLog(c);
+    const [elsewhere] = await readLog(other);
+
+    // An id of another document's row is ignored: the delete is scoped to the document.
+    await discardLogRows(c, [bad.id, elsewhere.id]);
+    expect((await readLog(c)).map((row) => row.id)).toEqual([kept.id]);
+    expect((await readLog(other)).map((row) => row.id)).toEqual([elsewhere.id]);
+    await deleteDoc(c);
+    await deleteDoc(other);
   });
 
   it('loadBase and readLog are empty for a non-existent doc, and deleteDoc is safe on it', async () => {

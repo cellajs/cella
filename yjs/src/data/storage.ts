@@ -102,6 +102,14 @@ export async function compactState(doc: DocKey, merged: Uint8Array, logIds: numb
   });
 }
 
+/** Deletes log rows no merge accepts, so they never block the document again. */
+export async function discardLogRows(doc: DocKey, logIds: number[]): Promise<void> {
+  if (logIds.length === 0) return;
+  await asSystem(doc, async (tx) => {
+    await tx.delete(yjsUpdatesTable).where(and(logWhere(doc), inArray(yjsUpdatesTable.id, logIds)));
+  });
+}
+
 /** Removes the session row and any log rows once the session is over. */
 export async function deleteDoc(doc: DocKey): Promise<void> {
   await asSystem(doc, async (tx) => {
