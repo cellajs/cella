@@ -9,7 +9,7 @@ import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
@@ -51,8 +51,10 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
   const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
   try {
-    if (passkeyData)
-      await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
+    if (passkeyData) {
+      const assertion = passkeyData as AuthenticationResponseJSON;
+      await verifyPasskeyAssertion(ctx, { assertion, purpose: 'authentication', userId: user.id });
+    }
 
     if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
   } catch (error) {

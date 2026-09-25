@@ -62,16 +62,10 @@ export async function createTotpUser(email: string) {
 }
 
 /** WebAuthn `AuthenticationResponseJSON` shape. */
-export function passkeySignInBody(opts: {
-  credentialId: string;
-  email: string;
-  type?: 'authentication' | 'mfa';
-  challenge?: string;
-}) {
+export function passkeySignInBody(opts: { credentialId: string; type?: 'authentication' | 'mfa'; challenge?: string }) {
   return {
     assertion: passkeyAssertion({ credentialId: opts.credentialId, challenge: opts.challenge }),
     type: opts.type ?? 'authentication',
-    email: opts.email,
   };
 }
 

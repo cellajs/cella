@@ -40,13 +40,13 @@ describe('Passkey verification', async () => {
       nameOnDevice: 'Test device',
       deviceType: 'desktop',
     });
-    return { user, email, passkey };
+    return { user, passkey };
   }
 
   /** A fresh challenge and the cookie that carries it, as the sign-in page gets them. */
-  async function challengeFor(email: string) {
+  async function challengeFor() {
     const { data, response } = await call(generatePasskeyChallenge, {
-      body: { type: 'authentication', email },
+      body: { type: 'authentication' },
       headers: defaultHeaders,
     });
     const cookie = response.headers.get('set-cookie')?.split(';')[0] ?? '';
@@ -54,9 +54,9 @@ describe('Passkey verification', async () => {
     return { challenge: (data as { challenge: string }).challenge, cookie };
   }
 
-  const signIn = (email: string, assertion: Assertion, cookie: string) =>
+  const signIn = (assertion: Assertion, cookie: string) =>
     call(signInWithPasskey, {
-      body: { type: 'authentication', email, assertion },
+      body: { type: 'authentication', assertion },
       headers: { ...defaultHeaders, Cookie: cookie },
     });
 
@@ -85,10 +85,10 @@ describe('Passkey verification', async () => {
 
   for (const [vector, forge] of forgeries) {
     it(`must not sign in via ${vector}`, async () => {
-      const { user, email, passkey } = await userWithPasskey();
-      const { challenge, cookie } = await challengeFor(email);
+      const { user, passkey } = await userWithPasskey();
+      const { challenge, cookie } = await challengeFor();
 
-      const { error, response } = await signIn(email, forge(passkey, challenge), cookie);
+      const { error, response } = await signIn(forge(passkey, challenge), cookie);
       expect(response.status).toBe(401);
       expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
       expect(response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
@@ -97,9 +97,9 @@ describe('Passkey verification', async () => {
   }
 
   it('must not switch MFA off via a passkey response to another challenge', async () => {
-    const { user, email, passkey } = await userWithPasskey();
+    const { user, passkey } = await userWithPasskey();
     await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
-    const { cookie } = await challengeFor(email);
+    const { cookie } = await challengeFor();
     const sessionCookie = await createTestSession(user);
 
     const { error, response } = await call(toggleMfa, {
@@ -116,10 +116,10 @@ describe('Passkey verification', async () => {
   });
 
   it('signs in with a valid response from the registered passkey (positive control)', async () => {
-    const { user, email, passkey } = await userWithPasskey();
-    const { challenge, cookie } = await challengeFor(email);
+    const { user, passkey } = await userWithPasskey();
+    const { challenge, cookie } = await challengeFor();
 
-    const { response } = await signIn(email, passkey.assert(challenge), cookie);
+    const { response } = await signIn(passkey.assert(challenge), cookie);
     expect(response.status).toBe(204);
     expect(response.headers.get('set-cookie')).toContain(authCookieName('session'));
     expect(await sessionsOf(user.id)).toHaveLength(1);

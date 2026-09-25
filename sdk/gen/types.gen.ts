@@ -1515,7 +1515,6 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 export type GeneratePasskeyChallengeData = {
   body: {
     type: 'authentication' | 'mfa' | 'registration';
-    email?: string;
   };
   path?: never;
   query?: never;
@@ -1580,7 +1579,6 @@ export type SignInWithPasskeyData = {
       type: 'public-key';
     };
     type: 'authentication' | 'mfa';
-    email?: string;
   };
   path?: never;
   query?: never;

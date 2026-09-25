@@ -20,20 +20,6 @@ export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCr
     .where(eq(passkeysTable.userId, userId));
 };
 
-interface FindUserIdByCredentialIdOpts {
-  credentialId: string;
-}
-
-export const findUserIdByCredentialId = async (ctx: DbContext, { credentialId }: FindUserIdByCredentialIdOpts) => {
-  const { db } = ctx.var;
-  const [record] = await db
-    .select({ userId: passkeysTable.userId })
-    .from(passkeysTable)
-    .where(eq(passkeysTable.credentialId, credentialId))
-    .limit(1);
-  return record;
-};
-
 interface FindUserMfaOpts {
   userId: string;
 }
@@ -95,11 +81,18 @@ interface InsertPasskeyOpts {
   values: typeof passkeysTable.$inferInsert;
 }
 
-/** Insert a passkey and return the created row (excluding credentialId and publicKey). */
+/**
+ * Insert a passkey and return the created row (excluding credentialId and publicKey), or undefined when its credential
+ * id is registered already, to this account or another.
+ */
 export const insertPasskey = async (ctx: DbContext, { values }: InsertPasskeyOpts) => {
   const { db } = ctx.var;
   const { credentialId: _, publicKey: __, ...passkeySelect } = getColumns(passkeysTable);
-  const [newPasskey] = await db.insert(passkeysTable).values(values).returning(passkeySelect);
+  const [newPasskey] = await db
+    .insert(passkeysTable)
+    .values(values)
+    .onConflictDoNothing({ target: passkeysTable.credentialId })
+    .returning(passkeySelect);
   return newPasskey;
 };
 

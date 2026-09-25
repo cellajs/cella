@@ -739,7 +739,6 @@ export const zDeletePasskeyResponse = z.void();
 
 export const zGeneratePasskeyChallengeBody = z.object({
   type: z.enum(['authentication', 'mfa', 'registration']),
-  email: z.email().min(4).max(255).optional(),
 });
 
 /**
@@ -765,7 +764,6 @@ export const zSignInWithPasskeyBody = z.object({
     type: z.enum(['public-key']),
   }),
   type: z.enum(['authentication', 'mfa']),
-  email: z.email().min(4).max(255).optional(),
 });
 
 /**

@@ -91,7 +91,7 @@ describe('passkey strategy disabled', async () => {
 
   it('should reject passkey generation', async () => {
     const { response: res, error } = await call(generatePasskeyChallenge, {
-      body: { email: 'test@example.com', type: 'registration' },
+      body: { type: 'registration' },
       headers: defaultHeaders,
     });
     expect(res.status).toBe(400);
@@ -100,7 +100,7 @@ describe('passkey strategy disabled', async () => {
 
   it('should reject passkey authentication', async () => {
     const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: 'test_id', email: 'test@example.com' }),
+      body: passkeySignInBody({ credentialId: 'test_id' }),
       headers: defaultHeaders,
     });
     expect(res.status).toBe(400);
@@ -166,7 +166,7 @@ describe('all strategies disabled', async () => {
 
   it('should reject passkey attempts', async () => {
     const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: '', email: 'test@example.com' }),
+      body: passkeySignInBody({ credentialId: '' }),
       headers: defaultHeaders,
     });
     expect(res.status).toBe(400);
@@ -184,7 +184,7 @@ describe('passkey strategy disabled', async () => {
     const user = await createTestUser('passkey-off-mfa@example.com');
     const mfaToken = await createMfaToken(user);
     const { response: res, error } = await call(signInWithPasskey, {
-      body: { ...passkeySignInBody({ credentialId: 'x', email: user.email, type: 'mfa' }), email: undefined },
+      body: passkeySignInBody({ credentialId: 'x', type: 'mfa' }),
       headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
     });
     expect(res.status).toBe(400);

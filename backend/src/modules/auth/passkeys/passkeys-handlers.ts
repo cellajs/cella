@@ -1,24 +1,24 @@
-import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { and, eq } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { findCredentialIdsByUser, findUserIdByCredentialId, insertPasskey } from '#/modules/auth/auth-queries';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { findCredentialIdsByUser, insertPasskey } from '#/modules/auth/auth-queries';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { validatePasskey, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
+import {
+  issuePasskeyChallenge,
+  verifyPasskeyAssertion,
+  verifyPasskeyRegistration,
+} from '#/modules/auth/passkeys/helpers/passkey';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
-import type { UserModel } from '#/modules/user/user-db';
-import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
+import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -27,14 +27,9 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
 
   const { attestation, nameOnDevice } = ctx.req.valid('json');
 
-  const challengeFromCookie = await getAuthCookie(ctx, 'passkey-challenge');
-  deleteAuthCookie(ctx, 'passkey-challenge');
-
-  if (!challengeFromCookie) throw new AppError(401, 'invalid_credentials', 'error');
-
   const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(
+    ctx,
     attestation as RegistrationResponseJSON,
-    challengeFromCookie,
   );
 
   const device = deviceInfo(ctx);
@@ -50,7 +45,9 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
     browser: device.browser,
   };
 
+  // A credential id names one account: an authenticator presenting one that is registered already is refused.
   const newPasskey = await insertPasskey(ctx, { values: passkeyValue });
+  if (!newPasskey) throw new AppError(409, 'resource_already_exists', 'warn');
 
   sendAccountSecurityEmail(user, 'passkey-added');
 
@@ -74,76 +71,40 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 });
 
 app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
-  const { email, type } = ctx.req.valid('json');
+  const { type } = ctx.req.valid('json');
 
-  // Generate a 32-byte random challenge and encode it as base64url (the WebAuthn JSON encoding)
-  const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
+  // The second factor of an MFA challenge is the one case with a known account, so its passkeys may be offered. A
+  // sign-in challenge names none: the passkey the browser picks names its account.
+  const user = type === 'mfa' ? await validateConfirmMfaToken(ctx) : null;
 
-  await setAuthCookie(ctx, 'passkey-challenge', challenge, new TimeSpan(5, 'm'));
+  const challenge = await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id });
 
-  let user: UserModel | null = null;
-
-  if (email && type === 'authentication') {
-    const normalizedEmail = email.toLowerCase().trim();
-    user = await findUserByEmail(ctx, { email: normalizedEmail });
-  }
-  if (type === 'mfa') {
-    const userFromToken = await validateConfirmMfaToken(ctx);
-    user = userFromToken;
-  }
-
-  if (!user) return ctx.json({ challenge, credentialIds: [] }, 200);
-
-  const credentials = await findCredentialIdsByUser(ctx, { userId: user.id });
-
+  const credentials = user ? await findCredentialIdsByUser(ctx, { userId: user.id }) : [];
   const credentialIds = credentials.map((c) => c.credentialId);
 
   return ctx.json({ challenge, credentialIds }, 200);
 });
 
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
-  const { email, type, assertion } = ctx.req.valid('json');
-  const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
-
-  let user: UserModel | null = null;
-
-  if (email) {
-    const normalizedEmail = email.toLowerCase().trim();
-    user = await findUserByEmail(ctx, { email: normalizedEmail });
-  }
+  const { type, assertion } = ctx.req.valid('json');
+  const response = assertion as AuthenticationResponseJSON;
 
   if (type === 'mfa') {
-    const userFromToken = await validateConfirmMfaToken(ctx);
-    user = userFromToken;
+    const user = await validateConfirmMfaToken(ctx);
+    await verifyPasskeyAssertion(ctx, { assertion: response, purpose: 'mfa', userId: user.id });
+    await spendConfirmMfaToken(ctx);
+    await setUserSession(ctx, user, 'passkey', 'mfa');
+    return ctx.body(null, 204);
   }
 
-  // If no user found by email, try to find by credentialId (supports conditional mediation / discoverable credentials)
-  if (!user) {
-    const passkeyRecord = await findUserIdByCredentialId(ctx, { credentialId: assertion.id });
-
-    if (passkeyRecord) {
-      user = await findUserById(ctx, { id: passkeyRecord.userId });
-    }
-  }
-
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta });
-
-  try {
-    await validatePasskey(ctx, { assertion: assertion as AuthenticationResponseJSON, userId: user.id });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'passkey_verification_failed', 'error', {
-      meta,
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
+  const userId = await verifyPasskeyAssertion(ctx, { assertion: response, purpose: 'authentication' });
+  const user = await findUserById(ctx, { id: userId });
+  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
   // A regular passkey sign-in also ends a challenge this browser left open.
-  if (type === 'mfa') await spendConfirmMfaToken(ctx);
-  else await spendCookieToken(ctx, 'confirm-mfa');
+  await spendCookieToken(ctx, 'confirm-mfa');
 
-  await setUserSession(ctx, user, meta.strategy, meta.sessionType);
+  await setUserSession(ctx, user, 'passkey', 'regular');
 
   return ctx.body(null, 204);
 });

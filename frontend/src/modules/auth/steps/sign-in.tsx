@@ -53,9 +53,8 @@ export function SignInStep() {
     isConditionalMediationAvailable().then(setConditionalMediationSupported);
   }, []);
 
-  const startMediation = (inputEmail: string) => {
-    const emailForMediation = inputEmail.trim();
-    if (!conditionalMediationSupported || !emailForMediation) return;
+  const startMediation = () => {
+    if (!conditionalMediationSupported) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -72,7 +71,7 @@ export function SignInStep() {
       }
     };
 
-    startConditionalMediation(handleCredential, controller.signal, emailForMediation).catch(() => {
+    startConditionalMediation(handleCredential, controller.signal).catch(() => {
       // Aborted or no credential selected, expected when retrying or navigating.
     });
   };
@@ -87,8 +86,7 @@ export function SignInStep() {
   const { mutate: _checkEmail, isPending } = useMutation<void, ApiError, CheckEmailData['body']>({
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: () => {
-      const submittedEmail = form.getValues('email');
-      startMediation(submittedEmail);
+      startMediation();
 
       setTimeout(() => {
         const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -200,7 +198,7 @@ export function SignInStep() {
             )}
           </SubmitButton>
 
-          {enabledStrategies.includes('passkey') && email && <PasskeyStrategy email={email} type="authentication" />}
+          {enabledStrategies.includes('passkey') && <PasskeyStrategy type="authentication" />}
         </form>
       )}
     </Form>

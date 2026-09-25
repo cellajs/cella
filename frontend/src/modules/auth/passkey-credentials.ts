@@ -18,20 +18,18 @@ const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfi
 /** True when the browser can show passkey suggestions in its autofill UI (conditional mediation). */
 export const isConditionalMediationAvailable = (): Promise<boolean> => browserSupportsWebAuthnAutofill();
 
-/** Cancellable passkey autofill: an email selects explicit credential IDs, omission uses discoverable credentials. */
+/** Cancellable passkey autofill over discoverable passkeys: the passkey the user picks names the account. */
 export const startConditionalMediation = async (
   onCredential: (data: ConditionalMediationResult) => void,
   signal: AbortSignal,
-  email?: string,
 ) => {
-  const challengeQuery = email ? { type: 'authentication' as const, email } : { type: 'authentication' as const };
-  const { challenge, credentialIds } = await getChallenge(challengeQuery);
+  const { challenge } = await getChallenge({ type: 'authentication' });
 
   const optionsJSON: PublicKeyCredentialRequestOptionsJSON = {
     challenge,
     rpId: relyingPartyId,
     userVerification: 'required',
-    allowCredentials: email && credentialIds?.length ? credentialIds.map(toAllowCredential) : [],
+    allowCredentials: [],
   };
 
   // The ceremony is managed by @simplewebauthn's singleton abort service; forward external aborts
@@ -93,12 +91,13 @@ export const getPasskeyRegistrationCredential = async () => {
   return { attestation, nameOnDevice };
 };
 
-/** Returns the passkey verify credential (assertion plus the challenge query context). */
-export const getPasskeyVerifyCredential = async (
-  query: Omit<PasskeyCredentialProps, 'type'> & {
-    type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
-  },
-) => {
+/**
+ * Returns the passkey verify credential (assertion plus the challenge type). Only an MFA challenge lists the account's
+ * passkeys; otherwise the browser offers its discoverable ones.
+ */
+export const getPasskeyVerifyCredential = async (query: {
+  type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
+}) => {
   const { challenge, credentialIds } = await getChallenge(query);
 
   const assertion = await startAuthentication({

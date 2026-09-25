@@ -15,11 +15,15 @@ interface AssertOptions {
   counter?: number;
 }
 
+type CborValue = Parameters<typeof isoCBOR.encode>[0];
+
 /**
  * A software WebAuthn authenticator with a P-256 key: `publicKey` is stored like a registered passkey (COSE,
- * base64url), and `assert` signs an authentication response for a challenge, valid unless an option says otherwise.
+ * base64url), `assert` signs an authentication response for a challenge, and `attest` answers a registration challenge
+ * with a `none` attestation, each valid unless an option says otherwise. `credentialId` defaults to random bytes; an
+ * authenticator may claim any id, so a test can pass one another account already registered.
  */
-export function softwarePasskey() {
+export function softwarePasskey({ credentialId = randomBytes(16).toString('base64url') } = {}) {
   const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
   const { x, y } = publicKey.export({ format: 'jwk' });
   if (!x || !y) throw new Error('software passkey: P-256 key without coordinates');
@@ -33,8 +37,6 @@ export function softwarePasskey() {
       [-3, new Uint8Array(Buffer.from(y, 'base64url'))],
     ]),
   );
-  const credentialId = randomBytes(16).toString('base64url');
-
   const assert = (challenge: string, options: AssertOptions = {}) => {
     const { origin = appConfig.frontendUrl, rpId = appRpId, flags = 0x05, counter = 1 } = options;
     const clientDataJSON = Buffer.from(JSON.stringify({ type: 'webauthn.get', challenge, origin, crossOrigin: false }));
@@ -56,5 +58,44 @@ export function softwarePasskey() {
     };
   };
 
-  return { credentialId, publicKey: Buffer.from(cose).toString('base64url'), assert };
+  const attest = (challenge: string, options: Omit<AssertOptions, 'counter'> = {}) => {
+    // Flags: user present, user verified, attested credential data included.
+    const { origin = appConfig.frontendUrl, rpId = appRpId, flags = 0x45 } = options;
+    const clientDataJSON = Buffer.from(
+      JSON.stringify({ type: 'webauthn.create', challenge, origin, crossOrigin: false }),
+    );
+    const idBytes = Buffer.from(credentialId, 'base64url');
+    const idLength = Buffer.alloc(2);
+    idLength.writeUInt16BE(idBytes.length);
+    // rpIdHash | flags | counter | AAGUID (zeros) | credential id length | credential id | COSE public key
+    const authenticatorData = Buffer.concat([
+      sha256(rpId),
+      Buffer.from([flags]),
+      Buffer.alloc(4),
+      Buffer.alloc(16),
+      idLength,
+      idBytes,
+      Buffer.from(cose),
+    ]);
+    const attestationObject = isoCBOR.encode(
+      new Map<string, CborValue>([
+        ['fmt', 'none'],
+        ['attStmt', new Map()],
+        ['authData', new Uint8Array(authenticatorData)],
+      ]),
+    );
+    return {
+      id: credentialId,
+      rawId: credentialId,
+      response: {
+        clientDataJSON: clientDataJSON.toString('base64url'),
+        attestationObject: Buffer.from(attestationObject).toString('base64url'),
+        transports: ['internal'],
+      },
+      clientExtensionResults: {},
+      type: 'public-key' as const,
+    };
+  };
+
+  return { credentialId, publicKey: Buffer.from(cose).toString('base64url'), assert, attest };
 }

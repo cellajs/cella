@@ -6,7 +6,6 @@ import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { useCurrentUser } from '~/modules/user/user-store';
 
 export function ConfirmDisableMfa() {
   const { t } = useTranslation();
@@ -39,7 +38,6 @@ export function ConfirmDisableMfa() {
 
 export function ConfirmMfaOptions({ mfaRequired }: { mfaRequired: boolean }) {
   const { t } = useTranslation();
-  const user = useCurrentUser();
   const { remove: removeDialog } = useDialoger();
 
   const { mutateAsync: toggleMfa } = useToggleMfaMutation();
@@ -49,7 +47,7 @@ export function ConfirmMfaOptions({ mfaRequired }: { mfaRequired: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const onPasskyConfirm = async () => {
-    const { assertion } = await getPasskeyVerifyCredential({ email: user.email, type: 'authentication' });
+    const { assertion } = await getPasskeyVerifyCredential({ type: 'authentication' });
     toggleMfa({ mfaRequired, passkeyData: assertion });
     removeDialog();
   };

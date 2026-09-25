@@ -45,6 +45,7 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'user_counters',
     'tokens',
     'passkeys',
+    'passkey_challenges',
     'identities',
     'totps',
     'requests',

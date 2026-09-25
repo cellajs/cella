@@ -1241,13 +1241,6 @@
             "type": "string",
             "required": true,
             "enum": ["authentication", "mfa", "registration"]
-          },
-          "email": {
-            "type": "string",
-            "required": false,
-            "format": "email",
-            "minLength": 4,
-            "maxLength": 255
           }
         },
         "required": true,
@@ -1339,13 +1332,6 @@
             "type": "string",
             "required": true,
             "enum": ["authentication", "mfa"]
-          },
-          "email": {
-            "type": "string",
-            "required": false,
-            "format": "email",
-            "minLength": 4,
-            "maxLength": 255
           }
         },
         "required": true,

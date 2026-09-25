@@ -3913,12 +3913,6 @@
                   "type": {
                     "type": "string",
                     "enum": ["authentication", "mfa", "registration"]
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "minLength": 4,
-                    "maxLength": 255
                   }
                 },
                 "required": ["type"]
@@ -4034,12 +4028,6 @@
                   "type": {
                     "type": "string",
                     "enum": ["authentication", "mfa"]
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "minLength": 4,
-                    "maxLength": 255
                   }
                 },
                 "required": ["assertion", "type"]

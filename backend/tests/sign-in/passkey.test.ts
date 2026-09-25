@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
@@ -16,16 +17,9 @@ import {
   type ErrorResponse,
   passkeySignInBody,
 } from '../helpers';
+import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/modules/auth/passkeys/helpers/passkey', async () => {
-  const actual = await vi.importActual('#/modules/auth/passkeys/helpers/passkey');
-  return {
-    ...actual,
-    validatePasskey: vi.fn().mockResolvedValue(undefined),
-  };
-});
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -35,69 +29,72 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await clearDatabase();
-  vi.clearAllMocks();
 });
 
 describe('Passkey Authentication', async () => {
   const call = await createAppClient();
 
+  /** A user with a software passkey registered. */
+  async function userWithPasskey(email = signUpUser.email) {
+    const user = await createUser(email);
+    const passkey = softwarePasskey();
+    await db.insert(passkeysTable).values({
+      userId: user.id,
+      credentialId: passkey.credentialId,
+      publicKey: passkey.publicKey,
+      counter: 0,
+      nameOnDevice: 'Test device',
+      deviceType: 'desktop',
+    });
+    return { user, passkey };
+  }
+
+  /** A challenge of `type`, its cookie, and the credential ids it lists. */
+  async function challenge(type: 'authentication' | 'mfa' = 'authentication', cookie?: string) {
+    const { data, response } = await call(generatePasskeyChallenge, {
+      body: { type },
+      headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) },
+    });
+    expect(response.status).toBe(200);
+    const challengeCookie =
+      response.headers
+        .getSetCookie()
+        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
+        ?.split(';')[0] ?? '';
+    const { challenge: value, credentialIds } = data as { challenge: string; credentialIds: string[] };
+    return { challenge: value, credentialIds, challengeCookie };
+  }
+
   describe('Challenge Generation', () => {
-    it('should generate challenge for authentication', async () => {
-      const user = await createUser(signUpUser.email);
+    it('should generate a sign-in challenge that lists no credentials', async () => {
+      await userWithPasskey();
 
-      const passkeyRecord = mockPasskeyRecord(user.id);
-      await db.insert(passkeysTable).values(passkeyRecord);
-
-      const { response: res, data } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: signUpUser.email },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(200);
-      const response = data as { challenge: string; credentialIds: string[] };
-      expect(response.challenge).toBeDefined();
-      expect(response.challenge).toMatch(/^[A-Za-z0-9_-]+$/);
-      expect(response.credentialIds).toContain(passkeyRecord.credentialId);
+      const { challenge: value, credentialIds } = await challenge('authentication');
+      expect(value).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credentialIds).toHaveLength(0);
     });
 
-    it('should generate challenge for MFA without tocken', async () => {
+    it("should list the account's passkeys for an MFA challenge", async () => {
+      const { user } = await userWithPasskey();
+      const second = mockPasskeyRecord(user.id, 'Linux Device', 'passkey-record:second');
+      await db.insert(passkeysTable).values(second);
+      const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
+
+      const { credentialIds } = await challenge('mfa', mfaCookie);
+      expect(credentialIds).toHaveLength(2);
+      expect(credentialIds).toContain(second.credentialId);
+    });
+
+    it('should refuse an MFA challenge without a second-factor challenge in progress', async () => {
       const user = await createUser(signUpUser.email);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      // The MFA challenge needs a confirm-mfa token from initial authentication; without one, 401.
       const { response: res, error } = await call(generatePasskeyChallenge, {
         body: { type: 'mfa' },
         headers: defaultHeaders,
       });
       expect(res.status).toBe(401);
-      const response = error as { type: string };
-
-      expect(response.type).toBe('confirm-mfa_not_found');
-    });
-
-    it('should reject challenge generation for non-existent user', async () => {
-      const { response: res, data } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: 'nonexistent@example.com' },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(200);
-      const response = data as { challenge: string; credentialIds: string[] };
-      expect(response.challenge).toBeDefined();
-      expect(response.credentialIds).toHaveLength(0);
-    });
-
-    it('should require email for authentication type', async () => {
-      const { response: res, data } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication' },
-        headers: defaultHeaders,
-      });
-
-      // Handler returns 200 with empty credentials when email is not provided
-      expect(res.status).toBe(200);
-      const response = data as { challenge: string; credentialIds: string[] };
-      expect(response.challenge).toBeDefined();
-      expect(response.credentialIds).toHaveLength(0);
+      expect((error as ErrorResponse).type).toBe('confirm-mfa_not_found');
     });
 
     it('should reject invalid challenge type', async () => {
@@ -122,38 +119,47 @@ describe('Passkey Authentication', async () => {
       expect(response).toBeUndefined();
     });
 
-    it('should reject verification with invalid credential ID', async () => {
-      const { response: res, error } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: '', email: signUpUser.email }),
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(404);
-      expect((error as ErrorResponse).type).toBe('not_found');
-    });
-
-    it('should reject verification with invalid JSON', async () => {
-      const body = passkeySignInBody({ credentialId: nanoid(32), email: signUpUser.email });
-      body.assertion.response.clientDataJSON = 'invalid-json';
+    it('should reject verification without a challenge', async () => {
+      const { passkey } = await userWithPasskey();
 
       const { response: res, error } = await call(signInWithPasskey, {
-        body,
+        body: { type: 'authentication', assertion: passkey.assert(nanoid(43)) },
         headers: defaultHeaders,
       });
-
-      expect(res.status).toBe(404);
-      expect((error as ErrorResponse).type).toBe('not_found');
+      expect(res.status).toBe(401);
+      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
     });
 
-    it('should reject verification for non-existent passkey', async () => {
-      await createUser(signUpUser.email);
+    it.each([
+      ['an unknown credential ID', nanoid(32)],
+      ['an empty credential ID', ''],
+      ['a very long credential ID', 'a'.repeat(1000)],
+    ])('should reject verification with %s', async (_label, credentialId) => {
+      const { challenge: value, challengeCookie } = await challenge();
 
-      const { response: res } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: nanoid(32), email: signUpUser.email }),
-        headers: defaultHeaders,
+      const { response: res, error } = await call(signInWithPasskey, {
+        body: passkeySignInBody({ credentialId, challenge: value }),
+        headers: { ...defaultHeaders, Cookie: challengeCookie },
       });
+      expect(res.status).toBe(404);
+      expect((error as ErrorResponse).type).toBe('passkey_not_found');
+    });
 
-      expect(res.status).toBe(204);
+    it.each([
+      ['invalid JSON', 'invalid-json'],
+      ['very long client data', 'a'.repeat(10000)],
+    ])('should reject verification with %s', async (_label, clientDataJSON) => {
+      const { passkey } = await userWithPasskey();
+      const { challenge: value, challengeCookie } = await challenge();
+      const assertion = passkey.assert(value);
+      assertion.response.clientDataJSON = clientDataJSON;
+
+      const { response: res, error } = await call(signInWithPasskey, {
+        body: { type: 'authentication', assertion },
+        headers: { ...defaultHeaders, Cookie: challengeCookie },
+      });
+      expect(res.status).toBe(401);
+      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
     });
   });
 
@@ -189,142 +195,45 @@ describe('Passkey Authentication', async () => {
       setTestConfig({ enabledAuthStrategies: ['totp'] });
       onTestFinished(() => setTestConfig({ enabledAuthStrategies: ['passkey'] }));
 
-      const user = await createUser(signUpUser.email);
-
-      const passkeyRecord = mockPasskeyRecord(user.id);
-      await db.insert(passkeysTable).values(passkeyRecord);
+      const { passkey } = await userWithPasskey();
 
       const { error } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: passkeyRecord.credentialId, email: signUpUser.email }),
+        body: passkeySignInBody({ credentialId: passkey.credentialId }),
         headers: defaultHeaders,
       });
 
       expect((error as ErrorResponse).type).toBe('forbidden_strategy');
     });
-
-    it('should reject malformed email in challenge request', async () => {
-      const { response, error } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: 'invalid-email' },
-        headers: defaultHeaders,
-      });
-
-      expect(error).toBeInstanceOf(Error);
-      expect(response).toBeUndefined();
-    });
-  });
-
-  describe('Security & Input Validation', () => {
-    it('should handle very long credential ID', async () => {
-      const { response: res, error } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: 'a'.repeat(1000), email: signUpUser.email }),
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(404);
-      expect((error as ErrorResponse).type).toBe('not_found');
-    });
-
-    it('should handle very long client data', async () => {
-      const body = passkeySignInBody({ credentialId: nanoid(32), email: signUpUser.email });
-      body.assertion.response.clientDataJSON = 'a'.repeat(10000);
-
-      const { response: res, error } = await call(signInWithPasskey, {
-        body,
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(404);
-      expect((error as ErrorResponse).type).toBe('not_found');
-    });
-  });
-
-  describe('Integration & Edge Cases', () => {
-    it('should handle multiple passkeys for user', async () => {
-      const user = await createUser(signUpUser.email);
-
-      const passkey1 = mockPasskeyRecord(user.id, 'Mac Device');
-      const passkey2 = mockPasskeyRecord(user.id, 'Linux Device');
-      await db.insert(passkeysTable).values([passkey1, passkey2]);
-
-      const { response: res, data } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: signUpUser.email },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(200);
-      const response = data as { challenge: string; credentialIds: string[] };
-      expect(response.credentialIds).toHaveLength(2);
-      expect(response.credentialIds).toContain(passkey1.credentialId);
-      expect(response.credentialIds).toContain(passkey2.credentialId);
-    });
-
-    it('should handle user with no passkeys', async () => {
-      await createUser(signUpUser.email);
-      const { response: res, data } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: signUpUser.email },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(200);
-      const response = data as { challenge: string; credentialIds: string[] };
-      expect(response.credentialIds).toHaveLength(0);
-      expect(response.challenge).toBeDefined();
-    });
   });
 
   describe('Successful Authentication', () => {
-    it('should authenticate successfully with valid passkey', async () => {
-      const user = await createUser(signUpUser.email);
-
-      const passkeyRecord = mockPasskeyRecord(user.id);
-      await db.insert(passkeysTable).values(passkeyRecord);
-
-      const { response: challengeRes, data: challengeData } = await call(generatePasskeyChallenge, {
-        body: { type: 'authentication', email: signUpUser.email },
-        headers: defaultHeaders,
-      });
-
-      expect(challengeRes.status).toBe(200);
-      const challengeResponse = challengeData as { challenge: string; credentialIds: string[] };
-      expect(challengeResponse.challenge).toBeDefined();
+    it('should authenticate with the passkey the browser picks, which names the account', async () => {
+      const { passkey } = await userWithPasskey();
+      const { challenge: value, challengeCookie } = await challenge();
 
       const { response: verificationRes } = await call(signInWithPasskey, {
-        body: passkeySignInBody({
-          credentialId: passkeyRecord.credentialId,
-          email: signUpUser.email,
-          challenge: challengeResponse.challenge,
-        }),
-        headers: defaultHeaders,
+        body: { type: 'authentication', assertion: passkey.assert(value) },
+        headers: { ...defaultHeaders, Cookie: challengeCookie },
       });
 
       expect(verificationRes.status).toBe(204);
-
-      const setCookieHeader = verificationRes.headers.get('set-cookie');
-      expect(setCookieHeader).toBeDefined();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(verificationRes.headers.get('set-cookie')).toContain(
+        `${appConfig.slug}-session-${appConfig.cookieVersion}=`,
+      );
     });
 
     it('should authenticate successfully with MFA passkey', async () => {
-      const user = await createUser(signUpUser.email);
+      const { user, passkey } = await userWithPasskey();
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
-
-      const passkeyRecord = mockPasskeyRecord(user.id, 'MFA Device');
-      await db.insert(passkeysTable).values(passkeyRecord);
-
-      const mfaToken = await createMfaToken(user);
+      const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
+      const { challenge: value, challengeCookie } = await challenge('mfa', mfaCookie);
 
       const { response: res } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: passkeyRecord.credentialId, email: signUpUser.email, type: 'mfa' }),
-        headers: {
-          ...defaultHeaders,
-          Cookie: authCookie('confirm-mfa', mfaToken),
-        },
+        body: { type: 'mfa', assertion: passkey.assert(value) },
+        headers: { ...defaultHeaders, Cookie: `${mfaCookie}; ${challengeCookie}` },
       });
       expect(res.status).toBe(204);
-
-      const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeDefined();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
     });
   });
 });

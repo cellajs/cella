@@ -1124,7 +1124,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum=} options.body.type - `enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
@@ -1164,7 +1163,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
  * @param {enum=} options.body.type - `enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(
