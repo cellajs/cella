@@ -217,6 +217,11 @@ describe('Magic link authentication', async () => {
       onTestFinished(() => setTestConfig({ selfRegistration: true }));
     };
     const userFor = (email: string) => db.select().from(usersTable).where(eq(usersTable.email, email));
+    const magicLinksFor = (email: string) =>
+      db
+        .select()
+        .from(tokensTable)
+        .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'magic')));
 
     it('still lets an invited address sign up', async () => {
       closeRegistration();
@@ -230,9 +235,9 @@ describe('Magic link authentication', async () => {
       });
 
       expect(res.status).toBe(204);
-      const [created] = await userFor('invited@example.com');
-      expect(created).toBeDefined();
-      expect(await getMagicToken(created.id)).toBeDefined();
+      // The link goes out without an account: the account is created when the link is clicked.
+      expect(await magicLinksFor('invited@example.com')).toEqual([expect.objectContaining({ userId: null })]);
+      expect(await userFor('invited@example.com')).toHaveLength(0);
     });
 
     it('creates nothing for an address that was not invited, with the same response', async () => {
@@ -244,6 +249,7 @@ describe('Magic link authentication', async () => {
       });
 
       expect(res.status).toBe(204);
+      expect(await magicLinksFor('stranger@example.com')).toHaveLength(0);
       expect(await userFor('stranger@example.com')).toHaveLength(0);
     });
 
@@ -264,6 +270,7 @@ describe('Magic link authentication', async () => {
 
       await call(sendMagicLink, { body: { email: 'declined@example.com' }, headers: defaultHeaders });
 
+      expect(await magicLinksFor('declined@example.com')).toHaveLength(0);
       expect(await userFor('declined@example.com')).toHaveLength(0);
     });
   });

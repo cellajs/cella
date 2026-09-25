@@ -15,6 +15,7 @@ import { getParsedSessionCookie, setUserSession, validateSession } from '#/modul
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
+import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { invokeToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
@@ -59,7 +60,9 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
       if (held) return held;
     }
 
-    const tokenRecord = await invokeToken(ctx, { type: tokenType, rawToken: token });
+    // A sign-up link creates its account at this click, which proves the inbox.
+    const claimOwner = tokenType === 'magic' ? claimMagicLinkOwner : undefined;
+    const tokenRecord = await invokeToken(ctx, { type: tokenType, rawToken: token, claimOwner });
 
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
 

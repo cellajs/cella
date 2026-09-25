@@ -5,12 +5,13 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb, type DbOrTx } from '#/db/db';
+import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type TokenRecord, tokenColumns } from '#/modules/auth/tokens/tokens-queries';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { findUserByEmail } from '#/modules/user/user-queries';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { getIsoDate } from '#/utils/iso-date';
@@ -113,8 +114,9 @@ export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { ty
 const expiredLink = (token: TokenRecord) => new AppError(401, `${token.type}_expired`, 'warn');
 
 /**
- * Refuses a link that belongs to another account than the one this browser is signed in to. An invitation not yet
- * bound to a user is the exception: whoever holds it may answer it as their own account.
+ * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
+ * account (a sign-up link) belongs to whoever holds its address by now, and to a new account when nobody does. An
+ * invitation not yet bound to a user is the exception: whoever holds it may answer it as their own account.
  */
 const refuseOtherAccount = async (ctx: Context<Env>, token: TokenRecord) => {
   if (token.type === 'invitation' && !token.userId) return;
@@ -126,7 +128,8 @@ const refuseOtherAccount = async (ctx: Context<Env>, token: TokenRecord) => {
   if (!sessionToken) return;
 
   const { user } = await validateSession(sessionToken);
-  if (token.userId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
+  const ownerId = token.userId ?? (await findUserByEmail({ var: { db: baseDb } }, { email: token.email }))?.id;
+  if (ownerId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
 };
 
 /**
@@ -151,6 +154,17 @@ interface LinkTokenOpts {
   rawToken: string;
 }
 
+/**
+ * Settles the account of a link issued without one, in the transaction that redeems it, and returns its user id: the
+ * token is bound to that user. A throw rolls the redemption back, so the link stays unopened.
+ */
+export type ClaimTokenOwner = (tx: Tx, token: TokenRecord) => Promise<string>;
+
+interface InvokeTokenOpts extends LinkTokenOpts {
+  /** For a link issued without an account (a sign-up link); runs only in the redemption that wins. */
+  claimOwner?: ClaimTokenOwner;
+}
+
 /** The link token a raw value names, read without redeeming it; undefined when there is none. */
 export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<TokenRecord | undefined> => {
   const [token] = await baseDb
@@ -165,12 +179,16 @@ export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<
  * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
  * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
  * browser gets the single-use cookie that binds the token to it. After that the link opens again only in the browser
- * holding that cookie, checked in SQL against the stored hash on a fresh read.
+ * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
+ * its owner from `claimOwner`, committed with the redemption.
  * @returns The redeemed token.
  * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 400
- *   `user_mismatch` while signed in to another account.
+ *   `user_mismatch` while signed in to another account, or what `claimOwner` throws.
  */
-export const invokeToken = async (ctx: Context<Env>, { type, rawToken }: LinkTokenOpts): Promise<TokenRecord> => {
+export const invokeToken = async (
+  ctx: Context<Env>,
+  { type, rawToken, claimOwner }: InvokeTokenOpts,
+): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
 
   const token = await findLinkToken({ type, rawToken });
@@ -188,16 +206,34 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken }: LinkTok
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const rawSingleUse = nanoid(40);
-  const [redeemed] = await baseDb
-    .update(tokensTable)
-    .set({
-      // Hash at rest: the raw value lives only in the browser's cookie.
-      singleUseToken: hashToken(rawSingleUse),
-      invokedAt: getIsoDate(),
-      expiresAt: createDate(singleUseWindow),
-    })
-    .where(and(eq(tokensTable.id, token.id), isNull(tokensTable.invokedAt)))
-    .returning(tokenColumns);
+  const redeem = async (db: DbOrTx) => {
+    const [redeemed] = await db
+      .update(tokensTable)
+      .set({
+        // Hash at rest: the raw value lives only in the browser's cookie.
+        singleUseToken: hashToken(rawSingleUse),
+        invokedAt: getIsoDate(),
+        expiresAt: createDate(singleUseWindow),
+      })
+      .where(and(eq(tokensTable.id, token.id), isNull(tokensTable.invokedAt)))
+      .returning(tokenColumns);
+    return redeemed;
+  };
+
+  const redeemed =
+    token.userId || !claimOwner
+      ? await redeem(baseDb)
+      : await baseDb.transaction(async (tx) => {
+          const won = await redeem(tx);
+          if (!won) return won;
+          const userId = await claimOwner(tx, won);
+          const [owned] = await tx
+            .update(tokensTable)
+            .set({ userId })
+            .where(eq(tokensTable.id, won.id))
+            .returning(tokenColumns);
+          return owned;
+        });
 
   if (redeemed) {
     await setAuthCookie(ctx, type, rawSingleUse, singleUseWindow);

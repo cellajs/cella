@@ -2,13 +2,19 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { confirmMagicLink, getPendingMagicLink, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestSession, createTestUser } from '../helpers';
+import { authCookie, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -179,5 +185,170 @@ describe('magic link opened in another browser', async () => {
       expect(setCookiePair(response, 'magic-requested')).toBeDefined();
     }
     setTestConfig({ selfRegistration: true });
+  });
+});
+
+/**
+ * Asking for a magic link proves nothing about the address, so it creates nothing: the account for a new address is
+ * created when its link is clicked, which proves the inbox. Until then nobody holds the address.
+ */
+describe('magic-link sign-up', async () => {
+  const call = await createAppClient();
+
+  beforeAll(() => {
+    mockFetchRequest();
+    setTestConfig({ selfRegistration: true });
+  });
+  beforeEach(() => vi.mocked(mailer.prepareEmails).mockClear());
+  afterEach(async () => await clearSecurityTestData());
+
+  const newcomer = () => `newcomer-${nanoid(6)}@security-test.com`.toLowerCase();
+
+  const closeRegistration = () => {
+    setTestConfig({ selfRegistration: false });
+    onTestFinished(() => setTestConfig({ selfRegistration: true }));
+  };
+
+  /** Requests a link for `email`: the raw token from the mailed link, and the marker cookie of the browser that asked. */
+  const requestLink = async (email: string) => {
+    const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
+    expect(response.status).toBe(204);
+    const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { magicLinkUrl?: string } | undefined;
+    const rawToken = statics?.magicLinkUrl?.split('/').at(-1) ?? '';
+    expect(rawToken).not.toBe('');
+    return { rawToken, requestedHere: setCookiePair(response, 'magic-requested') ?? '' };
+  };
+
+  const openLink = (rawToken: string, cookie: string) =>
+    call(invokeToken, { path: { type: 'magic', token: rawToken }, headers: { ...defaultHeaders, Cookie: cookie } });
+
+  const rowsFor = async (email: string) => ({
+    users: await db.select().from(usersTable).where(eq(usersTable.email, email)),
+    emails: await db.select().from(emailsTable).where(eq(emailsTable.email, email)),
+  });
+  const tokensFor = (email: string) => db.select().from(tokensTable).where(eq(tokensTable.email, email));
+  const actorCount = async () => (await db.select({ id: actorsTable.id }).from(actorsTable)).length;
+
+  it("must not create an account via requesting a magic link for someone else's address", async () => {
+    const email = newcomer();
+    const actorsBefore = await actorCount();
+
+    await requestLink(email);
+
+    expect(await rowsFor(email)).toEqual({ users: [], emails: [] });
+    expect(await actorCount()).toBe(actorsBefore);
+    expect(await tokensFor(email)).toEqual([
+      expect.objectContaining({ type: 'magic', userId: null, createdBy: null, invokedAt: null }),
+    ]);
+  });
+
+  it('creates the account with its address verified when the link is clicked, and signs in (positive control)', async () => {
+    const email = newcomer();
+    const { rawToken, requestedHere } = await requestLink(email);
+
+    const { response } = await openLink(rawToken, requestedHere);
+    expect(response.status).toBe(302);
+    expect(sessionCookieSet(response)).toBe(true);
+
+    const { users, emails } = await rowsFor(email);
+    expect(users).toHaveLength(1);
+    expect(emails).toEqual([
+      expect.objectContaining({ userId: users[0].id, verified: true, lastVerifiedVia: 'magic' }),
+    ]);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ userId: users[0].id })]);
+  });
+
+  it('lets an invited address sign up while registration is closed, claiming its invitation at the click', async () => {
+    closeRegistration();
+    const organization = await createTestOrganization();
+    const inviter = await createTestUser(`inviter-${nanoid(6)}@security-test.com`.toLowerCase());
+    const email = newcomer();
+    const { inactiveMembership } = await createInvitation({ organization, email, createdBy: inviter.id });
+
+    const { rawToken, requestedHere } = await requestLink(email);
+    expect((await rowsFor(email)).users).toHaveLength(0);
+
+    const { response } = await openLink(rawToken, requestedHere);
+    expect(response.status).toBe(302);
+    expect(sessionCookieSet(response)).toBe(true);
+
+    const { users } = await rowsFor(email);
+    expect(users).toHaveLength(1);
+    const [claimed] = await db
+      .select()
+      .from(inactiveMembershipsTable)
+      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    expect(claimed.userId).toBe(users[0].id);
+  });
+
+  it('signs in to an account that took the address since the link went out, creating no second one', async () => {
+    const email = newcomer();
+    const { rawToken, requestedHere } = await requestLink(email);
+    const holder = await createTestUser(email, false);
+
+    const { response } = await openLink(rawToken, requestedHere);
+    expect(response.status).toBe(302);
+    expect(sessionCookieSet(response)).toBe(true);
+
+    const { users, emails } = await rowsFor(email);
+    expect(users.map((user) => user.id)).toEqual([holder.id]);
+    expect(emails).toEqual([expect.objectContaining({ verified: true, lastVerifiedVia: 'magic' })]);
+  });
+
+  it('must not create an account via a sign-up link once registration has closed', async () => {
+    const email = newcomer();
+    const { rawToken, requestedHere } = await requestLink(email);
+    closeRegistration();
+
+    const { error, response } = await openLink(rawToken, requestedHere);
+    expect(response.status).toBe(403);
+    expect((error as { type: string }).type).toBe('sign_up_restricted');
+    expect(sessionCookieSet(response)).toBe(false);
+    expect((await rowsFor(email)).users).toHaveLength(0);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
+  });
+
+  it('must not confirm a planted sign-up link into a new account while signed in', async () => {
+    const victim = await createTestUser(`victim-${nanoid(6)}@security-test.com`.toLowerCase());
+    const email = newcomer();
+    const { rawToken } = await requestLink(email);
+
+    const cookies = [await createTestSession(victim), authCookie('magic-pending', rawToken)].join('; ');
+    const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
+    expect(response.status).toBe(400);
+    expect((error as { type: string }).type).toBe('user_mismatch');
+    expect((await rowsFor(email)).users).toHaveLength(0);
+    expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
+  });
+
+  it('shows the masked address of a sign-up link opened elsewhere, and creates the account on confirmation', async () => {
+    const email = newcomer();
+    const { rawToken } = await requestLink(email);
+
+    const opened = await call(invokeToken, { path: { type: 'magic', token: rawToken }, headers: defaultHeaders });
+    const held = setCookiePair(opened.response, 'magic-pending') ?? '';
+    expect((await rowsFor(email)).users).toHaveLength(0);
+
+    const pending = await call(getPendingMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
+    expect((pending.data as { email: string }).email).toBe(`n•••${email.slice(email.indexOf('@'))}`);
+
+    const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
+    expect(confirmed.response.status).toBe(302);
+    expect(sessionCookieSet(confirmed.response)).toBe(true);
+    expect((await rowsFor(email)).users).toHaveLength(1);
+  });
+
+  it('keeps one live sign-up link per address', async () => {
+    const email = newcomer();
+    const first = await requestLink(email);
+    const second = await requestLink(email);
+
+    const tokens = await tokensFor(email);
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].secret).toBe(hashToken(second.rawToken));
+
+    const { error, response } = await openLink(first.rawToken, first.requestedHere);
+    expect(response.status).toBe(401);
+    expect((error as { type: string }).type).toBe('magic_not_found');
   });
 });

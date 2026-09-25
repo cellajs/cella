@@ -8,12 +8,12 @@ import { mailer } from '#/lib/mailer';
 import { hasPendingInvitation } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
-import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import {
   findOpenableMagicLink,
   maskEmail,
   rememberMagicLinkRequest,
 } from '#/modules/auth/magic/helpers/magic-link-browser';
+import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { invokeToken, issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -35,8 +35,6 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 
   const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
 
-  let user: { id: string; name: string; language: string };
-
   if (!existingUser) {
     // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
     // as a real request, to prevent email enumeration.
@@ -46,23 +44,14 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
       await rememberMagicLinkRequest(ctx, generateId());
       return ctx.body(null, 204);
     }
-
-    const slug = slugFromEmail(normalizedEmail);
-    user = await handleCreateUser(
-      { var: { db } },
-      {
-        newUser: { email: normalizedEmail, slug, name: slug, firstName: slug },
-        emailVerified: false,
-      },
-    );
-    log.info('User created via magic link sign-up', { userId: user.id });
-  } else {
-    user = existingUser;
   }
 
+  // A sign-up link names no user: asking for it proves nothing about the address, so the account is created when the
+  // link is clicked (claimMagicLinkOwner).
+  const userId = existingUser?.id ?? null;
   const { token: tokenRecord, rawToken } = await issueToken(
     { var: { db } },
-    { type: 'magic', userId: user.id, email: normalizedEmail, createdBy: user.id, redirectPath },
+    { type: 'magic', userId, email: normalizedEmail, createdBy: userId, redirectPath },
   );
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
@@ -70,8 +59,12 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 
   const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
 
-  const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name, isNewUser: !existingUser };
-  const recipients = [{ email: normalizedEmail, lng: user.language }];
+  const staticProps = {
+    magicLinkUrl: magicLinkUrl.toString(),
+    name: existingUser?.name ?? slugFromEmail(normalizedEmail),
+    isNewUser: !existingUser,
+  };
+  const recipients = [{ email: normalizedEmail, lng: existingUser?.language ?? appConfig.defaultLanguage }];
 
   mailer.prepareEmails(magicLinkEmail, staticProps, recipients);
 
@@ -79,7 +72,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl.toString()}`);
   }
 
-  log.info('Magic link email sent', { userId: user.id });
+  log.info('Magic link email sent', { userId, signUp: !existingUser });
 
   return ctx.body(null, 204);
 });
@@ -98,7 +91,7 @@ app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
     if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
 
     // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
-    const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken });
+    const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner });
     deleteAuthCookie(ctx, 'magic-pending');
 
     return handleMagicLink(ctx, tokenRecord);
