@@ -4,6 +4,8 @@ import { uuidv7 } from 'uuidv7';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { tenantReadById } from '#/db/tenant-context';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
@@ -22,19 +24,33 @@ export interface MaterializeDescriptionInput {
 
 /**
  * Persists a Yjs collab description on behalf of the last editing user; called by the Yjs relay.
- * Dispatches to the entity's materializer, which re-checks permission because access may be revoked mid-session.
+ * The tenant and organization come from the entity row: a body naming another scope is refused
+ * (404 outside the named tenant, 403 for another organization). Dispatches to the entity's
+ * materializer, which re-checks permission in that scope because access may be revoked mid-session.
  */
 export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<{ sanitized: boolean }> {
-  if (!isProduct(input.entityType)) {
+  const { entityType } = input;
+  if (!isProduct(entityType)) {
     throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `Unknown entity type: ${input.entityType}` },
+      meta: { reason: `Unknown entity type: ${entityType}` },
     });
   }
 
-  const materializer = getYjsMaterializer(input.entityType);
+  const materializer = getYjsMaterializer(entityType);
   if (!materializer) {
     throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `No Yjs materializer registered for ${input.entityType}` },
+      meta: { reason: `No Yjs materializer registered for ${entityType}` },
+    });
+  }
+
+  const row = await tenantReadById(input.tenantId, (tx) =>
+    resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }),
+  );
+  if (!row || row.tenantId !== input.tenantId) throw new AppError(404, 'not_found', 'warn', { entityType });
+  if (row.organizationId !== input.organizationId) {
+    throw new AppError(403, 'forbidden', 'warn', {
+      entityType,
+      meta: { reason: 'Organization does not match the entity' },
     });
   }
 
@@ -52,15 +68,15 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
       isSystemAdmin: false,
       memberships,
       db: baseDb,
-      tenantId: input.tenantId,
-      organizationId: input.organizationId ?? undefined,
+      tenantId: row.tenantId,
+      organizationId: row.organizationId,
     },
   } as unknown as UserContext;
 
   const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description);
   if (sanitized) {
     log.warn('Yjs materialization sanitized untrusted media URLs', {
-      entityType: input.entityType,
+      entityType,
       entityId: input.entityId,
       invalidUrls,
     });
