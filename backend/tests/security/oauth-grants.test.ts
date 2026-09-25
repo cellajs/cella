@@ -10,11 +10,12 @@ import {
   getConnectedApps,
   revokeApiKey,
   revokeConnectedApp,
+  updateOrganization,
   updateServiceAccount,
 } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
@@ -24,6 +25,7 @@ import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -531,6 +533,37 @@ describe('OAuth grants', async () => {
       expect(minted.status).toBe(200);
     });
 
+    it("must not mint a service token via client_credentials for another tenant's resource", async () => {
+      const org = await createTestOrganization();
+      const other = await createTestOrganization();
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+      const { data } = await call(createServiceAccount, {
+        path: { tenantId: org.tenantId, organizationId: org.id },
+        body: { name: 'Sync bot', role: 'admin', key: { name: 'key', scopes: null } },
+        headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+      });
+      const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
+      const mint = (resource: string) =>
+        clientCredentialsToken(
+          oauth.issuer,
+          { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret },
+          { scope: 'attachment:read', resource },
+        );
+
+      for (const resource of [
+        resourceUri({ face: 'api', tenantId: other.tenantId }),
+        resourceUri({ face: 'mcp', tenantId: other.tenantId, organizationId: other.id }),
+      ]) {
+        const refused = await mint(resource);
+        expect(refused.status).toBe(400);
+        expect(refused.body).toMatchObject({ error: 'invalid_target' });
+        expect(refused.body.access_token).toBeUndefined();
+      }
+
+      // Positive control: the account's own tenant.
+      expect((await mint(resourceUri({ face: 'api', tenantId: org.tenantId }))).status).toBe(200);
+    });
+
     it('must not mint a service token via the client_credentials grant of a client that describes itself', async () => {
       const org = await createTestOrganization();
       const response = await fetch(`${oauth.issuer}/token`, {
@@ -600,6 +633,36 @@ describe('OAuth grants', async () => {
         logoUri: APP_LOGO,
         kind: 'registered',
       });
+    });
+
+    it("must not act as a system admin via a system admin's access token", async () => {
+      const ctx = await tenantWithApp();
+      // A system admin who is an ordinary member of the organization: only the system role lets them rename it.
+      const admin = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `sysadmin-${nanoid(8)}`);
+      await getAdminDb('test arrange')
+        .insert(systemRolesTable)
+        .values({ id: admin.id, userId: admin.id, role: 'admin', createdAt: new Date().toISOString() });
+      const rename = (headers: Record<string, string>) =>
+        call(updateOrganization, {
+          path: { tenantId: ctx.org.tenantId, id: ctx.org.id },
+          body: { name: `Renamed ${nanoid(4)}` },
+          headers,
+        });
+
+      const granted = await authorizationCodeToken(oauth.issuer, {
+        ...authorization(ctx, APP_ID, admin),
+        scope: 'organization:write attachment:read',
+        resource: resourceUri({ face: 'api', tenantId: ctx.org.tenantId }),
+      });
+      expect(granted.status).toBe(200);
+      const token = String(granted.body.access_token);
+
+      const refused = await rename(bearer(token));
+      expect(refused.response.status).toBe(403);
+      // The token acts as the member it is.
+      expect((await readAttachments(ctx, token)).response.status).toBe(200);
+      // Positive control: the same person's session, with the system role, renames the organization.
+      expect((await rename({ ...defaultHeaders, Cookie: admin.sessionCookie })).response.status).toBe(200);
     });
 
     it('must not grant consent via a session that has not stepped up or an impersonation', async () => {

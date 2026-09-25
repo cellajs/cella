@@ -10,6 +10,7 @@ import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource } from '#/modules/oauth-server/resources';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
@@ -19,17 +20,21 @@ const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
 
 /**
- * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key). Client
- * authentication records it; the resource lookup that follows caps the token at its scopes, and the token names it.
+ * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key), with the
+ * account's tenant. Client authentication records it; the resource lookup that follows keeps the token in that tenant
+ * and caps it at the key's scopes, and the token names the key.
  */
-const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessScope[] | null }>();
+const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessScope[] | null; tenantId: string }>();
+
+const isServiceClient = (client: unknown) =>
+  (client as { client_kind?: string } | undefined)?.client_kind === 'service';
 
 /**
  * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
  * stays within the key it authenticated with (`write` covers `read`, as on the API); other clients may ask for all.
  */
 function grantableScopes(ctx: object, client: unknown): readonly AccessScope[] {
-  if ((client as { client_kind?: string } | undefined)?.client_kind !== 'service') return accessScopes.all;
+  if (!isServiceClient(client)) return accessScopes.all;
   const key = presentedKeys.get(ctx);
   // No recorded key means client authentication did not run for this request: grant nothing.
   if (!key) return [];
@@ -111,6 +116,9 @@ export async function createProvider(): Promise<Provider> {
         getResourceServerInfo: (ctx, resourceIndicator, client) => {
           const resource = parseResource(resourceIndicator);
           if (!resource) throw new InvalidTarget();
+          // A service account acts in its own tenant: its token never names another tenant's resource.
+          if (isServiceClient(client) && presentedKeys.get(ctx)?.tenantId !== resource.tenantId)
+            throw new InvalidTarget();
           return {
             scope: grantableScopes(ctx, client).join(' '),
             audience: resourceIndicator,
@@ -183,13 +191,15 @@ export async function createProvider(): Promise<Provider> {
           hash: apiKeysTable.hash,
           expiresAt: apiKeysTable.expiresAt,
           scopes: apiKeysTable.scopes,
+          tenantId: serviceAccountsTable.tenantId,
         })
         .from(apiKeysTable)
+        .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
         .where(and(eq(apiKeysTable.actorId, this.clientId), isNull(apiKeysTable.revokedAt)));
       const key = keys.find((k) => (!k.expiresAt || !isExpiredDate(k.expiresAt)) && safeEqual(k.hash, presented));
       if (!key) return false;
       const ctx = Provider.ctx;
-      if (ctx) presentedKeys.set(ctx, { id: key.id, scopes: key.scopes ?? null });
+      if (ctx) presentedKeys.set(ctx, { id: key.id, scopes: key.scopes ?? null, tenantId: key.tenantId });
       return true;
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);
