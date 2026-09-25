@@ -76,9 +76,10 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   });
   const fragment = yDoc.getXmlFragment('document-store');
 
+  // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
   const unsubOnline = onlineManager.subscribe((isOnline) => {
-    if (isOnline) provider.connect();
-    else provider.disconnect();
+    if (!isOnline) provider.disconnect();
+    else if (useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
