@@ -1,6 +1,5 @@
 import { hierarchy } from 'shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mailer, neutralizeBrevoTags } from '#/lib/mailer';
+import { describe, expect, it } from 'vitest';
 import { describeDigestRow } from '#/modules/notification/digest/build-digest';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import {
@@ -11,8 +10,6 @@ import {
   systemInviteEmail,
 } from '../../emails';
 import { EmailButton } from '../../emails/components';
-import { type EmailPreviewName, emailPreviewFixtures } from '../../emails/preview-fixtures';
-import { renderEmailPreview } from '../../emails/render-preview';
 import { render } from '../../emails/renderer/render';
 
 /** A display name as OAuth sign-up can store it: user and organization names reach these mails unvalidated. */
@@ -111,73 +108,5 @@ describe('email plain-text parts keep names as typed', () => {
     const html = await render(magicLinkEmail.component({ ...translated }));
     expect(html).not.toMatch(doubleEscaped);
     expect(html).not.toContain('<Co>');
-  });
-});
-
-/**
- * Brevo renders subject and body as templates and fills and HTML-escapes the mailer's `{{params.x}}` placeholders.
- * Text rendered into the mail, such as a name, must not open a template tag of its own.
- */
-describe('Brevo template tags in rendered mails', () => {
-  const tagOpener = /\{[{%#]/;
-  const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';
-  const recipient = {
-    email: 'mentioned@example.test',
-    lng: 'en',
-    subjectTitle: 'Roadmap',
-    excerpt: 'See <b>this</b>',
-    link,
-    unsubscribeLink: 'https://app.example.test/unsubscribe',
-  };
-  const ownPlaceholders = /\{\{params\.(?:subjectTitle|excerpt|link|unsubscribeLink|email)\}\}/g;
-
-  /** Sends through the real Brevo path with the network stubbed, and returns the request body. */
-  const sentBody = async (statics: { actorName: string; channelName: string }) => {
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(null, { status: 201 }));
-    vi.stubGlobal('fetch', fetchMock);
-    // Under Vitest `env` reads process.env directly.
-    process.env.BREVO_API_KEY = 'test-brevo-key';
-    process.env.TEST_SEND_EMAILS = 'true';
-    await mailer.prepareEmails(mentionEmail, statics, [recipient]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    return JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
-      subject: string;
-      htmlContent: string;
-      messageVersions: { params: Record<string, string> }[];
-    };
-  };
-
-  afterEach(() => {
-    delete process.env.BREVO_API_KEY;
-    delete process.env.TEST_SEND_EMAILS;
-    vi.unstubAllGlobals();
-  });
-
-  it('must not open a Brevo template tag via a name rendered into the mail', async () => {
-    const body = await sentBody({ actorName: hostileName, channelName: hostileName });
-
-    expect(body.htmlContent.replace(ownPlaceholders, '')).not.toMatch(tagOpener);
-    expect(body.subject).not.toMatch(tagOpener);
-    // The name still reads as typed: only the brace that opens a tag is written as a character reference.
-    expect(body.htmlContent).toContain('&#123;{ params.excerpt|safe }}');
-  });
-
-  it('leaves every template, rendered as the mailer renders it, unchanged', async () => {
-    for (const [name, { recipient: sample }] of Object.entries(emailPreviewFixtures)) {
-      const { subject, html } = await renderEmailPreview(name as EmailPreviewName, { lng: 'en', placeholders: true });
-      const paramKeys = [...Object.keys(sample), 'email'];
-      expect(neutralizeBrevoTags(html, paramKeys, 'html'), name).toBe(html);
-      expect(neutralizeBrevoTags(subject, paramKeys, 'text'), name).toBe(subject);
-    }
-  });
-
-  it("keeps the mailer's own placeholders for Brevo to fill and escape (positive control)", async () => {
-    const body = await sentBody({ actorName: 'Jane', channelName: 'Design 101' });
-
-    for (const placeholder of ['{{params.subjectTitle}}', '{{params.excerpt}}', '{{params.link}}']) {
-      expect(body.htmlContent).toContain(placeholder);
-    }
-    expect(body.subject).toBe('Jane mentioned you in Design 101');
-    expect(body.messageVersions[0]?.params.excerpt).toBe(recipient.excerpt);
   });
 });

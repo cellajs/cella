@@ -68,6 +68,9 @@ const policies = { inline: inlinePolicy, richText: richTextPolicy } as const;
 
 export type SafeHtmlPolicy = keyof typeof policies;
 
+/** Untrusted HTML reduced to the policy's allowlist; `SafeHtml` renders it, the mailer applies it to HTML params. */
+export const sanitizeEmailHtml = (html: string, policy: SafeHtmlPolicy) => sanitizeHtml(html, policies[policy]);
+
 interface SafeHtmlProps {
   /** Untrusted HTML string to sanitize and render. */
   html: string;
@@ -81,7 +84,7 @@ interface SafeHtmlProps {
 
 /** The only `dangerouslySetInnerHTML` in the email pipeline; input is sanitized by policy. */
 export const SafeHtml = ({ html, policy, as: Tag = 'span', className }: SafeHtmlProps) => {
-  const clean = sanitizeHtml(html, policies[policy]);
+  const clean = sanitizeEmailHtml(html, policy);
   // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via sanitize-html allowlist policy
   return <Tag className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 };

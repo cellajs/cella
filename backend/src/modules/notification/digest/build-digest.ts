@@ -71,7 +71,7 @@ export function describeDigestRow(type: string, contextTitle: string, lng: strin
   return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-' });
 }
 
-/** Digest sections as sanitised HTML, because Brevo per-recipient params are strings only. */
+/** Digest sections as HTML with every user-derived fragment escaped: the digest mail's declared HTML param. */
 export function renderSectionsHtml(sections: DigestSection[]): string {
   return sections
     .map((section) => {

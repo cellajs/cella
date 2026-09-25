@@ -1,9 +1,10 @@
 import { type EmailPreviewFixture, type EmailPreviewName, emailPreviewFixtures } from './preview-fixtures';
 import { render } from './renderer/render';
+import { brevoPlaceholder } from './types';
 
 export interface RenderEmailPreviewOptions {
   lng: string;
-  /** True renders per-recipient props as Brevo `{{params.x}}` placeholders, as the mailer does. Default false. */
+  /** True renders per-recipient props as the Brevo placeholders the mailer uses (`brevoPlaceholder`). Default false. */
   placeholders?: boolean;
 }
 
@@ -20,7 +21,9 @@ export async function renderEmailPreview(
   const { subject, ...componentProps } = translated;
 
   const recipientProps = placeholders
-    ? Object.fromEntries(Object.keys(fixture.recipient).map((key) => [key, `{{params.${key}}}`]))
+    ? Object.fromEntries(
+        Object.keys(fixture.recipient).map((key) => [key, brevoPlaceholder(key, { ...fixture.def.htmlParams })]),
+      )
     : fixture.recipient;
 
   const html = await render(fixture.def.component({ ...componentProps, ...recipientProps }));

@@ -65,9 +65,7 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, MentionRecipient>
           <EmailText>
             <strong>{subjectTitle}</strong>
           </EmailText>
-          <EmailText>
-            <SafeHtml html={excerpt} policy="inline" />
-          </EmailText>
+          <EmailText>{excerpt}</EmailText>
 
           <EmailButton ButtonText={buttonText} href={link} />
 
