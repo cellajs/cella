@@ -2575,7 +2575,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.
+ * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
  *
@@ -2583,7 +2583,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.email - `string` (optional)
  * @param {enum=} options.body.type - `enum` (optional)
  * @param {string | null=} options.body.message - `string | null` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(
   options: Options<CreateRequestData, ThrowOnError>,

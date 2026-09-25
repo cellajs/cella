@@ -1,20 +1,36 @@
+import { inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { requestsTable } from '#/modules/requests/requests-db';
+import { accountExistsEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createUser } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
+vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
+
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
+
+/** The templates of the mails handed to the mailer for `email`. */
+const mailsTo = (email: string) =>
+  vi
+    .mocked(mailer.prepareEmails)
+    .mock.calls.filter(([, , recipients]) => (recipients as { email: string }[]).some((r) => r.email === email))
+    .map(([template]) => template);
 
 beforeAll(() => mockFetchRequest());
 
-afterEach(async () => await clearSecurityTestData());
+afterEach(async () => {
+  await clearSecurityTestData();
+  vi.mocked(mailer.prepareEmails).mockClear();
+});
 
 /**
  * Whether an address has an account is the owner's business. A visitor who types someone's address anywhere on the
@@ -125,5 +141,30 @@ describe('Account enumeration', async () => {
 
     expect(await checkEmail(account.email, ownBrowser)).toEqual({ status: 200, body: { recognized: true } });
     expect(await checkEmail(stranger, ownBrowser)).toEqual({ status: 200, body: { recognized: false } });
+  });
+
+  it('must not learn whether an address has an account via the waitlist form', async () => {
+    const { account, stranger } = await accountAndStranger();
+    const join = async (email: string) => {
+      const res = await post('/requests', { email, type: 'waitlist', message: null });
+      return { status: res.status, body: await res.text() };
+    };
+
+    const forAccount = await join(account.email);
+    const forStranger = await join(stranger);
+    const forRepeat = await join(stranger);
+    expect(forAccount).toEqual(forStranger);
+    expect(forRepeat).toEqual(forStranger);
+    expect(forStranger).toEqual({ status: 204, body: '' });
+
+    // The difference goes to each inbox: only the stranger is on the waitlist, confirmed once; the account holder is
+    // told the address already has an account.
+    const waitlisted = await db
+      .select({ email: requestsTable.email })
+      .from(requestsTable)
+      .where(inArray(requestsTable.email, [account.email, stranger]));
+    expect(waitlisted).toEqual([{ email: stranger }]);
+    expect(mailsTo(stranger)).toEqual([requestResponseEmail]);
+    expect(mailsTo(account.email)).toEqual([accountExistsEmail]);
   });
 });

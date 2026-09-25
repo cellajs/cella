@@ -1326,9 +1326,9 @@ export const zCreateRequestBody = z.object({
 });
 
 /**
- * Requests
+ * Request received
  */
-export const zCreateRequestResponse = zRequest;
+export const zCreateRequestResponse = z.void();
 
 /**
  * Unseen counts per parent channel entity per entity type

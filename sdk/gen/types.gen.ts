@@ -3681,9 +3681,9 @@ export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
 
 export type CreateRequestResponses = {
   /**
-   * Requests
+   * Request received
    */
-  201: Request;
+  204: void;
 };
 
 export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];

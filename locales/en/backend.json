@@ -1,4 +1,8 @@
 {
+  "email.account_exists.preview": "This address already signs in to {{appName}}",
+  "email.account_exists.subject": "You already have a {{appName}} account",
+  "email.account_exists.text": "Someone asked to join the {{appName}} waitlist with this address. It has an account already, so there is nothing to wait for: sign in with it. If this was not you, you can ignore this email.",
+  "email.account_exists.title": "You already have an account",
   "email.account_security.mfa-disabled.text": "MFA has been disabled on your {{appName}} account.",
   "email.account_security.mfa-disabled.title": "Multi-factor authentication disabled",
   "email.account_security.mfa-enabled.text": "Your account on {{appName}} now has MFA enabled for extra security.",

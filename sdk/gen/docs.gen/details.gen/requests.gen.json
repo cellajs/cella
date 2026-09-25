@@ -129,43 +129,7 @@
   {
     "operationId": "createRequest",
     "responses": [
-      {
-        "status": 201,
-        "description": "Requests",
-        "name": "Request",
-        "ref": "#/components/schemas/Request",
-        "contentType": "application/json",
-        "schema": {
-          "type": "object",
-          "description": "A contact or waitlist submission from an unauthenticated user.",
-          "properties": {
-            "createdAt": { "type": "string", "required": true },
-            "id": { "type": "string", "required": true, "format": "uuid" },
-            "message": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "email": { "type": "string", "required": true, "maxLength": 255 },
-            "type": {
-              "type": "string",
-              "required": true,
-              "enum": ["waitlist", "newsletter", "contact"]
-            },
-            "wasInvited": { "type": "boolean", "required": true }
-          },
-          "ref": "#/components/schemas/Request",
-          "contentType": "application/json"
-        },
-        "example": {
-          "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-          "email": "al.braun57@gmail.com",
-          "type": "contact",
-          "message": "Amitto sapiente antiquus temptatio verus mollitia.",
-          "createdAt": "2024-03-17T12:06:02.574Z",
-          "wasInvited": false
-        }
-      },
+      { "status": 204, "description": "Request received" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

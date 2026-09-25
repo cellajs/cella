@@ -7231,7 +7231,7 @@
         "operationId": "createRequest",
         "tags": ["requests", "cella"],
         "summary": "Create request",
-        "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
@@ -7263,23 +7263,8 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Requests",
-            "content": {
-              "application/json": {
-                "example": {
-                  "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-                  "email": "al.braun57@gmail.com",
-                  "type": "contact",
-                  "message": "Amitto sapiente antiquus temptatio verus mollitia.",
-                  "createdAt": "2024-03-17T12:06:02.574Z",
-                  "wasInvited": false
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Request"
-                }
-              }
-            }
+          "204": {
+            "description": "Request received"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

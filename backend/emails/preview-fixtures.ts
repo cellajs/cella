@@ -1,4 +1,5 @@
 import {
+  accountExistsEmail,
   accountSecurityEmail,
   magicLinkEmail,
   memberAddedEmail,
@@ -25,6 +26,7 @@ export interface EmailPreviewFixture {
 const previewTemplates = {
   welcome: welcomeEmailTemplate,
   'account-security': accountSecurityEmail,
+  'account-exists': accountExistsEmail,
   'oauth-verification': oauthVerificationEmail,
   'magic-link': magicLinkEmail,
   'system-invite': systemInviteEmail,

@@ -1,3 +1,4 @@
+export { accountExistsEmail } from './templates/account-exists';
 export { accountSecurityEmail } from './templates/account-security';
 export { magicLinkEmail } from './templates/magic-link';
 export { memberAddedEmail } from './templates/member-added';
