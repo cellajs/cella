@@ -66,6 +66,7 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 - **Reads the app database.** Sessions, memberships, tenants, service accounts and keys are read directly; the worker starts after the API in development for migrations and needs the runtime database role in production.
 - **One process serves consent.** The interaction routes render nothing themselves; the page under `/auth/consent` is the frontend's.
 - **Client secrets are hashes.** A registered app's secret is compared by hash; a service account's client secret is any of its live keys, so revoking a key also ends its `client_credentials` access, and the tokens minted with it stop at the guard.
+- **A request budget per address.** Past 60 requests a minute from one IP, every route under `/oauth` except the discovery documents and `/jwks` answers 429 (`oauthRequestLimiter`). Any client id can be the URL of a metadata document the worker fetches, so the budget also bounds the outbound requests one address can cause.
 - **Metadata caches for a minute.** Adapter-loaded clients are cached; a change to a service account drops its entry in every process.
 
 ## Health and configuration

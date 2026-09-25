@@ -83,6 +83,15 @@ export const pointsLimiter = (cost = 1) =>
     },
   });
 
+/**
+ * Requests to the authorization server per IP, outside its discovery document and public keys. Each names a client id
+ * that may be the URL of a metadata document the server fetches, so the budget also bounds that outbound traffic.
+ */
+export const oauthRequestLimiter = rateLimiter('limit', 'oauthRequest', ['ip'], {
+  limits: { points: 60, duration: 60, blockDuration: 60 },
+  description: 'Max 60 authorization server requests per minute per IP',
+});
+
 /** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
 export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorId'], {
   limits: { points: 30, duration: 1, blockDuration: 0 },

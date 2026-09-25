@@ -6,6 +6,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
+import { oauthRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
@@ -33,6 +34,8 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
   const app = new Hono<InteractionEnv>();
   // The interactions app binds Node's request objects; the handler reads only what every Hono context has.
   app.onError(appErrorHandler as never);
+  // The provider's own routes share this budget (`server.ts`); consent resolves the client again.
+  app.use(oauthRequestLimiter);
 
   /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
   app.get('/oauth/interaction/:uid', (c) =>
