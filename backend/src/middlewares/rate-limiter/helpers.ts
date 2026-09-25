@@ -17,8 +17,9 @@ type RateLimiterOptions = {
   duration: number;
   blockDuration?: number;
   /**
-   * Also block an over-limit key in this process's memory, until its window ends (default true). Fail-mode buckets
-   * pass false: their block lives in the database only, so every process holds it for the same `blockDuration`.
+   * Also block an over-limit key in this process's memory, until its window ends (default true). Buckets that reserve
+   * attempts pass false: an attempt given back must free the budget, and a block lives in the database only, so every
+   * process holds it for the same time.
    */
   inMemoryBlock?: boolean;
 };
@@ -60,14 +61,14 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
 type LimiterStore = ReturnType<typeof getRateLimiterInstance>;
 
 /**
- * Creates a fail-mode bucket's row, or restarts an expired one, in one statement, leaving a live count alone. The
- * database store's own upsert reads the row before it writes, so the first requests of a parallel burst on a new key
- * would each start the count at one; after this, every consume increments the row atomically.
+ * Creates a bucket's row, or restarts an expired one, in one statement, leaving a live count alone. The database
+ * store's own upsert reads the row before it writes, so the first requests of a parallel burst on a new key would each
+ * start the count at one; after this, every consume increments the row atomically.
  * @param store - The bucket's limiter; only the database store needs the row.
  * @param rateLimitKey - The key as the middleware passes it to the store.
  * @param durationSeconds - The counting window a new or restarted row gets.
  */
-export const openFailureBucket = async (store: LimiterStore, rateLimitKey: string, durationSeconds: number) => {
+export const openBucket = async (store: LimiterStore, rateLimitKey: string, durationSeconds: number) => {
   if (!(store instanceof RateLimiterDrizzle)) return;
   const now = new Date();
   const expire = new Date(now.getTime() + durationSeconds * 1000);

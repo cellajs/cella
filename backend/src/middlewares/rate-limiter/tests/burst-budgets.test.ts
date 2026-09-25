@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { getAdminDb } from '#/db/db';
+import type { RateLimitMode } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 
 // Undo the setup.ts mock: these tests drive the real middleware against the real database store.
@@ -14,9 +15,9 @@ const { appErrorHandler } = await import('#/lib/error');
 
 const budget = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
 
-/** A route behind a fresh fail-mode limiter whose handler counts its runs and answers with `status`. */
-function guardedRoute(mode: 'fail' | 'failseries', status: 200 | 401) {
-  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits: budget });
+/** A route behind a fresh limiter whose handler counts its runs and answers with `status`. */
+function guardedRoute(mode: RateLimitMode, status: 200 | 401, limits: typeof budget = budget) {
+  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   let reached = 0;
@@ -105,5 +106,46 @@ describe('fail-mode budgets under a parallel burst', () => {
         .where(eq(rateLimitsTable.key, `${succeeding.limiter.keyPrefix}:ip:${ip}`));
       expect(row?.points ?? 0, mode).toBe(0);
     }
+  });
+});
+
+/**
+ * The other modes hold a budget of sends (magic links per address, emails per user) that a parallel burst must not
+ * pass either: `limit` counts before the handler, `success` counted only after it.
+ */
+describe('send budgets under a parallel burst', () => {
+  it('must not send more than a limit budget via a parallel burst on a new key', async () => {
+    // The magic-link limiter's shape: two per address per window.
+    const route = guardedRoute('limit', 200, { points: 2, duration: 60 * 30, blockDuration: 0 });
+
+    const statuses = await burst(route.attempt, randomIp(), 20);
+
+    expect(route.reached()).toBe(2);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(18);
+  });
+
+  it('must not send more than a success budget via a parallel burst', async () => {
+    // The email spam limiter's shape: ten successful sends per hour.
+    const route = guardedRoute('success', 200, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
+
+    const statuses = await burst(route.attempt, randomIp(), 20);
+
+    expect(route.reached()).toBe(10);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(10);
+  });
+
+  it('counts only successful sends against a success budget (positive control)', async () => {
+    const failing = guardedRoute('success', 401, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
+    const ip = randomIp();
+
+    const statuses = await burst(failing.attempt, ip, 10);
+    for (let attempt = 0; attempt < 5; attempt++) statuses.push((await failing.attempt(ip)).status);
+
+    expect(statuses).toEqual(Array(15).fill(401));
+    const [row] = await getAdminDb('rate limit test')
+      .select()
+      .from(rateLimitsTable)
+      .where(eq(rateLimitsTable.key, `${failing.limiter.keyPrefix}:ip:${ip}`));
+    expect(row?.points ?? 0).toBe(0);
   });
 });
