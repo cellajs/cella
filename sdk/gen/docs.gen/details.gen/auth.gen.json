@@ -479,7 +479,7 @@
   {
     "operationId": "resendInvitationWithToken",
     "responses": [
-      { "status": 204, "description": "Invitation email sent" },
+      { "status": 204, "description": "Invitation email sent when the invitation is pending" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",
@@ -525,22 +525,10 @@
     ],
     "request": {
       "body": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "email": { "type": "string", "required": true, "format": "email" },
-              "tokenId": { "type": "string", "required": false }
-            }
-          },
-          {
-            "type": "object",
-            "properties": {
-              "email": { "type": "string", "required": false, "format": "email" },
-              "tokenId": { "type": "string", "required": true }
-            }
-          }
-        ],
+        "type": "object",
+        "properties": {
+          "tokenId": { "type": "string", "required": true, "format": "uuid" }
+        },
         "required": true,
         "contentType": "application/json"
       }

@@ -145,21 +145,13 @@ app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
-  const { email, tokenId } = ctx.req.valid('json');
+  const { tokenId } = ctx.req.valid('json');
 
-  const normalizedEmail = email?.toLowerCase().trim();
-
-  const filters = [eq(tokensTable.type, 'invitation')];
-
-  if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
-  else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-  else throw new AppError(400, 'invalid_request', 'error');
-
-  const oldToken = await findInvitationToken(ctx, { filters });
-
-  if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
-
-  await resendInvitationEmail(ctx, oldToken);
+  // One answer whether the id names a pending invitation or not, so the route tells nobody which invitations exist.
+  const oldToken = await findInvitationToken(ctx, {
+    filters: [eq(tokensTable.type, 'invitation'), eq(tokensTable.id, tokenId)],
+  });
+  if (oldToken) await resendInvitationEmail(ctx, oldToken);
 
   return ctx.body(null, 204);
 });

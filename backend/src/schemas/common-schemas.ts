@@ -144,11 +144,6 @@ export const slugIncludeQuerySchema = z.object({
   include: includeQuerySchema,
 });
 
-export const emailOrTokenIdQuerySchema = z.union([
-  z.object({ email: z.email({ message: t('error:invalid_email') }), tokenId: z.string().optional() }),
-  z.object({ email: z.email().optional(), tokenId: z.string() }),
-]);
-
 export const idsBodySchema = (maxItems = 50) =>
   z.object({
     ids: z

@@ -167,7 +167,7 @@
     "path": "/auth/resend-invitation",
     "tags": ["auth"],
     "summary": "Resend invitation",
-    "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+    "description": "Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,

@@ -121,9 +121,11 @@ interface InsertInvitationTokenOpts {
   values: typeof tokensTable.$inferInsert;
 }
 
+/** Insert an invitation token and return its id. */
 export const insertInvitationToken = async (ctx: DbContext, { values }: InsertInvitationTokenOpts) => {
   const { db } = ctx.var;
-  return db.insert(tokensTable).values(values);
+  const [token] = await db.insert(tokensTable).values(values).returning({ id: tokensTable.id });
+  return token;
 };
 
 interface RevokeSessionsOpts {

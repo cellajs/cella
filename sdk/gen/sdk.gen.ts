@@ -737,11 +737,12 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
 /**
  * Resend invitation
  *
- * Resends an invitation email with token to a new user using the provided email address and token ID.
+ * Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.
  *
  * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/resend-invitation) ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/resend-invitation) ·· _auth_cella_
  *
  * @param {resendInvitationWithTokenData} options
+ * @param {string=} options.body.tokenId - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(

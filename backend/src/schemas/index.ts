@@ -3,7 +3,6 @@ export {
   booleanTransformSchema,
   channelEntityTypeSchema,
   cookieSchema,
-  emailOrTokenIdQuerySchema,
   entityIdParamSchema,
   entityTypeSchema,
   entityWithTypeQuerySchema,

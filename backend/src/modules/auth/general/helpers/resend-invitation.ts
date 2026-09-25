@@ -1,95 +1,116 @@
+import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { insertInvitationToken } from '#/modules/auth/auth-queries';
-import type { UnsafeTokenModel } from '#/modules/auth/tokens-db';
+import { tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
-import { findUserById } from '#/modules/user/user-queries';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { deleteInvitationTokens, updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
+import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
+import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../../emails';
 
+/** The replacement row: the old row's invitation linkage, a new secret and a week to use it. */
+const newTokenValues = (oldToken: UnsafeTokenModel, rawToken: string) => ({
+  secret: hashToken(rawToken),
+  type: 'invitation' as const,
+  email: oldToken.email,
+  userId: oldToken.userId,
+  inactiveMembershipId: oldToken.inactiveMembershipId,
+  createdBy: oldToken.createdBy,
+  expiresAt: createDate(new TimeSpan(7, 'd')),
+});
+
 /**
- * Re-issues an invitation from an existing token row: mints a fresh 7-day token copying the old row's linkage, then sends the
- * matching email (membership invite when the token binds a pending membership, system invite otherwise).
- * Callers do token resolution and authorization themselves.
+ * Re-issues a pending invitation from one of its token rows and emails the new link. Pending means a membership
+ * invitation whose row stands, unrejected, in a channel that still exists, or a system invitation whose address no
+ * account has proven. The new token gets a fresh id and the invitation's older tokens are deleted, so only the newest
+ * link works. Returns false, sending nothing, when the invitation is no longer pending. Callers resolve the token and
+ * authorize the resend themselves.
  */
-export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeTokenModel): Promise<void> => {
-  const { email: userEmail } = oldToken;
+export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeTokenModel): Promise<boolean> => {
+  const { email, inactiveMembershipId } = oldToken;
 
-  // Generate token and store hashed
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
+  if (!inactiveMembershipId && (await findUserByEmail(ctx, { email, verifiedOnly: true }))) return false;
 
-  await insertInvitationToken(ctx, {
-    values: {
-      ...oldToken,
-      secret: hashedToken,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      invokedAt: null,
-      singleUseToken: null,
-    },
+  const rawToken = nanoid(40);
+
+  const reissued = await ctx.var.db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+
+    // The locked row is the invitation's anchor: a concurrent answer, rejection or resend waits for this one.
+    if (inactiveMembershipId) {
+      const [invitation] = await tx
+        .select()
+        .from(inactiveMembershipsTable)
+        .where(and(eq(inactiveMembershipsTable.id, inactiveMembershipId), isNull(inactiveMembershipsTable.rejectedAt)))
+        .for('update');
+      if (!invitation) return null;
+
+      const entity = await resolveEntity(txCtx, {
+        entityType: invitation.channelType,
+        identifier: invitation.channelId,
+      });
+      if (!entity) return null;
+
+      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [invitation.id] });
+      const token = await insertInvitationToken(txCtx, { values: newTokenValues(oldToken, rawToken) });
+      await updateInactiveMembershipToken(txCtx, { id: invitation.id, tokenId: token.id });
+
+      return { invitation: { ...invitation, entity }, tokenId: token.id };
+    }
+
+    const [anchor] = await tx
+      .select({ id: tokensTable.id })
+      .from(tokensTable)
+      .where(eq(tokensTable.id, oldToken.id))
+      .for('update');
+    if (!anchor) return null;
+
+    // A system invitation is every invitation token for the address outside a membership invitation.
+    await tx
+      .delete(tokensTable)
+      .where(
+        and(eq(tokensTable.type, 'invitation'), eq(tokensTable.email, email), isNull(tokensTable.inactiveMembershipId)),
+      );
+    const token = await insertInvitationToken(txCtx, { values: newTokenValues(oldToken, rawToken) });
+    await linkWaitlistRequest(txCtx, { email, tokenId: token.id });
+
+    return { invitation: null, tokenId: token.id };
   });
 
+  if (!reissued) return false;
+
   const recipient = {
-    email: userEmail,
+    email,
     lng: appConfig.defaultLanguage,
-    name: slugFromEmail(userEmail),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${oldToken.type}/${newToken}`,
+    name: slugFromEmail(email),
+    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${rawToken}`,
   };
 
-  // Default props are the system invite
-  const defaultEmailProps = {
-    senderName: 'System',
-    senderThumbnailUrl: null as string | null,
-  };
+  // Replies reach the inviter, as on the first invitation; without one it reads as a system invite.
+  const sender = oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined;
+  const senderProps = { senderName: sender?.name ?? 'System', senderThumbnailUrl: sender?.thumbnailUrl ?? null };
 
-  if (oldToken.createdBy) {
-    const sender = await findUserById(ctx, { id: oldToken.createdBy });
-    if (sender) {
-      defaultEmailProps.senderName = sender.name;
-      defaultEmailProps.senderThumbnailUrl = sender.thumbnailUrl;
-    }
-  }
+  const { invitation, tokenId } = reissued;
 
-  if (oldToken.inactiveMembershipId) {
-    const inactiveMembership = await findInactiveMembershipById(ctx, {
-      id: oldToken.inactiveMembershipId,
-    });
+  if (invitation) {
+    const { entity } = invitation;
+    const emailProps = { ...senderProps, entityName: entity.name, role: invitation.role };
+    const lng = 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage;
 
-    const entityIdColumnKey = appConfig.entityIdColumnKeys[
-      inactiveMembership.channelType
-    ] as keyof typeof inactiveMembership;
-    if (!inactiveMembership[entityIdColumnKey]) throw new AppError(400, 'invalid_request', 'error');
-    // Internal resolve: getting entity info for email template (no permission check needed)
-    const entity = await resolveEntity(ctx, {
-      entityType: inactiveMembership.channelType,
-      identifier: inactiveMembership[entityIdColumnKey] as string,
-    });
-
-    if (!entity) throw new AppError(400, 'invalid_request', 'error');
-
-    const emailProps = {
-      ...defaultEmailProps,
-      entityName: entity.name,
-      role: inactiveMembership.role,
-    };
-
-    const recipientLng = 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage;
-    await mailer.prepareEmails(
-      memberInviteWithTokenEmail,
-      emailProps,
-      [{ ...recipient, lng: recipientLng }],
-      userEmail,
-    );
-    log.info('Membership invitation has been resent', { [entityIdColumnKey]: entity.id });
+    await mailer.prepareEmails(memberInviteWithTokenEmail, emailProps, [{ ...recipient, lng }], sender?.email);
+    log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id, tokenId });
   } else {
-    await mailer.prepareEmails(systemInviteEmail, defaultEmailProps, [recipient], userEmail);
-    log.info('System invitation has been resent');
+    await mailer.prepareEmails(systemInviteEmail, senderProps, [recipient], sender?.email);
+    log.info('System invitation has been resent', { tokenId });
   }
+
+  return true;
 };

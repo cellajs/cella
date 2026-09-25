@@ -636,19 +636,12 @@ export const zStartImpersonationResponse = z.void();
  */
 export const zStopImpersonationResponse = z.void();
 
-export const zResendInvitationWithTokenBody = z.union([
-  z.object({
-    email: z.email(),
-    tokenId: z.string().optional(),
-  }),
-  z.object({
-    email: z.email().optional(),
-    tokenId: z.string(),
-  }),
-]);
+export const zResendInvitationWithTokenBody = z.object({
+  tokenId: z.uuid(),
+});
 
 /**
- * Invitation email sent
+ * Invitation email sent when the invitation is pending
  */
 export const zResendInvitationWithTokenResponse = z.void();
 

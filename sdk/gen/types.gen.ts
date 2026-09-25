@@ -976,15 +976,9 @@ export type StopImpersonationResponses = {
 export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
 
 export type ResendInvitationWithTokenData = {
-  body:
-    | {
-        email: string;
-        tokenId?: string;
-      }
-    | {
-        email?: string;
-        tokenId: string;
-      };
+  body: {
+    tokenId: string;
+  };
   path?: never;
   query?: never;
   url: '/auth/resend-invitation';
@@ -1021,7 +1015,7 @@ export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[key
 
 export type ResendInvitationWithTokenResponses = {
   /**
-   * Invitation email sent
+   * Invitation email sent when the invitation is pending
    */
   204: void;
 };

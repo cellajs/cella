@@ -10,6 +10,7 @@ import { getValidChannel } from '#/permissions/get-valid-channel';
 /**
  * Resends the invitation email for a pending membership; the caller needs `update` on the invited channel.
  * The token comes from the pending row itself, never from the email address, which can hold newer tokens from other contexts.
+ * A rejected invitation, or one answered meanwhile, is not re-sent: 404.
  */
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const inactiveMembership = await findInactiveMembershipById(ctx, { id });
@@ -22,7 +23,6 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const oldToken = await findInvitationToken(ctx, {
     filters: [eq(tokensTable.type, 'invitation'), eq(tokensTable.inactiveMembershipId, inactiveMembership.id)],
   });
-  if (!oldToken) throw new AppError(404, 'token_not_found', 'warn');
-
-  await resendInvitationEmail(ctx, oldToken);
+  const sent = oldToken && (await resendInvitationEmail(ctx, oldToken));
+  if (!sent) throw new AppError(404, 'token_not_found', 'warn');
 }

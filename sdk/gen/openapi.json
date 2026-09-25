@@ -3218,7 +3218,7 @@
         "operationId": "resendInvitationWithToken",
         "tags": ["auth", "cella"],
         "summary": "Resend invitation",
-        "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+        "description": "Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
@@ -3227,41 +3227,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email"
-                      },
-                      "tokenId": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["email"]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email"
-                      },
-                      "tokenId": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["tokenId"]
+                "type": "object",
+                "properties": {
+                  "tokenId": {
+                    "type": "string",
+                    "format": "uuid"
                   }
-                ]
+                },
+                "required": ["tokenId"]
               }
             }
           }
         },
         "responses": {
           "204": {
-            "description": "Invitation email sent"
+            "description": "Invitation email sent when the invitation is pending"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
