@@ -31,10 +31,14 @@ interface CreateLoggerOptions {
 /** Nested causes a serialized error is searched to; deeper ones are left as the serializer wrote them. */
 const maxCauseDepth = 8;
 
+/** A message or stack without the values of a failed query or the secrets of a URL it quotes. */
+const scrubErrorText = (text: string) => scrubUrl(redactFailedQuery(text));
+
 /**
- * Removes failed queries from a serialized error and its causes, in place. A failed query's own node takes the
- * database's reason as its message and loses its `query` and `params`; any other message or stack quoting one is
- * redacted. Only error-like nodes (a string `message`) are touched: the serializer built those, the caller did not.
+ * Removes failed queries and URL secrets from a serialized error and its causes, in place. A failed query's own node
+ * takes the database's reason as its message and loses its `query` and `params`; every message and stack goes through
+ * `redactFailedQuery` and `scrubUrl`. Only error-like nodes (a string `message`) are touched: the serializer built
+ * those, the caller did not.
  */
 const redactSerializedError = (node: unknown, depth = 0): void => {
   if (typeof node !== 'object' || node === null || depth > maxCauseDepth) return;
@@ -44,14 +48,14 @@ const redactSerializedError = (node: unknown, depth = 0): void => {
 
   if (isFailedQueryMessage(message)) {
     const reason = failedQueryReason(error.cause);
-    error.message = reason;
+    error.message = scrubUrl(reason);
     if (typeof stack === 'string') error.stack = stack.split(message).join(reason);
     delete error.query;
     delete error.params;
   } else {
-    error.message = redactFailedQuery(message);
+    error.message = scrubErrorText(message);
   }
-  if (typeof error.stack === 'string') error.stack = redactFailedQuery(error.stack);
+  if (typeof error.stack === 'string') error.stack = scrubErrorText(error.stack);
 
   redactSerializedError(error.cause, depth + 1);
   if (Array.isArray(error.aggregateErrors)) {
@@ -59,7 +63,7 @@ const redactSerializedError = (node: unknown, depth = 0): void => {
   }
 };
 
-/** Pino's `errWithCause` output ({ type, message, stack, cause }) without the SQL and values of a failed query. */
+/** Pino's `errWithCause` output ({ type, message, stack, cause }) without failed-query values or URL secrets. */
 const serializeError = (err: unknown): unknown => {
   const serialized: unknown = pino.stdSerializers.errWithCause(err as Error);
   redactSerializedError(serialized);
@@ -211,7 +215,8 @@ export const createLog = (logger: pino.Logger): Log => {
         ...rest,
         ...(err !== undefined && { err: toError(err) }),
         ...(repeated && { repeated }),
-        msg,
+        // A message can quote a URL, as a logged `url` does.
+        msg: scrubUrl(msg),
       });
     };
 

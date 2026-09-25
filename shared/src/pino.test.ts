@@ -66,6 +66,27 @@ describe('createLogger', () => {
     expect(line.meta).toEqual({ token: '[REDACTED]', provider: 'github' });
   });
 
+  it('must not log a token via a message or an error message', () => {
+    const { logger, lines, parsed } = collectingLogger([]);
+    // Built at run time: the test proves these values never reach a log line.
+    const [codeSecret, pathSecret, causeSecret] = [randomUUID(), randomUUID(), randomUUID()];
+    const cause = new Error(`GET https://app.example/me/unsubscribe?token=${causeSecret} answered 502`);
+
+    createLog(logger).warn(`OAuth callback https://app.example/auth/github/callback?code=${codeSecret} failed`, {
+      err: new Error(`fetch /api/auth/invoke-token/magic/${pathSecret} failed`, { cause }),
+    });
+
+    const written = lines.join('\n');
+    for (const secret of [codeSecret, pathSecret, causeSecret]) expect(written).not.toContain(secret);
+    // Positive control: the routes and the rest of the text survive.
+    const [line] = parsed();
+    expect(line?.msg).toBe('OAuth callback https://app.example/auth/github/callback?code=[REDACTED] failed');
+    expect(line?.err).toMatchObject({
+      message: 'fetch /api/auth/invoke-token/magic/[REDACTED] failed',
+      cause: { message: 'GET https://app.example/me/unsubscribe?token=[REDACTED] answered 502' },
+    });
+  });
+
   it('censors through the level facade the services log with', () => {
     const { logger, parsed } = collectingLogger(['token', '*.token']);
 
