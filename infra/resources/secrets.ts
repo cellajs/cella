@@ -6,7 +6,7 @@ import { mode, naming, region, tags } from '../pulumi-context';
 import { configuredOrRandomSecret } from './configured-secret';
 import { derivedRuntimeSecretData } from './stores';
 
-// Folder per secret: `/<slug>-<mode>/<service>/` for single-consumer secrets, `/<slug>-<mode>/shared/` for multi-consumer ones. The path is the security boundary the VM grant is conditioned on, so it is derived from the consumer list, never hand-assigned.
+// Folder per secret: `/<slug>-<mode>/<service>/` for single-consumer secrets, `/<slug>-<mode>/shared/<consumers>/` per consumer set for multi-consumer ones. The path is the security boundary the VM grant is conditioned on, so it is derived from the consumer list, never hand-assigned.
 const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode);
 
 /** One-time imports for operator secret containers created outside Pulumi, as `secretName=region/uuid`. The CLI self-heals this drift, so the hook is for direct runs or forced ids. */

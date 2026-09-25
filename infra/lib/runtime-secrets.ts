@@ -1,7 +1,8 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
-import { serviceNames } from './services';
+import { serviceKeyCondition } from './scaleway/secret-paths';
+import { principalSecretScopeSlugs, serviceNames } from './services';
 import type { StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
@@ -149,4 +150,18 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
       seen.add(definition.id);
       return true;
     });
+}
+
+/**
+ * The secret-read condition of a service principal: its scope's own folders plus the shared folder of every runtime
+ * secret its scope consumes, and nothing else. The Pulumi program (resources/vm-iam.ts) and the deploy's grant
+ * assertion both build it here, so they compare equal as strings.
+ */
+export function principalSecretCondition(slug: string, mode: string, singleVM: boolean, service: ServiceName): string {
+  return serviceKeyCondition(
+    slug,
+    mode,
+    principalSecretScopeSlugs(singleVM, service),
+    runtimeSecrets.map((secret) => secret.services),
+  );
 }

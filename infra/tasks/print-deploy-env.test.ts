@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { principalSecretCondition } from '../lib/runtime-secrets';
 import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
   CI_RULE_SHAPES,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import { principalSecretScopeSlugs, principalServices } from '../lib/services';
+import { bootKeyCondition } from '../lib/scaleway/secret-paths';
+import { principalServices } from '../lib/services';
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 
 const fakeAppConfig = {
@@ -50,7 +51,7 @@ describe('buildDeployEnv', () => {
         ...principalServices(false).map((svc) => ({
           app: `cella-production-vm-${svc.slug}`,
           sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-          condition: serviceKeyCondition('cella', 'production', svc.slug),
+          condition: principalSecretCondition('cella', 'production', false, svc.slug),
           dormant: !['backend', 'cdc', 'frontend'].includes(svc.slug),
         })),
         {
@@ -114,9 +115,7 @@ describe('buildDeployEnv', () => {
     }>;
     const serviceRows = rows.filter((row) => row.app.includes('-vm-'));
     expect(serviceRows.map((row) => row.app)).toEqual(['cella-production-vm-backend']);
-    expect(serviceRows[0]?.condition).toBe(
-      serviceKeyCondition('cella', 'production', principalSecretScopeSlugs(true, 'backend')),
-    );
+    expect(serviceRows[0]?.condition).toBe(principalSecretCondition('cella', 'production', true, 'backend'));
     expect(serviceRows[0]?.condition).toContain('/cella-production/yjs/');
     expect(serviceRows[0]?.condition).toContain('/cella-production/mcp/');
     expect(serviceRows[0]?.dormant).toBe(false);

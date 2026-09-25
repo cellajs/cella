@@ -18,6 +18,8 @@ function yjsTokenPublicKey(material: string): string {
 
 /**
  * App-owned mapping from runtime secrets to their consuming services; per-service manifests restrict each VM to the values it needs.
+ * The consumer list also places the secret: one folder per consumer set, which only those services' keys read. The
+ * backend image checks the same assignment per process mode (backend/src/env-mode-secrets.ts, pinned by the tests).
  * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
@@ -46,7 +48,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'cdc', 'mcp'],
+    // The CDC socket is served by the API process's internal listener only.
+    services: ['backend', 'cdc'],
   },
   yjsTokenPrivateKey: {
     secretName: 'yjs-token-private-key',
@@ -55,7 +58,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    // Only the API process's token route signs; the relay verifies with the public half.
+    services: ['backend'],
   },
   yjsTokenPublicKey: {
     secretName: 'yjs-token-public-key',
@@ -74,7 +78,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'yjs', 'mcp'],
+    services: ['backend', 'yjs'],
   },
   piiHashSecret: {
     secretName: 'pii-hash-secret',
@@ -101,7 +105,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'mcp'],
+    // Read by the admin seed, which the backend's release companion runs.
+    services: ['backend'],
   },
   brevoApiKey: {
     secretName: 'brevo-api-key',

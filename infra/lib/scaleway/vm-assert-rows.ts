@@ -1,5 +1,6 @@
 import type { EngineConfig } from '../../config/engine-config';
-import { deployedServices, principalSecretScopeSlugs, principalServices } from '../services';
+import { principalSecretCondition } from '../runtime-secrets';
+import { deployedServices, principalServices } from '../services';
 import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
@@ -7,7 +8,7 @@ import {
   SERVICE_SECRET_PERMISSION_SETS,
 } from './permissions';
 import { principalNames } from './principals';
-import { bootKeyCondition, serviceKeyCondition } from './secret-paths';
+import { bootKeyCondition } from './secret-paths';
 
 /** One grant assertion: the exact permission sets and secret condition a principal must hold, and whether it must hold no key at all. */
 export interface VmAssertRow {
@@ -31,7 +32,7 @@ export function buildVmAssertRows(appConfig: EngineConfig): VmAssertRow[] {
     ...principalServices(singleVM).map((svc) => ({
       app: names.vmService(svc.slug),
       sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-      condition: serviceKeyCondition(appConfig.slug, appConfig.mode, principalSecretScopeSlugs(singleVM, svc.slug)),
+      condition: principalSecretCondition(appConfig.slug, appConfig.mode, singleVM, svc.slug),
       dormant: !deployedSlugs.has(svc.slug),
     })),
     {

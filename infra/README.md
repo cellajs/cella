@@ -52,7 +52,7 @@ Three rules:
 - **The admin application** is the day-2 human principal: `s3:*` via bucket policies plus read-only on every infra surface, no IAM write; its key lives in the operator's `infra/.env.<mode>` (`SCW_ADMIN_*`) and, as the custody copy, in the `admin-key` secret, never in git or GitHub.
 - **VM keys are per service and per deploy**, path-conditioned (`resource.name.startsWith`). Cloud-init carries only the **boot key**; the service key arrives in a **single-access** Secret Manager bundle. A consumed bundle on first boot halts the VM as an interception signal; reboots reuse the on-disk pair.
 - **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). Uploads buckets are versioned and CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user data.
-- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/`, `/shared/`, `/handoff/`, `/engine/` (unreadable from VMs).
+- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` for a secret one service consumes, `/shared/<consumers>/` for each set of consumers (so a VM key reads exactly the secrets its services consume), `/handoff/`, `/engine/` (unreadable from VMs).
 
 ## Observability
 
