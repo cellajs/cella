@@ -118,7 +118,15 @@ export function startJobOwnership({
     if (!acquired) return;
     owned = session;
     session.onError((error) => release(session, `lock session failed: ${error.message}`));
-    stopJobs = jobs.map((job) => job.start());
+    // A job that fails to start is logged and skipped: the owner keeps the lock and runs every other job.
+    stopJobs = jobs.flatMap((job) => {
+      try {
+        return [job.start()];
+      } catch (error) {
+        baseLog.error('A scheduled job failed to start', { job: job.name, err: error });
+        return [];
+      }
+    });
     baseLog.info('Owns the scheduled jobs', { jobs: jobs.map((job) => job.name) });
   };
 

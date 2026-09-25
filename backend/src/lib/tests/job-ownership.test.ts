@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { type LockSession, startJobOwnership } from '#/lib/job-ownership';
 import type { BackendJob } from '#/lib/module';
+import { baseLog } from '#/lib/pino';
 
 /** Jobs that record which instances run them right now, and the most that ever ran at once. */
 function jobTracker() {
@@ -134,6 +135,39 @@ describe('job ownership failure handling', () => {
     await vi.waitFor(() => expect(owned.closed).toBe(true));
     // Positive control: with a healthy session again it wins the lock back.
     await vi.waitFor(() => expect([...jobs.running]).toEqual(['owner']));
+  });
+
+  it('must not stop the other jobs via one whose start throws', async () => {
+    const server = fakeLockServer();
+    const errorLog = vi.spyOn(baseLog, 'error').mockImplementation(() => {});
+    const running = new Set<string>();
+    const job = (name: string): BackendJob => ({
+      name,
+      start: () => {
+        running.add(name);
+        return () => running.delete(name);
+      },
+    });
+    const broken: BackendJob = {
+      name: 'broken',
+      start: () => {
+        throw new Error('missing setting');
+      },
+    };
+
+    const stop = start({ jobs: [job('first'), broken, job('last')], intervalMs: 10, openSession: server.openSession });
+
+    // The owner keeps its lock and runs every job that starts.
+    await vi.waitFor(() => expect([...running].sort()).toEqual(['first', 'last']));
+    expect(server.sessions.filter((session) => !session.closed)).toHaveLength(1);
+    expect(errorLog).toHaveBeenCalledWith(
+      'A scheduled job failed to start',
+      expect.objectContaining({ job: 'broken' }),
+    );
+    // Releasing the lock stops every job that started, the one before the broken job included.
+    stop();
+    expect(running.size).toBe(0);
+    errorLog.mockRestore();
   });
 
   it('keeps contending while the database is unreachable, then takes the jobs', async () => {
