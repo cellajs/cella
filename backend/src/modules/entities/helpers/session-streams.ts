@@ -2,7 +2,12 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { type SessionEndReason, sessionsTable } from '#/modules/auth/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
+import {
+  type BaseStreamSubscriber,
+  type StreamErrorPayload,
+  streamSubscriberManager,
+  writeError,
+} from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -44,6 +49,10 @@ export async function closeAppStreams(
     ),
   );
 }
+
+/** App streams carry the session they authenticated with; a stream an app registers without one is not theirs. */
+const isAppStream = (subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber =>
+  'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
 
 /** How often the sweep re-checks the session behind every open stream. */
 const SWEEP_INTERVAL_MS = 60_000;
@@ -96,12 +105,12 @@ const readSessionStates = (ids: string[]) =>
  * Re-checks the session behind every open app stream and closes the streams it no longer backs: the session expired,
  * was revoked where no event reached this process (another instance) or went with its user, an impersonation's admin
  * lost their session or system role, or the stream reads as system admin after the role was removed. Gaining the role
- * waits for the next connect.
+ * waits for the next connect. Streams without a session, which an app may register, are left alone.
  *
  * @returns How many streams it closed.
  */
 export async function sweepAppStreamSessions(): Promise<number> {
-  const subscribers = streamSubscriberManager.all<AppStreamSubscriber>();
+  const subscribers = streamSubscriberManager.all().filter(isAppStream);
   if (subscribers.length === 0) return 0;
 
   const sessions = await readSessionStates([...new Set(subscribers.map((subscriber) => subscriber.sessionId))]);
