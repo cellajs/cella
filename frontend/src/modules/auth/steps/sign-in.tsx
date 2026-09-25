@@ -93,8 +93,7 @@ export function SignInStep() {
     },
   });
 
-  // Without magic links the passkey signs in: the browser offers its passkeys for this site, and the one picked names
-  // the account.
+  // Without magic links a passkey signs in: the one the browser offers names the account.
   const onSubmit = () => {
     if (isMagicLinkEnabled) return sendMagic();
     startMediation();

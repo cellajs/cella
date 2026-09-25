@@ -38,7 +38,7 @@ app.openapi(authGeneralRoutes.health, async (ctx) => {
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   const { email } = ctx.req.valid('json');
 
-  // Any other browser gets `false` whether or not the address has an account.
+  // True only for a browser that signed in to the address before; any other browser gets false, account or not.
   const recognized = await isRecognizedBrowser(ctx, email.toLowerCase().trim());
 
   return ctx.json({ recognized }, 200);
