@@ -9,18 +9,15 @@ import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
-import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
+import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
 import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { readSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
-import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
-import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
-import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import { invokeToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -48,28 +45,7 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
 
   try {
-    if (tokenType === 'magic') {
-      const held = await holdMagicLinkOutsideItsBrowser(ctx, token);
-      if (held) return held;
-    }
-
-    // A sign-up link creates its account at this click, which proves the inbox.
-    const claimOwner = tokenType === 'magic' ? claimMagicLinkOwner : undefined;
-    const tokenRecord = await invokeToken(ctx, { type: tokenType, rawToken: token, claimOwner });
-
-    if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
-
-    if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
-
-    // Only invitation remains: the param schema is limited to invokable types.
-    const redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
-
-    log.info('Token invoked, redirecting with single use token in cookie', {
-      tokenId: tokenRecord.id,
-      userId: tokenRecord.userId,
-    });
-
-    return ctx.redirect(redirectUrl, 302);
+    return await linkHandlers[tokenType](ctx, token);
   } catch (err) {
     if (err instanceof AppError) {
       throw new AppError(err.status, err.type as ErrorKey, err.severity, {

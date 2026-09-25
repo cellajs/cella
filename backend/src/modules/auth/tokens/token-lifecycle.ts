@@ -8,7 +8,12 @@ import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
-import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import {
+  type CookieTokenType,
+  type LinkTokenType,
+  type TokenReplacement,
+  tokenPolicies,
+} from '#/modules/auth/tokens/token-policies';
 import { type TokenRecord, tokenColumns } from '#/modules/auth/tokens/tokens-queries';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -26,42 +31,31 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
     >
   >;
 
-/**
- * The earlier tokens a new one replaces, so only the newest link for a subject works: a magic link per address and
- * per account, a verification link per identity or per provider account signing up, an invitation link per membership
- * invitation, or per address for a system invitation. Other types replace nothing: every sign-in holds its own
- * second-factor challenge.
- */
+/** The subject each replacement rule names; undefined replaces nothing. See `tokenReplacements`. */
+const replacementSubjects = {
+  'address-or-account': (token) =>
+    token.userId
+      ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId))
+      : eq(tokensTable.email, token.email),
+  identity: ({ identityId, pendingSignUp }) => {
+    if (identityId) return eq(tokensTable.identityId, identityId);
+    if (!pendingSignUp) return undefined;
+    return and(
+      sql`${tokensTable.pendingSignUp}->>'issuer' = ${pendingSignUp.issuer}`,
+      sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
+    );
+  },
+  invitation: (token) =>
+    token.inactiveMembershipId
+      ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
+      : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
+  none: () => undefined,
+} satisfies Record<TokenReplacement, (token: NewToken) => SQL | undefined>;
+
+/** The earlier tokens a new one replaces, by its type's `replaces` rule, so only the newest one for a subject works. */
 const replacedBy = (token: NewToken): SQL | undefined => {
-  const sameType = eq(tokensTable.type, token.type);
-  switch (token.type) {
-    case 'magic':
-      return and(
-        sameType,
-        token.userId
-          ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId))
-          : eq(tokensTable.email, token.email),
-      );
-    case 'oauth-verification': {
-      if (token.identityId) return and(sameType, eq(tokensTable.identityId, token.identityId));
-      const { pendingSignUp } = token;
-      if (!pendingSignUp) return undefined;
-      return and(
-        sameType,
-        sql`${tokensTable.pendingSignUp}->>'issuer' = ${pendingSignUp.issuer}`,
-        sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
-      );
-    }
-    case 'invitation':
-      return and(
-        sameType,
-        token.inactiveMembershipId
-          ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
-          : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
-      );
-    default:
-      return undefined;
-  }
+  const subject = replacementSubjects[tokenPolicies[token.type].replaces](token);
+  return subject && and(eq(tokensTable.type, token.type), subject);
 };
 
 /**
@@ -131,11 +125,11 @@ const expired = (token: TokenRecord) =>
 
 /**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
- * account (a sign-up link) belongs to whoever holds its address by now, and to a new account when nobody does. An
- * invitation not yet bound to a user is the exception: whoever holds it may answer it as their own account.
+ * account goes to its policy's `unboundOpener`: the account holding its address by now (a new account when nobody
+ * does), or any signed-in account (an invitation not yet bound to a user, answered as that account).
  */
-const refuseOtherAccount = async (ctx: Context<Env>, token: TokenRecord) => {
-  if (token.type === 'invitation' && !token.userId) return;
+const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token: TokenRecord) => {
+  if (!token.userId && tokenPolicies[type].unboundOpener === 'any-account') return;
 
   const signedIn = await resolveSession(ctx).catch(() => null);
   if (!signedIn) return;
@@ -207,7 +201,7 @@ export const invokeToken = async (
   const token = await findLinkToken({ type, rawToken });
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
 
-  await refuseOtherAccount(ctx, token);
+  await refuseOtherAccount(ctx, type, token);
 
   if (isExpiredDate(token.expiresAt)) throw expired(token);
 

@@ -2,9 +2,9 @@ import { Hono } from 'hono';
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
-import { invokableTokenTypes } from '#/modules/auth/general/general-schema';
 import { authCookieName, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
+import { tokenPolicies, tokenReplacements } from '#/modules/auth/tokens/token-policies';
 
 const linkTypes = appConfig.tokenTypes.filter((type) => tokenPolicies[type].carrier === 'link');
 
@@ -13,8 +13,12 @@ describe('token policies', () => {
     for (const type of appConfig.tokenTypes) expect(tokenPolicies[type], type).toBeDefined();
   });
 
-  it('redeems exactly the link-carried types through a link', () => {
-    expect([...invokableTokenTypes].sort()).toEqual([...linkTypes].sort());
+  it('opens every link-carried type through a handler of its own', () => {
+    expect(Object.keys(linkHandlers).sort()).toEqual([...linkTypes].sort());
+  });
+
+  it('gives every token type a rule for the earlier tokens a new one replaces', () => {
+    for (const type of appConfig.tokenTypes) expect(tokenReplacements, type).toContain(tokenPolicies[type].replaces);
   });
 
   it('gives every link a single-use window shorter than its lifetime', () => {
