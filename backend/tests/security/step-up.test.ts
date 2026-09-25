@@ -174,11 +174,10 @@ describe('step-up', async () => {
     const askForLink = async (session: TestSession) => {
       const asked = await call(sendStepUpLink, { body: { redirect: '/account' }, headers: session.headers });
       expect(asked.response.status).toBe(204);
-      const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl: string };
-      return {
-        browser: cookiesAfter(session.cookie, asked.response),
-        rawToken: statics.stepUpUrl.split('/').at(-1) ?? '',
-      };
+      const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl?: string } | undefined;
+      const rawToken = statics?.stepUpUrl?.split('/').at(-1) ?? '';
+      expect(rawToken).not.toBe('');
+      return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
     };
 
     /** A click on the mailed link: the mail app starts the navigation, so the Strict session cookie stays home. */

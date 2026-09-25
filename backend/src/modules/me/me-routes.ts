@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, publicGuard, userGuard } from '#/middlewares/guard';
+import { crossTenantGuard, publicGuard, stepUpGuard, stepUpOrFactorProofGuard, userGuard } from '#/middlewares/guard';
 import {
   bulkPointsLimiter,
   mfaToggleLimiter,
@@ -111,7 +111,7 @@ const meRoutes = {
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Delete self',
@@ -222,12 +222,12 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpOrFactorProofGuard],
     xRateLimiter: [singlePointsLimiter, mfaToggleLimiter],
     tags: ['me', 'cella'],
     summary: 'Toggle MFA',
     description:
-      'Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.',
+      'Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

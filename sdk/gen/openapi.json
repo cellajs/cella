@@ -44,6 +44,14 @@
             "name": "relatable",
             "description": "Checks that the requesting user shares at least one organization with the target user"
           },
+          "stepUpGuard": {
+            "name": "stepUp",
+            "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+          },
+          "stepUpOrFactorProofGuard": {
+            "name": "stepUpOrFactorProof",
+            "description": "Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation."
+          },
           "sysAdminGuard": {
             "name": "sysAdmin",
             "description": "Requires system admin + IP whitelist"
@@ -3505,7 +3513,7 @@
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3565,7 +3573,7 @@
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3620,7 +3628,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3722,7 +3730,7 @@
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3887,7 +3895,7 @@
         "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4115,7 +4123,7 @@
         "tags": ["auth", "cella"],
         "summary": "Start connecting a provider",
         "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -5883,7 +5891,7 @@
         "tags": ["me", "cella"],
         "summary": "Delete self",
         "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -5921,8 +5929,8 @@
         "operationId": "toggleMfa",
         "tags": ["me", "cella"],
         "summary": "Toggle MFA",
-        "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
-        "x-guard": ["userGuard"],
+        "description": "Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.",
+        "x-guard": ["userGuard", "stepUpOrFactorProofGuard"],
         "x-rate-limiter": ["pointsLimiter", "mfaToggleLimiter"],
         "x-cache": [],
         "requestBody": {

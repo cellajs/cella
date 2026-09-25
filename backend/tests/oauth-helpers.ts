@@ -59,8 +59,9 @@ export async function clientCredentialsToken(
 /** A path-blind cookie jar: the provider scopes its cookies by path, the server never minds receiving extras. */
 class CookieJar {
   private readonly cookies = new Map<string, string>();
+  /** Each initial entry is a `Cookie` header: one pair, or several joined by `; `. */
   constructor(initial: string[] = []) {
-    for (const cookie of initial) this.store(cookie);
+    for (const header of initial) for (const pair of header.split('; ')) this.store(pair);
   }
   store(setCookie: string): void {
     const [pair] = setCookie.split(';');
@@ -90,7 +91,7 @@ type TokenResponse = { status: number; body: Record<string, unknown> };
 /**
  * The authorization request with PKCE as a public client, consenting (accept) through the app's interaction routes with
  * the user's session cookie, up to the redirect back to the client: what an MCP client and the consent page do together.
- * `failure` holds the details answer when it is not 200, or the error the redirect carries.
+ * `failure` holds the details or decision answer when it is not 200, or the error the redirect carries.
  */
 export async function authorizationCode(
   issuer: string,
@@ -132,6 +133,9 @@ export async function authorizationCode(
     body: JSON.stringify({ accept: true }),
   });
   jar.absorb(decision);
+  if (decision.status !== 200) {
+    return { code: null, verifier, consent, failure: { status: decision.status, body: await decision.json() } };
+  }
   const { redirectTo } = (await decision.json()) as { redirectTo: string };
 
   // Resume the authorization request; the provider may hop once more before landing on the client's redirect URI.

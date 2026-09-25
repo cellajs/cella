@@ -6,6 +6,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { appErrorHandler } from '#/lib/error';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
@@ -35,13 +36,14 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
   );
 
   app.get('/oauth/interaction/:uid/details', async (c) => {
-    const { user, details } = await loadInteraction(provider, c);
-    return c.json(details, user ? 200 : 401);
+    const { signedIn, details } = await loadInteraction(provider, c);
+    return c.json(details, signedIn ? 200 : 401);
   });
 
   app.post('/oauth/interaction/:uid/consent', async (c) => {
-    const { user, details, interaction, clientId } = await loadInteraction(provider, c);
-    if (!user) throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+    const { signedIn, details, interaction, clientId } = await loadInteraction(provider, c);
+    if (!signedIn) throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
+    const { user, session } = signedIn;
     const { accept } = (await c.req.json()) as { accept?: boolean };
 
     if (!accept || details.refusal) {
@@ -53,6 +55,9 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
       );
       return c.json({ redirectTo });
     }
+
+    // Granting a client access to the account needs the user present on this session again, never an impersonation.
+    await requireStepUp(session);
 
     const existing = interaction.grantId ? await provider.Grant.find(interaction.grantId) : undefined;
     const grant = existing ?? new provider.Grant({ accountId: user.id, clientId });
@@ -85,7 +90,8 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
 
   const requested = accessScopes.parse(String(interaction.params.scope ?? ''));
 
-  const user = await sessionUser(c);
+  const signedIn = await resolveSession(c).catch(() => null);
+  const user = signedIn?.user ?? null;
   const refusal = user
     ? await grantRefusal({ kind: 'user', userId: user.id, clientId, tenantId: resource.tenantId })
     : null;
@@ -106,14 +112,5 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
     prompt: { name: interaction.prompt.name, reasons: interaction.prompt.reasons },
     refusal,
   };
-  return { user, details, interaction, clientId };
-}
-
-async function sessionUser(c: Context<InteractionEnv>) {
-  try {
-    const { user } = await resolveSession(c);
-    return user;
-  } catch {
-    return null;
-  }
+  return { signedIn, details, interaction, clientId };
 }

@@ -38,6 +38,14 @@
           "name": "relatable",
           "description": "Checks that the requesting user shares at least one organization with the target user"
         },
+        "stepUpGuard": {
+          "name": "stepUp",
+          "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+        },
+        "stepUpOrFactorProofGuard": {
+          "name": "stepUpOrFactorProof",
+          "description": "Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation."
+        },
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
         "tenantGuard": {
           "name": "tenant",

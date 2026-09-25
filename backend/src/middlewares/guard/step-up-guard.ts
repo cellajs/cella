@@ -17,7 +17,7 @@ export const stepUpGuard = xMiddleware(
       'Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation.',
   },
   async (ctx, next) => {
-    await requireStepUp(ctx);
+    await requireStepUp(ctx.var.session);
     await next();
   },
 );
@@ -42,7 +42,8 @@ export const stepUpOrFactorProofGuard = xMiddleware(
       'Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation.',
   },
   async (ctx, next) => {
-    if (ctx.var.session.type === 'impersonation' || !(await carriesFactorProof(ctx))) await requireStepUp(ctx);
+    const { session } = ctx.var;
+    if (session.type === 'impersonation' || !(await carriesFactorProof(ctx))) await requireStepUp(session);
     await next();
   },
 );

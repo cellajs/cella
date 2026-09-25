@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { publicGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { cookieSchema, errorResponseRefs, locationSchema } from '#/schemas';
@@ -11,7 +11,7 @@ const authOAuthRoutes = {
     'x-strategy': 'oauth',
     method: 'post',
     path: '/oauth-connect',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Start connecting a provider',

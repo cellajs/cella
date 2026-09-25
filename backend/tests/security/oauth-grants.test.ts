@@ -16,6 +16,7 @@ import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
@@ -28,7 +29,13 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createSystemAdminUser, createTestOrganization, createTestSession, type ErrorResponse } from '../helpers';
+import {
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestSession,
+  type ErrorResponse,
+  insertTestSession,
+} from '../helpers';
 import {
   authorizationCode,
   authorizationCodeToken,
@@ -562,6 +569,35 @@ describe('OAuth grants', async () => {
         logoUri: APP_LOGO,
         kind: 'registered',
       });
+    });
+
+    it('must not grant consent via a session that has not stepped up or an impersonation', async () => {
+      const ctx = await tenantWithApp();
+      // Signed in longer ago than the step-up window.
+      const stale = await insertTestSession(ctx.member, { ageMs: 60 * 60 * 1000 });
+      // A system admin's impersonation of the member, layered on the admin's own session.
+      const admin = await createSystemAdminUser(`consent-admin-${nanoid(8)}@security-test.com`);
+      const adminSession = await insertTestSession(admin);
+      const impersonating = await insertTestSession(ctx.member, {
+        type: 'impersonation',
+        impersonatorSessionId: adminSession.id,
+      });
+
+      const refused = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
+      expect(refused.code).toBeNull();
+      expect(refused.failure).toMatchObject({ status: 403, body: { type: 'step_up_required' } });
+
+      const asAdmin = await authorizationCode(oauth.issuer, {
+        ...authorization(ctx),
+        sessionCookie: `${adminSession.cookie}; ${impersonating.cookie}`,
+      });
+      expect(asAdmin.failure).toMatchObject({ status: 403, body: { type: 'impersonation_forbidden' } });
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+
+      // Positive control: the same session once stepped up gets its code.
+      await stampStepUp(stale.id, ctx.member.id, 'email');
+      const granted = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
+      expect(granted.code).toBeTruthy();
     });
   });
 });

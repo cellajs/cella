@@ -1,7 +1,5 @@
 import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
@@ -74,15 +72,16 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
 /**
  * Refuses an account-security action on a session that does not stand stepped up. An impersonation is always
  * refused: the admin acts as the user, never on how the user's account is protected.
+ * @returns The step-up state, with the factor that proves the session.
  * @throws AppError 403 `impersonation_forbidden`, or 403 `step_up_required` with what the user can offer in
  *   `meta.methods`.
  */
-export const requireStepUp = async (ctx: Context<Env>) => {
-  const { session } = ctx.var;
+export const requireStepUp = async (session: SessionFacts): Promise<StepUpState> => {
   if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
 
-  const { steppedUp, methods } = await readStepUp(session);
-  if (!steppedUp) throw new AppError(403, 'step_up_required', 'info', { meta: { methods } });
+  const state = await readStepUp(session);
+  if (!state.steppedUp) throw new AppError(403, 'step_up_required', 'info', { meta: { methods: state.methods } });
+  return state;
 };
 
 /**
