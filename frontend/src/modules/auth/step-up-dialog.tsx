@@ -5,12 +5,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getStepUp, type StepUpData, sendStepUpLink, signOut, stepUp } from 'sdk';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
-import { retryAfterStepUp, StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
+import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/modules/user/user-store';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
 /** The page to come back to after an emailed link or a new sign-in. */
@@ -24,7 +23,6 @@ interface StepUpDialogProps {
 /** Asks the user to prove it's them: with a passkey or TOTP they hold, else by an emailed link or a new sign-in. */
 function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
   const { t } = useTranslation();
-  const email = useUserStore((state) => state.user?.email);
   const [view, setView] = useState<'options' | 'totp' | 'linkSent'>('options');
 
   const { mutate: proveFactor, isPending: proving } = useMutation({
@@ -77,7 +75,7 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
   }
 
   if (view === 'linkSent') {
-    return <p className="text-muted-foreground text-sm">{t('c:step_up_link_sent.text', { email })}</p>;
+    return <p className="text-muted-foreground text-sm">{t('c:step_up_link_sent.text')}</p>;
   }
 
   // An impersonation never steps up: the admin acts as the user, not on how the account is protected.
@@ -139,15 +137,3 @@ export const openStepUpDialog = (methods: StepUpMethod[]) =>
       },
     );
   });
-
-/**
- * Runs an account-security action; when the server asks the user to prove it's them first, opens the re-auth dialog
- * and runs the action once more after that. A closed dialog rejects with `StepUpDismissed`.
- */
-export const withStepUp = <T,>(action: () => Promise<T>) => retryAfterStepUp(action, openStepUpDialog);
-
-/** Steps up ahead of an action that starts with a ceremony (a passkey or authenticator setup), so it runs once. */
-export const ensureStepUp = async () => {
-  const { steppedUp, methods } = await getStepUp();
-  if (!steppedUp) await openStepUpDialog(methods);
-};

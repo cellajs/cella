@@ -565,7 +565,7 @@
   "step_up": "Confirm it's you",
   "step_up.text": "For your security, confirm it's you before you change how your account is protected.",
   "step_up_email": "Email me a confirmation link",
-  "step_up_link_sent.text": "We sent a link to {{email}}. Open it in this browser, then this window carries on.",
+  "step_up_link_sent.text": "We sent you a confirmation link. Open it in this browser, then this window carries on.",
   "still_not_accepted": "{{count}} of {{total}} already joined or already have invitations.",
   "stop_impersonation": "Stop impersonation",
   "storage": "Storage",
