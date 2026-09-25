@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { z } from 'zod';
 import type { Env } from '#/core/context';
 import { env } from '#/env';
@@ -28,7 +29,7 @@ const materializeBodySchema = z.object({
 /** Relay-to-backend route persisting a Yjs collab description. Non-OpenAPI, outside the public API, gated by the relay's shared secret. */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-secret');
-  if (!secret || secret !== env.YJS_SECRET) {
+  if (!secret || !safeEqual(secret, env.YJS_SECRET)) {
     log.warn('Yjs materialize auth failed');
     return ctx.json({ error: 'unauthorized' }, 401);
   }

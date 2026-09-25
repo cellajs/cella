@@ -3,6 +3,7 @@ import type { Duplex } from 'node:stream';
 import type { ServerType } from '@hono/node-server';
 import { z } from '@hono/zod-openapi';
 import { isValidEventType } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
@@ -161,7 +162,7 @@ class CdcWebSocketServer {
 
       // Validate shared secret for every environment.
       const secret = request.headers['x-cdc-secret'];
-      if (!env.CDC_SECRET || secret !== env.CDC_SECRET) {
+      if (!env.CDC_SECRET || typeof secret !== 'string' || !safeEqual(secret, env.CDC_SECRET)) {
         log.warn('CDC WebSocket auth failed', {
           ip: request.socket.remoteAddress,
           reason: !env.CDC_SECRET ? 'CDC_SECRET not configured' : 'invalid secret',

@@ -1,7 +1,7 @@
-import { timingSafeEqual } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { baseDb } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
@@ -165,12 +165,6 @@ class InvalidTarget extends Error {
     super('invalid_target');
     this.name = 'InvalidTarget';
   }
-}
-
-function safeEqual(a: string, b: string): boolean {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 export type ProviderContext = KoaContextWithOIDC;
