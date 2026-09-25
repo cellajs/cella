@@ -35,10 +35,17 @@ async function openPoolSession(): Promise<LockSession> {
   const pool = baseDb.$client;
   if (!isPool(pool)) throw new Error('job ownership needs the runtime pg pool');
   const client = await pool.connect();
+  const listeners: ((error: Error) => void)[] = [];
+  // Attached before the first query: a checked-out client has no error listener, and an unhandled one ends the process.
+  client.on('error', (error) => {
+    for (const listener of listeners) listener(error);
+  });
   return {
     query: (text, values) => client.query(text, values),
     close: () => client.release(true),
-    onError: (listener) => client.on('error', listener),
+    onError: (listener) => {
+      listeners.push(listener);
+    },
   };
 }
 
