@@ -7,9 +7,15 @@ import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createExpiredToken, createSignedToken, deferred } from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
-const verifyGate = { delayMs: 0, allowed: true };
+// `hold` keeps a verification pending until the test releases it.
+const verifyGate: { delayMs: number; allowed: boolean; hold: Promise<void> | null } = {
+  delayMs: 0,
+  allowed: true,
+  hold: null,
+};
 vi.mock('../data/permissions', () => ({
   authorizeDoc: vi.fn(async (_userId: string, requested: unknown) => {
+    if (verifyGate.hold) await verifyGate.hold;
     if (verifyGate.delayMs) await new Promise((resolve) => setTimeout(resolve, verifyGate.delayMs));
     return verifyGate.allowed ? requested : null;
   }),
@@ -295,15 +301,24 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 
 describe('setupConnectionHandler: per-socket ordering', () => {
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  /** Frames the server's sockets received, counted apart from the handler, so a test knows they arrived. */
+  let framesReceived = 0;
+
+  beforeAll(() => {
+    wss.on('connection', (ws) => ws.on('message', () => framesReceived++));
+  });
 
   afterEach(() => {
     applied.length = 0;
     verifyGate.delayMs = 0;
     verifyGate.allowed = true;
+    verifyGate.hold = null;
   });
 
   it('sync frames sent before verification wait for it and then apply in arrival order, one at a time', async () => {
-    verifyGate.delayMs = 60;
+    const verification = deferred();
+    verifyGate.hold = verification.promise;
+    const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-order' });
     const ws = new WsWebSocket(`${baseUrl}/entity-order?token=${token}&entityType=task&tenantId=tenant-1`);
     await new Promise<void>((resolve) => ws.on('open', () => resolve()));
@@ -313,11 +328,12 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     ws.send(new Uint8Array([0, 2, 2]));
     ws.send(new Uint8Array([1, 0, 9]));
     ws.send(new Uint8Array([0, 2, 3]));
-    await wait(40);
+    await until(() => framesReceived === before + 4);
     // Nothing ran before verification: sync frames are held, and so is the presence frame.
     expect(applied).toEqual([]);
 
-    await wait(150);
+    verification.release();
+    await until(() => applied.length === 4);
     // The join relays the held presence first, then the queue applies the sync frames.
     expect(applied).toEqual([
       { type: 1, verified: true, body: 9 },
@@ -328,20 +344,24 @@ describe('setupConnectionHandler: per-socket ordering', () => {
 
     // Presence from the joined socket goes through.
     ws.send(new Uint8Array([1, 0, 8]));
-    await wait(30);
+    await until(() => applied.length === 5);
     expect(applied.at(-1)).toEqual({ type: 1, verified: true, body: 8 });
     ws.close();
   });
 
   it('denied verification closes the socket and never applies the queued sync frames', async () => {
-    verifyGate.delayMs = 30;
+    const verification = deferred();
+    verifyGate.hold = verification.promise;
     verifyGate.allowed = false;
+    const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-denied' });
     const ws = new WsWebSocket(`${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`);
     const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
     await new Promise<void>((resolve) => ws.on('open', () => resolve()));
     ws.send(new Uint8Array([0, 2, 5]));
+    await until(() => framesReceived === before + 1);
 
+    verification.release();
     expect(await closed).toBe(4003);
     await wait(60);
     expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
