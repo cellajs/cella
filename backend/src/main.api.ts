@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server';
 import { sql } from 'drizzle-orm';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
@@ -9,9 +8,9 @@ import { registerOpenApiDocs } from '#/core/openapi-registration';
 import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
-import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { startJobOwnership } from '#/lib/job-ownership';
+import { serveApi, serveInternal } from '#/lib/listeners';
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
@@ -24,6 +23,7 @@ otel.start();
 otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
+let internalListener: ReturnType<typeof serveInternal> | undefined;
 const stopJobs: (() => void)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -70,21 +70,15 @@ const main = async () => {
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stopJobs.push(startGeoipRefresh());
 
-  server = serve(
+  // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
+  internalListener = serveInternal({ port: Number(env.INTERNAL_PORT) });
+
+  server = serveApi(
     {
       fetch: app.fetch,
-      hostname: '0.0.0.0',
       port,
-      serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 },
     },
     async () => {
-      if (server && 'headersTimeout' in server) {
-        server.headersTimeout = 60_000;
-        server.requestTimeout = 30_000;
-      }
-
-      cdcWebSocketServer.attachToServer(server!);
-
       // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
       if (appConfig.singleVM) {
         if (appConfig.services.cdc.enabled) {
@@ -133,7 +127,7 @@ setupGracefulShutdown({
     if (server) {
       server.close();
     }
-    cdcWebSocketServer.close();
+    internalListener?.close();
     await otel.shutdown();
   },
   log: (msg) => process.stderr.write(`[api] ${msg}\n`),

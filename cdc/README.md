@@ -25,7 +25,7 @@ persist activities → update sequences and counters → notify API
 acknowledge the highest processed LSN
 ```
 
-The API receives the messages on `/internal/cdc`, publishes them to its ActivityBus, and fans them out over SSE. Clients order by `seq`, not arrival.
+The API receives the messages on `/internal/cdc` of its internal listener, publishes them to its ActivityBus, and fans them out over SSE. Clients order by `seq`, not arrival.
 
 ## Normal event flow
 
@@ -53,7 +53,7 @@ Each group reserves a contiguous per-organization range from `channel_counters.c
 
 ## Internal API channel
 
-One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: isolated internal path, `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, one connection at a time (a new one replaces the old), 90-second idle timeout.
+One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: served only on the backend's internal listener (`INTERNAL_PORT`, which the infra routes from the private network alone; the public listener answers 404), `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, one connection at a time (a new one replaces the old), 90-second idle timeout.
 
 Data messages carry the activity, compacted row data, the previous location of reparented rows, permission-relevant batch rows, and trace context. The type check in `src/tests/wire-contract.type-check.ts` pins the outbound type to the backend's `CdcMessage` schema. Control messages (`health`, `catchup_complete`) bypass that schema.
 
@@ -90,7 +90,7 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | --- | --- |
 | `DATABASE_CDC_URL` | Replication and write connection. The role needs `REPLICATION`. |
 | `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production |
-| `API_WS_URL` | Backend WebSocket endpoint |
+| `API_WS_URL` | The backend internal listener's `/internal/cdc` endpoint, default port `devPorts.internal` |
 | `CDC_SECRET` | Internal-channel shared secret, minimum 16 characters |
 | `CDC_HEALTH_PORT` | Health server port, default 4001 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |

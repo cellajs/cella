@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import type { DocContext } from '../constants';
 import { env } from '../env';
 import { yUpdateToBlocks } from '../lib/blocknote-seed';
@@ -18,16 +17,16 @@ export type MaterializeResult = 'ok' | 'permanent' | 'retry';
 /** Refusals a later attempt can overcome, so they never count as permanent. */
 const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
 
-/** POST blocks JSON to the backend's secret-gated materialize endpoint. */
+/** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret. */
 export async function postMaterialize(
   ctx: DocContext,
   editedBy: string,
   description: string,
 ): Promise<MaterializeResult> {
   try {
-    const res = await fetch(`${appConfig.backendUrl}/yjs/materialize`, {
+    const res = await fetch(`${env.BACKEND_INTERNAL_URL}/internal/yjs/materialize`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-yjs-secret': env.YJS_SECRET },
+      headers: { 'content-type': 'application/json', 'x-yjs-relay-secret': env.YJS_RELAY_SECRET },
       body: JSON.stringify({
         entityType: ctx.entityType,
         entityId: ctx.entityId,

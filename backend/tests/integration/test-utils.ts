@@ -1,4 +1,4 @@
-import { createServer, type Server } from 'node:http';
+import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -7,7 +7,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { testDatabaseUrl } from 'shared/test-db';
 import { baseDb as db, type PgDB } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
-import { cdcWebSocketServer } from '#/lib/cdc-websocket';
+import { serveInternal } from '#/lib/listeners';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -77,17 +77,12 @@ export async function waitFor(
   throw new Error(`Timeout waiting for: ${label}`);
 }
 
-/** Host the real `/internal/cdc` endpoint on an ephemeral local port for the CDC worker to dial. */
+/** Host the real internal listener on an ephemeral local port for the CDC worker to dial. */
 async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promise<void> }> {
-  const server = createServer((_req, res) => {
-    res.writeHead(404);
-    res.end();
-  });
-  cdcWebSocketServer.attachToServer(server as unknown as Server);
+  const listener = serveInternal({ port: 0, hostname: '127.0.0.1' });
+  await once(listener.server, 'listening');
 
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-
-  const address = server.address() as AddressInfo | null;
+  const address = listener.server.address() as AddressInfo | null;
   if (!address) {
     throw new Error('Failed to determine test CDC WebSocket server address');
   }
@@ -95,8 +90,9 @@ async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promi
   return {
     url: `ws://127.0.0.1:${address.port}/internal/cdc`,
     async close() {
-      cdcWebSocketServer.close();
-      await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+      const closed = once(listener.server, 'close');
+      listener.close();
+      await closed;
     },
   };
 }

@@ -26,6 +26,7 @@ export default defineProject({
     env: {
       NODE_ENV: 'test',
       YJS_SECRET: 'test-yjs-secret-for-unit-tests',
+      YJS_RELAY_SECRET: 'test-yjs-relay-secret-for-unit-tests',
       // The relay connects as the RLS-subject runtime role in production; integration tests do the same.
       DATABASE_URL: testRuntimeDatabaseUrl,
       YJS_PORT: '0',

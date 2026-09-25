@@ -34,6 +34,8 @@ export const env = createEnv({
       z.literal('test'),
     ]),
     PORT: z.string().default(String(appConfig.devPorts.api)),
+    // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
+    INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
     UNSUBSCRIBE_SECRET: z.string(),
 
     // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
@@ -82,6 +84,8 @@ export const env = createEnv({
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
     YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
+    // Authenticates the Yjs relay on the internal listener's materialize route; it never signs a token.
+    YJS_RELAY_SECRET: z.string().min(16, 'YJS_RELAY_SECRET must be at least 16 characters'),
     CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
     PII_HASH_SECRET: z.string().min(16, 'PII_HASH_SECRET must be at least 16 characters'),
     DATA_ENCRYPTION_KEY: z.string().min(32, 'DATA_ENCRYPTION_KEY must be at least 32 characters'),

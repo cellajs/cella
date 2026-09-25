@@ -150,7 +150,8 @@ export const config = {
    * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
    * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy.
    * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
-   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins.
+   * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
+   * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
    */
   devPorts: {
     frontend: 3000,
@@ -159,6 +160,7 @@ export const config = {
     yjs: 4002,
     mcp: 4003,
     oauth: 4004,
+    internal: 4005,
   },
 
   has: {

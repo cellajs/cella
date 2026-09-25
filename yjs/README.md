@@ -71,7 +71,7 @@ A client's Step1 is answered with the diff of the merged document, followed by t
 
 Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content.
 
-Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/yjs/materialize` on behalf of the last editor in the window, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
+Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener on behalf of the last editor in the window, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
 
 | Result | Behavior |
 | --- | --- |
@@ -121,11 +121,13 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | --- | --- |
 | `DATABASE_URL` | RLS-scoped reads, log appends and compaction writes |
 | `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production unless `NODB` |
-| `YJS_SECRET` | HMAC and internal materialization secret, minimum 16 characters |
+| `YJS_SECRET` | HMAC secret the editor tokens are verified with, minimum 16 characters |
+| `YJS_RELAY_SECRET` | Authenticates the relay on the backend's materialize route, minimum 16 characters |
+| `BACKEND_INTERNAL_URL` | The backend's internal listener, default port `devPorts.internal` |
 | `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |
 | `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 20 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
 | `NODB` | In-memory connection limiter and no TLS CA requirement. Database reads still open lazily. |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
 
-The backend counterpart in `backend/src/modules/yjs/` issues tokens, exposes `/yjs/materialize`, sanitizes media URLs, and indexes the materializers modules register.
+The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves `/internal/yjs/materialize` on the internal listener only (the public API has no path to it), sanitizes media URLs, and indexes the materializers modules register.

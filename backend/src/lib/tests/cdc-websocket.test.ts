@@ -74,7 +74,7 @@ describe('CDC upgrade path', () => {
     }
   });
 
-  it('must not reach the CDC endpoint via a dot-segment path through the public /api route', async () => {
+  it('must not reach the CDC endpoint via a dot-segment path', async () => {
     for (const target of ['/api/%2e%2e/internal/cdc', '/api/../internal/cdc', '/internal/./cdc']) {
       expect(await upgradeStatus(target), target).toBe(404);
     }

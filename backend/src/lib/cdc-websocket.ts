@@ -96,7 +96,7 @@ const cdcPath = '/internal/cdc';
 /**
  * Whether an upgrade targets the CDC endpoint, by its raw request target up to the query string. A
  * WHATWG-normalized pathname would also match `/api/../internal/cdc` and `/api/%2e%2e/internal/cdc`,
- * which the public load balancer routes to this server under `/api`.
+ * so a prefix-routing proxy in front of the listener could alias another route to the socket.
  */
 export function isCdcUpgradePath(rawUrl: string | undefined): boolean {
   if (!rawUrl) return false;
@@ -148,7 +148,7 @@ class CdcWebSocketServer {
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
   private _lastLagAlert: CdcLagAlert | null = null;
 
-  /** Attach to an existing HTTP server and authenticate upgrade requests to /internal/cdc. */
+  /** Attach to the internal listener's HTTP server and authenticate upgrade requests to /internal/cdc. */
   attachToServer(server: ServerType): void {
     this.wss = new WebSocketServer({ noServer: true });
 
