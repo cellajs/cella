@@ -139,8 +139,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
       '/internal/yjs/materialize',
       '/api/internal/yjs/materialize',
       '/api/%2e%2e/internal/yjs/materialize',
-      '/yjs/materialize',
-      '/api/yjs/materialize',
     ]) {
       const { status, type } = await post(publicPort, target, materializeBody('via the public listener'), {
         'x-yjs-relay-secret': modeSecret('YJS_RELAY_SECRET'),
@@ -148,6 +146,20 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
       });
       expect(status, target).toBe(404);
       expect(type, target).toBe('route_not_found');
+    }
+    expect((await attachment.read())?.description).toBe(original);
+  });
+
+  it('must not let a relay from before the internal listener fold edits away via the old public path', async () => {
+    // That relay treats a 4xx as permanent and compacts its log without a write; 503 makes it keep the log and retry.
+    for (const target of ['/yjs/materialize', '/api/yjs/materialize']) {
+      const { status } = await post(
+        publicPort,
+        target,
+        { ...materializeBody('via the old public path'), editedBy: owner.user.id },
+        { 'x-yjs-secret': modeSecret('YJS_RELAY_SECRET') },
+      );
+      expect(status, target).toBe(503);
     }
     expect((await attachment.read())?.description).toBe(original);
   });
