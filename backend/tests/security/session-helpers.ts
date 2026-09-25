@@ -144,6 +144,39 @@ export async function openStream(userId: string, session: TestSession): Promise<
   return stream;
 }
 
+export interface UnreadStream {
+  sessionId: string;
+  /** Whether the server ended the response within `ms`: the one event it buffered comes out, then the end. */
+  endsWithin: (ms: number) => Promise<boolean>;
+}
+
+/**
+ * Opens the app stream as a client that stopped reading: the server's first event is buffered, and every later write
+ * waits for a reader that never comes, as it does once a real client's socket buffers are full.
+ */
+export async function openUnreadStream(userId: string, session: TestSession): Promise<UnreadStream> {
+  const { baseApp } = await import('#/routes');
+  const response = await baseApp.request('http://localhost/entities/app/stream', { headers: session.headers });
+  expect(response.status).toBe(200);
+  const body = response.body as ReadableStream<Uint8Array>;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+
+  const cancel = () => (reader ? reader.cancel() : body.cancel()).catch(() => {});
+  openStreams.push({ sessionId: session.id, events: [], ended: () => false, cancel });
+  await vi.waitFor(() => expect(subscribersOf(userId).some((s) => s.sessionId === session.id)).toBe(true));
+
+  const endsWithin = async (ms: number) => {
+    reader ??= body.getReader();
+    const draining = reader;
+    const drained = (async () => {
+      while (!(await draining.read()).done);
+      return true;
+    })();
+    return Promise.race([drained, new Promise<boolean>((resolve) => setTimeout(() => resolve(false), ms))]);
+  };
+  return { sessionId: session.id, endsWithin };
+}
+
 /** Ends every stream a test opened, from the client side; call in `afterEach`. */
 export const cancelOpenStreams = () => Promise.all(openStreams.splice(0).map((stream) => stream.cancel()));
 
@@ -158,4 +191,10 @@ export async function expectClosedWith(stream: OpenStream, code: string) {
 export function expectStillOpen(userId: string, stream: OpenStream) {
   expect(stream.events.filter((e) => e.event === 'error')).toEqual([]);
   expect(subscribersOf(userId).some((s) => s.sessionId === stream.sessionId)).toBe(true);
+}
+
+/** The server let go of a stream its client stopped reading: unregistered, and the response ended. */
+export async function expectReleased(userId: string, stream: UnreadStream) {
+  await vi.waitFor(() => expect(subscribersOf(userId).some((s) => s.sessionId === stream.sessionId)).toBe(false));
+  expect(await stream.endsWithin(3000)).toBe(true);
 }

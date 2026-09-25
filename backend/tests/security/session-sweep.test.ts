@@ -10,10 +10,12 @@ import { clearSecurityTestData } from './helpers';
 import {
   cancelOpenStreams,
   expectClosedWith,
+  expectReleased,
   expectStillOpen,
   insertImpersonation,
   insertSession,
   openStream,
+  openUnreadStream,
 } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -111,6 +113,34 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     // The session still holds, so the client reconnects and the stream is rebuilt without system-admin reads.
     await expectClosedWith(demotedStream, 'access_changed');
     expectStillOpen(admin.id, adminStream);
+  });
+
+  it('must not stall the sweep of every stream via a client that stopped reading', async () => {
+    const [stalled, other] = [
+      await createTestUser('stalled@security-test.com'),
+      await createTestUser('other@security-test.com'),
+    ];
+    const [stalledSession, otherSession] = [await insertSession(stalled), await insertSession(other)];
+    // Opened first, so the sweep meets it first.
+    const stalledStream = await openUnreadStream(stalled.id, stalledSession);
+    const otherStream = await openStream(other.id, otherSession);
+
+    const revokedAt = new Date().toISOString();
+    await stamp(stalledSession.id, { revokedAt, revocationReason: 'other_session' });
+    await stamp(otherSession.id, { revokedAt, revocationReason: 'other_session' });
+
+    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+
+    await expectClosedWith(otherStream, 'unauthorized');
+    await expectReleased(stalled.id, stalledStream);
+
+    // Later sweeps still run: a session revoked after the stalled close is swept on the next tick.
+    const late = await insertSession(other);
+    const lateStream = await openStream(other.id, late);
+    await stamp(late.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    await expectClosedWith(lateStream, 'unauthorized');
   });
 
   it('must not keep streaming to an impersonation via its open stream once its admin lost the session or the role', async () => {

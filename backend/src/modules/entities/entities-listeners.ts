@@ -6,7 +6,7 @@ import {
   dispatchMoveOuts,
   dispatchToAppStream,
 } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStream, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 import { streamSubscriberManager } from './stream';
@@ -30,14 +30,12 @@ for (const entityType of appConfig.productEntityTypes) {
 
 // Closes the streams bound to ended sessions, each with the code that tells the client whether to reconnect.
 authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
-  const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
   const payload = streamErrorForEnding(reason);
-  for (const subscriber of subscribers) {
-    if (sessionIds !== 'all' && !sessionIds.includes(subscriber.sessionId)) continue;
-    await closeAppStream(subscriber, payload).catch((error) => {
-      log.error('Failed to close the stream of an ended session', { error, subscriberId: subscriber.id });
-    });
-  }
+  const ended = streamSubscriberManager
+    .getByChannel<AppStreamSubscriber>(`user:${userId}`)
+    .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
+    .map((subscriber) => ({ subscriber, payload }));
+  await closeAppStreams(ended, 'Failed to close the stream of an ended session');
 });
 
 for (const action of ['created', 'updated', 'deleted'] as const) {

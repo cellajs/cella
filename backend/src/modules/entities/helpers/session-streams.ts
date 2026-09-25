@@ -6,6 +6,7 @@ import { type StreamErrorPayload, streamSubscriberManager, writeError } from '#/
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
+import { withinTimeout } from '#/utils/within-timeout';
 
 /** Endings after which the browser holds a newer session: a sign-in replaced it, or the admin's own one returns. */
 const endingsWithSuccessor = new Set<SessionEndReason>(['replaced', 'impersonation_stopped']);
@@ -16,13 +17,32 @@ export const streamErrorForEnding = (reason: SessionEndReason): StreamErrorPaylo
     ? { code: 'session_replaced', message: 'Session replaced' }
     : { code: 'unauthorized', message: 'Session revoked' };
 
-/** Tells the client why its stream ends, then ends it; without this the stream stays live until the client leaves. */
-export async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {
+/** How long a close waits for the client to take its error event. */
+const ERROR_WRITE_TIMEOUT_MS = 1000;
+
+/**
+ * Tells the client why its stream ends, then ends it; without this the stream stays live until the client leaves. A
+ * client that stopped reading never takes the error, so the close waits for it at most a second.
+ */
+async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {
   streamSubscriberManager.unregister(subscriber.id);
-  await writeError(subscriber.stream, payload);
-  // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
+  await withinTimeout(writeError(subscriber.stream, payload), ERROR_WRITE_TIMEOUT_MS);
+  // Abort runs the handler's onAbort cleanup, ends the response body and releases a write still waiting for the
+  // client; close lets keepAlive return.
   subscriber.stream.abort();
   await subscriber.stream.close();
+}
+
+/** Closes streams side by side, so a client that stopped reading holds up none of the others. */
+export async function closeAppStreams(
+  closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[],
+  failure: string,
+): Promise<void> {
+  await Promise.allSettled(
+    closings.map(({ subscriber, payload }) =>
+      closeAppStream(subscriber, payload).catch((error) => log.error(failure, { error, subscriberId: subscriber.id })),
+    ),
+  );
 }
 
 /** How often the sweep re-checks the session behind every open stream. */
@@ -107,17 +127,15 @@ export async function sweepAppStreamSessions(): Promise<number> {
   const sessionsById = new Map([...sessions, ...impersonators].map(({ id, ...state }) => [id, state]));
   const systemAdmins = new Set(admins.map(({ userId }) => userId));
 
-  let closed = 0;
-  for (const subscriber of subscribers) {
-    const error = staleStreamError(subscriber, sessionsById, systemAdmins);
-    if (!error) continue;
-    await closeAppStream(subscriber, error).catch((err) => {
-      log.error('Failed to close a stale stream', { err, subscriberId: subscriber.id });
-    });
-    closed++;
-  }
-  if (closed > 0) log.info('Closed streams whose session no longer holds', { closed });
-  return closed;
+  const stale = subscribers.flatMap((subscriber) => {
+    const payload = staleStreamError(subscriber, sessionsById, systemAdmins);
+    return payload ? [{ subscriber, payload }] : [];
+  });
+  if (stale.length === 0) return 0;
+
+  await closeAppStreams(stale, 'Failed to close a stale stream');
+  log.info('Closed streams whose session no longer holds', { closed: stale.length });
+  return stale.length;
 }
 
 /** Starts the sweep with the first open stream; it stops once no stream is open. Idempotent. */

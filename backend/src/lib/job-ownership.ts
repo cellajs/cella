@@ -2,6 +2,7 @@ import type pg from 'pg';
 import { baseDb } from '#/db/db';
 import type { BackendJob } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
+import { withinTimeout } from '#/utils/within-timeout';
 
 /** Names the session-level advisory lock the job owner holds (`hashtext` of it); advisory locks are per database. */
 const lockName = 'backend-jobs';
@@ -47,21 +48,6 @@ async function openPoolSession(): Promise<LockSession> {
       listeners.push(listener);
     },
   };
-}
-
-/** Resolves false once `ms` passes first. */
-async function withinTimeout(check: Promise<unknown>, ms: number): Promise<boolean> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<boolean>((resolve) => {
-    timer = setTimeout(() => resolve(false), ms);
-  });
-  try {
-    return await Promise.race([check.then(() => true), timeout]);
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 interface JobOwnershipOptions {

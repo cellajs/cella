@@ -35,10 +35,12 @@ import {
   asSession,
   cancelOpenStreams,
   expectClosedWith,
+  expectReleased,
   expectStillOpen,
   impersonationSetBy,
   insertSession,
   openStream,
+  openUnreadStream,
   sessionRow,
   sessionSetBy,
   type TestSession,
@@ -109,6 +111,25 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     expectStillOpen(user.id, currentStream);
     await warm(current);
+  });
+
+  it("must not keep an ended session's stream live via another stream of the user that stopped reading", async () => {
+    const user = await createTestUser('stalled-sibling@security-test.com');
+    const [current, stalled, other] = [await insertSession(user), await insertSession(user), await insertSession(user)];
+    // Opened first, so the ending meets it first.
+    const stalledStream = await openUnreadStream(user.id, stalled);
+    const otherStream = await openStream(user.id, other);
+    const currentStream = await openStream(user.id, current);
+
+    const { response } = await call(revokeMySessions, {
+      body: { ids: [stalled.id, other.id] },
+      headers: current.headers,
+    });
+    expect(response.status).toBe(200);
+
+    await expectClosedWith(otherStream, 'unauthorized');
+    await expectReleased(user.id, stalledStream);
+    expectStillOpen(user.id, currentStream);
   });
 
   it('must not keep pre-MFA sessions live via their open streams or the auth cache once MFA is on', async () => {
