@@ -184,6 +184,7 @@
   "email.digest_line.default": "New activity on <strong>{{title}}</strong>",
   "email.digest_line.mention": "You were mentioned in <strong>{{title}}</strong>",
   "email.digest_line.reply": "New reply on <strong>{{title}}</strong>",
+  "email.digest_overflow": "and {{count}} more",
   "email.mention.button": "View",
   "email.mention.in": "In {{channelName}}",
   "email.mention.preview": "{{actorName}} mentioned you",

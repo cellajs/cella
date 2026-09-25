@@ -79,12 +79,18 @@ export function describeDigestRow(type: string, contextTitle: string, lng: strin
   return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-' });
 }
 
-/** Digest sections as HTML with every user-derived fragment escaped: the digest mail's declared HTML param. */
-export function renderSectionsHtml(sections: DigestSection[]): string {
+/**
+ * Digest sections as HTML with every user-derived fragment escaped: the digest mail's declared HTML param.
+ * @param sections - The sections `buildDigestForUser` assembled.
+ * @param lng - Recipient language, for the line that counts the rows left out.
+ * @returns The sections, safe to place in the digest mail.
+ */
+export function renderSectionsHtml(sections: DigestSection[], lng: string): string {
   return sections
     .map((section) => {
       const items = section.lines.map((line) => `<li>${line}</li>`).join('');
-      const more = section.overflow > 0 ? `<li>and ${section.overflow} more</li>` : '';
+      const more =
+        section.overflow > 0 ? `<li>${i18n.t('c:email.digest_overflow', { lng, count: section.overflow })}</li>` : '';
       return `<h3>${escapeString(section.channelName)}</h3><ul>${items}${more}</ul>`;
     })
     .join('');

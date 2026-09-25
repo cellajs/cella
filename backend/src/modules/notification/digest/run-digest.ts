@@ -66,7 +66,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
         {
           email: recipient.email,
           lng: recipient.language,
-          sectionsHtml: renderSectionsHtml(content.sections),
+          sectionsHtml: renderSectionsHtml(content.sections, recipient.language),
           unsubscribeLink: buildUnsubscribeLink(recipient.userId, 'digest'),
         },
       ]);

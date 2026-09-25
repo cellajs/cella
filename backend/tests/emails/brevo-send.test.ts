@@ -149,9 +149,10 @@ describe('Mails as Brevo fills them', () => {
   });
 
   it('must not run user text in a digest section as markup or Brevo syntax', async () => {
-    const sectionsHtml = renderSectionsHtml([
-      { channelId: 'c1', channelName: hostile, lines: [describeDigestRow('comment', hostile, 'en')], overflow: 0 },
-    ]);
+    const sectionsHtml = renderSectionsHtml(
+      [{ channelId: 'c1', channelName: hostile, lines: [describeDigestRow('comment', hostile, 'en')], overflow: 0 }],
+      'en',
+    );
     const { params, html } = await send(
       digestEmail,
       { daily: true },
@@ -166,14 +167,17 @@ describe('Mails as Brevo fills them', () => {
   });
 
   it('renders a digest section as HTML (positive control)', async () => {
-    const sectionsHtml = renderSectionsHtml([
-      {
-        channelId: 'c1',
-        channelName: 'Design 101',
-        lines: [describeDigestRow('comment', 'Roadmap', 'en')],
-        overflow: 2,
-      },
-    ]);
+    const sectionsHtml = renderSectionsHtml(
+      [
+        {
+          channelId: 'c1',
+          channelName: 'Design 101',
+          lines: [describeDigestRow('comment', 'Roadmap', 'en')],
+          overflow: 2,
+        },
+      ],
+      'en',
+    );
     const { html } = await send(
       digestEmail,
       { daily: false },
