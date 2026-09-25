@@ -2,7 +2,7 @@ import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailTe
 import { Link } from '../components/primitives';
 import { i18n } from '../i18n';
 import { newsletterContentStyles, smallTextStyle } from '../styles';
-import { defineEmailTemplate, type EmailRecipient } from '../types';
+import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface NewsletterStatic {
   content: string;
@@ -13,10 +13,10 @@ interface NewsletterStatic {
 type NewsletterRecipient = EmailRecipient & { unsubscribeLink: string; orgName: string };
 
 export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterRecipient>()({
-  translate(lng, { content, subject, testEmail }) {
+  translate(lng, { content, subject, testEmail }, param = plainParam) {
     return {
       subject,
-      headerHtml: i18n.t('backend:email.newsletter.title', { orgName: '{{params.orgName}}', lng }),
+      headerHtml: i18n.t('backend:email.newsletter.title', { orgName: param('orgName'), lng }),
       unsubscribeText: i18n.t('backend:email.unsubscribe', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       content,

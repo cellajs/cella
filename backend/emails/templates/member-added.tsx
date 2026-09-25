@@ -13,7 +13,7 @@ import {
 import { Column, Row } from '../components/primitives';
 import { i18n, plainText } from '../i18n';
 import { avatarRowStyle, greetingStyle } from '../styles';
-import { defineEmailTemplate, type EmailRecipient } from '../types';
+import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface MemberAddedStatic {
   senderName: string;
@@ -27,12 +27,12 @@ type MemberAddedRecipient = EmailRecipient & { name: string; entityLink: string 
 const appName = appConfig.name;
 
 export const memberAddedEmail = defineEmailTemplate<MemberAddedStatic, MemberAddedRecipient>()({
-  translate(lng, { senderName, senderThumbnailUrl, entityName, role }) {
+  translate(lng, { senderName, senderThumbnailUrl, entityName, role }, param = plainParam) {
     return {
       subject: i18n.t('backend:email.member_added.subject', { lng, entityName, ...plainText }),
       previewText: i18n.t('backend:email.member_added.preview', { lng, entityName, appName, ...plainText }),
       headerHtml: i18n.t('backend:email.member_added.title', { lng, entityName }),
-      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}', ...plainText }),
+      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       bodyHtml: i18n.t('backend:email.member_added.text', { lng, entityName, appName, senderName, role }),
       buttonText: i18n.t('c:view', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),

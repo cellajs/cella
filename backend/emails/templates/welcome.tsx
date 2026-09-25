@@ -4,7 +4,7 @@ import { EmailAvatar, EmailBody, EmailContainer, EmailFooter, EmailLogo, EmailTe
 import { Column, Link, Row } from '../components/primitives';
 import { i18n, plainText } from '../i18n';
 import { avatarRowStyle, greetingStyle, smallTextStyle } from '../styles';
-import { defineEmailTemplate, type EmailRecipient } from '../types';
+import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 type WelcomeRecipient = EmailRecipient & { name: string };
 
@@ -17,11 +17,11 @@ const { welcomeEmail } = welcomeConfig;
 
 /** The marketing copy is app-specific, in `json/text-blocks.json` under `welcomeEmail`. */
 export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, WelcomeRecipient>()({
-  translate(lng) {
+  translate(lng, _statics, param = plainParam) {
     return {
       subject: withAppName(welcomeEmail.subject),
       previewText: withAppName(welcomeEmail.subject),
-      hiText: i18n.t('backend:email.hi', { lng, name: '{{params.name}}', ...plainText }),
+      hiText: i18n.t('backend:email.hi', { lng, name: param('name'), ...plainText }),
       intro: welcomeEmail.intro.map(withAppName),
       stepsHeading: withAppName(welcomeEmail.stepsHeading),
       steps: welcomeEmail.steps,

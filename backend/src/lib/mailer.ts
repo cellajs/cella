@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { appConfig } from 'shared';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
@@ -97,13 +98,16 @@ type Mailer = {
     html: string,
     versions: { to: { email: string }[]; params: Record<string, unknown> }[],
     replyTo?: string,
-    /** The rendered template's declared HTML params (`HtmlParams`). */
+    /** The rendered template's declared HTML params (`HtmlParams`), keyed as the versions' params are. */
     htmlParams?: Partial<Record<string, SafeHtmlPolicy>>,
   ): Promise<void>;
 };
 
 export const mailer: Mailer = {
-  /** Renders once per language group with Brevo placeholders (`brevoPlaceholder`), then sends in batches of 99. */
+  /**
+   * Renders once per language group with Brevo placeholders (`brevoPlaceholder`) whose keys carry a nonce drawn for the
+   * send, then sends in batches of 99.
+   */
   async prepareEmails<TStatic, TRecipient extends EmailRecipient>(
     template: EmailTemplateDef<TStatic, TRecipient>,
     staticProps: TStatic,
@@ -119,20 +123,28 @@ export const mailer: Mailer = {
       byLng.set(r.lng, group);
     }
 
-    const htmlParams: Partial<Record<string, SafeHtmlPolicy>> = { ...template.htmlParams };
-
     for (const [lng, lngRecipients] of byLng) {
+      // Every param key carries a nonce drawn for this send, so text a user typed into the mail can never name one:
+      // only the mailer's own placeholders survive `neutralizeBrevoTags`.
+      const nonce = randomBytes(8).toString('hex');
+      const paramKey = (key: string) => `${key}_${nonce}`;
+      const declaredHtmlParams: Partial<Record<string, SafeHtmlPolicy>> = { ...template.htmlParams };
+      const htmlParams: Partial<Record<string, SafeHtmlPolicy>> = {};
+      for (const [key, policy] of Object.entries(declaredHtmlParams)) htmlParams[paramKey(key)] = policy;
+
       // Translate once per language
-      const translated = template.translate(lng, staticProps);
+      const translated = template.translate(lng, staticProps, (key) =>
+        brevoPlaceholder(paramKey(String(key)), htmlParams),
+      );
       const { subject, ...componentProps } = translated;
 
       // Determine per-recipient keys (everything beyond email/lng)
       const recipientKeys = Object.keys(lngRecipients[0]).filter((k) => k !== 'email' && k !== 'lng');
 
-      // Build placeholder values for rendering: { name: '{{params.name}}', inviteLink: '{{params.inviteLink}}' }
+      // Placeholder values for rendering: { name: '{{params.name_<nonce>}}', ... }
       const placeholderProps: Record<string, string> = {};
       for (const k of recipientKeys) {
-        placeholderProps[k] = brevoPlaceholder(k, htmlParams);
+        placeholderProps[k] = brevoPlaceholder(paramKey(k), htmlParams);
       }
 
       const html = await render(template.component({ ...componentProps, ...placeholderProps }));
@@ -143,10 +155,10 @@ export const mailer: Mailer = {
         const versions = batch.map((recipient) => {
           const params: Record<string, unknown> = {};
           for (const k of recipientKeys) {
-            params[k] = (recipient as Record<string, unknown>)[k];
+            params[paramKey(k)] = (recipient as Record<string, unknown>)[k];
           }
-          // Include email in params so templates can reference {{params.email}}
-          params.email = recipient.email;
+          // The recipient's address, which a template names through `param('email')`
+          params[paramKey('email')] = recipient.email;
           return { to: [{ email: env.SEND_ALL_TO_EMAIL || recipient.email }], params };
         });
 

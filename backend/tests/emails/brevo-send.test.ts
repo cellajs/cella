@@ -7,6 +7,8 @@ import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html
 import type { SafeHtmlPolicy } from '../../emails/components/safe-html';
 import { emailPreviewFixtures } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
+import { oauthVerificationEmail } from '../../emails/templates/oauth-verification';
+import { systemInviteEmail } from '../../emails/templates/system-invite';
 import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '../../emails/types';
 
 type SentBody = { subject: string; htmlContent: string; messageVersions: { params: Record<string, string> }[] };
@@ -37,6 +39,10 @@ const fillAsBrevo = (template: string, params: Record<string, string>) =>
     const value = params[key] ?? '';
     return safe ? value : pongoEscape(value);
   });
+
+/** A per-recipient param's value: the mailer suffixes every param key with a nonce drawn for the send. */
+const paramValue = (params: Record<string, string>, key: string) =>
+  Object.entries(params).find(([name]) => new RegExp(`^${key}_[0-9a-f]{16}$`).test(name))?.[1];
 
 /** Sends through the real Brevo path with the network stubbed, and returns the request body. */
 const send = async <TStatic, TRecipient extends EmailRecipient>(
@@ -80,7 +86,7 @@ describe('Mails as Brevo fills them', () => {
     const hostileName = '{{ params.excerpt|safe }}{% autoescape off %}{# hidden';
     const { body } = await send(mentionEmail, { actorName: hostileName, channelName: hostileName }, mentionRecipient);
 
-    const ownPlaceholders = /\{\{params\.(?:subjectTitle|excerpt|link|unsubscribeLink|email)\}\}/g;
+    const ownPlaceholders = /\{\{params\.(?:subjectTitle|excerpt|link|unsubscribeLink)_[0-9a-f]{16}\}\}/g;
     expect(body.htmlContent.replace(ownPlaceholders, '')).not.toMatch(tagOpener);
     expect(body.subject).not.toMatch(tagOpener);
     // The name still reads as typed: only the brace that opens a tag is written as a character reference.
@@ -96,6 +102,35 @@ describe('Mails as Brevo fills them', () => {
 
     expect(body.htmlContent).not.toContain('{{params.excerpt|safe}}');
     expect(html).not.toMatch(anchorToEvil);
+  });
+
+  it("must not fill a param via its exact placeholder typed into a user's text", async () => {
+    const typed = '{{params.email}} {{params.unsubscribeLink}} {{params.link}}';
+    const { body, html } = await send(mentionEmail, { actorName: typed, channelName: typed }, mentionRecipient);
+
+    // No param key can be named without the send's nonce: the typed placeholders read as typed.
+    expect(html).not.toContain(mentionRecipient.email);
+    expect(html.split(unsubscribeLink)).toHaveLength(2);
+    expect(body.htmlContent).toContain('&#123;{params.email}}');
+    expect(body.subject).not.toMatch(tagOpener);
+  });
+
+  it('fills the params a template names in its translated text (positive control)', async () => {
+    const invite = await send(
+      systemInviteEmail,
+      { senderName: '{{params.name}}', senderThumbnailUrl: null },
+      { email: 'emily@example.test', lng: 'en', name: 'Emily', inviteLink: link },
+    );
+    expect(invite.html).toContain('Hi Emily,');
+    // The sender's name typed as that placeholder stays text.
+    expect(invite.body.htmlContent).toContain('&#123;{params.name}}');
+
+    const verification = await send(
+      oauthVerificationEmail,
+      { name: 'Emily', verificationLink: link, providerEmail: 'emily@provider.example', providerName: 'GitHub' },
+      { email: 'emily@example.test', lng: 'en' },
+    );
+    expect(verification.html).toContain('emily@example.test');
   });
 
   it('fills a mention excerpt escaped once', async () => {
@@ -123,7 +158,7 @@ describe('Mails as Brevo fills them', () => {
       { email: 'reader@example.test', lng: 'en', sectionsHtml, unsubscribeLink },
     );
 
-    expect(params.sectionsHtml).not.toMatch(tagOpener);
+    expect(paramValue(params, 'sectionsHtml')).not.toMatch(tagOpener);
     expect(html).not.toMatch(anchorToEvil);
     expect(html).toContain('<h3>&lt;a href=');
     // The unsubscribe link is printed only where the template puts it.
@@ -156,11 +191,11 @@ describe('Mails as Brevo fills them', () => {
       mentionRecipient,
     );
 
-    for (const placeholder of ['{{params.subjectTitle}}', '{{params.excerpt}}', '{{params.link}}']) {
-      expect(body.htmlContent).toContain(placeholder);
+    for (const key of ['subjectTitle', 'excerpt', 'link']) {
+      expect(body.htmlContent).toMatch(new RegExp(`\\{\\{params\\.${key}_[0-9a-f]{16}\\}\\}`));
     }
     expect(body.subject).toBe('Jane mentioned you in Design 101');
-    expect(params.excerpt).toBe(mentionRecipient.excerpt);
+    expect(paramValue(params, 'excerpt')).toBe(mentionRecipient.excerpt);
   });
 });
 

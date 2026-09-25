@@ -31,6 +31,17 @@ export type HtmlParams<TRecipient extends EmailRecipient = EmailRecipient> = Par
 export const brevoPlaceholder = (key: string, htmlParams: Partial<Record<string, SafeHtmlPolicy>> = {}) =>
   htmlParams[key] ? `{{params.${key}|safe}}` : `{{params.${key}}}`;
 
+/**
+ * The placeholder of a per-recipient value (or the recipient's `email`) for text `translate` writes. The mailer passes
+ * one that names the send's param keys, which carry a nonce; never write `{{params.<key>}}` by hand.
+ */
+export type ParamPlaceholder<TRecipient extends EmailRecipient = EmailRecipient> = (
+  key: RecipientKey<TRecipient> | 'email',
+) => string;
+
+/** The placeholder outside a send (previews, tests): `{{params.<key>}}`. */
+export const plainParam = (key: string): string => brevoPlaceholder(key);
+
 /** Sample render data, co-located with the template so it stays type-checked against its props. */
 export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = EmailRecipient> {
   /** Props shared across all recipients (passed to `translate`). */
@@ -44,8 +55,15 @@ export interface EmailPreviewData<TStatic, TRecipient extends EmailRecipient = E
  * entityName); `TRecipient` extends `EmailRecipient` with per-recipient props.
  */
 export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient extends EmailRecipient = EmailRecipient> {
-  /** Pre-compute all translated strings (+ pass-through statics the component needs). Must include `subject`. */
-  translate(lng: string, statics: TStatic): { subject: string } & Record<string, unknown>;
+  /**
+   * Pre-compute all translated strings (+ pass-through statics the component needs). Must include `subject`. Text that
+   * names a per-recipient value gets its placeholder from `param`.
+   */
+  translate(
+    lng: string,
+    statics: TStatic,
+    param?: ParamPlaceholder<TRecipient>,
+  ): { subject: string } & Record<string, unknown>;
   /** React shell receiving translate() output and per-recipient display props. No i18n calls. */
   component(props: Record<string, unknown>): React.ReactElement;
   /** Sample data to render this template in previews and tests. */
@@ -58,7 +76,7 @@ export interface EmailTemplateDef<TStatic = Record<string, never>, TRecipient ex
 /** The curried calls bind the static and recipient types before TS infers the translated shape. */
 export function defineEmailTemplate<TStatic, TRecipient extends EmailRecipient = EmailRecipient>() {
   return <TTranslated extends { subject: string }>(def: {
-    translate(lng: string, statics: TStatic): TTranslated;
+    translate(lng: string, statics: TStatic, param?: ParamPlaceholder<TRecipient>): TTranslated;
     component(props: TTranslated & RecipientProps<TRecipient>): React.ReactElement;
     preview: EmailPreviewData<TStatic, TRecipient>;
     htmlParams?: HtmlParams<TRecipient>;
