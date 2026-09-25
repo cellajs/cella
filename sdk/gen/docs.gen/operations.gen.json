@@ -1539,7 +1539,7 @@
     "path": "/users/users",
     "tags": ["users"],
     "summary": "Get list of users",
-    "description": "Returns a list of users.",
+    "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

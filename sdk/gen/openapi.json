@@ -8298,7 +8298,7 @@
         "operationId": "getUsers",
         "tags": ["users", "cella"],
         "summary": "Get list of users",
-        "description": "Returns a list of users.",
+        "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
         "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],

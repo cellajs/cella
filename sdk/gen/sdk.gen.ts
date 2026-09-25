@@ -2947,7 +2947,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
 /**
  * Get list of users
  *
- * Returns a list of users.
+ * Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.
  *
  * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
  *

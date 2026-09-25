@@ -13,7 +13,8 @@ const userRoutes = {
     xGuard: [userGuard, crossTenantGuard],
     tags: ['users', 'cella'],
     summary: 'Get list of users',
-    description: 'Returns a list of users.',
+    description:
+      'Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.',
     request: { query: userListQuerySchema },
     responses: {
       200: {
@@ -22,6 +23,7 @@ const userRoutes = {
           'application/json': {
             schema: paginationSchema(
               memberUserSchema.extend({
+                // Absent for other callers: the field would list the system admins.
                 role: systemRoleBaseSchema.shape.role.nullable().optional(),
               }),
             ),
