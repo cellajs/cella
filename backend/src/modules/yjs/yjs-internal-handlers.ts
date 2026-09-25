@@ -13,7 +13,8 @@ const materializeBodySchema = z.object({
   tenantId: z.string().max(50),
   organizationId: z.uuid().nullable(),
   description: z.string(),
-  editedBy: z.uuid(),
+  // The log's senders, newest first; the relay sends at most 20.
+  editors: z.array(z.uuid()).min(1).max(50),
 });
 
 /**
@@ -22,7 +23,7 @@ const materializeBodySchema = z.object({
  */
 const app = new Hono<Env>();
 
-/** Persists a compacted collaborative document to its entity. */
+/** Persists a compacted collaborative document to its entity; 410 tells the relay the entity is gone, so its rows can go too. */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-relay-secret');
   if (!secret || !safeEqual(secret, env.YJS_RELAY_SECRET)) {
@@ -33,8 +34,9 @@ app.post('/materialize', async (ctx) => {
   const parsed = materializeBodySchema.safeParse(await ctx.req.json().catch(() => null));
   if (!parsed.success) return ctx.json({ error: 'invalid_body' }, 400);
 
-  const { sanitized } = await materializeDescriptionOp(parsed.data);
-  return ctx.json({ success: true, sanitized }, 200);
+  const result = await materializeDescriptionOp(parsed.data);
+  if (result.outcome === 'gone') return ctx.json({ error: 'gone' }, 410);
+  return ctx.json({ success: true, sanitized: result.sanitized, editedBy: result.editedBy }, 200);
 });
 
 export const yjsInternalHandlers = app;

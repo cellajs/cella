@@ -102,7 +102,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
     entityId: attachment.id,
     tenantId: owner.tenantId,
     organizationId: owner.organization.id,
-    editedBy: owner.user.id,
+    editors: [owner.user.id],
     description: paragraph(text),
   });
 

@@ -73,8 +73,8 @@ export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
 
 /**
  * When the last client leaves, a grace period runs before the log is compacted and the session rows
- * are deleted. Rows go once the log is written or empty: a retryable failure keeps them and
- * retries, a permanent refusal keeps them for the next session or the startup sweep.
+ * are deleted. Rows go once the log is written or empty, or the entity is gone: a retryable failure
+ * keeps them and retries, a permanent refusal keeps them for the next session or the startup sweep.
  */
 export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   const key = collabKey(doc);
@@ -102,7 +102,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
         log.error(`Cleanup compaction failed for ${key}`, { err });
         result = 'retry';
       }
-      // An unwritten log keeps the rows: they hold edits the entity has not received.
+      // An unwritten log keeps the rows: they hold edits the entity has not received. A gone entity's rows go.
       if (result === 'retry') return 'retry';
       if (result === 'permanent') return 'kept';
 

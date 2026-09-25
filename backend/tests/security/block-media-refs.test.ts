@@ -177,16 +177,16 @@ describe('Block media references', async () => {
       const valid = [generateId(), ownKey()];
       const refused = bypasses().map(([, url]) => url);
 
-      const { sanitized } = await materializeDescriptionOp({
+      const result = await materializeDescriptionOp({
         entityType: 'attachment',
         entityId: attachmentId,
         tenantId: owner.tenantId,
         organizationId: owner.organization.id,
-        editedBy: owner.user.id,
+        editors: [owner.user.id],
         description: documentOf(...refused, ...valid),
       });
 
-      expect(sanitized).toBe(true);
+      expect(result).toMatchObject({ outcome: 'written', sanitized: true });
       // Refused references are blanked in place, so the document keeps its shape; valid ones survive unchanged.
       expect(urlsIn(await storedDescription())).toEqual([...refused.map(() => ''), ...valid]);
       await resetDescription();

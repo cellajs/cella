@@ -21,8 +21,8 @@ vi.mock('../../sync/materialize', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../sync/materialize')>();
   return {
     ...actual,
-    postMaterialize: vi.fn(async (_scope: DocScope, editedBy: string, description: string) => {
-      materialized.push({ editedBy, description });
+    postMaterialize: vi.fn(async (_scope: DocScope, editors: string[], description: string) => {
+      materialized.push({ editedBy: editors[0], description });
       return 'ok';
     }),
   };

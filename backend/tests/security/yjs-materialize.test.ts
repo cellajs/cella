@@ -1,18 +1,18 @@
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { env } from '#/env';
-import type { ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
- * The relay's materialize route (internal listener only) writes a collaborative description on behalf of the last
- * editor. Its body names the entity's tenant and organization: the backend takes the scope from the entity row and
- * refuses a body naming another.
+ * The relay's materialize route (internal listener only) writes a collaborative description in the entity row's scope,
+ * credited to the newest editor of the log who may still update the entity. When none may, the edits stay with the
+ * relay; a deleted entity answers 410 so the relay can drop its rows.
  */
 describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope', async () => {
   const call = await createAppClient();
@@ -20,6 +20,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   const original = paragraph('original');
   let owner: TestTenant;
   let other: TestTenant;
+  let member: Awaited<ReturnType<typeof createOrgUser>>;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
 
   const materialize = async (body: Record<string, unknown>, secret: string | null = env.YJS_RELAY_SECRET) => {
@@ -30,25 +31,32 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
         body: JSON.stringify(body),
       }),
     );
-    return { status: response.status, error: (await response.json()) as ErrorResponse };
+    return { status: response.status, body: (await response.json()) as Record<string, unknown> };
   };
 
-  const bodyFor = (scope: { tenantId: string; organizationId: string | null }, text: string) => ({
+  const bodyFor = (
+    scope: { tenantId: string; organizationId: string | null },
+    text: string,
+    editors: string[] = [owner.user.id],
+    entityId = attachment.id,
+  ) => ({
     entityType: 'attachment',
-    entityId: attachment.id,
+    entityId,
     ...scope,
-    editedBy: owner.user.id,
+    editors,
     description: paragraph(text),
   });
 
   const ownScope = () => ({ tenantId: owner.tenantId, organizationId: owner.organization.id });
 
-  const storedDescription = async () => (await attachment.read())?.description ?? null;
+  const stored = async () => attachment.read();
 
   beforeAll(async () => {
     mockFetchRequest();
     owner = await createTestTenant(call, 'materialize-owner');
     other = await createTestTenant(call, 'materialize-other');
+    // Members update their own attachments only ('own' in the permission config), and this one is the owner's.
+    member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-member');
     attachment = await seedAttachment({
       tenantId: owner.tenantId,
       organizationId: owner.organization.id,
@@ -65,32 +73,52 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   it('must not write without the relay secret or with a wrong one', async () => {
     expect((await materialize(bodyFor(ownScope(), 'no secret'), null)).status).toBe(401);
     expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${env.YJS_RELAY_SECRET}x`)).status).toBe(401);
-    expect(await storedDescription()).toBe(original);
+    expect((await stored())?.description).toBe(original);
   });
 
   it("must not write through a body that names another tenant's organization", async () => {
     for (const organizationId of [other.organization.id, null]) {
-      const { status, error } = await materialize(
+      const { status, body } = await materialize(
         bodyFor({ tenantId: owner.tenantId, organizationId }, 'forged organization'),
       );
       expect(status, String(organizationId)).toBe(403);
-      expect(error.type).toBe('forbidden');
+      expect(body.type).toBe('forbidden');
     }
-    expect(await storedDescription()).toBe(original);
+    expect((await stored())?.description).toBe(original);
   });
 
   it('must not write through a body that names another tenant', async () => {
-    const { status, error } = await materialize(
+    // The entity is not in the named tenant: for that document it is gone.
+    const { status, body } = await materialize(
       bodyFor({ tenantId: other.tenantId, organizationId: owner.organization.id }, 'forged tenant'),
     );
-    expect(status).toBe(404);
-    expect(error.type).toBe('not_found');
-    expect(await storedDescription()).toBe(original);
+    expect(status).toBe(410);
+    expect(body).toEqual({ error: 'gone' });
+    expect((await stored())?.description).toBe(original);
   });
 
-  it("writes in the row's own scope (positive control)", async () => {
-    const { status } = await materialize(bodyFor(ownScope(), 'written by the relay'));
+  it('must not write when no editor of the log may still update the entity', async () => {
+    for (const editors of [[member.id], [generateId()]]) {
+      const { status, body } = await materialize(bodyFor(ownScope(), 'no rightful editor', editors));
+      expect(status, editors.join()).toBe(403);
+      expect(body.type).toBe('forbidden');
+    }
+    expect(await stored()).toEqual({ description: original, updatedBy: null });
+  });
+
+  it('credits the newest editor who may still update the entity (positive control)', async () => {
+    // The member edited last but may not update the owner's attachment: the owner, who edited too, is credited.
+    const { status, body } = await materialize(bodyFor(ownScope(), 'written by the relay', [member.id, owner.user.id]));
     expect(status).toBe(200);
-    expect(await storedDescription()).toContain('written by the relay');
+    expect(body.editedBy).toBe(owner.user.id);
+    const row = await stored();
+    expect(row?.description).toContain('written by the relay');
+    expect(row?.updatedBy).toBe(owner.user.id);
+  });
+
+  it('answers 410 for an entity that no longer exists, so the relay can drop its rows', async () => {
+    const { status, body } = await materialize(bodyFor(ownScope(), 'too late', [owner.user.id], generateId()));
+    expect(status).toBe(410);
+    expect(body).toEqual({ error: 'gone' });
   });
 });

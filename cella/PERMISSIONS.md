@@ -196,5 +196,5 @@ export type CollectionReadWhere =
 | --- | --- |
 | Member with `update: 'own'` edits someone else's row | Denied. The UI enables the control optimistically and the backend rejects on save. |
 | Actor reads a row whose `publicAt` is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
-| Actor loses access mid-Yjs-session | Materialization re-checks `update` on the backend before persisting |
+| Actor loses access mid-Yjs-session | The socket closes when its five-minute token expires, and a reconnect is authorized again. Materialization credits the newest editor who still has `update` |
 | System admin joins a Yjs collab session | No bypass. Authorized as the acting user, matching materialization |

@@ -26,7 +26,7 @@ describe('postMaterialize', () => {
   it("sends the relay secret only to the backend's internal listener, never the public API", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, status: 200 });
 
-    const result = await postMaterialize(ctx, 'user-1', '[]');
+    const result = await postMaterialize(ctx, ['user-1'], '[]');
 
     expect(result).toBe('ok');
     const [url, init] = fetchMock.mock.calls[0];
@@ -38,25 +38,30 @@ describe('postMaterialize', () => {
       entityType: ctx.entityType,
       entityId: ctx.entityId,
       tenantId: ctx.tenantId,
-      editedBy: 'user-1',
+      editors: ['user-1'],
     });
   });
 
   it('classifies a rejected request as permanent, and refusals that can change and 5xx as retry', async () => {
     for (const status of [400, 413, 422]) {
       fetchMock.mockResolvedValueOnce({ ok: false, status });
-      expect(await postMaterialize(ctx, 'user-1', '[]'), `status ${status}`).toBe('permanent');
+      expect(await postMaterialize(ctx, ['user-1'], '[]'), `status ${status}`).toBe('permanent');
     }
     // Access, scope and secret refusals can change: an editor who lost access must not cost the log.
     for (const status of [401, 403, 404, 409, 429, 503]) {
       fetchMock.mockResolvedValueOnce({ ok: false, status });
-      expect(await postMaterialize(ctx, 'user-1', '[]'), `status ${status}`).toBe('retry');
+      expect(await postMaterialize(ctx, ['user-1'], '[]'), `status ${status}`).toBe('retry');
     }
+  });
+
+  it('classifies 410 as gone: the entity no longer exists, so its log has nowhere to go', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 410 });
+    expect(await postMaterialize(ctx, ['user-1'], '[]')).toBe('gone');
   });
 
   it('classifies network errors as retry', async () => {
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'));
-    expect(await postMaterialize(ctx, 'user-1', '[]')).toBe('retry');
+    expect(await postMaterialize(ctx, ['user-1'], '[]')).toBe('retry');
   });
 });
 

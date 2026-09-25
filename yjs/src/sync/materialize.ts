@@ -6,21 +6,23 @@ import { log } from '../lib/pino';
 /**
  * Outcome of one materialize attempt. Only `ok` lets compaction fold the log into the base.
  * - `ok`: durable, safe to compact.
+ * - `gone` (410): the entity no longer exists in the document's tenant; nothing can receive the
+ *   log, so cleanup and sweep delete the document's rows.
  * - `permanent`: the backend rejected the request itself (a 4xx no later attempt changes: an
  *   invalid body, an unknown type, no materializer); the log stays and cleanup stops retrying.
  * - `retry`: the backend is unavailable, or refused this write for a reason that can change (a
- *   rotated secret, an editor who lost access, an entity outside the claimed scope); the log stays
- *   so the next window, cleanup or sweep tries again.
+ *   rotated secret, no editor in the window who may still update the entity); the log stays so
+ *   the next window, cleanup or sweep tries again.
  */
-export type MaterializeResult = 'ok' | 'permanent' | 'retry';
+export type MaterializeResult = 'ok' | 'gone' | 'permanent' | 'retry';
 
 /** Refusals a later attempt can overcome, so they never count as permanent. */
 const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
 
-/** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret. */
+/** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret; `editors` are the window's senders, newest first. */
 export async function postMaterialize(
   scope: DocScope,
-  editedBy: string,
+  editors: string[],
   description: string,
 ): Promise<MaterializeResult> {
   try {
@@ -32,11 +34,15 @@ export async function postMaterialize(
         entityId: scope.entityId,
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
-        editedBy,
+        editors,
         description,
       }),
     });
     if (res.ok) return 'ok';
+    if (res.status === 410) {
+      log.warn(`Materialize: ${scope.entityType}:${scope.entityId} no longer exists, dropping its log`);
+      return 'gone';
+    }
 
     const rejected = res.status >= 400 && res.status < 500 && !retryableStatuses.has(res.status);
     const kind: MaterializeResult = rejected ? 'permanent' : 'retry';

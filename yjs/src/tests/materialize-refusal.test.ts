@@ -103,3 +103,33 @@ describe('a refused materialize keeps the edits', () => {
     expect(storage.logs.get(orphanKey)).toHaveLength(2);
   });
 });
+
+describe("a deleted entity's rows go", () => {
+  it('deletes the rows of a session whose entity no longer exists (410) at cleanup', async () => {
+    const { ctx, key, ws } = await sessionWithEdits();
+    fetchMock.mockResolvedValue({ ok: false, status: 410 });
+
+    leaveCollab(ctx, ws as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+
+    // Nothing can receive the edits any more, unlike an access refusal (403), which keeps them.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(storage.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(storage.bases.has(key)).toBe(false);
+    expect(storage.logs.has(key)).toBe(false);
+    expect(getCollab(ctx)).toBeUndefined();
+  });
+
+  it('deletes an orphaned session of an entity that no longer exists in the startup sweep', async () => {
+    const orphan = mockScope({ entityId: `gone-${++counter}` });
+    storage.bases.set(storageKey(orphan), mapUpdate('seed', true));
+    await storage.appendUpdate(orphan, 'user-1', mapUpdate('a', 1));
+    storage.listStaleDocs.mockResolvedValueOnce([orphan]);
+    fetchMock.mockResolvedValue({ ok: false, status: 410 });
+
+    await runStartupSweep();
+
+    expect(storage.deleteDoc).toHaveBeenCalledWith(orphan);
+    expect(storage.logs.has(storageKey(orphan))).toBe(false);
+  });
+});

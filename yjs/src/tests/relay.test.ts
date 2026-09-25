@@ -277,7 +277,7 @@ describe('handleMessage: awareness', () => {
 });
 
 describe('compaction', () => {
-  it('runs once after the debounce, credits the last editor, and deletes exactly the rows it read', async () => {
+  it('runs once after the debounce, names the editors newest first, and deletes exactly the rows it read', async () => {
     const { ctx: c, scope, key, ws } = session();
     const editor2 = mockSocketContext({ userId: 'user-2', requested: scope });
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
@@ -290,7 +290,7 @@ describe('compaction', () => {
 
     expect(postMaterialize).toHaveBeenCalledTimes(1);
     // As the system, in the document's scope: no joiner's context rides along.
-    expect(postMaterialize).toHaveBeenCalledWith(scope, 'user-2', '[]');
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-2', 'user-1'], '[]');
     const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);

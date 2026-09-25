@@ -189,7 +189,7 @@ describe('Attachment mentions (template notification source)', async () => {
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithText('signed contract')]),
-      editedBy: tenant.user.id,
+      editors: [tenant.user.id],
     });
     const keywords = await storedKeywords();
     expect(keywords).toContain('signed contract');
@@ -203,7 +203,7 @@ describe('Attachment mentions (template notification source)', async () => {
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithMentions([member.id])]),
-      editedBy: tenant.user.id,
+      editors: [tenant.user.id],
     });
     expect(await storedMentions()).toEqual([member.id]);
   });
