@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 import { testDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
+import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
 
 const testMode = process.env.TEST_MODE || 'core';
 // `runtime` runs the same suite as the RLS-subject runtime_role: the parity proof that
@@ -35,7 +36,7 @@ export default defineConfig({
       COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',
       UNSUBSCRIBE_SECRET: 'test-unsubscribe-secret',
       CDC_SECRET: 'test-cdc-secret-min16chars',
-      YJS_SECRET: 'test-yjs-secret-min16',
+      YJS_TOKEN_PRIVATE_KEY: testYjsTokenKeyMaterial,
       YJS_RELAY_SECRET: 'test-yjs-relay-secret-min16',
       PII_HASH_SECRET: 'test-pii-hash-secret-min16',
       DATA_ENCRYPTION_KEY: 'test-data-encryption-key-minimum-32-chars',

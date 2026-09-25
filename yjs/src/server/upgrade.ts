@@ -75,7 +75,7 @@ export function setupUpgradeHandler(
 
     const result = verifyToken(token);
     if (!result.ok) {
-      // Expiry is routine on a long-lived editor socket with a 30-minute token, so it logs at debug; a bad signature points at YJS_SECRET drift or tampering and warns.
+      // Expiry is routine on a long-lived editor socket, so it logs at debug; a bad signature points at a mismatched key pair or tampering and warns.
       if (result.reason === 'expired') {
         log.debug('WS token expired', { entityType: rawEntityType });
       } else {

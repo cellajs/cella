@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { defineProject } from 'vitest/config';
 import { testRuntimeDatabaseUrl } from 'shared/test-db';
+import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
 
 const testMode = process.env.TEST_MODE || 'core';
 
@@ -25,7 +26,7 @@ export default defineProject({
     fileParallelism: false,
     env: {
       NODE_ENV: 'test',
-      YJS_SECRET: 'test-yjs-secret-for-unit-tests',
+      YJS_TOKEN_PUBLIC_KEY: testYjsTokenPublicKey,
       YJS_RELAY_SECRET: 'test-yjs-relay-secret-for-unit-tests',
       // The relay connects as the RLS-subject runtime role in production; integration tests do the same.
       DATABASE_URL: testRuntimeDatabaseUrl,

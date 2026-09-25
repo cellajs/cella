@@ -1,8 +1,8 @@
 import { getYjsToken } from 'sdk';
 import { appConfig } from 'shared';
-import { verifyYjsToken } from 'shared/utils/yjs-token';
+import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
+import { verifyYjsToken, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { env } from '#/env';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -47,7 +47,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     });
     expect(response.status).toBe(200);
 
-    const verified = verifyYjsToken((data as { token: string }).token, env.YJS_SECRET);
+    // The relay's check: the public half of the backend's key, the only key the relay holds.
+    const verified = verifyYjsToken((data as { token: string }).token, yjsTokenVerifyKey(testYjsTokenPublicKey));
     if (!verified.ok) throw new Error(`token did not verify: ${verified.reason}`);
     const { exp, ...claims } = verified.payload;
     expect(claims).toEqual({

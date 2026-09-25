@@ -32,6 +32,7 @@
     "seed:production": "node dist/seeds-bundle.js",
     "s3:cors": "tsx scripts/set-bucket-cors.ts",
     "session:mint": "tsx scripts/mint-session.ts",
+    "yjs:public-key": "tsx scripts/yjs-public-key.ts",
     "seed:assets": "tsx scripts/upload-seed-assets.ts"
   },
   "dependencies": {

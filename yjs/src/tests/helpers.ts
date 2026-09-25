@@ -1,18 +1,12 @@
-import { createHmac } from 'node:crypto';
+import { sign } from 'node:crypto';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
+import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { vi } from 'vitest';
 import * as Y from 'yjs';
 import type { DocContext } from '../constants';
 import type { StaleDocRow } from '../data/storage';
-
-const DELIMITER = '.';
-const SIGNATURE_LENGTH = 16;
-const TEST_SECRET = 'test-yjs-secret-for-unit-tests';
-
-function computeSignature(encodedPayload: string, secret = TEST_SECRET): string {
-  return createHmac('sha256', secret).update(encodedPayload).digest('hex').slice(0, SIGNATURE_LENGTH);
-}
 
 interface TokenOptions {
   userId: string;
@@ -20,12 +14,20 @@ interface TokenOptions {
   tenantId?: string;
   organizationId?: string | null;
   exp?: number;
-  secret?: string;
+  /** Key material to sign with; defaults to the backend's test key, whose public half the relay holds. */
+  keyMaterial?: string;
 }
 
-/** Generate a valid HMAC-signed token for tests. */
-export function createSignedToken(opts: string | TokenOptions, exp?: number, secret?: string): string {
-  const o: TokenOptions = typeof opts === 'string' ? { userId: opts, exp, secret } : opts;
+/** The token as the backend signs it: base64url payload and an Ed25519 signature over it. */
+export function signPayload(payload: unknown, keyMaterial = testYjsTokenKeyMaterial): string {
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = sign(null, Buffer.from(payloadB64), yjsTokenSigningKey(keyMaterial)).toString('base64url');
+  return `${payloadB64}.${signature}`;
+}
+
+/** Generate a validly signed token for tests. */
+export function createSignedToken(opts: string | TokenOptions, exp?: number): string {
+  const o: TokenOptions = typeof opts === 'string' ? { userId: opts, exp } : opts;
   const payload = {
     userId: o.userId,
     entityType: o.entityType ?? 'task',
@@ -33,9 +35,7 @@ export function createSignedToken(opts: string | TokenOptions, exp?: number, sec
     organizationId: o.organizationId ?? 'org-1',
     exp: o.exp ?? Date.now() + 30 * 60 * 1000,
   };
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = computeSignature(payloadB64, o.secret ?? secret);
-  return `${payloadB64}${DELIMITER}${signature}`;
+  return signPayload(payload, o.keyMaterial);
 }
 
 export function createExpiredToken(userId: string): string {

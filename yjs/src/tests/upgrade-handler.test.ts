@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { createServer } from 'node:http';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
@@ -91,11 +92,30 @@ describe('setupUpgradeHandler', () => {
     expect(closeReason).toBe('Invalid or expired token');
   });
 
-  it('closes a tampered token after the handshake with 4001', async () => {
-    const token = createSignedToken({ userId: 'user-1', secret: 'another-secret-of-sixteen-chars' });
+  it('closes a token signed with another key after the handshake with 4001', async () => {
+    const token = createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' });
     const { closeCode } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
 
     expect(closeCode).toBe(4001);
+  });
+
+  it('must not accept a connection with a token minted with the relay secret', async () => {
+    const payloadB64 = Buffer.from(
+      JSON.stringify({
+        userId: 'user-1',
+        entityType: 'task',
+        tenantId: 'tenant-1',
+        organizationId: 'org-1',
+        exp: Date.now() + 60_000,
+      }),
+    ).toString('base64url');
+    const mac = createHmac('sha256', 'test-yjs-relay-secret-for-unit-tests').update(payloadB64).digest('base64url');
+    const { closeCode, closeReason } = await connect(
+      `/entity-1?token=${payloadB64}.${mac}&entityType=task&tenantId=tenant-1`,
+    );
+
+    expect(closeCode).toBe(4001);
+    expect(closeReason).toBe('Invalid or expired token');
   });
 
   it('still rejects missing params at the HTTP level', async () => {

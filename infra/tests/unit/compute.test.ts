@@ -33,7 +33,8 @@ describe('compute module source contracts', () => {
       'cookieSecret',
       'unsubscribeSecret',
       'cdcSecret',
-      'yjsSecret',
+      'yjsTokenPrivateKey',
+      'yjsRelaySecret',
       'piiHashSecret',
       'brevoApiKey',
       'scwAiApiKey',
@@ -140,7 +141,8 @@ describe('compute module source contracts', () => {
       'COOKIE_SECRET',
       'BREVO_API_KEY',
       'SCW_AI_API_KEY',
-      'YJS_SECRET',
+      'YJS_TOKEN_PRIVATE_KEY',
+      'YJS_RELAY_SECRET',
       'CDC_SECRET',
     ]) {
       expect(body, `${banned} must not appear in the env suppliers`).not.toContain(banned);

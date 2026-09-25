@@ -36,7 +36,7 @@ Keystrokes merge at character level and reach peers as soon as they are durable.
 ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 ```
 
-Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit. Malformed requests, scope mismatches and rate limits fail as an HTTP 400 with a JSON `{ code, reason }` body, which a browser sees as close code 1006. An invalid or expired token closes after the handshake with code 4001, so the client can refetch its token and reconnect with backoff.
+Before completing the handshake, the relay validates required parameters, the token's Ed25519 signature and expiry, token scope, and the per-user rate limit. The relay holds only the public half of the backend's signing key, so nothing on the relay can mint a token. Malformed requests, scope mismatches and rate limits fail as an HTTP 400 with a JSON `{ code, reason }` body, which a browser sees as close code 1006. An invalid or expired token closes after the handshake with code 4001, so the client can refetch its token and reconnect with backoff.
 
 Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync frames wait in the socket's serial queue behind it, up to 100, and later ones are dropped; a denied socket's queued frames never run. The socket joins the document's session only once verified: until then it receives no peer frames, and it relays no awareness. Its latest awareness frame waits for the join, so a new editor's presence shows at once; a denied socket's is dropped. The session's context, which compaction and materialization act in, comes from the first verified socket. A closing socket's frames are dropped.
 
@@ -121,7 +121,7 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | --- | --- |
 | `DATABASE_URL` | RLS-scoped reads, log appends and compaction writes |
 | `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production unless `NODB` |
-| `YJS_SECRET` | HMAC secret the editor tokens are verified with, minimum 16 characters |
+| `YJS_TOKEN_PUBLIC_KEY` | Public half of the backend's `YJS_TOKEN_PRIVATE_KEY` (base64url Ed25519): verifies editor tokens, cannot sign one. `pnpm --filter backend yjs:public-key` prints it |
 | `YJS_RELAY_SECRET` | Authenticates the relay on the backend's materialize route, minimum 16 characters |
 | `BACKEND_INTERNAL_URL` | The backend's internal listener, default port `devPorts.internal` |
 | `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |

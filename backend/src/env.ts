@@ -83,7 +83,8 @@ export const env = createEnv({
 
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
-    YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
+    // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
+    YJS_TOKEN_PRIVATE_KEY: z.string().min(32, 'YJS_TOKEN_PRIVATE_KEY must be at least 32 characters'),
     // Authenticates the Yjs relay on the internal listener's materialize route; it never signs a token.
     YJS_RELAY_SECRET: z.string().min(16, 'YJS_RELAY_SECRET must be at least 16 characters'),
     CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),

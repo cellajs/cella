@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
 import {
   defineRuntimeSecrets,
@@ -84,7 +85,7 @@ describe('runtime secret registry', () => {
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
       'DATABASE_SSL_CA',
-      'YJS_SECRET',
+      'YJS_TOKEN_PUBLIC_KEY',
       'YJS_RELAY_SECRET',
       'MAPLE_SECRET_INGEST_KEY',
     ]);
@@ -96,9 +97,31 @@ describe('runtime secret registry', () => {
     const yjsVars = new Set(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar));
     const backendVars = new Set(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar));
 
-    expect(cdcVars.has('YJS_SECRET')).toBe(false);
+    expect(cdcVars.has('YJS_RELAY_SECRET')).toBe(false);
     expect(yjsVars.has('CDC_SECRET')).toBe(false);
     expect(backendVars.has('DATABASE_CDC_URL')).toBe(false);
+  });
+
+  it('must not give the Yjs relay the key that signs editor tokens', () => {
+    const yjsVars = runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar);
+    expect(yjsVars).not.toContain('YJS_TOKEN_PRIVATE_KEY');
+    // Positive control: the relay gets the public half, the backend the signing key.
+    expect(yjsVars).toContain('YJS_TOKEN_PUBLIC_KEY');
+    expect(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar)).toContain('YJS_TOKEN_PRIVATE_KEY');
+  });
+
+  it('derives the relay public key from the signing key, so the two change together', () => {
+    const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
+    const privateKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
+    expect(publicKey?.derivedFrom?.secretId).toBe(privateKey?.id);
+    const material = 'key-material-of-at-least-thirty-two-chars';
+    const token = signYjsToken(
+      { userId: 'u', entityType: 'attachment', tenantId: 't', organizationId: null },
+      yjsTokenSigningKey(material),
+      60_000,
+    );
+    const derived = publicKey?.derivedFrom?.derive(material) ?? '';
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(derived)).ok).toBe(true);
   });
 });
 

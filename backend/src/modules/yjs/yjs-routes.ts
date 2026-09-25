@@ -25,7 +25,7 @@ const yjsRoutes = {
     operationId: 'getYjsToken',
     summary: 'Get Yjs token',
     description:
-      'Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.',
+      'Returns a context-scoped, Ed25519-signed token for a specific entity type. The Yjs relay worker verifies it with the public key alone, without a backend callback, and cannot mint one.',
     request: {
       query: yjsTokenQuerySchema,
     },

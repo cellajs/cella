@@ -1,4 +1,4 @@
-import type * as pulumi from '@pulumi/pulumi';
+import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { type RuntimeSecretDefinition, type RuntimeSecretId, runtimeSecrets } from '../lib/runtime-secrets';
 import { secretPathFor } from '../lib/scaleway/secret-paths';
@@ -65,9 +65,26 @@ function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
 
 // Store-derived values (connection strings, CA data) are bound by the store plugins in resources/stores; other pulumi-owned values resolve from registry generation metadata below.
 
+// One value per secret: a derived secret reads its source's value, which must not create a second random resource.
+const pulumiValues = new Map<RuntimeSecretId, pulumi.Input<string>>();
+
 function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
+  const known = pulumiValues.get(definition.id);
+  if (known !== undefined) return known;
+  const value = resolvePulumiRuntimeSecretData(definition);
+  pulumiValues.set(definition.id, value);
+  return value;
+}
+
+function resolvePulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
   const derived = derivedRuntimeSecretData[definition.id];
   if (derived !== undefined) return derived;
+  if (definition.derivedFrom) {
+    const { secretId, derive } = definition.derivedFrom;
+    const source = runtimeSecrets.find((candidate) => candidate.id === secretId);
+    if (!source) throw new Error(`secrets: '${definition.id}' derives from unknown secret '${secretId}'.`);
+    return pulumi.output(pulumiRuntimeSecretData(source)).apply(derive);
+  }
   if (definition.generation === 'random') return pulumiOwnedRuntimeSecret(definition.id, definition.secretName);
   throw new Error(
     `secrets: pulumi-owned secret '${definition.id}' has generation 'manual' but no derived value: add it to derivedRuntimeSecretData.`,

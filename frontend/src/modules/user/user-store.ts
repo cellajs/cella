@@ -16,7 +16,7 @@ interface UserStoreState {
   user: MeUser | null;
   isSystemAdmin: boolean;
   lastUser: LastUser | null; // Identity of the last signed-out user
-  yjsTokens: Record<string, string>; // Map of "entityType:tenantId" → HMAC token (not persisted)
+  yjsTokens: Record<string, string>; // Map of "entityType:tenantId" → signed Yjs token (not persisted)
   setUser: (user: MeUser, skipLastUser?: boolean) => void; // Also updates lastUser
   setIsSystemAdmin: (isSystemAdmin: boolean) => void;
   setLastUser: (lastUser: LastUser) => void;
