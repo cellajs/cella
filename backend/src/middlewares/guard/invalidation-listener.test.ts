@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm';
-import pg from 'pg';
+import pg, { type Pool, type PoolClient } from 'pg';
 import { testDatabaseUrl } from 'shared/test-db';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import type { MembershipCacheEntry } from './auth-cache';
@@ -113,6 +113,56 @@ describe('auth_invalidate listener', () => {
       await publishElsewhere({ user: 'after' });
       expect(cachedFor('after').session).toBe(false);
     });
+  });
+});
+
+/**
+ * A connection can die with no socket error (a dropped route, a host that vanished): its LISTEN hears nothing and no
+ * event says so. Only the heartbeat can notice, and only when an unanswered heartbeat counts as a lost connection.
+ */
+describe('auth_invalidate listener on a connection that stops answering', () => {
+  const pool = baseDb.$client as Pool;
+
+  it('must not keep an entry cached via a listening connection that silently stopped answering', async () => {
+    const connections: PoolClient[] = [];
+    const connect = pool.connect.bind(pool);
+    const connectSpy = vi.spyOn(pool, 'connect').mockImplementation(async () => {
+      const connection = await connect();
+      connections.push(connection);
+      return connection;
+    });
+    const stop = listenForAuthInvalidation({ heartbeatMs: 200, heartbeatTimeoutMs: 500 });
+    onTestFinished(async () => {
+      await stop();
+      connectSpy.mockRestore();
+    });
+
+    cacheUser('probe-silent');
+    await vi.waitFor(async () => {
+      await publishElsewhere({ user: 'probe-silent' });
+      expect(cachedFor('probe-silent').session).toBe(false);
+    });
+
+    // From now on nothing the listening connection sends gets an answer, as when its packets stop arriving.
+    const silent = connections.at(-1);
+    if (!silent) throw new Error('The listener took no connection');
+    vi.spyOn(silent, 'query').mockImplementation(() => new Promise(() => {}));
+    // Cached while nothing reaches this process: whatever invalidation it missed is gone, so the reconnect drops it.
+    cacheUser('while-silent');
+
+    await vi.waitFor(() => expect(cachedFor('while-silent').session).toBe(false), { timeout: 8000, interval: 100 });
+    expect(connections.length).toBeGreaterThan(1);
+
+    // Listening again, on a new connection.
+    cacheUser('after-silent');
+    await vi.waitFor(async () => {
+      await publishElsewhere({ user: 'after-silent' });
+      expect(cachedFor('after-silent').session).toBe(false);
+    });
+  });
+
+  it('keeps TCP keepalive on the pooled connections it listens on', () => {
+    expect(pool.options).toMatchObject({ keepAlive: true });
   });
 });
 

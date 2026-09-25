@@ -20,6 +20,9 @@ interface CreatePgConnectionOptions {
   connectionTimeoutMillis?: number;
 }
 
+/** A connection quiet this long gets TCP keepalive probes, so a dead peer or a middlebox idle timeout ends it. */
+const KEEP_ALIVE_IDLE_MS = 30_000;
+
 export const createPgConnection = (
   url: string,
   { max, sslCa, logger = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions,
@@ -30,6 +33,9 @@ export const createPgConnection = (
       connectionTimeoutMillis,
       max,
       ssl: verifiedPostgresSsl(url, sslCa),
+      // Long-lived pooled connections (the auth invalidation LISTEN, the job lock) sit idle for minutes.
+      keepAlive: true,
+      keepAliveInitialDelayMillis: KEEP_ALIVE_IDLE_MS,
     },
     logger,
   });

@@ -2,6 +2,7 @@ import type { Notification, Pool, PoolClient } from 'pg';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
+import { withinTimeout } from '#/utils/within-timeout';
 import { clearAuthCache } from './auth-cache';
 import { authInvalidateChannel, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
 import { clearOrgCache } from './org-cache';
@@ -13,8 +14,17 @@ const RETRY_MIN_MS = 1_000;
 const RETRY_MAX_MS = 30_000;
 /** A silently dropped connection hears nothing; repeating the LISTEN finds out within this. */
 const HEARTBEAT_MS = 60_000;
+/** A heartbeat without an answer in this long means the connection is gone, whether or not its socket said so. */
+const HEARTBEAT_TIMEOUT_MS = 10_000;
 
 let stopListening: (() => Promise<void>) | null = null;
+
+interface ListenOptions {
+  /** How often the LISTEN is repeated to check the connection. */
+  heartbeatMs?: number;
+  /** How long a heartbeat may go unanswered before the connection counts as lost. */
+  heartbeatTimeoutMs?: number;
+}
 
 /** Only a pool hands out a connection of its own; drizzle builds `baseDb` on one. */
 const isPool = (client: typeof baseDb.$client): client is Pool => 'totalCount' in client;
@@ -25,9 +35,13 @@ const isPool = (client: typeof baseDb.$client): client is Pool => 'totalCount' i
  * processes. Reconnects with backoff, and every (re)connect clears the guard caches: messages sent while no connection
  * listened are gone. One listener per process, also when singleVM runs the three in one.
  *
+ * @param options - The heartbeat timing; the defaults suit production.
  * @returns Stops listening and closes the connection.
  */
-export function listenForAuthInvalidation(): () => Promise<void> {
+export function listenForAuthInvalidation({
+  heartbeatMs = HEARTBEAT_MS,
+  heartbeatTimeoutMs = HEARTBEAT_TIMEOUT_MS,
+}: ListenOptions = {}): () => Promise<void> {
   if (stopListening) return stopListening;
   if (env.NODB) return async () => {};
 
@@ -79,6 +93,16 @@ export function listenForAuthInvalidation(): () => Promise<void> {
     scheduleConnect();
   }
 
+  /** Repeats the LISTEN; a failure, or no answer within the timeout, loses the connection. */
+  async function beat(listening: PoolClient) {
+    let failure = new Error(`The heartbeat LISTEN got no answer within ${heartbeatTimeoutMs} ms`);
+    const answer = listening.query(listenStatement).catch((error: Error) => {
+      failure = error;
+      throw error;
+    });
+    if (!(await withinTimeout(answer, heartbeatTimeoutMs)) && client === listening) onLost(failure);
+  }
+
   async function connect() {
     let next: PoolClient | undefined;
     try {
@@ -96,8 +120,8 @@ export function listenForAuthInvalidation(): () => Promise<void> {
       clearTenantCache();
       clearTokenGrantCache();
       heartbeat = setInterval(() => {
-        client?.query(listenStatement).catch((error: Error) => onLost(error));
-      }, HEARTBEAT_MS);
+        if (client) void beat(client);
+      }, heartbeatMs);
       heartbeat.unref();
     } catch (error) {
       if (next && next !== client) drop(next);
