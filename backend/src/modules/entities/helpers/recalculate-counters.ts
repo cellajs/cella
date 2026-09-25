@@ -43,6 +43,18 @@ const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: r
   ),
 ];
 
+/**
+ * One statement per channel type copying the channel's canonical path onto its counters row where the two differ;
+ * catchup verifies ancestry against it. The counters recalculation runs it, and so does a side-effect migration, which
+ * fills the rows written before CDC kept paths.
+ */
+export const channelPathSyncStatements = (): string[] =>
+  hierarchy.channelTypes.map(
+    (channelType) => `UPDATE channel_counters cc SET path = c.path
+      FROM ${tbl(channelType as EntityType)} c
+      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path`,
+  );
+
 /** Upsert a SELECT into channel_counters with JSONB || merge */
 const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   db.execute(
@@ -201,15 +213,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // Canonical channel paths let catchup verify ancestry; CDC maintains them incrementally.
-  for (const channelType of hierarchy.channelTypes) {
-    await db.execute(
-      sql.raw(`
-      UPDATE channel_counters cc SET path = c.path
-      FROM ${tbl(channelType as EntityType)} c
-      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path
-    `),
-    );
-  }
+  for (const statement of channelPathSyncStatements()) await db.execute(sql.raw(statement));
 
   // ── Phase 4: Product counters ─────────────────────────────────────────
   await db.delete(productCountersTable);
