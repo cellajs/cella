@@ -1,7 +1,7 @@
 import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
 import { authEvents } from '#/modules/auth/auth-events';
 import {
   type SessionEndReason,
@@ -25,10 +25,13 @@ export type EndSessionsOpts = SessionSelection & {
 
 /**
  * The one way sessions end before their expiry. Stamps the user's selected live sessions with `revokedAt`,
- * `revokedBy` and `revocationReason`, drops the user's cached sessions, and closes the streams bound to them. A
- * revoked session is never re-stamped, so the first ending is the one the sessions list shows; the row stays until
- * the sweep. `user_deleted` follows the delete, which took the rows along: nothing is stamped, and every stream of
- * the user closes.
+ * `revokedBy` and `revocationReason`, drops the user's cached sessions in every process, and closes the streams bound
+ * to them. A revoked session is never re-stamped, so the first ending is the one the sessions list shows; the row
+ * stays until the nightly sweep. `user_deleted` follows the delete, which took the rows along: nothing is stamped,
+ * and every stream of the user closes.
+ *
+ * The stamps and the `auth_invalidate` message commit together, inside the caller's transaction when there is one;
+ * this process drops its cache and closes the streams at the call, so call it last in a transaction.
  *
  * @param ctx - Any context with a database; the sign-in paths pass the base pool.
  * @param opts - The user, which sessions (`sessionIds` or `all`), the reason and the acting actor.
@@ -41,24 +44,28 @@ export const endSessions = async (ctx: DbContext, opts: EndSessionsOpts): Promis
   const selection = 'sessionIds' in opts ? inArray(sessionsTable.id, opts.sessionIds) : undefined;
   const ofType = 'all' in opts && opts.type ? eq(sessionsTable.type, opts.type) : undefined;
 
-  const ended =
-    reason === 'user_deleted'
-      ? []
-      : await ctx.var.db
-          .update(sessionsTable)
-          .set({ revokedAt: getIsoDate(), revokedBy: by, revocationReason: reason })
-          .where(
-            and(
-              eq(sessionsTable.userId, userId),
-              isNull(sessionsTable.revokedAt),
-              gt(sessionsTable.expiresAt, getIsoDate()),
-              selection,
-              ofType,
-            ),
-          )
-          .returning(sessionSafeColumns);
+  const ended = await ctx.var.db.transaction(async (tx) => {
+    const stamped =
+      reason === 'user_deleted'
+        ? []
+        : await tx
+            .update(sessionsTable)
+            .set({ revokedAt: getIsoDate(), revokedBy: by, revocationReason: reason })
+            .where(
+              and(
+                eq(sessionsTable.userId, userId),
+                isNull(sessionsTable.revokedAt),
+                gt(sessionsTable.expiresAt, getIsoDate()),
+                selection,
+                ofType,
+              ),
+            )
+            .returning(sessionSafeColumns);
+    await publishAuthInvalidation(tx, { user: userId });
+    return stamped;
+  });
 
-  invalidateCache.user(userId);
+  dropCachedAuth({ user: userId });
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {

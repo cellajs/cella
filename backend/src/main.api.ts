@@ -13,6 +13,7 @@ import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { startGeoipRefresh } from '#/lib/geoip';
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
+import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
@@ -61,6 +62,7 @@ const main = async () => {
   }
 
   registerCacheInvalidation();
+  stopJobs.push(listenForAuthInvalidation());
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stopJobs.push(startGeoipRefresh());

@@ -4,9 +4,13 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { TTLCache } from '#/lib/ttl-cache';
 import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
-import { getMembershipCache, setMembershipCache } from '#/middlewares/guard/auth-cache';
+import {
+  getMembershipCache,
+  getTokenUserCache,
+  setMembershipCache,
+  setTokenUserCache,
+} from '#/middlewares/guard/auth-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
@@ -14,11 +18,8 @@ import { bearerJwtFrom, verifyAccessToken } from '#/modules/oauth-server/verify-
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { type UserModel, usersTable } from '#/modules/user/user-db';
+import { usersTable } from '#/modules/user/user-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
-
-/** Users behind access tokens have no session to cache under; the row is cached by id for the token's lifetime scale. */
-const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_000 });
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
@@ -43,11 +44,11 @@ export async function setActorFromToken(
   const token = await verifyAccessToken(jwt, scope);
 
   if (token.kind === 'user') {
-    let user = tokenUserCache.get(token.actorId);
+    let user = getTokenUserCache(token.actorId);
     if (!user) {
       [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId)).limit(1);
       if (!user) throw unauthorized('unknown_user');
-      tokenUserCache.set(user.id, user);
+      setTokenUserCache(user);
     }
     let memberships = getMembershipCache(user.id);
     if (!memberships) {

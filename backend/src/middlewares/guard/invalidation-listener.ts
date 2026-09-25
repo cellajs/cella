@@ -1,0 +1,119 @@
+import type { Notification, Pool, PoolClient } from 'pg';
+import { baseDb } from '#/db/db';
+import { env } from '#/env';
+import { log } from '#/utils/logger';
+import { clearAuthCache } from './auth-cache';
+import { authInvalidateChannel, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
+import { clearOrgCache } from './org-cache';
+import { clearTenantCache } from './tenant-cache';
+
+const listenStatement = `LISTEN ${authInvalidateChannel}`;
+const RETRY_MIN_MS = 1_000;
+const RETRY_MAX_MS = 30_000;
+/** A silently dropped connection hears nothing; repeating the LISTEN finds out within this. */
+const HEARTBEAT_MS = 60_000;
+
+let stopListening: (() => Promise<void>) | null = null;
+
+/** Only a pool hands out a connection of its own; drizzle builds `baseDb` on one. */
+const isPool = (client: typeof baseDb.$client): client is Pool => 'totalCount' in client;
+
+/**
+ * LISTENs on `auth_invalidate` over one connection taken from the pool and drops what each message names from this
+ * process's guard caches, so a session ending or a membership change in one process reaches the api, mcp and oauth
+ * processes. Reconnects with backoff, and every (re)connect clears the guard caches: messages sent while no connection
+ * listened are gone. One listener per process, also when singleVM runs the three in one.
+ *
+ * @returns Stops listening and closes the connection.
+ */
+export function listenForAuthInvalidation(): () => Promise<void> {
+  if (stopListening) return stopListening;
+  if (env.NODB) return async () => {};
+
+  const dbClient = baseDb.$client;
+  if (!isPool(dbClient)) throw new Error('The auth invalidation listener needs the pooled database client');
+  const pool: Pool = dbClient;
+
+  let client: PoolClient | null = null;
+  let stopped = false;
+  let retryDelay = RETRY_MIN_MS;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
+
+  const onNotification = (message: Notification) => {
+    if (message.channel !== authInvalidateChannel || !message.payload) return;
+    const invalidation = parseAuthInvalidation(message.payload);
+    if (invalidation) dropCachedAuth(invalidation);
+    else log.warn('Ignored a malformed auth invalidation', { payload: message.payload });
+  };
+
+  /** Closes the connection for good: a LISTENing client never goes back to the pool. */
+  const drop = (lost: PoolClient) => {
+    lost.off('notification', onNotification);
+    lost.off('error', onLost);
+    lost.off('end', onLost);
+    // A late socket error from the closing connection must not surface as an unhandled 'error' event.
+    lost.on('error', () => {});
+    lost.release(true);
+  };
+
+  const scheduleConnect = () => {
+    if (stopped || retryTimer) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      void connect();
+    }, retryDelay);
+    retryTimer.unref();
+    retryDelay = Math.min(retryDelay * 2, RETRY_MAX_MS);
+  };
+
+  function onLost(error?: Error) {
+    const lost = client;
+    client = null;
+    if (heartbeat) clearInterval(heartbeat);
+    heartbeat = null;
+    if (!lost) return;
+    drop(lost);
+    log.warn('Auth invalidation listener lost its connection, reconnecting', { error });
+    scheduleConnect();
+  }
+
+  async function connect() {
+    let next: PoolClient | undefined;
+    try {
+      next = await pool.connect();
+      next.on('notification', onNotification);
+      next.on('error', onLost);
+      next.on('end', onLost);
+      await next.query(listenStatement);
+      if (stopped) return drop(next);
+      client = next;
+      retryDelay = RETRY_MIN_MS;
+      // Any entry cached while nothing listened may have missed its invalidation.
+      clearAuthCache();
+      clearOrgCache();
+      clearTenantCache();
+      heartbeat = setInterval(() => {
+        client?.query(listenStatement).catch((error: Error) => onLost(error));
+      }, HEARTBEAT_MS);
+      heartbeat.unref();
+    } catch (error) {
+      if (next && next !== client) drop(next);
+      log.warn('Auth invalidation listener failed to connect, retrying', { error });
+      scheduleConnect();
+    }
+  }
+
+  void connect();
+
+  stopListening = async () => {
+    stopped = true;
+    stopListening = null;
+    if (retryTimer) clearTimeout(retryTimer);
+    if (heartbeat) clearInterval(heartbeat);
+    const current = client;
+    client = null;
+    if (current) drop(current);
+  };
+  return stopListening;
+}
