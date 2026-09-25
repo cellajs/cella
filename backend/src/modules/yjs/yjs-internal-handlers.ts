@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { z } from 'zod';
 import type { Env } from '#/core/context';
-import { env } from '#/env';
+import { modeSecret } from '#/env';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { productEntityTypeSchema } from '#/schemas';
 import { log } from '#/utils/logger';
@@ -26,7 +26,7 @@ const app = new Hono<Env>();
 /** Persists a compacted collaborative document to its entity; 410 tells the relay the entity is gone, so its rows can go too. */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-relay-secret');
-  if (!secret || !safeEqual(secret, env.YJS_RELAY_SECRET)) {
+  if (!secret || !safeEqual(secret, modeSecret('YJS_RELAY_SECRET'))) {
     log.warn('Yjs materialize auth failed');
     return ctx.json({ error: 'unauthorized' }, 401);
   }

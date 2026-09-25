@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { env } from '#/env';
+import { modeSecret } from '#/env';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -23,7 +23,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   let member: Awaited<ReturnType<typeof createOrgUser>>;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
 
-  const materialize = async (body: Record<string, unknown>, secret: string | null = env.YJS_RELAY_SECRET) => {
+  const materialize = async (body: Record<string, unknown>, secret: string | null = modeSecret('YJS_RELAY_SECRET')) => {
     const response = await internalApp.fetch(
       new Request('http://localhost/internal/yjs/materialize', {
         method: 'POST',
@@ -72,7 +72,9 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it('must not write without the relay secret or with a wrong one', async () => {
     expect((await materialize(bodyFor(ownScope(), 'no secret'), null)).status).toBe(401);
-    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${env.YJS_RELAY_SECRET}x`)).status).toBe(401);
+    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${modeSecret('YJS_RELAY_SECRET')}x`)).status).toBe(
+      401,
+    );
     expect((await stored())?.description).toBe(original);
   });
 

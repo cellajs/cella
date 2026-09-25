@@ -1,5 +1,5 @@
 import { yjsTokenPublicKey } from 'shared/utils/yjs-token';
-import { env } from '#/env';
+import { modeSecret } from '#/env';
 
 /**
  * Prints the YJS_TOKEN_PUBLIC_KEY that matches this backend's YJS_TOKEN_PRIVATE_KEY, for the Yjs relay's env. The
@@ -7,4 +7,4 @@ import { env } from '#/env';
  *
  * Usage: pnpm --filter backend yjs:public-key
  */
-console.info(`YJS_TOKEN_PUBLIC_KEY=${yjsTokenPublicKey(env.YJS_TOKEN_PRIVATE_KEY)}`);
+console.info(`YJS_TOKEN_PUBLIC_KEY=${yjsTokenPublicKey(modeSecret('YJS_TOKEN_PRIVATE_KEY'))}`);

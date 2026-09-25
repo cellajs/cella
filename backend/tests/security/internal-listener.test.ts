@@ -4,7 +4,7 @@ import { connect } from 'node:net';
 import type { ServerType } from '@hono/node-server';
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { env } from '#/env';
+import { modeSecret } from '#/env';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -130,7 +130,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
 
   it('must not reach the CDC socket via the public listener, under any path encoding', async () => {
     for (const target of ['/internal/cdc', '/api/%2e%2e/internal/cdc', '/api/../internal/cdc', '/api/internal/cdc']) {
-      expect(await upgradeStatus(publicPort, target, { 'x-cdc-secret': env.CDC_SECRET }), target).toBe(404);
+      expect(await upgradeStatus(publicPort, target, { 'x-cdc-secret': modeSecret('CDC_SECRET') }), target).toBe(404);
     }
   });
 
@@ -143,7 +143,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
       '/api/yjs/materialize',
     ]) {
       const { status, type } = await post(publicPort, target, materializeBody('via the public listener'), {
-        'x-yjs-relay-secret': env.YJS_RELAY_SECRET,
+        'x-yjs-relay-secret': modeSecret('YJS_RELAY_SECRET'),
         Origin: appConfig.frontendUrl,
       });
       expect(status, target).toBe(404);
@@ -155,8 +155,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   it('must not accept the CDC socket on the internal listener without its own secret', async () => {
     const attempts: Headers[] = [
       {},
-      { 'x-cdc-secret': `${env.CDC_SECRET}x` },
-      { 'x-cdc-secret': env.YJS_RELAY_SECRET },
+      { 'x-cdc-secret': `${modeSecret('CDC_SECRET')}x` },
+      { 'x-cdc-secret': modeSecret('YJS_RELAY_SECRET') },
     ];
     for (const headers of attempts) {
       expect(await upgradeStatus(internalPort, '/internal/cdc', headers), JSON.stringify(headers)).toBe(401);
@@ -166,8 +166,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   it('must not write a document on the internal listener without the relay secret', async () => {
     const attempts: Headers[] = [
       {},
-      { 'x-yjs-relay-secret': `${env.YJS_RELAY_SECRET}x` },
-      { 'x-yjs-relay-secret': env.CDC_SECRET },
+      { 'x-yjs-relay-secret': `${modeSecret('YJS_RELAY_SECRET')}x` },
+      { 'x-yjs-relay-secret': modeSecret('CDC_SECRET') },
     ];
     for (const headers of attempts) {
       const { status } = await post(internalPort, '/internal/yjs/materialize', materializeBody('forged'), headers);
@@ -177,10 +177,10 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   });
 
   it('accepts the CDC worker and the relay on the internal listener with their own secrets (positive control)', async () => {
-    expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': env.CDC_SECRET })).toBe(101);
+    expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': modeSecret('CDC_SECRET') })).toBe(101);
 
     const { status } = await post(internalPort, '/internal/yjs/materialize', materializeBody('written by the relay'), {
-      'x-yjs-relay-secret': env.YJS_RELAY_SECRET,
+      'x-yjs-relay-secret': modeSecret('YJS_RELAY_SECRET'),
     });
     expect(status).toBe(200);
     expect((await attachment.read())?.description).toContain('written by the relay');

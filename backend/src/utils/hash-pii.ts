@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { env } from '#/env';
+import { modeSecret } from '#/env';
 
 /**
  * Deterministic 64-bit HMAC pseudonym for normalized PII, peppered by the server secret. Use only where the
@@ -10,13 +10,19 @@ import { env } from '#/env';
 export const hashPii = (value: string, namespace = 'pii'): string => {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return '';
-  return createHmac('sha256', env.PII_HASH_SECRET).update(`${namespace}:${normalized}`).digest('hex').slice(0, 16);
+  return createHmac('sha256', modeSecret('PII_HASH_SECRET'))
+    .update(`${namespace}:${normalized}`)
+    .digest('hex')
+    .slice(0, 16);
 };
 
 /** Bound to the user, so a table leak cannot correlate one IP across users. Backs MFA trust checks. */
 export const hashIpForUser = (ip: string, userId: string): string => {
   if (!ip || !userId) return '';
-  return createHmac('sha256', env.PII_HASH_SECRET).update(`session:ip:${userId}:${ip}`).digest('hex').slice(0, 32);
+  return createHmac('sha256', modeSecret('PII_HASH_SECRET'))
+    .update(`session:ip:${userId}:${ip}`)
+    .digest('hex')
+    .slice(0, 32);
 };
 
 /**
@@ -25,7 +31,7 @@ export const hashIpForUser = (ip: string, userId: string): string => {
  */
 export const hashDeviceIdForUser = (deviceId: string, userId: string): string => {
   if (!deviceId || !userId) return '';
-  return createHmac('sha256', env.PII_HASH_SECRET)
+  return createHmac('sha256', modeSecret('PII_HASH_SECRET'))
     .update(`session:device:${userId}:${deviceId}`)
     .digest('hex')
     .slice(0, 32);
@@ -34,5 +40,8 @@ export const hashDeviceIdForUser = (deviceId: string, userId: string): string =>
 /** Global namespace, so one subnet always hashes the same and cross-user blocklist matching works. */
 export const hashSubnet = (subnet: string): string => {
   if (!subnet) return '';
-  return createHmac('sha256', env.PII_HASH_SECRET).update(`blocklist:subnet:${subnet}`).digest('hex').slice(0, 32);
+  return createHmac('sha256', modeSecret('PII_HASH_SECRET'))
+    .update(`blocklist:subnet:${subnet}`)
+    .digest('hex')
+    .slice(0, 32);
 };
