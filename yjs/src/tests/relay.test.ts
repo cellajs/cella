@@ -234,8 +234,8 @@ describe('handleMessage: sync update', () => {
 });
 
 describe('handleMessage: awareness', () => {
-  it('is broadcast to peers, allowed before verification, and rate limited per client', async () => {
-    const { ctx: c, ws, collab } = session({ verified: false });
+  it('is broadcast to peers from a verified socket and rate limited per client', async () => {
+    const { ctx: c, ws, collab } = session();
     const peer = mockWebSocket();
     joinCollab(c, peer as never);
 
@@ -253,6 +253,22 @@ describe('handleMessage: awareness', () => {
     expect(peer.sent).toHaveLength(3);
     leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
     leaveCollab(collab.ctx.entityType, collab.ctx.entityId, other as never);
+  });
+
+  it('must not relay presence from an unverified or closing socket', async () => {
+    const { ctx: c, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(c, peer as never);
+
+    const pending = mockDocContext({ entityId: c.entityId });
+    await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([1])));
+    await handleMessage(c, mockWebSocket({ readyState: 2 }) as never, buildAwarenessMessage(new Uint8Array([2])));
+    expect(peer.sent).toHaveLength(0);
+
+    // Positive control: an open verified socket reaches the peer.
+    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([3])));
+    expect(peer.sent).toHaveLength(1);
+    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
   });
 });
 

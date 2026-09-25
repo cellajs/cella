@@ -11,7 +11,7 @@ vi.mock('../data/permissions', () => ({
     return verifyGate.allowed;
   }),
 }));
-// Sync frames are recorded with the verification state they were applied under; awareness frames bypass the queue.
+// Frames are recorded with the verification state they were applied under; awareness frames bypass the queue.
 const applied: { type: number; verified: boolean; body: number }[] = [];
 vi.mock('../sync/relay', () => ({
   YMessage: { Sync: 0, Awareness: 1 },
@@ -144,15 +144,22 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     ws.send(new Uint8Array([1, 0, 9]));
     ws.send(new Uint8Array([0, 2, 3]));
     await wait(40);
-    // Awareness bypassed the queue and ran unverified; sync frames are still held.
-    expect(applied).toEqual([{ type: 1, verified: false, body: 9 }]);
+    // Nothing ran before verification: sync frames are held, and so is the presence frame.
+    expect(applied).toEqual([]);
 
     await wait(150);
-    expect(applied.slice(1)).toEqual([
+    // The join relays the held presence first, then the queue applies the sync frames.
+    expect(applied).toEqual([
+      { type: 1, verified: true, body: 9 },
       { type: 0, verified: true, body: 1 },
       { type: 0, verified: true, body: 2 },
       { type: 0, verified: true, body: 3 },
     ]);
+
+    // Presence from the joined socket goes through.
+    ws.send(new Uint8Array([1, 0, 8]));
+    await wait(30);
+    expect(applied.at(-1)).toEqual({ type: 1, verified: true, body: 8 });
     ws.close();
   });
 

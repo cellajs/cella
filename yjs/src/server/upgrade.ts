@@ -56,7 +56,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> 
   }
 }
 
-/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync frames wait in the socket's queue. */
+/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync frames wait in the socket's queue and the socket stays outside the document. */
 export function setupUpgradeHandler(
   server: WebSocketServer,
 ): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
@@ -135,37 +135,55 @@ export function setupUpgradeHandler(
 
 /**
  * Sync frames from one socket run one at a time in arrival order through a serial queue whose
- * first task is the socket's entity verification: nothing is applied before access is known, and
- * a burst of keystrokes can never interleave. Awareness bypasses the queue (ephemeral, allowed
- * before verification). Closing drops whatever has not started.
+ * first task awaits the socket's entity verification and then joins the document: nothing is
+ * applied, and no peer frame is received, before access is known, and a burst of keystrokes can
+ * never interleave. Awareness bypasses the queue and is relayed only for a joined socket; the
+ * latest frame sent before the join waits for it, so a new editor's presence shows at once.
+ * Closing drops whatever has not started.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: DocContext) => {
-    joinCollab(ctx, ws);
+    let joined = false;
+    let heldAwareness: Uint8Array | null = null;
+    const relayAwareness = (data: Uint8Array) => {
+      handleMessage(ctx, ws, data).catch((err) => {
+        log.error(`Error handling awareness for ${ctx.entityType}:${ctx.entityId}`, { err });
+      });
+    };
 
     const queue = createSerialQueue((err) => {
       log.error(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, { err });
     });
     const verification = verifications.get(ws);
-    if (verification) {
-      void queue.enqueue(async () => {
-        await verification;
-        // Denied or failed: the socket is closing; frames queued meanwhile must never apply.
-        if (!ctx.verified) queue.close();
-      });
-    }
+    void queue.enqueue(async () => {
+      if (verification) await verification;
+      const held = heldAwareness;
+      heldAwareness = null;
+      // Denied, failed or closed during verification: queued frames must never apply, and the socket never joins.
+      if (!ctx.verified || queue.closed || ws.readyState !== ws.OPEN) {
+        queue.close();
+        return;
+      }
+      joinCollab(ctx, ws);
+      joined = true;
+      if (held) relayAwareness(held);
+    });
 
     const cleanup = () => {
       queue.close();
+      heldAwareness = null;
+      if (!joined) return;
+      joined = false;
       leaveCollab(ctx.entityType, ctx.entityId, ws);
     };
 
     ws.on('message', (rawData: Buffer) => {
+      // ws still emits frames that arrive while the socket closes: none reach the document or its peers.
+      if (ws.readyState !== ws.OPEN) return;
       const data = new Uint8Array(rawData);
       if (peekMessageType(data) === YMessage.Awareness) {
-        handleMessage(ctx, ws, data).catch((err) => {
-          log.error(`Error handling awareness for ${ctx.entityType}:${ctx.entityId}`, { err });
-        });
+        if (joined) relayAwareness(data);
+        else if (!queue.closed) heldAwareness = data;
         return;
       }
       // Bounds memory while a slow verification holds the queue; a verified socket is not capped.

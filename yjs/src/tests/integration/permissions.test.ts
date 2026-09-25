@@ -218,6 +218,10 @@ describe('Local entity authorization (canEditEntity)', () => {
     );
   });
 
+  it("must not verify a context that names another tenant's organization", async () => {
+    await expect(canEditEntity(ctx({ entityId: attachmentA, organizationId: orgC }))).resolves.toBe(false);
+  });
+
   it('denies access to a non-existent entity', async () => {
     await expect(canEditEntity(ctx({ entityId: randomUUID() }))).resolves.toBe(false);
   });

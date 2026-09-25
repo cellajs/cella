@@ -46,8 +46,12 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
   return run;
 }
 
-/** Registers a client for a document and cancels pending cleanup when reconnecting. */
+/**
+ * Registers a verified client for a document and cancels pending cleanup when reconnecting. The first
+ * client's context becomes the session's, which compaction, materialize and cleanup act in.
+ */
 export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
+  if (!ctx.verified) throw new Error(`Unverified socket cannot join ${ctx.entityType}:${ctx.entityId}`);
   const key = collabKey(ctx.entityType, ctx.entityId);
   let collab = collabSessions.get(key);
 

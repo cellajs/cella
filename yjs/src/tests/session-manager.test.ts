@@ -133,6 +133,12 @@ describe('joinCollab / leaveCollab', () => {
     expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
   });
 
+  it('must not take the session context from an unverified socket', () => {
+    const ctx = uniqueCtx({ verified: false });
+    expect(() => joinCollab(ctx, mockWebSocket() as never)).toThrow();
+    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+  });
+
   it('leave for an unknown session is a no-op', () => {
     expect(() => leaveCollab('task', 'nope', mockWebSocket() as never)).not.toThrow();
   });

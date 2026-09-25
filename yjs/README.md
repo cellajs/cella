@@ -38,7 +38,7 @@ ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 
 Before completing the handshake, the relay validates required parameters, HMAC token and expiry, token scope, and the per-user rate limit. Malformed requests, scope mismatches and rate limits fail as an HTTP 400 with a JSON `{ code, reason }` body, which a browser sees as close code 1006. An invalid or expired token closes after the handshake with code 4001, so the client can refetch its token and reconnect with backoff.
 
-Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync frames wait in the socket's serial queue behind it, up to 100, and later ones are dropped; a denied socket's queued frames never run. Awareness bypasses the queue.
+Entity authorization runs after the socket opens, via an RLS-scoped read by the shared permission engine (no backend round trip). Sync frames wait in the socket's serial queue behind it, up to 100, and later ones are dropped; a denied socket's queued frames never run. The socket joins the document's session only once verified: until then it receives no peer frames, and it relays no awareness. Its latest awareness frame waits for the join, so a new editor's presence shows at once; a denied socket's is dropped. The session's context, which compaction and materialization act in, comes from the first verified socket. A closing socket's frames are dropped.
 
 | Close code | Meaning |
 | --- | --- |
@@ -69,7 +69,7 @@ A client's Step1 is answered with the diff of the merged document, followed by t
 
 ### Ordering, append, broadcast, compaction
 
-Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content.
+Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content.
 
 Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/yjs/materialize` on behalf of the last editor in the window, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `4xx` for a product without one.
 

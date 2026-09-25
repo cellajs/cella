@@ -41,8 +41,8 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
 
 /**
  * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
- * verification, so they run in arrival order; awareness is ephemeral, allowed before verification
- * and rate limited per client.
+ * verification, so they run in arrival order; awareness is ephemeral, relayed only from a verified
+ * open socket and rate limited per client.
  */
 export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
@@ -64,6 +64,7 @@ export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8A
       await handleSyncUpdate(ctx, ws, update, data);
     }
   } else if (messageType === YMessage.Awareness) {
+    if (!ctx.verified || ws.readyState !== ws.OPEN) return;
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;

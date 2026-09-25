@@ -105,6 +105,8 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Defense in depth: verify the tenant match even when RLS is not enforced, as on a superuser connection.
     if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
+    // A verified context becomes the session's, whose organization scopes the log rows and the materialize write.
+    if (typeof entity.organizationId === 'string' && entity.organizationId !== ctx.organizationId) return false;
 
     // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
     if (!draftVisibleTo(asRecord(entity), ctx.userId)) return false;
