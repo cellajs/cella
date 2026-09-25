@@ -108,125 +108,149 @@ export async function runPrivilegedConverge(
     if (lockReleased) return;
     lockReleased = true;
     await stackLock.release();
+  };
+  // The minted key outlives the lock: the verification below reads IAM and the database with it, so it is revoked last (safe to call twice).
+  const releaseAll = async () => {
+    await releaseLock();
     await ownerKey.release();
   };
 
   let completed = false;
+  let verified: boolean | undefined;
   try {
-    env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
-
-    // Registry principals are privileged like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
-    console.info(pc.dim('\n→ Ensuring registry IAM principals (vm-<service> + boot applications)…'));
     try {
-      await ensureRegistryPrincipals({
-        callerSecretKey: ownerKey.secretKey,
-        projectId,
-        slug: appConfig.slug,
-        mode: context.environment,
-        organizationId: env.SCW_DEFAULT_ORGANIZATION_ID,
-        singleVM: appConfig.singleVM ?? false,
-      });
-    } catch (error) {
-      console.warn(
-        `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
-      );
-    }
+      env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
-    // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
-    console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-    const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], {
-      cwd: infraDir,
-      env,
-      stdio: 'inherit',
-    });
-    if (sync.status !== 0) {
-      await releaseLock();
-      console.error(
-        `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
-      );
-      process.exit(sync.status ?? 1);
-    }
-
-    const configFile = opts.prepare?.(env, stack);
-
-    if (opts.confirmPlan) {
-      const previewArgs = ['preview', '--stack', stack, '--diff', ...(configFile ? ['--config-file', configFile] : [])];
-      console.info(`\n→ pulumi preview (the plan this run would apply)\n  $ pulumi ${previewArgs.join(' ')}`);
-      const preview = spawnSync('pulumi', previewArgs, { cwd: infraDir, env, stdio: 'inherit' });
-      if (preview.status !== 0) {
-        await releaseLock();
-        console.error(`${warningMark} pulumi preview exited ${preview.status}; nothing applied.`);
-        process.exit(preview.status ?? 1);
-      }
-      if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
-        console.info('Declined; nothing applied.');
-        return { env, stack, completed: false, ownerKeyPasted: ownerKey.pasted };
-      }
-    }
-
-    let debugLogPath: string | undefined;
-    if (opts.debugProvider) {
-      const dir = resolve(infraDir, '.debug');
-      mkdirSync(dir, { recursive: true });
-      debugLogPath = resolve(dir, `${opts.operation}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-    }
-
-    while (true) {
-      const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
-        configFile,
-        skipPreview: opts.confirmPlan,
-        debugLogPath,
-      });
-      if (code === 0) {
-        completed = true;
-        break;
-      }
-      // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
-      const orphans = parseOrphanedDeletes(output);
-      if (orphans.length > 0) {
+      // Registry principals are privileged like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
+      console.info(pc.dim('\n→ Ensuring registry IAM principals (vm-<service> + boot applications)…'));
+      try {
+        await ensureRegistryPrincipals({
+          callerSecretKey: ownerKey.secretKey,
+          projectId,
+          slug: appConfig.slug,
+          mode: context.environment,
+          organizationId: env.SCW_DEFAULT_ORGANIZATION_ID,
+          singleVM: appConfig.singleVM ?? false,
+        });
+      } catch (error) {
         console.warn(
-          `\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`,
+          `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
         );
-        for (const urn of orphans) console.warn(`  ${pc.dim('-')} ${urn}`);
-        if (
-          await confirm({
-            message: `Prune ${orphans.length === 1 ? 'this stale entry' : 'these stale entries'} from state and retry pulumi up?`,
-            default: true,
-          })
-        ) {
-          pruneOrphanedDeletes(orphans, stack, infraDir, env);
-          continue;
+      }
+
+      // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
+      console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
+      const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], {
+        cwd: infraDir,
+        env,
+        stdio: 'inherit',
+      });
+      if (sync.status !== 0) {
+        await releaseAll();
+        console.error(
+          `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
+        );
+        process.exit(sync.status ?? 1);
+      }
+
+      const configFile = opts.prepare?.(env, stack);
+
+      if (opts.confirmPlan) {
+        const previewArgs = [
+          'preview',
+          '--stack',
+          stack,
+          '--diff',
+          ...(configFile ? ['--config-file', configFile] : []),
+        ];
+        console.info(`\n→ pulumi preview (the plan this run would apply)\n  $ pulumi ${previewArgs.join(' ')}`);
+        const preview = spawnSync('pulumi', previewArgs, { cwd: infraDir, env, stdio: 'inherit' });
+        if (preview.status !== 0) {
+          await releaseAll();
+          console.error(`${warningMark} pulumi preview exited ${preview.status}; nothing applied.`);
+          process.exit(preview.status ?? 1);
+        }
+        if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
+          console.info('Declined; nothing applied.');
+          return { env, stack, completed: false, ownerKeyPasted: ownerKey.pasted };
         }
       }
-      if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
+
+      let debugLogPath: string | undefined;
+      if (opts.debugProvider) {
+        const dir = resolve(infraDir, '.debug');
+        mkdirSync(dir, { recursive: true });
+        debugLogPath = resolve(dir, `${opts.operation}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+      }
+
+      while (true) {
+        const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
+          configFile,
+          skipPreview: opts.confirmPlan,
+          debugLogPath,
+        });
+        if (code === 0) {
+          completed = true;
+          break;
+        }
+        // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
+        const orphans = parseOrphanedDeletes(output);
+        if (orphans.length > 0) {
+          console.warn(
+            `\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`,
+          );
+          for (const urn of orphans) console.warn(`  ${pc.dim('-')} ${urn}`);
+          if (
+            await confirm({
+              message: `Prune ${orphans.length === 1 ? 'this stale entry' : 'these stale entries'} from state and retry pulumi up?`,
+              default: true,
+            })
+          ) {
+            pruneOrphanedDeletes(orphans, stack, infraDir, env);
+            continue;
+          }
+        }
+        if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
+      }
+    } finally {
+      await releaseLock();
+    }
+
+    if (completed && opts.verifyAfter) {
+      console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
+      const result = await verifyPrivilegedUp({
+        appConfig,
+        projectId,
+        organizationId,
+        secretKey: ownerKey.secretKey,
+        log: (msg) => console.info(pc.dim(msg)),
+      });
+      verified = result.ok;
+      if (result.errors.length > 0) {
+        console.error(
+          `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
+        );
+        console.error(
+          pc.dim(
+            "  Nothing is known to be wrong: re-run Preview, or let the next deploy's Verify VM IAM grants step tell.",
+          ),
+        );
+      }
+      if (result.problems.length > 0) {
+        console.error(
+          `\n${warningMark} pulumi reported success, but the live infrastructure still differs from the program:\n${result.problems.map((problem) => `  ✗ ${problem}`).join('\n')}`,
+        );
+        console.error(
+          pc.dim(
+            '  The provider recorded an update Scaleway did not keep. Re-run with --debug-provider to capture the API calls, then fix the rule in the console if a deploy is waiting.',
+          ),
+        );
+      } else if (result.errors.length === 0) {
+        console.info(`${pc.green('✓')} live grants and privileges match the program`);
+      }
     }
   } finally {
-    await releaseLock();
-  }
-
-  let verified: boolean | undefined;
-  if (completed && opts.verifyAfter) {
-    console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
-    const result = await verifyPrivilegedUp({
-      appConfig,
-      projectId,
-      organizationId,
-      secretKey: ownerKey.secretKey,
-      log: (msg) => console.info(pc.dim(msg)),
-    });
-    verified = result.ok;
-    if (!result.ok) {
-      console.error(
-        `\n${warningMark} pulumi reported success, but the live infrastructure still differs from the program:\n${result.problems.map((problem) => `  ✗ ${problem}`).join('\n')}`,
-      );
-      console.error(
-        pc.dim(
-          '  The provider recorded an update Scaleway did not keep. Re-run with --debug-provider to capture the API calls, then fix the rule in the console if a deploy is waiting.',
-        ),
-      );
-    } else {
-      console.info(`${pc.green('✓')} live grants and privileges match the program`);
-    }
+    await ownerKey.release();
   }
 
   return { env, stack, completed, verified, ownerKeyPasted: ownerKey.pasted };

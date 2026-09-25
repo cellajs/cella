@@ -77,7 +77,7 @@ describe('verifyPrivilegedUp', () => {
       assertGrants: okGrants,
       log: () => {},
     });
-    expect(result).toEqual({ ok: true, problems: [] });
+    expect(result).toEqual({ ok: true, problems: [], errors: [] });
   });
 
   it('reports a missing cron privilege and a failed grant', async () => {
@@ -113,6 +113,30 @@ describe('verifyPrivilegedUp', () => {
       'cella-production-vm-backend: live grant differs from the declared one (see the lines above)',
       "database privilege admin_role on rdb: live 'none', expected one of all",
     ]);
+  });
+
+  it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {
+    const denied: FetchLike = async () => ({
+      ok: false,
+      status: 401,
+      text: async () => JSON.stringify({ message: 'authentication is denied' }),
+    });
+    const throwingGrants: typeof assertVmGrants = async () => {
+      throw new Error('Scaleway GET applications → 401: authentication is denied');
+    };
+    const result = await verifyPrivilegedUp({
+      appConfig,
+      projectId: 'proj-1',
+      organizationId: 'org-1',
+      secretKey: 'revoked',
+      fetchImpl: denied,
+      assertGrants: throwingGrants,
+      log: () => {},
+    });
+    expect(result.ok).toBe(false);
+    expect(result.problems).toEqual([]);
+    expect(result.errors.length).toBeGreaterThan(1);
+    expect(result.errors[0]).toMatch(/401/);
   });
 
   it('passes the project scope only to conditioned (VM/boot) rows', async () => {
