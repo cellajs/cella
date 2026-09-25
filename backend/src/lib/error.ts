@@ -3,6 +3,7 @@ import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { appConfig, type Severity } from 'shared';
+import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
@@ -90,7 +91,8 @@ export interface ToClientErrorOptions {
 /**
  * Maps any thrown value to the error a client may see, and logs it once. An `AppError` passes through; a Postgres
  * error with a known code maps to its status and a fixed message; pool exhaustion answers 503; anything else is a 500
- * whose message (for a failed query: the SQL and its parameters) stays in the log unless `exposeServerMessage`.
+ * whose message (for a failed query: the SQL and its parameters) reaches the client only with `exposeServerMessage`.
+ * The logger writes a failed query with the database's reason alone, never its SQL or values.
  * @param err - The thrown value.
  * @param logFields - Request facts for the log line.
  * @param options - Message exposure; defaults to hiding 5xx messages in production.
@@ -185,6 +187,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
 
   // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
   ctx.set('errorStatus', clientError.status);
+
+  // The tracing middleware records `ctx.error` on the request span: a failed query goes there as the database's reason.
+  const traced = withoutFailedQuery(err);
+  if (traced instanceof Error) ctx.error = traced;
 
   if (clientError.willRedirect) {
     const redirectUrl = new URL(clientError.meta?.errorPagePath || '/error', appConfig.frontendUrl);

@@ -2,6 +2,7 @@ import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
+import { failedQueryReason, isFailedQueryMessage, redactFailedQuery } from './utils/failed-query.ts';
 import { scrubUrl } from './utils/scrub-url.ts';
 
 export type { Logger } from 'pino';
@@ -26,6 +27,44 @@ interface CreateLoggerOptions {
   /** Writes every line here and builds no console or Maple target (tests). */
   destination?: pino.DestinationStream;
 }
+
+/** Nested causes a serialized error is searched to; deeper ones are left as the serializer wrote them. */
+const maxCauseDepth = 8;
+
+/**
+ * Removes failed queries from a serialized error and its causes, in place. A failed query's own node takes the
+ * database's reason as its message and loses its `query` and `params`; any other message or stack quoting one is
+ * redacted. Only error-like nodes (a string `message`) are touched: the serializer built those, the caller did not.
+ */
+const redactSerializedError = (node: unknown, depth = 0): void => {
+  if (typeof node !== 'object' || node === null || depth > maxCauseDepth) return;
+  const error = node as Record<string, unknown>;
+  const { message, stack } = error;
+  if (typeof message !== 'string') return;
+
+  if (isFailedQueryMessage(message)) {
+    const reason = failedQueryReason(error.cause);
+    error.message = reason;
+    if (typeof stack === 'string') error.stack = stack.split(message).join(reason);
+    delete error.query;
+    delete error.params;
+  } else {
+    error.message = redactFailedQuery(message);
+  }
+  if (typeof error.stack === 'string') error.stack = redactFailedQuery(error.stack);
+
+  redactSerializedError(error.cause, depth + 1);
+  if (Array.isArray(error.aggregateErrors)) {
+    for (const inner of error.aggregateErrors) redactSerializedError(inner, depth + 1);
+  }
+};
+
+/** Pino's `errWithCause` output ({ type, message, stack, cause }) without the SQL and values of a failed query. */
+const serializeError = (err: unknown): unknown => {
+  const serialized: unknown = pino.stdSerializers.errWithCause(err as Error);
+  redactSerializedError(serialized);
+  return serialized;
+};
 
 export const createLogger = ({
   level,
@@ -91,10 +130,11 @@ export const createLogger = ({
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
-      // Pino convention: an Error under `err` expands to { type, message, stack }, keeping nested
+      // Pino convention: an Error under `err` (or `error`) expands to { type, message, stack }, keeping nested
       // `cause` chains, which is where Drizzle puts pg errors. A logged `url` goes through `scrubUrl`.
       serializers: {
-        err: pino.stdSerializers.errWithCause,
+        err: serializeError,
+        error: serializeError,
         url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url),
       },
       // Tag each line with the active OTel span so Maple joins logs to traces, including those

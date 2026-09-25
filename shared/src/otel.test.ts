@@ -154,6 +154,46 @@ describe('createOtelSDK', () => {
     expect(redacted?.attributes['url.query']).toBe('token=[REDACTED]&page=2');
   });
 
+  it('must not export the values of a failed query via an exception event or the status', async () => {
+    const exported: ReadableSpan[] = [];
+    const otel = createOtelSDK({
+      serviceName: 'test-service',
+      traceExporter: collectingExporter(exported),
+      autoInstrumentations: false,
+      flushOnShutdown: true,
+    });
+    otel.start();
+
+    // Built at run time: the test proves this value never reaches the exporter.
+    const secret = `secret_${crypto.randomUUID()}`;
+    const sql = 'select "id" from "sessions" where "sessions"."secret" = $1';
+    // Drizzle's DrizzleQueryError: the SQL and every bound value in the message, and so in the stack.
+    const failed = Object.assign(new Error(`Failed query: ${sql}\nparams: ${secret},\n${secret}`), {
+      name: 'DrizzleQueryError',
+    });
+    // An error that took over the failed query's stack, as an AppError built from `originalError` does.
+    const wrapper = Object.assign(new Error('Could not sign in'), { stack: failed.stack });
+    const span = trace.getTracer('test').startSpan('POST /auth/sign-in');
+    span.recordException(failed);
+    span.recordException(wrapper);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: failed.message });
+    span.end();
+    await otel.shutdown();
+
+    const text = exportedText(exported);
+    expect(text).not.toContain(secret);
+    expect(text).not.toContain(sql);
+    // Positive control: both exceptions are recorded, by type, with their stack frames.
+    const events = exported[0]?.events ?? [];
+    expect(events.map((event) => event.attributes?.['exception.type'])).toEqual(['DrizzleQueryError', 'Error']);
+    expect(events[0]?.attributes?.['exception.message']).toBe('Failed query: [REDACTED]');
+    expect(events[0]?.attributes?.['exception.stacktrace']).toMatch(
+      /^DrizzleQueryError: Failed query: \[REDACTED\]\n {4}at /,
+    );
+    expect(events[1]?.attributes?.['exception.message']).toBe('Could not sign in');
+    expect(exported[0]?.status.message).toBe('Failed query: [REDACTED]');
+  });
+
   it('redacts before any other span processor reads the span', async () => {
     const seenUrls: unknown[] = [];
     const reader: SpanProcessor = {
