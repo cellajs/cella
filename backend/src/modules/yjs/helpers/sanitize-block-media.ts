@@ -1,5 +1,5 @@
 import type { MediaRefContext } from 'shared/utils/media-ref';
-import { findRefusedMediaBlocks } from 'shared/utils/validate-block-media-urls';
+import { blankMediaReference, findRefusedMediaBlocks } from 'shared/utils/validate-block-media-urls';
 
 /**
  * Blanks media references the media grammar refuses before the relay persists description content. Client PUTs reject
@@ -26,6 +26,6 @@ export function sanitizeBlockMediaUrls(
   const refused = findRefusedMediaBlocks(blocks, ctx);
   if (refused.length === 0) return { description, sanitized: false, invalidUrls: [] };
 
-  for (const { props } of refused) props.url = '';
+  for (const block of refused) blankMediaReference(block);
   return { description: JSON.stringify(blocks), sanitized: true, invalidUrls: refused.map(({ url }) => url) };
 }

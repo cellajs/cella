@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { mediaBlockTypes } from 'shared/blocknote';
 import type { MediaRefContext } from 'shared/utils/media-ref';
-import { isAcceptedMediaUrl } from 'shared/utils/validate-block-media-urls';
+import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
@@ -42,18 +42,17 @@ const cacheFirstPass = (key: string, html: string) => {
 };
 
 /**
- * The blocks the static render shows. A media block whose reference the media grammar refuses renders
- * nothing, in either pass: it is dropped and its nested blocks take its place.
+ * The blocks the static render shows, walked as the media validator walks them. A media block the validator
+ * refuses renders nothing, in either pass, and neither does a node without a string type: each is dropped
+ * and its nested blocks take its place. A list item that is no object is skipped.
  */
-const withRenderableMedia = (blocks: CustomBlock[], ctx: MediaRefContext): CustomBlock[] =>
-  blocks.flatMap((block) => {
-    const children = block.children?.length
-      ? withRenderableMedia(block.children as CustomBlock[], ctx)
-      : block.children;
-    if (mediaBlockTypes.has(block.type) && 'url' in block.props && !isAcceptedMediaUrl(block.props.url, ctx)) {
-      return (children ?? []) as CustomBlock[];
-    }
-    return [{ ...block, children } as CustomBlock];
+const withRenderableMedia = (nodes: unknown[], ctx: MediaRefContext): CustomBlock[] =>
+  nodes.flatMap((node) => {
+    if (!isDocumentNode(node)) return [];
+    const children = withRenderableMedia(childNodes(node), ctx);
+    if (typeof node.type !== 'string' || isRefusedMediaBlock(node, ctx)) return children;
+    // A string-typed node keeps its own shape; BlockNote reads it as the block it names.
+    return [{ ...node, children } as CustomBlock];
   });
 
 /**
@@ -93,6 +92,7 @@ async function processBlocks(
       blocks.map(async (block) => {
         let props = block.props;
 
+        // withRenderableMedia ran first: a media block here holds a props object.
         if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
           const rawUrl = props.url as string;
           const resolvedUrl = await resolveUrl(rawUrl);

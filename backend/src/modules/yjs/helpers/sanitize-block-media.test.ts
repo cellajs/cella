@@ -53,6 +53,21 @@ describe('sanitizeBlockMediaUrls', () => {
     expect(JSON.parse(result.description)[0].children[0].props.url).toBe('');
   });
 
+  it('blanks a media block whose props is not an object, and one hidden under a node without a string type', () => {
+    const hidden = { id: '4', type: 'image', props: { url: '//evil.example/pixel.png' }, content: [], children: [] };
+    const description = JSON.stringify([
+      { id: '3', type: 'image', props: 'https://evil.example/pixel.png', content: [], children: [] },
+      { id: '5', type: 42, props: {}, children: [hidden] },
+    ]);
+    const result = sanitizeBlockMediaUrls(description, ctx);
+
+    expect(result.sanitized).toBe(true);
+    const [mediaBlock, oddNode] = JSON.parse(result.description);
+    expect(mediaBlock.props).toEqual({ url: '' });
+    expect(oddNode.children[0].props.url).toBe('');
+    expect(sanitizeBlockMediaUrls(result.description, ctx).sanitized).toBe(false);
+  });
+
   it('degrades content that is not a block list to an empty document', () => {
     for (const content of ['not json', '{"type": "image"}']) {
       const result = sanitizeBlockMediaUrls(content, ctx);

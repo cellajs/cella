@@ -2,6 +2,10 @@ import type { Block } from '@blocknote/core';
 
 export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
+/** Whether a block's `props` is an object whose keys can be read: a stored document is client input. */
+export const isPropsObject = (props: unknown): props is Record<string, unknown> =>
+  typeof props === 'object' && props !== null && !Array.isArray(props);
+
 type InlineContentLike = {
   type?: string;
   text?: unknown;
@@ -94,10 +98,9 @@ export const getTextFromBlock = (block: Block): string => {
   const { content, children } = block;
 
   // Media blocks carry no inline content; their file name stands in.
+  const props: unknown = block.props;
   const mediaName =
-    mediaBlockTypes.has(block.type) && 'name' in block.props && typeof block.props.name === 'string'
-      ? block.props.name
-      : '';
+    mediaBlockTypes.has(block.type) && isPropsObject(props) && typeof props.name === 'string' ? props.name : '';
   let text = contentText(content) || mediaName;
 
   if (Array.isArray(children)) {
@@ -141,11 +144,10 @@ export const getSearchableTextFromBlock = (block: Block): string => {
     );
   }
 
-  if (mediaBlockTypes.has(block.type)) {
-    if ('name' in block.props && typeof block.props.name === 'string') parts.push(block.props.name);
-    if ('url' in block.props && typeof block.props.url === 'string') {
-      parts.push(getSearchableTextFromUrl(block.props.url));
-    }
+  const props: unknown = block.props;
+  if (mediaBlockTypes.has(block.type) && isPropsObject(props)) {
+    if (typeof props.name === 'string') parts.push(props.name);
+    if (typeof props.url === 'string') parts.push(getSearchableTextFromUrl(props.url));
   }
 
   if (Array.isArray(children)) parts.push(...children.map(getSearchableTextFromBlock));

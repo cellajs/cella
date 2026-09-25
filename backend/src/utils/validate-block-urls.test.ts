@@ -143,6 +143,31 @@ describe('validateBlockMediaUrls', () => {
       });
     });
 
+    it('must not hide a media block under a node whose type is not a string', () => {
+      const hidden = '//evil.example/pixel.png';
+      for (const type of [123, null, ['image']]) {
+        const blocks = makeBlocks({ id: '6', type, props: {}, children: [image(hidden)] });
+        expect(validateBlockMediaUrls(blocks, ctx), JSON.stringify(type)).toEqual({
+          valid: false,
+          invalidUrls: [hidden],
+        });
+      }
+      const untyped = makeBlocks({ id: '6', props: {}, children: [image(hidden)] });
+      expect(validateBlockMediaUrls(untyped, ctx)).toEqual({ valid: false, invalidUrls: [hidden] });
+    });
+
+    it('must not store a media block whose props is not an object', () => {
+      for (const props of ['https://evil.example/pixel.png', null, 1, ['https://evil.example/pixel.png']]) {
+        const blocks = makeBlocks({ id: '7', type: 'image', props, content: [], children: [] });
+        expect(validateBlockMediaUrls(blocks, ctx), JSON.stringify(props)).toEqual({
+          valid: false,
+          invalidUrls: ['[invalid props]'],
+        });
+      }
+      const withoutProps = makeBlocks({ id: '8', type: 'video', content: [], children: [] });
+      expect(validateBlockMediaUrls(withoutProps, ctx)).toEqual({ valid: false, invalidUrls: ['[invalid props]'] });
+    });
+
     it('skips list items that are not blocks', () => {
       expect(validateBlockMediaUrls('[null, 1, "text", {"props": {"url": "//evil.example"}}]', ctx)).toEqual({
         valid: true,

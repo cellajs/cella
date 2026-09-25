@@ -149,6 +149,20 @@ describe('Block media references', async () => {
       }
     });
 
+    it('must not store a malformed media block via a client write', async () => {
+      const malformed = [
+        [{ id: generateId(), type: 'image', props: 'https://evil.example/pixel.png', content: [], children: [] }],
+        [{ id: generateId(), type: 'image', props: null, content: [], children: [] }],
+        [{ id: generateId(), type: 7, props: {}, children: [imageBlock('//evil.example/pixel.png')] }],
+      ];
+      for (const blocks of malformed) {
+        const { error, response } = await putDescription(JSON.stringify(blocks));
+        expect(response.status, JSON.stringify(blocks)).toBe(400);
+        expect((error as ErrorResponse).type).toBe('invalid_request');
+        expect(await storedDescription()).toBe(original);
+      }
+    });
+
     it('must not load media from outside the organization via an organization welcome text', async () => {
       const before = await storedWelcomeText();
       for (const url of ['//evil.example/pixel.png', victimKey()]) {

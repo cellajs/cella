@@ -1,5 +1,5 @@
 import { type MediaRefContext, parseMediaRef } from './media-ref.ts';
-import { mediaBlockTypes } from './text-from-block.ts';
+import { isPropsObject, mediaBlockTypes } from './text-from-block.ts';
 
 /**
  * Whether a media block's `url` prop may be stored and rendered: absent or blank (no file yet), or a string the media
@@ -8,38 +8,57 @@ import { mediaBlockTypes } from './text-from-block.ts';
 export const isAcceptedMediaUrl = (url: unknown, ctx: MediaRefContext): boolean =>
   url === undefined || url === '' || (typeof url === 'string' && parseMediaRef(url, ctx).kind !== 'invalid');
 
-interface BlockLike {
-  type: string;
-  props?: Record<string, unknown>;
-  children?: unknown[];
-}
+/** A node of a stored document, which is client input: any object, whatever its `type`, `props` or `children`. */
+export type DocumentNode = { type?: unknown; props?: unknown; children?: unknown };
 
-const isBlockLike = (value: unknown): value is BlockLike =>
-  typeof value === 'object' && value !== null && 'type' in value && typeof value.type === 'string';
+/** Whether a list item of a stored document is a node; every walk skips one that is not. */
+export const isDocumentNode = (value: unknown): value is DocumentNode =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** A media block whose `url` the grammar refuses: its props object, to blank in place, and the value for reports. */
+/** The nodes every walk descends into: `children` when it is a list, whatever the node's own type. */
+export const childNodes = (node: DocumentNode): unknown[] => (Array.isArray(node.children) ? node.children : []);
+
+/**
+ * Whether a node is a media block (image, video, audio, file) that may not render: its props is not an object, or its
+ * `url` is one the media grammar refuses for the document's organization. The validator refuses such a block, the relay
+ * blanks it and the renderer drops it.
+ */
+export const isRefusedMediaBlock = (node: DocumentNode, ctx: MediaRefContext): boolean =>
+  typeof node.type === 'string' &&
+  mediaBlockTypes.has(node.type) &&
+  !(isPropsObject(node.props) && isAcceptedMediaUrl(node.props.url, ctx));
+
+/** A refused media block, to blank in place with {@link blankMediaReference}, and its reference for reports. */
 interface RefusedMediaBlock {
-  props: Record<string, unknown>;
+  block: DocumentNode;
   url: string;
 }
 
+const reportedReference = (node: DocumentNode): string => {
+  if (!isPropsObject(node.props)) return '[invalid props]';
+  const { url } = node.props;
+  return typeof url === 'string' ? url : JSON.stringify(url);
+};
+
 /**
- * Media blocks (image, video, audio, file), which load their `url` when rendered, whose reference the media grammar
- * refuses for the document's organization, depth-first. Inline link hrefs are left alone because they need a click.
+ * Media blocks, which load their `url` when rendered, that {@link isRefusedMediaBlock} refuses, depth-first through the
+ * children of every node. Inline link hrefs are left alone because they need a click.
  */
 export const findRefusedMediaBlocks = (blocks: unknown[], ctx: MediaRefContext): RefusedMediaBlock[] => {
   const refused: RefusedMediaBlock[] = [];
 
-  for (const block of blocks) {
-    if (!isBlockLike(block)) continue;
-    const url = block.props?.url;
-    if (block.props && mediaBlockTypes.has(block.type) && !isAcceptedMediaUrl(url, ctx)) {
-      refused.push({ props: block.props, url: typeof url === 'string' ? url : JSON.stringify(url) });
-    }
-    if (Array.isArray(block.children)) refused.push(...findRefusedMediaBlocks(block.children, ctx));
+  for (const node of blocks) {
+    if (!isDocumentNode(node)) continue;
+    if (isRefusedMediaBlock(node, ctx)) refused.push({ block: node, url: reportedReference(node) });
+    refused.push(...findRefusedMediaBlocks(childNodes(node), ctx));
   }
 
   return refused;
+};
+
+/** Blanks a refused media block's reference in place: a blank `url` holds none, and props that were no object become one. */
+export const blankMediaReference = ({ block }: RefusedMediaBlock): void => {
+  block.props = { ...(isPropsObject(block.props) ? block.props : {}), url: '' };
 };
 
 type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] };

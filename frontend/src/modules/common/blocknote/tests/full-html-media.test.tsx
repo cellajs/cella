@@ -102,4 +102,28 @@ describe('BlockNoteFullHtml media', () => {
     // No render pass, first or resolved, ever held an <img> for a refused reference.
     expect(watcher.sources.filter((src) => bypasses.some((ref) => src?.includes(ref)))).toEqual([]);
   });
+
+  it('must not crash on, or load media from, a malformed stored document', async () => {
+    const hidden = '//evil.example/hidden.png';
+    const document = JSON.stringify([
+      { id: 'string-props', type: 'image', props: 'https://evil.example/pixel.png', children: [] },
+      { id: 'null-props', type: 'image', props: null, children: [] },
+      { id: 'untyped', type: 123, props: {}, children: [image(hidden, 'hidden')] },
+      null,
+      { ...paragraph('children not a list'), id: 'odd-children', children: 'not a list' },
+      paragraph('text survives'),
+    ]);
+    const watcher = watchImageSources(container);
+
+    await act(async () =>
+      root.render(
+        <BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />,
+      ),
+    );
+    await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
+    watcher.stop();
+
+    expect(container.textContent).toContain('children not a list');
+    expect(watcher.sources.filter((src) => src?.includes('evil.example'))).toEqual([]);
+  });
 });
