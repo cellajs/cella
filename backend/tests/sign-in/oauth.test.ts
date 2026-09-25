@@ -194,8 +194,31 @@ describe('OAuth Authentication', async () => {
       expect(untouched.userId).toBe(user.id);
     });
 
-    it('mails the verification to the address the provider asserts now, not a stale snapshot', async () => {
+    // Signed out, the provider holder has not shown they own the account: its verification mail goes only to the
+    // account's own address. Otherwise a sign-up identity (created from an address the provider never verified) could
+    // later be pointed at the holder's inbox and verified into the account of whoever proved that address meanwhile.
+    it("must not move an unverified identity's verification to another address via a signed-out sign-in", async () => {
       const user = await createUser('local-account@example.com');
+      const identity = await linkIdentity(user, { verified: false, email: user.email });
+
+      const state = 'mock-state-test';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+
+      const { response: res, error } = await call(githubCallback, {
+        query: { state, code: 'mock-auth-code' },
+        headers: defaultHeaders,
+      });
+
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_conflict');
+      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id))).toHaveLength(0);
+      const [unchanged] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
+      expect(unchanged).toMatchObject({ email: 'local-account@example.com', verified: false });
+    });
+
+    it("mails the verification to the account's own address, refreshing a stale snapshot (positive control)", async () => {
+      const user = await createUser('github-user@example.com');
       const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
@@ -208,8 +231,6 @@ describe('OAuth Authentication', async () => {
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toContain('/auth/email-verification');
-
-      // A token for the stale address could never verify: the click compares it with the provider's current address.
       const [token] = await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id));
       expect(token.email).toBe('github-user@example.com');
       const [refreshed] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
