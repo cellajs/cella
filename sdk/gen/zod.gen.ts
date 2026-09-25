@@ -1642,7 +1642,7 @@ export const zGetOrganizationsQuery = z.object({
     .string()
     .regex(/^\d+,\d+$/)
     .optional(),
-  relatableUserId: z.string().max(50).optional(),
+  relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z.enum(['true', 'false']).optional(),
   include: z.string().optional(),

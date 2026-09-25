@@ -14,11 +14,11 @@ import {
   noDuplicateSlugsRefine,
   paginationQuerySchema,
   validCDNUrlSchema,
-  validIdSchema,
   validNameSchema,
   validSlugSchema,
   validTempIdSchema,
   validUrlSchema,
+  validUuidSchema,
 } from '#/schemas';
 import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
@@ -120,7 +120,7 @@ export const organizationUpdateBodySchema = organizationContract.updateBodySchem
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
   order: z.enum(['asc', 'desc']).default('asc'),
-  relatableUserId: validIdSchema.optional(),
+  relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,
   include: includeQuerySchema,
