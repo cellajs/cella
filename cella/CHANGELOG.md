@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.12.0](https://github.com/cellajs/cella/compare/0.11.1...0.12.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** sessions are revoked, not deleted ([#1194](https://github.com/cellajs/cella/issues/1194))
+
+### 🎉 New features
+
+* **auth:** sessions are revoked, not deleted ([#1194](https://github.com/cellajs/cella/issues/1194)) ([f4493c6](https://github.com/cellajs/cella/commit/f4493c6810963a543160c5afdc5052d70fadeb06))
+* **infra:** harden the operator CLI and deploy pipeline after the 0.11.1 incident ([#1195](https://github.com/cellajs/cella/issues/1195)) ([0f57bc7](https://github.com/cellajs/cella/commit/0f57bc7e575bc29a483386fe45c0ff9761b78637))
+* **infra:** preflight prints the old and new value of a pending IAM rule change ([#1197](https://github.com/cellajs/cella/issues/1197)) ([9c47d25](https://github.com/cellajs/cella/commit/9c47d25790b07d7329993021e9b4f1b14e673a7c))
+
+
+### 🐞 Bug fixes
+
+* **infra:** apply verifies before it revokes the key it minted ([#1200](https://github.com/cellajs/cella/issues/1200)) ([a5562ca](https://github.com/cellajs/cella/commit/a5562ca4db9de6499506fa68a1485d26cd19e72c))
+* **sync:** act on raak's 2026-09-24 sync feedback ([#1201](https://github.com/cellajs/cella/issues/1201)) ([892b0f9](https://github.com/cellajs/cella/commit/892b0f96d8e7f5415e648eb089148378d8c264a4))
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies, move to blocknote 0.55 portal element ([#1199](https://github.com/cellajs/cella/issues/1199)) ([fae0eed](https://github.com/cellajs/cella/commit/fae0eed3bc8ced5ad464048e1f81ada1e7b11e86))
+* **infra:** the Pulumi CLI follows the @pulumi/pulumi SDK version ([#1198](https://github.com/cellajs/cella/issues/1198)) ([53d300f](https://github.com/cellajs/cella/commit/53d300f6db20dd25a2559cccf99cb42b74032423))
+
 ## [0.11.1](https://github.com/cellajs/cella/compare/0.11.0...0.11.1) (2026-09-23)
 
 
