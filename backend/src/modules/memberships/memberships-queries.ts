@@ -3,14 +3,13 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
-import { invitationTokensSubquery } from '#/modules/auth/tokens/tokens-queries';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
-import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
+import { memberSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
@@ -52,35 +51,33 @@ export const countPendingInvitesByChannel = async (
   return pendingInvites;
 };
 
-interface FindMembershipAwareRowsOpts {
+interface FindInvitationAccountsOpts {
   emails: string[];
   entityType: ChannelEntityType;
   entityId: string;
 }
 
-export const findMembershipAwareRows = async (
+/**
+ * The accounts behind invited addresses, one row per address an account holds: its primary address, and whether it is
+ * a member of the channel and of the organization. Addresses no account holds have no row.
+ */
+export const findInvitationAccounts = async (
   ctx: OrgContext,
-  { emails, entityType, entityId }: FindMembershipAwareRowsOpts,
+  { emails, entityType, entityId }: FindInvitationAccountsOpts,
 ) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
-  const invitationTokens = invitationTokensSubquery(db);
 
   return db
     .select({
       email: emailsTable.email,
       userId: usersTable.id,
-      language: usersTable.language,
+      primaryEmail: usersTable.email,
       membershipId: membershipsTable.id,
-      inactiveMembershipId: inactiveMembershipsTable.id,
-      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
-      inactiveMembershipCreatedAt: inactiveMembershipsTable.createdAt,
-      inactiveMembershipRemindedAt: inactiveMembershipsTable.remindedAt,
       orgMembershipId: orgMemberships.id,
-      tokenId: invitationTokens.id,
     })
     .from(emailsTable)
-    .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
+    .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
     .leftJoin(
       membershipsTable,
       and(
@@ -90,15 +87,6 @@ export const findMembershipAwareRows = async (
       ),
     )
     .leftJoin(
-      inactiveMembershipsTable,
-      and(
-        eq(inactiveMembershipsTable.channelType, entityType),
-        eq(inactiveMembershipsTable.channelId, entityId),
-        or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
-      ),
-    )
-    .leftJoin(invitationTokens, eq(invitationTokens.id, inactiveMembershipsTable.tokenId))
-    .leftJoin(
       orgMemberships,
       and(
         eq(orgMemberships.userId, usersTable.id),
@@ -106,7 +94,32 @@ export const findMembershipAwareRows = async (
         eq(orgMemberships.channelId, organizationId),
       ),
     )
-    .where(and(inArray(emailsTable.email, emails)));
+    .where(inArray(emailsTable.email, emails));
+};
+
+interface FindInvitationsToAddressesOpts {
+  emails: string[];
+  channelId: string;
+}
+
+/** The channel's invitations addressed to exactly these addresses, pending or rejected. */
+export const findInvitationsToAddresses = async (
+  ctx: DbContext,
+  { emails, channelId }: FindInvitationsToAddressesOpts,
+) => {
+  const { db } = ctx.var;
+  if (!emails.length) return [];
+  return db
+    .select({
+      id: inactiveMembershipsTable.id,
+      email: inactiveMembershipsTable.email,
+      rejectedAt: inactiveMembershipsTable.rejectedAt,
+      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
+      createdAt: inactiveMembershipsTable.createdAt,
+      remindedAt: inactiveMembershipsTable.remindedAt,
+    })
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.channelId, channelId), inArray(inactiveMembershipsTable.email, emails)));
 };
 
 interface FindPendingInactiveMembershipsByChannelsOpts {
@@ -473,12 +486,15 @@ interface FindPendingMembershipsPaginatedOpts {
   limit: number;
 }
 
+/**
+ * A channel's invitations as the inviter sees them: the address each went to, never the account that may hold it, so a
+ * row looks the same whether the invitee already has an account or not.
+ */
 export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: FindPendingMembershipsPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, sort, order, offset, limit } = opts;
 
   const table = inactiveMembershipsTable;
-  const invitationTokens = invitationTokensSubquery(db);
   const orderBy = getOrderColumns({
     sort,
     order,
@@ -491,20 +507,11 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
     .select({
       id: table.id,
       role: table.role,
-      userId: table.userId,
-      email: sql<string>`coalesce(
-        ${userBaseSelect.email},
-        ${invitationTokens.email}
-        )`.as('email'),
-      thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
+      email: table.email,
       createdAt: table.createdAt,
       createdBy: table.createdBy,
-      // The row's own invitation token: resends target it by id, never by email, which would resolve the address's newest token across orgs.
-      tokenId: invitationTokens.id,
     })
     .from(table)
-    .leftJoin(usersTable, eq(usersTable.id, table.userId))
-    .leftJoin(invitationTokens, eq(invitationTokens.inactiveMembershipId, table.id))
     .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)));
 
   const itemsQuery = pendingMembershipsQuery

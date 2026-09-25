@@ -90,12 +90,11 @@ export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt']).default('createdAt'),
 });
 
+/** An invitation as the channel sees it: nothing here tells whether an account holds the invited address. */
 export const pendingMembershipSchema = z.object({
   id: z.string(),
-  /** Token id a resend targets: absent without `update` on the channel, null when the token row is gone. */
-  tokenId: z.string().nullable().optional(),
+  /** The address the invitation went to. */
   email: userBaseSchema.shape.email,
-  thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
   createdBy: nullableUserMinimalBaseSchema,

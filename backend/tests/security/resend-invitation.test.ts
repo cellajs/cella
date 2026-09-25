@@ -298,8 +298,9 @@ describe('Resend a pending invitation from the pending list', async () => {
 
     const { response, error } = await call(resendPendingInvitation, { path, headers });
 
+    // A rejected invitation is no longer pending: it answers like a missing one.
     expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('token_not_found');
+    expect((error as ErrorResponse).type).toBe('not_found');
     expect(mailer.prepareEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });

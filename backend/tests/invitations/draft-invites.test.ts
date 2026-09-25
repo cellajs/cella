@@ -167,9 +167,9 @@ describe('Draft context invite deferral', async () => {
       query: { entityId: organization.id, entityType: 'organization' },
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
-    const listed = (data as { items: { id: string; tokenId: string | null }[] }).items;
+    const listed = (data as { items: { id: string; email: string }[] }).items;
     expect(listed.filter((item) => item.id === held.id)).toEqual([
-      expect.objectContaining({ tokenId: dispatched.tokenId }),
+      expect.objectContaining({ email: 'deferred@example.com' }),
     ]);
   });
 

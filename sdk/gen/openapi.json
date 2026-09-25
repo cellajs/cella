@@ -12035,7 +12035,7 @@
         "operationId": "getPendingMemberships",
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
-        "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
+        "description": "Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -12142,14 +12142,8 @@
                   "items": [
                     {
                       "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-                      "channelType": "organization",
-                      "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "email": "doug_larkin@hotmail.com",
-                      "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
-                      "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                       "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
                         "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
@@ -12157,20 +12151,12 @@
                         "slug": "agustin_kirlin",
                         "thumbnailUrl": null,
                         "entityType": "user"
-                      },
-                      "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "tenantId": "yx645y"
+                      }
                     },
                     {
                       "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-                      "channelType": "organization",
-                      "channelId": "772a771f-c150-465e-9635-46594859fc3d",
                       "email": "santos.jacobi12@gmail.com",
-                      "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
-                      "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                       "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
                         "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
@@ -12178,9 +12164,7 @@
                         "slug": "nya_nikolaus",
                         "thumbnailUrl": null,
                         "entityType": "user"
-                      },
-                      "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-                      "tenantId": "pa56tp"
+                      }
                     }
                   ],
                   "total": 2
@@ -12196,15 +12180,9 @@
                           "id": {
                             "type": "string"
                           },
-                          "tokenId": {
-                            "type": ["string", "null"]
-                          },
                           "email": {
                             "type": "string",
                             "format": "email"
-                          },
-                          "thumbnailUrl": {
-                            "type": ["string", "null"]
                           },
                           "role": {
                             "type": ["string", "null"],
@@ -12224,7 +12202,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
+                        "required": ["id", "email", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {
@@ -12267,7 +12245,7 @@
         "operationId": "resendPendingInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
-        "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+        "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],

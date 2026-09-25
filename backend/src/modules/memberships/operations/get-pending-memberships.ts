@@ -2,9 +2,6 @@ import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
-import { checkAccess } from '#/permissions';
-import { accessFrom } from '#/permissions/access';
-import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 interface GetPendingMembershipsInput {
@@ -17,16 +14,15 @@ interface GetPendingMembershipsInput {
 }
 
 /**
- * Pending invitations of a channel, for anyone who may read it: members already see every member's address. The
- * invitation's token id, which a resend targets, goes only to callers with `update` on the channel, the grant a
- * resend needs.
+ * Pending invitations of a channel, for anyone who may read it: members already see every member's address. Each row
+ * names the address the invitation went to and nothing about an account that may hold it, not even whether a token was
+ * minted, since anyone may create an organization and invite any address. A resend names the row by its own id.
  */
 export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput) {
   const organization = ctx.var.organization;
 
   const { entityId, entityType, sort, order, offset, limit } = input;
   const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
-  const { allowed: mayResend } = checkAccess(accessFrom(ctx), 'update', buildSubjectFromEntity(entityType, entity));
 
   const { items: rawItems, total } = await findPendingMembershipsPaginated(ctx, {
     organizationId: organization.id,
@@ -37,9 +33,7 @@ export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendin
     limit,
   });
 
-  // The declared shape only: `userId` would tell which invited addresses already hold an account.
-  const projected = rawItems.map(({ userId: _userId, tokenId, ...item }) => (mayResend ? { ...item, tokenId } : item));
-  const items = await withAuditUsers(ctx, projected);
+  const items = await withAuditUsers(ctx, rawItems);
 
   return { items, total };
 }

@@ -69,8 +69,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       name: '',
       width: 120,
       placeholderValue: '-',
-      // Rows whose invitation token row is gone offer no resend.
-      renderCell: ({ row }) => row.tokenId && <ResendPendingInvitationCell {...path} membershipId={row.id} />,
+      renderCell: ({ row }) => <ResendPendingInvitationCell {...path} membershipId={row.id} />,
     });
   }
 

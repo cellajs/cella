@@ -11,7 +11,7 @@ import { Button } from '~/modules/ui/button';
 type Props = {
   tenantId: string;
   organizationId: string;
-  /** The pending (inactive) membership id; the backend resolves and refreshes its own token. */
+  /** The pending (inactive) membership id; the backend resends that invitation. */
   membershipId: string;
 };
 
