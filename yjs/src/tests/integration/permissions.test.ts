@@ -193,9 +193,12 @@ describe('Local entity authorization (canEditEntity)', () => {
 
   afterAll(async () => {
     await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentC]]);
+    // One transaction: the organization-keeps-an-admin check is deferred to commit, when the organizations are gone too.
+    await admin.query('BEGIN');
     await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB]]);
     await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
     await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
+    await admin.query('COMMIT');
     await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
     await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB]]);
     await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB]]);
