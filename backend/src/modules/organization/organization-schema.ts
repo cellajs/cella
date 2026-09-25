@@ -1,5 +1,4 @@
 import { z } from '@hono/zod-openapi';
-import { t } from 'i18next';
 import { appConfig, type OrganizationFlags, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
@@ -13,6 +12,7 @@ import {
   maxLength,
   noDuplicateSlugsRefine,
   paginationQuerySchema,
+  translatedError,
   validCDNUrlSchema,
   validNameSchema,
   validSlugSchema,
@@ -113,7 +113,7 @@ export const organizationCreateBodySchema = organizationContract.createItemSchem
   .array()
   .min(1)
   .max(10)
-  .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
+  .refine(noDuplicateSlugsRefine, translatedError('error:duplicate_slugs'));
 
 export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 

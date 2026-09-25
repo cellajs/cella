@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { t } from 'i18next';
+import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { schemaTags } from '#/core/openapi-helpers';
@@ -21,6 +21,14 @@ export const entityTypeSchema = z.enum(appConfig.entityTypes);
 export const channelEntityTypeSchema = z.enum(appConfig.channelEntityTypes);
 
 export const productEntityTypeSchema = z.enum(appConfig.productEntityTypes);
+
+/**
+ * A zod error param translated when a value fails. Schemas are built while the routes import, before the server
+ * initializes i18n, so a message translated at build time would stay zod's default.
+ * @param key - Translation key, e.g. 'error:invalid_offset'.
+ * @param options - Interpolation values.
+ */
+export const translatedError = (key: string, options?: TOptions) => ({ error: () => t(key, options) });
 
 // Common param schemas
 
@@ -86,13 +94,13 @@ export const relatableUserIdParamSchema = z.object({
 export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
 const limitMax = 1000;
-const integerQuerySchema = (fallback: number, message: string) =>
+const integerQuerySchema = (fallback: number, error: ReturnType<typeof translatedError>) =>
   z
     .string()
-    .regex(/^\d+$/, message)
+    .regex(/^\d+$/, error)
     .optional()
     .transform((value) => (value === undefined ? fallback : Number(value)))
-    .refine(Number.isSafeInteger, message);
+    .refine(Number.isSafeInteger, error);
 
 const seqCursorSchema = z
   .string()
@@ -110,11 +118,11 @@ export const paginationQuerySchema = z.object({
   q: z.string().max(maxLength.field).optional(),
   sort: z.enum(['createdAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
-  offset: integerQuerySchema(0, t('error:invalid_offset')),
-  limit: integerQuerySchema(appConfig.requestLimits.default, t('error:invalid_limit', { max: limitMax })).refine(
-    (value) => value > 0 && value <= limitMax,
-    t('error:invalid_limit', { max: limitMax }),
-  ),
+  offset: integerQuerySchema(0, translatedError('error:invalid_offset')),
+  limit: integerQuerySchema(
+    appConfig.requestLimits.default,
+    translatedError('error:invalid_limit', { max: limitMax }),
+  ).refine((value) => value > 0 && value <= limitMax, translatedError('error:invalid_limit', { max: limitMax })),
   /** Org-sequence delta filter: bounded inclusive range "51,150" (seq >= 51 AND <= 150). */
   seqCursor: seqCursorSchema.optional(),
 });
@@ -148,8 +156,8 @@ export const idsBodySchema = (maxItems = 50) =>
   z.object({
     ids: z
       .array(z.string())
-      .min(1, t('error:invalid_min_items', { min: 'one', name: 'ID' }))
-      .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
+      .min(1, translatedError('error:invalid_min_items', { min: 'one', name: 'ID' }))
+      .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
   });
 
 /** The optional stx is what prevents echoing the change back to its source. */
@@ -157,8 +165,8 @@ export const idsWithStxBodySchema = (maxItems = 50) =>
   z.object({
     ids: z
       .array(z.string())
-      .min(1, t('error:invalid_min_items', { min: 'one', name: 'ID' }))
-      .max(maxItems, t('error:invalid_max_items', { max: maxItems, name: 'ID' })),
+      .min(1, translatedError('error:invalid_min_items', { min: 'one', name: 'ID' }))
+      .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
     stx: z
       .object({
         mutationId: z.string(),
@@ -190,7 +198,7 @@ export const refineWithType = <T>(check: (val: T) => boolean, errorType: string)
   };
 };
 
-export const validUuidSchema = z.string().uuid({ message: t('error:invalid_id') });
+export const validUuidSchema = z.string().uuid(translatedError('error:invalid_id'));
 
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
   new Set(items.map((i) => i.slug)).size === items.length;
@@ -198,15 +206,15 @@ export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
 export const validUrlSchema = z
   .string()
   .max(maxLength.url)
-  .startsWith('https://', { message: t('error:invalid_url') })
+  .startsWith('https://', translatedError('error:invalid_url'))
   .superRefine(refineWithType((url: string) => url.startsWith('https://'), 'invalid_url'))
   .transform((str) => str.toLowerCase().trim());
 
 export const validNameSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
-  .max(maxLength.field, t('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
-  .regex(/^[\p{L}\d\-., '&()]+$/u, { message: t('error:invalid_name') })
+  .min(2, translatedError('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
+  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
+  .regex(/^[\p{L}\d\-., '&()]+$/u, translatedError('error:invalid_name'))
   .superRefine(refineWithType((s) => /^[\p{L}\d\-., '&()]+$/u.test(s), 'invalid_name'));
 
 export const validEmailSchema = z
@@ -215,9 +223,12 @@ export const validEmailSchema = z
   .toLowerCase()
   .pipe(
     z
-      .email({ message: t('error:invalid_email') })
-      .min(4, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-      .max(maxLength.field, t('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field })),
+      .email(translatedError('error:invalid_email'))
+      .min(4, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
+      .max(
+        maxLength.field,
+        translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }),
+      ),
   )
   .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
 
@@ -230,9 +241,12 @@ export const validDomainSchema = z
   .pipe(
     z
       .string()
-      .min(4, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .max(maxLength.field, t('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .regex(canonicalDomainPattern, { message: t('error:invalid_domain') }),
+      .min(4, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
+      .max(
+        maxLength.field,
+        translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }),
+      )
+      .regex(canonicalDomainPattern, translatedError('error:invalid_domain')),
   )
   .openapi({
     type: 'string',
@@ -244,9 +258,9 @@ export const validDomainSchema = z
 
 export const validSlugSchema = z
   .string()
-  .min(2, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
-  .max(maxLength.field, t('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
-  .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i, { message: t('error:invalid_slug') })
+  .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
+  .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i, translatedError('error:invalid_slug'))
   .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 

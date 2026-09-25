@@ -30,6 +30,7 @@ export {
   tenantIdParamSchema,
   tenantOnlyParamSchema,
   tenantOrgParamSchema,
+  translatedError,
   userIdInTenantOrgParamSchema,
   validCDNUrlSchema,
   validDomainSchema,

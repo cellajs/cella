@@ -1,6 +1,17 @@
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { booleanTransformSchema, paginationQuerySchema, validDomainSchema, validEmailSchema } from './common-schemas';
+import {
+  booleanTransformSchema,
+  idsBodySchema,
+  paginationQuerySchema,
+  validDomainSchema,
+  validEmailSchema,
+  validNameSchema,
+  validUrlSchema,
+} from './common-schemas';
+
+// The server builds these schemas while importing its routes, before it initializes i18n; this file keeps that order.
+const { i18n } = await import('#/lib/i18n');
 
 describe('booleanTransformSchema', () => {
   it.each([
@@ -80,4 +91,22 @@ describe('normalized input schemas', () => {
       expect(validDomainSchema.safeParse(domain).success).toBe(false);
     },
   );
+});
+
+describe('validation messages', () => {
+  const messageOf = (result: { error?: { issues: { message: string }[] } }) => result.error?.issues[0]?.message;
+
+  it('translates a message when a value fails, after i18n initialized', () => {
+    expect(messageOf(paginationQuerySchema.safeParse({ offset: 'x' }))).toBe(i18n.t('error:invalid_offset'));
+    expect(messageOf(paginationQuerySchema.safeParse({ limit: '0' }))).toBe(
+      i18n.t('error:invalid_limit', { max: 1000 }),
+    );
+    expect(messageOf(validNameSchema.safeParse('x'))).toBe(
+      i18n.t('error:invalid_between_num', { name: 'Name', min: 2, max: 255 }),
+    );
+    expect(messageOf(validUrlSchema.safeParse('http://example.com'))).toBe(i18n.t('error:invalid_url'));
+    expect(messageOf(idsBodySchema().safeParse({ ids: [] }))).toBe(
+      i18n.t('error:invalid_min_items', { min: 'one', name: 'ID' }),
+    );
+  });
 });
