@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isIpv4, parseAclInput, toValidatedCidr } from './db-exposure-acl';
+import { isIpv4, minAclPrefix, parseAclInput, toValidatedCidr } from './db-exposure-acl';
 
 describe('isIpv4', () => {
   it('accepts valid dotted-quads', () => {
@@ -35,6 +35,29 @@ describe('toValidatedCidr', () => {
     expect(toValidatedCidr('203.0.113.7/33').ok).toBe(false);
     expect(toValidatedCidr('203.0.113.7/24/8').ok).toBe(false);
     expect(toValidatedCidr('').ok).toBe(false);
+    expect(toValidatedCidr('not-an-ip/24').ok).toBe(false);
+    expect(toValidatedCidr('2001:db8::/129').ok).toBe(false);
+    expect(toValidatedCidr('fe80::1%eth0').ok).toBe(false);
+  });
+
+  it('must not open the database to a wide range without the escape hatch', () => {
+    expect(minAclPrefix).toEqual({ ipv4: 24, ipv6: 48 });
+    expect(toValidatedCidr('198.51.0.0/16')).toMatchObject({ ok: false, reason: expect.stringContaining('/24') });
+    expect(toValidatedCidr('198.51.100.0/23').ok).toBe(false);
+    expect(toValidatedCidr('2001:db8::/32')).toMatchObject({ ok: false, reason: expect.stringContaining('/48') });
+    expect(toValidatedCidr('198.51.0.0/16', { allowWide: true })).toEqual({ ok: true, cidr: '198.51.0.0/16' });
+    expect(toValidatedCidr('2001:db8::/32', { allowWide: true })).toEqual({ ok: true, cidr: '2001:db8::/32' });
+  });
+
+  it('must not open the database to the whole internet, even with the escape hatch', () => {
+    for (const entry of ['0.0.0.0/0', '::/0', '::', '2001:db8::1/0', '0.0.0.0/8']) {
+      expect(toValidatedCidr(entry, { allowWide: true }).ok).toBe(false);
+    }
+  });
+
+  it('normalizes IPv6 entries', () => {
+    expect(toValidatedCidr('2001:DB8:0:0::1')).toEqual({ ok: true, cidr: '2001:db8::1/128' });
+    expect(toValidatedCidr('2001:db8:1234::/48')).toEqual({ ok: true, cidr: '2001:db8:1234::/48' });
   });
 });
 

@@ -1,4 +1,5 @@
 import type * as pulumi from '@pulumi/pulumi';
+import { parseAclInput } from '../../lib/db-exposure-acl';
 import { CRON_HOME_DATABASE, POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
@@ -126,6 +127,12 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         );
       }
 
+      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly. `infra:dbPublicAclAllowWide` admits prefixes wider than /24 (IPv4) or /48 (IPv6), never the whole internet.
+      const acl = dbPublicEndpoint
+        ? parseAclInput(dbPublicAcl, { allowWide: infraConfig.getBoolean('dbPublicAclAllowWide') ?? false })
+        : undefined;
+      if (acl && !acl.ok) throw new Error(`Security: infra:dbPublicAcl is refused: ${acl.reason}.`);
+
       // PostgreSQL Instance
 
       // Scaleway exposes logical replication only as vendor settings; feedback and synchronized slots preserve CDC across managed HA failovers.
@@ -157,14 +164,11 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         },
       );
 
-      if (dbPublicEndpoint && dbPublicAcl) {
+      if (acl?.ok) {
         new scaleway.databases.Acl('main-postgres-acl', {
           instanceId: instance.id,
           region,
-          aclRules: dbPublicAcl.split(',').map((cidr) => ({
-            ip: cidr.trim(),
-            description: 'operator (temporary)',
-          })),
+          aclRules: acl.cidrs.map((cidr) => ({ ip: cidr, description: 'operator (temporary)' })),
         });
       }
 

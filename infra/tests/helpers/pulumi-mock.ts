@@ -57,9 +57,12 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
           provider: args.provider,
         });
         // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
+        // Outputs only the provider computes get deterministic stubs: a managed database's CA certificate.
+        const computed =
+          args.type === 'scaleway:databases/instance:Instance' ? { certificate: 'mock-ca-certificate' } : {};
         return {
           id: `${args.name}-id`,
-          state: { ...args.inputs, id: `${args.name}-id` },
+          state: { ...args.inputs, ...computed, id: `${args.name}-id` },
         };
       },
       call(args) {
