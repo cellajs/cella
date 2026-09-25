@@ -800,6 +800,34 @@ describe('OAuth grants', async () => {
       });
     });
 
+    it('names the tenant and organization a grant reaches on the consent page', async () => {
+      const ctx = await tenantWithApp();
+      await db.update(tenantsTable).set({ name: 'Studio North' }).where(eq(tenantsTable.id, ctx.org.tenantId));
+
+      const onMcp = await authorizationCode(oauth.issuer, authorization(ctx));
+      expect(onMcp.consent.target).toEqual({ tenant: 'Studio North', organization: ctx.org.name });
+
+      const api = resourceUri({ face: 'api', tenantId: ctx.org.tenantId });
+      const onApi = await authorizationCode(oauth.issuer, { ...authorization(ctx), resource: api });
+      expect(onApi.consent.target).toEqual({ tenant: 'Studio North', organization: null });
+    });
+
+    it("must not reveal a tenant's or organization's name via the consent page of a non-member", async () => {
+      const ctx = await tenantWithApp();
+      const outsider = await tenantWithApp();
+      await db.update(tenantsTable).set({ name: 'Hidden Tenant' }).where(eq(tenantsTable.id, ctx.org.tenantId));
+
+      // Asked to consent to a tenant they are not in, a person learns neither name.
+      const foreign = await authorizationCode(oauth.issuer, authorization(ctx, APP_ID, outsider.member));
+      expect(foreign.consent.refusal).toBe('not_a_member');
+      expect(foreign.consent.target).toEqual({ tenant: null, organization: null });
+
+      // A resource pairing this tenant with another tenant's organization names only what the member belongs to.
+      const crossed = resourceUri({ face: 'mcp', tenantId: ctx.org.tenantId, organizationId: outsider.org.id });
+      const mixed = await authorizationCode(oauth.issuer, { ...authorization(ctx), resource: crossed });
+      expect(mixed.consent.target).toEqual({ tenant: 'Hidden Tenant', organization: null });
+    });
+
     it("must not act as a system admin via a system admin's access token", async () => {
       const ctx = await tenantWithApp();
       // A system admin who is an ordinary member of the organization: only the system role lets them rename it.

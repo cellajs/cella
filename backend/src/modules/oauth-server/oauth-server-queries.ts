@@ -1,9 +1,43 @@
+import { z } from '@hono/zod-openapi';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import { type AuthInvalidation, dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
+import type { ResourceRef } from '#/modules/oauth-server/resources';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+
+/**
+ * The names a consent page shows for where a grant reaches: the tenant, and on the MCP face the organization, each
+ * only when the user holds a membership in it. The caller has settled that the user is a member of the tenant.
+ */
+export async function findConsentTargetNames(
+  ctx: DbContext,
+  { userId, resource }: { userId: string; resource: ResourceRef },
+): Promise<{ tenant: string | null; organization: string | null }> {
+  const [tenant] = await ctx.var.db
+    .select({ name: tenantsTable.name })
+    .from(tenantsTable)
+    .where(eq(tenantsTable.id, resource.tenantId))
+    .limit(1);
+  // The resource grammar takes any path segment for the organization; only a uuid can name one.
+  if (resource.face !== 'mcp' || !z.uuid().safeParse(resource.organizationId).success) {
+    return { tenant: tenant?.name ?? null, organization: null };
+  }
+  const [organization] = await ctx.var.db
+    .select({ name: organizationsTable.name })
+    .from(organizationsTable)
+    .innerJoin(
+      membershipsTable,
+      and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, userId)),
+    )
+    .where(and(eq(organizationsTable.id, resource.organizationId), eq(organizationsTable.tenantId, resource.tenantId)))
+    .limit(1);
+  return { tenant: tenant?.name ?? null, organization: organization?.name ?? null };
+}
 
 /** The consents (Grant rows) of one user (the provider's `accountId`) with the registered client's name when there is one, oldest first. */
 export async function findConsentsByUser(ctx: DbContext, { userId }: { userId: string }) {

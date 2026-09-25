@@ -9,7 +9,7 @@ import { appErrorHandler } from '#/lib/error';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
-import { deleteProviderSession } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderSession, findConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
@@ -18,6 +18,8 @@ interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
   scopes: string[];
   resource: ResourceRef;
+  /** The names of the tenant and, on the MCP face, the organization the grant reaches; null where the user is not a member. */
+  target: { tenant: string | null; organization: string | null };
   /** Null when no session is present (the page sends the person to sign in). */
   user: { id: string; name: string } | null;
   /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
@@ -113,6 +115,12 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   // The session's user is gone since the session was read: consent starts over from sign-in.
   if (refusal === 'unknown_user') throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
 
+  // Where the grant reaches is named by the server, as the client is, and never to someone outside it.
+  const target =
+    user && refusal !== 'not_a_member'
+      ? await findConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
+      : { tenant: null, organization: null };
+
   const details: ConsentDetails = {
     // A metadata document is written by the client's author, who would learn every consenting viewer's address from a
     // logo and could claim any name: such a client shows the host serving its client id. A registered app shows the
@@ -123,6 +131,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
         : { id: clientId, name: client.clientName ?? clientId, logoUri: client.logoUri ?? null, kind: 'registered' },
     scopes: requested,
     resource,
+    target,
     user: user ? { id: user.id, name: user.name } : null,
     prompt: { name: interaction.prompt.name, reasons: interaction.prompt.reasons },
     refusal,

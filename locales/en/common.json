@@ -376,6 +376,8 @@
   "oauth.text": "Sign in with an identity provider that you already use.",
   "oauth_consent.text": "{{name}} wants to access your {{appName}} account with the permissions below.",
   "oauth_consent_header": "Authorize {{name}}",
+  "oauth_consent_target.organization": "Access is limited to {{organization}} in the workspace {{tenant}}.",
+  "oauth_consent_target.tenant": "Access is limited to the workspace {{tenant}}.",
   "oauth_consent_user.text": "You are signed in as {{name}}. You can revoke this access any time from your account settings.",
   "oauth_refusal.app_not_installed": "This app is not installed in your workspace. Ask an admin to install it first.",
   "oauth_refusal.unregistered_clients_not_allowed": "Your workspace does not allow connecting AI clients and other apps that an admin has not installed.",
