@@ -57,9 +57,10 @@ describe('refreshGeoipDatabases', () => {
 
     expect(await refreshGeoipDatabases()).toEqual({ country: 'updated', asn: 'updated' });
 
-    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
-      'https://geoip.test/geoip/dbip-country-lite.mmdb.gz',
+    // The two refreshes run in parallel, so the requests may leave in either order.
+    expect(fetchMock.mock.calls.map(([url]) => url).sort()).toEqual([
       'https://geoip.test/geoip/dbip-asn-lite.mmdb.gz',
+      'https://geoip.test/geoip/dbip-country-lite.mmdb.gz',
     ]);
     expect(readFileSync(join(dir, 'country.mmdb'), 'utf8')).toBe('country-v1');
     expect(readFileSync(join(dir, 'country.mmdb.etag'), 'utf8')).toBe('"v1-c"');
@@ -71,13 +72,15 @@ describe('refreshGeoipDatabases', () => {
   });
 
   it('asks conditionally and leaves the files and readers alone on 304', async () => {
-    const fetchMock = vi.fn(async () => respond(304));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => respond(304));
     vi.stubGlobal('fetch', fetchMock);
 
     expect(await refreshGeoipDatabases()).toEqual({ country: 'unchanged', asn: 'unchanged' });
 
-    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(init.headers).toEqual({ 'if-none-match': '"v1-c"' });
+    // Each refresh reads its etag file before it fetches, so the requests leave in either order.
+    const headersFor = (object: string) => fetchMock.mock.calls.find(([url]) => url.endsWith(object))?.[1]?.headers;
+    expect(headersFor('dbip-country-lite.mmdb.gz')).toEqual({ 'if-none-match': '"v1-c"' });
+    expect(headersFor('dbip-asn-lite.mmdb.gz')).toEqual({ 'if-none-match': '"v1-a"' });
     expect(readFileSync(join(dir, 'country.mmdb'), 'utf8')).toBe('country-v1');
     expect(await lookupIp('203.0.113.7')).toEqual({ country: 'NL', asn: 1136 });
     // Mocks are cleared between tests: no reopen at all is the assertion.
