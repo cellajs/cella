@@ -1,5 +1,5 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-provider';
+import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { baseDb } from '#/db/db';
@@ -42,9 +42,9 @@ export type IssuedTokenClaims = { actor_kind: 'user' | 'service'; tenant_id: str
 
 /**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
- * need. Grant types: authorization code + PKCE, refresh, client credentials. Client auth: none (CIMD public clients)
- * and client_secret_basic (registered apps; service accounts with their secret keys). Client registration by Client ID
- * Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
+ * need. Grant types: authorization code + PKCE, refresh, client credentials (service accounts only). Client auth: none
+ * (CIMD public clients) and client_secret_basic (registered apps; service accounts with their secret keys). Client
+ * registration by Client ID Metadata Document; no dynamic registration, no dev interactions, no logout endpoint.
  */
 export async function createProvider(): Promise<Provider> {
   const jwks = await loadSigningJwks();
@@ -105,13 +105,17 @@ export async function createProvider(): Promise<Provider> {
       if (actor?.kind !== 'user') return undefined;
       return { accountId: sub, claims: async () => ({ sub }) };
     },
-    extraTokenClaims: (_ctx, token) => {
+    extraTokenClaims: (ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
       if (!resource) throw new InvalidTarget();
+      const forUser = 'accountId' in token && !!token.accountId;
+      // Without a consenting person the token acts as a service account, so the client must have presented its API key.
+      if (!forUser && !presentedKeyScopes.has(ctx))
+        throw new errors.UnauthorizedClient('client_credentials is for service accounts and their API keys');
       const claims: IssuedTokenClaims = {
-        actor_kind: 'accountId' in token && token.accountId ? 'user' : 'service',
+        actor_kind: forUser ? 'user' : 'service',
         tenant_id: resource.tenantId,
       };
       return claims;

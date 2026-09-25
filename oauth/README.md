@@ -42,7 +42,7 @@ A consent is a Grant row bound to one resource with the approved scopes. People 
 
 | Setting | Value |
 | --- | --- |
-| Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` |
+| Grant types | `authorization_code` (PKCE required), `refresh_token` (rotated), `client_credentials` (service accounts only) |
 | Client auth | `none`, `client_secret_basic` |
 | Access token | RS256 JWT, 1 hour |
 | Refresh token | 30 days, rotated on use; grants live 30 days |

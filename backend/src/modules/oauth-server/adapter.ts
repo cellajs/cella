@@ -34,9 +34,8 @@ async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
       client_name: app.name,
       client_secret: app.secretHash ?? undefined,
       token_endpoint_auth_method: app.secretHash ? 'client_secret_basic' : 'none',
-      grant_types: app.secretHash
-        ? ['authorization_code', 'refresh_token', 'client_credentials']
-        : ['authorization_code', 'refresh_token'],
+      // A registered app acts for the people who consent to it; only a service account acts on its own.
+      grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
       redirect_uris: app.redirectUris,
       logo_uri: app.logoUri ?? undefined,
