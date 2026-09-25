@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { findRemainingMfaMethods } from '#/modules/auth/auth-queries';
-import { issueCookieToken, readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
+import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { userSelect } from '#/modules/user/helpers/select';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 
@@ -28,6 +28,18 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   return user;
+};
+
+/**
+ * Ends the MFA challenge this browser holds once its second factor has verified: the challenge is spent, row and cookie.
+ * Call it only after a successful verification, so a failed attempt leaves the challenge open for the next try. Of two
+ * concurrent completions exactly one passes.
+ * @throws AppError 401 `confirm-mfa_not_found` when the challenge was spent or expired meanwhile.
+ */
+export const spendConfirmMfaToken = async (ctx: Context<Env>) => {
+  const spent = await spendCookieToken(ctx, 'confirm-mfa');
+  if (!spent) throw new AppError(401, 'confirm-mfa_not_found', 'warn');
+  return spent;
 };
 
 /**

@@ -7,7 +7,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { findExistingTotp, insertTotp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
@@ -107,8 +107,7 @@ app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
     });
   }
 
-  // Revoke single use token by deleting cookie
-  deleteAuthCookie(ctx, 'confirm-mfa');
+  await spendConfirmMfaToken(ctx);
 
   await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 

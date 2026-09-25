@@ -8,12 +8,13 @@ import { baseDb } from '#/db/db';
 import { findCredentialIdsByUser, findUserIdByCredentialId, insertPasskey } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
+import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { UserModel } from '#/modules/user/user-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -138,8 +139,9 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
     });
   }
 
-  // Revoke single use token by deleting cookie
-  deleteAuthCookie(ctx, 'confirm-mfa');
+  // A regular passkey sign-in also ends a challenge this browser left open.
+  if (type === 'mfa') await spendConfirmMfaToken(ctx);
+  else await spendCookieToken(ctx, 'confirm-mfa');
 
   await setUserSession(ctx, user, meta.strategy, meta.sessionType);
 
