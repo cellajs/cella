@@ -1,12 +1,22 @@
 import type { DrizzleConfig } from 'drizzle-orm';
+import { appConfig, type ConfigMode } from 'shared';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
 import { createPgConnection, type DB, type PgDB } from './create-connection';
 
 export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
 
+/**
+ * Drizzle's query logger prints every query with the values it bound (tokens, email addresses) to stdout, so `DEBUG`
+ * turns it on in development only.
+ * @param debug - The parsed `DEBUG` flag.
+ * @param mode - The app mode.
+ */
+export const queryLoggerEnabled = (debug: boolean, mode: ConfigMode) => debug && mode === 'development';
+
 export const dbConfig = {
-  logger: !!env.DEBUG,
+  // Compared with true: under Vitest `env` holds the unparsed string.
+  logger: queryLoggerEnabled(env.DEBUG === true, appConfig.mode),
 } satisfies DrizzleConfig;
 
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
