@@ -59,10 +59,11 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
 ```
 Release published, push to main (staging), or manual dispatch
         ↓
-CI builds images in parallel
+CI builds images in parallel, and the frontend
+in a job that holds no secret
         ↓
-`infra deploy` (one command): preflights + stack lock;
-frontend build + asset upload run inside it, concurrent
+`infra deploy --dist` (one command): preflights + stack lock;
+the frontend asset upload runs inside it, concurrent
 with the wait for image tags
         ↓
 Wave 1: provision + cut over the primary service (backend)
@@ -116,7 +117,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, docker (buildx), and the pulumi CLI.
 2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --build`. `--build` bakes and pushes every image (app services + boot runner) via `docker buildx bake` with the registry `:buildcache` shared with CI. Safe to re-run. The stack lock serializes concurrent attempts.
 
-GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend. `--git-ref`, when provided, gates production deploys to main/release refs.
+GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend: GitHub Actions builds it in a job with no secrets, because the Vite build and its dependencies' install scripts run third-party code. Without `--dist` the command builds the frontend itself in a child process stripped of the deploy's keys, which keeps them out of its environment but not out of reach of code running as the same user on that machine. `--git-ref`, when provided, gates production deploys to main/release refs.
 
 ## Rollout strategies
 

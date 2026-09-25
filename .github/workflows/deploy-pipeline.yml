@@ -43,6 +43,8 @@ jobs:
       build_images_matrix: ${{ steps.derive.outputs.build_images_matrix }}
       primary_rollout_matrix: ${{ steps.derive.outputs.primary_rollout_matrix }}
       roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
+      frontend_backend_url: ${{ steps.frontend_env.outputs.BACKEND_URL }}
+      frontend_frontend_url: ${{ steps.frontend_env.outputs.FRONTEND_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -66,6 +68,15 @@ jobs:
           GIT_REF: ${{ github.ref }}
           GIT_SHA: ${{ github.sha }}
         run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
+
+      # The public URLs the SPA bakes in, handed to the secretless build-frontend job as plain outputs.
+      - name: Derive the frontend build env
+        id: frontend_env
+        if: steps.derive.outputs.frontend_bucket != ''
+        env:
+          ENV: ${{ steps.derive.outputs.environment }}
+          ENABLED_SERVICES_JSON: ${{ steps.derive.outputs.enabled_services_json }}
+        run: pnpm --silent --filter infra print-frontend-build-env --mode "$ENV" --services-json "$ENABLED_SERVICES_JSON" >> $GITHUB_OUTPUT
 
   # -------------------------------------------------------------------------
   # Build and push Docker images
@@ -165,9 +176,56 @@ jobs:
           provenance: false
 
   # -------------------------------------------------------------------------
-  # Build frontend bundle (no upload). Runs in parallel with build-images so
-  # the artifact is ready when publish-frontend gates on backend health.
+  # Build the frontend bundle in a job that holds no secret: no `environment:`,
+  # no `secrets.*`, no persisted git token. The Vite build runs a large
+  # third-party plugin graph (and its install scripts), so it runs where there
+  # is nothing to steal. The deploy job uploads this artifact via --dist and
+  # never installs the frontend's dependencies.
   # -------------------------------------------------------------------------
+  build-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [setup]
+    # A frontend-less registry has no SPA bucket and nothing to build.
+    if: needs.setup.outputs.frontend_bucket != ''
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # Full history: the frontend build's docs-frontmatter plugin derives
+          # page updatedAt from git commit dates (frontend/vite/git-updated-at.ts).
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter frontend...
+
+      - name: Build frontend
+        env:
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+          BACKEND_URL: ${{ needs.setup.outputs.frontend_backend_url }}
+          FRONTEND_URL: ${{ needs.setup.outputs.frontend_frontend_url }}
+        run: pnpm --filter frontend build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+          if-no-files-found: error
+
   # -------------------------------------------------------------------------
   # The deploy: ONE command (infra/tasks/deploy.ts) owns everything after the
   # image builds: preflights, stack lock, base stack update, waved rollout with
@@ -180,19 +238,19 @@ jobs:
     # Cold rollouts of many services (an app deploying yjs/mcp) need headroom.
     timeout-minutes: 35
     # No build-images dependency: the command's wait-for-images step is the real
-    # gate, so preflights, the frontend build, and the base stack update all
-    # overlap the image builds. The command builds + uploads the frontend too.
-    needs: [setup]
+    # gate, so preflights and the base stack update overlap the image builds.
+    # The frontend arrives prebuilt from build-frontend, skipped (and so not
+    # waited on) for a frontend-less registry.
+    needs: [setup, build-frontend]
+    if: >-
+      ${{ !cancelled() && needs.setup.result == 'success' &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') }}
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-        with:
-          # Full history: the frontend build's docs-frontmatter plugin derives
-          # page updatedAt from git commit dates (frontend/vite/git-updated-at.ts).
-          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
@@ -203,11 +261,18 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      # Only the workspaces the deploy command touches (it builds the frontend
-      # in-process): fewer packages and lifecycle scripts in the one job that
-      # holds the deploy secrets.
+      # Only the workspaces the deploy command runs: no frontend dependencies,
+      # so none of their install scripts run in the one job that holds the
+      # deploy secrets.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter infra... --filter shared... --filter frontend...
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Download frontend build
+        if: needs.build-frontend.result == 'success'
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: frontend-dist
+          path: frontend/dist
 
       - name: Install Pulumi CLI (at the SDK version)
         uses: ./.github/actions/pulumi-cli
@@ -220,7 +285,7 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --defer-reap
+        run: pnpm --filter infra run deploy --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}" --git-ref "${{ github.ref }}" --dist "$GITHUB_WORKSPACE/frontend/dist" --defer-reap
 
   # -------------------------------------------------------------------------
   # Reap the generations the deploy displaced. --defer-reap above leaves the
@@ -234,7 +299,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [setup, deploy]
-    if: success()
+    # Explicit: a plain success() also counts the skipped build-frontend of a
+    # frontend-less registry, two jobs up, and would skip the reap.
+    if: ${{ !cancelled() && needs.deploy.result == 'success' }}
     permissions:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
