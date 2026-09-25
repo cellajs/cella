@@ -1345,6 +1345,21 @@
    ],
    "requires": [],
    "summary": "Keys are named after their Scaleway bearer: the Owner API key (SCW_OWNER_*, your own key as organization Owner; a durable one mints a 30-minute key per privileged run) and the admin application key (SCW_ADMIN_* in infra/.env.<mode>; setup writes it, Fetch admin application key does elsewhere). SCW_BOOTSTRAP_* and SCW_STATE_* are read for one release with rename warnings. Apply validates the key, previews and confirms once, and verifies live grants and database privileges afterwards. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once."
+  },
+  {
+   "id": "20260925T1530-attachment-storage-keys",
+   "version": "next",
+   "title": "Attachment storage keys must name the organization's own storage",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "createAttachments refuses a key outside the organization's upload prefix (<organizationId>/…) or a bucket other than the app's own for the row's visibility, getPresignedUrls rejects stored rows that fail the same check, and getUploadToken refuses an organization the user is not a member of. Apps on the template upload flow are unaffected; apps with a custom Transloadit path, older rows or tests that create attachments with made-up buckets adapt them."
   }
  ]
 }
