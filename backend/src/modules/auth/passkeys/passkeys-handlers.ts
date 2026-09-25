@@ -3,7 +3,6 @@ import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simp
 import { and, eq } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { findCredentialIdsByUser, insertPasskey } from '#/modules/auth/auth-queries';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
@@ -60,7 +59,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
   const { id } = ctx.req.valid('param');
 
   // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
-  await baseDb.transaction(async (tx) => {
+  await mfaFactorRules.locked(user.id, async (tx) => {
     await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
     await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });

@@ -46,6 +46,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
   }
 
+  // Refused before a proof is spent; the transaction below checks again under the lock, and that check decides.
   if (mfaRequired) await mfaFactorRules.assertCanEnable(baseDb, user.id);
 
   const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
@@ -65,8 +66,9 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     });
   }
 
-  // The flag and the sessions it ends change together.
-  const updatedUser = await baseDb.transaction(async (tx) => {
+  // The flag and the sessions it ends change together, after a factor delete that got the lock first.
+  const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
+    if (mfaRequired) await mfaFactorRules.assertCanEnable(tx, user.id);
     const txCtx = { var: { ...ctx.var, db: tx } };
     const updated = await updateUserMfa(txCtx, { mfaRequired });
     if (updated.mfaRequired) {

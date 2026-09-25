@@ -70,7 +70,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
   // The delete rolls back when MFA is on: it keeps the authenticator app until MFA is turned off.
-  await baseDb.transaction(async (tx) => {
+  await mfaFactorRules.locked(user.id, async (tx) => {
     await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
     await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });

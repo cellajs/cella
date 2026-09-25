@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { type DbOrTx, baseDb as db } from '#/db/db';
+import { type DbOrTx, baseDb as db, type Tx } from '#/db/db';
 import { findRemainingMfaMethods } from '#/modules/auth/auth-queries';
 import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -48,6 +48,18 @@ export const spendConfirmMfaToken = async (ctx: Context<Env>) => {
  * interface enforces the same, this makes it hold for every caller.
  */
 export const mfaFactorRules = {
+  /**
+   * Runs a change to the MFA switch or the factors in a transaction that first locks the user's row. Every such change
+   * takes the lock, so they run one at a time and each check reads what the one before it committed; the checks below
+   * run inside `change`.
+   */
+  async locked<T>(userId: string, change: (tx: Tx) => Promise<T>): Promise<T> {
+    return db.transaction(async (tx) => {
+      await tx.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).for('update');
+      return change(tx);
+    });
+  },
+
   /** Refuses turning MFA on unless both methods are enabled for the app and enrolled by the user. */
   async assertCanEnable(tx: DbOrTx, userId: string) {
     const missing = (['passkey', 'totp'] as const).find((method) => !appConfig.enabledAuthStrategies.includes(method));
@@ -57,7 +69,7 @@ export const mfaFactorRules = {
     if (!passkeys.length || !totps.length) throw new AppError(400, 'mfa_factors_required', 'warn');
   },
 
-  /** Run after deleting a factor in the same transaction: refuses when MFA is on and a method is now gone. */
+  /** Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone. */
   async assertKeepsFactors(tx: DbOrTx, userId: string) {
     const [user] = await tx
       .select({ mfaRequired: usersTable.mfaRequired })
