@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { trustedMediaDomains, validateBlockMediaUrls } from '#/utils/validate-block-urls';
 
@@ -113,6 +114,13 @@ describe('validateBlockMediaUrls', () => {
   });
 
   describe('invalid cases', () => {
+    it('must not trust another host via a CDN-prefixed userinfo or hostname URL', () => {
+      const cdn = appConfig.s3.publicCDNUrl;
+      const bypasses = [`${cdn}@evil.example/pixel.png`, `${cdn}.evil.example/pixel.png`];
+      const result = validateBlockMediaUrls(makeBlocks(...bypasses.map(cdnImage)));
+      expect(result).toEqual({ valid: false, invalidUrls: bypasses });
+    });
+
     it('should reject untrusted external image URLs', () => {
       const result = validateBlockMediaUrls(makeBlocks(cdnImage('https://evil.com/tracking-pixel.png')));
       expect(result).toEqual({
