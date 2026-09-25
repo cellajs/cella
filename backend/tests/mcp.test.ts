@@ -48,8 +48,6 @@ const buildItem = (name: string, filename: string, ctx: { home: Record<string, s
   contentType: 'application/octet-stream',
   size: '1234',
   keys: { original: `${ctx.org.id}/uploads/${filename}` },
-  bucketName: appConfig.s3.privateBucket,
-  publicBucket: false,
 });
 const CLIENT_ID = 'test-portfolio';
 

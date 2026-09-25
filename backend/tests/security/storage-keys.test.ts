@@ -29,11 +29,14 @@ describe('Attachment storage keys', async () => {
   let attacker: TestTenant;
   let attackerPlan: TestEntityHierarchyPlan;
 
-  /** A create body in the attacker's organization, placed at the attachment's home channel (none in cella). */
+  /**
+   * A create body in the attacker's organization, placed at the attachment's home channel (none in cella). `claims`
+   * are storage fields the client may send although the server decides them.
+   */
   const bodyFor = (
     id: string,
     keys: { original: string; preview?: string },
-    bucketName = appConfig.s3.privateBucket,
+    claims: { bucketName?: string; publicBucket?: boolean } = {},
   ) => {
     const deepest = hierarchy
       .getOrderedAncestors('attachment')
@@ -49,7 +52,7 @@ describe('Attachment storage keys', async () => {
       contentType: 'application/pdf',
       size: '1024',
       keys,
-      bucketName,
+      ...claims,
       ...placement,
       stx: { mutationId: id, sourceId: 'storage-keys', fieldTimestamps: {} },
     };
@@ -74,6 +77,16 @@ describe('Attachment storage keys', async () => {
   const rowExists = async (id: string) =>
     (await adminDb.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id)))
       .length > 0;
+
+  const storageOf = async (id: string) =>
+    (
+      await adminDb
+        .select({ publicBucket: attachmentsTable.publicBucket, bucketName: attachmentsTable.bucketName })
+        .from(attachmentsTable)
+        .where(eq(attachmentsTable.id, id))
+    )[0];
+
+  const privateStorage = { publicBucket: false, bucketName: appConfig.s3.privateBucket };
 
   beforeAll(async () => {
     mockFetchRequest();
@@ -118,9 +131,19 @@ describe('Attachment storage keys', async () => {
 
   it('must not name a bucket outside the app via createAttachments', async () => {
     const id = generateId();
-    const { response } = await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }, 'another-apps-bucket'));
-    expect(response.status).toBe(400);
-    expect(await rowExists(id)).toBe(false);
+    const claims = { bucketName: 'another-apps-bucket' };
+    const { response } = await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }, claims));
+    // The server decides the bucket: the claim is ignored and the row names the app's private bucket.
+    expect(response.status).toBe(201);
+    expect(await storageOf(id)).toEqual(privateStorage);
+  });
+
+  it('must not store an attachment as public via claiming the public bucket', async () => {
+    const id = generateId();
+    const claims = { publicBucket: true, bucketName: appConfig.s3.publicBucket };
+    const { response } = await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }, claims));
+    expect(response.status).toBe(201);
+    expect(await storageOf(id)).toEqual(privateStorage);
   });
 
   it('must not sign a planted key already stored on a row via getPresignedUrls', async () => {
@@ -141,10 +164,11 @@ describe('Attachment storage keys', async () => {
     expect(result.rejectedIds).toEqual([id]);
   });
 
-  it('signs a key under the organization prefix in the private bucket (positive control)', async () => {
+  it('stores an attachment private and signs its key under the organization prefix (positive control)', async () => {
     const id = generateId();
     const key = keyOf(attacker, 'own.pdf');
     expect((await create(bodyFor(id, { original: key }))).response.status).toBe(201);
+    expect(await storageOf(id)).toEqual(privateStorage);
 
     const { data, response } = await presign(id);
     expect(response.status).toBe(200);

@@ -27,14 +27,13 @@ const bodyChannelIdColumns = (): BodyChannelIdColumns => {
   return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
 };
 
-/** A create body keyed under the organization's upload prefix, in the app's private bucket. */
+/** A create body keyed under the organization's upload prefix. */
 const attachmentBody = (id: string, organizationId: string) => ({
   id,
   filename: 'cross-org.pdf',
   contentType: 'application/pdf',
   size: '1024',
   keys: { original: `${organizationId}/test/cross-org-${id}.pdf` },
-  bucketName: appConfig.s3.privateBucket,
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
   ...bodyChannelIdColumns(),
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },

@@ -4793,11 +4793,6 @@ export type CreateAttachmentsData = {
       thumbnail?: string;
       converted?: string;
     };
-    bucketName: string;
-    /**
-     * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
-     */
-    publicBucket?: boolean;
     groupId?: string | null;
     /**
      * MIME type of the server-converted variant; null when none.

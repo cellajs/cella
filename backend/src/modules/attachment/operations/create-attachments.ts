@@ -8,7 +8,7 @@ import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { resolveAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
-import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
+import { attachmentBucket, namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
@@ -46,10 +46,11 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   }
 
   const now = getIsoDate();
+  const storage = attachmentBucket();
   const attachmentsToInsert: InsertAttachmentModel[] = [];
   for (const { stx, ...att } of input) {
     // The backend later signs these keys: they must name this organization's uploads in the app's own bucket.
-    if (!namesOwnStorage(att, organization.id)) {
+    if (!namesOwnStorage({ ...att, ...storage }, organization.id)) {
       throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
     }
 
@@ -58,6 +59,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
     const attachment = {
       ...att,
+      ...storage,
       convertedContentType: att.convertedContentType || null,
       groupId: att.groupId || null,
       ...placement,

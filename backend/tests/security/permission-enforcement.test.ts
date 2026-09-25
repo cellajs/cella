@@ -154,7 +154,6 @@ describe('Permission enforcement via HTTP', async () => {
             contentType: 'application/pdf',
             size: '1024',
             keys: { original: `${tenant.organization.id}/test/perm-${presignAttachmentId}.pdf` },
-            bucketName: appConfig.s3.privateBucket,
             // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
             ...bodyChannelIdColumns(),
             stx: { mutationId: presignAttachmentId, sourceId: 'perm-test', fieldTimestamps: {} },

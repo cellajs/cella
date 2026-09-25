@@ -10236,14 +10236,6 @@
                       },
                       "required": ["original"]
                     },
-                    "bucketName": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "publicBucket": {
-                      "type": "boolean",
-                      "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
-                    },
                     "groupId": {
                       "type": ["string", "null"],
                       "format": "uuid"
@@ -10260,7 +10252,7 @@
                       "$ref": "#/components/schemas/StxBase"
                     }
                   },
-                  "required": ["id", "filename", "contentType", "size", "keys", "bucketName", "stx"]
+                  "required": ["id", "filename", "contentType", "size", "keys", "stx"]
                 },
                 "minItems": 1,
                 "maxItems": 50

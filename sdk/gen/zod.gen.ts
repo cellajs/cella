@@ -1783,8 +1783,6 @@ export const zCreateAttachmentsBody = z
         thumbnail: z.string().optional(),
         converted: z.string().optional(),
       }),
-      bucketName: z.string().max(255),
-      publicBucket: z.boolean().optional(),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
       publicAt: z.string().nullish(),
