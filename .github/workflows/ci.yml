@@ -281,7 +281,8 @@ jobs:
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
-  # so offline clients wipe stale persisted query data. 
+  # so offline clients wipe stale persisted query data. It compares the committed
+  # spec (sdk/gen/openapi.json, which the commit hook regenerates) of base and head.
   schema-bust-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -300,7 +301,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$BASE_REF"
-          SPEC=backend/openapi.cache.json
+          SPEC=sdk/gen/openapi.json
           CFG=shared/config/config.default.ts
 
           # No base spec (first introduction) → nothing to compare.

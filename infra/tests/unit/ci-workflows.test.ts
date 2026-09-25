@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -64,5 +65,15 @@ describe('CI workflows', () => {
       new Set(['setup', 'build-images', 'build-boot-image', 'deploy', 'reap']),
     );
     expect(restoresCache(pipeline?.get('build-frontend') ?? '')).toBe(true);
+  });
+
+  it('must not skip the schema-bust gate via a base spec git never tracks', () => {
+    const gate = workflows.find(({ file }) => file === 'ci.yml')?.jobs.get('schema-bust-gate') ?? '';
+    const spec = /^\s+SPEC=(\S+)$/m.exec(gate)?.[1] ?? '';
+
+    expect(spec).not.toBe('');
+    // The gate reads the base branch's committed spec: an ignored or untracked path never exists there.
+    const tracked = () => execFileSync('git', ['ls-files', '--error-unmatch', spec], { cwd: repoRoot, stdio: 'pipe' });
+    expect(tracked).not.toThrow();
   });
 });
