@@ -661,6 +661,13 @@ export const zSendMagicLinkBody = z.object({
 export const zSendMagicLinkResponse = z.void();
 
 /**
+ * Masked address of the held link
+ */
+export const zGetPendingMagicLinkResponse = z.object({
+  email: z.string(),
+});
+
+/**
  * Challenge created
  */
 export const zGenerateTotpKeyResponse = z.object({

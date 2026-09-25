@@ -10,7 +10,13 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import {
+  authCookie,
+  createOrganizationAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
@@ -265,15 +271,22 @@ describe('Opening a token link while signed in', async () => {
   it('keeps the short window for other token types', async () => {
     const owner = await createTestUser('owner@example.com');
     const raw = nanoid(40);
-    await db.insert(tokensTable).values({
-      secret: hashToken(raw),
-      type: 'magic',
-      email: owner.email,
-      userId: owner.id,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    });
+    const [link] = await db
+      .insert(tokensTable)
+      .values({
+        secret: hashToken(raw),
+        type: 'magic',
+        email: owner.email,
+        userId: owner.id,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      })
+      .returning();
 
-    await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    // Opened in the browser that asked for it, so it is redeemed directly.
+    await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) },
+    });
 
     const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.email, owner.email));
     const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
@@ -297,17 +310,21 @@ describe('Opening a token link while signed in', async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
     const raw = nanoid(40);
-    await db.insert(tokensTable).values({
-      secret: hashToken(raw),
-      type: 'magic',
-      email: owner.email,
-      userId: owner.id,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    });
+    const [link] = await db
+      .insert(tokensTable)
+      .values({
+        secret: hashToken(raw),
+        type: 'magic',
+        email: owner.email,
+        userId: owner.id,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      })
+      .returning();
 
+    const cookies = [await createTestSession(me), authCookie('magic-requested', link.id)].join('; ');
     const { response } = await call(invokeToken, {
       path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
+      headers: { ...defaultHeaders, Cookie: cookies },
     });
 
     expect(response.status).toBe(400);

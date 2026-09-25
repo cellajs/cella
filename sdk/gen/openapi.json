@@ -3357,6 +3357,99 @@
         }
       }
     },
+    "/auth/magic/pending": {
+      "get": {
+        "security": [],
+        "operationId": "getPendingMagicLink",
+        "x-strategy": "magic",
+        "tags": ["auth", "cella"],
+        "summary": "Get pending magic link",
+        "description": "For a magic link opened in a browser that did not request it: the masked address it signs in, so the holder can recognize it before confirming.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Masked address of the held link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["email"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/magic/confirm": {
+      "post": {
+        "security": [],
+        "operationId": "confirmMagicLink",
+        "x-strategy": "magic",
+        "tags": ["auth", "cella"],
+        "summary": "Confirm magic link",
+        "description": "Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "responses": {
+          "302": {
+            "description": "Signed in, redirect to the app",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/totp/generate-key": {
       "post": {
         "security": [

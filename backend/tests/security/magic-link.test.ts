@@ -1,13 +1,14 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { invokeToken } from 'sdk';
+import { confirmMagicLink, getPendingMagicLink, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser } from '../helpers';
+import { authCookie, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -74,5 +75,109 @@ describe('magic link replay', async () => {
     expect(response.headers.get('location')?.startsWith(appConfig.frontendUrl)).toBe(true);
     const [after] = await db.select().from(tokensTable).where(eq(tokensTable.id, row.id));
     expect(after.invokedAt).not.toBeNull();
+  });
+});
+
+/** The `name=value` pair a response set for an auth cookie, to send back as the same browser would. */
+const setCookiePair = (res: Response, name: Parameters<typeof authCookieName>[0]) =>
+  res.headers
+    .getSetCookie()
+    .find((line) => line.startsWith(`${authCookieName(name)}=`))
+    ?.split(';')[0];
+
+/**
+ * Opening a magic link signs in directly only in the browser that asked for it. Anywhere else the link waits for a
+ * confirmation on the app's page: a link planted in someone's browser (login CSRF) or fetched by an email scanner signs
+ * nobody in and is not used up, while the owner can still finish on another device with one click.
+ */
+describe('magic link opened in another browser', async () => {
+  const call = await createAppClient();
+
+  beforeAll(() => mockFetchRequest());
+  afterEach(async () => await clearSecurityTestData());
+
+  const newUser = () => createTestUser(`magic-${nanoid(6)}@security-test.com`.toLowerCase());
+  const openedAt = async (id: string) =>
+    (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0]?.invokedAt ?? null;
+  const confirmPage = new URL('/auth/confirm-sign-in', appConfig.frontendUrl).toString();
+
+  it('must not sign in via a magic link opened in a browser that did not ask for it', async () => {
+    const user = await newUser();
+    const { raw, row } = await magicLink(user);
+
+    const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(confirmPage);
+    expect(sessionCookieSet(response)).toBe(false);
+    expect(setCookiePair(response, 'magic-pending')).toBeDefined();
+    expect(await openedAt(row.id)).toBeNull();
+  });
+
+  it('must not let a link scanner use up the link', async () => {
+    const user = await newUser();
+    const { raw, row } = await magicLink(user);
+
+    for (let fetchByScanner = 0; fetchByScanner < 2; fetchByScanner++) {
+      const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+      expect(response.headers.get('location')).toBe(confirmPage);
+    }
+    expect(await openedAt(row.id)).toBeNull();
+
+    // The owner's browser, which asked for the link, still signs in with it.
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
+    });
+    expect(response.status).toBe(302);
+    expect(sessionCookieSet(response)).toBe(true);
+  });
+
+  it('must not confirm a link this browser does not hold', async () => {
+    const { error, response } = await call(confirmMagicLink, { headers: defaultHeaders });
+    expect(response.status).toBe(401);
+    expect((error as { type: string }).type).toBe('magic_expired');
+    expect(sessionCookieSet(response)).toBe(false);
+  });
+
+  it("must not confirm a planted link into its sender's account while signed in", async () => {
+    const victim = await newUser();
+    const attacker = await newUser();
+    const { raw, row } = await magicLink(attacker);
+
+    const cookies = [await createTestSession(victim), authCookie('magic-pending', raw)].join('; ');
+    const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
+    expect(response.status).toBe(400);
+    expect((error as { type: string }).type).toBe('user_mismatch');
+    expect(await openedAt(row.id)).toBeNull();
+  });
+
+  it('shows the masked address and signs in after the confirmation (positive control)', async () => {
+    const user = await newUser();
+    const { raw, row } = await magicLink(user);
+
+    const opened = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    const held = setCookiePair(opened.response, 'magic-pending');
+    expect(held).toBeDefined();
+
+    const pending = await call(getPendingMagicLink, { headers: { ...defaultHeaders, Cookie: held! } });
+    expect(pending.response.status).toBe(200);
+    expect((pending.data as { email: string }).email).toBe(`m•••${user.email.slice(user.email.indexOf('@'))}`);
+
+    const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held! } });
+    expect(confirmed.response.status).toBe(302);
+    expect(sessionCookieSet(confirmed.response)).toBe(true);
+    expect(await openedAt(row.id)).not.toBeNull();
+  });
+
+  it('marks the requesting browser alike whether or not the address has an account', async () => {
+    setTestConfig({ selfRegistration: false });
+    const known = await newUser();
+
+    for (const email of [known.email, `unknown-${nanoid(6)}@security-test.com`.toLowerCase()]) {
+      const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
+      expect(response.status).toBe(204);
+      expect(setCookiePair(response, 'magic-requested')).toBeDefined();
+    }
+    setTestConfig({ selfRegistration: true });
   });
 });

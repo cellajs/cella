@@ -20,6 +20,8 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  ConfirmMagicLinkData,
+  ConfirmMagicLinkErrors,
   CreateApiKeyData,
   CreateApiKeyErrors,
   CreateApiKeyResponses,
@@ -143,6 +145,9 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
+  GetPendingMagicLinkData,
+  GetPendingMagicLinkErrors,
+  GetPendingMagicLinkResponses,
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
@@ -379,6 +384,7 @@ import {
   zGetOrganizationResponse,
   zGetOrganizationsQuery,
   zGetOrganizationsResponse,
+  zGetPendingMagicLinkResponse,
   zGetPendingMembershipsPath,
   zGetPendingMembershipsQuery,
   zGetPendingMembershipsResponse,
@@ -832,6 +838,61 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get pending magic link
+ *
+ * For a magic link opened in a browser that did not request it: the masked address it signs in, so the holder can recognize it before confirming.
+ *
+ * **GET /auth/magic/pending** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/magic/pending) ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/magic/pending) ·· _auth_cella_
+ *
+ * @param {getPendingMagicLinkData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPendingMagicLinkData, ThrowOnError>,
+): RequestResult<GetPendingMagicLinkResponses, GetPendingMagicLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPendingMagicLinkResponses, GetPendingMagicLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetPendingMagicLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/magic/pending',
+    ...options,
+  });
+
+/**
+ * Confirm magic link
+ *
+ * Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.
+ *
+ * **POST /auth/magic/confirm** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/confirm) ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/magic/confirm) ·· _auth_cella_
+ *
+ * @param {confirmMagicLinkData} options
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const confirmMagicLink = <ThrowOnError extends boolean = true>(
+  options?: Options<ConfirmMagicLinkData, ThrowOnError>,
+): RequestResult<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/magic/confirm',
+    ...options,
   });
 
 /**

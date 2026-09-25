@@ -21,6 +21,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
+import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -62,6 +63,11 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
 
   try {
+    if (tokenType === 'magic') {
+      const held = await holdMagicLinkOutsideItsBrowser(ctx, token);
+      if (held) return held;
+    }
+
     const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
 
     // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the existing cookie stays valid.

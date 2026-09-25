@@ -34,6 +34,7 @@ import { Route as PublicMarketingContactRouteImport } from './_public/_marketing
 import { Route as PublicMarketingFeaturesRouteImport } from './_public/_marketing/features'
 import { Route as PublicMarketingSyncEngineRouteImport } from './_public/_marketing/sync-engine'
 import { Route as PublicAuthAuthenticateRouteImport } from './_public/auth/authenticate'
+import { Route as PublicAuthConfirmSignInRouteImport } from './_public/auth/confirm-sign-in'
 import { Route as PublicAuthConsentRouteImport } from './_public/auth/consent'
 import { Route as PublicAuthErrorRouteImport } from './_public/auth/error'
 import { Route as PublicAuthMfaRouteImport } from './_public/auth/mfa'
@@ -179,6 +180,11 @@ const PublicAuthAuthenticateRoute = PublicAuthAuthenticateRouteImport.update({
   path: '/authenticate',
   getParentRoute: () => PublicAuthRouteRoute,
 } as any)
+const PublicAuthConfirmSignInRoute = PublicAuthConfirmSignInRouteImport.update({
+  id: '/confirm-sign-in',
+  path: '/confirm-sign-in',
+  getParentRoute: () => PublicAuthRouteRoute,
+} as any)
 const PublicAuthConsentRoute = PublicAuthConsentRouteImport.update({
   id: '/consent',
   path: '/consent',
@@ -315,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/features': typeof PublicMarketingFeaturesRoute
   '/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/auth/authenticate': typeof PublicAuthAuthenticateRoute
+  '/auth/confirm-sign-in': typeof PublicAuthConfirmSignInRoute
   '/auth/consent': typeof PublicAuthConsentRoute
   '/auth/error': typeof PublicAuthErrorRoute
   '/auth/mfa': typeof PublicAuthMfaRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/features': typeof PublicMarketingFeaturesRoute
   '/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/auth/authenticate': typeof PublicAuthAuthenticateRoute
+  '/auth/confirm-sign-in': typeof PublicAuthConfirmSignInRoute
   '/auth/consent': typeof PublicAuthConsentRoute
   '/auth/error': typeof PublicAuthErrorRoute
   '/auth/mfa': typeof PublicAuthMfaRoute
@@ -405,6 +413,7 @@ export interface FileRoutesById {
   '/_public/_marketing/features': typeof PublicMarketingFeaturesRoute
   '/_public/_marketing/sync-engine': typeof PublicMarketingSyncEngineRoute
   '/_public/auth/authenticate': typeof PublicAuthAuthenticateRoute
+  '/_public/auth/confirm-sign-in': typeof PublicAuthConfirmSignInRoute
   '/_public/auth/consent': typeof PublicAuthConsentRoute
   '/_public/auth/error': typeof PublicAuthErrorRoute
   '/_public/auth/mfa': typeof PublicAuthMfaRoute
@@ -450,6 +459,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/sync-engine'
     | '/auth/authenticate'
+    | '/auth/confirm-sign-in'
     | '/auth/consent'
     | '/auth/error'
     | '/auth/mfa'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/sync-engine'
     | '/auth/authenticate'
+    | '/auth/confirm-sign-in'
     | '/auth/consent'
     | '/auth/error'
     | '/auth/mfa'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/_public/_marketing/features'
     | '/_public/_marketing/sync-engine'
     | '/_public/auth/authenticate'
+    | '/_public/auth/confirm-sign-in'
     | '/_public/auth/consent'
     | '/_public/auth/error'
     | '/_public/auth/mfa'
@@ -741,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/authenticate'
       fullPath: '/auth/authenticate'
       preLoaderRoute: typeof PublicAuthAuthenticateRouteImport
+      parentRoute: typeof PublicAuthRouteRoute
+    }
+    '/_public/auth/confirm-sign-in': {
+      id: '/_public/auth/confirm-sign-in'
+      path: '/confirm-sign-in'
+      fullPath: '/auth/confirm-sign-in'
+      preLoaderRoute: typeof PublicAuthConfirmSignInRouteImport
       parentRoute: typeof PublicAuthRouteRoute
     }
     '/_public/auth/consent': {
@@ -1010,6 +1029,7 @@ const PublicContentRouteRouteWithChildren =
 
 interface PublicAuthRouteRouteChildren {
   PublicAuthAuthenticateRoute: typeof PublicAuthAuthenticateRoute
+  PublicAuthConfirmSignInRoute: typeof PublicAuthConfirmSignInRoute
   PublicAuthConsentRoute: typeof PublicAuthConsentRoute
   PublicAuthErrorRoute: typeof PublicAuthErrorRoute
   PublicAuthMfaRoute: typeof PublicAuthMfaRoute
@@ -1020,6 +1040,7 @@ interface PublicAuthRouteRouteChildren {
 
 const PublicAuthRouteRouteChildren: PublicAuthRouteRouteChildren = {
   PublicAuthAuthenticateRoute: PublicAuthAuthenticateRoute,
+  PublicAuthConfirmSignInRoute: PublicAuthConfirmSignInRoute,
   PublicAuthConsentRoute: PublicAuthConsentRoute,
   PublicAuthErrorRoute: PublicAuthErrorRoute,
   PublicAuthMfaRoute: PublicAuthMfaRoute,

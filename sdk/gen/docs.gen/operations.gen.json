@@ -230,6 +230,52 @@
     }
   },
   {
+    "id": "getPendingMagicLink",
+    "hash": "tag/auth/GET/auth/magic/pending",
+    "method": "get",
+    "path": "/auth/magic/pending",
+    "tags": ["auth"],
+    "summary": "Get pending magic link",
+    "description": "For a magic link opened in a browser that did not request it: the masked address it signs in, so the holder can recognize it before confirming.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "confirmMagicLink",
+    "hash": "tag/auth/POST/auth/magic/confirm",
+    "method": "post",
+    "path": "/auth/magic/confirm",
+    "tags": ["auth"],
+    "summary": "Confirm magic link",
+    "description": "Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "generateTotpKey",
     "hash": "tag/auth/POST/auth/totp/generate-key",
     "method": "post",

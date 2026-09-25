@@ -1116,6 +1116,89 @@ export type SendMagicLinkResponses = {
 
 export type SendMagicLinkResponse = SendMagicLinkResponses[keyof SendMagicLinkResponses];
 
+export type GetPendingMagicLinkData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/magic/pending';
+};
+
+export type GetPendingMagicLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPendingMagicLinkError = GetPendingMagicLinkErrors[keyof GetPendingMagicLinkErrors];
+
+export type GetPendingMagicLinkResponses = {
+  /**
+   * Masked address of the held link
+   */
+  200: {
+    email: string;
+  };
+};
+
+export type GetPendingMagicLinkResponse = GetPendingMagicLinkResponses[keyof GetPendingMagicLinkResponses];
+
+export type ConfirmMagicLinkData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/magic/confirm';
+};
+
+export type ConfirmMagicLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ConfirmMagicLinkError = ConfirmMagicLinkErrors[keyof ConfirmMagicLinkErrors];
+
 export type GenerateTotpKeyData = {
   body?: never;
   path?: never;

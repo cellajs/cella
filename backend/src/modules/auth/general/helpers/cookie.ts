@@ -27,15 +27,22 @@ export type CookieName =
   | 'device-id'
   | 'totp-challenge'
   | 'passkey-challenge'
+  | 'magic-requested'
+  | 'magic-pending'
   | `oauth-state-${string}`;
 
 /**
- * Cookies read on a navigation another site started stay SameSite Lax: OAuth and invitation redirects, plus the device id, which
- * the OAuth callback and emailed sign-in links must see to recognize the browser. All others, sessions included, are same-origin only.
+ * Cookies read on a navigation another site started stay SameSite Lax: OAuth and invitation redirects, plus the device id and
+ * the magic-link request marker, which the OAuth callback and emailed sign-in links must see to recognize the browser. All
+ * others, sessions included, are same-origin only.
  * @see initiation.ts
  */
 const isLaxCookie = (name: CookieName) =>
-  name === 'invitation' || name === 'oauth-verification' || name === 'device-id' || name.startsWith('oauth-state-');
+  name === 'invitation' ||
+  name === 'oauth-verification' ||
+  name === 'device-id' ||
+  name === 'magic-requested' ||
+  name.startsWith('oauth-state-');
 
 /** Effective wire name: hono prepends `__Host-` when the prefix option is active. For consumers naming the cookie outside this helper. */
 export const authCookieName = (name: CookieName) =>

@@ -8,7 +8,7 @@
   {
     "name": "auth",
     "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 24,
+    "count": 26,
     "kind": "module"
   },
   {
