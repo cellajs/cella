@@ -22,10 +22,8 @@ vi.mock('#/lib/mailer', () => ({
   mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
 }));
 
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
+// New-device notices are under test, not authenticator codes: every TOTP check passes.
+vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 

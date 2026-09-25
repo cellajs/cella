@@ -9,10 +9,8 @@ import { authCookie, createMfaToken, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
+// The device id is under test, not the authenticator code: every TOTP check passes.
+vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
