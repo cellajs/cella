@@ -3,11 +3,10 @@ import { getMe, getMyAuth, revokeMySessions, signOut } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createTestSession, createTestUser } from '../helpers';
+import { authCookie, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -37,10 +36,10 @@ describe('Sign-out scoping', async () => {
     const victimCookie = await createTestSession(victim); // real session row
     const victimSessionId = sessionIdOf(victimCookie);
 
-    // Forge a cookie: victim's sessionId but an attacker-chosen (wrong) secret.
+    // Forge a cookie: victim's sessionId but an attacker-chosen (wrong) secret, signed so only the secret is wrong.
     const forgedSecret = hashToken(nanoid(40));
     const forgedContent = `${forgedSecret}.${victimSessionId}.`;
-    const forgedCookie = `${authCookieName('session')}=${forgedContent}`;
+    const forgedCookie = authCookie('session', forgedContent);
 
     const { response: res } = await call(signOut, {
       headers: { ...defaultHeaders, Cookie: forgedCookie },

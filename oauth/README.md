@@ -82,7 +82,7 @@ Configuration and environment (the backend's `.env` and `appConfig`):
 | `services.oauth.enabled` | Runs the worker; `false` also hides the Connected apps card |
 | `oauthUrl`, `OAUTH_URL` | The issuer, same origin as the API under `/oauth` |
 | `devPorts.oauth`, `PORT` | `MODE=oauth` selects this entry; the dev entry, the infra env and the `singleVM` fold set `PORT` to `devPorts.oauth` (4004), and a bare `PORT` defaults to the API port |
-| `COOKIE_SECRET` | Signs the provider's interaction and session cookies |
+| `COOKIE_SECRET` | Signs the provider's interaction and session cookies, like the app's own; a comma-separated list rotates (the first signs, any verifies) |
 | `DATA_ENCRYPTION_KEY` | Encrypts private signing keys at rest |
 | `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role |
 

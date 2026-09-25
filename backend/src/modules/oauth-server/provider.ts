@@ -3,8 +3,8 @@ import { and, eq, isNull } from 'drizzle-orm';
 import Provider, { type Configuration, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { baseDb } from '#/db/db';
-import { env } from '#/env';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { parseResource } from '#/modules/oauth-server/resources';
@@ -52,7 +52,7 @@ export async function createProvider(): Promise<Provider> {
   const configuration: Configuration = {
     adapter: DrizzleAdapter,
     jwks,
-    cookies: { keys: [env.COOKIE_SECRET], long: { signed: true }, short: { signed: true } },
+    cookies: { keys: cookieSecrets, long: { signed: true }, short: { signed: true } },
     clientAuthMethods: ['none', 'client_secret_basic'],
     extraClientMetadata: { properties: ['client_kind'] },
     responseTypes: ['code'],

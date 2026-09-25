@@ -6,12 +6,11 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 
@@ -88,7 +87,7 @@ describe('brute-force budgets', async () => {
   it('must not keep guessing the second factor at sign-in via totp-verification', async () => {
     const user = await createTotpUser(`totp-limit-${nanoid(8)}@security-test.com`);
     const mfaToken = await createMfaToken(user);
-    const headers = { ...fromIp(randomIp()), Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}` };
+    const headers = { ...fromIp(randomIp()), Cookie: authCookie('confirm-mfa', mfaToken) };
 
     for (let attempt = 0; attempt < 5; attempt++) {
       const { response } = await call(signInWithTotp, { body: { code: wrongCode() }, headers });

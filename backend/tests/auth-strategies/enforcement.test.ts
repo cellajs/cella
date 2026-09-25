@@ -10,9 +10,9 @@ import {
   toggleMfa,
 } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
 import {
+  authCookie,
   createMfaToken,
   createTestSession,
   createTestUser,
@@ -185,7 +185,7 @@ describe('passkey strategy disabled', async () => {
     const mfaToken = await createMfaToken(user);
     const { response: res, error } = await call(signInWithPasskey, {
       body: { ...passkeySignInBody({ credentialId: 'x', email: user.email, type: 'mfa' }), email: undefined },
-      headers: { ...defaultHeaders, Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}` },
+      headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
     });
     expect(res.status).toBe(400);
     expect((error as ErrorResponse).type).toBe('forbidden_strategy');

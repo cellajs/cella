@@ -651,7 +651,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -687,7 +687,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -726,7 +726,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -860,7 +860,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -895,7 +895,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -930,7 +930,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1004,7 +1004,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1044,7 +1044,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1331,7 +1331,7 @@ export const getDomains = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1368,7 +1368,7 @@ export const createDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1409,7 +1409,7 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1446,7 +1446,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1483,7 +1483,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1522,7 +1522,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1560,7 +1560,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1597,7 +1597,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1636,7 +1636,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1671,7 +1671,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1715,7 +1715,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1757,7 +1757,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1796,7 +1796,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1831,7 +1831,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1867,7 +1867,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1908,7 +1908,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1946,7 +1946,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2009,7 +2009,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2044,7 +2044,7 @@ export const getConnectedApps = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2080,7 +2080,7 @@ export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2147,7 +2147,7 @@ export const getNotifications = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2184,7 +2184,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2228,7 +2228,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2271,7 +2271,7 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2340,7 +2340,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2381,7 +2381,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2419,7 +2419,7 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2459,7 +2459,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2504,7 +2504,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2574,7 +2574,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2610,7 +2610,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2650,7 +2650,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2698,7 +2698,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2742,7 +2742,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2788,7 +2788,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2824,7 +2824,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2871,7 +2871,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2917,7 +2917,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2954,7 +2954,7 @@ export const getUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2992,7 +2992,7 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3068,7 +3068,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3108,7 +3108,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3157,7 +3157,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3196,7 +3196,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3261,7 +3261,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3314,7 +3314,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3372,7 +3372,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3419,7 +3419,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3471,7 +3471,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3523,7 +3523,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3574,7 +3574,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3708,7 +3708,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3753,7 +3753,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3799,7 +3799,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3845,7 +3845,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3893,7 +3893,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3938,7 +3938,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3981,7 +3981,7 @@ export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4020,7 +4020,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4064,7 +4064,7 @@ export const getServiceAccounts = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4104,7 +4104,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4148,7 +4148,7 @@ export const updateServiceAccount = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4190,7 +4190,7 @@ export const getApiKeys = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4233,7 +4233,7 @@ export const createApiKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4276,7 +4276,7 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],

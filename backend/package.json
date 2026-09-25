@@ -31,6 +31,7 @@
     "test:full": "cross-env TEST_MODE=full vitest run",
     "seed:production": "node dist/seeds-bundle.js",
     "s3:cors": "tsx scripts/set-bucket-cors.ts",
+    "session:mint": "tsx scripts/mint-session.ts",
     "seed:assets": "tsx scripts/upload-seed-assets.ts"
   },
   "dependencies": {

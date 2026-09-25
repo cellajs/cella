@@ -5,7 +5,7 @@ import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -34,7 +34,7 @@ describe('device id on sign-in', async () => {
 
   const signIn = async (user: { id: string; email: string }, deviceCookie?: string) => {
     const mfaToken = await createMfaToken(user);
-    const cookies = [`${authCookieName('confirm-mfa')}=${mfaToken}`, deviceCookie].filter(Boolean).join('; ');
+    const cookies = [authCookie('confirm-mfa', mfaToken), deviceCookie].filter(Boolean).join('; ');
     const { response } = await call(signInWithTotp, {
       body: { code: '123456' },
       headers: { ...defaultHeaders, Cookie: cookies },

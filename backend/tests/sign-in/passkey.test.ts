@@ -5,11 +5,17 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createTestSession, createUser, type ErrorResponse, passkeySignInBody } from '../helpers';
+import {
+  authCookie,
+  createMfaToken,
+  createTestSession,
+  createUser,
+  type ErrorResponse,
+  passkeySignInBody,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -311,7 +317,7 @@ describe('Passkey Authentication', async () => {
         body: passkeySignInBody({ credentialId: passkeyRecord.credentialId, email: signUpUser.email, type: 'mfa' }),
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
       expect(res.status).toBe(204);

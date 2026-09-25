@@ -17,6 +17,10 @@ export const CDC_HEALTH_URL = `http://localhost:${BACKEND_PORT + 1}/health?depth
 
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 
+/** Signs the bench session cookies like the app does; read from backend/.env. */
+// biome-ignore lint/style/noProcessEnv: bench reads the app's cookie secret from backend/.env here.
+export const COOKIE_SECRET = process.env.COOKIE_SECRET ?? '';
+
 /** How long an SSE benchmark subscriber remains connected. */
 // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
 export const SSE_HOLD_MS = Number(process.env.HOLD_MS ?? 25_000);

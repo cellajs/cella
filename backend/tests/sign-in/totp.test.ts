@@ -3,11 +3,11 @@ import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
+  authCookie,
   createMfaToken,
   createTestSession,
   createTestUser,
@@ -95,7 +95,7 @@ describe('TOTP Authentication', async () => {
         body: { code: '123456' },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
@@ -116,7 +116,7 @@ describe('TOTP Authentication', async () => {
         body: { code: '000000' },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
@@ -149,7 +149,7 @@ describe('TOTP Authentication', async () => {
         body: { code: '123456' },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
@@ -170,7 +170,7 @@ describe('TOTP Authentication', async () => {
           body: { code },
           headers: {
             ...defaultHeaders,
-            Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+            Cookie: authCookie('confirm-mfa', mfaToken),
           },
         });
         expect(error, `code=${JSON.stringify(code)}`).toBeInstanceOf(Error);

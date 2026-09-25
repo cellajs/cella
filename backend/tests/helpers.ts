@@ -5,7 +5,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -206,7 +206,12 @@ export async function createTestSession(user: { id: string }) {
   });
 
   const cookieContent = `${hashedSessionToken}.${sessionId}.`;
-  return `${authCookieName('session')}=${cookieContent}`;
+  return authCookie('session', cookieContent, 7 * 24 * 60 * 60);
+}
+
+/** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */
+export function authCookie(name: CookieName, content: string, maxAgeSeconds = 60 * 60) {
+  return `${authCookieName(name)}=${encodeURIComponent(sealAuthCookie(name, content, maxAgeSeconds))}`;
 }
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
