@@ -189,6 +189,8 @@ interface TestSessionOpts {
   /** Backdates the session's creation, e.g. past the step-up window. */
   ageMs?: number;
   expiresInMs?: number;
+  /** For an impersonation: the admin session it is layered on. */
+  impersonatorSessionId?: string;
 }
 
 /**
@@ -202,6 +204,7 @@ export async function insertTestSession(
     authStrategy = 'passkey',
     ageMs = 0,
     expiresInMs = 7 * 24 * 60 * 60 * 1000,
+    impersonatorSessionId,
   }: TestSessionOpts = {},
 ) {
   const token = nanoid(40);
@@ -215,9 +218,11 @@ export async function insertTestSession(
     authStrategy,
     createdAt: new Date(Date.now() - ageMs).toISOString(),
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
+    impersonatorSessionId,
   });
 
-  return { id, token, cookie: authCookie('session', token, 7 * 24 * 60 * 60) };
+  const cookieName = type === 'impersonation' ? 'impersonation' : 'session';
+  return { id, token, cookie: authCookie(cookieName, token, 7 * 24 * 60 * 60) };
 }
 
 /** Inserts a session row and returns the cookie string for test requests. */

@@ -30,6 +30,12 @@ export async function insertSession(
   return asSession(id, cookie);
 }
 
+/** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */
+export async function insertImpersonation(admin: TestSession, target: { id: string }): Promise<TestSession> {
+  const { id, cookie } = await insertTestSession(target, { type: 'impersonation', impersonatorSessionId: admin.id });
+  return asSession(id, `${admin.cookie}; ${cookie}`);
+}
+
 /** The session behind a cookie's token: a row stores the token's hash only. */
 const sessionIdFor = async (token: string) => {
   const [row] = await db

@@ -7,7 +7,14 @@ import { usersTable } from '#/modules/user/user-db';
 import { createSystemAdminUser, createTestUser } from '../helpers';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cancelOpenStreams, expectClosedWith, expectStillOpen, insertSession, openStream } from './session-helpers';
+import {
+  cancelOpenStreams,
+  expectClosedWith,
+  expectStillOpen,
+  insertImpersonation,
+  insertSession,
+  openStream,
+} from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -104,5 +111,32 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     // The session still holds, so the client reconnects and the stream is rebuilt without system-admin reads.
     await expectClosedWith(demotedStream, 'access_changed');
     expectStillOpen(admin.id, adminStream);
+  });
+
+  it('must not keep streaming to an impersonation via its open stream once its admin lost the session or the role', async () => {
+    const [demoted, expiring, admin] = [
+      await createSystemAdminUser('demoted-impersonator@security-test.com'),
+      await createSystemAdminUser('expiring-impersonator@security-test.com'),
+      await createSystemAdminUser('impersonator@security-test.com'),
+    ];
+    const target = await createTestUser('impersonated@security-test.com');
+    const [demotedSession, expiringSession, adminSession] = [
+      await insertSession(demoted),
+      await insertSession(expiring),
+      await insertSession(admin),
+    ];
+    const demotedStream = await openStream(target.id, await insertImpersonation(demotedSession, target));
+    const expiringStream = await openStream(target.id, await insertImpersonation(expiringSession, target));
+    const keptStream = await openStream(target.id, await insertImpersonation(adminSession, target));
+
+    // Outside the API: an operator removes a role, and a session expires without a stamp.
+    await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, demoted.id));
+    await stamp(expiringSession.id, { expiresAt: new Date(Date.now() - 1000).toISOString() });
+
+    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+
+    await expectClosedWith(demotedStream, 'unauthorized');
+    await expectClosedWith(expiringStream, 'unauthorized');
+    expectStillOpen(target.id, keptStream);
   });
 });

@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
@@ -6,6 +6,7 @@ import { authEvents } from '#/modules/auth/auth-events';
 import {
   type SessionEndReason,
   type SessionModel,
+  type SessionRevocationReason,
   type SessionTypes,
   sessionSafeColumns,
   sessionsTable,
@@ -28,7 +29,8 @@ export type EndSessionsOpts = SessionSelection & {
  * `revokedBy` and `revocationReason`, drops the user's cached sessions in every process, and closes the streams bound
  * to them. A revoked session is never re-stamped, so the first ending is the one the sessions list shows; the row
  * stays until the nightly sweep. `user_deleted` follows the delete, which took the rows along: nothing is stamped,
- * and every stream of the user closes.
+ * and every stream of the user closes. An impersonation layered on an ended session ends with it as
+ * `impersonation_stopped` (a deleted admin's rows take theirs along), since only its admin's session can present it.
  *
  * The stamps and the `auth_invalidate` message commit together, inside the caller's transaction when there is one;
  * this process drops its cache and closes the streams at the call, so call it last in a transaction.
@@ -44,25 +46,25 @@ export const endSessions = async (ctx: DbContext, opts: EndSessionsOpts): Promis
   const selection = 'sessionIds' in opts ? inArray(sessionsTable.id, opts.sessionIds) : undefined;
   const ofType = 'all' in opts && opts.type ? eq(sessionsTable.type, opts.type) : undefined;
 
-  const ended = await ctx.var.db.transaction(async (tx) => {
+  const { ended, layered } = await ctx.var.db.transaction(async (tx) => {
+    const stamp = (revocationReason: SessionRevocationReason, where: SQL | undefined) =>
+      tx
+        .update(sessionsTable)
+        .set({ revokedAt: getIsoDate(), revokedBy: by, revocationReason })
+        .where(and(isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate()), where))
+        .returning(sessionSafeColumns);
+
     const stamped =
-      reason === 'user_deleted'
-        ? []
-        : await tx
-            .update(sessionsTable)
-            .set({ revokedAt: getIsoDate(), revokedBy: by, revocationReason: reason })
-            .where(
-              and(
-                eq(sessionsTable.userId, userId),
-                isNull(sessionsTable.revokedAt),
-                gt(sessionsTable.expiresAt, getIsoDate()),
-                selection,
-                ofType,
-              ),
-            )
-            .returning(sessionSafeColumns);
-    await publishAuthInvalidation(tx, { user: userId });
-    return stamped;
+      reason === 'user_deleted' ? [] : await stamp(reason, and(eq(sessionsTable.userId, userId), selection, ofType));
+    const endedIds = stamped.map((session) => session.id);
+    const stopped = endedIds.length
+      ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds))
+      : [];
+
+    for (const user of new Set([userId, ...stopped.map((session) => session.userId)])) {
+      await publishAuthInvalidation(tx, { user });
+    }
+    return { ended: stamped, layered: stopped };
   });
 
   dropCachedAuth({ user: userId });
@@ -75,7 +77,15 @@ export const endSessions = async (ctx: DbContext, opts: EndSessionsOpts): Promis
       reason,
     });
   }
-  log.info('Sessions ended', { userId, reason, count: ended.length });
+  for (const impersonation of layered) {
+    dropCachedAuth({ user: impersonation.userId });
+    authEvents.emit('session.revoked', {
+      userId: impersonation.userId,
+      sessionIds: [impersonation.id],
+      reason: 'impersonation_stopped',
+    });
+  }
+  log.info('Sessions ended', { userId, reason, count: ended.length, impersonationsStopped: layered.length });
 
   return ended;
 };

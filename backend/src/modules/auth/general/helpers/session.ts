@@ -260,8 +260,9 @@ export const readSession = async (sessionToken: string): Promise<SessionCacheEnt
 /**
  * The app session a request presents, read from its cookies only, so any process serving the app's origin can call it
  * with a raw request context. An impersonation counts only on top of the admin session that started it, held by this
- * same browser; without an impersonation cookie it is the browser's own session, which is never an impersonation. With
- * `clearOnError`, a refusal also deletes the cookie that failed.
+ * same browser, while that admin still has system access (the role, from an allowed address); without an
+ * impersonation cookie it is the browser's own session, which is never an impersonation. With `clearOnError`, a
+ * refusal also deletes the cookie that failed.
  * @throws AppError 401 without a session cookie, for an unknown, revoked or expired token, or an impersonation that
  *   this browser's own session does not back.
  */
@@ -286,9 +287,8 @@ export const resolveSession = async (
       const impersonation = await readSession(impersonationToken);
       const admin = sessionToken ? await readSession(sessionToken).catch(() => null) : null;
       const { type, impersonatorSessionId } = impersonation.session;
-      if (type !== 'impersonation' || !admin || admin.session.id !== impersonatorSessionId) {
-        throw new AppError(401, 'unauthorized', 'warn');
-      }
+      const backed = admin?.session.id === impersonatorSessionId && admin.hasSystemRole && isSystemAccessAllowed(ctx);
+      if (type !== 'impersonation' || !backed) throw new AppError(401, 'unauthorized', 'warn');
       return impersonation;
     });
   }

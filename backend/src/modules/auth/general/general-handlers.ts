@@ -167,7 +167,7 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
     if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
   }
 
-  // The browser's session cookie goes, and an impersonation cookie layered on it.
+  // The browser's session cookie goes, and an impersonation layered on it, which `endSessions` ends with it.
   const sessionToken = await getAuthCookie(ctx, 'session');
   deleteAuthCookie(ctx, 'session');
   if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
