@@ -26,7 +26,8 @@ const getHighlighter = () => {
 };
 
 export function CodeViewer({ code, language }: CodeViewerProps) {
-  const [state, setState] = useState<{ html: string; isLoading: boolean }>({ html: '', isLoading: true });
+  // `html: null` means highlighting failed and the code renders as plain text.
+  const [state, setState] = useState<{ html: string | null; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function CodeViewer({ code, language }: CodeViewerProps) {
         });
         if (!cancelled) setState({ html: highlighted, isLoading: false });
       } catch {
-        if (!cancelled) setState({ html: `<pre><code>${code}</code></pre>`, isLoading: false });
+        if (!cancelled) setState({ html: null, isLoading: false });
       }
     };
 
@@ -54,6 +55,16 @@ export function CodeViewer({ code, language }: CodeViewerProps) {
 
   if (state.isLoading) {
     return <div className="h-24 animate-pulse rounded bg-muted" />;
+  }
+
+  if (state.html === null) {
+    return (
+      <div className="text-sm">
+        <pre>
+          <code>{code}</code>
+        </pre>
+      </div>
+    );
   }
 
   return (
