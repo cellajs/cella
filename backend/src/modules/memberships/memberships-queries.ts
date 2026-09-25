@@ -37,6 +37,7 @@ interface CountPendingInvitesByChannelOpts {
   channelId: string;
 }
 
+/** Invitations still waiting for an answer; a rejected one is answered. */
 export const countPendingInvitesByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountPendingInvitesByChannelOpts,
@@ -46,7 +47,11 @@ export const countPendingInvitesByChannel = async (
     .select({ pendingInvites: count() })
     .from(inactiveMembershipsTable)
     .where(
-      and(eq(inactiveMembershipsTable.channelType, channelType), eq(inactiveMembershipsTable.channelId, channelId)),
+      and(
+        eq(inactiveMembershipsTable.channelType, channelType),
+        eq(inactiveMembershipsTable.channelId, channelId),
+        isNull(inactiveMembershipsTable.rejectedAt),
+      ),
     );
   return pendingInvites;
 };
@@ -251,22 +256,33 @@ interface FindInactiveMembershipForUserOpts {
   id: string;
 }
 
+/** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
 export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId)))
+    .where(
+      and(
+        eq(inactiveMembershipsTable.id, id),
+        eq(inactiveMembershipsTable.userId, userId),
+        isNull(inactiveMembershipsTable.rejectedAt),
+      ),
+    )
     .limit(1);
   return membership;
 };
 
 /**
- * An invitation is claimable by a user while it is unbound, or already bound to that same user. Every write that
- * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3).
+ * An invitation is claimable by a user while it is pending and unbound, or bound to that same user. Every write that
+ * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3)
+ * and a rejected one is never revived.
  */
 const claimableBy = (userId: string) =>
-  or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId));
+  and(
+    isNull(inactiveMembershipsTable.rejectedAt),
+    or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)),
+  );
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
@@ -487,8 +503,8 @@ interface FindPendingMembershipsPaginatedOpts {
 }
 
 /**
- * A channel's invitations as the inviter sees them: the address each went to, never the account that may hold it, so a
- * row looks the same whether the invitee already has an account or not.
+ * A channel's pending invitations as the inviter sees them: the address each went to, never the account that may hold
+ * it, so a row looks the same whether the invitee already has an account or not.
  */
 export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: FindPendingMembershipsPaginatedOpts) => {
   const { db } = ctx.var;
@@ -512,7 +528,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       createdBy: table.createdBy,
     })
     .from(table)
-    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)));
+    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt)));
 
   const itemsQuery = pendingMembershipsQuery
     .orderBy(...orderBy)
