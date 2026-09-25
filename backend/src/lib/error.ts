@@ -190,6 +190,7 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     const redirectUrl = new URL(clientError.meta?.errorPagePath || '/error', appConfig.frontendUrl);
     redirectUrl.searchParams.set('error', clientError.type);
     redirectUrl.searchParams.set('severity', clientError.severity);
+    if (clientError.meta?.tokenId) redirectUrl.searchParams.set('tokenId', clientError.meta.tokenId);
     return ctx.redirect(redirectUrl, 302);
   }
 

@@ -26,7 +26,10 @@ const ctx = { var: { db } };
 
 const isLinkType = (name: string): name is LinkTokenType => isTokenType(name) && tokenPolicies[name].carrier === 'link';
 
-/** One route per lifecycle step, so each call runs with a real request's cookies; a refusal answers its status and type. */
+/**
+ * One route per lifecycle step, so each call runs with a real request's cookies; a refusal answers its status, type and
+ * the token id it names.
+ */
 const app = new Hono<Env>()
   .get('/invoke/:type/:token', async (ctx) => {
     const type = ctx.req.param('type');
@@ -45,7 +48,7 @@ const app = new Hono<Env>()
   })
   .onError((err, ctx) => {
     if (!(err instanceof AppError)) throw err;
-    return ctx.json({ type: err.type }, err.status as ContentfulStatusCode);
+    return ctx.json({ type: err.type, tokenId: err.meta?.tokenId }, err.status as ContentfulStatusCode);
   });
 
 const request = (path: string, cookies: string[] = [], method = 'GET') =>
@@ -150,7 +153,7 @@ describe('invokeToken', () => {
     const [winner, loser] = first.status === 200 ? [first, second] : [second, first];
     expect(winner.status).toBe(200);
     expect(loser.status).toBe(401);
-    expect(await loser.json()).toEqual({ type: 'invitation_expired' });
+    expect(await loser.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
     expect(cookieSet(loser, 'invitation')).toBeUndefined();
 
     const opened = await rowOf(token.id);
@@ -167,7 +170,7 @@ describe('invokeToken', () => {
     const otherCookie = cookieSet(await request(`/invoke/invitation/${otherLink.rawToken}`), 'invitation');
     const replay = await request(`/invoke/invitation/${rawToken}`, [otherCookie!]);
     expect(replay.status).toBe(401);
-    expect(await replay.json()).toEqual({ type: 'invitation_expired' });
+    expect(await replay.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
   });
 
   it('refuses an unknown or expired link', async () => {
@@ -179,7 +182,7 @@ describe('invokeToken', () => {
     await expire(token.id);
     const expired = await request(`/invoke/magic/${rawToken}`);
     expect(expired.status).toBe(401);
-    expect(await expired.json()).toEqual({ type: 'magic_expired' });
+    expect(await expired.json()).toEqual({ type: 'magic_expired', tokenId: token.id });
     expect((await rowOf(token.id)).invokedAt).toBeNull();
   });
 });
@@ -219,7 +222,7 @@ describe('readBoundToken', () => {
     await expire(token.id);
     const expired = await request('/read/confirm-mfa', [authCookie('confirm-mfa', rawToken)]);
     expect(expired.status).toBe(401);
-    expect(await expired.json()).toEqual({ type: 'confirm-mfa_expired' });
+    expect(await expired.json()).toEqual({ type: 'confirm-mfa_expired', tokenId: token.id });
   });
 });
 

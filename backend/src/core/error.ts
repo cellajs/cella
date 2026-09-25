@@ -4,7 +4,11 @@ import type { locales } from '#/lib/i18n-locales';
 import type { apiErrorSchema } from '#/schemas';
 
 type ErrorSchemaType = z.infer<typeof apiErrorSchema>;
-type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & { errorPagePath?: string };
+type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean | null } & {
+  errorPagePath?: string;
+  /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
+  tokenId?: string;
+};
 export type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
 
 export type AppErrorOpts = {

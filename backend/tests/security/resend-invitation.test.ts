@@ -3,7 +3,7 @@ import { invokeToken, resendInvitationWithToken, resendPendingInvitation } from 
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -128,6 +128,32 @@ describe('Resend an invitation', async () => {
     const old = await invoke(rawToken);
     expect(old.response.status).toBe(401);
     expect((old.error as ErrorResponse).type).toBe('invitation_not_found');
+  });
+
+  it('names an expired invitation on the error page by its token id, so the page can ask for a new link', async () => {
+    const { token, rawToken } = await expiredInvitation();
+
+    // Outside test mode the refusal is the redirect a browser opening the link sees.
+    const { mode } = appConfig;
+    const setMode = (value: string) => {
+      Object.assign(appConfig, { mode: value });
+    };
+    setMode('development');
+    onTestFinished(() => setMode(mode));
+
+    const opened = await invoke(rawToken);
+    setMode(mode);
+    expect(opened.response.status).toBe(302);
+    const errorPage = new URL(opened.response.headers.get('location') ?? '');
+    expect(`${errorPage.origin}${errorPage.pathname}`).toBe(`${appConfig.frontendUrl}/auth/error`);
+    expect(errorPage.searchParams.get('error')).toBe('invitation_expired');
+    expect(errorPage.searchParams.get('tokenId')).toBe(token.id);
+    expect(errorPage.toString()).not.toContain(rawToken);
+
+    // The page's resend button sends that id.
+    const { response } = await resend({ tokenId: errorPage.searchParams.get('tokenId') ?? '' });
+    expect(response.status).toBe(204);
+    expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
   });
 
   it('re-sends a pending system invitation with one fresh link', async () => {

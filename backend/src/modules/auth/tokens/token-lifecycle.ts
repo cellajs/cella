@@ -125,8 +125,9 @@ export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { ty
   return record;
 };
 
-/** A redeemed link is spent for every browser but the one holding its single-use cookie. */
-const expiredLink = (token: TokenRecord) => new AppError(401, `${token.type}_expired`, 'warn');
+/** An expired token's refusal names it by id, so an error page can offer a new link; never by its raw value. */
+const expired = (token: TokenRecord) =>
+  new AppError(401, `${token.type}_expired`, 'warn', { meta: { tokenId: token.id } });
 
 /**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
@@ -211,11 +212,11 @@ export const invokeToken = async (
 
   await refuseOtherAccount(ctx, token);
 
-  if (isExpiredDate(token.expiresAt)) throw expiredLink(token);
+  if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   if (token.invokedAt) {
     const held = await heldByThisBrowser(ctx, token);
-    if (!held) throw expiredLink(token);
+    if (!held) throw expired(token);
     return held;
   }
 
@@ -257,7 +258,7 @@ export const invokeToken = async (
 
   // Lost the race: the token is usable only in the browser that won it.
   const held = await heldByThisBrowser(ctx, token);
-  if (!held) throw expiredLink(token);
+  if (!held) throw expired(token);
   return held;
 };
 
@@ -305,7 +306,7 @@ export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promis
   if (!token) {
     throw isLink ? new AppError(404, `${type}_not_found`, 'error') : new AppError(401, `${type}_not_found`, 'warn');
   }
-  if (isExpiredDate(token.expiresAt)) throw new AppError(401, `${type}_expired`, 'warn');
+  if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   return token;
 };
