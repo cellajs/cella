@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { PgAsyncDatabase, type PgTable } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 import { confirmMagicLink, getPendingMagicLink, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
@@ -25,6 +26,21 @@ vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn() } }));
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
 
 const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
+
+/**
+ * The next delete from `table` fails, as a statement does when its connection drops. The pool and a transaction share
+ * the prototype, so the failure hits alike with or without a transaction.
+ */
+const failNextDeleteOf = (table: PgTable) => {
+  const prototype = PgAsyncDatabase.prototype;
+  const original = prototype.delete;
+  const spy = vi.spyOn(prototype, 'delete').mockImplementation(function (this: typeof prototype, target) {
+    if (target !== table) return original.call(this, target);
+    spy.mockRestore();
+    throw new Error('Connection terminated unexpectedly');
+  });
+  onTestFinished(() => spy.mockRestore());
+};
 
 /** A magic link row for `user`, optionally already opened with a single-use token (hash at rest). */
 async function magicLink(user: { id: string; email: string }, opened?: { singleUse: string }) {
@@ -398,6 +414,31 @@ describe('adopting an unproven account', async () => {
   it("must not keep an unverified provider identity on an account adopted via its owner's magic link", async () => {
     const owner = await createTestUser(address('owner'), false);
     const planted = await linkIdentity(owner, { verified: false, subject: 'planted-github-id' });
+
+    await signInByMagicLink(owner);
+
+    expect(await identityRow(planted.id)).toBeUndefined();
+    const [adopted] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
+    expect(adopted).toMatchObject({ verified: true, lastVerifiedVia: 'magic' });
+  });
+
+  it('must not keep an unverified provider identity on an adopted account via a cleanup that failed midway', async () => {
+    const owner = await createTestUser(address('owner'), false);
+    const planted = await linkIdentity(owner, { verified: false, subject: 'planted-github-id' });
+
+    // The first proof loses its connection between stamping the address and dropping the identities.
+    failNextDeleteOf(identitiesTable);
+    const { raw, row } = await magicLink(owner);
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
+    });
+    expect(response.status).toBe(500);
+    expect(sessionCookieSet(response)).toBe(false);
+
+    // Stamped without its cleanup, the address would read as proven and the next proof would skip the cleanup.
+    const [afterFailure] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
+    expect(afterFailure.verified).toBe(false);
 
     await signInByMagicLink(owner);
 

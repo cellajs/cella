@@ -30,24 +30,28 @@ const proofStamps = (via: EmailProof, now: string) => ({
  *
  * A proof of an address still unverified adopts the account: whoever created it proved nothing, so the provider
  * identities nobody verified are dropped, and a sign-up someone else started leaves no provider account on it.
+ *
+ * All of it commits together, in a transaction of its own or a savepoint inside the caller's: a stamp that committed
+ * without its cleanup would read as proven at the next proof, which then never drops those identities.
  */
-export const markEmailVerified = async (db: DbOrTx, { userId, email, via }: EmailProofOpts): Promise<boolean> => {
-  const onAddress = and(eq(emailsTable.email, email), eq(emailsTable.userId, userId));
-  const [before] = await db.select({ verified: emailsTable.verified }).from(emailsTable).where(onAddress);
-  if (!before) return false;
+export const markEmailVerified = async (db: DbOrTx, { userId, email, via }: EmailProofOpts): Promise<boolean> =>
+  db.transaction(async (tx) => {
+    const onAddress = and(eq(emailsTable.email, email), eq(emailsTable.userId, userId));
+    const [before] = await tx.select({ verified: emailsTable.verified }).from(emailsTable).where(onAddress);
+    if (!before) return false;
 
-  await db.update(emailsTable).set(proofStamps(via, getIsoDate())).where(onAddress);
+    await tx.update(emailsTable).set(proofStamps(via, getIsoDate())).where(onAddress);
 
-  if (!before.verified) {
-    await db
-      .delete(identitiesTable)
-      .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.verified, false)));
-  }
+    if (!before.verified) {
+      await tx
+        .delete(identitiesTable)
+        .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.verified, false)));
+    }
 
-  // The inbox is proven, so the invitations waiting for this address are this user's. Idempotent, one cheap lookup.
-  await claimEmailForUser({ var: { db } }, { userId, email });
-  return true;
-};
+    // The inbox is proven, so the invitations waiting for this address are this user's. Idempotent, one cheap lookup.
+    await claimEmailForUser({ var: { db: tx } }, { userId, email });
+    return true;
+  });
 
 /** For flows whose whole purpose is verification: an address the account does not hold fails the request. */
 export const requireEmailVerified = async (db: DbOrTx, opts: EmailProofOpts): Promise<void> => {
