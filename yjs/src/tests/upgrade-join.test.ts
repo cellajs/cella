@@ -6,6 +6,7 @@ import {
   buildAwarenessMessage,
   buildSyncUpdate,
   createSignedToken,
+  deferred,
   fakeStorage,
   mapUpdate,
   storageKey,
@@ -27,7 +28,9 @@ vi.mock('../data/permissions', () => ({
     };
   }),
 }));
-const storage = fakeStorage();
+// A test holds appends open to leave frames waiting in a socket's queue.
+let appendHold: ReturnType<typeof deferred> | null = null;
+const storage = fakeStorage((call) => (call === 'appendUpdate' ? appendHold?.promise : undefined));
 vi.mock('../data/storage', () => storage);
 vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => null) }));
 vi.mock('../sync/materialize', () => ({
@@ -106,6 +109,29 @@ async function open(userId: string, entityId: string, tenantId = 'tenant-1') {
   });
   return { ws, received, closed };
 }
+
+describe('upgrade: a closing socket', () => {
+  it('must not drop the updates a socket sent just before it closed', async () => {
+    const doc = 'doc-drain';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+
+    // The first append is held, so the next two updates wait in the socket's queue when the client closes.
+    appendHold = deferred();
+    const appends = storage.appendUpdate.mock.calls.length;
+    for (const key of ['a', 'b', 'c']) editor.ws.send(buildSyncUpdate(mapUpdate(key, 1)));
+    await until(() => storage.appendUpdate.mock.calls.length === appends + 1);
+    editor.ws.close(1000);
+    await editor.closed;
+    await wait(20);
+    appendHold.release();
+    appendHold = null;
+
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 3);
+    // The socket left its session once its updates were logged.
+    await until(() => clientCount(doc) === 0);
+  });
+});
 
 describe('upgrade: a socket joins its document only once verified', () => {
   it("must not relay a peer's edits to a socket still pending verification", async () => {

@@ -211,7 +211,8 @@ async function admitUpgrade(
  * applied, and no peer frame is received, before access is known, and a burst of keystrokes can
  * never interleave. Awareness bypasses the queue and is relayed only for a joined socket; the
  * latest frame sent before the join waits for it, so a new editor's presence shows at once.
- * Closing drops whatever has not started.
+ * Closing an unjoined socket drops whatever has not started. A joined socket's queue drains first,
+ * so updates it sent just before closing still reach the log, and then it leaves the session.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: SocketContext) => {
@@ -241,13 +242,20 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       if (held) relayAwareness(held);
     });
 
+    let cleanedUp = false;
     const cleanup = () => {
-      queue.close();
+      if (cleanedUp) return;
+      cleanedUp = true;
       heldAwareness = null;
-      if (!joined) return;
       const scope = joined;
-      joined = null;
-      leaveCollab(scope, ws);
+      if (!scope) {
+        queue.close();
+        return;
+      }
+      void queue.enqueue(() => {
+        joined = null;
+        leaveCollab(scope, ws);
+      });
     };
 
     ws.on('message', (rawData: Buffer) => {

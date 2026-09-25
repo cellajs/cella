@@ -230,6 +230,18 @@ describe('handleMessage: sync update', () => {
     leaveCollab(collab.scope, peer as never);
   });
 
+  it('must not drop an update silently when its socket has no live session: it is logged and the socket reconnects', async () => {
+    // Authorized, but its session is gone: the socket was never joined to one.
+    const scope = mockScope({ entityId: `entity-${++counter}` });
+    const c = mockSocketContext({ requested: scope });
+    const ws = mockWebSocket();
+
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(storageKey(scope))).toHaveLength(1);
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Session ended' });
+  });
+
   it('must not fail on a sync frame whose payload is cut short, and closes its sender with 4400', async () => {
     const { ctx: c, ws } = session();
     // A payload length whose continuation byte never arrives.

@@ -133,6 +133,56 @@ describe('joinCollab / leaveCollab', () => {
     expect(getCollab(ctx)).toBe(collab);
   });
 
+  it('must not strand a socket that joins while cleanup compacts: the session and its rows stay', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx, ws as never);
+    const compaction = deferred();
+    vi.mocked(compactDocument).mockImplementationOnce(async () => {
+      await compaction.promise;
+      return 'ok';
+    });
+    leaveCollab(ctx, ws as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+    expect(compactDocument).toHaveBeenCalledTimes(1);
+
+    // A socket joins after cleanup checked for clients, while its compaction is still writing.
+    const joiner = mockWebSocket();
+    expect(joinCollab(ctx, joiner as never)).toBe(collab);
+    compaction.release();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // The relay still finds the joiner's session, so its updates are logged and relayed, and its rows stay.
+    expect(getCollab(ctx)).toBe(collab);
+    expect(collab.clients.has(joiner as never)).toBe(true);
+    expect(deleteDoc).not.toHaveBeenCalled();
+
+    // Positive control: once the joiner leaves, cleanup runs to the end.
+    leaveCollab(ctx, joiner as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+    expect(deleteDoc).toHaveBeenCalledWith(ctx);
+    expect(getCollab(ctx)).toBeUndefined();
+  });
+
+  it('must not retry a refused cleanup forever: after an hour it keeps the rows for the sweep and forgets the session', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    joinCollab(ctx, ws as never);
+    vi.mocked(compactDocument).mockResolvedValue('retry');
+    leaveCollab(ctx, ws as never);
+
+    await vi.advanceTimersByTimeAsync(GRACE * 12);
+    expect(compactDocument).toHaveBeenCalledTimes(12);
+    expect(getCollab(ctx)).toBeUndefined();
+    expect(deleteDoc).not.toHaveBeenCalled();
+
+    // No timer is left behind: nothing runs again.
+    await vi.advanceTimersByTimeAsync(GRACE * 12);
+    expect(compactDocument).toHaveBeenCalledTimes(12);
+    vi.mocked(compactDocument).mockReset();
+    vi.mocked(compactDocument).mockResolvedValue('ok');
+  });
+
   it('must not share a session between tenants via the same entity id', () => {
     const ctx = uniqueCtx();
     const ours = mockWebSocket();

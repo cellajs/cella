@@ -1,5 +1,7 @@
 /** Grace period after the last client leaves before the session row is compacted and deleted; also the retry interval when the backend cannot take the final write. */
 export const YJS_CLEANUP_DELAY_MS = 5 * 60 * 1000;
+/** Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its rows stay for the next session or the startup sweep. */
+export const YJS_CLEANUP_MAX_ATTEMPTS = 12;
 /** Debounces compaction (merge the log into the base state and materialize) after the last received update; bounds description freshness for non-editing viewers. */
 export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 /** Sync messages a socket may queue while its entity access is still being verified. */

@@ -103,6 +103,8 @@ async function loadDocumentState(scope: DocScope): Promise<Uint8Array | null> {
  * (a lost frame, a reconnect) are uploaded and logged like any update.
  */
 async function handleSyncStep1(scope: DocScope, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
+  // A socket that closed while this frame waited has no one to answer.
+  if (ws.readyState !== ws.OPEN) return;
   const collab = getCollab(scope);
   const state = collab ? await withDocLock(collab, () => loadDocumentState(scope)) : await loadDocumentState(scope);
 
@@ -136,7 +138,14 @@ async function handleSyncUpdate(
   if (kind === 'malformed') return refuseMalformed(scope, userId, ws);
 
   const collab = getCollab(scope);
-  if (!collab) return;
+  if (!collab) {
+    // A joined socket always finds its session. Should it not, the update is still logged, and the socket reconnects
+    // into a live session, where its handshake uploads anything else it holds.
+    await appendUpdate(scope, userId, update);
+    log.warn(`No session for ${scope.entityType}:${scope.entityId}: update logged, socket asked to reconnect`);
+    ws.close(1013, 'Session ended');
+    return;
+  }
 
   await appendUpdate(scope, userId, update);
   broadcastToCollab(scope, rawMessage, ws);

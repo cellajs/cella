@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { DocKey, DocScope } from '../constants';
-import { YJS_CLEANUP_DELAY_MS } from '../constants';
+import { YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS } from '../constants';
 import { deleteDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { compactDocument } from './compaction';
@@ -74,7 +74,10 @@ export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
 /**
  * When the last client leaves, a grace period runs before the log is compacted and the session rows
  * are deleted. Rows go once the log is written or empty, or the entity is gone: a retryable failure
- * keeps them and retries, a permanent refusal keeps them for the next session or the startup sweep.
+ * keeps them and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last failed
+ * attempt keeps them for the next session or the startup sweep. A socket that joins while cleanup
+ * runs keeps the session and its rows: the session leaves the map only while it has no client, so the
+ * relay always finds a joined socket's session.
  */
 export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   const key = collabKey(doc);
@@ -84,6 +87,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   collab.clients.delete(ws);
   if (collab.clients.size > 0) return;
 
+  let attempts = 0;
   const cleanup = async () => {
     collab.cleanupTimer = undefined;
     if (collab.clients.size > 0) return;
@@ -91,6 +95,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
       clearTimeout(collab.compactTimer);
       collab.compactTimer = undefined;
     }
+    attempts++;
 
     const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'kept' | 'done'> => {
       if (collab.clients.size > 0) return 'rejoined';
@@ -102,6 +107,8 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
         log.error(`Cleanup compaction failed for ${key}`, { err });
         result = 'retry';
       }
+      // A socket joined while the compaction wrote: its session goes on with the rows.
+      if (collab.clients.size > 0) return 'rejoined';
       // An unwritten log keeps the rows: they hold edits the entity has not received. A gone entity's rows go.
       if (result === 'retry') return 'retry';
       if (result === 'permanent') return 'kept';
@@ -114,11 +121,14 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
       return 'done';
     });
 
-    if (outcome === 'rejoined') return;
+    if (outcome === 'rejoined' || collab.clients.size > 0) return;
     if (outcome === 'retry') {
-      log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
-      collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
-      return;
+      if (attempts < YJS_CLEANUP_MAX_ATTEMPTS) {
+        log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
+        collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+        return;
+      }
+      log.error(`Materialize failed ${attempts} times for ${key}: keeping session rows for the next session or sweep`);
     }
     if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping session rows for the next session`);
     collabSessions.delete(key);
