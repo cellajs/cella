@@ -10,7 +10,8 @@ import { AppError, type ErrorKey } from '#/core/error';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-const isProduction = appConfig.mode === 'production';
+/** A 5xx's own message (SQL, parameters, internals) reaches a client only where that client is the developer. */
+const exposesServerMessages = () => appConfig.mode === 'development' || appConfig.mode === 'test';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
 
 /** PostgreSQL error codes to user-friendly error mappings */
@@ -84,7 +85,7 @@ export interface ClientError {
 export type ErrorLogFields = Record<string, string | undefined>;
 
 export interface ToClientErrorOptions {
-  /** Keep a 5xx error's own message. Default: every mode but production; a caller answering a third party passes false. */
+  /** Keep a 5xx error's own message. Default: development and test only; a caller answering a third party passes false. */
   exposeServerMessage?: boolean;
 }
 
@@ -95,13 +96,13 @@ export interface ToClientErrorOptions {
  * The logger writes a failed query with the database's reason alone, never its SQL or values.
  * @param err - The thrown value.
  * @param logFields - Request facts for the log line.
- * @param options - Message exposure; defaults to hiding 5xx messages in production.
+ * @param options - Message exposure; defaults to showing 5xx messages in development and test only.
  * @returns The client-facing error.
  */
 export function toClientError(
   err: unknown,
   logFields: ErrorLogFields = {},
-  { exposeServerMessage = !isProduction }: ToClientErrorOptions = {},
+  { exposeServerMessage = exposesServerMessages() }: ToClientErrorOptions = {},
 ): ClientError {
   const fields = Object.fromEntries(Object.entries(logFields).filter(([, value]) => value !== undefined));
   const hideIfServerError = (status: number, message: string) =>
