@@ -28,6 +28,23 @@ export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: { g
   return grant;
 }
 
+/**
+ * The authorization server's sessions of a user, in every browser: none answers a client for them any more until they
+ * consent again. Their grants and refresh tokens stay.
+ */
+export async function deleteProviderSessionsOfUser(ctx: DbContext, { userId }: { userId: string }): Promise<void> {
+  await ctx.var.db
+    .delete(oidcPayloadsTable)
+    .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
+}
+
+/** One authorization server session, by the id its cookie names. */
+export async function deleteProviderSession(ctx: DbContext, { id }: { id: string }): Promise<void> {
+  await ctx.var.db
+    .delete(oidcPayloadsTable)
+    .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
+}
+
 /** Everything the authorization server holds for these users (grants, codes, refresh tokens, sessions): an account deletion. */
 export async function deleteConsentsOfUsers(ctx: DbContext, { userIds }: { userIds: string[] }): Promise<void> {
   if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));

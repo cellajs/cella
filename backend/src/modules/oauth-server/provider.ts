@@ -6,6 +6,7 @@ import { baseDb } from '#/db/db';
 import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
+import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource } from '#/modules/oauth-server/resources';
@@ -140,7 +141,11 @@ export async function createProvider(): Promise<Provider> {
     // Refresh tokens whenever the client may use them; MCP clients do not always ask for `offline_access`.
     issueRefreshToken: (_ctx, client) => client.grantTypeAllowed('refresh_token'),
     rotateRefreshToken: true,
+    // Codes and refresh tokens rest on their grant and the grant policy, never on this server's session in the browser
+    // that consented: an app sign-out ends that session, and the clients a person connected keep their access.
+    expiresWithSession: () => false,
     interactions: {
+      policy: appInteractionPolicy(),
       // Same origin as the API: the interaction cookie is scoped to this path, and the page under it reads the session.
       url: (_ctx, interaction) => `/oauth/interaction/${interaction.uid}`,
     },

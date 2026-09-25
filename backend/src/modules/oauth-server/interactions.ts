@@ -4,10 +4,12 @@ import type Provider from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
+import { deleteProviderSession } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
@@ -59,8 +61,21 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
     // Granting a client access to the account needs the user present on this session again, never an impersonation.
     await requireStepUp(session);
 
+    // The authorization server's session in this browser may name someone who consented here before: it ends, and
+    // the resume signs this user in to a fresh one.
+    const previous = interaction.session;
+    if (previous && previous.accountId !== user.id) {
+      await deleteProviderSession({ var: { db: baseDb } }, { id: previous.cookie });
+      interaction.session = undefined;
+      await interaction.save(interaction.exp - Math.floor(Date.now() / 1000));
+    }
+
+    // The browser's earlier grant for this client carries on only when it is this user's own.
     const existing = interaction.grantId ? await provider.Grant.find(interaction.grantId) : undefined;
-    const grant = existing ?? new provider.Grant({ accountId: user.id, clientId });
+    const grant =
+      existing?.accountId === user.id && existing.clientId === clientId
+        ? existing
+        : new provider.Grant({ accountId: user.id, clientId });
     // Entity scopes are both the provider's scopes and the resource's: the grant records them in both forms.
     const resource = String(interaction.params.resource);
     grant.addOIDCScope(details.scopes.join(' '));

@@ -11,11 +11,19 @@ import {
   sessionSafeColumns,
   sessionsTable,
 } from '#/modules/auth/sessions-db';
+import { deleteProviderSessionsOfUser } from '#/modules/oauth-server/oauth-server-queries';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /** Which of the user's live sessions end: these ids, or all of them (optionally of one type). */
 type SessionSelection = { sessionIds: string[] } | { all: true; type?: SessionTypes };
+
+/**
+ * Endings where the person leaves (signs out, ends their other sessions, turns MFA on): the authorization server's
+ * sessions of the user end too, so no browser keeps answering OAuth clients for them. Sign-in housekeeping and a
+ * stopped impersonation leave them.
+ */
+const endsProviderSessions = new Set<SessionEndReason>(['sign_out', 'other_session', 'mfa_enabled']);
 
 export type EndSessionsOpts = SessionSelection & {
   userId: string;
@@ -60,6 +68,8 @@ export const endSessions = async (ctx: DbContext, opts: EndSessionsOpts): Promis
     const stopped = endedIds.length
       ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds))
       : [];
+
+    if (endsProviderSessions.has(reason)) await deleteProviderSessionsOfUser({ var: { db: tx } }, { userId });
 
     for (const user of new Set([userId, ...stopped.map((session) => session.userId)])) {
       await publishAuthInvalidation(tx, { user });

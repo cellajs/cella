@@ -10,6 +10,7 @@ import {
   getConnectedApps,
   revokeApiKey,
   revokeConnectedApp,
+  signOut,
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
@@ -17,6 +18,8 @@ import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import type { SessionEndReason } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -35,6 +38,7 @@ import {
   createSystemAdminUser,
   createTestOrganization,
   createTestSession,
+  createTestUser,
   type ErrorResponse,
   insertTestSession,
 } from '../helpers';
@@ -386,6 +390,110 @@ describe('OAuth grants', async () => {
         const read = await readAttachments(ctx, jwt);
         expect(read.response.status).toBe(401);
         expect(reasonOf(read.error)).toBe('invalid_token');
+      }
+    });
+  });
+
+  /**
+   * The authorization server keeps a session of its own in the browser (its `_session` cookie). It may answer a client
+   * at once only while the same person is signed in to the app in that browser; otherwise a shared computer hands the
+   * next person a code for the previous one, with no sign-in and no consent screen.
+   */
+  describe('one browser, several people', () => {
+    /** The provider's session rows for a user: what lets a browser get codes for them without asking. */
+    const providerSessionsOf = (userId: string) =>
+      db
+        .select({ id: oidcPayloadsTable.id })
+        .from(oidcPayloadsTable)
+        .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
+
+    /** The member consents in `browser` and the client exchanges the code. */
+    async function consentIn(ctx: Tenant, browser: CookieJar) {
+      const { code, verifier } = await authorizationCode(oauth.issuer, { ...authorization(ctx), browser });
+      const tokens = await exchangeCode(oauth.issuer, {
+        clientId: APP_ID,
+        redirectUri: REDIRECT_URI,
+        code: code ?? '',
+        verifier,
+      });
+      expect(tokens.status).toBe(200);
+      return tokens.body;
+    }
+
+    it('must not issue a code for a person who signed out via the browser they used', async () => {
+      const ctx = await tenantWithApp();
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      const tokens = await consentIn(ctx, browser);
+      // Positive control: while the member is signed in here, the client gets a code at once.
+      expect((await startAuthorization(oauth.issuer, { ...authorization(ctx), browser })).code).toBeTruthy();
+      expect(await providerSessionsOf(ctx.member.id)).not.toEqual([]);
+
+      const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: browser.header() } });
+      expect(signedOut.response.status).toBe(204);
+      browser.absorb(signedOut.response);
+      expect(await providerSessionsOf(ctx.member.id)).toEqual([]);
+
+      const next = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser });
+      expect(next.code).toBeNull();
+      expect(next.uid).toBeTruthy();
+      // The consent page finds nobody signed in and sends the next person to sign in.
+      const details = await fetch(`${new URL(oauth.issuer).origin}/oauth/interaction/${next.uid}/details`, {
+        headers: { Cookie: next.browser.header() },
+      });
+      expect(details.status).toBe(401);
+      // The member's consent itself stays: their client keeps refreshing.
+      expect((await refresh(String(tokens.refresh_token))).status).toBe(200);
+    });
+
+    it('must not issue a code for the previous person via a browser now signed in as someone else', async () => {
+      const ctx = await tenantWithApp();
+      const other = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      const memberTokens = await consentIn(ctx, browser);
+
+      // Someone else signs in on the same browser; the member never signed out.
+      browser.store(other.sessionCookie);
+      const next = await startAuthorization(oauth.issuer, { ...authorization(ctx, APP_ID, other), browser });
+      expect(next.code).toBeNull();
+      expect(next.uid).toBeTruthy();
+
+      // Consenting there gets the one signed in a grant and a token of their own.
+      const granted = await authorizationCodeToken(oauth.issuer, { ...authorization(ctx, APP_ID, other), browser });
+      expect(granted.status).toBe(200);
+      const token = await verifyAccessToken(String(granted.body.access_token), {
+        tenantId: ctx.org.tenantId,
+        organizationId: ctx.org.id,
+      });
+      expect(token.actorId).toBe(other.id);
+      expect(await grantRowsOf(other.id)).toContainEqual({ type: 'Grant' });
+      // The member's grant is theirs still, and untouched.
+      expect((await refresh(String(memberTokens.refresh_token))).status).toBe(200);
+    });
+
+    it("ends the user's authorization server sessions with every ending where the person leaves", async () => {
+      const user = await createTestUser(`leaves-${nanoid(8)}@security-test.com`);
+      const signIn = async () => {
+        const session = await insertTestSession(user);
+        await db.insert(oidcPayloadsTable).values({
+          type: 'Session',
+          id: nanoid(),
+          accountId: user.id,
+          payload: { accountId: user.id },
+          expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        });
+        return session;
+      };
+      const ending = (reason: SessionEndReason, sessionId: string) =>
+        endSessions({ var: { db } }, { userId: user.id, sessionIds: [sessionId], reason, by: null });
+
+      for (const reason of ['sign_out', 'other_session', 'mfa_enabled'] as const) {
+        await ending(reason, (await signIn()).id);
+        expect(await providerSessionsOf(user.id)).toEqual([]);
+      }
+      // Housekeeping at a sign-in ends a session, not the person's presence: the rows stay.
+      for (const reason of ['session_cap', 'replaced'] as const) {
+        await ending(reason, (await signIn()).id);
+        expect(await providerSessionsOf(user.id)).not.toEqual([]);
       }
     });
   });
