@@ -57,7 +57,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<voi
   }
 }
 
-/** Validates params and token, then accepts the connection; entity-level access is verified asynchronously while sync frames wait in the socket's queue and the socket stays outside the document. */
+/** Validates params and token, then accepts the connection until the token expires; entity-level access is verified asynchronously while sync frames wait in the socket's queue and the socket stays outside the document. */
 export function setupUpgradeHandler(
   server: WebSocketServer,
 ): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
@@ -138,6 +138,14 @@ export function setupUpgradeHandler(
     log.info(`Connection accepted for ${docLabel(ctx)}`, { userId: ctx.userId, tenantId: payload.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
       verifications.set(ws, verifyEntityAsync(ws, ctx));
+      // The socket lives no longer than its token: the client reconnects with a fresh one, which a user whose access was revoked cannot get.
+      const deadline = setTimeout(
+        () => {
+          if (ws.readyState === ws.OPEN) ws.close(4001, 'Token expired');
+        },
+        Math.max(0, payload.exp - Date.now()),
+      );
+      ws.once('close', () => clearTimeout(deadline));
       server.emit('connection', ws, ctx);
     });
   };

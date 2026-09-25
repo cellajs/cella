@@ -141,6 +141,23 @@ describe('setupUpgradeHandler', () => {
     expect(error?.message).toContain('403');
   });
 
+  it('must not keep a socket open past its token expiry', async () => {
+    const expiring = createSignedToken({ userId: 'user-1', exp: Date.now() + 400 });
+    const lasting = createSignedToken({ userId: 'user-1' });
+    const short = new WsWebSocket(`${baseUrl}/entity-1?token=${expiring}&entityType=task&tenantId=tenant-1`);
+    const long = new WsWebSocket(`${baseUrl}/entity-1?token=${lasting}&entityType=task&tenantId=tenant-1`);
+    const closed = new Promise<{ code: number; reason: string }>((resolve) =>
+      short.on('close', (code, reason) => resolve({ code, reason: reason.toString() })),
+    );
+    await Promise.all([short, long].map((ws) => new Promise((resolve) => ws.once('open', resolve))));
+
+    // The client refetches its token on 4001 and reconnects; revoked access gets no new token.
+    expect(await closed).toEqual({ code: 4001, reason: 'Token expired' });
+    // Positive control: a socket whose token is still valid stays open.
+    expect(long.readyState).toBe(WsWebSocket.OPEN);
+    long.close();
+  });
+
   it('accepts a valid token', async () => {
     const token = createSignedToken({ userId: 'user-1' });
     const { ws, closeCode, error } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
