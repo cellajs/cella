@@ -28,12 +28,12 @@
     "method": "post",
     "path": "/auth/check-email",
     "tags": ["auth"],
-    "summary": "Check if email exists",
-    "description": "Checks if a user with the specified email address exists in the system.",
+    "summary": "Check email",
+    "description": "Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasResponseBody": false,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
       "xGuard": ["publicGuard"],
@@ -1317,7 +1317,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["publicGuard"],
-      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
+      "xRateLimiter": ["spamLimiter"],
       "xCache": []
     },
     "tagsByKind": {

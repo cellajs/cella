@@ -62,7 +62,18 @@
   {
     "operationId": "checkEmail",
     "responses": [
-      { "status": 204, "description": "Email exists" },
+      {
+        "status": 200,
+        "description": "Whether this browser is recognized for the address",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "recognized": { "type": "boolean", "required": true }
+          },
+          "contentType": "application/json"
+        }
+      },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

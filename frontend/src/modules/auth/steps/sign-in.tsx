@@ -5,11 +5,10 @@ import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type CheckEmailData, checkEmail, type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sdk';
+import { type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sdk';
 import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
-import type { ApiError } from '~/lib/api';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
@@ -82,26 +81,6 @@ export function SignInStep() {
     };
   }, []);
 
-  // Verify the email exists before starting passkey mediation for it.
-  const { mutate: _checkEmail, isPending } = useMutation<void, ApiError, CheckEmailData['body']>({
-    mutationFn: (body) => checkEmail({ body }),
-    onSuccess: () => {
-      startMediation();
-
-      setTimeout(() => {
-        const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
-        submitButton?.focus();
-      }, 0);
-    },
-    onError: (error: ApiError) => {
-      // In restricted mode, don't reset steps on 404 (user not found) to avoid email enumeration
-      if (error?.status === 404 && !restrictedMode) return resetSteps();
-
-      if (error.type !== 'invalid_credentials') return;
-      form.reset(form.getValues());
-    },
-  });
-
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
     mutationFn: () =>
@@ -114,9 +93,15 @@ export function SignInStep() {
     },
   });
 
-  const onSubmit = (body: FormValues) => {
+  // Without magic links the passkey signs in: the browser offers its passkeys for this site, and the one picked names
+  // the account.
+  const onSubmit = () => {
     if (isMagicLinkEnabled) return sendMagic();
-    _checkEmail({ ...body });
+    startMediation();
+    setTimeout(() => {
+      const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitButton?.focus();
+    }, 0);
   };
 
   const resetAuth = () => {
@@ -136,19 +121,7 @@ export function SignInStep() {
       {restrictedMode ? (
         <>
           <h1 className="mt-4 text-center text-2xl">{getTitle()}</h1>
-          {appConfig.has.selfRegistration && (
-            <p className="text-center">
-              {t('c:new_here')}{' '}
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto p-0 text-base"
-                onClick={() => setStep('signUp', form.getValues('email'))}
-              >
-                {t('c:sign_up')}
-              </Button>
-            </p>
-          )}
+          <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />
         </>
       ) : (
         <h1 className="text-center text-2xl">
@@ -184,7 +157,7 @@ export function SignInStep() {
             )}
           />
 
-          <SubmitButton loading={isMagicLinkEnabled ? isSending : isPending} className="w-full gap-2">
+          <SubmitButton loading={isMagicLinkEnabled && isSending} className="w-full gap-2">
             {isMagicLinkEnabled ? (
               <>
                 <MailIcon />
@@ -202,5 +175,28 @@ export function SignInStep() {
         </form>
       )}
     </Form>
+  );
+}
+
+/** Where a visitor without an account goes from the neutral step: sign-up, the waitlist, or the invite-only notice. */
+function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) {
+  const { t } = useTranslation();
+
+  if (!appConfig.has.selfRegistration && !appConfig.has.waitlist) {
+    return (
+      <p className="text-center">
+        {t('c:new_here')} {t('c:invite_only.text', { appName: appConfig.name })}
+      </p>
+    );
+  }
+
+  const step = appConfig.has.selfRegistration ? 'signUp' : 'waitlist';
+  return (
+    <p className="text-center">
+      {t('c:new_here')}{' '}
+      <Button type="button" variant="link" className="h-auto p-0 text-base" onClick={() => onStep(step)}>
+        {step === 'signUp' ? t('c:sign_up') : t('c:request_access')}
+      </Button>
+    </p>
   );
 }

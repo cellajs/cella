@@ -60,7 +60,10 @@
           "name": "spam",
           "description": "Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints"
         },
-        "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
+        "emailEnumLimiter": {
+          "name": "emailEnum",
+          "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min"
+        },
         "presignedUrlLimiter": {
           "name": "presignedUrl",
           "description": "Max 2000 requests/hour per user for presigned URLs"

@@ -81,22 +81,22 @@ describe('brute-force budgets', async () => {
     expect(response.status).toBe(200);
   });
 
-  it('must not keep probing which addresses have accounts via check-email', async () => {
+  it('must not keep looking up addresses via check-email', async () => {
     const ip = randomIp();
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const { response } = await call(checkEmail, {
-        body: { email: `nobody-${nanoid(6)}@security-test.com`.toLowerCase() },
-        headers: fromIp(ip),
-      });
-      expect(response.status).toBe(404);
-    }
     const known = await createTestUser(`known-${nanoid(6)}@security-test.com`.toLowerCase());
+
+    // Every lookup counts, whatever it answers: a hit as much as a miss.
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const email = attempt % 2 ? known.email : `nobody-${nanoid(6)}@security-test.com`.toLowerCase();
+      const { response } = await call(checkEmail, { body: { email }, headers: fromIp(ip) });
+      expect(response.status).toBe(200);
+    }
     const blocked = await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) });
     expect(blocked.response.status).toBe(429);
 
     // Another client is unaffected (positive control).
     const other = await call(checkEmail, { body: { email: known.email }, headers: fromIp(randomIp()) });
-    expect(other.response.status).toBe(204);
+    expect(other.response.status).toBe(200);
   });
 
   it('must not keep guessing the second factor at sign-in via totp-verification', async () => {

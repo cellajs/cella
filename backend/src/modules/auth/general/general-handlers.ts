@@ -9,6 +9,7 @@ import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
+import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
@@ -19,7 +20,7 @@ import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up'
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { invokeToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
-import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
+import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -37,18 +38,10 @@ app.openapi(authGeneralRoutes.health, async (ctx) => {
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   const { email } = ctx.req.valid('json');
 
-  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+  // Any other browser gets `false` whether or not the address has an account.
+  const recognized = await isRecognizedBrowser(ctx, email.toLowerCase().trim());
 
-  // In restricted mode, always return 204 to prevent email enumeration
-  if (restrictedMode) return ctx.body(null, 204);
-
-  const normalizedEmail = email.toLowerCase().trim();
-
-  const user = await findUserByEmail(ctx, { email: normalizedEmail });
-
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
-
-  return ctx.body(null, 204);
+  return ctx.json({ recognized }, 200);
 });
 
 app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {

@@ -588,9 +588,11 @@ export const zCheckEmailBody = z.object({
 });
 
 /**
- * Email exists
+ * Whether this browser is recognized for the address
  */
-export const zCheckEmailResponse = z.void();
+export const zCheckEmailResponse = z.object({
+  recognized: z.boolean(),
+});
 
 export const zInvokeTokenPath = z.object({
   type: z.enum(['oauth-verification', 'invitation', 'magic']),

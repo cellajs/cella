@@ -79,8 +79,9 @@ const authGeneralRoutes = {
     xRateLimiter: [emailEnumLimiter],
     middleware: isNoBot,
     tags: ['auth', 'cella'],
-    summary: 'Check if email exists',
-    description: 'Checks if a user with the specified email address exists in the system.',
+    summary: 'Check email',
+    description:
+      'Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.',
     request: {
       body: {
         required: true,
@@ -88,7 +89,10 @@ const authGeneralRoutes = {
       },
     },
     responses: {
-      204: { description: 'Email exists' },
+      200: {
+        description: 'Whether this browser is recognized for the address',
+        content: { 'application/json': { schema: z.object({ recognized: z.boolean() }) } },
+      },
       ...errorResponseRefs,
     },
   }),

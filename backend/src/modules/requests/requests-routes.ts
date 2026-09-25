@@ -1,7 +1,7 @@
 import { createXRoute } from '#/core/x-routes';
 import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
 import { mockPaginatedRequestsResponse, mockRequestResponse } from './requests-mocks';
@@ -12,7 +12,7 @@ const requestRoutes = {
     method: 'post',
     path: '/',
     xGuard: [publicGuard],
-    xRateLimiter: [emailEnumLimiter, spamLimiter],
+    xRateLimiter: [spamLimiter],
     middleware: [isNoBot],
     tags: ['requests', 'cella'],
     summary: 'Create request',

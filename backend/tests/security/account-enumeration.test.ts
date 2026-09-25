@@ -2,9 +2,10 @@ import { nanoid } from 'nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { defaultHeaders } from '../fixtures';
-import { createUser } from '../helpers';
+import { authCookie, createUser } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -89,5 +90,40 @@ describe('Account enumeration', async () => {
     const forStranger = await signInAs(stranger);
     expect(forAccount).toEqual(forStranger);
     expect(forAccount.status).toBe(404);
+  });
+
+  /** The status and body check-email answers for `email`, from a browser carrying `cookie`. */
+  const checkEmail = async (email: string, cookie?: string) => {
+    const res = await post('/auth/check-email', { email }, cookie);
+    return { status: res.status, body: res.status === 204 ? null : await res.json() };
+  };
+
+  /** A browser's device-id cookie, enrolled for `accounts` as a sign-in there would enroll it. */
+  const browserOf = async (...accounts: { id: string }[]) => {
+    const deviceId = nanoid(24);
+    for (const account of accounts) await enrollDevice(account.id, deviceId);
+    return authCookie('device-id', deviceId, 400 * 24 * 60 * 60);
+  };
+
+  it('must not learn whether an address has an account via check-email from an unrecognized browser', async () => {
+    const { account, stranger } = await accountAndStranger();
+
+    // A browser without a device id.
+    expect(await checkEmail(account.email)).toEqual(await checkEmail(stranger));
+
+    // A browser that signed in, to another account: the prober's own.
+    const prober = await createUser(`prober-${nanoid(8)}@security-test.com`.toLowerCase());
+    const proberBrowser = await browserOf(prober);
+    const forAccount = await checkEmail(account.email, proberBrowser);
+    expect(forAccount).toEqual(await checkEmail(stranger, proberBrowser));
+    expect(forAccount).toEqual({ status: 200, body: { recognized: false } });
+  });
+
+  it('tells a browser that signed in to the address before that it has an account (positive control)', async () => {
+    const { account, stranger } = await accountAndStranger();
+    const ownBrowser = await browserOf(account);
+
+    expect(await checkEmail(account.email, ownBrowser)).toEqual({ status: 200, body: { recognized: true } });
+    expect(await checkEmail(stranger, ownBrowser)).toEqual({ status: 200, body: { recognized: false } });
   });
 });

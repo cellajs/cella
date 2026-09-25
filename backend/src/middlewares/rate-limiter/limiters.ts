@@ -11,9 +11,13 @@ export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
   description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
 
-export const emailEnumLimiter = rateLimiter('failseries', 'emailEnum', ['ip'], {
-  limits: { points: 5 },
-  description: 'Blocks IP for 30 min after 5 consecutive failures',
+/**
+ * Address lookups per IP. check-email answers truthfully only a browser that signed in to the address before, so every
+ * lookup counts, hits included: this bounds guessing on a shared browser. Past it, sign-in goes on without lookups.
+ */
+export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
+  limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 30 },
+  description: 'Max 30 address lookups/hour per IP, then blocks the IP for 30 min',
 });
 
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>

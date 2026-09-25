@@ -540,15 +540,15 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Check if email exists
+ * Check email
  *
- * Checks if a user with the specified email address exists in the system.
+ * Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.
  *
  * **POST /auth/check-email** ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email) ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/check-email) ·· _auth_cella_
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(
   options: Options<CheckEmailData, ThrowOnError>,

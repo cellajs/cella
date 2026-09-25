@@ -71,7 +71,7 @@
           },
           "emailEnumLimiter": {
             "name": "emailEnum",
-            "description": "Blocks IP for 30 min after 5 consecutive failures"
+            "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min"
           },
           "presignedUrlLimiter": {
             "name": "presignedUrl",
@@ -2849,8 +2849,8 @@
         "security": [],
         "operationId": "checkEmail",
         "tags": ["auth", "cella"],
-        "summary": "Check if email exists",
-        "description": "Checks if a user with the specified email address exists in the system.",
+        "summary": "Check email",
+        "description": "Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["emailEnumLimiter"],
         "x-cache": [],
@@ -2874,8 +2874,21 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Email exists"
+          "200": {
+            "description": "Whether this browser is recognized for the address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recognized": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["recognized"]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -7220,7 +7233,7 @@
         "summary": "Create request",
         "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["emailEnumLimiter", "spamLimiter"],
+        "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,

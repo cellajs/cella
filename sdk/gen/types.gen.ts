@@ -744,9 +744,11 @@ export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
 
 export type CheckEmailResponses = {
   /**
-   * Email exists
+   * Whether this browser is recognized for the address
    */
-  204: void;
+  200: {
+    recognized: boolean;
+  };
 };
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
