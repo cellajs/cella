@@ -54,7 +54,8 @@ export const validatePasskey = async (ctx: Context, { assertion, userId }: Passk
 
   if (!passkeyRecord) throw new AppError(404, 'passkey_not_found', 'warn');
 
-  // Verify assertion signature against stored public key, challenge, origin, and relying-party ID
+  // The library throws for most mismatches (challenge, origin, relying party, flags, counter) and answers false for a bad
+  // signature. Both are a failed sign-in, a 401 the sign-in limiter counts, never a server error.
   const { verified, authenticationInfo } = await verifyAuthenticationResponse({
     response: assertion,
     expectedChallenge: challengeFromCookie,
@@ -66,9 +67,13 @@ export const validatePasskey = async (ctx: Context, { assertion, userId }: Passk
       counter: passkeyRecord.counter,
     },
     requireUserVerification: true,
+  }).catch((error: unknown) => {
+    throw new AppError(401, 'passkey_verification_failed', 'warn', {
+      ...(error instanceof Error ? { originalError: error } : {}),
+    });
   });
 
-  if (!verified) throw new AppError(401, 'invalid_token', 'warn');
+  if (!verified) throw new AppError(401, 'passkey_verification_failed', 'warn');
 
   // Persist the signature counter so cloned-authenticator replays can be detected
   await db
