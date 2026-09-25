@@ -99,7 +99,7 @@ export const handleOAuthCallback = async (
   return await processCallbackResult({ ctx, redirectAfter, provider, ...result });
 };
 
-/** Basic OAuth authentication and signup: existing verified account, unverified account, or new registration. */
+/** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
 const authCallbackFlow = async ({
   providerUser,
   provider,
@@ -349,7 +349,7 @@ const touchIdentity = async (identity: IdentityModel, providerUser: TransformedU
 
 /**
  * Post-callback handling: verified accounts may start an MFA challenge and/or set the session, then redirect to the post-login path.
- * Unverified accounts get a verification email and land on the email-verification page.
+ * Unverified identities and pending sign-ups get a verification email and land on the email-verification page.
  */
 const processCallbackResult = async (
   info: OAuthFlowResult & { ctx: Context<Env>; provider: EnabledOAuthProvider; redirectAfter?: string },
