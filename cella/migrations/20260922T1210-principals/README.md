@@ -34,7 +34,7 @@ constraint names it needs when run without hints).
 
 ## Manual steps
 
-0. Rename the type everywhere: `git ls-files '*.ts' '*.tsx' '*.md' | xargs perl -pi -e 's/\bAuthContext\b/UserContext/g'`.
+0. Rename the type everywhere: `git ls-files '*.ts' '*.tsx' '*.md' ':!cella/' ':!*CHANGELOG.md' | xargs perl -pi -e 's/\bAuthContext\b/UserContext/g'`.
 1. In the generated `migration.sql`, insert the backfill directly after `CREATE TABLE "principals"` and before
    any `ADD CONSTRAINT`: `INSERT INTO "principals" ("id", "kind", "created_at") SELECT "id", 'user', "created_at" FROM "users";`
 2. Replace every `db.insert(usersTable)` in app code, seeds and tests with `insertUsers(db, records, { onConflictDoNothing })`.

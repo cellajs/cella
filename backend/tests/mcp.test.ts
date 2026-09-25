@@ -1,7 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createServiceAccount, getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
+import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -10,6 +12,7 @@ import { resourceUri } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
+import { seedEntityHierarchy } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
   clientCredentialsToken,
@@ -37,7 +40,8 @@ type ToolResult = {
 const REDIRECT_URI = 'http://localhost:9999/callback';
 
 /** A create item as the route's body schema reads it (the sync transaction is added server-side). */
-const buildItem = (name: string, filename: string) => ({
+const buildItem = (name: string, filename: string, home: Record<string, string>) => ({
+  ...home,
   id: crypto.randomUUID(),
   name,
   filename,
@@ -60,10 +64,33 @@ describe('MCP on the substrate (Phase E)', async () => {
   afterAll(async () => await as.close());
   afterEach(async () => await clearSecurityTestData());
 
+  /**
+   * The create body's home: the deepest seeded ancestor id below the organization; empty in the
+   * template's org-homed default. A write token needs no `<home>:read`: placement only looks the home up.
+   */
+  async function seedAttachmentHome(
+    org: { id: string; tenantId: string },
+    createdBy: string,
+  ): Promise<Record<string, string>> {
+    const plan = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      organizationId: org.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, plan, { tenantId: org.tenantId, createdBy, slugPrefix: `mcp-${nanoid(6)}` });
+    const deepest = hierarchy
+      .getOrderedAncestors('attachment')
+      .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+    if (!deepest) return {};
+    const key = appConfig.entityIdColumnKeys[deepest];
+    return { [key]: plan.channelIdColumns[key] };
+  }
+
   async function orgWithAdmin() {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
-    return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
+    const home = await seedAttachmentHome(org, user.id);
+    return { org, user, home, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
   /** A service account plus a token for the organization's MCP resource, scoped as asked. */
@@ -187,7 +214,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {
     const ctx = await serviceToken('attachment:write');
     const created = await toolCall(ctx, 'createAttachments', {
-      items: [buildItem('Build log', 'build.log')],
+      items: [buildItem('Build log', 'build.log', ctx.home)],
     });
     expect(created.rpc.error).toBeUndefined();
     expect(created.response.status).toBe(200);
@@ -225,7 +252,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const seed = await serviceToken('attachment:write');
     const created = await toolCall(seed, 'createAttachments', {
-      items: [buildItem('Thesis', 'thesis.pdf')],
+      items: [buildItem('Thesis', 'thesis.pdf', seed.home)],
     });
     expect(created.rpc.error).toBeUndefined();
     const { data: items } = toolResult(created).structuredContent as { data: { id: string }[] };
@@ -246,7 +273,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: items[0].id });
     expect(moved.response.status).toBe(200);
     const own = await toolCall(writer, 'createAttachments', {
-      items: [buildItem('Draft', 'draft.pdf')],
+      items: [buildItem('Draft', 'draft.pdf', writer.home)],
     });
     expect(own.rpc.error).toBeUndefined();
     expect(toolResult(own).isError).toBeUndefined();

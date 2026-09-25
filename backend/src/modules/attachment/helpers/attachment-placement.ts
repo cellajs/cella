@@ -12,7 +12,7 @@ import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
 import type { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { getValidChannel } from '#/permissions/get-valid-channel';
+import { resolveChannelInScope } from '#/permissions/get-valid-channel';
 import { validUuidSchema } from '#/schemas';
 
 const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors('attachment'));
@@ -68,9 +68,9 @@ export const validateAttachmentPlacement = (
 };
 
 /**
- * Ancestor columns for one create-body item: the deepest provided id, resolved to a readable
- * channel row, plus that row's own ancestor ids; never client input above the home. No id means
- * org-homed, which the fields schema only allows when no strict ancestor exists.
+ * Ancestor columns for one create-body item: the deepest provided id, resolved to a channel row in
+ * the request scope, plus that row's own ancestor ids; never client input above the home. No id
+ * means org-homed, which the fields schema only allows when no strict ancestor exists.
  */
 export const resolveAttachmentPlacement = async (
   ctx: OrgContext,
@@ -82,7 +82,9 @@ export const resolveAttachmentPlacement = async (
   const home = providedHome(input)[0];
   if (!home) return columns as ResolvedAttachmentPlacement;
 
-  const { entity } = await getValidChannel(ctx, input[placementKey(home)] as string, home, 'read');
+  // Placement resolves where the row lives; `canCreateEntity` on the placed row decides whether the
+  // actor may create there. No separate read check on the home, so no scope beyond `attachment:write`.
+  const entity = await resolveChannelInScope(ctx, input[placementKey(home)] as string, home);
   const row = entity as Record<string, unknown>;
   columns[placementKey(home)] = entity.id;
   for (const ancestor of hierarchy.getOrderedAncestors(home)) {
@@ -107,8 +109,9 @@ export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
 
 /**
  * Home channel a list or delta read narrows to, from the `channelId` query param; undefined reads
- * org-wide. The organization itself (or no id) is org-wide; any other id must be a readable channel
- * of the home type. With the organization as home there is no narrower channel, so other ids are unknown.
+ * org-wide. The organization itself (or no id) is org-wide; any other id must be a channel of the
+ * home type inside the request scope. With the organization as home there is no narrower channel, so
+ * other ids are unknown.
  */
 export const resolveAttachmentHomeScope = async (
   ctx: OrgContext,
@@ -119,7 +122,9 @@ export const resolveAttachmentHomeScope = async (
   if ((homeChannelType as string) === 'organization') {
     throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
   }
-  const { entity } = await getValidChannel(ctx, channelId, homeChannelType, 'read');
+  // Existence and scope only: the collection read filter narrows the list to the rows the caller's
+  // grants allow, so a home the caller cannot read yields an empty page, never a 403.
+  const entity = await resolveChannelInScope(ctx, channelId, homeChannelType);
   return entity.id;
 };
 

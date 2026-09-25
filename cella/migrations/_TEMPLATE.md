@@ -31,7 +31,10 @@ pnpm exec tsx cella/migrations/<id>/<script>.ts rewrite   <roots>   # apply
 ## Manual steps
 
 <Numbered, per-file steps the codemod cannot do: file renames (`git mv`), ambiguous identifiers
-it deliberately skips, DB migrations, config keys. Omit the section only if there are none.>
+it deliberately skips, DB migrations, config keys. `backend/drizzle` is app-owned (the default sync
+config ignores it), so a template migration never arrives: say what `pnpm generate` produces and
+name the hand-written SQL to port (backfills, data moves), or state that `pnpm generate` alone is
+enough. Omit the section only if there are none.>
 
 ## Verify
 

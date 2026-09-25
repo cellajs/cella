@@ -37,8 +37,8 @@ export default defineConfig({
       'frontend/src/routes/routeTree.gen.ts',
       'frontend/src/modules/common/bg-animation',
       // App identity: brand assets and the app's own locale namespace. cella has no upstream fix
-      // to push into these, so they are never synced (a pin would still merge and drop upstream
-      // hunks on conflict). Template-consumed copy lives in common.json, never in app.json.
+      // to push into these, so they are never synced. Template-consumed copy lives in common.json,
+      // never in app.json.
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
       'frontend/public/thumbnail.png',
@@ -48,7 +48,8 @@ export default defineConfig({
       'locales/nl/app.json',
       '.github/release-please-manifest.json',
     ],
-    // Paths pinned to fork; prefer fork version during merge conflicts
+    // Paths pinned to the app: the app copy always wins, upstream hunks never merge in. Adopt them by hand
+    // from the analyze list ("protected but behind upstream").
     pinned: [
       'backend/src/db/channel-tables.ts',
       'backend/src/db/product-tables.ts',
