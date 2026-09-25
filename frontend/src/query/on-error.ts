@@ -36,7 +36,14 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
-/** Global handler for API request errors: network errors, ApiErrors, and 401 -> sign-in redirect. */
+/**
+ * 401 types the session guards answer with when the session is gone. Any other 401 refuses a proof (a wrong
+ * authenticator code on the MFA toggle, a failed passkey) on a request that is still signed in.
+ */
+const sessionLostTypes = new Set(['unauthorized', 'no_session', 'session_expired', 'session_revoked']);
+const isSessionLost = (error: ApiError) => !error.type || sessionLostTypes.has(error.type);
+
+/** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // isNetworkError excludes ApiError, so a server that responded with any status falls through to the handling below.
   if (isNetworkError(error)) {
@@ -91,7 +98,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       toaster[toastType](errorMessage, { description });
     }
 
-    if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
+    if (statusCode === 401 && isSessionLost(error) && !location.pathname.startsWith('/auth/')) {
       const redirectOptions: { to: string; search?: { redirect: string } } = {
         to: '/auth/authenticate',
       };
