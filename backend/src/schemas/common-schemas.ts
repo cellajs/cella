@@ -203,12 +203,21 @@ export const validUuidSchema = z.string().uuid(translatedError('error:invalid_id
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
   new Set(items.map((i) => i.slug)).size === items.length;
 
+/** Scheme and host are case-insensitive; userinfo, path, query and fragment are not, so they keep their case. */
+const lowercaseSchemeAndHost = (url: string) => {
+  const match = /^([a-z][a-z\d+.-]*:\/\/)([^/\\?#]*)(.*)$/is.exec(url);
+  if (!match) return url;
+  const [, scheme, authority, rest] = match;
+  const hostStart = authority.lastIndexOf('@') + 1;
+  return `${scheme.toLowerCase()}${authority.slice(0, hostStart)}${authority.slice(hostStart).toLowerCase()}${rest}`;
+};
+
 export const validUrlSchema = z
   .string()
   .max(maxLength.url)
   .startsWith('https://', translatedError('error:invalid_url'))
   .superRefine(refineWithType((url: string) => url.startsWith('https://'), 'invalid_url'))
-  .transform((str) => str.toLowerCase().trim());
+  .transform((str) => lowercaseSchemeAndHost(str.trim()));
 
 export const validNameSchema = z
   .string()

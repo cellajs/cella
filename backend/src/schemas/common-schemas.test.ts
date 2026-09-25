@@ -93,6 +93,22 @@ describe('normalized input schemas', () => {
   );
 });
 
+describe('validUrlSchema', () => {
+  it('lowercases the scheme and host only: userinfo, path, query and fragment keep their case', () => {
+    expect(validUrlSchema.parse('https://Example.COM/Path/To?Q=Mixed#Frag')).toBe(
+      'https://example.com/Path/To?Q=Mixed#Frag',
+    );
+    expect(validUrlSchema.parse('https://User:Pass@Docs.Example.com:8443/A?b=C ')).toBe(
+      'https://User:Pass@docs.example.com:8443/A?b=C',
+    );
+    expect(validUrlSchema.parse('https://EXAMPLE.com')).toBe('https://example.com');
+  });
+
+  it.each(['http://example.com', 'HTTPS://example.com', 'example.com'])('rejects %s', (url) => {
+    expect(validUrlSchema.safeParse(url).success).toBe(false);
+  });
+});
+
 describe('validation messages', () => {
   const messageOf = (result: { error?: { issues: { message: string }[] } }) => result.error?.issues[0]?.message;
 
