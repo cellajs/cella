@@ -1,8 +1,10 @@
 import { createHmac } from 'node:crypto';
 import { createServer } from 'node:http';
+import { type Socket, connect as tcpConnect } from 'node:net';
+import type { Duplex } from 'node:stream';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
-import { createExpiredToken, createSignedToken } from './helpers';
+import { createExpiredToken, createSignedToken, deferred } from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
 const verifyGate = { delayMs: 0, allowed: true };
@@ -27,10 +29,14 @@ vi.mock('../sync/session-manager', () => ({ joinCollab: vi.fn(), leaveCollab: vi
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 
 const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
+const { checkConnectionRate } = await import('../server/rate-limiter');
 
 let baseUrl: string;
+let port: number;
 let httpServer: ReturnType<typeof createServer>;
 let wss: WebSocketServer;
+/** The server's side of every upgrade request, in arrival order. */
+const upgradeSockets: Duplex[] = [];
 
 beforeAll(async () => {
   httpServer = createServer((_req, res) => {
@@ -39,12 +45,14 @@ beforeAll(async () => {
   });
   wss = new WebSocketServer({ noServer: true });
   httpServer.on('upgrade', setupUpgradeHandler(wss));
+  httpServer.on('upgrade', (_req, socket) => upgradeSockets.push(socket));
   setupConnectionHandler(wss);
 
   await new Promise<void>((resolve) => {
     httpServer.listen(0, '127.0.0.1', () => {
       const addr = httpServer.address();
-      baseUrl = `ws://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
+      port = typeof addr === 'object' && addr ? addr.port : 0;
+      baseUrl = `ws://127.0.0.1:${port}`;
       resolve();
     });
   });
@@ -166,6 +174,122 @@ describe('setupUpgradeHandler', () => {
     expect(closeCode).toBeUndefined();
     expect(ws.readyState).toBe(WsWebSocket.OPEN);
     ws.close();
+  });
+});
+
+/** Polls until `check` holds, failing after `ms`. */
+async function until(check: () => boolean, ms = 2000): Promise<void> {
+  const deadline = Date.now() + ms;
+  while (!check()) {
+    if (Date.now() > deadline) throw new Error('condition not met in time');
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
+/** An upgrade request on a plain TCP socket, so a test can reset the connection at any moment; `response` resolves the head the server sent, if any. */
+function rawUpgrade(target: string): { client: Socket; response: Promise<string> } {
+  const client = tcpConnect(port, '127.0.0.1');
+  client.on('error', () => {});
+  let received = '';
+  const response = new Promise<string>((resolve) => {
+    client.on('data', (chunk) => {
+      received += chunk.toString('latin1');
+      if (received.includes('\r\n\r\n')) resolve(received);
+    });
+    client.on('close', () => resolve(received));
+    // A server that never answers resolves as silence.
+    setTimeout(() => resolve(received), 2000);
+  });
+  const lines = [
+    `GET ${target} HTTP/1.1`,
+    `Host: 127.0.0.1:${port}`,
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==',
+    'Sec-WebSocket-Version: 13',
+  ];
+  client.write(`${lines.join('\r\n')}\r\n\r\n`);
+  return { client, response };
+}
+
+describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () => {
+  // A socket 'error' without a listener, or a rejected upgrade handler, is what takes the process down.
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
+
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+    process.on('unhandledRejection', record);
+  });
+
+  afterAll(() => {
+    process.off('uncaughtException', record);
+    process.off('unhandledRejection', record);
+  });
+
+  afterEach(() => {
+    crashes.length = 0;
+  });
+
+  /** Positive control for each case: the server still accepts a valid connection. */
+  async function expectStillServing() {
+    const token = createSignedToken({ userId: 'user-1' });
+    const { ws, closeCode, error } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
+    expect(error).toBeUndefined();
+    expect(closeCode).toBeUndefined();
+    ws.close();
+  }
+
+  it('must not crash the process via a connection reset while the upgrade waits on the rate limiter', async () => {
+    const limiter = deferred();
+    const calls = vi.mocked(checkConnectionRate).mock.calls.length;
+    vi.mocked(checkConnectionRate).mockImplementationOnce(async () => {
+      await limiter.promise;
+      return true;
+    });
+    const seen = upgradeSockets.length;
+    const token = createSignedToken({ userId: 'user-1' });
+    const { client } = rawUpgrade(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
+    await until(() => vi.mocked(checkConnectionRate).mock.calls.length > calls && upgradeSockets.length > seen);
+    const serverSide = upgradeSockets[seen];
+
+    client.resetAndDestroy();
+    await until(() => serverSide.destroyed);
+    limiter.release();
+    await settle();
+
+    expect(crashes).toEqual([]);
+    expect(wss.clients.size).toBe(0);
+    await expectStillServing();
+  });
+
+  it('must not crash the process via a connection reset after a refused upgrade', async () => {
+    const seen = upgradeSockets.length;
+    // No token: refused at the HTTP level.
+    const { client, response } = rawUpgrade('/entity-1?entityType=task&tenantId=tenant-1');
+    expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 400 Bad Request');
+    const serverSide = upgradeSockets[seen];
+
+    client.resetAndDestroy();
+    await settle();
+
+    expect(crashes).toEqual([]);
+    // The refusal ends the connection itself: a peer that never closes cannot hold the socket open.
+    expect(serverSide.destroyed).toBe(true);
+    await expectStillServing();
+  });
+
+  it('must not leave a socket open or reject the handler via a request target no URL can hold', async () => {
+    const seen = upgradeSockets.length;
+    const token = createSignedToken({ userId: 'user-1' });
+    const { response } = rawUpgrade(`//[/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
+
+    expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 400 Bad Request');
+    await until(() => upgradeSockets[seen]?.destroyed === true);
+    await settle();
+    expect(crashes).toEqual([]);
+    await expectStillServing();
   });
 });
 
