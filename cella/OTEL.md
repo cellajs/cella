@@ -71,6 +71,15 @@ Use `@opentelemetry/api` directly in any service with OTel initialized: `tracer.
 
 Span names are constants in [span-names.ts](../shared/src/tracing/span-names.ts), grouped by service prefix (`cdc.*`, `sync.*`). Never inline strings. The shared tracing module also exports attribute builders (`cdcAttrs`, `activityAttrs`, `eventAttrs`). Add a helper when a group of spans shares attributes.
 
+## Redaction
+
+Tokens travel in request URLs: magic-link and invitation paths, unsubscribe links, OAuth callbacks. One function,
+`scrubUrl` ([scrub-url.ts](../shared/src/utils/scrub-url.ts)), removes them from both signals. `createOtelSDK` registers
+a redacting span processor ([redacting-span-processor.ts](../shared/src/tracing/redacting-span-processor.ts)) before
+every other processor, so the exporter and debug processors only see scrubbed span names, attributes, events and
+status messages. `createLogger` requires the redact key paths and scrubs every logged `url`. A new token route adds its
+template to `secretPathTemplates`, a new token query key to `sensitiveQueryKeys`, in that file.
+
 ## Trace correlation
 
 1. **Frontend**: `FetchInstrumentation` injects `traceparent` on API calls.

@@ -52,7 +52,8 @@ const userinfoPattern = /(:\/\/)[^/?#@\s]+@/g;
 /**
  * Redacts secrets from a URL, a path, a bare query string or any text that contains them: the value of every sensitive
  * query key, the secret segment of known token routes, and URL userinfo. Everything else is kept byte for byte, so logs
- * and spans still show the route and the harmless parameters.
+ * and spans still show the route and the harmless parameters. `createLogger` runs it on every logged `url`, and the
+ * redacting span processor on every span string before export.
  */
 export const scrubUrl = (input: string): string => {
   if (!input) return input;
