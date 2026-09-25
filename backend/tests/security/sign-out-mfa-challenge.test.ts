@@ -4,13 +4,12 @@ import { getMe, signInWithTotp, signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createMfaToken, createTestSession, createTotpUser, type ErrorResponse } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTotpUser, type ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -45,7 +44,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     const sessionCookie = await createTestSession(user);
     const otherSessionCookie = await createTestSession(user);
     const mfaToken = await createMfaToken(user);
-    const mfaCookie = `${authCookieName('confirm-mfa')}=${mfaToken}`;
+    const mfaCookie = authCookie('confirm-mfa', mfaToken);
     const sessionHeaders = { ...defaultHeaders, Cookie: sessionCookie };
 
     // Cache the session first, so the refusal below also proves the cache entry was dropped.
@@ -83,7 +82,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     const mfaToken = await createMfaToken(user);
 
     const { response } = await call(signOut, {
-      headers: { ...defaultHeaders, Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}` },
+      headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
     });
 
     expect(response.status).toBe(204);
