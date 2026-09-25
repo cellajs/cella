@@ -12,7 +12,7 @@ defineBackendModule({
     defineBackendModule call (who counts as a recipient is the only app-specific part); with no
     source declared the whole module is dormant. Rows are partitioned by createdAt so retention is
     automatic, and excluded from CDC because they are per-user state rather than synced content.`,
-  // Exactly one instance sends digests: jobs run on the migration-owning instance only.
+  // Exactly one instance sends digests: job ownership (lib/job-ownership.ts) runs jobs on one instance at a time.
   jobs: [{ name: 'notification-digest', start: () => scheduleNotificationDigest() }],
   routes: [{ path: '/notifications', app: notificationHandlers }],
 });

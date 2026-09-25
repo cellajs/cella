@@ -11,6 +11,7 @@ import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { startGeoipRefresh } from '#/lib/geoip';
+import { startJobOwnership } from '#/lib/job-ownership';
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
@@ -52,13 +53,15 @@ const main = async () => {
     await schedulePartitionMaintenance();
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
-
-    // The migration-owning instance also owns every scheduled job, so only one instance runs each.
-    const jobs = getBackendJobs();
-    for (const job of jobs) stopJobs.push(job.start());
-    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
+  }
+
+  // One instance runs the scheduled jobs: every RUN_JOBS instance contends for an advisory lock, also across a rollout.
+  if (env.RUN_JOBS && !env.NODB) {
+    const jobs = getBackendJobs();
+    stopJobs.push(startJobOwnership({ jobs }));
+    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
   }
 
   registerCacheInvalidation();

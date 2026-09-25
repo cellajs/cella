@@ -103,6 +103,14 @@ export const env = createEnv({
       .default('true')
       .transform((v) => v === 'true'),
 
+    // Contend for the scheduled jobs (lib/job-ownership.ts: an advisory lock picks one instance). Deployed containers
+    // (NODE_ENV=production) default to false and the deploy sets it on the primary rollout service; other modes run them.
+    RUN_JOBS: z
+      .string()
+      // biome-ignore lint/style/noProcessEnv: the default depends on the NODE_ENV this same loader reads.
+      .default(process.env.NODE_ENV === 'production' ? 'false' : 'true')
+      .transform((v) => v === 'true'),
+
     PINO_LOG_LEVEL: z
       .enum([...severityLevels, 'silent'])
       .default(appConfig.mode === 'test' ? 'silent' : appConfig.mode === 'production' ? 'info' : 'debug'),

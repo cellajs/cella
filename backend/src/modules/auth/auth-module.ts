@@ -14,7 +14,7 @@ defineBackendModule({
   description: `Endpoints for authentication, supporting multiple sign-in methods including OAuth
     (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,
     account linking, and impersonation for system admins.`,
-  // Jobs run on the migration-owning instance only, so exactly one process reaps and prunes.
+  // Job ownership (lib/job-ownership.ts) runs these on one instance at a time, so exactly one process reaps and prunes.
   jobs: [
     { name: 'reap-unproven-accounts', start: () => scheduleReapUnprovenAccounts() },
     { name: 'prune-devices', start: () => schedulePruneDevices() },
