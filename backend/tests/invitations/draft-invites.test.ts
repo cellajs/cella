@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm';
-import { getMyInvitations, membershipInvite } from 'sdk';
+import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
 import { type EntityRole, hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-invites';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -142,6 +143,34 @@ describe('Draft context invite deferral', async () => {
     const [afterSecond] = await getInactiveRows(organization.id);
     expect(afterSecond.remindedAt).toBe(afterRow.remindedAt);
     expect(afterSecond.tokenId).toBe(afterRow.tokenId);
+  });
+
+  it('lists a dispatched invite once: rotating its link retires the old one', async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
+    const [held] = await getInactiveRows(organization.id);
+
+    await db
+      .update(organizationsTable)
+      .set({ publishedAt: new Date().toISOString() })
+      .where(eq(organizationsTable.id, organization.id));
+    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as UserContext, {
+      channelIds: [organization.id],
+    });
+
+    const [dispatched] = await getInactiveRows(organization.id);
+    const links = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, held.id));
+    expect(links.map((link) => link.id)).toEqual([dispatched.tokenId]);
+
+    const { data } = await call(getPendingMemberships, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      query: { entityId: organization.id, entityType: 'organization' },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
+    const listed = (data as { items: { id: string; tokenId: string | null }[] }).items;
+    expect(listed.filter((item) => item.id === held.id)).toEqual([
+      expect.objectContaining({ tokenId: dispatched.tokenId }),
+    ]);
   });
 
   it('throttles reminder emails to once per 7 days on published contexts', async () => {
