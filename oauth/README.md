@@ -50,7 +50,7 @@ A consent is a Grant row bound to one resource with the approved scopes. It hold
 | Refresh token | 30 days, rotated on use; grants live 30 days |
 | Scopes | The app's access scopes (`attachment:read`, …), never `openid` |
 
-Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the actor), `actor_kind` (`user` or `service`), `tenant_id`, `scope`, `aud`, `iss`, and what the token rests on: `gid` (the grant) for a person's token, `key_id` (the API key) for a service account's. Verification happens in the guard against the public keys in `signing_keys` (every status, so a retired key still verifies), cached in-process for five minutes: no round trip to this worker, no row per token. The guard then puts the grant or key to the grant policy and caches the answer for 30 seconds per grant or key; a change made in the same process (a revoked key or connected app, a membership change, a deleted account) drops it at once. A token without `gid` or `key_id` is refused.
+Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST API or `<mcpUrl>/<tenant>/<org>/mcp` for one organization's MCP endpoint. A request for any other resource fails with `invalid_target`, so a token never crosses tenants. The claims a guard reads are `sub` (the actor), `actor_kind` (`user` or `service`), `tenant_id`, `scope`, `aud`, `iss`, and what the token rests on: `gid` (the grant) for a person's token, `key_id` (the API key) for a service account's. Verification happens in the guard against the public keys in `signing_keys` (every status, so a retired key still verifies), cached in-process for five minutes: no round trip to this worker, no row per token. The guard then puts the grant or key to the grant policy and caches the answer for 30 seconds per grant or key. Whatever ends a grant or key (a revoked key, connected app or refresh token, a replayed code, a refusal at refresh) or changes what it rests on (the user, a membership, the service account, an installed app, the tenant's policy) drops the answers it affects in every process at once, through `auth_invalidate`. A token without `gid` or `key_id` is refused.
 
 ## Keystore
 
@@ -66,7 +66,7 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 - **Reads the app database.** Sessions, memberships, tenants, service accounts and keys are read directly; the worker starts after the API in development for migrations and needs the runtime database role in production.
 - **One process serves consent.** The interaction routes render nothing themselves; the page under `/auth/consent` is the frontend's.
 - **Client secrets are hashes.** A registered app's secret is compared by hash; a service account's client secret is any of its live keys, so revoking a key also ends its `client_credentials` access, and the tokens minted with it stop at the guard.
-- **Metadata caches for a minute.** Adapter-loaded clients are cached; disabling a service account invalidates its entry.
+- **Metadata caches for a minute.** Adapter-loaded clients are cached; a change to a service account drops its entry in every process.
 
 ## Health and configuration
 

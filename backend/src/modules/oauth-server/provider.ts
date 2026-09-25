@@ -200,7 +200,14 @@ export async function createProvider(): Promise<Provider> {
         })
         .from(apiKeysTable)
         .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
-        .where(and(eq(apiKeysTable.actorId, this.clientId), isNull(apiKeysTable.revokedAt)));
+        // Read here, not from the cached client: a disabled account stops minting the moment it is disabled.
+        .where(
+          and(
+            eq(apiKeysTable.actorId, this.clientId),
+            isNull(apiKeysTable.revokedAt),
+            eq(serviceAccountsTable.status, 'active'),
+          ),
+        );
       const key = keys.find((k) => (!k.expiresAt || !isExpiredDate(k.expiresAt)) && safeEqual(k.hash, presented));
       if (!key) return false;
       const ctx = Provider.ctx;

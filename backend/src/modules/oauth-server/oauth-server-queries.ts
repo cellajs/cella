@@ -1,5 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import type { DbOrTx } from '#/db/db';
+import { type AuthInvalidation, dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 
@@ -50,12 +52,29 @@ export async function deleteConsentsOfUsers(ctx: DbContext, { userIds }: { userI
   if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));
 }
 
-/** The grant and every token issued under it, in one transaction; the client must ask again. */
+/**
+ * The grant and every token issued under it, in one transaction; the client must ask again. The verdicts on its access
+ * tokens drop here at once and in every other process when the delete commits.
+ */
 export async function deleteConsentWithTokens(ctx: DbContext, { grantId }: { grantId: string }): Promise<void> {
-  await ctx.var.db.transaction(async (tx) => {
+  const deleted = await ctx.var.db.transaction(async (tx) => {
     await tx.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
-    await tx
-      .delete(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
+    return deleteGrantRow(tx, grantId);
   });
+  if (deleted) dropCachedAuth(deleted);
+}
+
+/**
+ * Deletes one Grant row and, while the caller's transaction commits, tells every process to drop the verdicts on its
+ * tokens. Returns that message for this process, or null when no such grant existed.
+ */
+export async function deleteGrantRow(db: DbOrTx, grantId: string): Promise<AuthInvalidation | null> {
+  const [grant] = await db
+    .delete(oidcPayloadsTable)
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
+    .returning({ accountId: oidcPayloadsTable.accountId });
+  if (!grant?.accountId) return null;
+  const invalidation = { grant: { accountId: grant.accountId, grantId } };
+  await publishAuthInvalidation(db, invalidation);
+  return invalidation;
 }

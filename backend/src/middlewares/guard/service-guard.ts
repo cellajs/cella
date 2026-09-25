@@ -71,8 +71,7 @@ export async function setActorFromToken(
 
 /** The grant policy's verdict on the grant (per tenant) or API key a token names, cached with the actor's row. */
 async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
-  const key = token.kind === 'user' ? `${token.grantId}:${token.tenantId}` : token.keyId;
-  const cached = getTokenGrantCache(token.actorId, key);
+  const cached = getTokenGrantCache(token);
   if (cached) return cached;
 
   let entry: TokenGrantEntry;
@@ -91,7 +90,7 @@ async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrant
       : await baseDb.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, token.actorId));
     entry = account ? { refusal: null, kind: 'service', account } : { refusal: refusal ?? 'service_account_disabled' };
   }
-  setTokenGrantCache(token.actorId, key, entry);
+  setTokenGrantCache(token, entry);
   return entry;
 }
 

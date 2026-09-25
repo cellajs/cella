@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
+import pg from 'pg';
 import {
   createApiKey,
   createServiceAccount,
@@ -15,6 +16,7 @@ import {
   updateServiceAccount,
 } from 'sdk';
 import { appConfig } from 'shared';
+import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -74,6 +76,13 @@ const cimdDocument = {
 };
 
 const bearer = (jwt: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` });
+
+/**
+ * The other processes (api, mcp, oauth): what they hear on `auth_invalidate`, through a listener on a connection of
+ * its own. Each keeps its own cached verdicts, so a revocation must reach them at once.
+ */
+const otherProcesses = { client: new pg.Client({ connectionString: testDatabaseUrl }), heard: [] as unknown[] };
+const toldOtherProcesses = (message: unknown) => vi.waitFor(() => expect(otherProcesses.heard).toContainEqual(message));
 const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
 
 /** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
@@ -100,10 +109,16 @@ describe('OAuth grants', async () => {
   beforeAll(async () => {
     oauth = await startTestOauthServer();
     restoreFetch = serveClientMetadataDocuments({ [CIMD_ID]: cimdDocument });
+    await otherProcesses.client.connect();
+    otherProcesses.client.on('notification', ({ channel, payload }) => {
+      if (channel === 'auth_invalidate' && payload) otherProcesses.heard.push(JSON.parse(payload));
+    });
+    await otherProcesses.client.query('LISTEN auth_invalidate');
   });
   afterAll(async () => {
     restoreFetch();
     await oauth.close();
+    await otherProcesses.client.end();
   });
   afterEach(async () => await clearSecurityTestData());
 
@@ -156,6 +171,13 @@ describe('OAuth grants', async () => {
   const readAttachments = (ctx: Tenant, jwt: string) =>
     call(getAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearer(jwt) });
 
+  /** The grant a person's access token names, as the other processes hear of its revocation. */
+  async function grantOf(ctx: Tenant, jwt: string) {
+    const token = await verifyAccessToken(jwt, { tenantId: ctx.org.tenantId, organizationId: ctx.org.id });
+    if (token.kind !== 'user') throw new Error("Expected a person's token");
+    return { grant: { accountId: token.actorId, grantId: token.grantId } };
+  }
+
   async function allowUnregisteredClients(tenantId: string, allow: boolean) {
     const [tenant] = await db
       .select({ restrictions: tenantsTable.restrictions })
@@ -173,9 +195,12 @@ describe('OAuth grants', async () => {
       const ctx = await tenantWithApp();
       const grant = await consent(ctx);
 
-      // Positive control: while the app is installed, the refresh token rotates.
+      // Positive control: while the app is installed, the refresh token rotates and its token reads, which also
+      // caches the grant's verdict at the guard.
       const rotated = await refresh(grant.refresh);
       expect(rotated.status).toBe(200);
+      const access = String(rotated.body.access_token);
+      expect((await readAttachments(ctx, access)).response.status).toBe(200);
 
       const uninstalled = await call(updateServiceAccount, {
         path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id, id: ctx.installationId },
@@ -184,15 +209,18 @@ describe('OAuth grants', async () => {
       });
       expect(uninstalled.response.status).toBe(200);
 
-      const read = await readAttachments(ctx, String(rotated.body.access_token));
+      const read = await readAttachments(ctx, access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('app_not_installed');
+      await toldOtherProcesses({ installation: { tenantId: ctx.org.tenantId, clientId: APP_ID } });
 
+      const revoked = await grantOf(ctx, access);
       const refused = await refresh(String(rotated.body.refresh_token));
       expect(refused.status).toBe(400);
       expect(refused.body.error).toBe('invalid_grant');
       // The refused grant is deleted with every token issued under it: the client must ask the person again.
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+      await toldOtherProcesses(revoked);
     });
 
     it('must not keep a deleted account acting via its grant', async () => {
@@ -257,6 +285,8 @@ describe('OAuth grants', async () => {
       const grant = await consent(ctx, CIMD_ID);
       const rotated = await refresh(grant.refresh, CIMD_ID);
       expect(rotated.status).toBe(200);
+      // Positive control, which also caches the grant's verdict at the guard.
+      expect((await readAttachments(ctx, String(rotated.body.access_token))).response.status).toBe(200);
 
       await allowUnregisteredClients(ctx.org.tenantId, false);
 
@@ -313,6 +343,27 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, grant.access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
+      await toldOtherProcesses(await grantOf(ctx, grant.access));
+    });
+
+    it('must not act via an access token after the client revokes its refresh token', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      // RFC 7009: revoking a refresh token ends its grant, with every token issued under it.
+      const revocation = await fetch(`${oauth.issuer}/token/revocation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ token: grant.refresh, token_type_hint: 'refresh_token', client_id: APP_ID }),
+      });
+      expect(revocation.status).toBe(200);
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+      await toldOtherProcesses(await grantOf(ctx, grant.access));
     });
   });
 
@@ -353,6 +404,7 @@ describe('OAuth grants', async () => {
       const refused = await read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('invalid_api_key');
+      await toldOtherProcesses({ serviceAccount: accountId });
       // Positive control: the account and its other key are untouched.
       expect((await read(await tokenFor(secondKey.secret))).response.status).toBe(200);
     });
@@ -508,10 +560,8 @@ describe('OAuth grants', async () => {
       const first = await exchange();
       expect(first.status).toBe(200);
       const access = String(first.body.access_token);
-      // Positive control: the token itself verifies; any refusal below is the grant's.
-      await expect(
-        verifyAccessToken(access, { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }),
-      ).resolves.toBeTruthy();
+      // Positive control: the token reads, which also caches the grant's verdict; any refusal below is the grant's.
+      expect((await readAttachments(ctx, access)).response.status).toBe(200);
 
       const replay = await exchange();
       expect(replay.status).toBe(400);
@@ -522,6 +572,7 @@ describe('OAuth grants', async () => {
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
       expect((await refresh(String(first.body.refresh_token))).body.error).toBe('invalid_grant');
+      await toldOtherProcesses(await grantOf(ctx, access));
     });
 
     it('must not mint tokens via a rotated refresh token, and the replay revokes the grant', async () => {
@@ -531,6 +582,7 @@ describe('OAuth grants', async () => {
       const rotated = await refresh(grant.refresh);
       expect(rotated.status).toBe(200);
       const access = String(rotated.body.access_token);
+      expect((await readAttachments(ctx, access)).response.status).toBe(200);
 
       const replay = await refresh(grant.refresh);
       expect(replay.status).toBe(400);
@@ -541,6 +593,7 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
+      await toldOtherProcesses(await grantOf(ctx, access));
     });
 
     /** Holds every consume back a moment, so each racing request has read the unspent row before any spends it. */
@@ -565,6 +618,10 @@ describe('OAuth grants', async () => {
       const results = await Promise.all([exchange(), exchange()]).finally(() => race.mockRestore());
       expect(results.map((result) => result.status).sort()).toEqual([200, 400]);
       expect(results.find((result) => result.status === 400)?.body.error).toBe('invalid_grant');
+      // The replay revoked the grant, the winner's tokens with it, here and in the other processes.
+      const winner = String(results.find((result) => result.status === 200)?.body.access_token);
+      expect((await readAttachments(ctx, winner)).response.status).toBe(401);
+      await toldOtherProcesses(await grantOf(ctx, winner));
     });
 
     it('must not mint tokens twice via two concurrent refreshes with one refresh token', async () => {
@@ -753,7 +810,7 @@ describe('OAuth grants', async () => {
       const rename = (headers: Record<string, string>) =>
         call(updateOrganization, {
           path: { tenantId: ctx.org.tenantId, id: ctx.org.id },
-          body: { name: `Renamed ${nanoid(4)}` },
+          body: { name: 'Renamed organization' },
           headers,
         });
 

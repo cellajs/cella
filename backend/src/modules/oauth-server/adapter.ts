@@ -2,9 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { and, eq, isNull } from 'drizzle-orm';
 import { type Adapter, type AdapterPayload, errors } from 'oidc-provider';
 import { baseDb } from '#/db/db';
+import { dropCachedAuth } from '#/middlewares/guard/invalidate-cache';
 import { clientCache } from '#/modules/oauth-server/client-cache';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
-import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteConsentWithTokens, deleteGrantRow } from '#/modules/oauth-server/oauth-server-queries';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { hashToken } from '#/utils/hash-token';
@@ -155,7 +156,13 @@ export class DrizzleAdapter implements Adapter {
     throw new errors.InvalidGrant(`${this.name} already consumed`);
   }
 
+  /** A grant the provider deletes itself (a revoked refresh token, a replayed code) takes its tokens' verdicts along. */
   async destroy(id: string): Promise<void> {
+    if (this.name === 'Grant') {
+      const deleted = await baseDb.transaction((tx) => deleteGrantRow(tx, id));
+      if (deleted) dropCachedAuth(deleted);
+      return;
+    }
     await baseDb
       .delete(oidcPayloadsTable)
       .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))));

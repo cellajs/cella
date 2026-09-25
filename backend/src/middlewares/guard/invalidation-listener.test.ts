@@ -4,7 +4,11 @@ import { testDatabaseUrl } from 'shared/test-db';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
+import { activityBus } from '#/lib/activity-bus';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { clientCache } from '#/modules/oauth-server/client-cache';
+import type { VerifiedAccessToken } from '#/modules/oauth-server/verify-access-token';
+import { getApiKeyCache, setApiKeyCache } from './api-key-cache';
 import type { MembershipCacheEntry } from './auth-cache';
 import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
 import { invalidateCache } from './invalidate-cache';
@@ -21,18 +25,59 @@ const publishElsewhere = (payload: unknown) =>
     sql`select pg_notify('auth_invalidate', ${typeof payload === 'string' ? payload : JSON.stringify(payload)})`,
   );
 
+/** A person's access token as the guard verified it: under a grant, for one tenant, from one client. */
+const userToken = (
+  actorId: string,
+  grantId = 'grant',
+  tenantId = 'tenant',
+  clientId = 'client',
+): VerifiedAccessToken => ({
+  kind: 'user',
+  actorId,
+  grantId,
+  tenantId,
+  clientId,
+  scopes: [],
+});
+/** A service account's access token, minted with one of its API keys. */
+const serviceToken = (accountId: string, keyId: string): VerifiedAccessToken => ({
+  kind: 'service',
+  actorId: accountId,
+  keyId,
+  tenantId: 'tenant',
+  clientId: accountId,
+  scopes: [],
+});
+// The caches hold what the guards hand them; a stub with the id is enough to find and drop the entries.
+const cacheVerdict = (token: VerifiedAccessToken) =>
+  setTokenGrantCache(token, { refusal: null, kind: 'user', user: { id: token.actorId } as never });
+
 /** Caches a session, memberships and an access-token verdict for a user, as the guards do on a request. */
 const cacheUser = (userId: string) => {
-  // The caches hold what the guards hand them; a stub with the id is enough to find and drop the entries.
   const user = { id: userId } as never;
   setSessionCache(`${userId}-session`, { session: { id: `${userId}-session` } as never, user, hasSystemRole: false });
   setMembershipCache(userId, [] as MembershipCacheEntry);
-  setTokenGrantCache(userId, 'grant:tenant', { refusal: null, kind: 'user', user });
+  cacheVerdict(userToken(userId));
 };
 const cachedFor = (userId: string) => ({
   session: !!getSessionCache(`${userId}-session`),
   memberships: !!getMembershipCache(userId),
-  tokenGrant: !!getTokenGrantCache(userId, 'grant:tenant'),
+  tokenGrant: !!getTokenGrantCache(userToken(userId)),
+});
+
+/** Caches a service account's API key and client, and a verdict on a token minted with the key. */
+const cacheServiceAccount = (accountId: string) => {
+  setApiKeyCache(`${accountId}-hash`, {
+    apiKey: { id: `${accountId}-key` } as never,
+    account: { id: accountId } as never,
+  });
+  clientCache.set(accountId, { client_id: accountId, client_kind: 'service' });
+  cacheVerdict(serviceToken(accountId, `${accountId}-key`));
+};
+const cachedForAccount = (accountId: string) => ({
+  apiKey: !!getApiKeyCache(`${accountId}-hash`),
+  client: !!clientCache.get(accountId),
+  tokenGrant: !!getTokenGrantCache(serviceToken(accountId, `${accountId}-key`)),
 });
 
 /**
@@ -85,6 +130,44 @@ describe('auth_invalidate listener', () => {
     expect(getOrgCache('tenant-b', 'org-3')).toBeDefined();
   });
 
+  it("must not keep verdicts on a grant's tokens after another process deletes the grant", async () => {
+    const [revoked, kept] = [userToken('holder', 'revoked-grant'), userToken('holder', 'kept-grant')];
+    cacheVerdict(revoked);
+    cacheVerdict(kept);
+
+    await publishElsewhere({ grant: { accountId: 'holder', grantId: 'revoked-grant' } });
+
+    await vi.waitFor(() => expect(getTokenGrantCache(revoked)).toBeUndefined());
+    expect(getTokenGrantCache(kept)).toBeDefined();
+  });
+
+  it("must not keep verdicts on a tenant's tokens after another process changes its policy or an installation", async () => {
+    const inChangedTenant = userToken('member', 'grant-a', 'tenant-policy');
+    const installedApp = userToken('member', 'grant-b', 'tenant-apps', 'portfolio');
+    const otherClient = userToken('member', 'grant-c', 'tenant-apps', 'https://client.example/metadata.json');
+    const otherTenant = userToken('member', 'grant-d', 'tenant-other');
+    for (const token of [inChangedTenant, installedApp, otherClient, otherTenant]) cacheVerdict(token);
+
+    await publishElsewhere({ tenant: 'tenant-policy' });
+    await publishElsewhere({ installation: { tenantId: 'tenant-apps', clientId: 'portfolio' } });
+
+    await vi.waitFor(() => expect(getTokenGrantCache(installedApp)).toBeUndefined());
+    expect(getTokenGrantCache(inChangedTenant)).toBeUndefined();
+    expect(getTokenGrantCache(otherClient)).toBeDefined();
+    expect(getTokenGrantCache(otherTenant)).toBeDefined();
+  });
+
+  it("must not keep a service account's API keys, client or token verdicts after another process changes it", async () => {
+    cacheServiceAccount('changed-account');
+    cacheServiceAccount('other-account');
+
+    await publishElsewhere({ serviceAccount: 'changed-account' });
+
+    await vi.waitFor(() => expect(cachedForAccount('changed-account').apiKey).toBe(false));
+    expect(cachedForAccount('changed-account')).toEqual({ apiKey: false, client: false, tokenGrant: false });
+    expect(cachedForAccount('other-account')).toEqual({ apiKey: true, client: true, tokenGrant: true });
+  });
+
   it('ignores a malformed message and keeps listening', async () => {
     cacheUser('kept');
     cacheUser('next');
@@ -113,6 +196,19 @@ describe('auth_invalidate listener', () => {
       await publishElsewhere({ user: 'after' });
       expect(cachedFor('after').session).toBe(false);
     });
+  });
+
+  it("must not keep a service account's cached key or client while the listening connection was down", async () => {
+    await adminDb.execute(
+      sql`select pg_terminate_backend(pid) from pg_stat_activity where query = 'LISTEN auth_invalidate' and pid <> pg_backend_pid()`,
+    );
+    cacheServiceAccount('in-gap-account');
+
+    await vi.waitFor(() => expect(cachedForAccount('in-gap-account').apiKey).toBe(false), {
+      timeout: 10_000,
+      interval: 100,
+    });
+    expect(cachedForAccount('in-gap-account')).toEqual({ apiKey: false, client: false, tokenGrant: false });
   });
 });
 
@@ -182,21 +278,50 @@ describe('invalidateCache and endSessions publish to every process', () => {
 
   it('drops the entry here and tells the other processes', async () => {
     cacheUser('changed');
+    cacheServiceAccount('account-e');
+    const installedApp = userToken('member-f', 'grant-f', 'tenant-f', 'portfolio');
+    cacheVerdict(installedApp);
 
     invalidateCache.user('changed');
     invalidateCache.org('tenant-c', 'org-4');
     invalidateCache.tenant('tenant-d');
+    invalidateCache.serviceAccount('account-e');
+    invalidateCache.installation('tenant-f', 'portfolio');
 
     expect(cachedFor('changed')).toEqual({ session: false, memberships: false, tokenGrant: false });
+    expect(cachedForAccount('account-e')).toEqual({ apiKey: false, client: false, tokenGrant: false });
+    expect(getTokenGrantCache(installedApp)).toBeUndefined();
     await vi.waitFor(() =>
       expect(received.map((payload) => JSON.parse(payload))).toEqual(
         expect.arrayContaining([
           { user: 'changed' },
           { org: { tenantId: 'tenant-c', orgId: 'org-4' } },
           { tenant: 'tenant-d' },
+          { serviceAccount: 'account-e' },
+          { installation: { tenantId: 'tenant-f', clientId: 'portfolio' } },
         ]),
       ),
     );
+  });
+
+  it("must not keep a user's system role in any process via the cache once CDC reports it changed", async () => {
+    // system_roles is written outside the API; the change arrives as a CDC event on the activity bus.
+    await import('#/modules/system/system-listeners');
+    cacheUser('demoted');
+    cacheUser('bystander-admin');
+
+    activityBus.emit({
+      id: generateId(),
+      type: 'system_role.deleted',
+      action: 'delete',
+      resourceType: 'system_role',
+      entityType: null,
+      rowData: { userId: 'demoted', role: 'admin' },
+    } as never);
+
+    expect(cachedFor('demoted')).toEqual({ session: false, memberships: false, tokenGrant: false });
+    expect(cachedFor('bystander-admin').session).toBe(true);
+    await vi.waitFor(() => expect(received).toContain(JSON.stringify({ user: 'demoted' })));
   });
 
   it('announces an ending of sessions to the other processes only once it commits', async () => {

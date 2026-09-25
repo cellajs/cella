@@ -3,11 +3,7 @@ import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
-import { clearAuthCache } from './auth-cache';
-import { authInvalidateChannel, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
-import { clearOrgCache } from './org-cache';
-import { clearTenantCache } from './tenant-cache';
-import { clearTokenGrantCache } from './token-grant-cache';
+import { authInvalidateChannel, clearCachedAuth, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
 
 const listenStatement = `LISTEN ${authInvalidateChannel}`;
 const RETRY_MIN_MS = 1_000;
@@ -115,10 +111,7 @@ export function listenForAuthInvalidation({
       client = next;
       retryDelay = RETRY_MIN_MS;
       // Any entry cached while nothing listened may have missed its invalidation.
-      clearAuthCache();
-      clearOrgCache();
-      clearTenantCache();
-      clearTokenGrantCache();
+      clearCachedAuth();
       heartbeat = setInterval(() => {
         if (client) void beat(client);
       }, heartbeatMs);
