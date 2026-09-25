@@ -35,6 +35,10 @@ describe('Sign-out scoping', async () => {
     const victim = await createTestUser('victim@example.com');
     const victimCookie = await createTestSession(victim); // real session row
     const victimSessionId = sessionIdOf(victimCookie);
+    const victimHeaders = { ...defaultHeaders, Cookie: victimCookie };
+
+    // The victim's session is cached, so a sign-out that trusted a cached session id would find it.
+    expect((await call(getMe, { headers: victimHeaders })).response.status).toBe(200);
 
     // Forge a cookie: victim's sessionId but an attacker-chosen (wrong) secret, signed so only the secret is wrong.
     const forgedSecret = hashToken(nanoid(40));
@@ -50,6 +54,7 @@ describe('Sign-out scoping', async () => {
 
     const remaining = await findSession(victimSessionId);
     expect(remaining.revokedAt).toBeNull();
+    expect((await call(getMe, { headers: victimHeaders })).response.status).toBe(200);
   });
 });
 
@@ -60,6 +65,9 @@ describe('Sign-out revokes the session', async () => {
     const user = await createTestUser('owner@example.com');
     const cookie = await createTestSession(user);
     const headers = { ...defaultHeaders, Cookie: cookie };
+
+    // Cache the session first, so the 401 below proves sign-out drops the cached entry.
+    expect((await call(getMe, { headers })).response.status).toBe(200);
 
     const { response } = await call(signOut, { headers });
     expect(response.status).toBe(204);
