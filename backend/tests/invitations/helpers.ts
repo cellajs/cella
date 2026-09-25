@@ -3,9 +3,9 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
+import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { singleUseWindow } from '#/utils/get-valid-token';
 import { hashToken } from '#/utils/hash-token';
 import { createDate } from '#/utils/time-span';
 import { authCookie } from '../helpers';
@@ -69,7 +69,7 @@ export async function createInvitation({
         ? {
             singleUseToken: hashToken(rawSingleUseToken),
             invokedAt: new Date().toISOString(),
-            expiresAt: createDate(singleUseWindow('invitation')),
+            expiresAt: createDate(tokenPolicies.invitation.singleUseWindow),
           }
         : { expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }),
     })

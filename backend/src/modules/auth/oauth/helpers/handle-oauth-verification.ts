@@ -5,9 +5,9 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { identitiesTable } from '#/modules/auth/identities-db';
-import type { TokenModel } from '#/modules/auth/tokens-db';
+import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 
-export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenModel) => {
+export const handleOAuthVerification = async (ctx: Context<Env>, token: TokenRecord) => {
   if (!token.userId || !token.identityId) throw new AppError(500, 'server_error', 'error');
 
   const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, token.identityId)).limit(1);

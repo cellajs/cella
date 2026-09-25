@@ -1,5 +1,6 @@
 import type { DbContext } from '#/core/context';
-import { bindInactiveMembershipsByEmail, deleteInvitationTokens } from '#/modules/memberships/memberships-queries';
+import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { bindInactiveMembershipsByEmail } from '#/modules/memberships/memberships-queries';
 
 interface ClaimEmailForUserOpts {
   userId: string;

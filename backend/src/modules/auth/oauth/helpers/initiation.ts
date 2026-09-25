@@ -7,7 +7,7 @@ import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
 import type { OAuthCookiePayload, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { oauthCookiePayloadSchema } from '#/modules/auth/oauth/oauth-schema';
-import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
+import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -60,7 +60,7 @@ export const handleOAuthInitiation = async (
 
   if (type === 'verify') {
     // Fails early on a missing or expired verification token; the callback re-validates. The post-auth redirect travels on the token row.
-    const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
+    const tokenRecord = await readBoundToken(ctx, 'oauth-verification');
     cookieContent.redirectAfter = tokenRecord.redirectPath ?? undefined;
   }
 

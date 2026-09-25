@@ -1,17 +1,12 @@
-import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
 import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { tokensTable } from '#/modules/auth/tokens-db';
-import { hashToken } from '#/utils/hash-token';
+import { findLinkToken } from '#/modules/auth/tokens/token-lifecycle';
+import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { TimeSpan } from '#/utils/time-span';
-
-/** How long a magic link stays valid, and so how long its browser remembers asking for it. */
-export const magicLinkLifetime = new TimeSpan(15, 'm');
 
 /** How long a link opened in another browser waits for its holder to confirm. */
 const heldLinkLifetime = new TimeSpan(10, 'm');
@@ -20,19 +15,16 @@ const heldLinkLifetime = new TimeSpan(10, 'm');
 export const confirmSignInPath = '/auth/confirm-sign-in';
 
 /**
- * Remembers, in the browser that asked, which magic link it asked for: opening that link there signs in directly. Set
- * on every request, with an unrelated id when no link went out, so the response never tells whether an account exists.
+ * Remembers, in the browser that asked, which magic link it asked for, as long as the link lives: opening that link
+ * there signs in directly. Set on every request, with an unrelated id when no link went out, so the response never
+ * tells whether an account exists.
  */
 export const rememberMagicLinkRequest = (ctx: Context<Env>, tokenId: string) =>
-  setAuthCookie(ctx, 'magic-requested', tokenId, magicLinkLifetime);
+  setAuthCookie(ctx, 'magic-requested', tokenId, tokenPolicies.magic.ttl);
 
 /** The unopened, unexpired magic link a raw value names, or undefined. */
 export const findOpenableMagicLink = async (rawToken: string) => {
-  const [token] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, 'magic')))
-    .limit(1);
+  const token = await findLinkToken({ type: 'magic', rawToken });
   if (!token) throw new AppError(401, 'magic_not_found', 'warn');
   if (token.invokedAt || isExpiredDate(token.expiresAt)) throw new AppError(401, 'magic_expired', 'warn');
   return token;
@@ -47,11 +39,7 @@ export const findOpenableMagicLink = async (rawToken: string) => {
 export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken: string) => {
   if (await getAuthCookie(ctx, 'magic')) return null;
 
-  const [token] = await db
-    .select({ id: tokensTable.id })
-    .from(tokensTable)
-    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, 'magic')))
-    .limit(1);
+  const token = await findLinkToken({ type: 'magic', rawToken });
   // An unknown link takes the direct path, which refuses it the same way it always has.
   if (!token || (await getAuthCookie(ctx, 'magic-requested')) === token.id) return null;
 

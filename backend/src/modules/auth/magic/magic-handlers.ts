@@ -1,32 +1,26 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { hasPendingInvitation } from '#/modules/auth/auth-queries';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import {
   findOpenableMagicLink,
-  magicLinkLifetime,
   maskEmail,
   rememberMagicLinkRequest,
 } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { invokeToken, issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { getValidToken, singleUseWindow } from '#/utils/get-valid-token';
-import { hashToken } from '#/utils/hash-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate } from '#/utils/time-span';
 import { magicLinkEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
@@ -66,29 +60,15 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     user = existingUser;
   }
 
-  await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'magic')));
-
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
-
-  // Create token row with 15-minute expiry
-  const [tokenRecord] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashedToken,
-      type: 'magic',
-      userId: user.id,
-      email: normalizedEmail,
-      createdBy: user.id,
-      redirectPath,
-      expiresAt: createDate(magicLinkLifetime),
-    })
-    .returning();
+  const { token: tokenRecord, rawToken } = await issueToken(
+    { var: { db } },
+    { type: 'magic', userId: user.id, email: normalizedEmail, createdBy: user.id, redirectPath },
+  );
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
   await rememberMagicLinkRequest(ctx, tokenRecord.id);
 
-  const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
+  const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
 
   const staticProps = { magicLinkUrl: magicLinkUrl.toString(), name: user.name, isNewUser: !existingUser };
   const recipients = [{ email: normalizedEmail, lng: user.language }];
@@ -118,10 +98,7 @@ app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
     if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
 
     // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
-    const tokenRecord = await getValidToken({ ctx, token: rawToken, tokenType: 'magic', invokeToken: true });
-    if (tokenRecord.singleUseToken) {
-      await setAuthCookie(ctx, 'magic', tokenRecord.singleUseToken, singleUseWindow('magic'));
-    }
+    const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken });
     deleteAuthCookie(ctx, 'magic-pending');
 
     return handleMagicLink(ctx, tokenRecord);

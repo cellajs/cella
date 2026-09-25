@@ -1,9 +1,7 @@
-import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { findInvitationToken } from '#/modules/auth/auth-queries';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
@@ -20,9 +18,7 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
 
   await getValidChannel(ctx, inactiveMembership.channelId, inactiveMembership.channelType, 'update');
 
-  const oldToken = await findInvitationToken(ctx, {
-    filters: [eq(tokensTable.type, 'invitation'), eq(tokensTable.inactiveMembershipId, inactiveMembership.id)],
-  });
+  const oldToken = await findInvitationToken(ctx, { inactiveMembershipId: inactiveMembership.id });
   const sent = oldToken && (await resendInvitationEmail(ctx, oldToken));
   if (!sent) throw new AppError(404, 'token_not_found', 'warn');
 }

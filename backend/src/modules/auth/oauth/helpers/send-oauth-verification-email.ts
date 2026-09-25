@@ -1,18 +1,14 @@
 import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { deleteOAuthVerificationTokens } from '#/modules/auth/auth-queries';
 import { identitiesTable } from '#/modules/auth/identities-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { oauthVerificationEmail } from '../../../../../emails';
 
 interface Props {
@@ -42,15 +38,10 @@ export const sendOAuthVerificationEmail = async ({ userId, identityId, redirectP
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
-  await deleteOAuthVerificationTokens({ var: { db } }, { userId: user.id, identityId });
-
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
-
-  const [tokenRecord] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashedToken,
+  // A fresh verification mail replaces the earlier ones for this identity.
+  const { token: tokenRecord, rawToken } = await issueToken(
+    { var: { db } },
+    {
       type: 'oauth-verification',
       userId: user.id,
       email,
@@ -58,13 +49,12 @@ export const sendOAuthVerificationEmail = async ({ userId, identityId, redirectP
       identityId,
       // Kept on the token row (not the emailed URL) so the deep link doesn't leak into email bodies
       redirectPath: redirectPath || null,
-      expiresAt: createDate(new TimeSpan(2, 'h')),
-    })
-    .returning();
+    },
+  );
 
   const lng = user.language;
 
-  const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${newToken}`);
+  const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
 
   const staticProps = {
     verificationLink: verificationURL.toString(),

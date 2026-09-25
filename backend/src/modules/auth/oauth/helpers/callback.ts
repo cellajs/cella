@@ -11,10 +11,10 @@ import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-d
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
+import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 import type { UserModel } from '#/modules/user/user-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
-import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -186,7 +186,7 @@ const inviteCallbackFlow = async ({
   provider,
   identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const invitationToken = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
+  const invitationToken = await readBoundToken(ctx, 'invitation');
 
   if (invitationToken.email !== providerUser.email) {
     throw new AppError(409, 'oauth_wrong_email', 'error');
@@ -218,7 +218,7 @@ const verifyCallbackFlow = async ({
   provider,
   identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  const verifyToken = await getValidSingleUseToken({ ctx, tokenType: 'oauth-verification' });
+  const verifyToken = await readBoundToken(ctx, 'oauth-verification');
 
   if (!identity) throw new AppError(400, 'oauth_failed', 'error');
 

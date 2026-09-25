@@ -1,13 +1,11 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { defaultOptions } from '#/middlewares/rate-limiter/core';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { findBoundToken } from '#/modules/auth/tokens/token-lifecycle';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 
 /** Extract email from rate limit key like "email:user@example.com" or "email:user@example.comip:1.2.3.4" */
 const emailFromKey = (key: string) => {
@@ -15,25 +13,8 @@ const emailFromKey = (key: string) => {
   return match?.[1] ?? null;
 };
 
-/** Resolves the account behind an IP-only key from the `confirm-mfa` cookie. Read-only: invoking it would consume it. */
-const emailFromMfaCookie = async (ctx: Context<Env>) => {
-  const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
-  if (!tokenFromCookie) return null;
-
-  const [tokenRecord] = await db
-    .select({ email: tokensTable.email })
-    .from(tokensTable)
-    .where(
-      and(
-        eq(tokensTable.secret, hashToken(tokenFromCookie)),
-        eq(tokensTable.type, 'confirm-mfa'),
-        gt(tokensTable.expiresAt, new Date().toISOString()),
-      ),
-    )
-    .limit(1);
-
-  return tokenRecord?.email ?? null;
-};
+/** Resolves the account behind an IP-only key from the `confirm-mfa` challenge. Reads only: the challenge stays open. */
+const emailFromMfaCookie = async (ctx: Context<Env>) => (await findBoundToken(ctx, 'confirm-mfa'))?.email ?? null;
 
 /**
  * Sends a lockout notification. Fire-and-forget: failures are absorbed so a broken mail path cannot fail the response.

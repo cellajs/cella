@@ -1,15 +1,12 @@
-import { and, desc, eq, getColumns, gt, isNull, type SQL } from 'drizzle-orm';
-import type { TokenType } from 'shared';
+import { and, desc, eq, getColumns, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { hashToken } from '#/utils/hash-token';
-import { getIsoDate } from '#/utils/iso-date';
 
 interface FindCredentialIdsByUserOpts {
   userId: string;
@@ -76,16 +73,6 @@ export const insertTotp = async (ctx: DbContext, { userId, secret }: InsertTotpO
   return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret) });
 };
 
-interface LinkTokenToUserOpts {
-  tokenId: string;
-  userId: string;
-}
-
-export const linkTokenToUser = async (ctx: DbContext, { tokenId, userId }: LinkTokenToUserOpts) => {
-  const { db } = ctx.var;
-  return db.update(tokensTable).set({ userId }).where(eq(tokensTable.id, tokenId));
-};
-
 interface FindLatestSessionByUserOpts {
   userId: string;
 }
@@ -100,45 +87,6 @@ export const findLatestSessionByUser = async (ctx: DbContext, { userId }: FindLa
     .orderBy(desc(sessionsTable.expiresAt))
     .limit(1);
   return session;
-};
-
-interface FindInvitationTokenOpts {
-  filters: SQL[];
-}
-
-/** Find an invitation token matching the given filters (newest first). */
-export const findInvitationToken = async (ctx: DbContext, { filters }: FindInvitationTokenOpts) => {
-  const { db } = ctx.var;
-  const [token] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(...filters))
-    .orderBy(desc(tokensTable.createdAt))
-    .limit(1);
-  return token;
-};
-
-interface InsertInvitationTokenOpts {
-  values: typeof tokensTable.$inferInsert;
-}
-
-/** Insert an invitation token and return its id. */
-export const insertInvitationToken = async (ctx: DbContext, { values }: InsertInvitationTokenOpts) => {
-  const { db } = ctx.var;
-  const [token] = await db.insert(tokensTable).values(values).returning({ id: tokensTable.id });
-  return token;
-};
-
-interface DeleteTokenByRawValueOpts {
-  type: TokenType;
-  /** The unhashed token a cookie or link carried. */
-  token: string;
-}
-
-/** Deletes the token behind a raw value, so the flow it stands for can no longer be completed. */
-export const deleteTokenByRawValue = async (ctx: DbContext, { type, token }: DeleteTokenByRawValueOpts) => {
-  const { db } = ctx.var;
-  return db.delete(tokensTable).where(and(eq(tokensTable.secret, hashToken(token)), eq(tokensTable.type, type)));
 };
 
 interface InsertPasskeyOpts {
@@ -171,34 +119,5 @@ export const hasPendingInvitation = async (ctx: DbContext, { email }: HasPending
     .limit(1);
   if (membershipInvitation) return true;
 
-  const [liveToken] = await db
-    .select({ id: tokensTable.id })
-    .from(tokensTable)
-    .where(
-      and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())),
-    )
-    .limit(1);
-  return !!liveToken;
-};
-
-interface DeleteOAuthVerificationTokensOpts {
-  userId: string;
-  identityId: string;
-}
-
-/** A fresh verification mail replaces the user's earlier ones for that identity. */
-export const deleteOAuthVerificationTokens = async (
-  ctx: DbContext,
-  { userId, identityId }: DeleteOAuthVerificationTokensOpts,
-) => {
-  const { db } = ctx.var;
-  return db
-    .delete(tokensTable)
-    .where(
-      and(
-        eq(tokensTable.userId, userId),
-        eq(tokensTable.type, 'oauth-verification'),
-        eq(tokensTable.identityId, identityId),
-      ),
-    );
+  return hasLiveInvitationToken(ctx, { email });
 };

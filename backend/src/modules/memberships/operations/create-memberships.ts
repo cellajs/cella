@@ -1,24 +1,21 @@
 import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import {
   countMembershipsByChannel,
   countPendingInvitesByChannel,
   findMembershipAwareRows,
   insertInactiveMemberships,
-  insertTokens,
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
-import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface CreateMembershipsInput {
@@ -187,30 +184,16 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const newUserInactiveMembershipIdsByEmail = new Map<string, string>();
   for (const email of newUserTokenEmails) newUserInactiveMembershipIdsByEmail.set(email, generateId());
 
-  const rawTokens: Array<{ email: string; raw: string }> = [];
-  const tokensToInsert = newUserTokenEmails.map((email) => {
-    const raw = nanoid(40);
-    const hashed = hashToken(raw);
-    rawTokens.push({ email, raw });
-
-    return {
-      secret: hashed,
+  const issuedTokens = await issueTokens(
+    ctx,
+    newUserTokenEmails.map((email) => ({
       type: 'invitation' as const,
       email,
       createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      role,
-      entityType,
       inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
-      ...getMembershipEntityIds(entity),
-      channelId: entity.id,
-    };
-  });
-
-  let insertedTokens: Array<{ id: string; email: string; secret: string; type: string }> = [];
-  if (tokensToInsert.length > 0) {
-    insertedTokens = await insertTokens(ctx, { tokens: tokensToInsert });
-  }
+    })),
+  );
+  const insertedTokens = issuedTokens.map(({ token }) => token);
 
   let insertedInactiveMemberships: Array<{ id: string; email: string }> = [];
 
@@ -239,7 +222,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     });
   }
 
-  const rawByEmail = new Map(rawTokens.map((t) => [t.email, t.raw]));
+  const rawByEmail = new Map(issuedTokens.map(({ token, rawToken }) => [token.email, rawToken]));
 
   const withTokenRecipients = insertedTokens
     .filter(({ email }) => insertedInactiveMemberships.some((m) => m.email === email))

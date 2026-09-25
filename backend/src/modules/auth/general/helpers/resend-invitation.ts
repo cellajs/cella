@@ -1,30 +1,25 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
-import { insertInvitationToken } from '#/modules/auth/auth-queries';
-import { tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
+import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
+import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { deleteInvitationTokens, updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
+import { updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
-import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../../emails';
 
-/** The replacement row: the old row's invitation linkage, a new secret and a week to use it. */
-const newTokenValues = (oldToken: UnsafeTokenModel, rawToken: string) => ({
-  secret: hashToken(rawToken),
-  type: 'invitation' as const,
+/** The replacement token: the old token's invitation linkage under a new secret and lifetime. */
+const replacementOf = (oldToken: TokenRecord): NewToken => ({
+  type: 'invitation',
   email: oldToken.email,
   userId: oldToken.userId,
   inactiveMembershipId: oldToken.inactiveMembershipId,
   createdBy: oldToken.createdBy,
-  expiresAt: createDate(new TimeSpan(7, 'd')),
 });
 
 /**
@@ -34,12 +29,10 @@ const newTokenValues = (oldToken: UnsafeTokenModel, rawToken: string) => ({
  * link works. Returns false, sending nothing, when the invitation is no longer pending. Callers resolve the token and
  * authorize the resend themselves.
  */
-export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeTokenModel): Promise<boolean> => {
+export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecord): Promise<boolean> => {
   const { email, inactiveMembershipId } = oldToken;
 
   if (!inactiveMembershipId && (await findUserByEmail(ctx, { email, verifiedOnly: true }))) return false;
-
-  const rawToken = nanoid(40);
 
   const reissued = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
@@ -59,30 +52,22 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
       });
       if (!entity) return null;
 
-      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [invitation.id] });
-      const token = await insertInvitationToken(txCtx, { values: newTokenValues(oldToken, rawToken) });
+      // The new token replaces every older token of the invitation.
+      const { token, rawToken } = await issueToken(txCtx, replacementOf(oldToken));
       await updateInactiveMembershipToken(txCtx, { id: invitation.id, tokenId: token.id });
 
-      return { invitation: { ...invitation, entity }, tokenId: token.id };
+      return { invitation: { ...invitation, entity }, tokenId: token.id, rawToken };
     }
 
-    const [anchor] = await tx
-      .select({ id: tokensTable.id })
-      .from(tokensTable)
-      .where(eq(tokensTable.id, oldToken.id))
-      .for('update');
+    const anchor = await findInvitationToken(txCtx, { id: oldToken.id }, { forUpdate: true });
     if (!anchor) return null;
 
-    // A system invitation is every invitation token for the address outside a membership invitation.
-    await tx
-      .delete(tokensTable)
-      .where(
-        and(eq(tokensTable.type, 'invitation'), eq(tokensTable.email, email), isNull(tokensTable.inactiveMembershipId)),
-      );
-    const token = await insertInvitationToken(txCtx, { values: newTokenValues(oldToken, rawToken) });
+    // A system invitation is every invitation token for the address outside a membership invitation; the new token
+    // replaces them all.
+    const { token, rawToken } = await issueToken(txCtx, replacementOf(oldToken));
     await linkWaitlistRequest(txCtx, { email, tokenId: token.id });
 
-    return { invitation: null, tokenId: token.id };
+    return { invitation: null, tokenId: token.id, rawToken };
   });
 
   if (!reissued) return false;
@@ -91,7 +76,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: UnsafeToke
     email,
     lng: appConfig.defaultLanguage,
     name: slugFromEmail(email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${rawToken}`,
+    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${reissued.rawToken}`,
   };
 
   // Replies reach the inviter, as on the first invitation; without one it reads as a system invite.

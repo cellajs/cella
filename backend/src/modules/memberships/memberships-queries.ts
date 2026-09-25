@@ -3,7 +3,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { invitationTokensSubquery } from '#/modules/auth/tokens/tokens-queries';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -64,6 +64,7 @@ export const findMembershipAwareRows = async (
 ) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
+  const invitationTokens = invitationTokensSubquery(db);
 
   return db
     .select({
@@ -76,7 +77,7 @@ export const findMembershipAwareRows = async (
       inactiveMembershipCreatedAt: inactiveMembershipsTable.createdAt,
       inactiveMembershipRemindedAt: inactiveMembershipsTable.remindedAt,
       orgMembershipId: orgMemberships.id,
-      tokenId: tokensTable.id,
+      tokenId: invitationTokens.id,
     })
     .from(emailsTable)
     .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
@@ -96,10 +97,7 @@ export const findMembershipAwareRows = async (
         or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
       ),
     )
-    .leftJoin(
-      tokensTable,
-      and(eq(tokensTable.id, inactiveMembershipsTable.tokenId), eq(tokensTable.type, 'invitation')),
-    )
+    .leftJoin(invitationTokens, eq(invitationTokens.id, inactiveMembershipsTable.tokenId))
     .leftJoin(
       orgMemberships,
       and(
@@ -213,20 +211,6 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMe
   return updated;
 };
 
-interface InsertTokensOpts {
-  tokens: (typeof tokensTable.$inferInsert)[];
-}
-
-export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
-  const { db } = ctx.var;
-  return db.insert(tokensTable).values(tokens).returning({
-    id: tokensTable.id,
-    email: tokensTable.email,
-    secret: tokensTable.secret,
-    type: tokensTable.type,
-  });
-};
-
 interface InsertInactiveMembershipsOpts {
   memberships: (typeof inactiveMembershipsTable.$inferInsert)[];
 }
@@ -330,17 +314,6 @@ export const unbindInactiveMemberships = async (ctx: DbContext, { userIds }: Unb
     .update(inactiveMembershipsTable)
     .set({ userId: null })
     .where(inArray(inactiveMembershipsTable.userId, userIds));
-};
-
-interface DeleteInvitationTokensOpts {
-  inactiveMembershipIds: string[];
-}
-
-/** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
-export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: DeleteInvitationTokensOpts) => {
-  if (!inactiveMembershipIds.length) return;
-  const { db } = ctx.var;
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
 interface FindMembersPaginatedOpts {
@@ -505,6 +478,7 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   const { organizationId, entityId, sort, order, offset, limit } = opts;
 
   const table = inactiveMembershipsTable;
+  const invitationTokens = invitationTokensSubquery(db);
   const orderBy = getOrderColumns({
     sort,
     order,
@@ -520,17 +494,17 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       userId: table.userId,
       email: sql<string>`coalesce(
         ${userBaseSelect.email},
-        ${tokensTable.email}
+        ${invitationTokens.email}
         )`.as('email'),
       thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
       createdAt: table.createdAt,
       createdBy: table.createdBy,
       // The row's own invitation token: resends target it by id, never by email, which would resolve the address's newest token across orgs.
-      tokenId: tokensTable.id,
+      tokenId: invitationTokens.id,
     })
     .from(table)
     .leftJoin(usersTable, eq(usersTable.id, table.userId))
-    .leftJoin(tokensTable, and(eq(tokensTable.inactiveMembershipId, table.id), eq(tokensTable.type, 'invitation')))
+    .leftJoin(invitationTokens, eq(invitationTokens.inactiveMembershipId, table.id))
     .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)));
 
   const itemsQuery = pendingMembershipsQuery

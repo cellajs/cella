@@ -1,13 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
-import { deleteTokenByRawValue, findInvitationToken, findLatestSessionByUser } from '#/modules/auth/auth-queries';
+import { findLatestSessionByUser } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
@@ -17,11 +16,10 @@ import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accep
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { invokeToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
-import { getValidToken, singleUseWindow } from '#/utils/get-valid-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
@@ -61,13 +59,7 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
       if (held) return held;
     }
 
-    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-
-    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the existing cookie stays valid.
-    if (tokenRecord.singleUseToken) {
-      // Cookie named by token type, holding the single use token, expiring with the token's single-use window or on use.
-      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, singleUseWindow(tokenRecord.type));
-    }
+    const tokenRecord = await invokeToken(ctx, { type: tokenType, rawToken: token });
 
     if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
 
@@ -96,17 +88,18 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+  const tokenRecord = await readBoundToken(ctx, tokenType);
   if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
   return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
 });
 
 app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
+  const tokenRecord = await readBoundToken(ctx, 'invitation');
 
+  // The answer deletes the invitation's tokens; the spend also clears this browser's cookie.
   const entity = await acceptInvitationTokenOp(ctx, tokenRecord);
-  deleteAuthCookie(ctx, 'invitation');
+  await spendCookieToken(ctx, 'invitation');
 
   return ctx.json(entity, 200);
 });
@@ -161,9 +154,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
   const { tokenId } = ctx.req.valid('json');
 
   // One answer whether the id names a pending invitation or not, so the route tells nobody which invitations exist.
-  const oldToken = await findInvitationToken(ctx, {
-    filters: [eq(tokensTable.type, 'invitation'), eq(tokensTable.id, tokenId)],
-  });
+  const oldToken = await findInvitationToken(ctx, { id: tokenId });
   if (oldToken) await resendInvitationEmail(ctx, oldToken);
 
   return ctx.body(null, 204);
@@ -171,10 +162,8 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 
 app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
-  const confirmMfaToken = await getAuthCookie(ctx, 'confirm-mfa');
-  if (confirmMfaToken) {
-    deleteAuthCookie(ctx, 'confirm-mfa');
-    await deleteTokenByRawValue(ctx, { type: 'confirm-mfa', token: confirmMfaToken });
+  if (await getAuthCookie(ctx, 'confirm-mfa')) {
+    await spendCookieToken(ctx, 'confirm-mfa');
     log.info('User mfa canceled');
 
     // Canceling from the MFA page carries no session cookie: ending the challenge is then the whole sign-out.
