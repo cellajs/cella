@@ -3,7 +3,6 @@ import { and, eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { hasPendingInvitation } from '#/modules/auth/auth-queries';
@@ -23,14 +22,9 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const { email, redirect } = ctx.req.valid('json');
-  const strategy = 'magic';
 
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
   const redirectPath = isValidRedirectPath(redirect) || null;
-
-  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-  }
 
   const normalizedEmail = email.toLowerCase().trim();
 

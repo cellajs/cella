@@ -8,7 +8,6 @@ import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encr
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 interface FindCredentialIdsByUserOpts {
@@ -54,11 +53,6 @@ export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUs
     db.select().from(totpsTable).where(eq(totpsTable.userId, userId)),
   ]);
   return { passkeys, totps };
-};
-
-export const disableMfa = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
-  const { db } = ctx.var;
-  return db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, userId));
 };
 
 interface VerifyEmailOpts {

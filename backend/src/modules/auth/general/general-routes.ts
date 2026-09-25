@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import type { StrategyGate } from '#/core/openapi-extensions';
 import { createXRoute } from '#/core/x-routes';
 import { crossTenantGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
@@ -8,6 +9,9 @@ import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/mod
 import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
+
+/** A magic link belongs to the magic-link method; the other invokable tokens (invitations, verification) to none. */
+const magicLinkStrategy: StrategyGate = (ctx) => (ctx.req.param('type') === 'magic' ? 'magic' : null);
 
 const authGeneralRoutes = {
   health: createXRoute({
@@ -90,6 +94,7 @@ const authGeneralRoutes = {
   }),
   invokeToken: createXRoute({
     operationId: 'invokeToken',
+    'x-strategy': magicLinkStrategy,
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     xGuard: [publicGuard],

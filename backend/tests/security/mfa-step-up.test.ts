@@ -1,11 +1,14 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { toggleMfa } from 'sdk';
+import { deletePasskey, deleteTotp, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
+import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
+import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestSession, createTotpUser, type ErrorResponse } from '../helpers';
@@ -36,11 +39,14 @@ describe('MFA toggle step-up', async () => {
 
   afterEach(async () => await clearSecurityTestData());
 
-  async function totpUserWithSession(mfaRequired: boolean) {
+  async function totpUserWithSession(mfaRequired: boolean, { withPasskey = true } = {}) {
     const user = await createTotpUser(`mfa-${nanoid(8)}@security-test.com`);
     if (!mfaRequired) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
+    const [passkey] = withPasskey
+      ? await db.insert(passkeysTable).values(mockPasskeyRecord(user.id)).returning()
+      : [undefined];
     const sessionCookie = await createTestSession(user);
-    return { user, headers: { ...defaultHeaders, Cookie: sessionCookie } };
+    return { user, passkey, headers: { ...defaultHeaders, Cookie: sessionCookie } };
   }
 
   it('must not disable MFA via PUT /me/mfa with a session and no second factor', async () => {
@@ -74,5 +80,51 @@ describe('MFA toggle step-up', async () => {
     const { response } = await call(toggleMfa, { body: { mfaRequired: false, totpCode: currentCode() }, headers });
     expect(response.status).toBe(200);
     expect(await mfaRequiredOf(user.id)).toBe(false);
+  });
+
+  // MFA keeps two factors so a lost one can be replaced: removing either while MFA is on would switch it off unasked.
+  it('must not turn MFA off by deleting the authenticator app via deleteTotp', async () => {
+    const { user, headers } = await totpUserWithSession(true);
+    const { error, response } = await call(deleteTotp, { headers });
+    expect(response.status).toBe(400);
+    expect((error as ErrorResponse).type).toBe('mfa_factor_in_use');
+    expect(await mfaRequiredOf(user.id)).toBe(true);
+    expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
+  });
+
+  it('must not turn MFA off by deleting the last passkey via deletePasskey', async () => {
+    const { user, passkey, headers } = await totpUserWithSession(true);
+    const { error, response } = await call(deletePasskey, { path: { id: passkey!.id }, headers });
+    expect(response.status).toBe(400);
+    expect((error as ErrorResponse).type).toBe('mfa_factor_in_use');
+    expect(await mfaRequiredOf(user.id)).toBe(true);
+    expect(await db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id))).toHaveLength(1);
+  });
+
+  it('must not turn on MFA without both a passkey and an authenticator app', async () => {
+    const { user, headers } = await totpUserWithSession(false, { withPasskey: false });
+    const { error, response } = await call(toggleMfa, {
+      body: { mfaRequired: true, totpCode: currentCode() },
+      headers,
+    });
+    expect(response.status).toBe(400);
+    expect((error as ErrorResponse).type).toBe('mfa_factors_required');
+    expect(await mfaRequiredOf(user.id)).toBe(false);
+  });
+
+  it('turns on MFA with both factors, and deletes a factor while MFA is off (positive controls)', async () => {
+    const on = await totpUserWithSession(false);
+    const enabled = await call(toggleMfa, {
+      body: { mfaRequired: true, totpCode: currentCode() },
+      headers: on.headers,
+    });
+    expect(enabled.response.status).toBe(200);
+    expect(await mfaRequiredOf(on.user.id)).toBe(true);
+
+    const off = await totpUserWithSession(false);
+    expect((await call(deleteTotp, { headers: off.headers })).response.status).toBe(204);
+    expect((await call(deletePasskey, { path: { id: off.passkey!.id }, headers: off.headers })).response.status).toBe(
+      204,
+    );
   });
 });

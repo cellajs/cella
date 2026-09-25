@@ -15,6 +15,7 @@ import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
 const authPasskeysRoutes = {
   generatePasskeyChallenge: createXRoute({
     operationId: 'generatePasskeyChallenge',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey/generate-challenge',
     xGuard: [publicGuard],
@@ -38,6 +39,7 @@ const authPasskeysRoutes = {
   }),
   createPasskey: createXRoute({
     operationId: 'createPasskey',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey',
     xGuard: [userGuard],
@@ -62,6 +64,7 @@ const authPasskeysRoutes = {
   }),
   deletePasskey: createXRoute({
     operationId: 'deletePasskey',
+    'x-strategy': null,
     method: 'delete',
     path: '/passkey/{id}',
     xGuard: [userGuard],
@@ -79,6 +82,7 @@ const authPasskeysRoutes = {
   }),
   signInWithPasskey: createXRoute({
     operationId: 'signInWithPasskey',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey-verification',
     xGuard: [publicGuard],

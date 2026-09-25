@@ -141,6 +141,13 @@
         "description": "Service gating the endpoint; route returns 404 when the service is disabled",
         "required": false,
         "kind": "metadata"
+      },
+      {
+        "key": "x-strategy",
+        "id": "x-strategy",
+        "description": "Sign-in method the endpoint belongs to; refused while that method is switched off",
+        "required": false,
+        "kind": "metadata"
       }
     ]
   },
@@ -2882,6 +2889,7 @@
       "get": {
         "security": [],
         "operationId": "invokeToken",
+        "x-strategy": "per-request",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
         "description": "Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
@@ -3311,6 +3319,7 @@
       "post": {
         "security": [],
         "operationId": "sendMagicLink",
+        "x-strategy": "magic",
         "tags": ["auth", "cella"],
         "summary": "Send magic link",
         "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
@@ -3372,6 +3381,7 @@
           }
         ],
         "operationId": "generateTotpKey",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
@@ -3431,6 +3441,7 @@
           }
         ],
         "operationId": "createTotp",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
@@ -3485,6 +3496,7 @@
           }
         ],
         "operationId": "deleteTotp",
+        "x-strategy": "none",
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
@@ -3520,6 +3532,7 @@
       "post": {
         "security": [],
         "operationId": "signInWithTotp",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
@@ -3585,6 +3598,7 @@
           }
         ],
         "operationId": "createPasskey",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
@@ -3749,6 +3763,7 @@
           }
         ],
         "operationId": "deletePasskey",
+        "x-strategy": "none",
         "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the current user.",
@@ -3795,6 +3810,7 @@
       "post": {
         "security": [],
         "operationId": "generatePasskeyChallenge",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
@@ -3876,6 +3892,7 @@
       "post": {
         "security": [],
         "operationId": "signInWithPasskey",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
@@ -3982,6 +3999,7 @@
       "get": {
         "security": [],
         "operationId": "github",
+        "x-strategy": "oauth:github",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4045,6 +4063,7 @@
       "get": {
         "security": [],
         "operationId": "google",
+        "x-strategy": "oauth:google",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4108,6 +4127,7 @@
       "get": {
         "security": [],
         "operationId": "microsoft",
+        "x-strategy": "oauth:microsoft",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4171,6 +4191,7 @@
       "get": {
         "security": [],
         "operationId": "githubCallback",
+        "x-strategy": "oauth:github",
         "tags": ["auth", "cella"],
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
@@ -4256,6 +4277,7 @@
       "get": {
         "security": [],
         "operationId": "googleCallback",
+        "x-strategy": "oauth:google",
         "tags": ["auth", "cella"],
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
@@ -4317,6 +4339,7 @@
       "get": {
         "security": [],
         "operationId": "microsoftCallback",
+        "x-strategy": "oauth:microsoft",
         "tags": ["auth", "cella"],
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",

@@ -2,20 +2,13 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { and, eq } from 'drizzle-orm';
-import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import {
-  disableMfa,
-  findCredentialIdsByUser,
-  findRemainingMfaMethods,
-  findUserIdByCredentialId,
-  insertPasskey,
-} from '#/modules/auth/auth-queries';
+import { findCredentialIdsByUser, findUserIdByCredentialId, insertPasskey } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
@@ -68,16 +61,10 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 
   const { id } = ctx.req.valid('param');
 
-  // Delete passkey and conditionally disable MFA atomically
+  // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
   await baseDb.transaction(async (tx) => {
     await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
-
-    const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-
-    // MFA requires both passkeys and TOTP as backup.
-    if (!passkeys.length || !totps.length) {
-      await disableMfa({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-    }
+    await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });
 
   sendAccountSecurityEmail(user, 'passkey-deleted');
@@ -87,11 +74,6 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 
 app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
   const { email, type } = ctx.req.valid('json');
-
-  const strategy = 'passkey';
-  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-  }
 
   // Generate a 32-byte random challenge and encode it as base64url (the WebAuthn JSON encoding)
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
@@ -121,10 +103,6 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
 app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   const { email, type, assertion } = ctx.req.valid('json');
   const meta = { strategy: 'passkey', sessionType: type === 'mfa' ? 'mfa' : 'regular' } as const;
-
-  if (type === 'authentication' && !appConfig.enabledAuthStrategies.includes(meta.strategy)) {
-    throw new AppError(400, 'forbidden_strategy', 'error', { meta });
-  }
 
   let user: UserModel | null = null;
 

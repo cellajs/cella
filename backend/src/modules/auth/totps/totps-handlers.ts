@@ -5,9 +5,9 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { disableMfa, findExistingTotp, findRemainingMfaMethods, insertTotp } from '#/modules/auth/auth-queries';
+import { findExistingTotp, insertTotp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
@@ -78,16 +78,10 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
-  // Delete TOTP and conditionally disable MFA atomically
+  // The delete rolls back when MFA is on: it keeps the authenticator app until MFA is turned off.
   await baseDb.transaction(async (tx) => {
     await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-
-    // MFA requires both passkeys and TOTP as backup.
-    if (!passkeys.length || !totps.length) {
-      await disableMfa({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-    }
+    await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });
 
   sendAccountSecurityEmail(user, 'totp-deleted');
@@ -98,13 +92,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   const { code } = ctx.req.valid('json');
 
-  const strategy = 'totp';
-
-  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-  }
-
-  const meta = { strategy, sessionType: 'mfa' } as const;
+  const meta = { strategy: 'totp', sessionType: 'mfa' } as const;
 
   const user = await validateConfirmMfaToken(ctx);
 

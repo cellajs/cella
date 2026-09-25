@@ -8,6 +8,7 @@ import { errorResponseRefs, locationSchema } from '#/schemas';
 const authOAuthRoutes = {
   github: createXRoute({
     operationId: 'github',
+    'x-strategy': { oauth: 'github' },
     method: 'get',
     path: '/github',
     xGuard: [publicGuard],
@@ -26,6 +27,7 @@ const authOAuthRoutes = {
   }),
   githubCallback: createXRoute({
     operationId: 'githubCallback',
+    'x-strategy': { oauth: 'github' },
     method: 'get',
     path: '/github/callback',
     xGuard: [publicGuard],
@@ -50,6 +52,7 @@ const authOAuthRoutes = {
   }),
   google: createXRoute({
     operationId: 'google',
+    'x-strategy': { oauth: 'google' },
     method: 'get',
     path: '/google',
     xGuard: [publicGuard],
@@ -68,6 +71,7 @@ const authOAuthRoutes = {
   }),
   googleCallback: createXRoute({
     operationId: 'googleCallback',
+    'x-strategy': { oauth: 'google' },
     method: 'get',
     path: '/google/callback',
     xGuard: [publicGuard],
@@ -86,6 +90,7 @@ const authOAuthRoutes = {
   }),
   microsoft: createXRoute({
     operationId: 'microsoft',
+    'x-strategy': { oauth: 'microsoft' },
     method: 'get',
     path: '/microsoft',
     xGuard: [publicGuard],
@@ -104,6 +109,7 @@ const authOAuthRoutes = {
   }),
   microsoftCallback: createXRoute({
     operationId: 'microsoftCallback',
+    'x-strategy': { oauth: 'microsoft' },
     method: 'get',
     path: '/microsoft/callback',
     xGuard: [publicGuard],

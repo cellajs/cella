@@ -9,6 +9,7 @@ import { cookieSchema, errorResponseRefs } from '#/schemas';
 const authTotpsRoutes = {
   generateTotpKey: createXRoute({
     operationId: 'generateTotpKey',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp/generate-key',
     xGuard: [userGuard],
@@ -31,6 +32,7 @@ const authTotpsRoutes = {
   }),
   createTotp: createXRoute({
     operationId: 'createTotp',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp',
     xGuard: [userGuard],
@@ -55,6 +57,7 @@ const authTotpsRoutes = {
   }),
   deleteTotp: createXRoute({
     operationId: 'deleteTotp',
+    'x-strategy': null,
     method: 'delete',
     path: '/totp',
     xGuard: [userGuard],
@@ -69,6 +72,7 @@ const authTotpsRoutes = {
   }),
   signInWithTotp: createXRoute({
     operationId: 'signInWithTotp',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp-verification',
     xGuard: [publicGuard],

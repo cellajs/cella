@@ -8,6 +8,7 @@ import { errorResponseRefs } from '#/schemas';
 const authMagicLinkRoutes = {
   sendMagicLink: createXRoute({
     operationId: 'sendMagicLink',
+    'x-strategy': 'magic',
     method: 'post',
     path: '/magic/send',
     xGuard: [publicGuard],

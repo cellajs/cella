@@ -120,6 +120,13 @@
       "description": "Service gating the endpoint; route returns 404 when the service is disabled",
       "required": false,
       "kind": "metadata"
+    },
+    {
+      "key": "x-strategy",
+      "id": "x-strategy",
+      "description": "Sign-in method the endpoint belongs to; refused while that method is switched off",
+      "required": false,
+      "kind": "metadata"
     }
   ]
 }

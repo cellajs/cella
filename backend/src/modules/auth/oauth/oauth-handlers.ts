@@ -28,15 +28,6 @@ const microsoftScopes = ['openid', 'profile', 'email'];
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authOAuthRoutes.github, async (ctx) => {
-  const strategy = 'github' as EnabledOAuthProvider;
-
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   // Generate a `state` to prevent CSRF, and build URL with scope.
   const state = generateRandomState();
   const url = await githubAuth.createAuthorizationURL(state, githubScopes);
@@ -45,14 +36,6 @@ app.openapi(authOAuthRoutes.github, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.google, async (ctx) => {
-  const strategy = 'google' as EnabledOAuthProvider;
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   const state = generateRandomState();
   const codeVerifier = generateRandomCodeVerifier();
   const nonce = generateRandomNonce();
@@ -62,14 +45,6 @@ app.openapi(authOAuthRoutes.google, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
-  const strategy = 'microsoft' as EnabledOAuthProvider;
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   const state = generateRandomState();
   const codeVerifier = generateRandomCodeVerifier();
   const nonce = generateRandomNonce();

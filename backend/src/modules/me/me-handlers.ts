@@ -5,6 +5,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
@@ -42,6 +43,8 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
   if (!passkeyData && !totpCode) {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
   }
+
+  if (mfaRequired) await mfaFactorRules.assertCanEnable(baseDb, user.id);
 
   const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
