@@ -155,13 +155,13 @@ describe('Attachment storage keys', async () => {
 
   it('must not issue an upload token into another organization via organizationId', async () => {
     const foreign = await call(getUploadToken, {
-      query: { publicBucket: false, templateId: 'attachment', organizationId: victim.organization.id },
+      query: { templateId: 'attachment', organizationId: victim.organization.id },
       headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
     });
     expect(foreign.response.status).toBe(403);
 
     const own = await call(getUploadToken, {
-      query: { publicBucket: false, templateId: 'attachment', organizationId: attacker.organization.id },
+      query: { templateId: 'attachment', organizationId: attacker.organization.id },
       headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
     });
     expect(own.response.status).toBe(200);

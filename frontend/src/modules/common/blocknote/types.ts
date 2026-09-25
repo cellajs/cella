@@ -50,7 +50,7 @@ export type IconType = (
   },
 ) => React.ReactElement;
 
-/** Whether BlockNote stores a public bucket key or a private attachment id; private media needs the id for permission-scoped access. */
+/** How an upload is referenced: by attachment id, or in a public mode by cloud key when the attachment template stores publicly (the template decides). */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';
 
 /** Attachment modes require a tenantId for persistence and private reads. */

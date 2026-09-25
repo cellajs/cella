@@ -368,6 +368,9 @@ export type InactiveMembership = {
  * A signed token authorizing file uploads to the configured storage provider.
  */
 export type UploadToken = {
+  /**
+   * Whether the upload is stored public-read in the public bucket; the template decides.
+   */
   publicBucket: boolean;
   sub: string;
   s3: boolean;
@@ -2801,10 +2804,6 @@ export type GetUploadTokenData = {
   body?: never;
   path?: never;
   query: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    publicBucket?: BooleanQueryValue;
     organizationId?: string;
     templateId: 'avatar' | 'cover' | 'attachment';
   };

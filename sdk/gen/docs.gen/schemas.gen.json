@@ -791,7 +791,11 @@
     "schema": {
       "type": "object",
       "properties": {
-        "publicBucket": { "type": "boolean", "required": true },
+        "publicBucket": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the upload is stored public-read in the public bucket; the template decides."
+        },
         "sub": { "type": "string", "required": true },
         "s3": { "type": "boolean", "required": true },
         "signature": {

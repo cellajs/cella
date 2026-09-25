@@ -7,7 +7,7 @@ import { sessionsTable } from '#/modules/auth/sessions-db';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
-import { booleanTransformSchema, validUuidSchema } from '#/schemas';
+import { validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
@@ -48,7 +48,9 @@ export const meAuthDataSchema = z
 
 export const uploadTokenSchema = z
   .object({
-    publicBucket: z.boolean(),
+    publicBucket: z
+      .boolean()
+      .openapi({ description: 'Whether the upload is stored public-read in the public bucket; the template decides.' }),
     sub: z.string(),
     s3: z.boolean(),
     signature: z.string().nullable(),
@@ -71,7 +73,6 @@ export const uploadTokenSchema = z
 export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
 export const uploadTokenQuerySchema = z.object({
-  publicBucket: booleanTransformSchema,
   organizationId: validUuidSchema.optional(),
   templateId: z.enum(appConfig.uploadTemplateIds),
 });

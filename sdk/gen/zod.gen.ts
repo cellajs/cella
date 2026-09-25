@@ -1124,7 +1124,6 @@ export const zDeleteMyMembershipQuery = z.object({
 export const zDeleteMyMembershipResponse = z.void();
 
 export const zGetUploadTokenQuery = z.object({
-  publicBucket: zBooleanQueryValue.optional(),
   organizationId: z.uuid().optional(),
   templateId: z.enum(['avatar', 'cover', 'attachment']),
 });

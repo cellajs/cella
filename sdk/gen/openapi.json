@@ -1680,7 +1680,8 @@
         "type": "object",
         "properties": {
           "publicBucket": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the upload is stored public-read in the public bucket; the template decides."
           },
           "sub": {
             "type": "string"
@@ -6162,20 +6163,11 @@
         "operationId": "getUploadToken",
         "tags": ["me", "cella"],
         "summary": "Get upload token",
-        "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
+        "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars and covers are public, attachments private.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
-          {
-            "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
-            },
-            "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
-            "name": "publicBucket",
-            "in": "query"
-          },
           {
             "schema": {
               "type": "string",

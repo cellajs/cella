@@ -1,4 +1,5 @@
 const avatar = {
+  publicBucket: true,
   steps: {
     converted: {
       use: ':original',
@@ -19,6 +20,7 @@ const avatar = {
 };
 
 const cover = {
+  publicBucket: true,
   steps: {
     converted: {
       use: ':original',
@@ -40,6 +42,7 @@ const cover = {
 
 // @link https://transloadit.com/docs/transcoding/file-filtering/file-filter/
 const attachment = {
+  publicBucket: false,
   steps: {
     filter_images: {
       use: ':original',
@@ -146,6 +149,11 @@ const attachment = {
   ] as const,
 };
 
+/**
+ * Transloadit pipelines per upload template. `publicBucket` decides where the backend lets a template store: `true`
+ * writes public-read objects to the public bucket, for what the app shows publicly by design (avatars, logos,
+ * banners); anything else stays private. A public template exports only images it re-encoded, never `:original`.
+ */
 export const uploadTemplates = {
   avatar,
   cover,

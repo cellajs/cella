@@ -81,8 +81,6 @@ export function UppyFilePanel({
   editor,
   onClose,
 }: UppyFilePanelProps) {
-  // Private media uses the private bucket and an attachment id reference; both public modes use the public bucket and a cloud key.
-  const publicBucket = mediaMode !== 'private-attachment';
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
@@ -140,11 +138,7 @@ export function UppyFilePanel({
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, {
-          publicBucket,
-          templateId: 'attachment',
-          organizationId,
-        });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, { templateId: 'attachment', organizationId });
 
         localUppy
           .on('error', (error) => {
@@ -169,12 +163,13 @@ export function UppyFilePanel({
             const activeEditor = editorRef.current;
 
             for (const attachment of attachments) {
-              // Public mode stores a cloud key: images the mid-size preview, other types the converted variant, never the full-size file.
+              // A public mode stores a cloud key only when the attachment template stores publicly: images the mid-size
+              // preview, other types the converted variant, never the full-size file. A private file is referenced by id.
               const publicKey =
                 blockType === 'image'
                   ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
                   : attachment.keys.converted || attachment.keys.original;
-              const url = mediaMode === 'private-attachment' ? attachment.id : publicKey;
+              const url = mediaMode !== 'private-attachment' && attachment.publicBucket ? publicKey : attachment.id;
               const props = {
                 name: attachment.filename,
                 url,
@@ -232,7 +227,7 @@ export function UppyFilePanel({
       setUppy(null);
       if (localUppy) localUppy.destroy();
     };
-  }, [blockType, publicBucket, organizationId, uppyOptions, mediaMode]);
+  }, [blockType, organizationId, uppyOptions, mediaMode]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

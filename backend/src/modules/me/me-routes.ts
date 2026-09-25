@@ -208,7 +208,7 @@ const meRoutes = {
     tags: ['me', 'cella'],
     summary: 'Get upload token',
     description:
-      'Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization',
+      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars and covers are public, attachments private.',
     request: { query: uploadTokenQuerySchema },
     responses: {
       200: {

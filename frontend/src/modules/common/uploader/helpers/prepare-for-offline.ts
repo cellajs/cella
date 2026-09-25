@@ -26,10 +26,7 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     throw new Error('organizationId required for local storage');
   }
 
-  const uploadContext: UploadContext = {
-    templateId: tokenQuery.templateId,
-    publicBucket: tokenQuery.publicBucket,
-  };
+  const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
 
   // Store each file blob locally, under the id its attachment row will be created with.
   for (const file of Object.values(files)) {

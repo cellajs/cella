@@ -1302,7 +1302,11 @@
           "type": "object",
           "description": "A signed token authorizing file uploads to the configured storage provider.",
           "properties": {
-            "publicBucket": { "type": "boolean", "required": true },
+            "publicBucket": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the upload is stored public-read in the public bucket; the template decides."
+            },
             "sub": { "type": "string", "required": true },
             "s3": { "type": "boolean", "required": true },
             "signature": {
@@ -1384,19 +1388,6 @@
     "request": {
       "query": {
         "properties": {
-          "publicBucket": {
-            "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
-            "anyOf": [
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["true", "false"]
-              },
-              { "type": "boolean", "required": false }
-            ],
-            "ref": "#/components/schemas/BooleanQueryValue"
-          },
           "organizationId": { "type": "string", "required": false, "format": "uuid" },
           "templateId": {
             "type": "string",

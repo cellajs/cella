@@ -1981,12 +1981,11 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization
+ * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars and covers are public, attachments private.
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
  *
  * @param {getUploadTokenData} options
- * @param {any=} options.query.publicbucket - `any` (optional)
  * @param {string=} options.query.organizationid - `string` (optional)
  * @param {enum} options.query.templateid - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429

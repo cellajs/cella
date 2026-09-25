@@ -6,6 +6,7 @@ import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
+import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
@@ -39,11 +40,13 @@ export const createBaseTransloaditUppy = async (
     hasCloudUpload = false;
   }
 
+  // The template decides where the backend stores the upload; the row records the same bucket.
+  const publicBucket = isPublicUploadTemplate(tokenQuery.templateId);
   const uppy = new Uppy({
     ...uppyOptions,
     meta: {
-      publicBucket: tokenQuery.publicBucket,
-      bucketName: tokenQuery.publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+      publicBucket,
+      bucketName: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
       offlineUploaded: !hasCloudUpload,
     },
     onBeforeFileAdded,
@@ -81,10 +84,7 @@ export const createBaseTransloaditUppy = async (
     // Store the blob before uploading so a failed upload can retry from IndexedDB
     const organizationId = tokenQuery.organizationId;
     if (organizationId) {
-      const uploadContext: UploadContext = {
-        templateId: tokenQuery.templateId,
-        publicBucket: tokenQuery.publicBucket,
-      };
+      const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
       for (const file of uploadFiles) {
         await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext, file.meta.attachmentId);
       }

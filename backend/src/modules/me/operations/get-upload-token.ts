@@ -1,17 +1,22 @@
 import type { UploadTemplateId } from 'shared';
+import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
 import { getParams, getSignature } from '#/lib/transloadit';
 
 interface GetUploadTokenOpts {
-  publicBucket: boolean;
   organizationId?: string;
   templateId: UploadTemplateId;
 }
 
-export function getUploadTokenOp(ctx: UserContext, { publicBucket, organizationId, templateId }: GetUploadTokenOpts) {
+/**
+ * Signs an upload under `<organizationId>/<userId>`. The template decides the bucket and ACL: an avatar or banner is
+ * public by design, an attachment (any file type, HTML and SVG included) is private.
+ */
+export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId }: GetUploadTokenOpts) {
   const user = ctx.var.user;
+  const publicBucket = isPublicUploadTemplate(templateId);
 
   // The organization id becomes the upload's storage prefix, which attachments must name: members only.
   const isMember = ctx.var.memberships.some((membership) => membership.organizationId === organizationId);
@@ -26,7 +31,7 @@ export function getUploadTokenOp(ctx: UserContext, { publicBucket, organizationI
   }
 
   try {
-    const params = getParams(templateId, publicBucket, sub);
+    const params = getParams(templateId, sub);
     const paramsString = JSON.stringify(params);
     const signature = getSignature(paramsString);
     return { sub, publicBucket, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
