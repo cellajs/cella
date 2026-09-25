@@ -54,24 +54,26 @@ export const findNewsletterRecipients = async (
   { organizationIds, roles }: FindNewsletterRecipientsOpts,
 ) => {
   const { db } = ctx.var;
-  return db
-    .selectDistinct({
-      email: usersTable.email,
-      name: usersTable.name,
-      unsubscribeToken: unsubscribeTokensTable.secret,
-      newsletter: usersTable.newsletter,
-      orgName: organizationsTable.name,
-    })
-    .from(membershipsTable)
-    .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
-    .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
-    .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
-    .where(
-      and(
-        eq(membershipsTable.channelType, 'organization'),
-        inArray(membershipsTable.organizationId, organizationIds),
-        inArray(membershipsTable.role, roles),
-        eq(usersTable.newsletter, true),
-      ),
-    );
+  return (
+    db
+      .selectDistinct({
+        email: usersTable.email,
+        name: usersTable.name,
+        newsletter: usersTable.newsletter,
+        orgName: organizationsTable.name,
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
+      // Only users holding an unsubscribe token row: their link finds it.
+      .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
+      .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
+      .where(
+        and(
+          eq(membershipsTable.channelType, 'organization'),
+          inArray(membershipsTable.organizationId, organizationIds),
+          inArray(membershipsTable.role, roles),
+          eq(usersTable.newsletter, true),
+        ),
+      )
+  );
 };

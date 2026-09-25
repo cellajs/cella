@@ -94,12 +94,8 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
 };
 
 export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsubscribeTokenModel> => {
-  const { generateUnsubscribeToken } = await import('#/utils/unsubscribe-token');
-  return {
-    secret: generateUnsubscribeToken(user.email),
-    userId: user.id,
-    createdAt: mockPastIsoDate(),
-  };
+  const { unsubscribeTokenRow } = await import('#/utils/unsubscribe-token');
+  return { ...unsubscribeTokenRow(user.id, user.email), createdAt: mockPastIsoDate() };
 };
 
 export const mockEmail = (user: UserModel): InsertEmailModel => {

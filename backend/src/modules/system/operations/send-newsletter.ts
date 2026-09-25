@@ -5,6 +5,7 @@ import { mailer } from '#/lib/mailer';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import { findNewsletterRecipients } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
+import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { newsletterEmail } from '../../../../emails';
 
 interface SendNewsletterInput {
@@ -26,10 +27,11 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
 
   if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');
 
-  let recipients = recipientsRecords.map(({ newsletter, unsubscribeToken, ...recipient }) => ({
+  // The token is derived from the address; the database holds only its hash.
+  let recipients = recipientsRecords.map(({ newsletter, ...recipient }) => ({
     ...recipient,
     lng: user.language,
-    unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=${unsubscribeToken}`,
+    unsubscribeLink: `${appConfig.backendUrl}/me/unsubscribe?token=${generateUnsubscribeToken(recipient.email)}`,
   }));
 
   if (toSelf)
@@ -38,7 +40,7 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
         email: user.email,
         name: user.name,
         lng: user.language,
-        unsubscribeLink: `${appConfig.backendUrl}/unsubscribe?token=NOTOKEN`,
+        unsubscribeLink: `${appConfig.backendUrl}/me/unsubscribe?token=NOTOKEN`,
         orgName: 'TEST EMAIL ORGANIZATION',
       },
     ];

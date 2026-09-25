@@ -9,6 +9,7 @@ import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
+import { hashToken } from '#/utils/hash-token';
 import { pick } from '#/utils/pick';
 
 interface UpsertLastStartedOpts {
@@ -81,13 +82,14 @@ interface FindUserByUnsubscribeTokenOpts {
   token: string;
 }
 
+/** The user an unsubscribe link belongs to, found by the token's hash: the table stores no token itself. */
 export const findUserByUnsubscribeToken = async (ctx: DbContext, { token }: FindUserByUnsubscribeTokenOpts) => {
   const { db } = ctx.var;
   const [user] = await db
     .select(userSelect)
     .from(usersTable)
     .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
-    .where(eq(unsubscribeTokensTable.secret, token))
+    .where(eq(unsubscribeTokensTable.secret, hashToken(token)))
     .limit(1);
   return user;
 };

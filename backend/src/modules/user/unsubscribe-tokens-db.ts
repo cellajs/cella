@@ -14,6 +14,7 @@ export const unsubscribeTokensTable = snakeCase.table(
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
+    // SHA-256 hex of the token an unsubscribe link carries (`unsubscribeTokenRow`), never the token itself.
     secret: varchar({ length: maxLength.field }).notNull(),
     createdAt: timestampColumns.createdAt,
   },
