@@ -587,7 +587,7 @@
   "success.passkey_added": "Passkey created and added successfully.",
   "success.profile_updated": "Your profile has been updated.",
   "success.request_feedback": "Response email has been sent.",
-  "success.resend_invitation": "A new invitation email has been sent!",
+  "success.resend_invitation": "If the invitation is still open, a new invitation email is on its way.",
   "success.reset_link_sent": "Reset link sent by email.",
   "success.resource_copied": "{{resource}} copied!",
   "success.resource_count_invited": "{{count}} {{resource}} invited.",
