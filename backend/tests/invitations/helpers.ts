@@ -78,5 +78,5 @@ export async function createInvitation({
   /** Cookie header value for the single-use token; only meaningful for an invoked token. */
   const invitationCookie = authCookie('invitation', rawSingleUseToken);
 
-  return { inactiveMembership, token, rawToken, invitationCookie };
+  return { inactiveMembership, token, rawToken, rawSingleUseToken, invitationCookie };
 }

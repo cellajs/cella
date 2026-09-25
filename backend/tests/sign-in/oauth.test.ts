@@ -10,6 +10,7 @@ import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
@@ -670,6 +671,69 @@ describe('OAuth Authentication', async () => {
       expect(match![1].length).toBeGreaterThan(0);
     });
   });
+  describe('Invite flow: the invitation opened in this browser proves the inbox', () => {
+    const state = 'mock-state-invite';
+    const providerEmail = 'github-user@example.com';
+
+    /** An invitation to `email` whose link this browser opened, and an invite round trip started here. */
+    const openedInvitation = async (email: string) => {
+      const organization = await createTestOrganization();
+      const inviter = await createUser('inviter@example.com');
+      const invitation = await createInvitation({ organization, email, createdBy: inviter.id, token: 'invoked' });
+      // The cookie mock keeps plain values: this browser's single-use cookie for the opened link.
+      mockCookieStore.set('invitation', invitation.rawSingleUseToken);
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'invite' }));
+      return invitation;
+    };
+
+    const inviteCallback = () =>
+      call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+
+    it('creates the account verified and signs in, with no second verification mail', async () => {
+      const { inactiveMembership } = await openedInvitation(providerEmail);
+
+      const { response: res } = await inviteCallback();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).not.toContain('/auth/email-verification');
+      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(mailer.prepareEmails).not.toHaveBeenCalled();
+
+      const [account] = await db.select().from(usersTable).where(eq(usersTable.email, providerEmail));
+      const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
+      expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
+      const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
+      expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
+
+      // The invitation waiting for the address is the new account's, answered in the app.
+      const [claimed] = await db
+        .select()
+        .from(inactiveMembershipsTable)
+        .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+      expect(claimed.userId).toBe(account.id);
+    });
+
+    it('must not create an account via an invite round trip in a browser that did not open the invitation', async () => {
+      await openedInvitation(providerEmail);
+      mockCookieStore.delete('invitation');
+
+      const { response: res, error } = await inviteCallback();
+      expect(res.status).toBe(400);
+      expect((error as { type: string }).type).toBe('invalid_token');
+      expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+    });
+
+    it('must not create an account on the invited address via a provider account of another address', async () => {
+      await openedInvitation('invited@example.com');
+
+      const { response: res, error } = await inviteCallback();
+      expect(res.status).toBe(409);
+      expect((error as { type: string }).type).toBe('oauth_wrong_email');
+      expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+    });
+  });
+
   describe('Sign-up: no account before the inbox is proven', () => {
     const providerEmail = 'github-user@example.com';
     const verifyState = 'mock-state-verify-sign-up';

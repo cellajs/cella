@@ -29,7 +29,7 @@ type OAuthFlowResult =
   | {
       type: 'unverified';
       identity: IdentityModel;
-      reason: 'signup' | 'signin' | 'connect' | 'invite';
+      reason: 'signup' | 'signin' | 'connect';
     }
   | {
       /** A sign-up without an account: it waits on the verification mail sent to the provider's address. */
@@ -185,7 +185,11 @@ const connectCallbackFlow = async ({
   return { type: 'unverified', identity: newIdentity, reason: 'connect' };
 };
 
-/** Sign-up via invitation: validates the token and requires its email to match the provider email before creating the OAuth account. */
+/**
+ * Sign-up via invitation, for a provider account that asserts the invited address. The invitation's link, opened in
+ * this browser, proved the inbox it was mailed to, so the account is created with its address and identity verified,
+ * in one transaction that also claims the invitations waiting for the address, and signs in without a second mail.
+ */
 const inviteCallbackFlow = async ({
   ctx,
   providerUser,
@@ -204,18 +208,20 @@ const inviteCallbackFlow = async ({
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'error');
 
-  // No user match → create a new user and OAuth account atomically
-  const newIdentity = await db.transaction(async (tx) => {
+  const { email } = invitationToken;
+  const created = await db.transaction(async (tx) => {
     const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    return createIdentity(tx, {
-      userId: user.id,
-      issuer: provider,
-      subject: providerUser.id,
-      email: providerUser.email,
-    });
+    await requireEmailVerified(tx, { userId: user.id, email, via: provider });
+    const newIdentity = await createIdentity(
+      tx,
+      { userId: user.id, issuer: provider, subject: providerUser.id, email },
+      { verified: true },
+    );
+    return { userId: user.id, identity: newIdentity };
   });
 
-  return { type: 'unverified', identity: newIdentity, reason: 'invite' };
+  const user = await findUserById({ var: { db } }, { id: created.userId });
+  return { type: 'verified', user, identity: created.identity };
 };
 
 const verifyCallbackFlow = async ({
