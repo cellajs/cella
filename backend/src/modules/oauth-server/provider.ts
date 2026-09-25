@@ -8,8 +8,8 @@ import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
-import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource } from '#/modules/oauth-server/resources';
+import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -77,7 +77,7 @@ async function accountMayUseGrant(sub: string, source: GrantSource | undefined):
     refusal ??= await grantRefusal({ kind: 'user', userId: sub, clientId: source.clientId ?? '', tenantId });
   }
   if (!refusal) return true;
-  if (source.grantId) await deleteConsentWithTokens({ var: { db: baseDb } }, { grantId: source.grantId });
+  if (source.grantId) await revokeGrant({ var: { db: baseDb } }, { grantId: source.grantId });
   log.info('OAuth grant refused', { refusal, grantId: source.grantId });
   return false;
 }

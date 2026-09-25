@@ -1,8 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import type { DbOrTx } from '#/db/db';
-import { type AuthInvalidation, dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
@@ -10,13 +8,18 @@ import type { ResourceRef } from '#/modules/oauth-server/resources';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
+interface GetConsentTargetNamesOpts {
+  userId: string;
+  resource: ResourceRef;
+}
+
 /**
  * The names a consent page shows for where a grant reaches: the tenant, and on the MCP face the organization, each
  * only when the user holds a membership in it. The caller has settled that the user is a member of the tenant.
  */
-export async function findConsentTargetNames(
+export async function getConsentTargetNames(
   ctx: DbContext,
-  { userId, resource }: { userId: string; resource: ResourceRef },
+  { userId, resource }: GetConsentTargetNamesOpts,
 ): Promise<{ tenant: string | null; organization: string | null }> {
   const [tenant] = await ctx.var.db
     .select({ name: tenantsTable.name })
@@ -64,18 +67,30 @@ export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: { g
   return grant;
 }
 
+interface DeleteProviderSessionsOfUserOpts {
+  userId: string;
+}
+
 /**
  * The authorization server's sessions of a user, in every browser: none answers a client for them any more until they
  * consent again. Their grants and refresh tokens stay.
  */
-export async function deleteProviderSessionsOfUser(ctx: DbContext, { userId }: { userId: string }): Promise<void> {
+export async function deleteProviderSessionsOfUser(
+  ctx: DbContext,
+  { userId }: DeleteProviderSessionsOfUserOpts,
+): Promise<void> {
   await ctx.var.db
     .delete(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
 }
 
-/** One authorization server session, by the id its cookie names. */
-export async function deleteProviderSession(ctx: DbContext, { id }: { id: string }): Promise<void> {
+interface DeleteProviderSessionOpts {
+  /** The session's id, which its `_session` cookie carries. */
+  id: string;
+}
+
+/** One authorization server session. */
+export async function deleteProviderSession(ctx: DbContext, { id }: DeleteProviderSessionOpts): Promise<void> {
   await ctx.var.db
     .delete(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
@@ -86,29 +101,30 @@ export async function deleteConsentsOfUsers(ctx: DbContext, { userIds }: { userI
   if (userIds.length) await ctx.var.db.delete(oidcPayloadsTable).where(inArray(oidcPayloadsTable.accountId, userIds));
 }
 
-/**
- * The grant and every token issued under it, in one transaction; the client must ask again. The verdicts on its access
- * tokens drop here at once and in every other process when the delete commits.
- */
-export async function deleteConsentWithTokens(ctx: DbContext, { grantId }: { grantId: string }): Promise<void> {
-  const deleted = await ctx.var.db.transaction(async (tx) => {
-    await tx.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
-    return deleteGrantRow(tx, grantId);
-  });
-  if (deleted) dropCachedAuth(deleted);
+interface DeleteGrantOpts {
+  grantId: string;
 }
 
 /**
- * Deletes one Grant row and, while the caller's transaction commits, tells every process to drop the verdicts on its
- * tokens. Returns that message for this process, or null when no such grant existed.
+ * The grant and every token issued under it, in one transaction; the client must ask again. Call it through
+ * `revokeGrant`, which stops the grant's access tokens too.
+ * @returns The account the grant belonged to, or null when there was no such grant.
  */
-export async function deleteGrantRow(db: DbOrTx, grantId: string): Promise<AuthInvalidation | null> {
-  const [grant] = await db
+export async function deleteConsentWithTokens(ctx: DbContext, { grantId }: DeleteGrantOpts): Promise<string | null> {
+  return ctx.var.db.transaction(async (tx) => {
+    await tx.delete(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
+    return deleteGrant({ var: { db: tx } }, { grantId });
+  });
+}
+
+/**
+ * The Grant row alone, for when the provider deletes the grant's tokens itself.
+ * @returns The account the grant belonged to, or null when there was no such grant.
+ */
+export async function deleteGrant(ctx: DbContext, { grantId }: DeleteGrantOpts): Promise<string | null> {
+  const [grant] = await ctx.var.db
     .delete(oidcPayloadsTable)
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
     .returning({ accountId: oidcPayloadsTable.accountId });
-  if (!grant?.accountId) return null;
-  const invalidation = { grant: { accountId: grant.accountId, grantId } };
-  await publishAuthInvalidation(db, invalidation);
-  return invalidation;
+  return grant?.accountId ?? null;
 }

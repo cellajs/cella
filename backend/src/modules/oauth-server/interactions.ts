@@ -10,7 +10,7 @@ import { oauthRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
-import { deleteProviderSession, findConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderSession, getConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
@@ -121,7 +121,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   // Where the grant reaches is named by the server, as the client is, and never to someone outside it.
   const target =
     user && refusal !== 'not_a_member'
-      ? await findConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
+      ? await getConsentTargetNames({ var: { db: baseDb } }, { userId: user.id, resource })
       : { tenant: null, organization: null };
 
   const details: ConsentDetails = {

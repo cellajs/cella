@@ -119,6 +119,6 @@ function installation(tenantId: string, clientId: string): void {
 
 /**
  * Every call drops the entries in every process: here at once, elsewhere through `auth_invalidate`. A deleted grant
- * publishes inside the deleting transaction (`deleteConsentWithTokens`).
+ * publishes inside the deleting transaction (`revokeGrant`).
  */
 export const invalidateCache = { user, org, tenant, serviceAccount, installation };
