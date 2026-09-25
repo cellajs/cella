@@ -69,6 +69,10 @@
           "name": "totpVerification",
           "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
         },
+        "mfaToggleLimiter": {
+          "name": "mfaToggle",
+          "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
+        },
         "magicLinkLimiter": {
           "name": "magicLink",
           "description": "Max 2 magic link emails per 30 min per email address"

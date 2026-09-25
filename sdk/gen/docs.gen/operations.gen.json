@@ -819,7 +819,7 @@
     "hasExample": true,
     "extensions": {
       "xGuard": ["userGuard"],
-      "xRateLimiter": ["pointsLimiter"],
+      "xRateLimiter": ["pointsLimiter", "mfaToggleLimiter"],
       "xCache": []
     },
     "tagsByKind": {

@@ -1,7 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
 import { crossTenantGuard, publicGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import {
+  bulkPointsLimiter,
+  mfaToggleLimiter,
+  singlePointsLimiter,
+  tokenLimiter,
+} from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -218,7 +223,7 @@ const meRoutes = {
     method: 'put',
     path: '/mfa',
     xGuard: [userGuard],
-    xRateLimiter: [singlePointsLimiter],
+    xRateLimiter: [singlePointsLimiter, mfaToggleLimiter],
     tags: ['me', 'cella'],
     summary: 'Toggle MFA',
     description:

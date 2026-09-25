@@ -37,6 +37,12 @@ export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerificati
   onBlock: (key, ctx) => sendLockoutEmail(key, 'totp-lockout', ctx, totpLimits),
 });
 
+/** Keyed per account: a session guessing authenticator codes on the MFA toggle is blocked whatever IP it uses. */
+export const mfaToggleLimiter = rateLimiter('failseries', 'mfaToggle', ['userId'], {
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
+  description: 'Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle',
+});
+
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   limits: { points: 2, duration: 60 * 30, blockDuration: 0 },
   description: 'Max 2 magic link emails per 30 min per email address',

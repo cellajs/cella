@@ -30,6 +30,32 @@ export const slowOptions = {
   blockDuration: 60 * 60 * 3,
 };
 
+type FailureStore = ReturnType<typeof getRateLimiterInstance>;
+
+/**
+ * Records one failure against a fail-mode bucket. The store blocks a key in memory once it reaches its points, so later
+ * consumes are refused there and never reach the database; blocking the key in the database when the budget is spent
+ * is what makes the next request's pre-check (`consumedPoints > points`) refuse it, for `blockDuration`.
+ */
+async function recordFailure(
+  store: FailureStore,
+  rateLimitKey: string,
+  { points, duration, blockDuration }: { points: number; duration: number; blockDuration: number },
+) {
+  // A zero block duration would block forever in the store; fall back to the counting window.
+  const blockSeconds = blockDuration > 0 ? blockDuration : duration;
+  try {
+    const result = await store.consume(rateLimitKey);
+    if (result.consumedPoints >= points) await store.block(rateLimitKey, blockSeconds);
+  } catch (err) {
+    if (!(err instanceof RateLimiterRes)) {
+      log.warn('Rate limit consume failed', { rateLimitKey, err });
+      return;
+    }
+    await store.block(rateLimitKey, blockSeconds);
+  }
+}
+
 /**
  * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
  * resets after a success. Failure modes also consume a 24-hour bucket that catches slow brute-force attempts.
@@ -161,18 +187,8 @@ export const rateLimiter = (
         }
       } else if (isFail && !isIgnored && slowLimiter) {
         // Must use the same normalized key as the slow-bucket lookup, or the 24-hour bucket never blocks
-        try {
-          await slowLimiter.consume(rateLimitKey);
-        } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
-          throw rlRejected;
-        }
-
-        try {
-          await limiter.consume(rateLimitKey);
-        } catch (err) {
-          log.warn('Rate limit consume failed', { rateLimitKey, err });
-        }
+        await recordFailure(slowLimiter, rateLimitKey, slowOptions);
+        await recordFailure(limiter, rateLimitKey, config);
       }
     },
   );
