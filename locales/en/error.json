@@ -92,6 +92,8 @@
   "invitation_not_found.text": "The token is used or doesn't exist. Please sign in directly or use reply-to in the invitation email to request a new one.",
   "load_more_failed": "Could not load more data. Try reloading or come back later.",
   "load_resource": "Failed to load {{resource}}",
+  "last_admin": "An admin is needed",
+  "last_admin.text": "An organization always keeps at least one admin. Make someone else an admin first.",
   "local_file_not_found": "File not found. This file was stored locally on a specific browser and therefore is not accessible by other browsers or devices.",
   "magic_expired": "Magic link has expired",
   "magic_expired.text": "This link has expired. Please request a new magic link on the sign in page.",

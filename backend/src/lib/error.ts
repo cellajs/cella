@@ -30,6 +30,16 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
   '40P01': { status: 409, type: 'server_error', message: 'Operation conflict, please retry' },
 };
 
+/** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
+const PG_CONSTRAINT_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
+  // Refused when an organization would be left without an admin; the trigger is defined in scripts/migrations.
+  memberships_keep_org_admin: {
+    status: 409,
+    type: 'last_admin',
+    message: 'An organization keeps at least one admin',
+  },
+};
+
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };
 
 /** Reads PG error info off the error or its `.cause`, where Drizzle stores the original PG error. */
@@ -95,7 +105,9 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const isAppError = err instanceof AppError;
 
   const pgError = !isAppError ? extractPgError(err) : null;
-  const pgMappedError = pgError ? PG_ERROR_MAP[pgError.code] : undefined;
+  const pgMappedError = pgError
+    ? ((pgError.constraint ? PG_CONSTRAINT_MAP[pgError.constraint] : undefined) ?? PG_ERROR_MAP[pgError.code])
+    : undefined;
 
   const severity = isAppError ? err.severity : pgMappedError ? 'warn' : 'error';
   const type = isAppError ? err.type : (pgMappedError?.type ?? 'server_error');

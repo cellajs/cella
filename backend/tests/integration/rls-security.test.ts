@@ -76,9 +76,9 @@ async function seedEntityHierarchy(
   }
 }
 
-async function cleanupEntityHierarchy(...plans: TestEntityHierarchyPlan[]) {
+async function cleanupEntityHierarchy(executor: Pick<typeof adminDb, 'execute'>, ...plans: TestEntityHierarchyPlan[]) {
   for (const row of plans.flatMap((plan) => plan.seedChannelRows).reverse()) {
-    await adminDb.execute(sql`DELETE FROM ${sql.raw(quoteIdent(row.tableName))} WHERE id = ${row.id}`);
+    await executor.execute(sql`DELETE FROM ${sql.raw(quoteIdent(row.tableName))} WHERE id = ${row.id}`);
   }
 }
 
@@ -262,9 +262,12 @@ async function cleanupTestData() {
   for (const { fixture } of activeRlsProducts) {
     await fixture.cleanup();
   }
-  await adminDb.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
-  await cleanupEntityHierarchy(...activeRlsProducts.map(({ fixture }) => fixture.plan));
-  await adminDb.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`);
+  // One transaction: the organization-keeps-an-admin check is deferred to commit, when the organizations are gone too.
+  await adminDb.transaction(async (tx) => {
+    await tx.execute(sql`DELETE FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`);
+    await cleanupEntityHierarchy(tx, ...activeRlsProducts.map(({ fixture }) => fixture.plan));
+    await tx.execute(sql`DELETE FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`);
+  });
   await adminDb.execute(sql`DELETE FROM users WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
   await adminDb.execute(sql`DELETE FROM actors WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
   await adminDb.execute(

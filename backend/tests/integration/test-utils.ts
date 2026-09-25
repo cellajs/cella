@@ -23,17 +23,22 @@ export async function migrateDatabase() {
   await migrate(db as PgDB, { migrationsFolder });
 }
 
-/** Delete order respects the foreign key constraints. */
+/**
+ * Delete order respects the foreign key constraints. One transaction: the organization-keeps-an-admin check is deferred to
+ * commit, when the organizations are gone too.
+ */
 export async function clearDatabase() {
-  await db.delete(activitiesTable);
-  await db.delete(sessionsTable);
-  await db.delete(tokensTable);
-  await db.delete(membershipsTable);
-  await db.delete(attachmentsTable);
-  await db.delete(channelCountersTable);
-  await db.delete(emailsTable);
-  await db.delete(usersTable);
-  await db.delete(organizationsTable);
+  await db.transaction(async (tx) => {
+    await tx.delete(activitiesTable);
+    await tx.delete(sessionsTable);
+    await tx.delete(tokensTable);
+    await tx.delete(membershipsTable);
+    await tx.delete(attachmentsTable);
+    await tx.delete(channelCountersTable);
+    await tx.delete(emailsTable);
+    await tx.delete(usersTable);
+    await tx.delete(organizationsTable);
+  });
 }
 
 import type { ActivityEvent } from '#/lib/activity-bus';
