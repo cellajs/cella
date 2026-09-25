@@ -134,6 +134,10 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.signOut, async (ctx) => {
+  // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
+  // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
+  if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
+
   // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
   if (await getAuthCookie(ctx, 'confirm-mfa')) {
     await spendCookieToken(ctx, 'confirm-mfa');
