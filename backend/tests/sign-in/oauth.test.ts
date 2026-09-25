@@ -14,7 +14,8 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createUser, linkIdentity } from '../helpers';
+import { createTestOrganization, createUser, linkIdentity } from '../helpers';
+import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -801,6 +802,43 @@ describe('OAuth Authentication', async () => {
       expect((error as { type: string }).type).toBe('oauth_email_exists');
       expect((await accountsFor(providerEmail)).map((user) => user.id)).toEqual([holder.id]);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
+    });
+
+    const closeRegistration = () => {
+      setTestConfig({ selfRegistration: false });
+      onTestFinished(() => setTestConfig({ selfRegistration: true }));
+    };
+
+    it('must not create an account via a pending OAuth sign-up once registration has closed', async () => {
+      await signUpCallback();
+      await openVerificationLink(mailedVerificationToken());
+      closeRegistration();
+
+      const { response: res, error } = await verifyCallback();
+      expect(res.status).toBe(403);
+      expect((error as { type: string }).type).toBe('sign_up_restricted');
+      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+
+      // The verification stays unspent: its row, and this browser's single-use cookie.
+      expect(await verificationTokens()).toHaveLength(1);
+      expect(mockCookieStore.has('oauth-verification')).toBe(true);
+    });
+
+    it('completes the sign-up of an invited address after registration closed (positive control)', async () => {
+      await signUpCallback();
+      await openVerificationLink(mailedVerificationToken());
+      closeRegistration();
+      const organization = await createTestOrganization();
+      const inviter = await createUser('inviter@example.com');
+      await createInvitation({ organization, email: providerEmail, createdBy: inviter.id });
+
+      const { response: res } = await verifyCallback();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(await accountsFor(providerEmail)).toHaveLength(1);
+      expect(await verificationTokens()).toHaveLength(0);
     });
 
     it('keeps one live sign-up per provider account', async () => {

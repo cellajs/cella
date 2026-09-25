@@ -1,7 +1,6 @@
-import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import type { Tx } from '#/db/db';
-import { hasPendingInvitation } from '#/modules/auth/auth-queries';
+import { maySignUp } from '#/modules/auth/auth-queries';
 import { requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
@@ -22,8 +21,7 @@ export const claimMagicLinkOwner = async (tx: Tx, token: TokenRecord): Promise<s
   const holder = await findUserByEmail(txCtx, { email: token.email });
   if (holder) return holder.id;
 
-  const mayRegister = appConfig.has.selfRegistration || (await hasPendingInvitation(txCtx, { email: token.email }));
-  if (!mayRegister) throw new AppError(403, 'sign_up_restricted', 'info');
+  if (!(await maySignUp(txCtx, { email: token.email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
   const slug = slugFromEmail(token.email);
   const user = await handleCreateUser(txCtx, {

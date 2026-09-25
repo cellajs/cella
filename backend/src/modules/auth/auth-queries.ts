@@ -1,4 +1,5 @@
 import { and, eq, getColumns, isNull } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
@@ -99,3 +100,10 @@ export const hasPendingInvitation = async (ctx: DbContext, { email }: HasPending
 
   return hasLiveInvitationToken(ctx, { email });
 };
+
+/**
+ * Whether a new account may be created for the address: registration is open, or an invitation to it still stands.
+ * Sign-ups check it again when they complete, since either may have changed after the sign-up started.
+ */
+export const maySignUp = async (ctx: DbContext, { email }: HasPendingInvitationOpts) =>
+  appConfig.has.selfRegistration || hasPendingInvitation(ctx, { email });

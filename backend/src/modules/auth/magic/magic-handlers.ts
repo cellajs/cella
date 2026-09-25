@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { hasPendingInvitation } from '#/modules/auth/auth-queries';
+import { maySignUp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { findOpenableMagicLink, rememberMagicLinkRequest } from '#/modules/auth/magic/helpers/magic-link-browser';
@@ -34,8 +34,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   if (!existingUser) {
     // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
     // as a real request, to prevent email enumeration.
-    const mayRegister = appConfig.has.selfRegistration || (await hasPendingInvitation(ctx, { email: normalizedEmail }));
-    if (!mayRegister) {
+    if (!(await maySignUp(ctx, { email: normalizedEmail }))) {
       log.info('Magic link requested for unknown email', { email: normalizedEmail });
       await rememberMagicLinkRequest(ctx, generateId());
       return ctx.body(null, 204);

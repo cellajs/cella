@@ -4,6 +4,7 @@ import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
+import { maySignUp } from '#/modules/auth/auth-queries';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
@@ -269,6 +270,7 @@ const verifyCallbackFlow = async ({
  * Finishes an OAuth sign-up in the browser that opened its verification mail, once the same provider account signed
  * in again: the click proved the inbox, so the account is created now with its address and identity verified, in one
  * transaction that spends the verification. An account or identity that appeared meanwhile ends the sign-up.
+ * @throws AppError 403 `sign_up_restricted` when the address may no longer sign up; the verification stays unspent.
  */
 const completeSignUp = async ({
   ctx,
@@ -294,6 +296,10 @@ const completeSignUp = async ({
   if (await findUserByEmail({ var: { db } }, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   const created = await db.transaction(async (tx) => {
+    // Registration may have closed since the mail went out. Checked before the spend, so a refusal leaves the
+    // verification and this browser's cookie as they were.
+    if (!(await maySignUp({ var: { db: tx } }, { email }))) throw new AppError(403, 'sign_up_restricted', 'info');
+
     // Of two concurrent completions only the one that spends the verification creates the account.
     const spent = await spendCookieToken(ctx, 'oauth-verification', { db: tx });
     if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
