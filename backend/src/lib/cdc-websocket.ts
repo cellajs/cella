@@ -91,7 +91,19 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
   return false;
 }
 
-/** Self-reported CDC worker health payload pushed over the WS control channel. */
+const cdcPath = '/internal/cdc';
+
+/**
+ * Whether an upgrade targets the CDC endpoint, by its raw request target up to the query string. A
+ * WHATWG-normalized pathname would also match `/api/../internal/cdc` and `/api/%2e%2e/internal/cdc`,
+ * which the public load balancer routes to this server under `/api`.
+ */
+export function isCdcUpgradePath(rawUrl: string | undefined): boolean {
+  if (!rawUrl) return false;
+  const queryStart = rawUrl.indexOf('?');
+  return (queryStart === -1 ? rawUrl : rawUrl.slice(0, queryStart)) === cdcPath;
+}
+
 /** WAL lag alert from the worker's `wal_lag_alert` control message. */
 export interface CdcLagAlert {
   severity: 'wal_lag_warn' | 'wal_lag_unhealthy';
@@ -102,6 +114,7 @@ export interface CdcLagAlert {
   receivedAt: string;
 }
 
+/** Self-reported CDC worker health payload pushed over the WS control channel. */
 export interface CdcWorkerHealth {
   replicationStatus: string;
   lastLsn: string | null;
@@ -141,8 +154,7 @@ class CdcWebSocketServer {
 
     // Type assertion needed because ServerType is broader than HTTP1 Server
     (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
-      const url = new URL(request.url ?? '', `http://${request.headers.host}`);
-      if (url.pathname !== '/internal/cdc') {
+      if (!isCdcUpgradePath(request.url)) {
         socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
         socket.destroy();
         return;
