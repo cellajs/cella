@@ -186,7 +186,7 @@ export const config = {
 
   enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
   enabledOAuthProviders: ['github'] as const,
-  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
+  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect'] as const,
 
   /**
    * Maximum concurrent sessions per user. On sign-in, the oldest sessions beyond the cap are

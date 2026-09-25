@@ -4088,6 +4088,55 @@
         }
       }
     },
+    "/auth/oauth-connect": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "startOAuthConnect",
+        "x-strategy": "oauth",
+        "tags": ["auth", "cella"],
+        "summary": "Start connecting a provider",
+        "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "responses": {
+          "204": {
+            "description": "Connect pinned",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/github": {
       "get": {
         "security": [],

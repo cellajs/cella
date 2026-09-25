@@ -774,6 +774,11 @@ export const zSignInWithPasskeyBody = z.object({
  */
 export const zSignInWithPasskeyResponse = z.void();
 
+/**
+ * Connect pinned
+ */
+export const zStartOAuthConnectResponse = z.void();
+
 export const zGithubQuery = z.object({
   type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
   redirectAfter: z.string().optional(),

@@ -8,9 +8,10 @@ type SameSite = 'lax' | 'strict';
  * - `address-or-account`: those for its address, and for its account when it names one (a magic link).
  * - `identity`: those of its identity, or of the provider account signing up (a verification link).
  * - `invitation`: those of its membership invitation, or of its address for a system invitation.
+ * - `account`: those of its account (a connect pin: one per account at a time).
  * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
  */
-export const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'none'] as const;
+export const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'none'] as const;
 export type TokenReplacement = (typeof tokenReplacements)[number];
 
 /**
@@ -48,8 +49,9 @@ export type TokenPolicy =
  * link type also its handler in `linkHandlers`.
  * - `invitation`: its single-use window outlasts a magic-link sign-in (15 minutes) plus a second-factor challenge, so
  *   answering an invitation from another account never expires midway.
- * - `invitation` and `oauth-verification` are Lax: an OAuth provider's callback, a navigation another site started,
- *   reads them. The others are Strict.
+ * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another
+ *   site started, reads them. The others are Strict.
+ * - `oauth-connect` pins a connect to the account that started it, in this browser, for the provider round trip.
  */
 export const tokenPolicies = {
   invitation: {
@@ -77,6 +79,7 @@ export const tokenPolicies = {
     unboundOpener: 'address-owner',
   },
   'confirm-mfa': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'strict', replaces: 'none' },
+  'oauth-connect': { carrier: 'cookie', ttl: new TimeSpan(10, 'm'), sameSite: 'lax', replaces: 'account' },
 } as const satisfies Record<TokenType, TokenPolicy>;
 
 type TokenTypeCarriedBy<C extends TokenPolicy['carrier']> = {

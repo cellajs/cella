@@ -1,8 +1,8 @@
-import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { User } from 'sdk';
+import { startOAuthConnect, type User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -68,25 +68,25 @@ export function AccountAuthenticationCard() {
 
   const invertClass = mode === 'dark' ? 'invert' : '';
 
-  const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-
-    try {
-      setLoadingProvider(provider);
-
-      const baseUrl = `${appConfig.backendAuthUrl}/${provider}`;
+  // The backend pins the provider's callback to this account first; the browser then leaves for the provider.
+  const { mutate: connectProvider } = useMutation({
+    mutationFn: async (_provider: EnabledOAuthProvider) => {
+      await startOAuthConnect();
+    },
+    onMutate: (provider) => setLoadingProvider(provider),
+    onSuccess: (_data, provider) => {
       const params = new URLSearchParams({
         type: 'connect',
         redirectAfter: window.location.pathname + window.location.hash,
       });
+      window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params.toString()}`);
+    },
+    onError: () => setLoadingProvider(null),
+  });
 
-      const providerUrl = `${baseUrl}?${params.toString()}`;
-      window.location.assign(providerUrl);
-    } catch (error) {
-      console.error('Failed to build OAuth URL:', error);
-      toaster.error(t('c:url_malformed'));
-      setLoadingProvider(null);
-    }
+  const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
+    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    connectProvider(provider);
   };
 
   return (

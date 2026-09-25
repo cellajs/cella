@@ -460,6 +460,29 @@
     }
   },
   {
+    "id": "startOAuthConnect",
+    "hash": "tag/auth/POST/auth/oauth-connect",
+    "method": "post",
+    "path": "/auth/oauth-connect",
+    "tags": ["auth"],
+    "summary": "Start connecting a provider",
+    "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "github",
     "hash": "tag/auth/GET/auth/github",
     "method": "get",

@@ -348,15 +348,33 @@ describe('OAuth Authentication', async () => {
     const state = 'mock-state-connect';
     const providerEmail = 'github-user@example.com';
 
-    const connectCallback = (connectUserId?: string) => {
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect', connectUserId }));
+    /** The pin startOAuthConnect leaves: a token row for the user, and its raw value in this browser's cookie. */
+    const pinConnect = async (user: { id: string; email: string }) => {
+      const rawPin = nanoid(40);
+      await db.insert(tokensTable).values({
+        secret: hashToken(rawPin),
+        type: 'oauth-connect',
+        email: user.email,
+        userId: user.id,
+        createdBy: user.id,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+      mockCookieStore.set('oauth-connect', rawPin);
+    };
+
+    const connectCallback = (payload: Record<string, unknown> = {}) => {
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect', ...payload }));
       return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
+    const identitiesOf = (userId: string) =>
+      db.select().from(identitiesTable).where(eq(identitiesTable.userId, userId));
+
     it('links a provider account on another address without making that address a user email', async () => {
       const user = await createUser('local-account@example.com');
+      await pinConnect(user);
 
-      const { response: res } = await connectCallback(user.id);
+      const { response: res } = await connectCallback();
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toContain('/auth/email-verification/connect');
@@ -371,8 +389,9 @@ describe('OAuth Authentication', async () => {
     it('refuses when another user holds the provider address', async () => {
       const user = await createUser('local-account@example.com');
       await createUser(providerEmail);
+      await pinConnect(user);
 
-      const { response: res, error } = await connectCallback(user.id);
+      const { response: res, error } = await connectCallback();
 
       expect(res.status).toBe(409);
       expect((error as { type: string }).type).toBe('oauth_conflict');
@@ -383,17 +402,64 @@ describe('OAuth Authentication', async () => {
       const user = await createUser('local-account@example.com');
       const other = await createUser('other-account@example.com');
       await linkIdentity(other, { email: providerEmail });
+      await pinConnect(user);
 
-      const { response: res, error } = await connectCallback(user.id);
+      const { response: res, error } = await connectCallback();
 
       expect(res.status).toBe(409);
       expect((error as { type: string }).type).toBe('oauth_conflict');
     });
 
-    it('requires the connecting user pinned at initiation', async () => {
-      const { response: res } = await connectCallback(undefined);
+    it('must not connect a provider to another account via a state naming that account', async () => {
+      const victim = await createUser('victim-account@example.com');
+      const attacker = await createUser('attacker-account@example.com');
 
-      expect(res.status).toBe(401);
+      // A signed state that names the victim and no pin: nothing is connected.
+      const unpinned = await connectCallback({ connectUserId: victim.id });
+      expect(unpinned.response.status).toBe(401);
+      expect((unpinned.error as { type: string }).type).toBe('oauth-connect_not_found');
+      expect(await identitiesOf(victim.id)).toHaveLength(0);
+
+      // The attacker's own pin with a state naming the victim: the pin decides, so it lands on the attacker.
+      await pinConnect(attacker);
+      expect((await connectCallback({ connectUserId: victim.id })).response.status).toBe(302);
+      expect(await identitiesOf(victim.id)).toHaveLength(0);
+      expect(await identitiesOf(attacker.id)).toHaveLength(1);
+    });
+
+    it('connects once per pin, then refuses the same callback', async () => {
+      const user = await createUser('local-account@example.com');
+      await pinConnect(user);
+
+      expect((await connectCallback()).response.status).toBe(302);
+      const replay = await connectCallback();
+
+      expect(replay.response.status).toBe(401);
+      expect((replay.error as { type: string }).type).toBe('oauth-connect_not_found');
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
+    });
+
+    it('starts a connect only with a pin of the signed-in account, and keeps any user id out of the state', async () => {
+      const user = await createUser('local-account@example.com');
+      const other = await createUser('other-account@example.com');
+      const signedInAs = (id: string) =>
+        vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id }, session: { id: 'session' } } as never);
+
+      signedInAs(user.id);
+      const unpinned = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
+      expect(unpinned.response.status).toBe(401);
+
+      await pinConnect(other);
+      signedInAs(user.id);
+      const othersPin = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
+      expect(othersPin.response.status).toBe(401);
+
+      await pinConnect(user);
+      signedInAs(user.id);
+      const started = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
+      expect(started.response.status).toBe(302);
+      const statePayload = [...mockCookieStore.entries()].find(([name]) => name.startsWith('oauth-state-'))?.[1];
+      expect(JSON.parse(statePayload ?? '{}')).toEqual({ type: 'connect' });
     });
   });
 

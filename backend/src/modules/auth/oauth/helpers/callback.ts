@@ -71,7 +71,7 @@ export const handleOAuthCallback = async (
   try {
     switch (type) {
       case 'connect':
-        result = await connectCallbackFlow({ connectUserId: oauthPayload.connectUserId, ...baseCallbackProps });
+        result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
         break;
       case 'invite':
         result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
@@ -140,16 +140,19 @@ const authCallbackFlow = async ({
 };
 
 /**
- * Connects an OAuth provider to an existing user account. The connecting user comes from the signed oauth-state payload, pinned at
- * initiation where the session was validated, because the SameSite=Strict session cookie is absent on the provider's cross-site callback.
+ * Connects an OAuth provider to an existing user account: the account the `oauth-connect` pin names, which the user
+ * issued signed in, right before leaving for the provider. The pin is spent here, so one start connects once; the
+ * SameSite=Strict session cookie is absent on the provider's cross-site callback.
  */
 const connectCallbackFlow = async ({
-  connectUserId,
+  ctx,
   providerUser,
   provider,
   identity = null,
-}: { connectUserId?: string } & BaseCallbackProps): Promise<OAuthFlowResult> => {
-  if (!connectUserId) throw new AppError(401, 'unauthorized', 'warn');
+}: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
+  const pin = await spendCookieToken(ctx, 'oauth-connect');
+  if (!pin?.userId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
+  const connectUserId = pin.userId;
 
   const user = await findUserById({ var: { db } }, { id: connectUserId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });

@@ -255,6 +255,9 @@ import type {
   StartImpersonationData,
   StartImpersonationErrors,
   StartImpersonationResponses,
+  StartOAuthConnectData,
+  StartOAuthConnectErrors,
+  StartOAuthConnectResponses,
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
@@ -459,6 +462,7 @@ import {
   zSignOutResponse,
   zStartImpersonationBody,
   zStartImpersonationResponse,
+  zStartOAuthConnectResponse,
   zStopImpersonationResponse,
   zSystemInviteBody,
   zSystemInviteResponse,
@@ -1185,6 +1189,41 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Start connecting a provider
+ *
+ * Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.
+ *
+ * **POST /auth/oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/oauth-connect) ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/oauth-connect) ·· _auth_cella_
+ *
+ * @param {startOAuthConnectData} options
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const startOAuthConnect = <ThrowOnError extends boolean = true>(
+  options?: Options<StartOAuthConnectData, ThrowOnError>,
+): RequestResult<StartOAuthConnectResponses, StartOAuthConnectErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<StartOAuthConnectResponses, StartOAuthConnectErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zStartOAuthConnectResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/oauth-connect',
+    ...options,
   });
 
 /**

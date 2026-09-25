@@ -18,6 +18,7 @@ import {
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
+import { issueCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 
 // `openid` is required for Google and Microsoft so the token endpoint returns an id_token, which carries the nonce validated on callback.
@@ -26,6 +27,15 @@ const googleScopes = ['openid', 'profile', 'email'];
 const microsoftScopes = ['openid', 'profile', 'email'];
 
 const app = new OpenAPIHono<Env>({ defaultHook });
+
+app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
+  const { user } = ctx.var;
+
+  // The provider's callback is a navigation from another site: this Lax cookie's token is what names the account.
+  await issueCookieToken(ctx, { type: 'oauth-connect', userId: user.id, email: user.email, createdBy: user.id });
+
+  return ctx.body(null, 204);
+});
 
 app.openapi(authOAuthRoutes.github, async (ctx) => {
   // Generate a `state` to prevent CSRF, and build URL with scope.

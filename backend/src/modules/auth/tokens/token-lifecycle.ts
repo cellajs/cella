@@ -49,6 +49,7 @@ const replacementSubjects = {
     token.inactiveMembershipId
       ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
       : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
+  account: (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
   none: () => undefined,
 } satisfies Record<TokenReplacement, (token: NewToken) => SQL | undefined>;
 
@@ -110,8 +111,8 @@ export const issueToken = async (ctx: DbContext, token: NewToken) => {
 };
 
 /**
- * Issues a cookie-carried token, a second-factor challenge, and sets its cookie on this response for the type's `ttl`.
- * The raw value lives only in that cookie.
+ * Issues a cookie-carried token (a second-factor challenge, a connect pin) and sets its cookie on this response for the
+ * type's `ttl`. The raw value lives only in that cookie.
  */
 export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { type: CookieTokenType }) => {
   const { token: record, rawToken } = await issueToken({ var: { db: baseDb } }, token);

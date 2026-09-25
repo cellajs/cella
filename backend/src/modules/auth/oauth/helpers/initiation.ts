@@ -27,7 +27,8 @@ export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthC
 
 /**
  * Creates an OAuth session: stores the flow context (invite, connect, verify, or default) in cookies and redirects to the provider.
- * The context is tied to the OAuth `state` to prevent CSRF and can carry a PKCE `codeVerifier` and an OIDC `nonce`.
+ * The context is tied to the OAuth `state` to prevent CSRF and can carry a PKCE `codeVerifier` and an OIDC `nonce`. It
+ * never names a user: a connect goes to the account its `oauth-connect` pin names, spent at the callback.
  */
 export const handleOAuthInitiation = async (
   ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,
@@ -42,9 +43,9 @@ export const handleOAuthInitiation = async (
 
   if (type === 'connect') {
     try {
-      const { user } = await resolveSession(ctx);
-      // Pin the connecting user in the signed state payload: the SameSite=Strict session cookie is absent on the cross-site callback.
-      cookieContent.connectUserId = user.id;
+      // Fails early without the pin, or with one another account in this browser started.
+      const [pin, { user }] = await Promise.all([readBoundToken(ctx, 'oauth-connect'), resolveSession(ctx)]);
+      if (pin.userId !== user.id) throw new AppError(401, 'oauth-connect_not_found', 'warn');
     } catch (err) {
       if (err instanceof AppError) {
         throw new AppError(err.status, err.type as ErrorKey, err.severity, {
