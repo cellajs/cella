@@ -25,7 +25,7 @@ const publishElsewhere = (payload: unknown) =>
 const cacheUser = (userId: string) => {
   // The caches hold what the guards hand them; a stub with the id is enough to find and drop the entries.
   const user = { id: userId } as never;
-  setSessionCache(`${userId}-session`, userId, { user, hasSystemRole: false });
+  setSessionCache(`${userId}-session`, { session: { id: `${userId}-session` } as never, user, hasSystemRole: false });
   setMembershipCache(userId, [] as MembershipCacheEntry);
   setTokenGrantCache(userId, 'grant:tenant', { refusal: null, kind: 'user', user });
 };

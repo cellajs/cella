@@ -36,6 +36,7 @@ import {
   cancelOpenStreams,
   expectClosedWith,
   expectStillOpen,
+  impersonationSetBy,
   insertSession,
   openStream,
   sessionRow,
@@ -139,7 +140,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     expect(await sessionRow(current.id)).toMatchObject({ revocationReason: 'replaced', revokedBy: user.id });
     expect(await sessionRow(otherRegular.id)).toMatchObject({ revocationReason: 'mfa_enabled', revokedBy: user.id });
 
-    await warm(sessionSetBy(response));
+    await warm(await sessionSetBy(response));
     expectStillOpen(user.id, mfaStream);
     await warm(earlierMfa);
   });
@@ -164,8 +165,8 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     /** Signs the user in from a browser, as every sign-in route does once its proof checked out. */
     const signIn = async (user: { id: string }, deviceId: string | null) => {
-      const { sessionId, hashedSessionToken } = await createSession(user, browser(deviceId), 'passkey');
-      return asSession(sessionId, authCookie('session', `${hashedSessionToken}.${sessionId}.`, 7 * 24 * 60 * 60));
+      const { sessionId, sessionToken } = await createSession(user, browser(deviceId), 'passkey');
+      return asSession(sessionId, authCookie('session', sessionToken, 7 * 24 * 60 * 60));
     };
 
     it('must not keep a session evicted by the session cap live via its open stream or the auth cache', async () => {
@@ -223,7 +224,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       headers: adminSession.headers,
     });
     expect(started.response.status).toBe(204);
-    const impersonation = sessionSetBy(started.response);
+    const impersonation = await impersonationSetBy(started.response, adminSession);
     await warm(impersonation);
     await warm(targetOwn);
     const impersonationStream = await openStream(target.id, impersonation);

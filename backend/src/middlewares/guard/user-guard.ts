@@ -1,18 +1,15 @@
 import { eq } from 'drizzle-orm';
-import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { updateLastSeenAt } from '../update-last-seen';
-import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
+import { getMembershipCache, setMembershipCache } from './auth-cache';
 
 /**
- * Authenticates the session and sets user, memberships, and base db context from short TTL caches. The RLS lookup
- * transaction ends before `next()`, so handlers open their own scoped reads.
+ * Authenticates the session (an impersonation only on top of its admin's session) and sets user, session facts,
+ * memberships and base db context from short TTL caches.
  */
 export const userGuard = xMiddleware(
   {
@@ -23,75 +20,27 @@ export const userGuard = xMiddleware(
     description: 'Requires valid session and sets auth context (user, memberships, baseDb)',
   },
   async (ctx, next) => {
-    try {
-      // Parse session cookie (lightweight, no DB)
-      const { sessionToken, sessionId } = await getParsedSessionCookie(ctx);
+    // A refused cookie is deleted, so the browser stops presenting it.
+    const { session, user, hasSystemRole } = await resolveSession(ctx, { clearOnError: true });
 
-      const cachedSession = getSessionCache(sessionId);
-      if (cachedSession) {
-        ctx.set('user', cachedSession.user);
-        ctx.set('userId', cachedSession.user.id);
-        ctx.set('sessionToken', sessionToken);
-        ctx.set('sessionId', sessionId);
-        ctx.set('isSystemAdmin', cachedSession.hasSystemRole && isSystemAccessAllowed(ctx));
-        ctx.set('db', baseDb);
+    ctx.set('user', user);
+    ctx.set('userId', user.id);
+    ctx.set('session', session);
+    ctx.set('sessionId', session.id);
+    ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
+    ctx.set('db', baseDb);
 
-        // Memberships cached separately with longer TTL (keyed by userId)
-        let memberships = getMembershipCache(cachedSession.user.id);
-        if (!memberships) {
-          memberships = await baseDb
-            .select()
-            .from(membershipsTable)
-            .where(eq(membershipsTable.userId, cachedSession.user.id));
-          setMembershipCache(cachedSession.user.id, memberships);
-        }
-        ctx.set('memberships', memberships);
-        ctx.set('actor', { kind: 'user', id: cachedSession.user.id, bindings: memberships, scopes: null });
-
-        if (ctx.req.method === 'GET') {
-          updateLastSeenAt(cachedSession.user.id);
-        }
-
-        return next();
-      }
-
-      const { session, user } = await validateSession(sessionToken);
-
-      if (ctx.req.method === 'GET') {
-        updateLastSeenAt(user.id);
-      }
-
-      ctx.set('user', user);
-      ctx.set('userId', user.id);
-      ctx.set('sessionToken', sessionToken);
-      ctx.set('sessionId', session.id);
-
-      // The role is read whatever the address, so the cached entry is right for every request that hits it.
-      const { memberships, hasSystemRole } = await baseDb.transaction(async (tx) => {
-        const [memberships, [systemRoleRecord]] = await Promise.all([
-          tx.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-          tx
-            .select({ role: systemRolesTable.role })
-            .from(systemRolesTable)
-            .where(eq(systemRolesTable.userId, user.id))
-            .limit(1),
-        ]);
-
-        return { memberships, hasSystemRole: systemRoleRecord?.role === 'admin' };
-      });
-
-      ctx.set('memberships', memberships);
-      ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
-      ctx.set('isSystemAdmin', hasSystemRole && isSystemAccessAllowed(ctx));
-      ctx.set('db', baseDb);
-
-      setSessionCache(session.id, user.id, { user, hasSystemRole });
+    // Memberships cached separately with longer TTL (keyed by userId)
+    let memberships = getMembershipCache(user.id);
+    if (!memberships) {
+      memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
       setMembershipCache(user.id, memberships);
-
-      await next();
-    } catch (err) {
-      if (err instanceof AppError) deleteAuthCookie(ctx, 'session');
-      throw err;
     }
+    ctx.set('memberships', memberships);
+    ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
+
+    if (ctx.req.method === 'GET') updateLastSeenAt(user.id);
+
+    await next();
   },
 );

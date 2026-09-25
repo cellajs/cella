@@ -24,7 +24,6 @@ export {
   productEntityTypeSchema,
   refineWithType,
   relatableUserIdParamSchema,
-  sessionCookieSchema,
   slugIncludeQuerySchema,
   slugQuerySchema,
   tenantIdParamSchema,

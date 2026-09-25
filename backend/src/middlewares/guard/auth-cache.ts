@@ -1,8 +1,10 @@
 import { TTLCache } from '#/lib/ttl-cache';
+import type { SessionFacts } from '#/modules/auth/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 
 export interface SessionCacheEntry {
+  session: SessionFacts;
   user: UserWithCounters;
   /** Holds the admin system role. The rights also need an allowlisted request address, so they are never cached. */
   hasSystemRole: boolean;
@@ -10,15 +12,19 @@ export interface SessionCacheEntry {
 
 export type MembershipCacheEntry = (MembershipBaseModel & { createdBy: string | null })[];
 
+/**
+ * Keyed by the hash of the session's cookie token, the value its row stores: an entry answers only to a cookie that
+ * carries the token itself, never to a session id.
+ */
 const sessionCache = new TTLCache<SessionCacheEntry>({
   maxSize: 5000,
   defaultTtl: 60_000, // 1 min, security-sensitive
   onDispose: (key, value) => {
     // Clean up reverse index when entry expires or is evicted
-    const sessionIds = userIndex.get(value.user.id);
-    if (sessionIds) {
-      sessionIds.delete(key);
-      if (sessionIds.size === 0) userIndex.delete(value.user.id);
+    const secretHashes = userIndex.get(value.user.id);
+    if (secretHashes) {
+      secretHashes.delete(key);
+      if (secretHashes.size === 0) userIndex.delete(value.user.id);
     }
   },
 });
@@ -28,28 +34,29 @@ const membershipCache = new TTLCache<MembershipCacheEntry>({
   defaultTtl: 5 * 60_000, // 5 min, actively invalidated on changes
 });
 
-/** Reverse index: userId to Set of sessionIds for user-wide invalidation. */
+/** Reverse index: userId to the secret hashes of the user's cached sessions, for user-wide invalidation. */
 const userIndex = new Map<string, Set<string>>();
 
-export const getSessionCache = (sessionId: string): SessionCacheEntry | undefined => {
-  return sessionCache.get(sessionId);
+export const getSessionCache = (secretHash: string): SessionCacheEntry | undefined => {
+  return sessionCache.get(secretHash);
 };
 
 export const getMembershipCache = (userId: string): MembershipCacheEntry | undefined => {
   return membershipCache.get(userId);
 };
 
-export const setSessionCache = (sessionId: string, userId: string, entry: SessionCacheEntry): void => {
+export const setSessionCache = (secretHash: string, entry: SessionCacheEntry): void => {
   // Jitter TTL ±20% (48-72s) to prevent synchronized expiry under load
   const jitteredTtl = Math.round(60_000 * (0.8 + Math.random() * 0.4));
-  sessionCache.set(sessionId, entry, jitteredTtl);
+  sessionCache.set(secretHash, entry, jitteredTtl);
 
-  let sessionIds = userIndex.get(userId);
-  if (!sessionIds) {
-    sessionIds = new Set();
-    userIndex.set(userId, sessionIds);
+  const userId = entry.user.id;
+  let secretHashes = userIndex.get(userId);
+  if (!secretHashes) {
+    secretHashes = new Set();
+    userIndex.set(userId, secretHashes);
   }
-  sessionIds.add(sessionId);
+  secretHashes.add(secretHash);
 };
 
 export const setMembershipCache = (userId: string, memberships: MembershipCacheEntry): void => {
@@ -60,10 +67,10 @@ export const setMembershipCache = (userId: string, memberships: MembershipCacheE
 
 /** Invalidate all cached entries for a user: every session and the memberships. */
 export const invalidateAuthCacheByUser = (userId: string): void => {
-  const sessionIds = userIndex.get(userId);
-  if (sessionIds) {
-    for (const sessionId of sessionIds) {
-      sessionCache.delete(sessionId);
+  const secretHashes = userIndex.get(userId);
+  if (secretHashes) {
+    for (const secretHash of secretHashes) {
+      sessionCache.delete(secretHash);
     }
     userIndex.delete(userId);
   }

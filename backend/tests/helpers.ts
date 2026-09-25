@@ -7,7 +7,7 @@ import { baseDb as db, getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -183,24 +183,46 @@ export async function createTestOrganization(
   return organization;
 }
 
-/** Inserts a session row and returns the cookie string for test requests. */
-export async function createTestSession(user: { id: string }) {
-  const sessionToken = nanoid(40);
-  const hashedSessionToken = hashToken(sessionToken);
-  const sessionId = generateId();
+interface TestSessionOpts {
+  type?: SessionTypes;
+  authStrategy?: AuthStrategy;
+  /** Backdates the session's creation, e.g. past the step-up window. */
+  ageMs?: number;
+  expiresInMs?: number;
+}
+
+/**
+ * Inserts a session row as a sign-in stores it: the random token goes in the cookie, the row keeps its hash. Returns
+ * the row id, the token and the signed `Cookie` pair that presents it.
+ */
+export async function insertTestSession(
+  user: { id: string },
+  {
+    type = 'regular',
+    authStrategy = 'passkey',
+    ageMs = 0,
+    expiresInMs = 7 * 24 * 60 * 60 * 1000,
+  }: TestSessionOpts = {},
+) {
+  const token = nanoid(40);
+  const id = generateId();
 
   await db.insert(sessionsTable).values({
-    id: sessionId,
-    secret: hashedSessionToken,
+    id,
+    secret: hashToken(token),
     userId: user.id,
-    type: 'regular',
-    authStrategy: 'passkey',
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    type,
+    authStrategy,
+    createdAt: new Date(Date.now() - ageMs).toISOString(),
+    expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
   });
 
-  const cookieContent = `${hashedSessionToken}.${sessionId}.`;
-  return authCookie('session', cookieContent, 7 * 24 * 60 * 60);
+  return { id, token, cookie: authCookie('session', token, 7 * 24 * 60 * 60) };
+}
+
+/** Inserts a session row and returns the cookie string for test requests. */
+export async function createTestSession(user: { id: string }, opts?: TestSessionOpts) {
+  return (await insertTestSession(user, opts)).cookie;
 }
 
 /** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */

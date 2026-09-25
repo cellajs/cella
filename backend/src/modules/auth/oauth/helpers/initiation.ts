@@ -4,7 +4,7 @@ import type z from 'zod';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/general/helpers/session';
 import type { OAuthCookiePayload, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { oauthCookiePayloadSchema } from '#/modules/auth/oauth/oauth-schema';
 import { readBoundToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -42,9 +42,7 @@ export const handleOAuthInitiation = async (
 
   if (type === 'connect') {
     try {
-      const { sessionToken } = await getParsedSessionCookie(ctx);
-      const { user } = await validateSession(sessionToken);
-      if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
+      const { user } = await resolveSession(ctx);
       // Pin the connecting user in the signed state payload: the SameSite=Strict session cookie is absent on the cross-site callback.
       cookieContent.connectUserId = user.id;
     } catch (err) {

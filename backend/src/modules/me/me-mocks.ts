@@ -39,6 +39,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
           revokedAt: null,
           revokedBy: null,
           revocationReason: null,
+          impersonatorSessionId: null,
           isCurrent: true,
           isNewDevice: false,
         },

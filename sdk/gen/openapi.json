@@ -1471,6 +1471,10 @@
                     null
                   ]
                 },
+                "impersonatorSessionId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
                 "isCurrent": {
                   "type": "boolean"
                 },
@@ -1498,6 +1502,7 @@
                 "revokedAt",
                 "revokedBy",
                 "revocationReason",
+                "impersonatorSessionId",
                 "isCurrent",
                 "isNewDevice"
               ]
@@ -1578,6 +1583,7 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
+              "impersonatorSessionId": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -5746,6 +5752,7 @@
                       "revokedAt": null,
                       "revokedBy": null,
                       "revocationReason": null,
+                      "impersonatorSessionId": null,
                       "isCurrent": true,
                       "isNewDevice": false
                     }
@@ -6043,6 +6050,10 @@
                               "impersonation_stopped",
                               null
                             ]
+                          },
+                          "impersonatorSessionId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
                           }
                         },
                         "required": [
@@ -6063,7 +6074,8 @@
                           "expiresAt",
                           "revokedAt",
                           "revokedBy",
-                          "revocationReason"
+                          "revocationReason",
+                          "impersonatorSessionId"
                         ]
                       }
                     },

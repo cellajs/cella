@@ -33,12 +33,12 @@ if (!owner) {
 }
 
 const hours = Number(hoursArg ?? 24);
-const secret = hashToken(nanoid(40));
-const sessionId = generateId();
+// The cookie carries the token, the row only its hash, as a sign-in stores them.
+const sessionToken = nanoid(40);
 
 await db.insert(sessionsTable).values({
-  id: sessionId,
-  secret,
+  id: generateId(),
+  secret: hashToken(sessionToken),
   userId: owner.userId,
   type: 'regular',
   authStrategy: 'magic',
@@ -46,7 +46,7 @@ await db.insert(sessionsTable).values({
   expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),
 });
 
-const value = encodeURIComponent(sealAuthCookie('session', `${secret}.${sessionId}.`, hours * 60 * 60));
+const value = encodeURIComponent(sealAuthCookie('session', sessionToken, hours * 60 * 60));
 console.info(`${authCookieName('session')}=${value}`);
 console.info(`\ncurl ${appConfig.backendUrl}/me -H 'cookie: ${authCookieName('session')}=${value}'`);
 process.exit(0);

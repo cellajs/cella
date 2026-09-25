@@ -7,7 +7,7 @@ import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type TokenRecord, tokenColumns } from '#/modules/auth/tokens/tokens-queries';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
@@ -137,13 +137,10 @@ const expired = (token: TokenRecord) =>
 const refuseOtherAccount = async (ctx: Context<Env>, token: TokenRecord) => {
   if (token.type === 'invitation' && !token.userId) return;
 
-  const sessionToken = await getParsedSessionCookie(ctx).then(
-    (cookie) => cookie.sessionToken,
-    () => null,
-  );
-  if (!sessionToken) return;
+  const signedIn = await resolveSession(ctx).catch(() => null);
+  if (!signedIn) return;
 
-  const { user } = await validateSession(sessionToken);
+  const { user } = signedIn;
   const ownerId = token.userId ?? (await findUserByEmail({ var: { db: baseDb } }, { email: token.email }))?.id;
   if (ownerId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
 };

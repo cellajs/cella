@@ -6,7 +6,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -623,7 +623,7 @@ describe('OAuth Authentication', async () => {
 
     /** Opens the verification link in a signed-out browser, which keeps its single-use cookie. */
     const openVerificationLink = async (rawToken: string) => {
-      vi.mocked(getParsedSessionCookie).mockRejectedValueOnce(new Error('no session'));
+      vi.mocked(resolveSession).mockRejectedValueOnce(new Error('no session'));
       return call(invokeToken, { path: { type: 'oauth-verification', token: rawToken }, headers: defaultHeaders });
     };
 

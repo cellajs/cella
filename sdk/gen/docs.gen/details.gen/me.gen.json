@@ -726,6 +726,11 @@
                       null
                     ]
                   },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
                   "isCurrent": { "type": "boolean", "required": true },
                   "isNewDevice": {
                     "type": "boolean",
@@ -796,6 +801,7 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
+              "impersonatorSessionId": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -1165,6 +1171,11 @@
                       "impersonation_stopped",
                       null
                     ]
+                  },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
                   }
                 }
               }

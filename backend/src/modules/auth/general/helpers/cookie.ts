@@ -25,6 +25,7 @@ const prefix = secure ? ('host' as const) : undefined;
 export type CookieName =
   | TokenType
   | 'session'
+  | 'impersonation'
   | 'device-id'
   | 'totp-challenge'
   | 'passkey-challenge'
@@ -99,12 +100,12 @@ export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content
 };
 
 /** Reads an auth cookie's content; a missing, forged, transplanted or expired value reads as undefined. */
-export const getAuthCookie = async (ctx: Context<Env>, name: CookieName) => {
+export const getAuthCookie = async (ctx: Context, name: CookieName) => {
   const sealed = getCookie(ctx, versionedCookieName(name), prefix);
   return sealed ? openAuthCookie(name, sealed) : undefined;
 };
 
-export const deleteAuthCookie = (ctx: Context<Env>, name: CookieName) => {
+export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
   // Must mirror the set attributes (prefix implies Path=/, Secure, no Domain), or the browser keeps the original cookie.
   return deleteCookie(ctx, versionedCookieName(name), { path: '/', secure, prefix });
 };

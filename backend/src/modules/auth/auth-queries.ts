@@ -1,7 +1,6 @@
-import { and, desc, eq, getColumns, isNull } from 'drizzle-orm';
+import { and, eq, getColumns, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -59,22 +58,6 @@ interface InsertTotpOpts {
 export const insertTotp = async (ctx: DbContext, { userId, secret, lastUsedStep }: InsertTotpOpts) => {
   const { db } = ctx.var;
   return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret), lastUsedStep });
-};
-
-interface FindLatestSessionByUserOpts {
-  userId: string;
-}
-
-/** The user's newest session that is not revoked: what stopping an impersonation hands the admin's browser back to. */
-export const findLatestSessionByUser = async (ctx: DbContext, { userId }: FindLatestSessionByUserOpts) => {
-  const { db } = ctx.var;
-  const [session] = await db
-    .select()
-    .from(sessionsTable)
-    .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt)))
-    .orderBy(desc(sessionsTable.expiresAt))
-    .limit(1);
-  return session;
 };
 
 interface InsertPasskeyOpts {

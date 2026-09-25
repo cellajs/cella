@@ -1,23 +1,16 @@
 import { createHmac } from 'node:crypto';
-import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMe } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestSession, createTestUser } from '../helpers';
+import { authCookie, createTestSession, createTestUser, insertTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 
-/** A live session's cookie content, `<secret hash>.<session id>.`, read from its row so no cookie format is assumed. */
-const sessionContentFor = async (user: { id: string }) => {
-  await createTestSession(user);
-  const [row] = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id));
-  return `${row.secret}.${row.id}.`;
-};
+/** A live session's cookie content: its random token. */
+const sessionContentFor = async (user: { id: string }) => (await insertTestSession(user)).token;
 
 /**
  * Every mode signs its cookies, and the signature covers the cookie's name and expiry. A cookie the server did not
@@ -52,7 +45,7 @@ describe('cookie integrity', async () => {
     const user = await createTestUser(`cookie-${nanoid(6)}@security-test.com`.toLowerCase());
     const content = await sessionContentFor(user);
 
-    // A lifetime taken from a stored expiry (as when stopping an impersonation) is measured in milliseconds.
+    // A lifetime taken from a stored expiry is measured in milliseconds.
     const { response } = await meWith(authCookie('session', content, 3599.5));
     expect(response.status).toBe(200);
   });

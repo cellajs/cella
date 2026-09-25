@@ -1,30 +1,30 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
+import { baseDb } from '#/db/db';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
-import { findLatestSessionByUser } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { readSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { invokeToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -103,6 +103,9 @@ app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const { targetUserId } = ctx.req.valid('json');
 
+  // An impersonation is layered on the admin's own session, never on another impersonation.
+  if (ctx.var.session.type === 'impersonation') throw new AppError(400, 'invalid_request', 'warn');
+
   const user = await findUserById(ctx, { id: targetUserId });
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
@@ -117,31 +120,29 @@ app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
-  const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
-  const { session } = await validateSession(sessionToken);
+  // userGuard read an impersonation only from its own cookie, on top of the admin session this browser holds.
+  const { session } = ctx.var;
+  if (session.type !== 'impersonation' || !session.impersonatorSessionId) {
+    throw new AppError(400, 'invalid_request', 'warn');
+  }
 
-  // Only an impersonation session stops: it ends here, and the browser returns to the admin's own session.
-  if (!adminUserId || session.type !== 'impersonation') throw new AppError(400, 'invalid_request', 'error');
+  const [admin] = await baseDb
+    .select({ userId: sessionsTable.userId })
+    .from(sessionsTable)
+    .where(eq(sessionsTable.id, session.impersonatorSessionId));
+  if (!admin) throw new AppError(401, 'unauthorized', 'warn');
 
   await endSessions(ctx, {
     userId: session.userId,
     sessionIds: [session.id],
     reason: 'impersonation_stopped',
-    by: adminUserId,
+    by: admin.userId,
   });
 
-  const adminsLastSession = await findLatestSessionByUser(ctx, { userId: adminUserId });
+  // The admin's session cookie never left this browser: without the impersonation cookie it authenticates again.
+  deleteAuthCookie(ctx, 'impersonation');
 
-  if (!adminsLastSession || isExpiredDate(adminsLastSession.expiresAt)) {
-    throw new AppError(401, 'unauthorized', 'warn');
-  }
-
-  const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
-  const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
-
-  await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
-
-  log.info('Stopped impersonation', { adminId: adminUserId, targetUserId: session.userId });
+  log.info('Stopped impersonation', { adminId: admin.userId, targetUserId: session.userId });
 
   return ctx.body(null, 204);
 });
@@ -166,8 +167,14 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
     if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
   }
 
-  const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
-  const { session: currentSession } = await validateSession(sessionToken);
+  // The browser's session cookie goes, and an impersonation cookie layered on it.
+  const sessionToken = await getAuthCookie(ctx, 'session');
+  deleteAuthCookie(ctx, 'session');
+  if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
+  if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
+
+  const { session: currentSession } = await readSession(sessionToken);
+  if (currentSession.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
 
   await endSessions(ctx, {
     userId: currentSession.userId,

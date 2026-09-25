@@ -2,6 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import type { AccessScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
+import type { SessionFacts } from '#/modules/auth/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';
@@ -76,7 +77,8 @@ export type Env = {
     organizationId: string;
     /** User-only sugar for `actor.bindings`, with the inviter's id; a service actor has no memberships. */
     memberships: (MembershipBaseModel & { createdBy: string | null })[];
-    sessionToken: string;
+    /** The authenticated session's facts: its type, how it was proven and when (`userGuard` only). */
+    session: SessionFacts;
     /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */
     sessionId: string;
     requestId: string;

@@ -1,15 +1,13 @@
 import { eq } from 'drizzle-orm';
-import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { authCookieName, type CookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie } from '../helpers';
+import { insertTestSession } from '../helpers';
 
 export interface TestSession {
   id: string;
@@ -23,36 +21,70 @@ export const asSession = (id: string, cookie: string): TestSession => ({
   headers: { ...defaultHeaders, Cookie: cookie },
 });
 
-/** A live session row and the signed cookie that presents it; `ageMs` backdates its creation. */
+/** A live session row and the signed cookie that presents it; the options are `insertTestSession`'s. */
 export async function insertSession(
   user: { id: string },
-  { type = 'regular', ageMs = 0 }: { type?: SessionTypes; ageMs?: number } = {},
+  opts: { type?: SessionTypes; ageMs?: number; expiresInMs?: number } = {},
 ): Promise<TestSession> {
-  const secret = hashToken(nanoid(40));
-  const id = generateId();
-  await db.insert(sessionsTable).values({
-    id,
-    secret,
-    userId: user.id,
-    type,
-    authStrategy: 'passkey',
-    createdAt: new Date(Date.now() - ageMs).toISOString(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  });
-  return asSession(id, authCookie('session', `${secret}.${id}.`, 7 * 24 * 60 * 60));
+  const { id, cookie } = await insertTestSession(user, opts);
+  return asSession(id, cookie);
 }
 
-/** The session a response set: the last non-empty session cookie among its Set-Cookie lines. */
-export function sessionSetBy(response: Response): TestSession {
-  const name = `${authCookieName('session')}=`;
+/** The session behind a cookie's token: a row stores the token's hash only. */
+const sessionIdFor = async (token: string) => {
+  const [row] = await db
+    .select({ id: sessionsTable.id })
+    .from(sessionsTable)
+    .where(eq(sessionsTable.secret, hashToken(token)));
+  if (!row) throw new Error('No session stores this token');
+  return row.id;
+};
+
+/** The token inside a signed cookie pair: the sealed value is `<token>.<expiresAt>.<mac>`. */
+const tokenOf = (pair: string) => decodeURIComponent(pair.slice(pair.indexOf('=') + 1)).split('.')[0];
+
+/** The last non-empty `name` cookie a response set, as a `Cookie` pair. */
+const setCookiePair = (response: Response, name: CookieName) => {
+  const prefix = `${authCookieName(name)}=`;
   const pair = response.headers
     .getSetCookie()
     .map((line) => line.split(';')[0])
-    .filter((value) => value.startsWith(name) && value.length > name.length)
+    .filter((value) => value.startsWith(prefix) && value.length > prefix.length)
     .at(-1);
-  if (!pair) throw new Error('The response set no session cookie');
-  // The sealed value starts with `<secret>.<sessionId>`.
-  return asSession(decodeURIComponent(pair.slice(name.length)).split('.')[1], pair);
+  if (!pair) throw new Error(`The response set no ${name} cookie`);
+  return pair;
+};
+
+/** The session a response set, as the browser then presents it. */
+export async function sessionSetBy(response: Response): Promise<TestSession> {
+  const pair = setCookiePair(response, 'session');
+  return asSession(await sessionIdFor(tokenOf(pair)), pair);
+}
+
+/** The impersonation a response set, presented as the browser does: on top of the admin session it holds. */
+export async function impersonationSetBy(response: Response, admin: TestSession): Promise<TestSession> {
+  const pair = setCookiePair(response, 'impersonation');
+  return asSession(await sessionIdFor(tokenOf(pair)), `${admin.cookie}; ${pair}`);
+}
+
+/**
+ * The `Cookie` header a browser sends after a response: its Set-Cookie lines replace pairs of the same name, and an
+ * emptied value removes the pair.
+ */
+export function cookiesAfter(cookieHeader: string, response: Response): string {
+  const jar = new Map(
+    cookieHeader
+      .split('; ')
+      .filter(Boolean)
+      .map((pair) => [pair.slice(0, pair.indexOf('=')), pair] as const),
+  );
+  for (const line of response.headers.getSetCookie()) {
+    const pair = line.split(';')[0];
+    const name = pair.slice(0, pair.indexOf('='));
+    if (pair.length > name.length + 1) jar.set(name, pair);
+    else jar.delete(name);
+  }
+  return [...jar.values()].join('; ');
 }
 
 export const sessionRow = async (id: string) =>

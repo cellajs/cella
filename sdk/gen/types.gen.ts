@@ -334,6 +334,7 @@ export type MeAuthData = {
       | 'replaced'
       | 'impersonation_stopped'
       | null;
+    impersonatorSessionId: string | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -2750,6 +2751,7 @@ export type RevokeMySessionsResponses = {
         | 'replaced'
         | 'impersonation_stopped'
         | null;
+      impersonatorSessionId: string | null;
     }>;
     /**
      * Identifiers of items that could not be processed

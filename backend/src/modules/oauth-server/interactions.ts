@@ -5,7 +5,7 @@ import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { appErrorHandler } from '#/lib/error';
-import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
@@ -111,9 +111,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
 
 async function sessionUser(c: Context<InteractionEnv>) {
   try {
-    // The cookie parser reads headers only, which this context shares with the API's.
-    const { sessionToken } = await getParsedSessionCookie(c as never);
-    const { user } = await validateSession(sessionToken);
+    const { user } = await resolveSession(c);
     return user;
   } catch {
     return null;

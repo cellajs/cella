@@ -41,12 +41,6 @@ export const validTempIdSchema = z
 
 export const cookieSchema = z.string().max(maxLength.field);
 
-export const sessionCookieSchema = z.object({
-  sessionToken: z.string().max(maxLength.field),
-  sessionId: z.string().max(maxLength.id),
-  adminUserId: z.string().max(maxLength.id).optional(),
-});
-
 export const languageSchema = z.enum(appConfig.languages);
 
 export const entityIdParamSchema = z.object({ id: validIdSchema });
