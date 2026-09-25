@@ -1360,6 +1360,71 @@
    ],
    "requires": [],
    "summary": "createAttachments refuses a key outside the organization's upload prefix (<organizationId>/…) or a bucket other than the app's own for the row's visibility, getPresignedUrls rejects stored rows that fail the same check, and getUploadToken refuses an organization the user is not a member of. Apps on the template upload flow are unaffected; apps with a custom Transloadit path, older rows or tests that create attachments with made-up buckets adapt them."
+  },
+  {
+   "id": "20260925T1750-signed-cookies",
+   "version": "next",
+   "title": "Auth cookies are signed in every mode",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts",
+    "bench/src"
+   ],
+   "requires": [],
+   "summary": "Every auth cookie is sealed as <content>.<expiresAt>.<mac> with the MAC over the versioned name and expiry, in every mode; COOKIE_SECRET may be a comma-separated list (first signs, any verifies); cookieVersion is v3. Tests build cookies with authCookie() from backend/tests/helpers.ts, and pnpm --filter backend session:mint <email> replaces hand-built dev cookies."
+  },
+  {
+   "id": "20260925T1750-auth-flow-rules",
+   "version": "next",
+   "title": "Magic-link confirmation, MFA factor rules and strategy gating",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "A magic link opened outside the browser that asked for it signs in only after a click on /auth/confirm-sign-in. Auth routes declare x-strategy and a switched-off method is refused before guards. MFA needs both a passkey and TOTP, and neither can be deleted while it is on. POST /auth/resend-invitation takes { tokenId } only and always answers 204."
+  },
+  {
+   "id": "20260925T1750-organization-keeps-admin",
+   "version": "next",
+   "title": "An organization always keeps an admin",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/scripts",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "A deferred constraint trigger (side-effect producer 10-membership-rules) refuses demoting, removing, leaving or deleting the account of an organization's last admin with 409 last_admin. Apps run pnpm --filter backend generate to get it, and test cleanups delete memberships and organizations in one transaction."
+  },
+  {
+   "id": "20260925T1750-input-and-infra-checks",
+   "version": "next",
+   "title": "Stricter URL, redirect and email checks; infra helpers moved",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/emails",
+    "frontend/src",
+    "infra",
+    "shared/src"
+   ],
+   "requires": [],
+   "summary": "Profile image URLs must be on the CDN origin exactly, redirect paths are validated after normalizing, email interpolations are HTML-escaped (plainText option for text parts), StaticDocumentBody, BlockNoteMinimalHtml and sanitizeUrl are removed, db-exposure-acl moved to infra/lib, parseBootPlanJson takes the plan path, and in-process infra tasks throw ExitCodeError."
   }
  ]
 }
