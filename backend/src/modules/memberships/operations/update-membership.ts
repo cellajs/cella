@@ -31,6 +31,12 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   }
 
+  // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
+  const setsPersonalView = archived !== undefined || muted !== undefined || displayOrder !== undefined;
+  if (setsPersonalView && membershipToUpdate.userId !== actorId) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { membership: membershipId } });
+  }
+
   const updatedType = membershipToUpdate.channelType;
 
   // The new role must exist in the context's vocabulary (e.g. no org 'member' on a course)
