@@ -1,11 +1,17 @@
+// @vitest-environment jsdom
+import { act, createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 class MockProvider {
   params: Record<string, string>;
+  shouldConnect = true;
+  synced = false;
   private listeners = new Map<string, Set<(...args: unknown[]) => void>>();
 
   constructor(_url: string, _room: string, _doc: unknown, opts: { params: Record<string, string> }) {
     this.params = { ...opts.params };
+    providers.push(this);
   }
 
   on(event: string, cb: (...args: unknown[]) => void) {
@@ -19,11 +25,19 @@ class MockProvider {
     for (const cb of this.listeners.get(event) ?? []) cb(...args);
   }
 
-  connect = vi.fn();
-  disconnect = vi.fn();
+  connect = vi.fn(() => {
+    this.shouldConnect = true;
+  });
+  disconnect = vi.fn(() => {
+    this.shouldConnect = false;
+  });
   destroy = vi.fn();
-  synced = false;
 }
+const providers: MockProvider[] = [];
+
+let onlineListener: ((online: boolean) => void) | undefined;
+const warning = vi.fn();
+const invalidateQueries = vi.fn();
 
 vi.mock('y-websocket', () => ({ WebsocketProvider: MockProvider }));
 vi.mock('yjs', () => {
@@ -33,224 +47,156 @@ vi.mock('yjs', () => {
   }
   return { Doc, default: { Doc } };
 });
-vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: vi.fn() }));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (...args: unknown[]) => warning(...args) } }));
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
-vi.mock('shared', () => ({
-  appConfig: { yjsUrl: 'http://localhost:1234' },
-  toWsUrl: (u: string) => u.replace(/^http/, 'ws'),
-}));
+vi.mock('shared', () => ({ appConfig: { yjsUrl: 'http://localhost:1234' } }));
 vi.mock('@tanstack/react-query', () => ({
-  onlineManager: { isOnline: () => true, subscribe: () => () => {} },
+  onlineManager: {
+    isOnline: () => true,
+    subscribe: (listener: (online: boolean) => void) => {
+      onlineListener = listener;
+      return () => {};
+    },
+  },
 }));
+vi.mock('~/query/query-client', () => ({
+  queryClient: { invalidateQueries: (...args: unknown[]) => invalidateQueries(...args) },
+}));
+vi.mock('~/modules/common/blocknote/query', () => ({ yjsTokenKeys: { entity: (...key: unknown[]) => key } }));
+vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 
-// ── Module under test (imported after mocks) ────────────────────────────────
-
 const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const TEST_TOKEN_KEY = yjsTokenKey('attachment', 'tenant-1');
+type Connection = ReturnType<typeof useYjsConnection>;
 
-/** Create a provider and wire the store→params subscription (mirrors acquireConnection). */
-function createProviderWithTokenSync(token: string) {
-  useUserStore.setState({ yjsTokens: { [TEST_TOKEN_KEY]: token } });
+let root: Root | undefined;
+let counter = 0;
 
-  const provider = new MockProvider(
-    'ws://localhost:1234',
-    'test-session',
-    {},
-    {
-      params: { token, entityType: 'attachment', tenantId: 'tenant-1' },
-    },
-  );
-
-  const unsubToken = useUserStore.subscribe((state) => {
-    const newToken = state.yjsTokens[TEST_TOKEN_KEY];
-    if (newToken && provider.params) {
-      provider.params.token = newToken;
-    }
-  });
-
-  return { provider, unsubToken };
-}
-
-/** Wire close-code handler (mirrors acquireConnection logic). */
-function wireCloseHandler(provider: MockProvider) {
-  const handleConnectionClose = (event: { code: number } | null) => {
-    if (!event || event.code === 1000) return;
-    if (event.code === 4001) return; // Recoverable, let provider retry
-    provider.disconnect();
+/** Mounts one editor's connection and returns a reader for its latest hook state and its provider. */
+async function mountConnection() {
+  const entityId = `doc-${++counter}`;
+  const tokenKey = yjsTokenKey('attachment', entityId);
+  useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
+  let latest: Connection = null;
+  const Harness = () => {
+    latest = useYjsConnection(entityId, 'attachment', 'tenant-1');
+    return null;
   };
-  provider.on('connection-close', handleConnectionClose as (...args: unknown[]) => void);
+  const container = document.createElement('div');
+  root = createRoot(container);
+  await act(async () => root?.render(createElement(Harness)));
+  const provider = providers.at(-1);
+  if (!provider) throw new Error('no provider created');
+  return { provider, tokenKey, state: () => latest };
 }
 
-// ── Tests ───────────────────────────────────────────────────────────────────
+const close = async (provider: MockProvider, code: number) => {
+  await act(async () => provider.emit('connection-close', { code, reason: '' }, provider));
+};
 
-describe('yjs-connections token refresh', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useUserStore.setState({ yjsTokens: { [TEST_TOKEN_KEY]: 'initial-token' } });
+beforeEach(() => {
+  warning.mockClear();
+  invalidateQueries.mockClear();
+});
+
+afterEach(async () => {
+  await act(async () => root?.unmount());
+  root = undefined;
+});
+
+describe('yjs connection: transient closes', () => {
+  it('must not stop syncing via a server restart, a dropped connection or an authorization outage', async () => {
+    const { provider, tokenKey, state } = await mountConnection();
+
+    for (const code of [1001, 1006, 4503]) await close(provider, code);
+
+    // y-websocket backs off and resyncs with the same token.
+    expect(provider.disconnect).not.toHaveBeenCalled();
+    expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
+    expect(state()?.stopped).toBe(false);
+    expect(warning).not.toHaveBeenCalled();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should update provider.params.token when store token changes', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('token-v1');
-    expect(provider.params.token).toBe('token-v1');
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'token-v2');
+  it('keeps the provider on the latest token, so a reconnect uses it', async () => {
+    const { provider, tokenKey } = await mountConnection();
+    await act(async () => useUserStore.getState().setYjsToken(tokenKey, 'token-v2'));
     expect(provider.params.token).toBe('token-v2');
-
-    unsubToken();
-  });
-
-  it('should update provider.params.token across multiple refreshes', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('token-v1');
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'token-v2');
-    expect(provider.params.token).toBe('token-v2');
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'token-v3');
-    expect(provider.params.token).toBe('token-v3');
-
-    unsubToken();
-  });
-
-  it('should not update provider.params.token when token is set to null', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('token-v1');
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, null);
-    expect(provider.params.token).toBe('token-v1');
-
-    unsubToken();
-  });
-
-  it('should stop updating after unsubscribe', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('token-v1');
-    unsubToken();
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'token-v2');
-    expect(provider.params.token).toBe('token-v1');
   });
 });
 
-describe('yjs-connections close code handling', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useUserStore.setState({ yjsTokens: { [TEST_TOKEN_KEY]: 'initial-token' } });
+describe('yjs connection: final closes', () => {
+  it('must not keep accepting edits once the relay denies access (4003): the connection stops for good', async () => {
+    const { provider, state } = await mountConnection();
+
+    await close(provider, 4003);
+
+    expect(provider.disconnect).toHaveBeenCalledTimes(1);
+    expect(state()?.stopped).toBe(true);
+    expect(warning).toHaveBeenCalledWith('error:no_permission_for_sync.text');
   });
 
-  it('should NOT disconnect provider on TOKEN_INVALID (4001)', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
-
-    provider.emit('connection-close', { code: 4001, reason: 'Invalid or expired token' });
-    expect(provider.disconnect).not.toHaveBeenCalled();
+  it('must not keep accepting edits once the relay refuses the document (4400)', async () => {
+    const { provider, state } = await mountConnection();
+    await close(provider, 4400);
+    expect(provider.disconnect).toHaveBeenCalledTimes(1);
+    expect(state()?.stopped).toBe(true);
   });
 
-  it('should disconnect provider on ACCESS_DENIED (4003)', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
+  it('must not keep an editor editable after the backend withdraws its token, even while offline', async () => {
+    const { provider, tokenKey, state } = await mountConnection();
+    await act(async () => onlineListener?.(false));
 
-    provider.emit('connection-close', { code: 4003, reason: 'Access denied' });
-    expect(provider.disconnect).toHaveBeenCalledOnce();
+    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    expect(state()?.stopped).toBe(true);
+
+    provider.connect.mockClear();
+    await act(async () => onlineListener?.(true));
+    expect(provider.connect).not.toHaveBeenCalled();
   });
 
-  it('should disconnect provider on BACKEND_UNAVAILABLE (4503)', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
+  it('must not reconnect a stopped connection when the browser comes back online', async () => {
+    const { provider } = await mountConnection();
+    await close(provider, 4003);
+    provider.connect.mockClear();
 
-    provider.emit('connection-close', { code: 4503, reason: 'Backend unavailable' });
-    expect(provider.disconnect).toHaveBeenCalledOnce();
-  });
-
-  it('should NOT disconnect on normal close (1000)', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
-
-    provider.emit('connection-close', { code: 1000, reason: 'Normal closure' });
-    expect(provider.disconnect).not.toHaveBeenCalled();
-  });
-
-  it('should allow retry with fresh token after 4001', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('expired-token');
-    wireCloseHandler(provider);
-
-    // Server rejects with 4001
-    provider.emit('connection-close', { code: 4001, reason: 'Invalid or expired token' });
-    expect(provider.disconnect).not.toHaveBeenCalled();
-
-    // Token fetcher provides fresh token
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'fresh-token');
-    expect(provider.params.token).toBe('fresh-token');
-
-    unsubToken();
+    await act(async () => onlineListener?.(true));
+    expect(provider.connect).not.toHaveBeenCalled();
   });
 });
 
-describe('yjs-connections edge cases', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    useUserStore.setState({ yjsTokens: { [TEST_TOKEN_KEY]: 'initial-token' } });
-  });
+describe('yjs connection: token refusals', () => {
+  /** The relay closes an unusable token right after the handshake: the socket opens, then closes with 4001. */
+  const refuseToken = async (provider: MockProvider) => {
+    await act(async () => provider.emit('status', { status: 'connected' }));
+    await close(provider, 4001);
+  };
 
-  it('should not crash on null close event', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
+  it('must not retry forever via a token the relay keeps refusing: it stops after five refusals', async () => {
+    const { provider, state } = await mountConnection();
 
-    expect(() => provider.emit('connection-close', null)).not.toThrow();
+    for (let i = 0; i < 4; i++) await refuseToken(provider);
+    // Each refusal refetches the token and lets y-websocket reconnect.
+    expect(invalidateQueries).toHaveBeenCalledTimes(4);
     expect(provider.disconnect).not.toHaveBeenCalled();
+
+    await refuseToken(provider);
+    expect(provider.disconnect).toHaveBeenCalledTimes(1);
+    expect(state()?.stopped).toBe(true);
+    expect(warning).toHaveBeenCalledWith('error:sync_token_expired.text');
   });
 
-  it('should not crash on close event missing code property', () => {
-    const { provider } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
+  it('a synced connection resets the count, so routine expiry closes never stop it (positive control)', async () => {
+    const { provider, state } = await mountConnection();
 
-    expect(() => provider.emit('connection-close', {})).not.toThrow();
-    expect(() => provider.emit('connection-close', { reason: 'no code' })).not.toThrow();
-  });
-
-  it('should stay stable under rapid 4001 spam', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('token-v1');
-    wireCloseHandler(provider);
-
-    for (let i = 0; i < 50; i++) {
-      provider.emit('connection-close', { code: 4001, reason: 'Invalid or expired token' });
+    for (let i = 0; i < 8; i++) {
+      await refuseToken(provider);
+      await act(async () => provider.emit('sync', true));
     }
-
     expect(provider.disconnect).not.toHaveBeenCalled();
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, 'post-spam-token');
-    expect(provider.params.token).toBe('post-spam-token');
-
-    unsubToken();
-  });
-
-  it('should not accept empty string as a valid token', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('valid-token');
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, '' as unknown as string);
-    expect(provider.params.token).toBe('valid-token');
-
-    unsubToken();
-  });
-
-  it('should pass forged tokens through to provider params (server-side HMAC is the real gate)', () => {
-    const { provider, unsubToken } = createProviderWithTokenSync('valid-token');
-
-    // A forged token will be pushed to params; the frontend has no way to verify HMAC.
-    // Defense-in-depth: the yjs server's verifyToken() rejects it (see yjs/src/tests/auth.test.ts).
-    const forgedPayload = Buffer.from(JSON.stringify({ userId: 'attacker', exp: Date.now() + 99999999 })).toString(
-      'base64url',
-    );
-    const forgedToken = `${forgedPayload}.fakesig123456789`;
-
-    useUserStore.getState().setYjsToken(TEST_TOKEN_KEY, forgedToken);
-    expect(provider.params.token).toBe(forgedToken);
-
-    unsubToken();
+    expect(state()?.stopped).toBe(false);
   });
 });

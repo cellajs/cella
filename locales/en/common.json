@@ -64,6 +64,7 @@
   "clear_selection": "Clear selection",
   "click": "Click",
   "close": "Close",
+  "collaboration_stopped.text": "Collaborative editing stopped, so this editor is read-only. Close and reopen it to edit again.",
   "collapse": "Collapse",
   "color": "Color",
   "columns_view": "Column view",

@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { appConfig, type ProductEntityType } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
@@ -37,7 +38,11 @@ type CollaborativeBlockNoteProps = PassthroughProps & {
 /** How long the token fetch, connect and first sync may take before the editor opens standalone. */
 const SYNC_TIMEOUT_MS = 5_000;
 
-/** BlockNote host for an entity description: owns the token, online and permission gates, the relay connection, and the standalone fallback. */
+/**
+ * BlockNote host for an entity description: owns the token, online and permission gates, the relay connection, and the
+ * standalone fallback. A collaborative editor whose connection the relay ended for good turns read-only with a notice:
+ * saving its document through the standalone path would overwrite the collaborators' latest edits it never received.
+ */
 export function CollaborativeBlockNote({
   entityType,
   entityId,
@@ -49,6 +54,7 @@ export function CollaborativeBlockNote({
   waitingFallback,
   ...blockNoteProps
 }: CollaborativeBlockNoteProps) {
+  const { t } = useTranslation();
   const user = useCurrentUser();
 
   const isOnline = useOnlineManager();
@@ -96,6 +102,8 @@ export function CollaborativeBlockNote({
   const committed = committedRef.current;
   const waitingForSync = committed === null;
   const collaborative = committed === 'collab';
+  // Nothing typed after the relay ended the session could reach it, so the editor stops taking edits.
+  const collaborationStopped = collaborative && (yjsConn?.stopped ?? false);
 
   // Stable random color for cursor labels
   const userColorRef = useRef(getRandomColor());
@@ -116,24 +124,32 @@ export function CollaborativeBlockNote({
   const uploadHostProps = blockNoteProps.baseFilePanelProps;
 
   const editor = (
-    <BlockNote
-      // Stable for this mount; the key still guards against reusing a standalone editor instance as collaborative.
-      key={collaborative ? 'collab' : 'solo'}
-      id={`blocknote-${entityId}`}
-      defaultValue={description ?? undefined}
-      updateData={(blocks) => void updateData(blocks, collaborative)}
-      collaboration={collaborationBundle}
-      onBeforeLoad={
-        collaborative
-          ? undefined
-          : (editor) => {
-              const strBlocks = JSON.stringify(editor.document);
-              if (description === null || strBlocks === description) return;
-              void updateData(strBlocks, collaborative);
-            }
-      }
-      {...blockNoteProps}
-    />
+    <>
+      {collaborationStopped && (
+        <p role="status" className="mb-2 text-muted-foreground text-sm">
+          {t('c:collaboration_stopped.text')}
+        </p>
+      )}
+      <BlockNote
+        // Stable for this mount; the key still guards against reusing a standalone editor instance as collaborative.
+        key={collaborative ? 'collab' : 'solo'}
+        id={`blocknote-${entityId}`}
+        defaultValue={description ?? undefined}
+        updateData={(blocks) => void updateData(blocks, collaborative)}
+        collaboration={collaborationBundle}
+        onBeforeLoad={
+          collaborative
+            ? undefined
+            : (editor) => {
+                const strBlocks = JSON.stringify(editor.document);
+                if (description === null || strBlocks === description) return;
+                void updateData(strBlocks, collaborative);
+              }
+        }
+        {...blockNoteProps}
+        editable={blockNoteProps.editable !== false && !collaborationStopped}
+      />
+    </>
   );
 
   // The upload dialog renders above the editor so it survives an editor remount.
