@@ -4,7 +4,7 @@ import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
@@ -69,8 +69,11 @@ describe('Attachment storage keys', async () => {
       headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
     });
 
+  // Attachments sit under RLS: arrange and assert on the admin connection so a runtime_role run sees every row.
+  const adminDb = getAdminDb('storage-keys test');
   const rowExists = async (id: string) =>
-    (await db.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id))).length > 0;
+    (await adminDb.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id)))
+      .length > 0;
 
   beforeAll(async () => {
     mockFetchRequest();
@@ -124,10 +127,12 @@ describe('Attachment storage keys', async () => {
     const id = generateId();
     expect((await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }))).response.status).toBe(201);
     // A row written before keys were checked: the presign boundary refuses it on its own.
-    await db
+    const planted = await adminDb
       .update(attachmentsTable)
       .set({ keys: { original: keyOf(victim, 'contract.pdf') } })
-      .where(eq(attachmentsTable.id, id));
+      .where(eq(attachmentsTable.id, id))
+      .returning({ id: attachmentsTable.id });
+    expect(planted).toHaveLength(1);
 
     const { data, response } = await presign(id);
     expect(response.status).toBe(200);
