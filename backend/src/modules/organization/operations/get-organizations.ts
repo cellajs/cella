@@ -29,12 +29,29 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
 
   // relatableGuard already verified shared org membership if relatableUserId is provided
   const targetUserId = relatableUserId ?? user.id;
+  // Another user's organizations are listed only where the caller is a member too; a system admin sees all of them.
+  const sharedWithCaller =
+    relatableUserId && relatableUserId !== user.id && !ctx.var.isSystemAdmin
+      ? [...new Set(memberships.map((m) => m.organizationId))]
+      : undefined;
 
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
   const includeMembers = include.includes('members');
 
-  const opts = { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts };
+  const opts = {
+    isSystemAdmin,
+    targetUserId,
+    organizationIds: sharedWithCaller,
+    q,
+    sort,
+    order,
+    offset,
+    limit,
+    excludeArchived,
+    role,
+    includeCounts,
+  };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
   // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:{role} counters.
