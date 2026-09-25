@@ -181,6 +181,9 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
     organizationId: ctx.get('organization')?.id,
   });
 
+  // Rate limiters classify the outcome by this status: the redirect below answers 302 whatever went wrong.
+  ctx.set('errorStatus', clientError.status);
+
   if (clientError.willRedirect) {
     const redirectUrl = new URL(clientError.meta?.errorPagePath || '/error', appConfig.frontendUrl);
     redirectUrl.searchParams.set('error', clientError.type);

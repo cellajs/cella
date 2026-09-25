@@ -83,6 +83,8 @@ export type Env = {
     db: DbOrTx;
     tenantId: string;
     tenant: TenantModel;
+    /** Status of the error `appErrorHandler` answered, also when it answered with a redirect; the rate limiters read it. */
+    errorStatus?: number;
   };
   Bindings: Bindings;
 };

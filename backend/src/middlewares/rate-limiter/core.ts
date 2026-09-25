@@ -171,9 +171,11 @@ export const rateLimiter = (
 
       await next();
 
-      const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
-      const isFail = config.failStatusCodes?.includes(ctx.res.status) ?? false;
-      const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
+      // An error answered with a redirect (token links, OAuth callbacks) responds 302; its own status is the outcome.
+      const status = ctx.var.errorStatus ?? ctx.res.status;
+      const isSuccess = config.successStatusCodes?.includes(status) ?? false;
+      const isFail = config.failStatusCodes?.includes(status) ?? false;
+      const isIgnored = config.ignoredStatusCodes?.includes(status) ?? false;
 
       if (isSuccess && !isIgnored) {
         if (mode === 'success') {
