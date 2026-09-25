@@ -1,5 +1,7 @@
 import { i18n } from '../../../../emails/i18n';
+import { accessForUserIds } from '../helpers/access-for-users';
 import { findChannelNames } from '../helpers/channel-names';
+import { findReadableSubjectIds } from '../helpers/readable-subjects';
 import { escapeString } from '../helpers/render-digest-html';
 import { findSubjectNames } from '../helpers/subject-names';
 import { findUndigestedNotifications } from '../notification-queries';
@@ -24,15 +26,21 @@ export interface DigestContent {
 
 /**
  * Assemble one user's digest for the window `[since, now)`, with lines in the recipient's
- * language.
+ * language. The runner bounds `since` (run-digest.ts).
  *
- * The window comes from the stored `lastDigestAt`, so a late or skipped run resumes exactly
- * where the previous one stopped; a fixed "now minus 24h" window would silently drop the gap.
- * Rows already emailed instantly are excluded, so a mention never arrives twice.
+ * Rows already emailed instantly are excluded, so a mention never arrives twice. So are rows of
+ * an organization the user left and rows whose subject the user may no longer read: the digest
+ * names only what the recipient can open.
  */
-export async function buildDigestForUser(userId: string, since: Date | null, lng: string): Promise<DigestContent> {
-  const rows = await findUndigestedNotifications(userId, since?.toISOString() ?? null, MAX_ROWS);
-  if (rows.length === 0) return { notificationIds: [], sections: [] };
+export async function buildDigestForUser(userId: string, since: Date, lng: string): Promise<DigestContent> {
+  const empty: DigestContent = { notificationIds: [], sections: [] };
+  const undigested = await findUndigestedNotifications(userId, since.toISOString(), MAX_ROWS);
+  const access = undigested.length ? (await accessForUserIds([userId])).get(userId) : undefined;
+  if (!access) return empty;
+
+  const readable = await findReadableSubjectIds(access, undigested);
+  const rows = undigested.filter((row) => readable.has(row.subjectId));
+  if (rows.length === 0) return empty;
 
   const contextNames = await findSubjectNames(rows.map((row) => ({ ...row, id: row.contextId })));
   const channelNames = await findChannelNames(rows.map((row) => row.channelId));

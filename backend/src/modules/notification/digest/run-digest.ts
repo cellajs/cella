@@ -14,6 +14,19 @@ const SEND_HOUR = 7;
 /** Weekday for weekly digests (1 = Monday … 5 = Friday), matching the legacy Friday cadence. */
 const WEEKLY_ISO_WEEKDAY = 5;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Where a recipient's digest window starts: at the stored `lastDigestAt`, so a late or skipped run resumes where the
+ * previous one stopped, but never further back than the cadence plus a day. A first digest, and the first after the
+ * digest was off, cover recent rows only, never the whole inbox.
+ */
+const windowStart = (recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date => {
+  const earliest = now.getTime() - (recipient.digest === 'weekly' ? 8 : 2) * DAY_MS;
+  const last = recipient.lastDigestAt ? new Date(recipient.lastDigestAt).getTime() : earliest;
+  return new Date(Math.max(last, earliest));
+};
+
 /**
  * One digest pass.
  *
@@ -40,8 +53,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
 
   for (const recipient of due) {
     try {
-      const since = recipient.lastDigestAt ? new Date(recipient.lastDigestAt) : null;
-      const content = await buildDigestForUser(recipient.userId, since, recipient.language);
+      const content = await buildDigestForUser(recipient.userId, windowStart(recipient, now), recipient.language);
 
       // Skip-if-empty: weekly is on by default, so silence must stay silent.
       if (content.sections.length === 0) {

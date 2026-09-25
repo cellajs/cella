@@ -1,6 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
+import { accessFrom } from '#/permissions/access';
 import { findChannelNames } from '../helpers/channel-names';
+import { findReadableSubjectIds } from '../helpers/readable-subjects';
 import { findSubjectNames } from '../helpers/subject-names';
 import { countUnreadByUser, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
 import type { notificationSchema } from '../notification-schema';
@@ -19,7 +21,8 @@ export interface GetNotificationsInput {
  *
  * Both travel together so the badge can never disagree with the list the user is looking at; the
  * client treats this response as the source of truth and any realtime signal only as a hint to
- * refetch it.
+ * refetch it. Rows of an organization the user left are gone from both, and a subject the user
+ * may no longer read keeps its row with empty names.
  */
 export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
@@ -29,10 +32,13 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     countUnreadByUser(ctx, userId),
   ]);
 
+  const readable = await findReadableSubjectIds(accessFrom(ctx), rows);
+  const readableRows = rows.filter((row) => readable.has(row.subjectId));
+
   const [actors, channelNames, subjectTitles] = await Promise.all([
     findUsersMinimal(rows.map((row) => row.actorId).filter((id): id is string => id !== null)),
-    findChannelNames(rows.map((row) => row.channelId)),
-    findSubjectNames(rows.map((row) => ({ ...row, id: row.subjectId }))),
+    findChannelNames(readableRows.map((row) => row.channelId)),
+    findSubjectNames(readableRows.map((row) => ({ ...row, id: row.subjectId }))),
   ]);
 
   const items: NotificationResponse[] = rows.map((row) => ({
@@ -48,7 +54,7 @@ export async function getNotificationsOp(ctx: UserContext, input: GetNotificatio
     tenantId: row.tenantId,
     actorId: row.actorId,
     actor: (row.actorId && actors.get(row.actorId)) || null,
-    channelName: channelNames.get(row.channelId) ?? '',
+    channelName: (readable.has(row.subjectId) && channelNames.get(row.channelId)) || '',
     subjectTitle: subjectTitles.get(row.subjectId) ?? '',
     readAt: row.readAt,
   }));

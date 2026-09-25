@@ -4,8 +4,10 @@ import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
 import { log } from '#/utils/logger';
 import { mentionEmail } from '../emails/mention-email';
+import { accessForUserIds } from '../helpers/access-for-users';
 import { buildUnsubscribeLink } from '../helpers/category-token';
 import { findChannelNames } from '../helpers/channel-names';
+import { findReadableSubjectIds } from '../helpers/readable-subjects';
 import { htmlToExcerpt } from '../helpers/render-digest-html';
 import { findPendingMentionEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
 import { getNotificationSource, loadSubjectPreview } from '../notification-sources';
@@ -19,8 +21,9 @@ const MAX_PER_RUN = 200;
 /**
  * Send instant emails for freshly created mention notifications.
  *
- * Only mentions mail instantly, and only when the recipient has not opted out. Everything mailed
- * here is stamped `emailedAt`, which is what keeps the digest from repeating it.
+ * Only mentions mail instantly, and only when the recipient has not opted out and may still read
+ * the subject: access can end between the fan-out and this pass. Everything mailed here is stamped
+ * `emailedAt`, which is what keeps the digest from repeating it.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
   const pending = await findPendingMentionEmails(organizationId, MAX_PER_RUN);
@@ -28,6 +31,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
 
   const recipients = await findVerifiedRecipients(pending.map((row) => row.userId));
   const byUser = new Map(recipients.map((row) => [row.id, row]));
+  const readableByUser = await findReadableByUser(pending);
 
   const actorNames = await findUserNames([
     ...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id))),
@@ -40,6 +44,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     const user = byUser.get(notification.userId);
     // No verified address: leave emailedAt null so the digest still reaches them in-app.
     if (!user) continue;
+    if (!readableByUser.get(notification.userId)?.has(notification.subjectId)) continue;
 
     const source = getNotificationSource(notification.entityType);
     if (!source) continue;
@@ -83,4 +88,15 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
 
   await stampEmailed(sent);
   log.info('Mention emails sent', { count: sent.length, organizationId });
+}
+
+/** Per recipient, the subjects of their pending mentions they may read now. */
+async function findReadableByUser(pending: Awaited<ReturnType<typeof findPendingMentionEmails>>) {
+  const accessByUser = await accessForUserIds(pending.map((row) => row.userId));
+  const readableByUser = new Map<string, Set<string>>();
+  for (const [userId, access] of accessByUser) {
+    const refs = pending.filter((row) => row.userId === userId);
+    readableByUser.set(userId, await findReadableSubjectIds(access, refs));
+  }
+  return readableByUser;
 }
