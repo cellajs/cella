@@ -1558,6 +1558,73 @@
    ],
    "requires": [],
    "summary": "verifyTotp accepts each code once (totps.last_used_step) and draws on a per-account failure budget; completeMfaChallenge is the only way out of an MFA challenge. Passkey challenges are single-use rows, credential ids are unique, and sign-in challenges carry no email. check-email answers { recognized }, true only for a browser that signed in to that address before, and POST /requests answers 204 to everyone."
+  },
+  {
+   "id": "20260925T2234-session-model-step-up",
+   "version": "next",
+   "title": "Session tokens stored hashed, impersonation on its own cookie, step-up for account security",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src",
+    "bench/src"
+   ],
+   "requires": [],
+   "summary": "The session cookie carries a random token and the database stores its hash; impersonation has its own cookie and sessions.impersonator_session_id, and ends with the admin's session or role. OAuth connect is pinned by a single-use oauth-connect token. Account-security routes need a stepped-up session (second factor, fresh sign-in or emailed link), and token policies declare replacement rules with a handler per link type."
+  },
+  {
+   "id": "20260925T2234-secret-scopes-relay",
+   "version": "next",
+   "title": "Secrets scoped to their consumers; a sturdier Yjs relay",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "yjs/src",
+    "frontend/src",
+    "infra"
+   ],
+   "requires": [],
+   "summary": "Runtime secrets live in folders named by their consumer set and VM principals read only their own; mode-bound secrets are optional in the env schema and read through modeSecret(). The relay refuses undecodable updates, survives resets during the upgrade, keeps updates through cleanup and relays presence only for a socket's own clients; the editor turns read-only when collaboration stops for good. Needs an infra Apply."
+  },
+  {
+   "id": "20260925T2234-uniform-refusals",
+   "version": "next",
+   "title": "One refusal for what the caller may not see; invitations reveal no accounts",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "tenantGuard answers one 403 for missing, inactive or inaccessible tenants and admits a creator only until the tenant has an organization; an unreadable product answers 404. Pending invitations show the invited address only, resend works by row id and rejections are final; notifications and digests follow current access; personal membership fields show on the caller's own row only; blob: keys are never signed."
+  },
+  {
+   "id": "20260925T2234-limits-logs-email-params",
+   "version": "next",
+   "title": "Burst-proof limits, query-free logs, hashed unsubscribe tokens, email param keys",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "shared/src",
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "Rate-limit budgets reserve before the handler and block in the database only, logs and spans keep a failed query's reason but never its SQL or parameters, and server messages show in development and test only. Unsubscribe tokens are stored hashed, email templates name params through param() with a per-send nonce, COOKIE_SECRET entries need 16 characters outside development, and clientCacheVersion is bumped."
   }
  ]
 }
