@@ -59,7 +59,8 @@ const cookieMac = (secret: string, versionedName: string, expiresAt: number, con
  */
 export const sealAuthCookie = (name: CookieName, content: string, maxAgeSeconds: number) => {
   const versionedName = versionedCookieName(name);
-  const expiresAt = Math.floor(Date.now() / 1000) + maxAgeSeconds;
+  // Whole seconds: the expiry sits between dots in the sealed value, so a fraction would read back as another number.
+  const expiresAt = Math.floor(Date.now() / 1000 + maxAgeSeconds);
   return `${content}.${expiresAt}.${cookieMac(cookieSecrets[0], versionedName, expiresAt, content)}`;
 };
 
@@ -84,15 +85,17 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
 
 /** Sets a signed auth cookie; SameSite per `isLaxCookie`. */
 export const setAuthCookie = async (ctx: Context<Env>, name: CookieName, content: string, timeSpan: TimeSpan) => {
+  // A lifetime measured from a stored expiry has milliseconds; the cookie and its seal both take whole seconds.
+  const maxAge = Math.floor(timeSpan.seconds());
   const options = {
     secure,
     path: '/',
     prefix,
     httpOnly: true,
     sameSite: isLaxCookie(name) ? 'lax' : 'strict',
-    maxAge: timeSpan.seconds(),
+    maxAge,
   } satisfies CookieOptions;
-  setCookie(ctx, versionedCookieName(name), sealAuthCookie(name, content, timeSpan.seconds()), options);
+  setCookie(ctx, versionedCookieName(name), sealAuthCookie(name, content, maxAge), options);
 };
 
 /** Reads an auth cookie's content; a missing, forged, transplanted or expired value reads as undefined. */

@@ -48,6 +48,15 @@ describe('cookie integrity', async () => {
     expect(response.status).toBe(401);
   });
 
+  it('reads back a cookie sealed with a max age in fractions of a second (positive control)', async () => {
+    const user = await createTestUser(`cookie-${nanoid(6)}@security-test.com`.toLowerCase());
+    const content = await sessionContentFor(user);
+
+    // A lifetime taken from a stored expiry (as when stopping an impersonation) is measured in milliseconds.
+    const { response } = await meWith(authCookie('session', content, 3599.5));
+    expect(response.status).toBe(200);
+  });
+
   it('must not authenticate a session cookie past its max age', async () => {
     const user = await createTestUser(`cookie-${nanoid(6)}@security-test.com`.toLowerCase());
     const content = await sessionContentFor(user);
