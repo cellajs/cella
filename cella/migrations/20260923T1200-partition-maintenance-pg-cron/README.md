@@ -26,10 +26,11 @@ No script: manual.
 ## Manual steps
 
 1. `pnpm docker:test:reset`, then rebuild both db images: `docker compose -f backend/compose.yaml --profile test build`.
-2. If you imported `#/lib/db-maintenance` or ran `scripts/db-maintenance.ts`, delete those references; the job now lives in pg_cron.
-3. Simplify any `and(eq(sessionsTable.id, …), eq(sessionsTable.expiresAt, …))` (same for tokens and unsubscribe tokens) to the `id` predicate; `tokens.id` is now a plain primary key other tables may reference.
-4. Apps on Scaleway: CLI **Apply infra change** so the admin user gets `all` on the `rdb` database, before the next release migrates.
-5. Any extra compose file that runs `backend/db` (devcontainers) adds `-c shared_preload_libraries=pg_cron -c cron.database_name=postgres`.
+2. `backend/drizzle` is app-owned (the default sync config ignores it): `pnpm generate` writes the primary-key change for `sessions`, `tokens` and `unsubscribe_tokens` and regenerates the side-effects migration (`partition_setup` replaces `partman_setup`). A database that an earlier migration partitioned needs the flatten block first: copy the `DO $$ ... $$` statement from the template's `20260923092234_tidy_bruce_banner/migration.sql` to the top of your generated migration.
+3. If you imported `#/lib/db-maintenance` or ran `scripts/db-maintenance.ts`, delete those references; the job now lives in pg_cron.
+4. Simplify any `and(eq(sessionsTable.id, …), eq(sessionsTable.expiresAt, …))` (same for tokens and unsubscribe tokens) to the `id` predicate; `tokens.id` is now a plain primary key other tables may reference.
+5. Apps on Scaleway: CLI **Apply infra change** so the admin user gets `all` on the `rdb` database, before the next release migrates.
+6. Any extra compose file that runs `backend/db` (devcontainers) adds `-c shared_preload_libraries=pg_cron -c cron.database_name=postgres`.
 
 ## Verify
 

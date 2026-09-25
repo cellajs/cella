@@ -1,16 +1,21 @@
+import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { AccessScope } from './access-scopes.ts';
 import { type Access, checkAccess, checkAccessBatch, checkAccessFanout } from './check-access.ts';
 import type { AccessMembership, SubjectForPermission } from './engine/types.ts';
 
+// The attachment's ancestor chain from the app's hierarchy, so the fixture holds for any topology.
+const channelIds = Object.fromEntries(hierarchy.getOrderedAncestors('attachment').map((type) => [type, `${type}1`]));
+const homeType = hierarchy.getOrderedAncestors('attachment')[0];
+
 /**
- * The key or token mask over the template's own policy: an organization admin may do everything with attachments, so
- * every denial below comes from `scopes` alone.
+ * The key or token mask over the app's own policy: an admin of the attachment's home channel may do everything with
+ * attachments, so every denial below comes from `scopes` alone.
  */
 const membership: AccessMembership = {
-  channelType: 'organization',
-  channelId: 'org1',
-  organizationId: 'org1',
+  channelType: homeType,
+  channelId: channelIds[homeType],
+  organizationId: channelIds.organization,
   role: 'admin',
   userId: 'u1',
 } as AccessMembership;
@@ -19,7 +24,7 @@ const subject = (id = 'a1'): SubjectForPermission =>
   ({
     entityType: 'attachment',
     id,
-    channelIds: { organization: 'org1' },
+    channelIds,
     row: { createdBy: 'u1', publicAt: null },
   }) as never;
 

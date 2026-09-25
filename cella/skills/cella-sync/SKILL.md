@@ -14,8 +14,10 @@ advances one stage (steps 6 and 7).
 ## Vocabulary
 
 - **fork-owned**: exists only in the app; sync never touches it. Preferred home for app code.
-- **ignored / pinned**: `overrides` in `cella.config.ts`. Ignored: never synced. Pinned: fork side
-  wins on conflict, upstream changes that merge cleanly still arrive.
+- **ignored / pinned**: `overrides` in `cella.config.ts`. Ignored: never synced. Pinned: the app copy
+  always wins; the CLI restores every changed pinned file to HEAD right after the merge, so no upstream
+  hunk merges in and a pinned file never conflicts. Adopt upstream hunks by hand from the analyze list
+  ("protected but behind upstream").
 - **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`) on every
   intentional app edit in a cella-owned file, one marker per contiguous edit, naming the
   customization axis, not the diff; unmarked drift counts as accidental. JSON cannot carry
@@ -32,11 +34,11 @@ advances one stage (steps 6 and 7).
 
 ## 2. Conflict triage
 
-Resolve in this order.
+Resolve in this order. Pinned files are absent here on purpose: the CLI already restored them to the app
+copy, and their upstream hunks wait in the analyze list.
 
 | Conflict shape | Resolution |
 |---|---|
-| Pinned file (UU) | Fork side wins by config. Still diff against upstream; hand-adopt upstream-only improvements if cheap. |
 | Both-added (AA) test or module, ours = upstream + app cases | Take upstream verbatim (`git checkout --theirs`); move the app cases to a fork-owned file beside its source (`<source>.test.ts` next to the fork's schema/module), never inside a cella-owned file. |
 | Cella-owned file with fork markers (UU) | Take theirs, grep the pre-merge version (`git show :2:<file> \| grep -n -A2 'fork:'`), re-apply exactly the marked deltas with their markers. |
 | Cella-owned file, no markers, unclear delta | Suspect accidental drift. Diff `:2:` vs `:3:`: no intentional axis on the fork side, take theirs; intentional, re-apply WITH a new `// fork:` marker. |
@@ -89,7 +91,7 @@ rerun. Per `drifted` file:
 | Generic improvement the app authored | Contribute upstream (`pnpm cella contributions`); do not protect. |
 | App payload inside a cella-owned barrel/registry | Move the payload to a fork-owned file, import it directly, revert the barrel. |
 | Real fork axis on a cella-owned file | Every delta gets a `// fork:` marker. Pin only after auto-merge has mangled the file at least once. |
-| App identity (brand, locales, release config, root docs) | Add to `ignored` (never synced) or `pinned` (brand files that still want upstream fixes). |
+| App identity (brand, locales, release config, root docs) | Add to `ignored` (never synced) or `pinned` (brand files whose upstream fixes you adopt by hand). |
 | Fork axis shared by several files | Extension-point request: ask upstream for an empty stub file the fork fills and pins (setup-config / app-product-mocks pattern), then collapse the pins. |
 
 Target state per sync: `diverged 0`, `behind 0`, every `drifted` file has a designated action, and

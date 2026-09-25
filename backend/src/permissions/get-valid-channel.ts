@@ -3,7 +3,7 @@ import type { ActorBinding, ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
-import { accessFrom, type BindingOf } from '#/permissions/access';
+import { type AccessOptions, accessFrom, type BindingOf } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import type { EntityModel } from '#/tables';
 
@@ -19,6 +19,8 @@ export interface ValidChannelResult<T extends ChannelEntityType, G extends Actor
  * system admins and admins of a higher-level entity (`permissions-config`) pass without one.
  * Channel tables sit outside RLS, so the request-scope comparison here is their tenant isolation.
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
+ * @param options - `unmasked` keeps a key's or token's scope mask out of the check, for a read the
+ *   caller's scoped action implies (see `AccessOptions`).
  */
 export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
   ctx: C,
@@ -26,6 +28,7 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
   entityType: T,
   action: Exclude<EntityActionType, 'create'>,
   bySlug = false,
+  options: AccessOptions = {},
 ): Promise<ValidChannelResult<T, BindingOf<C>>> => {
   const entity = await resolveEntity(ctx, { entityType, identifier: entityId, bySlug });
 
@@ -40,7 +43,7 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
 
   // System admin bypass is handled inside checkAccess.
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { allowed, membership } = checkAccess(accessFrom(ctx), action, subject);
+  const { allowed, membership } = checkAccess(accessFrom(ctx, options), action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
 
   return { entity, membership };

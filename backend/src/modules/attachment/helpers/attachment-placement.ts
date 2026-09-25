@@ -82,7 +82,11 @@ export const resolveAttachmentPlacement = async (
   const home = providedHome(input)[0];
   if (!home) return columns as ResolvedAttachmentPlacement;
 
-  const { entity } = await getValidChannel(ctx, input[placementKey(home)] as string, home, 'read');
+  // The home read is part of the attachment write the caller's scope covers (`attachment:write`),
+  // so a key's or token's mask stays out of it; the actor's own grants on the home still decide.
+  const { entity } = await getValidChannel(ctx, input[placementKey(home)] as string, home, 'read', false, {
+    unmasked: true,
+  });
   const row = entity as Record<string, unknown>;
   columns[placementKey(home)] = entity.id;
   for (const ancestor of hierarchy.getOrderedAncestors(home)) {
@@ -119,7 +123,8 @@ export const resolveAttachmentHomeScope = async (
   if ((homeChannelType as string) === 'organization') {
     throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
   }
-  const { entity } = await getValidChannel(ctx, channelId, homeChannelType, 'read');
+  // Same as the write side: the list's `attachment:read` scope covers the home it narrows to.
+  const { entity } = await getValidChannel(ctx, channelId, homeChannelType, 'read', false, { unmasked: true });
   return entity.id;
 };
 

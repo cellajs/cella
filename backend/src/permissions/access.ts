@@ -18,16 +18,25 @@ export const actorFrom = (ctx: AccessContext): PredicateActor =>
     ? { actorId: ctx.var.actor.id, isSystemAdmin: ctx.var.isSystemAdmin, scopes: ctx.var.actor.scopes }
     : { anonymous: true };
 
+export interface AccessOptions {
+  /**
+   * Leave the key's or token's scope mask out of this check; the actor's own grants still decide.
+   * For a read that the caller's scoped action implies and already covers, such as an attachment
+   * write resolving its home channel: the mask names `attachment:write`, never the home's `read`.
+   */
+  unmasked?: boolean;
+}
+
 /**
  * Actor AND grants in one object for `checkAccess`. Hand-assembling one risks pairing one
  * actor's grants with another's identity.
  */
-export const accessFrom = <C extends AccessContext>(ctx: C): Access<BindingOf<C>> =>
+export const accessFrom = <C extends AccessContext>(ctx: C, options: AccessOptions = {}): Access<BindingOf<C>> =>
   ctx.var.actor
     ? {
         actorId: ctx.var.actor.id,
         isSystemAdmin: ctx.var.isSystemAdmin === true,
         memberships: ctx.var.actor.bindings as BindingOf<C>[],
-        scopes: ctx.var.actor.scopes,
+        scopes: options.unmasked ? null : ctx.var.actor.scopes,
       }
     : { anonymous: true };

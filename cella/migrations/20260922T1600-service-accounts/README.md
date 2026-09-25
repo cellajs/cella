@@ -27,7 +27,7 @@ pnpm sdk
 
 ## Manual steps
 
-0. Rename the guards everywhere: `git ls-files '*.ts' '*.tsx' '*.md' | xargs perl -pi -e 's/\bauthGuard\b/userGuard/g'` (`authGuard` is now `userGuard`, the session-only guard; `serviceGuard` takes API keys; `actorGuard` takes either).
+0. Rename the guards everywhere: `git ls-files '*.ts' '*.tsx' '*.md' ':!cella/' ':!*CHANGELOG.md' | xargs perl -pi -e 's/\bauthGuard\b/userGuard/g'` (`authGuard` is now `userGuard`, the session-only guard; `serviceGuard` takes API keys; `actorGuard` takes either).
 1. Add `'service_accounts'` and `'api_keys'` to `fullCrudTables` in `backend/scripts/migrations/10-rls.migration.ts` if the app pins that file (they are auth tables, not RLS tables).
 2. Add `api_keys, service_accounts` to test `TRUNCATE` lists that include `users`.
 3. Routes a machine may call: switch `xGuard: [userGuard, ...]` to `[actorGuard, ...]` on routes whose operations are typed `ActorContext`. Never on a route whose operation reads `ctx.var.user`.

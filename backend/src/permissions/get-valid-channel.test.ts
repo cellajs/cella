@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
+import { accessFrom } from '#/permissions/access';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
@@ -59,6 +60,15 @@ describe('getValidChannel request scope', () => {
     await expect(
       getValidChannel(ctx({ tenantId: TENANT, organizationId: ORG }), 'ch-1', 'organization', 'read'),
     ).rejects.toMatchObject({ status: 404, type: 'not_found' });
+  });
+
+  it('builds the access it checks from the same context, masked unless told otherwise', async () => {
+    vi.mocked(resolveEntity).mockResolvedValue(organization as never);
+    const context = ctx({ tenantId: TENANT });
+    await getValidChannel(context, ORG, 'organization', 'read');
+    expect(accessFrom).toHaveBeenLastCalledWith(context, {});
+    await getValidChannel(context, ORG, 'organization', 'read', false, { unmasked: true });
+    expect(accessFrom).toHaveBeenLastCalledWith(context, { unmasked: true });
   });
 
   it('returns 403 when the channel is in scope but the engine denies the action', async () => {
