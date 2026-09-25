@@ -5446,7 +5446,18 @@ export type GetMembersResponses = {
     items: Array<
       UserBase & {
         lastSeenAt: string | null;
-        membership: MembershipBase;
+        membership: {
+          id: string;
+          tenantId: string;
+          channelType: 'organization';
+          channelId: string;
+          userId: string;
+          role: 'admin' | 'member';
+          organizationId: string;
+          archived?: boolean;
+          muted?: boolean;
+          displayOrder?: number;
+        };
         counts?: {
           memberships: {
             [key: string]: unknown;

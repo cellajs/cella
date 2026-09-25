@@ -2002,7 +2002,18 @@ export const zGetMembersResponse = z.object({
     zUserBase.and(
       z.object({
         lastSeenAt: z.string().nullable(),
-        membership: zMembershipBase,
+        membership: z.object({
+          id: z.uuid(),
+          tenantId: z.string().max(24),
+          channelType: z.enum(['organization']),
+          channelId: z.uuid(),
+          userId: z.uuid(),
+          role: z.enum(['admin', 'member']),
+          organizationId: z.uuid(),
+          archived: z.boolean().optional(),
+          muted: z.boolean().optional(),
+          displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+        }),
         counts: z
           .object({
             memberships: z.record(z.string(), z.unknown()),

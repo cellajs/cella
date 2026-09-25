@@ -565,7 +565,6 @@
                   "membership": {
                     "type": "object",
                     "required": true,
-                    "description": "Core membership fields shared across active and inactive memberships.",
                     "properties": {
                       "id": { "type": "string", "required": true, "format": "uuid" },
                       "tenantId": { "type": "string", "required": true, "maxLength": 24 },
@@ -581,17 +580,16 @@
                         "required": true,
                         "enum": ["admin", "member"]
                       },
-                      "archived": { "type": "boolean", "required": true },
-                      "muted": { "type": "boolean", "required": true },
+                      "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                      "archived": { "type": "boolean", "required": false },
+                      "muted": { "type": "boolean", "required": false },
                       "displayOrder": {
                         "type": "number",
-                        "required": true,
+                        "required": false,
                         "minimum": -140737488355328,
                         "maximum": 140737488355327
-                      },
-                      "organizationId": { "type": "string", "required": true, "format": "uuid" }
-                    },
-                    "ref": "#/components/schemas/MembershipBase"
+                      }
+                    }
                   },
                   "counts": {
                     "type": "object",

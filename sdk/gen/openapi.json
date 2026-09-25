@@ -11945,7 +11945,57 @@
                                 "type": ["string", "null"]
                               },
                               "membership": {
-                                "$ref": "#/components/schemas/MembershipBase"
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "tenantId": {
+                                    "type": "string",
+                                    "maxLength": 24
+                                  },
+                                  "channelType": {
+                                    "type": "string",
+                                    "enum": ["organization"]
+                                  },
+                                  "channelId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "userId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "role": {
+                                    "type": "string",
+                                    "enum": ["admin", "member"]
+                                  },
+                                  "organizationId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "archived": {
+                                    "type": "boolean"
+                                  },
+                                  "muted": {
+                                    "type": "boolean"
+                                  },
+                                  "displayOrder": {
+                                    "type": "number",
+                                    "minimum": -140737488355328,
+                                    "maximum": 140737488355327
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "tenantId",
+                                  "channelType",
+                                  "channelId",
+                                  "userId",
+                                  "role",
+                                  "organizationId"
+                                ]
                               },
                               "counts": {
                                 "type": "object",

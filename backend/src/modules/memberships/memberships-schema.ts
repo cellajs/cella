@@ -57,6 +57,18 @@ export const membershipBaseSchema = membershipSchema
     'x-tags': schemaTags('base', 'memberships', 'cella'),
   });
 
+/**
+ * A membership as the channel's members list shows it: archive, mute and menu order are each member's own view, so
+ * they come with the caller's own row only.
+ */
+export const memberMembershipSchema = membershipBaseSchema
+  .omit({ archived: true, muted: true, displayOrder: true })
+  .extend({
+    archived: membershipBaseSchema.shape.archived.optional(),
+    muted: membershipBaseSchema.shape.muted.optional(),
+    displayOrder: membershipBaseSchema.shape.displayOrder.optional(),
+  });
+
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
   role: membershipSchema.shape.role,
