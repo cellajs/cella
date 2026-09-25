@@ -45,7 +45,7 @@ Each flush groups events by type and action (`attachment:update`), which can reo
 
 ### Persist, stamp, and publish
 
-Per group, in order: persist activities (IDs derive from the LSN, so a replay is idempotent), reserve sequence values and apply counter deltas, stamp `seq` back onto the rows, mirror changed channel paths onto `channel_counters`, publish the WebSocket message, then clean up embedded references. Groups of one flush run concurrently. The worker acknowledges the highest LSN once every group has settled.
+Per group, in order: persist activities (IDs derive from the LSN, so a replay is idempotent), reserve sequence values and apply counter deltas, stamp `seq` back onto the rows, mirror each changed channel's path onto `channel_counters` (computed from the row's id columns, since the generated `path` column is not in the row image), publish the WebSocket message, then clean up embedded references. Groups of one flush run concurrently. The worker acknowledges the highest LSN once every group has settled.
 
 ### Sequences and counters
 

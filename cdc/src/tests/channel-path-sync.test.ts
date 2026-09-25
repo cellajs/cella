@@ -48,11 +48,23 @@ describe('syncChannelPaths', () => {
     expect(upserts[0].params).toEqual(['org-1', 'org-1']);
   });
 
-  it('ignores products, deletes, and rows without a path', async () => {
+  it('must not leave a channel without its path when the row image carries none', async () => {
+    // `path` is a generated column: logical replication leaves it out of the row image.
+    await syncChannelPaths([event('organization', 'create', { id: 'org-3', name: 'Org 3' })]);
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0].params).toEqual(['org-3', 'org-3']);
+  });
+
+  it('computes the path from the row, whatever path value the image holds', async () => {
+    await syncChannelPaths([event('organization', 'update', { id: 'org-4', path: 'other-org/org-4' })]);
+    expect(upserts[0].params).toEqual(['org-4', 'org-4']);
+  });
+
+  it('ignores products, deletes, and rows without an id', async () => {
     await syncChannelPaths([
-      event('attachment', 'create', { id: 'att-1', path: 'org-1' }),
-      event('organization', 'delete', { id: 'org-2', path: 'org-2' }),
-      event('organization', 'create', { id: 'org-3' }),
+      event('attachment', 'create', { id: 'att-1', organizationId: 'org-1' }),
+      event('organization', 'delete', { id: 'org-2' }),
+      event('organization', 'create', { name: 'No id' }),
     ]);
     expect(upserts).toHaveLength(0);
   });
