@@ -1,16 +1,32 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
+import { importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
-import { createServiceAccount } from 'sdk';
+import {
+  createApiKey,
+  createServiceAccount,
+  getAttachments,
+  getConnectedApps,
+  revokeApiKey,
+  revokeConnectedApp,
+  updateServiceAccount,
+} from 'sdk';
+import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
+import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
+import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization } from '../helpers';
+import { createTestOrganization, type ErrorResponse } from '../helpers';
 import {
   authorizationCode,
   authorizationCodeToken,
@@ -39,6 +55,21 @@ const cimdDocument = {
   response_types: ['code'],
   client_kind: 'registered',
 };
+
+const bearer = (jwt: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` });
+const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
+
+/** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
+const grantRowsOf = (userId: string) =>
+  db
+    .select({ type: oidcPayloadsTable.type })
+    .from(oidcPayloadsTable)
+    .where(
+      and(
+        eq(oidcPayloadsTable.accountId, userId),
+        inArray(oidcPayloadsTable.type, ['Grant', 'AuthorizationCode', 'RefreshToken']),
+      ),
+    );
 
 /**
  * A grant is valid only while the grant policy says so: at consent, at every code exchange and refresh, and at the
@@ -105,7 +136,226 @@ describe('OAuth grants', async () => {
   const refresh = (refreshToken: string, clientId = APP_ID) =>
     refreshAccessToken(oauth.issuer, { clientId, refreshToken });
 
+  const readAttachments = (ctx: Tenant, jwt: string) =>
+    call(getAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearer(jwt) });
+
+  async function allowUnregisteredClients(tenantId: string, allow: boolean) {
+    const [tenant] = await db
+      .select({ restrictions: tenantsTable.restrictions })
+      .from(tenantsTable)
+      .where(eq(tenantsTable.id, tenantId));
+    await db
+      .update(tenantsTable)
+      .set({ restrictions: { ...normalizeRestrictions(tenant.restrictions), allowUnregisteredClients: allow } })
+      .where(eq(tenantsTable.id, tenantId));
+    invalidateCache.tenant(tenantId);
+  }
+
+  describe('a grant ends with what it rests on', () => {
+    it('must not keep a grant alive via refresh after its app is uninstalled', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+
+      // Positive control: while the app is installed, the refresh token rotates.
+      const rotated = await refresh(grant.refresh);
+      expect(rotated.status).toBe(200);
+
+      const uninstalled = await call(updateServiceAccount, {
+        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id, id: ctx.installationId },
+        body: { status: 'disabled' },
+        headers: ctx.adminHeaders,
+      });
+      expect(uninstalled.response.status).toBe(200);
+
+      const read = await readAttachments(ctx, String(rotated.body.access_token));
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('app_not_installed');
+
+      const refused = await refresh(String(rotated.body.refresh_token));
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe('invalid_grant');
+      // The refused grant is deleted with every token issued under it: the client must ask the person again.
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+    });
+
+    it('must not refresh the grant of a deleted user via a deletion path that skips the account routes', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      const rotated = await refresh(grant.refresh);
+      expect(rotated.status).toBe(200);
+
+      // A deletion that skips the account routes: the actor row outlives the user, the grant rows stay.
+      await db.delete(usersTable).where(eq(usersTable.id, ctx.member.id));
+      expect(await grantRowsOf(ctx.member.id)).not.toEqual([]);
+
+      const read = await readAttachments(ctx, String(rotated.body.access_token));
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('unknown_user');
+
+      const refused = await refresh(String(rotated.body.refresh_token));
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe('invalid_grant');
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+    });
+
+    it("must not keep an unregistered client's grant via refresh after the tenant stops allowing such clients", async () => {
+      const ctx = await tenantWithApp({ installed: false });
+      const grant = await consent(ctx, CIMD_ID);
+      const rotated = await refresh(grant.refresh, CIMD_ID);
+      expect(rotated.status).toBe(200);
+
+      await allowUnregisteredClients(ctx.org.tenantId, false);
+
+      const read = await readAttachments(ctx, String(rotated.body.access_token));
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('unregistered_clients_not_allowed');
+
+      const refused = await refresh(String(rotated.body.refresh_token), CIMD_ID);
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe('invalid_grant');
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+    });
+
+    it('must not act via an access token after the person revokes the connected app', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      const memberHeaders = { ...defaultHeaders, Cookie: ctx.member.sessionCookie };
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      const listed = await call(getConnectedApps, { headers: memberHeaders });
+      const [app] = (listed.data as { items: { id: string }[] }).items;
+      const revoked = await call(revokeConnectedApp, { path: { id: app.id }, headers: memberHeaders });
+      expect(revoked.response.status).toBe(200);
+
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+    });
+  });
+
+  describe('a service token follows its API key', () => {
+    it('must not act via a service token after its API key is revoked, even while its verdict is cached', async () => {
+      const org = await createTestOrganization();
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+      const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
+      const path = { tenantId: org.tenantId, organizationId: org.id };
+      const { data } = await call(createServiceAccount, {
+        path,
+        body: { name: 'Sync bot', role: 'admin', key: { name: 'first', scopes: null } },
+        headers,
+      });
+      const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string } };
+      const accountId = created.serviceAccount.id;
+      const second = await call(createApiKey, { path: { ...path, id: accountId }, body: { name: 'second' }, headers });
+      const secondKey = second.data as { secret: string };
+
+      const resource = resourceUri({ face: 'api', tenantId: org.tenantId });
+      const tokenFor = async (clientSecret: string) => {
+        const minted = await clientCredentialsToken(
+          oauth.issuer,
+          { clientId: accountId, clientSecret },
+          { scope: 'attachment:read', resource },
+        );
+        expect(minted.status).toBe(200);
+        return String(minted.body.access_token);
+      };
+      const read = (jwt: string) => call(getAttachments, { path, headers: bearer(jwt) });
+
+      const jwt = await tokenFor(created.apiKey.secret);
+      expect((await read(jwt)).response.status).toBe(200);
+
+      const revoked = await call(revokeApiKey, { path: { ...path, id: accountId, keyId: created.apiKey.id }, headers });
+      expect(revoked.response.status).toBe(200);
+
+      const refused = await read(jwt);
+      expect(refused.response.status).toBe(401);
+      expect(reasonOf(refused.error)).toBe('invalid_api_key');
+      // Positive control: the account and its other key are untouched.
+      expect((await read(await tokenFor(secondKey.secret))).response.status).toBe(200);
+    });
+
+    it('must not skip the grant check via a token that names no grant or API key', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      // Positive control: the server's own token names its grant and passes.
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      const { data } = await call(createServiceAccount, {
+        path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+        body: { name: 'Sync bot', role: 'admin' },
+        headers: ctx.adminHeaders,
+      });
+      const accountId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
+
+      // Signed with the server's own key and otherwise well-formed: only the grant and key ids are missing.
+      const [signingJwk] = (await loadSigningJwks()).keys;
+      const key = await importJWK(signingJwk, 'RS256');
+      const sign = (claims: Record<string, unknown>, sub: string) =>
+        new SignJWT({ tenant_id: ctx.org.tenantId, scope: 'attachment:read', ...claims })
+          .setProtectedHeader({ alg: 'RS256', kid: signingJwk.kid, typ: 'at+jwt' })
+          .setSubject(sub)
+          .setIssuer(appConfig.oauthUrl)
+          .setAudience(ctx.resource)
+          .setIssuedAt()
+          .setExpirationTime('1h')
+          .sign(key);
+
+      for (const jwt of [
+        await sign({ actor_kind: 'user', client_id: APP_ID }, ctx.member.id),
+        await sign({ actor_kind: 'service', client_id: accountId }, accountId),
+      ]) {
+        const read = await readAttachments(ctx, jwt);
+        expect(read.response.status).toBe(401);
+        expect(reasonOf(read.error)).toBe('invalid_token');
+      }
+    });
+  });
+
   describe('codes and refresh tokens are single use', () => {
+    it('must not mint tokens twice via a replayed code, and the replay revokes the grant', async () => {
+      const ctx = await tenantWithApp();
+      const { code, verifier } = await authorizationCode(oauth.issuer, authorization(ctx));
+      const exchange = () =>
+        exchangeCode(oauth.issuer, { clientId: APP_ID, redirectUri: REDIRECT_URI, code: code ?? '', verifier });
+
+      const first = await exchange();
+      expect(first.status).toBe(200);
+      const access = String(first.body.access_token);
+      // Positive control: the token itself verifies; any refusal below is the grant's.
+      await expect(
+        verifyAccessToken(access, { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }),
+      ).resolves.toBeTruthy();
+
+      const replay = await exchange();
+      expect(replay.status).toBe(400);
+      expect(replay.body.error).toBe('invalid_grant');
+
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+      const read = await readAttachments(ctx, access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+      expect((await refresh(String(first.body.refresh_token))).body.error).toBe('invalid_grant');
+    });
+
+    it('must not mint tokens via a rotated refresh token, and the replay revokes the grant', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+
+      const rotated = await refresh(grant.refresh);
+      expect(rotated.status).toBe(200);
+      const access = String(rotated.body.access_token);
+
+      const replay = await refresh(grant.refresh);
+      expect(replay.status).toBe(400);
+      expect(replay.body.error).toBe('invalid_grant');
+
+      expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+      expect((await refresh(String(rotated.body.refresh_token))).body.error).toBe('invalid_grant');
+      const read = await readAttachments(ctx, access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+    });
+
     /** Holds every consume back a moment, so each racing request has read the unspent row before any spends it. */
     function widenConsumeRace() {
       const consume = DrizzleAdapter.prototype.consume;
@@ -218,6 +468,40 @@ describe('OAuth grants', async () => {
       });
       expect(response.status).toBe(400);
       expect(((await response.json()) as { error: string }).error).toBe('unauthorized_client');
+    });
+  });
+
+  describe('consent', () => {
+    it('must not grant consent via a posted accept despite a refusal', async () => {
+      const installed = await tenantWithApp();
+      const uninstalled = await tenantWithApp({ installed: false });
+      await allowUnregisteredClients(uninstalled.org.tenantId, false);
+
+      const cases = [
+        {
+          refusal: 'not_a_member',
+          input: authorization(installed, APP_ID, uninstalled.member),
+          user: uninstalled.member,
+        },
+        { refusal: 'app_not_installed', input: authorization(uninstalled), user: uninstalled.member },
+        {
+          refusal: 'unregistered_clients_not_allowed',
+          input: authorization(uninstalled, CIMD_ID),
+          user: uninstalled.member,
+        },
+      ];
+      for (const { refusal, input, user } of cases) {
+        const result = await authorizationCode(oauth.issuer, input);
+        expect(result.consent.refusal).toBe(refusal);
+        expect(result.code).toBeNull();
+        expect(result.failure?.body).toMatchObject({ error: 'access_denied', error_description: refusal });
+        expect(await grantRowsOf(user.id)).toEqual([]);
+      }
+
+      // Positive control: the same accept for an installed app and a member yields a code.
+      const allowed = await authorizationCode(oauth.issuer, authorization(installed));
+      expect(allowed.consent.refusal).toBeNull();
+      expect(allowed.code).toBeTruthy();
     });
   });
 });

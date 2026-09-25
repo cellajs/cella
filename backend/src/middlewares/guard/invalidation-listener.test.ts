@@ -6,18 +6,12 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import type { MembershipCacheEntry } from './auth-cache';
-import {
-  getMembershipCache,
-  getSessionCache,
-  getTokenUserCache,
-  setMembershipCache,
-  setSessionCache,
-  setTokenUserCache,
-} from './auth-cache';
+import { getMembershipCache, getSessionCache, setMembershipCache, setSessionCache } from './auth-cache';
 import { invalidateCache } from './invalidate-cache';
 import { listenForAuthInvalidation } from './invalidation-listener';
 import { getOrgCache, setOrgCache } from './org-cache';
 import { getTenantCache, setTenantCache } from './tenant-cache';
+import { getTokenGrantCache, setTokenGrantCache } from './token-grant-cache';
 
 const adminDb = getAdminDb('test publish');
 
@@ -27,23 +21,23 @@ const publishElsewhere = (payload: unknown) =>
     sql`select pg_notify('auth_invalidate', ${typeof payload === 'string' ? payload : JSON.stringify(payload)})`,
   );
 
-/** Caches a session, memberships and the token user for a user, as the guards do on a request. */
+/** Caches a session, memberships and an access-token verdict for a user, as the guards do on a request. */
 const cacheUser = (userId: string) => {
   // The caches hold what the guards hand them; a stub with the id is enough to find and drop the entries.
   const user = { id: userId } as never;
   setSessionCache(`${userId}-session`, userId, { user, hasSystemRole: false });
   setMembershipCache(userId, [] as MembershipCacheEntry);
-  setTokenUserCache(user);
+  setTokenGrantCache(userId, 'grant:tenant', { refusal: null, kind: 'user', user });
 };
 const cachedFor = (userId: string) => ({
   session: !!getSessionCache(`${userId}-session`),
   memberships: !!getMembershipCache(userId),
-  tokenUser: !!getTokenUserCache(userId),
+  tokenGrant: !!getTokenGrantCache(userId, 'grant:tenant'),
 });
 
 /**
  * Each process (api, mcp, oauth) holds its own guard caches. A change made in one process must drop the entry in the
- * others, or MCP keeps a removed membership for up to 6 minutes and a deleted user's token user for a minute.
+ * others, or MCP keeps a removed membership for up to 6 minutes and a deleted user's access-token verdicts for half a minute.
  */
 describe('auth_invalidate listener', () => {
   let stop: () => Promise<void>;
@@ -63,16 +57,16 @@ describe('auth_invalidate listener', () => {
 
   afterAll(async () => await stop());
 
-  it("must not keep a user's cached session, memberships or token user after another process invalidates them", async () => {
+  it("must not keep a user's cached session, memberships or access-token verdicts after another process invalidates them", async () => {
     cacheUser('ended');
     cacheUser('bystander');
 
     await publishElsewhere({ user: 'ended' });
 
     await vi.waitFor(() =>
-      expect(cachedFor('ended')).toEqual({ session: false, memberships: false, tokenUser: false }),
+      expect(cachedFor('ended')).toEqual({ session: false, memberships: false, tokenGrant: false }),
     );
-    expect(cachedFor('bystander')).toEqual({ session: true, memberships: true, tokenUser: true });
+    expect(cachedFor('bystander')).toEqual({ session: true, memberships: true, tokenGrant: true });
   });
 
   it('must not keep a cached tenant, its organizations or one organization after another process invalidates them', async () => {
@@ -100,7 +94,7 @@ describe('auth_invalidate listener', () => {
     await publishElsewhere({ user: 'next' });
 
     await vi.waitFor(() => expect(cachedFor('next').session).toBe(false));
-    expect(cachedFor('kept')).toEqual({ session: true, memberships: true, tokenUser: true });
+    expect(cachedFor('kept')).toEqual({ session: true, memberships: true, tokenGrant: true });
   });
 
   it('must not keep an entry cached while the listening connection was down via the missed messages', async () => {
@@ -143,7 +137,7 @@ describe('invalidateCache and endSessions publish to every process', () => {
     invalidateCache.org('tenant-c', 'org-4');
     invalidateCache.tenant('tenant-d');
 
-    expect(cachedFor('changed')).toEqual({ session: false, memberships: false, tokenUser: false });
+    expect(cachedFor('changed')).toEqual({ session: false, memberships: false, tokenGrant: false });
     await vi.waitFor(() =>
       expect(received.map((payload) => JSON.parse(payload))).toEqual(
         expect.arrayContaining([

@@ -1,18 +1,14 @@
 import type { HttpBindings } from '@hono/node-server';
-import { and, eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { AppClientMetadata } from '#/modules/oauth-server/adapter';
+import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { loadActiveTenant } from '#/modules/tenants/helpers/load-active-tenant';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
 
@@ -24,8 +20,8 @@ interface ConsentDetails {
   user: { id: string; name: string } | null;
   /** What the provider is asking for (`login`, `consent`) and why; the page shows the reasons when it refuses. */
   prompt: { name: string; reasons: string[] };
-  /** Why the consent screen must refuse; null when the user may accept. */
-  refusal: 'not_a_member' | 'unregistered_clients_not_allowed' | 'app_not_installed' | null;
+  /** Why the consent screen must refuse (the grant policy's answer); null when the user may accept. */
+  refusal: Exclude<UserGrantRefusal, 'unknown_user'> | null;
 }
 
 /** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
@@ -93,7 +89,11 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
 
   const user = await sessionUser(c);
   const kind = client.client_kind === 'registered' ? 'registered' : 'cimd';
-  const refusal = user ? await refusalFor(user.id, kind, clientId, resource) : null;
+  const refusal = user
+    ? await grantRefusal({ kind: 'user', userId: user.id, clientId, tenantId: resource.tenantId })
+    : null;
+  // The session's user is gone since the session was read: consent starts over from sign-in.
+  if (refusal === 'unknown_user') throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
 
   const details: ConsentDetails = {
     client: {
@@ -120,37 +120,4 @@ async function sessionUser(c: Context<InteractionEnv>) {
   } catch {
     return null;
   }
-}
-
-/** Consent needs a foothold in the resource's tenant and, per client kind, the tenant's policy (D4) or an installation. */
-async function refusalFor(
-  userId: string,
-  kind: 'cimd' | 'registered',
-  clientId: string,
-  resource: ResourceRef,
-): Promise<ConsentDetails['refusal']> {
-  const [membership] = await baseDb
-    .select({ id: membershipsTable.id })
-    .from(membershipsTable)
-    .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.tenantId, resource.tenantId)))
-    .limit(1);
-  if (!membership) return 'not_a_member';
-
-  if (kind === 'cimd') {
-    const tenant = await loadActiveTenant(resource.tenantId);
-    return tenant.restrictions.allowUnregisteredClients ? null : 'unregistered_clients_not_allowed';
-  }
-
-  const [installation] = await baseDb
-    .select({ id: serviceAccountsTable.id })
-    .from(serviceAccountsTable)
-    .where(
-      and(
-        eq(serviceAccountsTable.oauthClientId, clientId),
-        eq(serviceAccountsTable.tenantId, resource.tenantId),
-        eq(serviceAccountsTable.status, 'active'),
-      ),
-    )
-    .limit(1);
-  return installation ? null : 'app_not_installed';
 }

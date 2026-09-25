@@ -5,16 +5,14 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
-import {
-  getMembershipCache,
-  getTokenUserCache,
-  setMembershipCache,
-  setTokenUserCache,
-} from '#/middlewares/guard/auth-cache';
+import { getMembershipCache, setMembershipCache } from '#/middlewares/guard/auth-cache';
+import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { grantRefusal } from '#/modules/oauth-server/grant-policy';
+import { findConsentOfUser } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
-import { bearerJwtFrom, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
+import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -34,7 +32,8 @@ export function routeTarget(ctx: Context<Env>): { tenantId: string; organization
 /**
  * A token from the app's own authorization server (D12): verified locally, bound to this route's tenant, it runs as
  * the user who consented (masked by the token's scopes) or as the service account behind a `client_credentials`
- * grant. Tokens and keys never carry system admin: that stays with a session and its IP allow-list.
+ * grant, and only while the grant policy holds the grant or API key it names. Tokens and keys never carry system
+ * admin: that stays with a session and its IP allow-list.
  */
 export async function setActorFromToken(
   ctx: Context<Env>,
@@ -42,14 +41,11 @@ export async function setActorFromToken(
   scope: { tenantId: string; organizationId?: string },
 ): Promise<void> {
   const token = await verifyAccessToken(jwt, scope);
+  const grant = await resolveTokenGrant(token);
+  if (grant.refusal !== null) throw unauthorized(grant.refusal);
 
-  if (token.kind === 'user') {
-    let user = getTokenUserCache(token.actorId);
-    if (!user) {
-      [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId)).limit(1);
-      if (!user) throw unauthorized('unknown_user');
-      setTokenUserCache(user);
-    }
+  if (grant.kind === 'user') {
+    const { user } = grant;
     let memberships = getMembershipCache(user.id);
     if (!memberships) {
       memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
@@ -60,12 +56,7 @@ export async function setActorFromToken(
     ctx.set('memberships', memberships);
     ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
   } else {
-    const [account] = await baseDb
-      .select()
-      .from(serviceAccountsTable)
-      .where(eq(serviceAccountsTable.id, token.actorId))
-      .limit(1);
-    if (account?.status !== 'active') throw unauthorized('service_account_disabled');
+    const { account } = grant;
     ctx.set('actor', {
       kind: 'service',
       id: account.id,
@@ -76,6 +67,32 @@ export async function setActorFromToken(
   }
   ctx.set('isSystemAdmin', false);
   ctx.set('db', baseDb);
+}
+
+/** The grant policy's verdict on the grant (per tenant) or API key a token names, cached with the actor's row. */
+async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
+  const key = token.kind === 'user' ? `${token.grantId}:${token.tenantId}` : token.keyId;
+  const cached = getTokenGrantCache(token.actorId, key);
+  if (cached) return cached;
+
+  let entry: TokenGrantEntry;
+  if (token.kind === 'user') {
+    // A revoked grant, or one a replayed code or refresh token revoked, is deleted: its tokens stop with it.
+    const grant = await findConsentOfUser({ var: { db: baseDb } }, { grantId: token.grantId, userId: token.actorId });
+    const refusal = grant
+      ? await grantRefusal({ kind: 'user', userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId })
+      : 'grant_revoked';
+    const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
+    entry = user ? { refusal: null, kind: 'user', user } : { refusal: refusal ?? 'unknown_user' };
+  } else {
+    const refusal = await grantRefusal({ kind: 'service', serviceAccountId: token.actorId, keyId: token.keyId });
+    const [account] = refusal
+      ? []
+      : await baseDb.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, token.actorId));
+    entry = account ? { refusal: null, kind: 'service', account } : { refusal: refusal ?? 'service_account_disabled' };
+  }
+  setTokenGrantCache(token.actorId, key, entry);
+  return entry;
 }
 
 /** The key and its account in one read, cached by hash; a revoke, roll, or disable invalidates the account's keys. */

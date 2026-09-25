@@ -7,14 +7,18 @@ import { getPublicJwkSet } from '#/modules/oauth-server/keystore';
 import type { IssuedTokenClaims } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
 
-export interface VerifiedAccessToken {
+interface VerifiedToken {
   actorId: string;
-  kind: 'user' | 'service';
   tenantId: string;
   /** The token's scope set, always a mask: a delegated token never carries an actor's full bindings implicitly. */
   scopes: AccessScope[];
   clientId: string;
 }
+
+/** A person's token names the grant it was issued under, a service account's the API key it was minted with. */
+export type VerifiedAccessToken =
+  | (VerifiedToken & { kind: 'user'; grantId: string })
+  | (VerifiedToken & { kind: 'service'; keyId: string });
 
 /** A bearer value that is a JWT (three segments); this app's opaque keys carry no dots. */
 export function bearerJwtFrom(ctx: Context<Env>): string | null {
@@ -26,7 +30,8 @@ export function bearerJwtFrom(ctx: Context<Env>): string | null {
 
 /**
  * Verifies an access token this server issued, locally against the keystore (no self-HTTP, no DB row per token) and binds it
- * to the route's tenant and organization: the audience must be one of this route's resources (RFC 8707).
+ * to the route's tenant and organization: the audience must be one of this route's resources (RFC 8707). The token
+ * must name the grant or API key it rests on, which the guard then puts to the grant policy.
  */
 export async function verifyAccessToken(
   jwt: string,
@@ -41,17 +46,22 @@ export async function verifyAccessToken(
       issuer: appConfig.oauthUrl,
       audience: audiences,
     });
-    const claims = payload as typeof payload & Partial<IssuedTokenClaims> & { scope?: string; client_id?: string };
-    if (!claims.sub || !claims.actor_kind || !claims.tenant_id)
-      throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
-    const scopes = accessScopes.parse(claims.scope);
-    return {
-      actorId: claims.sub,
-      kind: claims.actor_kind,
-      tenantId: claims.tenant_id,
-      scopes,
-      clientId: claims.client_id ?? '',
-    };
+    const claims = payload as typeof payload &
+      Partial<{ actor_kind: IssuedTokenClaims['actor_kind']; tenant_id: string; gid: string; key_id: string }> & {
+        scope?: string;
+        client_id?: string;
+      };
+    if (claims.sub && claims.tenant_id && claims.client_id) {
+      const token = {
+        actorId: claims.sub,
+        tenantId: claims.tenant_id,
+        scopes: accessScopes.parse(claims.scope),
+        clientId: claims.client_id,
+      };
+      if (claims.actor_kind === 'user' && claims.gid) return { ...token, kind: 'user', grantId: claims.gid };
+      if (claims.actor_kind === 'service' && claims.key_id) return { ...token, kind: 'service', keyId: claims.key_id };
+    }
+    throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });
   } catch (error) {
     if (error instanceof AppError) throw error;
     const reason = error instanceof errors.JWTExpired ? 'token_expired' : 'invalid_token';

@@ -1,7 +1,6 @@
 import { TTLCache } from '#/lib/ttl-cache';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
-import type { UserModel } from '#/modules/user/user-db';
 
 export interface SessionCacheEntry {
   user: UserWithCounters;
@@ -28,9 +27,6 @@ const membershipCache = new TTLCache<MembershipCacheEntry>({
   maxSize: 5000,
   defaultTtl: 5 * 60_000, // 5 min, actively invalidated on changes
 });
-
-/** Users behind access tokens have no session to cache under; the row is cached by user id. */
-const tokenUserCache = new TTLCache<UserModel>({ maxSize: 5000, defaultTtl: 60_000 });
 
 /** Reverse index: userId to Set of sessionIds for user-wide invalidation. */
 const userIndex = new Map<string, Set<string>>();
@@ -62,11 +58,7 @@ export const setMembershipCache = (userId: string, memberships: MembershipCacheE
   membershipCache.set(userId, memberships, jitteredTtl);
 };
 
-export const getTokenUserCache = (userId: string): UserModel | undefined => tokenUserCache.get(userId);
-
-export const setTokenUserCache = (user: UserModel): void => tokenUserCache.set(user.id, user);
-
-/** Invalidate all cached entries for a user: every session, the memberships and the user behind access tokens. */
+/** Invalidate all cached entries for a user: every session and the memberships. */
 export const invalidateAuthCacheByUser = (userId: string): void => {
   const sessionIds = userIndex.get(userId);
   if (sessionIds) {
@@ -76,13 +68,11 @@ export const invalidateAuthCacheByUser = (userId: string): void => {
     userIndex.delete(userId);
   }
   membershipCache.delete(userId);
-  tokenUserCache.delete(userId);
 };
 
 export const clearAuthCache = (): void => {
   sessionCache.clear();
   membershipCache.clear();
-  tokenUserCache.clear();
   userIndex.clear();
 };
 

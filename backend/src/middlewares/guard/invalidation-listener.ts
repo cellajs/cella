@@ -6,6 +6,7 @@ import { clearAuthCache } from './auth-cache';
 import { authInvalidateChannel, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
 import { clearOrgCache } from './org-cache';
 import { clearTenantCache } from './tenant-cache';
+import { clearTokenGrantCache } from './token-grant-cache';
 
 const listenStatement = `LISTEN ${authInvalidateChannel}`;
 const RETRY_MIN_MS = 1_000;
@@ -93,6 +94,7 @@ export function listenForAuthInvalidation(): () => Promise<void> {
       clearAuthCache();
       clearOrgCache();
       clearTenantCache();
+      clearTokenGrantCache();
       heartbeat = setInterval(() => {
         client?.query(listenStatement).catch((error: Error) => onLost(error));
       }, HEARTBEAT_MS);

@@ -3,12 +3,14 @@ import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'o
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { baseDb } from '#/db/db';
-import { actorsTable } from '#/modules/actors/actors-db';
 import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
+import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
+import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource } from '#/modules/oauth-server/resources';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
+import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -17,10 +19,10 @@ const HOUR = 60 * 60;
 const DAY = 24 * HOUR;
 
 /**
- * The scopes of the secret key a service account presented at the token endpoint, per request (null: an unscoped key).
- * Client authentication records it; the resource lookup that follows caps the token at it.
+ * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key). Client
+ * authentication records it; the resource lookup that follows caps the token at its scopes, and the token names it.
  */
-const presentedKeyScopes = new WeakMap<object, readonly AccessScope[] | null>();
+const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessScope[] | null }>();
 
 /**
  * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
@@ -28,17 +30,48 @@ const presentedKeyScopes = new WeakMap<object, readonly AccessScope[] | null>();
  */
 function grantableScopes(ctx: object, client: unknown): readonly AccessScope[] {
   if ((client as { client_kind?: string } | undefined)?.client_kind !== 'service') return accessScopes.all;
+  const key = presentedKeys.get(ctx);
   // No recorded key means client authentication did not run for this request: grant nothing.
-  if (!presentedKeyScopes.has(ctx)) return [];
-  const keyScopes = presentedKeyScopes.get(ctx);
+  if (!key) return [];
   return accessScopes.all.filter((scope) => {
     const [type, verb] = scope.split(':') as [AccessScopedEntityType, 'read' | 'write'];
-    return accessScopes.allows(keyScopes, type, verb === 'read' ? 'read' : 'update');
+    return accessScopes.allows(key.scopes, type, verb === 'read' ? 'read' : 'update');
   });
 }
 
-/** Claims this server adds to every access token; the guard reads them to build the actor. */
-export type IssuedTokenClaims = { actor_kind: 'user' | 'service'; tenant_id: string };
+/**
+ * Claims this server adds to every access token; the guard reads them to build the actor, and asks the grant policy
+ * about the grant (`gid`) or API key (`key_id`) the token rests on.
+ */
+export type IssuedTokenClaims =
+  | { actor_kind: 'user'; tenant_id: string; gid: string }
+  | { actor_kind: 'service'; tenant_id: string; key_id: string };
+
+/** The code or refresh token a grant is used through at the token endpoint, as `findAccount` receives it. */
+type GrantSource = { clientId?: string; grantId?: string; resource?: unknown };
+
+/**
+ * Whether a code exchange or refresh may go on for this account, by the grant policy for every tenant the token names.
+ * A refused grant is deleted with every token issued under it, so the client must ask the person again. The
+ * authorization endpoint asks without a token, about its session's account: the user only has to exist.
+ */
+async function accountMayUseGrant(sub: string, source: GrantSource | undefined): Promise<boolean> {
+  if (!source) {
+    const [user] = await baseDb.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, sub)).limit(1);
+    return !!user;
+  }
+  let refusal: string | null = null;
+  for (const uri of [source.resource].flat()) {
+    const tenantId = typeof uri === 'string' ? parseResource(uri)?.tenantId : undefined;
+    refusal ??= tenantId
+      ? await grantRefusal({ kind: 'user', userId: sub, clientId: source.clientId ?? '', tenantId })
+      : 'invalid_target';
+  }
+  if (!refusal) return true;
+  if (source.grantId) await deleteConsentWithTokens({ var: { db: baseDb } }, { grantId: source.grantId });
+  log.info('OAuth grant refused', { refusal, grantId: source.grantId });
+  return false;
+}
 
 /**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
@@ -100,24 +133,21 @@ export async function createProvider(): Promise<Provider> {
       // Same origin as the API: the interaction cookie is scoped to this path, and the page under it reads the session.
       url: (_ctx, interaction) => `/oauth/interaction/${interaction.uid}`,
     },
-    findAccount: async (_ctx, sub) => {
-      const [actor] = await baseDb.select().from(actorsTable).where(eq(actorsTable.id, sub)).limit(1);
-      if (actor?.kind !== 'user') return undefined;
-      return { accountId: sub, claims: async () => ({ sub }) };
-    },
+    findAccount: async (_ctx, sub, token) =>
+      (await accountMayUseGrant(sub, token)) ? { accountId: sub, claims: async () => ({ sub }) } : undefined,
     extraTokenClaims: (ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
       if (!resource) throw new InvalidTarget();
-      const forUser = 'accountId' in token && !!token.accountId;
+      if ('accountId' in token && token.accountId) {
+        const claims: IssuedTokenClaims = { actor_kind: 'user', tenant_id: resource.tenantId, gid: token.grantId };
+        return claims;
+      }
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.
-      if (!forUser && !presentedKeyScopes.has(ctx))
-        throw new errors.UnauthorizedClient('client_credentials is for service accounts and their API keys');
-      const claims: IssuedTokenClaims = {
-        actor_kind: forUser ? 'user' : 'service',
-        tenant_id: resource.tenantId,
-      };
+      const key = presentedKeys.get(ctx);
+      if (!key) throw new errors.UnauthorizedClient('client_credentials is for service accounts and their API keys');
+      const claims: IssuedTokenClaims = { actor_kind: 'service', tenant_id: resource.tenantId, key_id: key.id };
       return claims;
     },
     renderError: async (ctx, out, error) => {
@@ -145,13 +175,18 @@ export async function createProvider(): Promise<Provider> {
     const presented = hashToken(actual);
     if (this.client_kind === 'service') {
       const keys = await baseDb
-        .select({ hash: apiKeysTable.hash, expiresAt: apiKeysTable.expiresAt, scopes: apiKeysTable.scopes })
+        .select({
+          id: apiKeysTable.id,
+          hash: apiKeysTable.hash,
+          expiresAt: apiKeysTable.expiresAt,
+          scopes: apiKeysTable.scopes,
+        })
         .from(apiKeysTable)
         .where(and(eq(apiKeysTable.actorId, this.clientId), isNull(apiKeysTable.revokedAt)));
       const key = keys.find((k) => (!k.expiresAt || !isExpiredDate(k.expiresAt)) && safeEqual(k.hash, presented));
       if (!key) return false;
       const ctx = Provider.ctx;
-      if (ctx) presentedKeyScopes.set(ctx, key.scopes ?? null);
+      if (ctx) presentedKeys.set(ctx, { id: key.id, scopes: key.scopes ?? null });
       return true;
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);
