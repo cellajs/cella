@@ -66,7 +66,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   /**
    * The create body's home: the deepest seeded ancestor id below the organization; empty in the
-   * template's org-homed default. A write token needs no `<home>:read`: the home read is part of the write.
+   * template's org-homed default. A write token needs no `<home>:read`: placement only looks the home up.
    */
   async function seedAttachmentHome(
     org: { id: string; tenantId: string },
