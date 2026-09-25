@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type { DocScope } from '../constants';
 import {
+  awarenessUpdate,
   buildAwarenessMessage,
   buildSyncUpdate,
   createSignedToken,
@@ -163,10 +164,10 @@ describe('upgrade: a socket joins its document only once verified', () => {
     gates.set('user-x', { delayMs: 60, allowed: false });
     const pending = await open('user-c', doc);
     const denied = await open('user-x', doc);
-    pending.ws.send(buildAwarenessMessage(new Uint8Array([1])));
-    const latest = buildAwarenessMessage(new Uint8Array([2]));
+    pending.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    const latest = buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 }));
     pending.ws.send(latest);
-    denied.ws.send(buildAwarenessMessage(new Uint8Array([9])));
+    denied.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 9 })));
     expect(await denied.closed).toBe(4003);
     await wait(50);
     expect(peer.received).toHaveLength(0);
@@ -189,7 +190,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     const [, closing] = [...(getCollab(docOf(doc))?.clients ?? [])];
     closing.close(1000);
     expect(closing.readyState).toBe(WsWebSocket.CLOSING);
-    closing.emit('message', Buffer.from(buildAwarenessMessage(new Uint8Array([3]))), false);
+    closing.emit('message', Buffer.from(buildAwarenessMessage(awarenessUpdate({ clientId: 3 }))), false);
     await wait(50);
     expect(peer.received).toHaveLength(0);
   });

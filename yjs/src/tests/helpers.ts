@@ -83,6 +83,32 @@ export function buildSyncUpdate(update: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
+/** An awareness update as y-protocols encodes it: each entry's client id, clock and JSON state (null removes it). */
+export function awarenessUpdate(...entries: { clientId: number; clock?: number; state?: unknown }[]): Uint8Array {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, entries.length);
+  for (const { clientId, clock = 1, state = { user: { name: `client ${clientId}` } } } of entries) {
+    encoding.writeVarUint(encoder, clientId);
+    encoding.writeVarUint(encoder, clock);
+    encoding.writeVarString(encoder, JSON.stringify(state));
+  }
+  return encoding.toUint8Array(encoder);
+}
+
+/** The client ids an awareness frame carries. */
+export function awarenessClientIds(message: Uint8Array): number[] {
+  const decoder = decoding.createDecoder(message);
+  decoding.readVarUint(decoder); // MESSAGE_AWARENESS
+  const update = decoding.createDecoder(decoding.readVarUint8Array(decoder));
+  const ids: number[] = [];
+  for (let count = decoding.readVarUint(update); count > 0; count--) {
+    ids.push(decoding.readVarUint(update));
+    decoding.readVarUint(update);
+    decoding.readVarString(update);
+  }
+  return ids;
+}
+
 export function buildAwarenessMessage(data: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Awareness);

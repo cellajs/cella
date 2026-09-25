@@ -10,7 +10,7 @@ import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 import { classifyUpdate, mergeLog } from './document-state';
-import { broadcastToCollab, type CollabSession, getCollab, withDocLock } from './session-manager';
+import { broadcastToCollab, type CollabSession, claimAwarenessClient, getCollab, withDocLock } from './session-manager';
 
 export const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
@@ -39,10 +39,44 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Closes a socket whose sync frame or update no decoder accepts: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
-function refuseMalformed(scope: DocScope, userId: string, ws: WebSocket): void {
-  log.warn(`Malformed update refused for ${scope.entityType}:${scope.entityId}`, { userId });
-  ws.close(4400, 'Malformed update');
+/** Closes a socket whose frame no decoder accepts: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
+function refuseMalformed(scope: DocScope, userId: string, ws: WebSocket, reason = 'Malformed update'): void {
+  log.warn(`${reason} refused for ${scope.entityType}:${scope.entityId}`, { userId });
+  ws.close(4400, reason);
+}
+
+/** One entry of an awareness update, as y-protocols encodes it; `state` is its JSON text. */
+interface AwarenessEntry {
+  clientId: number;
+  clock: number;
+  state: string;
+}
+
+function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] {
+  const decoder = decoding.createDecoder(update);
+  const entries: AwarenessEntry[] = [];
+  for (let count = decoding.readVarUint(decoder); count > 0; count--) {
+    entries.push({
+      clientId: decoding.readVarUint(decoder),
+      clock: decoding.readVarUint(decoder),
+      state: decoding.readVarString(decoder),
+    });
+  }
+  return entries;
+}
+
+function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
+  const update = encoding.createEncoder();
+  encoding.writeVarUint(update, entries.length);
+  for (const { clientId, clock, state } of entries) {
+    encoding.writeVarUint(update, clientId);
+    encoding.writeVarUint(update, clock);
+    encoding.writeVarString(update, state);
+  }
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, YMessage.Awareness);
+  encoding.writeVarUint8Array(encoder, encoding.toUint8Array(update));
+  return encoding.toUint8Array(encoder);
 }
 
 /**
@@ -78,12 +112,24 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     }
   } else if (messageType === YMessage.Awareness) {
     if (!scope || ws.readyState !== ws.OPEN) return;
+    const collab = getCollab(scope);
+    if (!collab) return;
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
     awarenessTimestamps.set(ws, now);
 
-    broadcastToCollab(scope, data, ws);
+    let entries: AwarenessEntry[];
+    try {
+      entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
+    } catch {
+      refuseMalformed(scope, ctx.userId, ws, 'Malformed awareness');
+      return;
+    }
+    // Presence for another user's client would show a cursor under their name, or remove theirs.
+    const own = entries.filter((entry) => claimAwarenessClient(collab, ws, ctx.userId, entry.clientId));
+    if (own.length === 0) return;
+    broadcastToCollab(scope, own.length === entries.length ? data : encodeAwarenessMessage(own), ws);
   }
 }
 

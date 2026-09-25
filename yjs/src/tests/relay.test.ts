@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { DocScope } from '../constants';
 import {
+  awarenessClientIds,
+  awarenessUpdate,
   buildAwarenessMessage,
   buildSyncStep1,
   buildSyncUpdate,
@@ -295,17 +297,17 @@ describe('handleMessage: awareness', () => {
     const peer = mockWebSocket();
     joinCollab(scope, peer as never);
 
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([1])));
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([2])));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 })));
     expect(peer.sent).toHaveLength(1);
 
     const other = mockWebSocket();
     joinCollab(scope, other as never);
-    await handleMessage(c, other as never, buildAwarenessMessage(new Uint8Array([3])));
+    await handleMessage(c, other as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
     expect(peer.sent).toHaveLength(2);
 
     vi.advanceTimersByTime(600);
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([4])));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 3 })));
     expect(peer.sent).toHaveLength(3);
     leaveCollab(collab.scope, peer as never);
     leaveCollab(collab.scope, other as never);
@@ -317,14 +319,104 @@ describe('handleMessage: awareness', () => {
     joinCollab(scope, peer as never);
 
     const pending = mockSocketContext({ requested: scope, scope: null });
-    await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([1])));
-    await handleMessage(c, mockWebSocket({ readyState: 2 }) as never, buildAwarenessMessage(new Uint8Array([2])));
+    await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    await handleMessage(
+      c,
+      mockWebSocket({ readyState: 2 }) as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 2 })),
+    );
     expect(peer.sent).toHaveLength(0);
 
     // Positive control: an open verified socket reaches the peer.
-    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([3])));
+    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
     expect(peer.sent).toHaveLength(1);
     leaveCollab(collab.scope, peer as never);
+  });
+});
+
+describe('handleMessage: awareness ownership', () => {
+  /** A socket joined to the session under its own user. */
+  const joined = (scope: DocScope, userId: string) => {
+    const ws = mockWebSocket();
+    joinCollab(scope, ws as never);
+    return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
+  };
+
+  it("must not relay a presence state for another user's client", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const victim = joined(scope, 'user-victim');
+    const attacker = joined(scope, 'user-attacker');
+
+    await handleMessage(victim.ctx, victim.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 10 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[10]]);
+
+    // A newer clock would win at every peer: a fake cursor under the victim's name, or its removal.
+    await handleMessage(
+      attacker.ctx,
+      attacker.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 10, clock: 99, state: null })),
+    );
+    expect(peer.ws.sent).toHaveLength(1);
+
+    // Positive control: the attacker's own client is relayed.
+    vi.advanceTimersByTime(600);
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 20 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[10], [20]]);
+    for (const ws of [peer.ws, victim.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it("drops another user's entry from a frame and relays the sender's own", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const other = joined(scope, 'user-other');
+    const sender = joined(scope, 'user-sender');
+    await handleMessage(other.ctx, other.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 30 })));
+
+    await handleMessage(
+      sender.ctx,
+      sender.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 40 }, { clientId: 30, clock: 5 })),
+    );
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[30], [40]]);
+    for (const ws of [peer.ws, other.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it("lets a user's new socket take over its client, and frees a client whose socket left", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const first = joined(scope, 'user-a');
+    await handleMessage(first.ctx, first.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50 })));
+
+    // A reconnect of the same user announces the same client before the old socket's close is processed.
+    const reconnect = joined(scope, 'user-a');
+    await handleMessage(
+      reconnect.ctx,
+      reconnect.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 50, clock: 2 })),
+    );
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[50], [50]]);
+
+    leaveCollab(collab.scope, reconnect.ws as never);
+    const later = joined(scope, 'user-b');
+    await handleMessage(
+      later.ctx,
+      later.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 50, clock: 3 })),
+    );
+    expect(peer.ws.sent).toHaveLength(3);
+    for (const ws of [peer.ws, first.ws, later.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it('must not relay an awareness frame no decoder accepts, and closes its sender with 4400', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const sender = joined(scope, 'user-sender');
+
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(new Uint8Array([5, 1])));
+    expect(peer.ws.sent).toHaveLength(0);
+    expect(sender.ws.closed).toEqual({ code: 4400, reason: 'Malformed awareness' });
+    for (const ws of [peer.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
   });
 });
 

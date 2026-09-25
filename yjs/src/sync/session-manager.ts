@@ -9,6 +9,8 @@ export interface CollabSession {
   /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
   scope: DocScope;
   clients: Set<WebSocket>;
+  /** Awareness client id → the socket that announced it and its user; only they relay presence for that id. */
+  awarenessOwners: Map<number, { ws: WebSocket; userId: string }>;
   /** Document lock: seeding, compaction and cleanup run one at a time through this chain. */
   chain: Promise<unknown>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
@@ -66,7 +68,7 @@ export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
     return collab;
   }
 
-  collab = { scope, clients: new Set([ws]), chain: Promise.resolve() };
+  collab = { scope, clients: new Set([ws]), awarenessOwners: new Map(), chain: Promise.resolve() };
   collabSessions.set(key, collab);
   return collab;
 }
@@ -85,6 +87,9 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   if (!collab) return;
 
   collab.clients.delete(ws);
+  for (const [clientId, owner] of collab.awarenessOwners) {
+    if (owner.ws === ws) collab.awarenessOwners.delete(clientId);
+  }
   if (collab.clients.size > 0) return;
 
   let attempts = 0;
@@ -135,6 +140,17 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   };
 
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+}
+
+/**
+ * Whether a socket may relay presence for an awareness client id: one no other user's socket announced first. The
+ * socket claims it, so a user's reconnecting socket takes over its client before the old socket's close is processed.
+ */
+export function claimAwarenessClient(collab: CollabSession, ws: WebSocket, userId: string, clientId: number): boolean {
+  const owner = collab.awarenessOwners.get(clientId);
+  if (owner && owner.userId !== userId) return false;
+  collab.awarenessOwners.set(clientId, { ws, userId });
+  return true;
 }
 
 export function broadcastToCollab(doc: DocKey, message: Uint8Array, exclude?: WebSocket): void {
