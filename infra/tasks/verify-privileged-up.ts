@@ -20,8 +20,10 @@ export interface VerifyPrivilegedUpOptions {
 
 export interface VerifyPrivilegedUpResult {
   ok: boolean;
-  /** Human problems, one per failed check. */
+  /** Verified differences between live and declared, one per failed check. */
   problems: string[];
+  /** Checks that could not run (an auth or network failure): the live state is unknown there, not wrong. */
+  errors: string[];
 }
 
 /**
@@ -33,6 +35,7 @@ export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promi
   const log = opts.log ?? ((msg) => console.info(msg));
   const assertGrants = opts.assertGrants ?? assertVmGrants;
   const problems: string[] = [];
+  const errors: string[] = [];
 
   for (const row of buildVmAssertRows(opts.appConfig)) {
     try {
@@ -50,7 +53,7 @@ export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promi
       });
       if (!result.ok) problems.push(`${row.app}: live grant differs from the declared one (see the lines above)`);
     } catch (error) {
-      problems.push(`${row.app}: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(`${row.app}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -77,8 +80,8 @@ export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promi
       }
     }
   } catch (error) {
-    problems.push(`database privileges: ${error instanceof Error ? error.message : String(error)}`);
+    errors.push(`database privileges: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  return { ok: problems.length === 0, problems };
+  return { ok: problems.length === 0 && errors.length === 0, problems, errors };
 }
