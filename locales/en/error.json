@@ -63,7 +63,7 @@
   "inactive_membership_not_found.text": "The inactive membership you are trying to access does not exist or has been deleted.",
   "insert_in_progress": "Another create is still processing, please wait a moment.",
   "invalid_between_num": "{{name}} must be between {{min}} and {{max}} characters",
-  "invalid_cdn_url": "URL must start with the configured CDN URL",
+  "invalid_cdn_url": "URL must point to the configured CDN",
   "invalid_credentials": "Invalid credentials",
   "invalid_credentials.text": "The credentials used for authentication are invalid.",
   "invalid_domain": "Domain must not contain @, no special chars and at least one dot (.) in between.",

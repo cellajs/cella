@@ -250,11 +250,14 @@ export const validSlugSchema = z
   .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
-/** superRefine, because the allowed CDN hosts come from runtime config and cannot be a static JSON-schema pattern. */
+/**
+ * superRefine, because the allowed CDN hosts come from runtime config and cannot be a static JSON-schema pattern.
+ * Trimmed before the check, so the stored value is the one that was validated.
+ */
 export const validCDNUrlSchema = z
   .string()
+  .trim()
   .max(maxLength.url)
-  .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'))
-  .transform((str) => str.trim());
+  .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'));
 
 export const validDomainsSchema = validDomainSchema.array().optional();
