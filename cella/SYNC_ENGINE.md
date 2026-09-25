@@ -203,7 +203,7 @@ The template collaborates on attachment descriptions through the Yjs relay (`ser
 
 ### SSE wire
 
-Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream is revoked (sign-out, or from the sessions list).
+Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream ended for good (sign-out, revoked from another session, evicted, expired, the account deleted). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation) and `access_changed` that the stream lost its system-admin reads; the client reconnects on both. The server checks every open stream's session again once a minute, which also catches endings on another instance.
 
 ```typescript
 interface StreamNotification {
