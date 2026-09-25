@@ -1,9 +1,9 @@
 import type { MiddlewareHandler } from 'hono';
 import { requestId } from 'hono/request-id';
 import { appConfig } from 'shared';
+import { scrubUrl } from 'shared/utils/scrub-url';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
-import { scrubUrl } from '#/utils/scrub-url';
 
 // Instantiate requestId middleware once at module scope to reuse it across requests.
 const requestIdMiddleware = requestId();

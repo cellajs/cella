@@ -3,11 +3,11 @@ import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { appConfig, type Severity } from 'shared';
+import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
-import { scrubPath } from '#/utils/scrub-url';
 
 const isProduction = appConfig.mode === 'production';
 const severitiesRequiringDetails = new Set(['warn', 'error', 'fatal']);
@@ -175,7 +175,7 @@ export function toClientError(
 /** Global error handler for Hono API routes. */
 export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   // Redact secret path segments before logging or returning them: Pino's key-based redaction cannot reach inside `path`
-  const safePath = scrubPath(ctx.req.path);
+  const safePath = scrubUrl(ctx.req.path);
   const clientError = toClientError(err, {
     path: safePath,
     method: ctx.req.method,
