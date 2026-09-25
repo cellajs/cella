@@ -10,7 +10,7 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Client metadata as the provider reads it; `client_kind` tells the consent screen and the secret check which table it came from. */
+/** Client metadata as the provider reads it; `client_kind` tells the secret check and the scope cap which table it came from. */
 export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
 
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {

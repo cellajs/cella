@@ -542,5 +542,26 @@ describe('OAuth grants', async () => {
       expect(allowed.consent.refusal).toBeNull();
       expect(allowed.code).toBeTruthy();
     });
+
+    it('must not show a logo or name via the metadata document of an unregistered client', async () => {
+      const ctx = await tenantWithApp();
+
+      const unregistered = await authorizationCode(oauth.issuer, authorization(ctx, CIMD_ID));
+      expect(unregistered.consent.client).toEqual({
+        id: CIMD_ID,
+        name: 'mcp-client.example',
+        logoUri: null,
+        kind: 'cimd',
+      });
+
+      // Positive control: a registered app keeps the name and logo a system admin set.
+      const registered = await authorizationCode(oauth.issuer, authorization(ctx));
+      expect(registered.consent.client).toEqual({
+        id: APP_ID,
+        name: 'Portfolio',
+        logoUri: APP_LOGO,
+        kind: 'registered',
+      });
+    });
   });
 });

@@ -6,7 +6,6 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { appErrorHandler } from '#/lib/error';
 import { getParsedSessionCookie, validateSession } from '#/modules/auth/general/helpers/session';
-import type { AppClientMetadata } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
@@ -78,8 +77,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const interaction = await provider.interactionDetails(c.env.incoming, c.env.outgoing);
   const clientId = String(interaction.params.client_id);
-  // The provider types its Client model loosely; the adapter built it from AppClientMetadata.
-  const client = (await provider.Client.find(clientId)) as (AppClientMetadata & { clientId: string }) | undefined;
+  const client = await provider.Client.find(clientId);
   if (!client) throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'unknown_client' } });
 
   const resource = parseResource(String(interaction.params.resource ?? ''));
@@ -88,7 +86,6 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   const requested = accessScopes.parse(String(interaction.params.scope ?? ''));
 
   const user = await sessionUser(c);
-  const kind = client.client_kind === 'registered' ? 'registered' : 'cimd';
   const refusal = user
     ? await grantRefusal({ kind: 'user', userId: user.id, clientId, tenantId: resource.tenantId })
     : null;
@@ -96,12 +93,13 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
   if (refusal === 'unknown_user') throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'no_session' } });
 
   const details: ConsentDetails = {
-    client: {
-      id: clientId,
-      name: String(client.client_name ?? clientId),
-      logoUri: typeof client.logo_uri === 'string' ? client.logo_uri : null,
-      kind,
-    },
+    // A metadata document is written by the client's author, who would learn every consenting viewer's address from a
+    // logo and could claim any name: such a client shows the host serving its client id. A registered app shows the
+    // name and logo a system admin set.
+    client:
+      'clientIdMetadataDocument' in client
+        ? { id: clientId, name: new URL(clientId).host, logoUri: null, kind: 'cimd' }
+        : { id: clientId, name: client.clientName ?? clientId, logoUri: client.logoUri ?? null, kind: 'registered' },
     scopes: requested,
     resource,
     user: user ? { id: user.id, name: user.name } : null,
