@@ -9,6 +9,7 @@ import { writeFileMode } from './fs-utils';
 import { createJsonLogger } from './logger';
 import { type BootPlan, parseBootPlanJson } from './plan';
 import { hydrateRuntimeSecrets } from './runtime-secrets';
+import { createSecretRedactor } from './secret-redactor';
 import { fetchServiceKey } from './service-key';
 
 /** Seconds to wait for the started container to become healthy before failing the boot. */
@@ -133,14 +134,20 @@ async function sinkKeyFromRuntimeEnv(path: string, keyEnvVar: string): Promise<s
 export async function boot(opts: BootOptions): Promise<void> {
   const exec = opts.exec ?? execCommand;
   const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'), opts.planPath);
-  const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha });
+  // Learns every secret value as boot handles it; the console, telemetry and the diagnostics upload all redact through it.
+  const redactor = createSecretRedactor();
+  const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha }, (line) =>
+    console.info(redactor.redact(line)),
+  );
   const accessKey = await readKeyFile(plan.credentials.scwAccessKeyFile);
   const secretKey = await readKeyFile(plan.credentials.scwSecretKeyFile);
+  redactor.add(accessKey, secretKey);
   // Build-only until secret hydration delivers an ingest key; every record lands in the black-box JSONL either way, joined to the deploy trace.
   const telemetry: Telemetry = createTelemetry({
     resource: { 'service.name': 'infra-boot', 'app.service': plan.service, 'vcs.ref.head.revision': plan.releaseSha },
     traceparent: plan.traceparent,
     onError: (message) => logger.log('warn', 'telemetry-export-failed', { message }),
+    redact: redactor.redact,
   });
   const bootSpan = telemetry.startSpan(`boot ${plan.service}`, { service: plan.service, sha: plan.releaseSha });
   telemetry.event(bootEvents.started, { service: plan.service, sha: plan.releaseSha });
@@ -182,10 +189,11 @@ export async function boot(opts: BootOptions): Promise<void> {
           bootSecretKey: secretKey,
           region: plan.region,
         });
+        redactor.add(serviceKey.accessKey, serviceKey.secretKey);
       });
     }
-    await phase('hydrate-runtime-secrets', () =>
-      hydrateRuntimeSecrets({
+    await phase('hydrate-runtime-secrets', async () => {
+      const delivered = await hydrateRuntimeSecrets({
         manifest: plan.files.runtimeSecretManifest,
         secretKey: serviceKey.secretKey,
         region: plan.region,
@@ -194,8 +202,9 @@ export async function boot(opts: BootOptions): Promise<void> {
         extraLines: plan.exportS3Env
           ? [`S3_ACCESS_KEY_ID=${serviceKey.accessKey}`, `S3_ACCESS_KEY_SECRET=${serviceKey.secretKey}`]
           : [],
-      }),
-    );
+      });
+      redactor.add(...delivered);
+    });
     // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
     const sink = plan.telemetry;
     const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
@@ -227,7 +236,8 @@ export async function boot(opts: BootOptions): Promise<void> {
       { service: plan.service, sha: plan.releaseSha, error: errorMessage(err) },
       { severity: 'error', body: failureBody },
     );
-    throw err;
+    // The entrypoint prints this message to the serial console, and a failed command's output can carry a secret.
+    throw new Error(redactor.redact(errorMessage(err)));
   } finally {
     await telemetry.flush().catch(() => {});
     try {
@@ -242,6 +252,7 @@ export async function boot(opts: BootOptions): Promise<void> {
         logFile: plan.bootDiagnostics.logFile,
         appLogs,
         events: telemetry.eventsJsonl(),
+        redact: redactor.redact,
       });
     } catch (err) {
       logger.log('warn', 'boot-diagnostics-upload-failed', { message: errorMessage(err) });

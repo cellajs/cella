@@ -30,6 +30,8 @@ export interface TelemetryOptions {
   fetchImpl?: FetchLike;
   /** Telemetry must never fail the operation it observes; failures land here. */
   onError?: (message: string) => void;
+  /** Applied to every string value when records are serialized (export and black box), so a secret learned after a record was buffered still leaves it redacted. */
+  redact?: (text: string) => string;
   now?: () => number;
 }
 
@@ -77,6 +79,12 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   const spans: OtlpSpan[] = [];
   const records: OtlpLogRecord[] = [];
   const exported = { spans: 0, records: 0 };
+  const redact = opts.redact;
+  const serialize = (value: unknown): string =>
+    JSON.stringify(
+      value,
+      redact ? (_key, item: unknown) => (typeof item === 'string' ? redact(item) : item) : undefined,
+    );
 
   const startSpan = (
     name: string,
@@ -113,7 +121,7 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
     const res = await fetchImpl(`${exporter.endpoint}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(exporter.headers ?? {}) },
-      body: JSON.stringify(payload),
+      body: serialize(payload),
     });
     if (!res.ok) throw new Error(`${path} -> ${res.status}: ${(await res.text()).slice(0, 200)}`);
   };
@@ -140,7 +148,7 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
       );
     },
     eventsJsonl() {
-      return records.map((record) => JSON.stringify(record)).join('\n');
+      return records.map((record) => serialize(record)).join('\n');
     },
     configureExport(config) {
       exporter = config;
