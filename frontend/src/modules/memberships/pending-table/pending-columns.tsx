@@ -6,7 +6,8 @@ import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (path: { tenantId: string; organizationId: string }) => {
+/** `canResend`: the viewer holds `update` on the channel, which a resend needs. */
+export const useColumns = (path: { tenantId: string; organizationId: string }, canResend: boolean) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
@@ -60,15 +61,18 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
-    {
+  ];
+
+  if (canResend) {
+    columns.push({
       key: 'resend',
       name: '',
       width: 120,
       placeholderValue: '-',
       // Rows whose invitation token row is gone offer no resend.
       renderCell: ({ row }) => row.tokenId && <ResendPendingInvitationCell {...path} membershipId={row.id} />,
-    },
-  ];
+    });
+  }
 
   return useState<ColumnOrColumnGroup<PendingMembership>[]>(columns);
 };

@@ -12312,7 +12312,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "tokenId", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
+                        "required": ["id", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {
