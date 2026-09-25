@@ -9,13 +9,21 @@ import { mailer } from '#/lib/mailer';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { identitiesTable } from '#/modules/auth/identities-db';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestOrganization, createTestSession, createTestUser, linkIdentity } from '../helpers';
+import {
+  authCookie,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  insertTestSession,
+  linkIdentity,
+} from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -382,6 +390,59 @@ describe('magic-link sign-up', async () => {
     const { error, response } = await openLink(first.rawToken, first.requestedHere);
     expect(response.status).toBe(401);
     expect((error as { type: string }).type).toBe('magic_not_found');
+  });
+});
+
+/**
+ * A link refuses a browser signed in to another account. A session cookie that no longer authenticates (revoked,
+ * expired, or naming no session at all) signs nobody in, so it counts as no session: the link opens as usual.
+ */
+describe('magic link in a browser with a stale session cookie', async () => {
+  const call = await createAppClient();
+
+  beforeAll(() => mockFetchRequest());
+  afterEach(async () => await clearSecurityTestData());
+
+  const staleCookies = async (owner: { id: string }) => {
+    const revoked = await insertTestSession(owner);
+    await db
+      .update(sessionsTable)
+      .set({ revokedAt: new Date().toISOString(), revocationReason: 'sign_out' })
+      .where(eq(sessionsTable.id, revoked.id));
+    const expired = await insertTestSession(owner, { expiresInMs: -1000 });
+    return { revoked: revoked.cookie, expired: expired.cookie, unknown: authCookie('session', nanoid(40)) };
+  };
+
+  it('must not lock the owner out of their magic link via a stale session cookie in the browser', async () => {
+    const owner = await createTestUser(`stale-${nanoid(6)}@security-test.com`.toLowerCase());
+
+    for (const [kind, stale] of Object.entries(await staleCookies(owner))) {
+      const { raw, row } = await magicLink(owner);
+      const cookies = [stale, authCookie('magic-requested', row.id)].join('; ');
+
+      const { response } = await call(invokeToken, {
+        path: { type: 'magic', token: raw },
+        headers: { ...defaultHeaders, Cookie: cookies },
+      });
+      expect(response.status, kind).toBe(302);
+      expect(response.headers.get('location'), kind).not.toContain('/auth/error');
+      expect(sessionCookieSet(response), kind).toBe(true);
+    }
+  });
+
+  it('still refuses a link while a live session of another account is in the browser (positive control)', async () => {
+    const owner = await createTestUser(`owner-${nanoid(6)}@security-test.com`.toLowerCase());
+    const other = await createTestUser(`other-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row } = await magicLink(owner);
+    const cookies = [await createTestSession(other), authCookie('magic-requested', row.id)].join('; ');
+
+    const { error, response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: cookies },
+    });
+    expect(response.status).toBe(400);
+    expect((error as { type: string }).type).toBe('user_mismatch');
+    expect(sessionCookieSet(response)).toBe(false);
   });
 });
 
