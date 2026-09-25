@@ -1,3 +1,4 @@
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
@@ -5,7 +6,10 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { type DbOrTx, baseDb as db, type Tx } from '#/db/db';
 import { findRemainingMfaMethods } from '#/modules/auth/auth-queries';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
 import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { userSelect } from '#/modules/user/helpers/select';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 
@@ -32,14 +36,35 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
 
 /**
  * Ends the MFA challenge this browser holds once its second factor has verified: the challenge is spent, row and cookie.
- * Call it only after a successful verification, so a failed attempt leaves the challenge open for the next try. Of two
- * concurrent completions exactly one passes.
+ * Of two concurrent completions exactly one passes.
  * @throws AppError 401 `confirm-mfa_not_found` when the challenge was spent or expired meanwhile.
  */
-export const spendConfirmMfaToken = async (ctx: Context<Env>) => {
+const spendConfirmMfaToken = async (ctx: Context<Env>) => {
   const spent = await spendCookieToken(ctx, 'confirm-mfa');
   if (!spent) throw new AppError(401, 'confirm-mfa_not_found', 'warn');
   return spent;
+};
+
+/** A second factor offered for an MFA challenge: a code from the authenticator app, or a passkey response. */
+export type MfaProof =
+  | { strategy: 'totp'; code: string }
+  | { strategy: 'passkey'; assertion: AuthenticationResponseJSON };
+
+/**
+ * The only way out of an MFA challenge: reads the challenge this browser holds, verifies the offered factor for the
+ * challenge's account, spends the challenge, and signs the account in with an mfa session. A factor that fails leaves
+ * the challenge open for the next try.
+ * @throws AppError 401 `confirm-mfa_not_found` or `confirm-mfa_expired` without a live challenge, and what the factor's
+ *   verification throws (`verifyTotp`, `verifyPasskeyAssertion`).
+ */
+export const completeMfaChallenge = async (ctx: Context<Env>, proof: MfaProof) => {
+  const user = await validateConfirmMfaToken(ctx);
+
+  if (proof.strategy === 'totp') await verifyTotp(ctx, { user, code: proof.code });
+  else await verifyPasskeyAssertion(ctx, { assertion: proof.assertion, purpose: 'mfa', userId: user.id });
+
+  await spendConfirmMfaToken(ctx);
+  await setUserSession(ctx, user, proof.strategy, 'mfa');
 };
 
 /**

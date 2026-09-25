@@ -127,4 +127,52 @@ describe('Second-factor challenge', async () => {
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await sessionsOf(user.id)).toHaveLength(1);
   });
+
+  it('keeps the challenge open after a failed passkey response, and completes it with a valid one (positive control)', async () => {
+    const user = await createTotpUser('owner@security-test.com');
+    const passkey = softwarePasskey();
+    await db.insert(passkeysTable).values({
+      userId: user.id,
+      credentialId: passkey.credentialId,
+      publicKey: passkey.publicKey,
+      counter: 0,
+      nameOnDevice: 'Test device',
+      deviceType: 'desktop',
+    });
+    const mfaToken = await createMfaToken(user);
+    const mfaCookie = authCookie('confirm-mfa', mfaToken);
+
+    /** Answers a fresh MFA passkey challenge with the response `sign` makes for it. */
+    const answer = async (sign: (challenge: string) => ReturnType<typeof passkey.assert>) => {
+      const challenged = await call(generatePasskeyChallenge, {
+        body: { type: 'mfa' },
+        headers: { ...defaultHeaders, Cookie: mfaCookie },
+      });
+      const challengeCookie = challenged.response.headers
+        .getSetCookie()
+        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
+        ?.split(';')[0];
+      const { challenge } = challenged.data as { challenge: string };
+      return call(signInWithPasskey, {
+        body: { type: 'mfa', assertion: sign(challenge) },
+        headers: { ...defaultHeaders, Cookie: [mfaCookie, challengeCookie].filter(Boolean).join('; ') },
+      });
+    };
+
+    // Signed by another key under this passkey's id.
+    const failed = await answer((challenge) => ({
+      ...softwarePasskey().assert(challenge),
+      id: passkey.credentialId,
+      rawId: passkey.credentialId,
+    }));
+    expect(failed.response.status).toBe(401);
+    expect((failed.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    expect(sessionCookieSet(failed.response)).toBe(false);
+    expect(await confirmMfaRowOf(mfaToken)).toBeDefined();
+
+    const completed = await answer((challenge) => passkey.assert(challenge));
+    expect(completed.response.status).toBe(204);
+    expect(sessionCookieSet(completed.response)).toBe(true);
+    expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
+  });
 });

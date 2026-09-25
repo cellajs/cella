@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findCredentialIdsByUser, insertPasskey } from '#/modules/auth/auth-queries';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { completeMfaChallenge, mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import {
@@ -89,10 +89,7 @@ app.openapi(authPasskeysRoutes.signInWithPasskey, async (ctx) => {
   const response = assertion as AuthenticationResponseJSON;
 
   if (type === 'mfa') {
-    const user = await validateConfirmMfaToken(ctx);
-    await verifyPasskeyAssertion(ctx, { assertion: response, purpose: 'mfa', userId: user.id });
-    await spendConfirmMfaToken(ctx);
-    await setUserSession(ctx, user, 'passkey', 'mfa');
+    await completeMfaChallenge(ctx, { strategy: 'passkey', assertion: response });
     return ctx.body(null, 204);
   }
 

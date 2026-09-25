@@ -7,9 +7,8 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { findExistingTotp, insertTotp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { completeMfaChallenge, mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
 import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -83,13 +82,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   const { code } = ctx.req.valid('json');
 
-  const user = await validateConfirmMfaToken(ctx);
-
-  await verifyTotp(ctx, { user, code });
-
-  await spendConfirmMfaToken(ctx);
-
-  await setUserSession(ctx, user, 'totp', 'mfa');
+  await completeMfaChallenge(ctx, { strategy: 'totp', code });
 
   return ctx.body(null, 204);
 });
