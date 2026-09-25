@@ -1542,6 +1542,22 @@
    ],
    "requires": [],
    "summary": "parseMediaRef accepts an attachment id, a key under the document's organization or an eux asset, and everything else renders nothing; trusted-media-domains.json is removed. Upload templates declare publicBucket, the client flag is gone, attachment rows are stamped private, and newsletter images use a system-admin template."
+  },
+  {
+   "id": "20260925T2144-second-factors-check-email",
+   "version": "next",
+   "title": "Single-use second factors; check-email answers only a recognized browser",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "verifyTotp accepts each code once (totps.last_used_step) and draws on a per-account failure budget; completeMfaChallenge is the only way out of an MFA challenge. Passkey challenges are single-use rows, credential ids are unique, and sign-in challenges carry no email. check-email answers { recognized }, true only for a browser that signed in to that address before, and POST /requests answers 204 to everyone."
   }
  ]
 }
