@@ -1425,6 +1425,123 @@
    ],
    "requires": [],
    "summary": "Profile image URLs must be on the CDN origin exactly, redirect paths are validated after normalizing, email interpolations are HTML-escaped (plainText option for text parts), StaticDocumentBody, BlockNoteMinimalHtml and sanitizeUrl are removed, db-exposure-acl moved to infra/lib, parseBootPlanJson takes the plan path, and in-process infra tasks throw ExitCodeError."
+  },
+  {
+   "id": "20260925T2031-token-lifecycle",
+   "version": "next",
+   "title": "One token lifecycle module; sign-ups create accounts after the inbox is proven",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "backend/tests",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "backend/src/modules/auth/tokens is the only importer of tokens-db: per-type tokenPolicies, issueToken, invokeToken, readBoundToken and spendCookieToken replace getValidToken and getValidSingleUseToken. A magic-link or OAuth sign-up creates its account only when the emailed link is clicked; tokens.pending_sign_up holds a pending OAuth sign-up. Rejected invitations lose their links and the expired-invitation page can resend."
+  },
+  {
+   "id": "20260925T2031-session-endings",
+   "version": "next",
+   "title": "Every session ends through endSessions",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "endSessions stamps the revocation, drops the auth cache and closes the session's event stream at every ending (sign-out, eviction, MFA toggle, impersonation stop, account deletion); revokeSessions is removed. A 60 s sweep closes streams of sessions ended elsewhere, and auth_invalidate (pg_notify) drops cached entries in every process."
+  },
+  {
+   "id": "20260925T2031-oauth-grant-policy",
+   "version": "next",
+   "title": "One grant policy for the app's authorization server",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "grantRefusal decides whether an OAuth grant still holds, at consent, in findAccount and in the token guard. Codes and refresh tokens are stored hashed and spent once, a replay revokes the grant, only a service account's API key mints client_credentials tokens, and access tokens carry gid or key_id. Unregistered clients show their host on consent, never their own logo."
+  },
+  {
+   "id": "20260925T2031-telemetry-and-jobs",
+   "version": "next",
+   "title": "Scrubbed logs and traces, secretless frontend builds, one job owner",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "shared/src",
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "scrubUrl moves to shared and a redacting span processor runs before export; traces now export. createLogger requires redactPaths. Boot redacts secrets by value, the deploy pipeline builds the frontend in a job without secrets, and scheduled jobs run on RUN_JOBS instances, one at a time through a Postgres advisory lock."
+  },
+  {
+   "id": "20260925T2031-internal-listener-yjs-tokens",
+   "version": "next",
+   "title": "Internal listener and per-entity Yjs tokens",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "yjs/src",
+    "cdc/src",
+    "frontend/src",
+    "infra",
+    "shared/config"
+   ],
+   "requires": [],
+   "summary": "The CDC socket and Yjs materialize answer only on INTERNAL_PORT behind the private load balancer pool. Yjs tokens are Ed25519-signed per entity for five minutes and the relay can only verify them: YJS_SECRET becomes YJS_TOKEN_PRIVATE_KEY, YJS_TOKEN_PUBLIC_KEY and YJS_RELAY_SECRET. Materialize credits the newest editor who may still update. Needs an infra Apply."
+  },
+  {
+   "id": "20260925T2031-scoped-responses",
+   "version": "next",
+   "title": "Narrower responses outside the caller's scope; email params escaped once",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "frontend/src",
+    "shared/src"
+   ],
+   "requires": [],
+   "summary": "getUsers shows the system role only to system admins, pending invitations drop userId and give tokenId only to callers who may update, markSeen uses the read scope, idempotent replays return the caller's rows only and relatableUserId must be a uuid. Email params are escaped once by Brevo, declared HTML params use |safe, and schema messages translate lazily."
+  },
+  {
+   "id": "20260925T2031-media-refs-upload-visibility",
+   "version": "next",
+   "title": "One media reference grammar; the server decides upload visibility",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/src",
+    "shared/config"
+   ],
+   "requires": [],
+   "summary": "parseMediaRef accepts an attachment id, a key under the document's organization or an eux asset, and everything else renders nothing; trusted-media-domains.json is removed. Upload templates declare publicBucket, the client flag is gone, attachment rows are stamped private, and newsletter images use a system-admin template."
   }
  ]
 }
