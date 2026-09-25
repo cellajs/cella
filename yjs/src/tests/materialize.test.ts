@@ -2,9 +2,9 @@ import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { postMaterialize, stateToBlocksJson } from '../sync/materialize';
-import { mockDocContext } from './helpers';
+import { mockScope } from './helpers';
 
-const ctx = mockDocContext({ verified: true });
+const ctx = mockScope();
 
 const description = JSON.stringify([
   { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },

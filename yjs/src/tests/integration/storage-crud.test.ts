@@ -2,7 +2,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { DocContext } from '../../constants';
+import type { DocScope } from '../../constants';
 import { appendUpdate, compactState, deleteDoc, ensureDoc, loadBase, readLog } from '../../data/storage';
 import { mergeState } from '../../sync/document-state';
 import { mapUpdate, readMap } from '../helpers';
@@ -14,15 +14,13 @@ const testTenantId = 'yjs-integ-tenant';
 const testUserId = '00000000-0000-4000-a000-0000000000aa';
 const testOrgId = '00000000-0000-4000-a000-000000000001';
 
-function ctx(entityId: string, userId = testUserId): DocContext {
+function ctx(entityId: string): DocScope {
   return {
     // The Yjs tables have no FK to the entity table, so any product type works.
     entityType: appConfig.productEntityTypes[0],
     entityId,
     tenantId: testTenantId,
-    userId,
     organizationId: testOrgId,
-    verified: true,
   };
 }
 
@@ -74,8 +72,8 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     expect(await loadBase(c)).toBeNull();
     expect(await ensureDoc(c, seed)).toEqual(seed);
 
-    await appendUpdate(c, mapUpdate('a', 1));
-    await appendUpdate(ctx(ids.lifecycle, '00000000-0000-4000-a000-0000000000bb'), mapUpdate('b', 2));
+    await appendUpdate(c, testUserId, mapUpdate('a', 1));
+    await appendUpdate(c, '00000000-0000-4000-a000-0000000000bb', mapUpdate('b', 2));
     const rows = await readLog(c);
     expect(rows.map((row) => row.userId)).toEqual([testUserId, '00000000-0000-4000-a000-0000000000bb']);
     expect(rows[0].id).toBeLessThan(rows[1].id);
@@ -109,13 +107,13 @@ describe('6.1 Storage: session row, update log, compaction', () => {
   it('twenty concurrent appends all land, and compaction deletes only the rows it was given', async () => {
     const c = ctx(ids.compaction);
     await ensureDoc(c, null);
-    await Promise.all(Array.from({ length: 20 }, (_, i) => appendUpdate(c, mapUpdate(`k${i}`, i))));
+    await Promise.all(Array.from({ length: 20 }, (_, i) => appendUpdate(c, testUserId, mapUpdate(`k${i}`, i))));
     const rows = await readLog(c);
     expect(rows).toHaveLength(20);
 
     // An append that lands after the read and before the compaction write survives.
     const read = rows.slice(0, 20);
-    await appendUpdate(c, mapUpdate('late', true));
+    await appendUpdate(c, testUserId, mapUpdate('late', true));
     const merged = mergeState(
       await loadBase(c),
       read.map((row) => row.payload),
@@ -144,7 +142,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
   it('rows are invisible to the runtime role without tenant context and from another tenant', async () => {
     const c = ctx(ids.rls);
     await ensureDoc(c, mapUpdate('seed', true));
-    await appendUpdate(c, mapUpdate('a', 1));
+    await appendUpdate(c, testUserId, mapUpdate('a', 1));
 
     expect(await loadBase({ ...c, tenantId: 'some-other-tenant' })).toBeNull();
     expect(await readLog({ ...c, tenantId: 'some-other-tenant' })).toEqual([]);

@@ -1,16 +1,30 @@
 import { createServer } from 'node:http';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
-import type { DocContext } from '../constants';
-import { buildAwarenessMessage, buildSyncUpdate, createSignedToken, fakeStorage, mapUpdate } from './helpers';
+import type { DocScope } from '../constants';
+import {
+  buildAwarenessMessage,
+  buildSyncUpdate,
+  createSignedToken,
+  fakeStorage,
+  mapUpdate,
+  storageKey,
+} from './helpers';
 
-// The real upgrade handler, relay and session manager over in-memory storage. Entity access is decided per user.
+// The real upgrade handler, relay and session manager over in-memory storage. Entity access is decided per user;
+// every entity row sits in tenant-1 / org-1, and authorization returns the row's scope, never the token's.
 const gates = new Map<string, { delayMs: number; allowed: boolean }>();
 vi.mock('../data/permissions', () => ({
-  canEditEntity: vi.fn(async (ctx: DocContext) => {
-    const gate = gates.get(ctx.userId) ?? { delayMs: 0, allowed: true };
+  authorizeDoc: vi.fn(async (userId: string, requested: DocScope) => {
+    const gate = gates.get(userId) ?? { delayMs: 0, allowed: true };
     if (gate.delayMs) await new Promise((resolve) => setTimeout(resolve, gate.delayMs));
-    return gate.allowed;
+    if (!gate.allowed || requested.tenantId !== 'tenant-1') return null;
+    return {
+      entityType: requested.entityType,
+      entityId: requested.entityId,
+      tenantId: 'tenant-1',
+      organizationId: 'org-1',
+    };
   }),
 }));
 const storage = fakeStorage();
@@ -26,6 +40,8 @@ const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/
 const { getCollab } = await import('../sync/session-manager');
 
 const entityType = 'task';
+/** A document of tenant-1, as the relay keys its session and rows. */
+const docOf = (entityId: string) => ({ entityType, entityId, tenantId: 'tenant-1' });
 let baseUrl: string;
 let httpServer: ReturnType<typeof createServer>;
 let wss: WebSocketServer;
@@ -56,7 +72,7 @@ afterEach(() => {
 afterAll(() => {
   // The relay arms compaction and cleanup timers per document; none may outlive the file.
   for (const entityId of usedDocs) {
-    const collab = getCollab(entityType, entityId);
+    const collab = getCollab(docOf(entityId));
     if (collab?.compactTimer) clearTimeout(collab.compactTimer);
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
   }
@@ -74,13 +90,13 @@ async function until(check: () => boolean, ms = 2000): Promise<void> {
   }
 }
 
-const clientCount = (entityId: string) => getCollab(entityType, entityId)?.clients.size ?? 0;
+const clientCount = (entityId: string) => getCollab(docOf(entityId))?.clients.size ?? 0;
 
 /** An open client socket on the document; `received` collects every frame the relay sends it. */
-async function open(userId: string, entityId: string) {
+async function open(userId: string, entityId: string, tenantId = 'tenant-1') {
   usedDocs.add(entityId);
-  const token = createSignedToken({ userId, entityType, entityId });
-  const ws = new WsWebSocket(`${baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=tenant-1`);
+  const token = createSignedToken({ userId, entityType, entityId, tenantId });
+  const ws = new WsWebSocket(`${baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=${tenantId}`);
   const received: Uint8Array[] = [];
   ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));
   const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
@@ -100,7 +116,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     gates.set('user-b', { delayMs: 250, allowed: true });
     const pending = await open('user-b', doc);
     editor.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
-    await until(() => storage.logs.get(`${entityType}:${doc}`)?.length === 1);
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 1);
     await wait(50);
     expect(pending.received).toHaveLength(0);
 
@@ -144,7 +160,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     await until(() => clientCount(doc) === 2);
 
     // ws still emits frames that arrive after the server started closing; one is replayed on the closing socket.
-    const [, closing] = [...(getCollab(entityType, doc)?.clients ?? [])];
+    const [, closing] = [...(getCollab(docOf(doc))?.clients ?? [])];
     closing.close(1000);
     expect(closing.readyState).toBe(WsWebSocket.CLOSING);
     closing.emit('message', Buffer.from(buildAwarenessMessage(new Uint8Array([3]))), false);
@@ -161,10 +177,27 @@ describe('upgrade: a socket joins its document only once verified', () => {
     await until(() => clientCount(doc) === 1);
 
     expect(await denied.closed).toBe(4003);
-    const collab = getCollab(entityType, doc);
-    expect(collab?.ctx.userId).toBe('user-v');
-    expect(collab?.ctx.verified).toBe(true);
+    const collab = getCollab(docOf(doc));
+    // The session's scope is the entity row's, with no joiner in it: compaction and materialize act as the system.
+    expect(collab?.scope).toEqual({ entityType, entityId: doc, tenantId: 'tenant-1', organizationId: 'org-1' });
     expect(collab?.clients.size).toBe(1);
+  });
+
+  it("must not open a session in another tenant's scope via a token naming that tenant", async () => {
+    const doc = 'doc-forged-tenant';
+    // The token names tenant-x, but the entity row is in tenant-1: authorization reads no such row there.
+    const forged = await open('user-g', doc, 'tenant-x');
+    forged.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(await forged.closed).toBe(4003);
+    await wait(30);
+    expect(getCollab({ entityType, entityId: doc, tenantId: 'tenant-x' })).toBeUndefined();
+    expect(storage.logs.get(storageKey({ entityType, entityId: doc, tenantId: 'tenant-x' }))).toBeUndefined();
+
+    // Positive control: the row's own tenant opens it, with a session keyed by that tenant.
+    await open('user-h', doc);
+    await until(() => clientCount(doc) === 1);
+    expect(getCollab(docOf(doc))?.scope.tenantId).toBe('tenant-1');
   });
 
   it('must not open a document session for a denied socket', async () => {
@@ -175,7 +208,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
 
     expect(await denied.closed).toBe(4003);
     await wait(30);
-    expect(getCollab(entityType, doc)).toBeUndefined();
-    expect(storage.logs.get(`${entityType}:${doc}`)).toBeUndefined();
+    expect(getCollab(docOf(doc))).toBeUndefined();
+    expect(storage.logs.get(storageKey(docOf(doc)))).toBeUndefined();
   });
 });

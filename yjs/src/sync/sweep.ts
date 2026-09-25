@@ -25,13 +25,11 @@ export async function runStartupSweep(): Promise<void> {
 
   for (const doc of stale) {
     // A document that reconnected since the listing belongs to its live session.
-    if (getCollab(doc.entityType, doc.entityId)) continue;
-
-    const ctx = { ...doc, userId: '', verified: true };
+    if (getCollab(doc)) continue;
 
     let result: Awaited<ReturnType<typeof compactDocument>>;
     try {
-      result = await compactDocument(ctx);
+      result = await compactDocument(doc);
     } catch (err) {
       log.warn(`Startup sweep: compaction failed for ${doc.entityType}:${doc.entityId}, keeping rows`, { err });
       continue;
@@ -42,7 +40,7 @@ export async function runStartupSweep(): Promise<void> {
     }
 
     try {
-      await deleteDoc(ctx);
+      await deleteDoc(doc);
     } catch (err) {
       log.warn(`Startup sweep: failed to delete ${doc.entityType}:${doc.entityId}`, { err });
     }

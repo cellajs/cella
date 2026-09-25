@@ -3,8 +3,8 @@ import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
 import { MissingAncestorError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
-import { type DocContext, YJS_PENDING_QUEUE_CAP } from '../constants';
-import { canEditEntity } from '../data/permissions';
+import { type SocketContext, YJS_PENDING_QUEUE_CAP } from '../constants';
+import { authorizeDoc } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
 import { handleMessage, peekMessageType, YMessage } from '../sync/relay';
@@ -27,33 +27,32 @@ function rejectUpgrade(socket: Duplex, status: keyof typeof statusText, code: nu
 /** Per-socket verification, awaited as the first task of the socket's queue so no sync frame runs before it settles. */
 const verifications = new WeakMap<WebSocket, Promise<void>>();
 
-function applyVerifyResult(ws: WebSocket, ctx: DocContext, allowed: boolean): void {
-  if (allowed) {
-    ctx.verified = true;
-    log.debug(`Entity verified for ${ctx.entityType}:${ctx.entityId}`, { userId: ctx.userId });
-  } else {
-    log.warn(`Entity access denied for ${ctx.entityType}:${ctx.entityId}`);
-    ws.close(4003, 'Access denied');
-  }
-}
+/** `type:id` of the document a socket asks for, for log lines. */
+const docLabel = (ctx: SocketContext) => `${ctx.requested.entityType}:${ctx.requested.entityId}`;
 
-/** Verifies entity access after the connection is established, locally through the shared permission engine; on failure the client is disconnected and its queued sync frames never run. */
-async function verifyEntityAsync(ws: WebSocket, ctx: DocContext): Promise<void> {
+/** Authorizes the socket's user against the entity row after the connection is established, locally through the shared permission engine; on success the socket takes the row's scope, on failure it is disconnected and its queued sync frames never run. */
+async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<void> {
   try {
-    const allowed = await canEditEntity(ctx);
+    const scope = await authorizeDoc(ctx.userId, ctx.requested);
     if (ws.readyState !== ws.OPEN) return;
-    applyVerifyResult(ws, ctx, allowed);
+    if (!scope) {
+      log.warn(`Entity access denied for ${docLabel(ctx)}`);
+      ws.close(4003, 'Access denied');
+      return;
+    }
+    ctx.scope = scope;
+    log.debug(`Entity verified for ${docLabel(ctx)}`, { userId: ctx.userId });
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;
     if (err instanceof MissingAncestorError) {
-      log.warn(`Entity missing required ancestor for ${ctx.entityType}:${ctx.entityId}`, {
+      log.warn(`Entity missing required ancestor for ${docLabel(ctx)}`, {
         missingChannel: err.missingChannel,
         missingKey: err.missingKey,
       });
       ws.close(4400, 'Missing entity ancestor');
       return;
     }
-    log.error(`Entity verify failed for ${ctx.entityType}:${ctx.entityId}`, { err: err });
+    log.error(`Entity verify failed for ${docLabel(ctx)}`, { err: err });
     ws.close(4503, 'Authorization unavailable');
   }
 }
@@ -125,16 +124,18 @@ export function setupUpgradeHandler(
     if (socket.destroyed) return;
 
     // Accepted optimistically: sync frames queue on the socket until entity access is verified.
-    const ctx: DocContext = {
-      entityType: rawEntityType,
-      entityId,
-      tenantId: payload.tenantId,
+    const ctx: SocketContext = {
       userId: payload.userId,
-      organizationId: payload.organizationId,
-      verified: false,
+      requested: {
+        entityType: payload.entityType,
+        entityId: payload.entityId,
+        tenantId: payload.tenantId,
+        organizationId: payload.organizationId,
+      },
+      scope: null,
     };
 
-    log.info(`Connection accepted for ${rawEntityType}:${entityId}`, { userId: ctx.userId, tenantId: ctx.tenantId });
+    log.info(`Connection accepted for ${docLabel(ctx)}`, { userId: ctx.userId, tenantId: payload.tenantId });
     server.handleUpgrade(req, socket, head, (ws) => {
       verifications.set(ws, verifyEntityAsync(ws, ctx));
       server.emit('connection', ws, ctx);
@@ -151,17 +152,17 @@ export function setupUpgradeHandler(
  * Closing drops whatever has not started.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
-  server.on('connection', (ws, ctx: DocContext) => {
-    let joined = false;
+  server.on('connection', (ws, ctx: SocketContext) => {
+    let joined: SocketContext['scope'] = null;
     let heldAwareness: Uint8Array | null = null;
     const relayAwareness = (data: Uint8Array) => {
       handleMessage(ctx, ws, data).catch((err) => {
-        log.error(`Error handling awareness for ${ctx.entityType}:${ctx.entityId}`, { err });
+        log.error(`Error handling awareness for ${docLabel(ctx)}`, { err });
       });
     };
 
     const queue = createSerialQueue((err) => {
-      log.error(`Error handling message for ${ctx.entityType}:${ctx.entityId}`, { err });
+      log.error(`Error handling message for ${docLabel(ctx)}`, { err });
     });
     const verification = verifications.get(ws);
     void queue.enqueue(async () => {
@@ -169,12 +170,12 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       const held = heldAwareness;
       heldAwareness = null;
       // Denied, failed or closed during verification: queued frames must never apply, and the socket never joins.
-      if (!ctx.verified || queue.closed || ws.readyState !== ws.OPEN) {
+      if (!ctx.scope || queue.closed || ws.readyState !== ws.OPEN) {
         queue.close();
         return;
       }
-      joinCollab(ctx, ws);
-      joined = true;
+      joinCollab(ctx.scope, ws);
+      joined = ctx.scope;
       if (held) relayAwareness(held);
     });
 
@@ -182,8 +183,9 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       queue.close();
       heldAwareness = null;
       if (!joined) return;
-      joined = false;
-      leaveCollab(ctx.entityType, ctx.entityId, ws);
+      const scope = joined;
+      joined = null;
+      leaveCollab(scope, ws);
     };
 
     ws.on('message', (rawData: Buffer) => {
@@ -196,14 +198,14 @@ export function setupConnectionHandler(server: WebSocketServer): void {
         return;
       }
       // Bounds memory while a slow verification holds the queue; a verified socket is not capped.
-      if (!ctx.verified && queue.size >= YJS_PENDING_QUEUE_CAP) return;
+      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) return;
       void queue.enqueue(() => handleMessage(ctx, ws, data));
     });
 
     ws.on('close', cleanup);
 
     ws.on('error', (err) => {
-      log.error('WebSocket error', { entityType: ctx.entityType, entityId: ctx.entityId, err });
+      log.error('WebSocket error', { entityType: ctx.requested.entityType, entityId: ctx.requested.entityId, err });
       cleanup();
     });
   });

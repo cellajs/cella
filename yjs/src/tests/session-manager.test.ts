@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deferred, mockDocContext, mockWebSocket, storageMock } from './helpers';
+import { deferred, mockScope, mockWebSocket, storageMock } from './helpers';
 
 vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
@@ -21,8 +21,8 @@ afterEach(() => {
 
 // A unique entityId per test keeps the module-level session Map from leaking across tests.
 let testCounter = 0;
-function uniqueCtx(overrides?: Partial<ReturnType<typeof mockDocContext>>) {
-  return mockDocContext({ entityId: `entity-${++testCounter}`, verified: true, ...overrides });
+function uniqueCtx(overrides?: Partial<ReturnType<typeof mockScope>>) {
+  return mockScope({ entityId: `entity-${++testCounter}`, ...overrides });
 }
 
 describe('joinCollab / leaveCollab', () => {
@@ -43,9 +43,9 @@ describe('joinCollab / leaveCollab', () => {
     const ws2 = mockWebSocket();
     joinCollab(ctx, ws1 as never);
     const collab = joinCollab(ctx, ws2 as never);
-    leaveCollab(ctx.entityType, ctx.entityId, ws1 as never);
+    leaveCollab(ctx, ws1 as never);
     expect(collab.cleanupTimer).toBeUndefined();
-    leaveCollab(ctx.entityType, ctx.entityId, ws2 as never);
+    leaveCollab(ctx, ws2 as never);
     expect(collab.cleanupTimer).toBeDefined();
   });
 
@@ -53,12 +53,12 @@ describe('joinCollab / leaveCollab', () => {
     const ctx = uniqueCtx();
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as never);
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
     joinCollab(ctx, ws as never);
     expect(collab.cleanupTimer).toBeUndefined();
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(compactDocument).not.toHaveBeenCalled();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
+    expect(getCollab(ctx)).toBe(collab);
   });
 
   it('cleanup compacts, deletes the rows, and forgets the session', async () => {
@@ -66,14 +66,14 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as never);
     collab.compactTimer = setTimeout(() => {}, 3000);
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
 
     await vi.advanceTimersByTimeAsync(GRACE);
 
     expect(compactDocument).toHaveBeenCalledWith(ctx);
     expect(deleteDoc).toHaveBeenCalledWith(ctx);
     expect(collab.compactTimer).toBeUndefined();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+    expect(getCollab(ctx)).toBeUndefined();
   });
 
   it('a retryable materialize failure keeps the rows and reschedules cleanup', async () => {
@@ -81,16 +81,16 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     joinCollab(ctx, ws as never);
     vi.mocked(compactDocument).mockResolvedValueOnce('retry');
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
 
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(deleteDoc).not.toHaveBeenCalled();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeDefined();
+    expect(getCollab(ctx)).toBeDefined();
 
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(compactDocument).toHaveBeenCalledTimes(2);
     expect(deleteDoc).toHaveBeenCalledTimes(1);
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+    expect(getCollab(ctx)).toBeUndefined();
   });
 
   it('a thrown compaction error is treated as retry', async () => {
@@ -98,10 +98,10 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     joinCollab(ctx, ws as never);
     vi.mocked(compactDocument).mockRejectedValueOnce(new Error('db down'));
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(deleteDoc).not.toHaveBeenCalled();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeDefined();
+    expect(getCollab(ctx)).toBeDefined();
   });
 
   it('a delete failure still forgets the session (the sweep finishes the rows on the next boot)', async () => {
@@ -109,9 +109,9 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     joinCollab(ctx, ws as never);
     vi.mocked(deleteDoc).mockRejectedValueOnce(new Error('db down'));
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(GRACE);
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+    expect(getCollab(ctx)).toBeUndefined();
   });
 
   it('cleanup waits for a running locked task and aborts when a client rejoined meanwhile', async () => {
@@ -120,7 +120,7 @@ describe('joinCollab / leaveCollab', () => {
     const collab = joinCollab(ctx, ws as never);
     const gate = deferred();
     void withDocLock(collab, () => gate.promise);
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
 
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(compactDocument).not.toHaveBeenCalled();
@@ -130,17 +130,28 @@ describe('joinCollab / leaveCollab', () => {
 
     expect(compactDocument).not.toHaveBeenCalled();
     expect(deleteDoc).not.toHaveBeenCalled();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBe(collab);
+    expect(getCollab(ctx)).toBe(collab);
   });
 
-  it('must not take the session context from an unverified socket', () => {
-    const ctx = uniqueCtx({ verified: false });
-    expect(() => joinCollab(ctx, mockWebSocket() as never)).toThrow();
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+  it('must not share a session between tenants via the same entity id', () => {
+    const ctx = uniqueCtx();
+    const ours = mockWebSocket();
+    const theirs = mockWebSocket();
+    const collab = joinCollab(ctx, ours as never);
+    const other = joinCollab({ ...ctx, tenantId: 'tenant-2', organizationId: 'org-2' }, theirs as never);
+    expect(other).not.toBe(collab);
+    expect(other.scope.tenantId).toBe('tenant-2');
+    broadcastToCollab(ctx, new Uint8Array([1, 2, 3]));
+    expect(theirs.sent).toHaveLength(0);
+    // Positive control: the same tenant's document is the same session, and its members receive the broadcast.
+    const peer = mockWebSocket();
+    expect(joinCollab(ctx, peer as never)).toBe(collab);
+    broadcastToCollab(ctx, new Uint8Array([4, 5, 6]), ours as never);
+    expect(peer.sent).toHaveLength(1);
   });
 
   it('leave for an unknown session is a no-op', () => {
-    expect(() => leaveCollab('task', 'nope', mockWebSocket() as never)).not.toThrow();
+    expect(() => leaveCollab(mockScope({ entityId: 'nope' }), mockWebSocket() as never)).not.toThrow();
   });
 });
 
@@ -182,7 +193,7 @@ describe('broadcastToCollab', () => {
     joinCollab(uniqueCtx(), otherPeer as never);
 
     const message = new Uint8Array([1, 2, 3]);
-    broadcastToCollab(ctx.entityType, ctx.entityId, message, sender as never);
+    broadcastToCollab(ctx, message, sender as never);
 
     expect(sender.sent).toHaveLength(0);
     expect(peer.sent).toEqual([message]);

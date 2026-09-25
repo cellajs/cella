@@ -6,13 +6,27 @@ export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 export const YJS_PENDING_QUEUE_CAP = 100;
 export const YJS_AWARENESS_RATE_LIMIT = 2; // Max 2 awareness updates per client per second to prevent spam and DoS
 
-/** Identifies a document and its access context. Passed through the entire relay pipeline. */
-export interface DocContext {
+/**
+ * A document and its place as the entity row states them: the session key, the tenant its rows are stored and read
+ * under, and the scope materialize writes in. Only a scope read from the row reaches storage or a session.
+ */
+export interface DocScope {
   entityType: string;
   entityId: string;
   tenantId: string;
-  userId: string;
   organizationId: string | null;
-  /** Whether entity access has been verified. Starts false; a socket's sync messages wait in its queue until async verify completes. */
-  verified: boolean;
+}
+
+/** The fields that identify a document: its session key and the tenant of its rows. */
+export type DocKey = Pick<DocScope, 'entityType' | 'entityId' | 'tenantId'>;
+
+/**
+ * One socket: the user its token names and the document the token asks for. `scope` stays null until the user's
+ * access is authorized against the entity row, and then holds the row's scope; until then the socket's sync frames
+ * wait in its queue and it relays nothing.
+ */
+export interface SocketContext {
+  userId: string;
+  requested: DocScope;
+  scope: DocScope | null;
 }

@@ -4,12 +4,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createExpiredToken, createSignedToken } from './helpers';
 
-// The real upgrade handler over mocked collaborators: entity access is granted, the relay and session manager are inert.
+// The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
 const verifyGate = { delayMs: 0, allowed: true };
 vi.mock('../data/permissions', () => ({
-  canEditEntity: vi.fn(async () => {
+  authorizeDoc: vi.fn(async (_userId: string, requested: unknown) => {
     if (verifyGate.delayMs) await new Promise((resolve) => setTimeout(resolve, verifyGate.delayMs));
-    return verifyGate.allowed;
+    return verifyGate.allowed ? requested : null;
   }),
 }));
 // Frames are recorded with the verification state they were applied under; awareness frames bypass the queue.
@@ -17,10 +17,10 @@ const applied: { type: number; verified: boolean; body: number }[] = [];
 vi.mock('../sync/relay', () => ({
   YMessage: { Sync: 0, Awareness: 1 },
   peekMessageType: (data: Uint8Array) => (data.length < 2 ? null : data[0]),
-  handleMessage: vi.fn(async (ctx: { verified: boolean }, _ws: unknown, data: Uint8Array) => {
+  handleMessage: vi.fn(async (ctx: { scope: unknown }, _ws: unknown, data: Uint8Array) => {
     // A slow first frame: later frames must still apply after it, in order.
     if (data[2] === 1) await new Promise((resolve) => setTimeout(resolve, 30));
-    applied.push({ type: data[0], verified: ctx.verified, body: data[2] });
+    applied.push({ type: data[0], verified: ctx.scope !== null, body: data[2] });
   }),
 }));
 vi.mock('../sync/session-manager', () => ({ joinCollab: vi.fn(), leaveCollab: vi.fn() }));

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import type { DocContext } from '../constants';
+import type { DocScope } from '../constants';
 import {
   buildAwarenessMessage,
   buildSyncStep1,
@@ -11,9 +11,11 @@ import {
   fakeStorage,
   flushMicrotasks,
   mapUpdate,
-  mockDocContext,
+  mockScope,
+  mockSocketContext,
   mockWebSocket,
   readMap,
+  storageKey,
 } from './helpers';
 
 // Real append/read/compact semantics in memory, with per-call gates so tests can interleave.
@@ -37,8 +39,8 @@ const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
 const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 
-const unverifiedCtx = mockDocContext();
-const ctx = mockDocContext({ verified: true });
+const unverifiedCtx = mockSocketContext({ scope: null });
+const ctx = mockSocketContext();
 
 /** Decodes the frames a socket received: [Step2 update, Step1 state vector, ...]. */
 function decodeFrames(sent: Uint8Array[]) {
@@ -47,11 +49,12 @@ function decodeFrames(sent: Uint8Array[]) {
 
 let counter = 0;
 /** A session for a fresh document so the module-level session map never leaks between tests. */
-function session(overrides: Partial<ReturnType<typeof mockDocContext>> = {}) {
-  const c = mockDocContext({ verified: true, entityId: `entity-${++counter}`, ...overrides });
+function session(overrides: Partial<DocScope> = {}) {
+  const scope = mockScope({ entityId: `entity-${++counter}`, ...overrides });
+  const c = mockSocketContext({ requested: scope });
   const ws = mockWebSocket();
-  joinCollab(c, ws as never);
-  return { ctx: c, ws, collab: getCollab(c.entityType, c.entityId)! };
+  joinCollab(scope, ws as never);
+  return { ctx: c, scope, key: storageKey(scope), ws, collab: getCollab(scope)! };
 }
 
 beforeEach(() => {
@@ -86,10 +89,10 @@ describe('handleMessage: gating and validation', () => {
 
 describe('handleMessage: sync step 1', () => {
   it('first connection without entity content: seeds an empty doc and answers with an empty Step2 plus a Step1', async () => {
-    const { ctx: c, ws } = session();
+    const { ctx: c, scope, ws } = session();
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(storage.ensureDoc).toHaveBeenCalledWith(c, null);
+    expect(storage.ensureDoc).toHaveBeenCalledWith(scope, null);
     const frames = decodeFrames(ws.sent);
     expect(frames.map((f) => f.sync)).toEqual([1, 0]);
     expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({});
@@ -115,9 +118,9 @@ describe('handleMessage: sync step 1', () => {
   it('concurrent Step1s from two sockets seed once, through the document lock', async () => {
     const gate = deferred();
     gates.set('ensureDoc', gate.promise);
-    const { ctx: c, ws: ws1, collab } = session();
+    const { ctx: c, scope, ws: ws1, collab } = session();
     const ws2 = mockWebSocket();
-    joinCollab(c, ws2 as never);
+    joinCollab(scope, ws2 as never);
 
     const first = handleMessage(c, ws1 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     const second = handleMessage(c, ws2 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
@@ -131,13 +134,13 @@ describe('handleMessage: sync step 1', () => {
     expect(storage.loadBase).toHaveBeenCalledTimes(2);
     expect(ws1.sent).toHaveLength(2);
     expect(ws2.sent).toHaveLength(2);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, ws2 as never);
+    leaveCollab(collab.scope, ws2 as never);
   });
 
   it('existing base plus log: answers with the diff of the merged document and asks for the rest', async () => {
-    const { ctx: c, ws } = session();
-    storage.bases.set(`${c.entityType}:${c.entityId}`, mapUpdate('base', true));
-    await storage.appendUpdate(c, mapUpdate('logged', 1));
+    const { ctx: c, scope, key, ws } = session();
+    storage.bases.set(key, mapUpdate('base', true));
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('logged', 1));
 
     const client = new Y.Doc();
     client.getMap('data').set('mine', 'x');
@@ -153,8 +156,8 @@ describe('handleMessage: sync step 1', () => {
   });
 
   it('corrupted stored state: falls back to sending the full state without a pull', async () => {
-    const { ctx: c, ws } = session();
-    storage.bases.set(`${c.entityType}:${c.entityId}`, new Uint8Array([1, 2, 3]));
+    const { ctx: c, key, ws } = session();
+    storage.bases.set(key, new Uint8Array([1, 2, 3]));
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     expect(ws.sent).toHaveLength(1);
     expect(decodeSyncStep2(ws.sent[0])).toEqual(new Uint8Array([1, 2, 3]));
@@ -163,9 +166,9 @@ describe('handleMessage: sync step 1', () => {
 
 describe('handleMessage: sync update', () => {
   it('appends the update to the log before broadcasting it to peers', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, scope, key, ws, collab } = session();
     const peer = mockWebSocket();
-    joinCollab(c, peer as never);
+    joinCollab(scope, peer as never);
     const gate = deferred();
     gates.set('appendUpdate', gate.promise);
 
@@ -176,10 +179,11 @@ describe('handleMessage: sync update', () => {
     gate.release();
     await done;
 
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(storage.logs.get(key)?.[0].userId).toBe(c.userId);
     expect(peer.sent[0]).toEqual(raw);
     expect(ws.sent).toHaveLength(0);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
+    leaveCollab(collab.scope, peer as never);
   });
 
   it('accepts a client Step2 as an update and skips an empty one', async () => {
@@ -195,18 +199,18 @@ describe('handleMessage: sync update', () => {
   });
 
   it('a burst of dependent updates dispatched without awaiting all reach the log, and one compaction merges them', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = session();
     // The first append is slow; the others overtake it.
     const gate = deferred();
     let slowed = false;
     gates.set('appendUpdate', gate.promise);
-    storage.appendUpdate.mockImplementationOnce(async (_ctx: DocContext, payload: Uint8Array) => {
+    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string, payload: Uint8Array) => {
       slowed = true;
       await gate.promise;
       gates.delete('appendUpdate');
-      const list = storage.logs.get(`${c.entityType}:${c.entityId}`) ?? [];
-      list.push({ id: 1000, payload, userId: c.userId });
-      storage.logs.set(`${c.entityType}:${c.entityId}`, list);
+      const list = storage.logs.get(key) ?? [];
+      list.push({ id: 1000, payload, userId });
+      storage.logs.set(key, list);
     });
 
     const doc = new Y.Doc();
@@ -222,10 +226,10 @@ describe('handleMessage: sync update', () => {
     gate.release();
     await Promise.all(dispatched);
 
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(3);
+    expect(storage.logs.get(key)).toHaveLength(3);
     await vi.advanceTimersByTimeAsync(3000);
     expect(storage.compactState).toHaveBeenCalledTimes(1);
-    const merged = storage.bases.get(`${c.entityType}:${c.entityId}`)!;
+    const merged = storage.bases.get(key)!;
     const verify = new Y.Doc();
     Y.applyUpdate(verify, merged);
     expect(verify.getText('t').toString()).toBe('abc');
@@ -235,32 +239,32 @@ describe('handleMessage: sync update', () => {
 
 describe('handleMessage: awareness', () => {
   it('is broadcast to peers from a verified socket and rate limited per client', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, scope, ws, collab } = session();
     const peer = mockWebSocket();
-    joinCollab(c, peer as never);
+    joinCollab(scope, peer as never);
 
     await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([1])));
     await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([2])));
     expect(peer.sent).toHaveLength(1);
 
     const other = mockWebSocket();
-    joinCollab(c, other as never);
+    joinCollab(scope, other as never);
     await handleMessage(c, other as never, buildAwarenessMessage(new Uint8Array([3])));
     expect(peer.sent).toHaveLength(2);
 
     vi.advanceTimersByTime(600);
     await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([4])));
     expect(peer.sent).toHaveLength(3);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, other as never);
+    leaveCollab(collab.scope, peer as never);
+    leaveCollab(collab.scope, other as never);
   });
 
   it('must not relay presence from an unverified or closing socket', async () => {
-    const { ctx: c, collab } = session();
+    const { ctx: c, scope, collab } = session();
     const peer = mockWebSocket();
-    joinCollab(c, peer as never);
+    joinCollab(scope, peer as never);
 
-    const pending = mockDocContext({ entityId: c.entityId });
+    const pending = mockSocketContext({ requested: scope, scope: null });
     await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([1])));
     await handleMessage(c, mockWebSocket({ readyState: 2 }) as never, buildAwarenessMessage(new Uint8Array([2])));
     expect(peer.sent).toHaveLength(0);
@@ -268,14 +272,14 @@ describe('handleMessage: awareness', () => {
     // Positive control: an open verified socket reaches the peer.
     await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(new Uint8Array([3])));
     expect(peer.sent).toHaveLength(1);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
+    leaveCollab(collab.scope, peer as never);
   });
 });
 
 describe('compaction', () => {
   it('runs once after the debounce, credits the last editor, and deletes exactly the rows it read', async () => {
-    const { ctx: c, ws, collab } = session();
-    const editor2 = mockDocContext({ verified: true, entityId: c.entityId, userId: 'user-2' });
+    const { ctx: c, scope, key, ws } = session();
+    const editor2 = mockSocketContext({ userId: 'user-2', requested: scope });
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
     vi.advanceTimersByTime(2000);
     await handleMessage(editor2, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
@@ -285,15 +289,16 @@ describe('compaction', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(postMaterialize).toHaveBeenCalledTimes(1);
-    expect(postMaterialize).toHaveBeenCalledWith(collab.ctx, 'user-2', '[]');
+    // As the system, in the document's scope: no joiner's context rides along.
+    expect(postMaterialize).toHaveBeenCalledWith(scope, 'user-2', '[]');
     const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
+    expect(storage.logs.get(key)).toHaveLength(0);
   });
 
   it('an update appended during an in-flight materialize survives compaction', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = session();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     const gate = deferred();
@@ -307,15 +312,14 @@ describe('compaction', () => {
     gate.release();
     expect(await compaction).toBe('ok');
 
-    const remaining = storage.logs.get(`${c.entityType}:${c.entityId}`)!;
+    const remaining = storage.logs.get(key)!;
     expect(remaining).toHaveLength(1);
     expect(readMap(remaining[0].payload)).toEqual({ late: true });
-    expect(readMap(storage.bases.get(`${c.entityType}:${c.entityId}`)!)).toEqual({ a: 1 });
+    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1 });
   });
 
   it('only a written window compacts: retry, permanent and unparseable all keep the log for the next one', async () => {
-    const { ctx: c, ws, collab } = session();
-    const key = `${c.entityType}:${c.entityId}`;
+    const { ctx: c, key, ws, collab } = session();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     vi.mocked(postMaterialize).mockResolvedValueOnce('retry');

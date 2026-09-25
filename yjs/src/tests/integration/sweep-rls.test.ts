@@ -78,14 +78,7 @@ describe('startup sweep under RLS (runtime_role)', () => {
   });
 
   it('deletes a swept document inside its own tenant scope', async () => {
-    await deleteDoc({
-      entityType,
-      entityId: docs.staleA,
-      tenantId: tenants.a,
-      userId: '',
-      organizationId: orgs.a,
-      verified: true,
-    });
+    await deleteDoc({ entityType, entityId: docs.staleA, tenantId: tenants.a });
     const { rowCount } = await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [docs.staleA]);
     expect(rowCount).toBe(0);
     // The other tenant's row is untouched.

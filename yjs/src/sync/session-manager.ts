@@ -1,12 +1,13 @@
 import type { WebSocket } from 'ws';
-import type { DocContext } from '../constants';
+import type { DocKey, DocScope } from '../constants';
 import { YJS_CLEANUP_DELAY_MS } from '../constants';
 import { deleteDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { compactDocument } from './compaction';
 
 export interface CollabSession {
-  ctx: DocContext;
+  /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
+  scope: DocScope;
   clients: Set<WebSocket>;
   /** Document lock: seeding, compaction and cleanup run one at a time through this chain. */
   chain: Promise<unknown>;
@@ -16,12 +17,13 @@ export interface CollabSession {
 
 const collabSessions = new Map<string, CollabSession>();
 
-function collabKey(entityType: string, entityId: string): string {
-  return `${entityType}:${entityId}`;
+/** Keyed by tenant, type and id, so no session is shared across tenants. */
+function collabKey({ tenantId, entityType, entityId }: DocKey): string {
+  return `${tenantId}:${entityType}:${entityId}`;
 }
 
-export function getCollab(entityType: string, entityId: string): CollabSession | undefined {
-  return collabSessions.get(collabKey(entityType, entityId));
+export function getCollab(doc: DocKey): CollabSession | undefined {
+  return collabSessions.get(collabKey(doc));
 }
 
 export function getActiveDocumentCount(): number {
@@ -47,12 +49,12 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
 }
 
 /**
- * Registers a verified client for a document and cancels pending cleanup when reconnecting. The first
- * client's context becomes the session's, which compaction, materialize and cleanup act in.
+ * Registers an authorized client for a document and cancels pending cleanup when reconnecting. `scope` is the one
+ * authorization read from the entity row, so every joiner of a document brings the same one and the first opens the
+ * session in it.
  */
-export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
-  if (!ctx.verified) throw new Error(`Unverified socket cannot join ${ctx.entityType}:${ctx.entityId}`);
-  const key = collabKey(ctx.entityType, ctx.entityId);
+export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
+  const key = collabKey(scope);
   let collab = collabSessions.get(key);
 
   if (collab) {
@@ -64,18 +66,18 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
     return collab;
   }
 
-  collab = { ctx, clients: new Set([ws]), chain: Promise.resolve() };
+  collab = { scope, clients: new Set([ws]), chain: Promise.resolve() };
   collabSessions.set(key, collab);
   return collab;
 }
 
 /**
  * When the last client leaves, a grace period runs before the log is compacted and the session rows
- * are deleted. Rows go only once the log is written or empty: a retryable failure keeps them and
+ * are deleted. Rows go once the log is written or empty: a retryable failure keeps them and
  * retries, a permanent refusal keeps them for the next session or the startup sweep.
  */
-export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
-  const key = collabKey(entityType, entityId);
+export function leaveCollab(doc: DocKey, ws: WebSocket): void {
+  const key = collabKey(doc);
   const collab = collabSessions.get(key);
   if (!collab) return;
 
@@ -95,7 +97,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
 
       let result: Awaited<ReturnType<typeof compactDocument>>;
       try {
-        result = await compactDocument(collab.ctx);
+        result = await compactDocument(collab.scope);
       } catch (err) {
         log.error(`Cleanup compaction failed for ${key}`, { err });
         result = 'retry';
@@ -105,7 +107,7 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
       if (result === 'permanent') return 'kept';
 
       try {
-        await deleteDoc(collab.ctx);
+        await deleteDoc(collab.scope);
       } catch (err) {
         log.error(`Failed to delete session rows for ${key}`, { err });
       }
@@ -125,13 +127,8 @@ export function leaveCollab(entityType: string, entityId: string, ws: WebSocket)
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
 }
 
-export function broadcastToCollab(
-  entityType: string,
-  entityId: string,
-  message: Uint8Array,
-  exclude?: WebSocket,
-): void {
-  const collab = getCollab(entityType, entityId);
+export function broadcastToCollab(doc: DocKey, message: Uint8Array, exclude?: WebSocket): void {
+  const collab = getCollab(doc);
   if (!collab) return;
 
   for (const client of collab.clients) {

@@ -3,8 +3,8 @@ import pg from 'pg';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { DocContext } from '../../constants';
-import { canEditEntity } from '../../data/permissions';
+import type { DocScope } from '../../constants';
+import { authorizeDoc } from '../../data/permissions';
 
 const DATABASE_URL = testDatabaseUrl;
 
@@ -16,8 +16,10 @@ const orgC = '20000000-0000-4000-a000-000000000003';
 
 const userA = randomUUID();
 const userB = randomUUID();
+const memberA = randomUUID(); // a plain member of orgA
 
 const attachmentA = randomUUID(); // tenantA / orgA, owned by userA
+const attachmentM = randomUUID(); // tenantA / orgA, owned by memberA
 const attachmentC = randomUUID(); // tenantB / orgC
 
 const hierarchyA = buildTestEntityHierarchyPlan({
@@ -31,16 +33,9 @@ const hierarchyC = buildTestEntityHierarchyPlan({
   makeChannelId: () => randomUUID(),
 });
 
-function ctx(overrides: Partial<DocContext>): DocContext {
-  return {
-    entityType: 'attachment',
-    entityId: attachmentA,
-    tenantId: tenantA,
-    userId: userA,
-    organizationId: orgA,
-    verified: false,
-    ...overrides,
-  };
+/** The document a token asks for: attachmentA in its own scope unless overridden. */
+function requested(overrides: Partial<DocScope>): DocScope {
+  return { entityType: 'attachment', entityId: attachmentA, tenantId: tenantA, organizationId: orgA, ...overrides };
 }
 
 function quoteIdent(identifier: string) {
@@ -114,12 +109,12 @@ async function seedOrg(client: pg.Client, tenantId: string, orgId: string, slug:
   );
 }
 
-async function seedMembership(client: pg.Client, tenantId: string, orgId: string, userId: string) {
+async function seedMembership(client: pg.Client, tenantId: string, orgId: string, userId: string, role = 'admin') {
   await client.query(
     `INSERT INTO memberships (id, tenant_id, channel_type, channel_id, organization_id, user_id, role, created_by, display_order)
-     VALUES ($1, $2, 'organization', $3, $3, $4, 'admin', $4, 1)
+     VALUES ($1, $2, 'organization', $3, $3, $4, $5, $4, 1)
      ON CONFLICT (tenant_id, user_id, channel_id) DO NOTHING`,
-    [randomUUID(), tenantId, orgId, userId],
+    [randomUUID(), tenantId, orgId, userId, role],
   );
 }
 
@@ -165,7 +160,7 @@ async function seedAttachment(
 // Exercises the real `loadMemberships` / `resolveEntityScope` SQL and the shared permission engine
 // against Postgres, covering cross-tenant isolation. Cross-organization isolation within one tenant
 // is not representable: 1 tenant = 1 organization (organizations_tenant_id_key).
-describe('Local entity authorization (canEditEntity)', () => {
+describe('Local entity authorization (authorizeDoc)', () => {
   let admin: pg.Client;
 
   beforeAll(async () => {
@@ -174,6 +169,7 @@ describe('Local entity authorization (canEditEntity)', () => {
 
     await seedUser(admin, userA, 'a');
     await seedUser(admin, userB, 'b');
+    await seedUser(admin, memberA, 'm');
 
     await seedTenant(admin, tenantA);
     await seedTenant(admin, tenantB);
@@ -186,46 +182,65 @@ describe('Local entity authorization (canEditEntity)', () => {
 
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
+    await seedMembership(admin, tenantA, orgA, memberA, 'member');
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
+    await seedAttachment(admin, attachmentM, tenantA, hierarchyA, memberA);
     await seedAttachment(admin, attachmentC, tenantB, hierarchyC, userB);
   });
 
   afterAll(async () => {
-    await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentC]]);
+    await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentM, attachmentC]]);
     // One transaction: the organization-keeps-an-admin check is deferred to commit, when the organizations are gone too.
     await admin.query('BEGIN');
-    await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB]]);
+    await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB, memberA]]);
     await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
     await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
     await admin.query('COMMIT');
     await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
-    await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB]]);
-    await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB]]);
+    await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB, memberA]]);
+    await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB, memberA]]);
     await admin.end();
   });
 
-  it('allows an org admin to edit an entity in their organization', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA }))).resolves.toBe(true);
+  it("returns the entity row's scope to an org admin editing in their organization (positive control)", async () => {
+    await expect(authorizeDoc(userA, requested({ entityId: attachmentA }))).resolves.toEqual({
+      entityType: 'attachment',
+      entityId: attachmentA,
+      tenantId: tenantA,
+      organizationId: orgA,
+    });
   });
 
   it('denies editing an entity in a tenant where the user has no membership', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBe(
-      false,
-    );
+    await expect(
+      authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC })),
+    ).resolves.toBeNull();
   });
 
   it('denies when the tenant param does not match the entity tenant (defense-in-depth)', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA }))).resolves.toBe(
-      false,
-    );
+    await expect(
+      authorizeDoc(userA, requested({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA })),
+    ).resolves.toBeNull();
   });
 
-  it("must not verify a context that names another tenant's organization", async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA, organizationId: orgC }))).resolves.toBe(false);
+  it("must not authorize a request that names another tenant's organization", async () => {
+    await expect(authorizeDoc(userA, requested({ entityId: attachmentA, organizationId: orgC }))).resolves.toBeNull();
+  });
+
+  it("must not let a member write another member's attachment through the relay", async () => {
+    // Members update their own attachments only ('own' in the permission config).
+    await expect(authorizeDoc(memberA, requested({ entityId: attachmentA }))).resolves.toBeNull();
+    // Positive control: the member's own attachment.
+    await expect(authorizeDoc(memberA, requested({ entityId: attachmentM }))).resolves.toEqual({
+      entityType: 'attachment',
+      entityId: attachmentM,
+      tenantId: tenantA,
+      organizationId: orgA,
+    });
   });
 
   it('denies access to a non-existent entity', async () => {
-    await expect(canEditEntity(ctx({ entityId: randomUUID() }))).resolves.toBe(false);
+    await expect(authorizeDoc(userA, requested({ entityId: randomUUID() }))).resolves.toBeNull();
   });
 });

@@ -8,7 +8,6 @@ import {
   checkAccess,
   draftVisibleTo,
   hierarchy,
-  isChannel,
   isProduct,
   type ProductEntityType,
   toColumnName,
@@ -16,7 +15,7 @@ import {
 } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import type { DocContext } from '../constants';
+import type { DocScope } from '../constants';
 import { type Tx, withRlsTx } from './db';
 
 // Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
@@ -87,29 +86,33 @@ export async function resolveEntityScope(
 }
 
 /**
- * Mirrors the backend `verifyEntityOp`: one RLS-scoped transaction, then the shared permission engine for the `update` action.
+ * Authorizes a user to edit the document a token asks for, as the backend's `getValidProduct(update)` does: one
+ * RLS-scoped transaction reads the entity row and the user's memberships, then the shared permission engine decides.
+ * The document's scope comes from the row, never the token: the result is the scope the session, its stored rows and
+ * the materialize write use. Null for a missing row, a row in another tenant or organization than the token names,
+ * a draft the user did not author, or a row the user may not update.
  *
  * @throws MissingAncestorError if the resolved entity is missing a required ancestor scope.
  */
-export async function canEditEntity(ctx: DocContext): Promise<boolean> {
-  const { entityType } = ctx;
-  if (!isChannel(entityType) && !isProduct(entityType)) return false;
+export async function authorizeDoc(userId: string, requested: DocScope): Promise<DocScope | null> {
+  const { entityType } = requested;
+  // Tokens are issued for product entities only, the ones a materializer writes.
+  if (!isProduct(entityType)) return null;
 
-  return withRlsTx(ctx.tenantId, ctx.userId, async (tx) => {
+  return withRlsTx(requested.tenantId, userId, async (tx) => {
     const [entity, memberships] = await Promise.all([
-      resolveEntityScope(tx, entityType, ctx.entityId),
-      loadMemberships(tx, ctx.userId),
+      resolveEntityScope(tx, entityType, requested.entityId),
+      loadMemberships(tx, userId),
     ]);
 
-    if (!entity) return false;
-
-    // Defense in depth: verify the tenant match even when RLS is not enforced, as on a superuser connection.
-    if (typeof entity.tenantId === 'string' && entity.tenantId !== ctx.tenantId) return false;
-    // A verified context becomes the session's, whose organization scopes the log rows and the materialize write.
-    if (typeof entity.organizationId === 'string' && entity.organizationId !== ctx.organizationId) return false;
+    if (!entity || typeof entity.tenantId !== 'string') return null;
+    // Defense in depth: RLS limits the read to the token's tenant, which a superuser connection would not.
+    if (entity.tenantId !== requested.tenantId) return null;
+    const organizationId = typeof entity.organizationId === 'string' ? entity.organizationId : null;
+    if (organizationId !== requested.organizationId) return null;
 
     // Unpublished drafts are editable by their author alone: a lifecycle veto ahead of the engine, which has no draft vocabulary.
-    if (!draftVisibleTo(asRecord(entity), ctx.userId)) return false;
+    if (!draftVisibleTo(asRecord(entity), userId)) return null;
 
     const createdBy = typeof entity.createdBy === 'string' || entity.createdBy === null ? entity.createdBy : undefined;
     const subject = buildSubject(entityType, entity, {
@@ -121,10 +124,12 @@ export async function canEditEntity(ctx: DocContext): Promise<boolean> {
 
     // Collaborative editing confers no system-admin bypass, matching the backend materialize endpoint.
     const { allowed } = checkAccess(
-      { actorId: ctx.userId, isSystemAdmin: false, memberships, scopes: null },
+      { actorId: userId, isSystemAdmin: false, memberships, scopes: null },
       'update',
       subject,
     );
-    return allowed;
+    if (!allowed) return null;
+
+    return { entityType, entityId: entity.id, tenantId: entity.tenantId, organizationId };
   });
 }

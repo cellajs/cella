@@ -5,7 +5,7 @@ import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
 import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { vi } from 'vitest';
 import * as Y from 'yjs';
-import type { DocContext } from '../constants';
+import type { DocKey, DocScope, SocketContext } from '../constants';
 import type { StaleDocRow } from '../data/storage';
 
 interface TokenOptions {
@@ -44,18 +44,25 @@ export function createExpiredToken(userId: string): string {
   return createSignedToken({ userId, exp: Date.now() - 1000 });
 }
 
-/** Factory for DocContext with sensible defaults. */
-export function mockDocContext(overrides?: Partial<DocContext>): DocContext {
+/** A document scope with sensible defaults, as authorization reads it from the entity row. */
+export function mockScope(overrides?: Partial<DocScope>): DocScope {
+  return { entityType: 'task', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1', ...overrides };
+}
+
+/** A socket's context: authorized in `requested` unless `scope` says otherwise (null for a socket still pending). */
+export function mockSocketContext(
+  overrides: { userId?: string; requested?: DocScope; scope?: DocScope | null } = {},
+): SocketContext {
+  const requested = overrides.requested ?? mockScope();
   return {
-    entityType: 'task',
-    entityId: 'entity-1',
-    tenantId: 'tenant-1',
-    userId: 'user-1',
-    organizationId: 'org-1',
-    verified: false,
-    ...overrides,
+    userId: overrides.userId ?? 'user-1',
+    requested,
+    scope: overrides.scope === undefined ? requested : overrides.scope,
   };
 }
+
+/** The fake storage's key for a document: its tenant, type and id. */
+export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
 
 const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Update: 2 } as const;
@@ -141,7 +148,7 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
   const bases = new Map<string, Uint8Array>();
   const logs = new Map<string, { id: number; payload: Uint8Array; userId: string | null }[]>();
   let nextId = 1;
-  const key = (ctx: DocContext) => `${ctx.entityType}:${ctx.entityId}`;
+  const key = storageKey;
   const wait = async (call: string) => {
     const p = delay?.(call);
     if (p) await p;
@@ -149,37 +156,37 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
   const store = {
     bases,
     logs,
-    loadBase: vi.fn(async (ctx: DocContext) => {
+    loadBase: vi.fn(async (doc: DocKey) => {
       await wait('loadBase');
-      return bases.get(key(ctx)) ?? null;
+      return bases.get(key(doc)) ?? null;
     }),
-    ensureDoc: vi.fn(async (ctx: DocContext, seed: Uint8Array | null) => {
+    ensureDoc: vi.fn(async (scope: DocScope, seed: Uint8Array | null) => {
       await wait('ensureDoc');
-      if (!bases.has(key(ctx))) bases.set(key(ctx), seed ?? new Uint8Array());
-      return bases.get(key(ctx))!;
+      if (!bases.has(key(scope))) bases.set(key(scope), seed ?? new Uint8Array());
+      return bases.get(key(scope))!;
     }),
-    appendUpdate: vi.fn(async (ctx: DocContext, payload: Uint8Array) => {
+    appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array) => {
       await wait('appendUpdate');
-      const list = logs.get(key(ctx)) ?? [];
-      list.push({ id: nextId++, payload, userId: ctx.userId || null });
-      logs.set(key(ctx), list);
+      const list = logs.get(key(scope)) ?? [];
+      list.push({ id: nextId++, payload, userId: userId || null });
+      logs.set(key(scope), list);
     }),
-    readLog: vi.fn(async (ctx: DocContext) => {
+    readLog: vi.fn(async (doc: DocKey) => {
       await wait('readLog');
-      return [...(logs.get(key(ctx)) ?? [])];
+      return [...(logs.get(key(doc)) ?? [])];
     }),
-    compactState: vi.fn(async (ctx: DocContext, merged: Uint8Array, ids: number[]) => {
+    compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[]) => {
       await wait('compactState');
-      bases.set(key(ctx), merged);
+      bases.set(key(doc), merged);
       logs.set(
-        key(ctx),
-        (logs.get(key(ctx)) ?? []).filter((row) => !ids.includes(row.id)),
+        key(doc),
+        (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
     }),
-    deleteDoc: vi.fn(async (ctx: DocContext) => {
+    deleteDoc: vi.fn(async (doc: DocKey) => {
       await wait('deleteDoc');
-      bases.delete(key(ctx));
-      logs.delete(key(ctx));
+      bases.delete(key(doc));
+      logs.delete(key(doc));
     }),
     listStaleDocs: vi.fn(async (): Promise<StaleDocRow[]> => []),
   };

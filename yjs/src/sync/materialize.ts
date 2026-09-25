@@ -1,4 +1,4 @@
-import type { DocContext } from '../constants';
+import type { DocScope } from '../constants';
 import { env } from '../env';
 import { yUpdateToBlocks } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
@@ -19,7 +19,7 @@ const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409,
 
 /** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret. */
 export async function postMaterialize(
-  ctx: DocContext,
+  scope: DocScope,
   editedBy: string,
   description: string,
 ): Promise<MaterializeResult> {
@@ -28,10 +28,10 @@ export async function postMaterialize(
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-yjs-relay-secret': env.YJS_RELAY_SECRET },
       body: JSON.stringify({
-        entityType: ctx.entityType,
-        entityId: ctx.entityId,
-        tenantId: ctx.tenantId,
-        organizationId: ctx.organizationId,
+        entityType: scope.entityType,
+        entityId: scope.entityId,
+        tenantId: scope.tenantId,
+        organizationId: scope.organizationId,
         editedBy,
         description,
       }),
@@ -40,10 +40,10 @@ export async function postMaterialize(
 
     const rejected = res.status >= 400 && res.status < 500 && !retryableStatuses.has(res.status);
     const kind: MaterializeResult = rejected ? 'permanent' : 'retry';
-    log.warn(`Materialize ${kind} failure for ${ctx.entityType}:${ctx.entityId}`, { status: res.status });
+    log.warn(`Materialize ${kind} failure for ${scope.entityType}:${scope.entityId}`, { status: res.status });
     return kind;
   } catch (err) {
-    log.warn(`Materialize unreachable for ${ctx.entityType}:${ctx.entityId}`, { err });
+    log.warn(`Materialize unreachable for ${scope.entityType}:${scope.entityId}`, { err });
     return 'retry';
   }
 }

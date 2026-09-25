@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeStorage, mapUpdate, mockDocContext, mockWebSocket, readMap } from './helpers';
+import { fakeStorage, mapUpdate, mockScope, mockWebSocket, readMap, storageKey } from './helpers';
 
 // Real compaction, materialize, cleanup and sweep over in-memory storage; the backend answers through a stubbed fetch.
 const storage = fakeStorage();
@@ -16,12 +16,12 @@ const fetchMock = vi.fn();
 let counter = 0;
 /** A verified session on a fresh document whose base holds the written seed and whose log holds two unwritten edits. */
 async function sessionWithEdits() {
-  const ctx = mockDocContext({ verified: true, entityId: `refusal-${++counter}` });
-  const key = `${ctx.entityType}:${ctx.entityId}`;
+  const ctx = mockScope({ entityId: `refusal-${++counter}` });
+  const key = storageKey(ctx);
   storage.bases.set(key, mapUpdate('seed', true));
-  await storage.appendUpdate({ ...ctx, userId: 'user-1' }, mapUpdate('a', 1));
+  await storage.appendUpdate(ctx, 'user-1', mapUpdate('a', 1));
   // The last editor lost access mid-session: the backend refuses the write credited to them.
-  await storage.appendUpdate({ ...ctx, userId: 'user-2' }, mapUpdate('b', 2));
+  await storage.appendUpdate(ctx, 'user-2', mapUpdate('b', 2));
   const ws = mockWebSocket();
   const collab = joinCollab(ctx, ws as never);
   return { ctx, key, ws, collab };
@@ -46,21 +46,21 @@ describe('a refused materialize keeps the edits', () => {
     const { ctx, key, ws } = await sessionWithEdits();
     fetchMock.mockResolvedValue({ ok: false, status: 403 });
 
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(GRACE);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
     expect(storage.logs.get(key)).toHaveLength(2);
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeDefined();
+    expect(getCollab(ctx)).toBeDefined();
 
     // Positive control: once the backend accepts, the edits are written and the session ends.
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(storage.deleteDoc).toHaveBeenCalledTimes(1);
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+    expect(getCollab(ctx)).toBeUndefined();
   });
 
   it('must not lose edits when the last compaction did not write', async () => {
@@ -71,21 +71,21 @@ describe('a refused materialize keeps the edits', () => {
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
     expect(storage.logs.get(key)).toHaveLength(2);
 
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    leaveCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(2);
 
     // The rows wait for the next session or the startup sweep; cleanup does not retry in a loop.
-    expect(getCollab(ctx.entityType, ctx.entityId)).toBeUndefined();
+    expect(getCollab(ctx)).toBeUndefined();
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('must not lose an orphaned session via a refused materialize in the startup sweep', async () => {
     const { ctx, key, ws } = await sessionWithEdits();
-    const collab = getCollab(ctx.entityType, ctx.entityId);
-    leaveCollab(ctx.entityType, ctx.entityId, ws as never);
+    const collab = getCollab(ctx);
+    leaveCollab(ctx, ws as never);
     // The relay crashed before cleanup: only the rows remain.
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
     storage.listStaleDocs.mockResolvedValueOnce([
