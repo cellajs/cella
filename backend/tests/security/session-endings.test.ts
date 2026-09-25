@@ -19,7 +19,15 @@ import { createSession, type SignInContext } from '#/modules/auth/general/helper
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { usersTable } from '#/modules/user/user-db';
-import { authCookie, createSystemAdminUser, createTestUser, createTotpUser, type ErrorResponse } from '../helpers';
+import {
+  authCookie,
+  createOrganizationAdminUser,
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestUser,
+  createTotpUser,
+  type ErrorResponse,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -257,6 +265,28 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     expectStillOpen(bystander.id, bystanderStream);
     await warm(bystanderSession);
+  });
+
+  it('keeps the sessions of an account whose deletion was refused (positive control)', async () => {
+    const org = await createTestOrganization();
+    // The only admin of an organization: the database refuses to delete the account.
+    const soleAdmin = await createOrganizationAdminUser(
+      'sole-admin@security-test.com',
+      org.id,
+      'admin',
+      true,
+      org.tenantId,
+    );
+    const session = await insertSession(soleAdmin);
+    await warm(session);
+    const stream = await openStream(soleAdmin.id, session);
+
+    const { error, response } = await call(deleteMe, { headers: session.headers });
+    expect(response.status).toBe(409);
+    expect((error as ErrorResponse).type).toBe('last_admin');
+
+    expectStillOpen(soleAdmin.id, stream);
+    await warm(session);
   });
 
   it("must not keep a user a system admin deleted live via the user's open streams or the auth cache", async () => {
