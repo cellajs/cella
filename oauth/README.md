@@ -56,7 +56,7 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly job registered with the API deletes expired rows and consumed rows older than thirty days. Like every backend job it runs on one API instance at a time: each instance with `RUN_JOBS` (development by default, and the primary rollout service in a deploy) contends for a Postgres advisory lock, and the holder runs the jobs.
+`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. Codes and refresh tokens are keyed by the SHA-256 of their value and keep no copy of it. Each is spent once by a conditional update: a second spend, sequential or concurrent, is a replay and revokes the grant with every token issued under it. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly job registered with the API deletes expired rows and consumed rows older than thirty days. Like every backend job it runs on one API instance at a time: each instance with `RUN_JOBS` (development by default, and the primary rollout service in a deploy) contends for a Postgres advisory lock, and the holder runs the jobs.
 
 ## Operational constraints
 

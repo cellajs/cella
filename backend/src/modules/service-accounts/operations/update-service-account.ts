@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { invalidateApiKeyCacheByAccount } from '#/middlewares/guard/api-key-cache';
-import { invalidateOauthClientCache } from '#/modules/oauth-server/adapter';
+import { invalidateOauthClientCache } from '#/modules/oauth-server/client-cache';
 import { requireManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import type { UpdateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';

@@ -1,22 +1,17 @@
 import { z } from '@hono/zod-openapi';
-import { and, eq } from 'drizzle-orm';
-import type { Adapter, AdapterPayload } from 'oidc-provider';
+import { and, eq, isNull } from 'drizzle-orm';
+import { type Adapter, type AdapterPayload, errors } from 'oidc-provider';
 import { baseDb } from '#/db/db';
-import { TTLCache } from '#/lib/ttl-cache';
+import { clientCache } from '#/modules/oauth-server/client-cache';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
+import { deleteConsentWithTokens } from '#/modules/oauth-server/oauth-server-queries';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
 /** Client metadata as the provider reads it; `client_kind` tells the consent screen and the secret check which table it came from. */
 export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
-
-/** The provider caches only static clients; adapter-loaded ones are cached here, dropped when the account changes. */
-const clientCache = new TTLCache<AppClientMetadata>({ maxSize: 1000, defaultTtl: 60_000 });
-
-export const invalidateOauthClientCache = (id: string): void => {
-  clientCache.delete(id);
-};
 
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {
   const cached = clientCache.get(id);
@@ -65,31 +60,44 @@ async function loadClient(id: string): Promise<AppClientMetadata | undefined> {
 }
 
 /**
+ * Codes and refresh tokens are values a client presents to get tokens: their rows are keyed by the value's SHA-256 and
+ * the stored payload drops `jti` (the value itself), so reading the store yields nothing a client could present.
+ */
+const hashedModels = new Set(['AuthorizationCode', 'RefreshToken']);
+
+/**
  * `node-oidc-provider`'s adapter over `oidc_payloads`: one row per model instance keyed by (type, id). The `Client`
  * model reads the app's own tables (`oauth_clients`, active `service_accounts`). Expiry is a column, so a sweep can delete
  * what the provider no longer reads.
  */
 export class DrizzleAdapter implements Adapter {
-  constructor(private readonly name: string) {}
+  private readonly hashed: boolean;
+
+  constructor(private readonly name: string) {
+    this.hashed = hashedModels.has(name);
+  }
+
+  private rowId(id: string): string {
+    return this.hashed ? hashToken(id) : id;
+  }
 
   async upsert(id: string, payload: AdapterPayload, expiresIn?: number): Promise<void> {
     const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
+    const { jti: _value, ...withoutValue } = payload;
     const row = {
       type: this.name,
-      id,
-      payload,
+      id: this.rowId(id),
+      payload: this.hashed ? withoutValue : payload,
       grantId: (payload.grantId as string | undefined) ?? null,
       accountId: (payload.accountId as string | undefined) ?? null,
       uid: (payload.uid as string | undefined) ?? null,
       expiresAt,
     };
+    // A save over an existing row leaves `consumedAt` alone: what was spent stays spent.
     await baseDb
       .insert(oidcPayloadsTable)
       .values(row)
-      .onConflictDoUpdate({
-        target: [oidcPayloadsTable.type, oidcPayloadsTable.id],
-        set: { ...row, consumedAt: null },
-      });
+      .onConflictDoUpdate({ target: [oidcPayloadsTable.type, oidcPayloadsTable.id], set: row });
   }
 
   async find(id: string): Promise<AdapterPayload | undefined> {
@@ -97,9 +105,10 @@ export class DrizzleAdapter implements Adapter {
     const [row] = await baseDb
       .select()
       .from(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, id)))
+      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))))
       .limit(1);
-    return row ? toPayload(row) : undefined;
+    if (!row) return undefined;
+    return this.hashed ? { ...toPayload(row), jti: id } : toPayload(row);
   }
 
   async findByUid(uid: string): Promise<AdapterPayload | undefined> {
@@ -116,17 +125,40 @@ export class DrizzleAdapter implements Adapter {
     return undefined;
   }
 
+  /**
+   * Spends a code, refresh token or pushed request once. The provider checks `consumed` on the row it read before it
+   * consumes, so two concurrent requests can both pass that check: only the one whose update finds the row unspent
+   * wins, and the other is a replay. As for a code used twice, a replay revokes the grant with every token issued
+   * under it.
+   */
   async consume(id: string): Promise<void> {
-    await baseDb
+    const rowId = this.rowId(id);
+    const [spent] = await baseDb
       .update(oidcPayloadsTable)
       .set({ consumedAt: getIsoDate() })
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, id)));
+      .where(
+        and(
+          eq(oidcPayloadsTable.type, this.name),
+          eq(oidcPayloadsTable.id, rowId),
+          isNull(oidcPayloadsTable.consumedAt),
+        ),
+      )
+      .returning({ id: oidcPayloadsTable.id });
+    if (spent) return;
+
+    const [replayed] = await baseDb
+      .select({ grantId: oidcPayloadsTable.grantId })
+      .from(oidcPayloadsTable)
+      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, rowId)))
+      .limit(1);
+    if (replayed?.grantId) await deleteConsentWithTokens({ var: { db: baseDb } }, { grantId: replayed.grantId });
+    throw new errors.InvalidGrant(`${this.name} already consumed`);
   }
 
   async destroy(id: string): Promise<void> {
     await baseDb
       .delete(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, id)));
+      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))));
   }
 
   async revokeByGrantId(grantId: string): Promise<void> {
