@@ -1,8 +1,10 @@
+import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
@@ -18,12 +20,13 @@ import {
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
-
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
+
+/** The current code for a Base32 secret; `createTotpUser` stores `JBSWY3DPEHPK3PXP`. */
+const currentCode = (secret = 'JBSWY3DPEHPK3PXP') =>
+  generateTOTP(decodeBase32(secret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
+/** A well-formed code that is not the current one. */
+const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
 
 beforeAll(async () => {
   mockFetchRequest();
@@ -31,7 +34,6 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await clearDatabase();
-  vi.clearAllMocks();
 });
 
 describe('TOTP Authentication', async () => {
@@ -72,7 +74,7 @@ describe('TOTP Authentication', async () => {
       const allCookies = [sessionCookie, generateCookies].filter(Boolean).join('; ');
 
       const { response: createRes } = await call(createTotp, {
-        body: { code: '123456' },
+        body: { code: currentCode(generatedTotp.manualKey) },
         headers: { ...defaultHeaders, Cookie: allCookies },
       });
 
@@ -92,7 +94,7 @@ describe('TOTP Authentication', async () => {
       const mfaToken = await createMfaToken(user);
 
       const { response: res } = await call(signInWithTotp, {
-        body: { code: '123456' },
+        body: { code: currentCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),
@@ -109,18 +111,16 @@ describe('TOTP Authentication', async () => {
       const user = await createTotpUser(signUpUser.email);
       const mfaToken = await createMfaToken(user);
 
-      const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
-      vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('Invalid TOTP code'));
-
-      const { response: res } = await call(signInWithTotp, {
-        body: { code: '000000' },
+      const { response: res, error } = await call(signInWithTotp, {
+        body: { code: wrongCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(401);
+      expect((error as { type: string }).type).toBe('invalid_token');
     });
 
     it('should reject TOTP verification for non-existent user', async () => {
@@ -142,18 +142,16 @@ describe('TOTP Authentication', async () => {
       const mfaToken = await createMfaToken(user);
 
       // No TOTP registered for the user.
-      const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
-      vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('TOTP not found'));
-
-      const { response: res } = await call(signInWithTotp, {
-        body: { code: '123456' },
+      const { response: res, error } = await call(signInWithTotp, {
+        body: { code: currentCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(404);
+      expect((error as { type: string }).type).toBe('not_found');
     });
   });
 

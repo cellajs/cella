@@ -190,6 +190,8 @@
   "token_not_found.text": "Token could not be found. It has been used, replaced or has otherwise become invalid.",
   "too_many_requests": "Too many requests. Action temporarily restricted.",
   "too_many_requests.text": "To safeguard user data, we prevent suspicious activity by momentarily restricting requests. Please come back later or contact support.",
+  "totp_code_used": "Code already used",
+  "totp_code_used.text": "This code was used already. Enter the next code from your authenticator app.",
   "totp_delete_failed": "Deleting TOTP failed. Try again later.",
   "totp_verification_failed": "TOTP verification failed",
   "totp_verification_failed.text": "TOTP verification failed. Please try again or use another method.",

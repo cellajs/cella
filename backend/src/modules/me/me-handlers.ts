@@ -11,7 +11,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
-import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
@@ -54,7 +54,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     if (passkeyData)
       await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
 
-    if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
+    if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
   } catch (error) {
     if (error instanceof AppError) throw error;
 

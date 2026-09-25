@@ -11,7 +11,7 @@ import { mfaFactorRules, spendConfirmMfaToken, validateConfirmMfaToken } from '#
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
-import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -51,21 +51,12 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
   const existingTotp = await findExistingTotp(ctx, { userId: user.id });
   if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
 
-  const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
-  if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
+  const pendingSecret = await getAuthCookie(ctx, 'totp-challenge');
+  if (!pendingSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
-  try {
-    const isValid = signInWithTotp(code, encodedSecret);
-    if (!isValid) throw new AppError(403, 'invalid_token', 'warn');
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'invalid_credentials', 'error', {
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
-
-  await insertTotp(ctx, { userId: user.id, secret: encodedSecret });
+  // The confirming code's step is stored with the secret, so the same code cannot also answer a second factor.
+  const lastUsedStep = await verifyTotp(ctx, { user, code, pendingSecret });
+  await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep });
 
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');
@@ -92,24 +83,13 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   const { code } = ctx.req.valid('json');
 
-  const meta = { strategy: 'totp', sessionType: 'mfa' } as const;
-
   const user = await validateConfirmMfaToken(ctx);
 
-  try {
-    await validateTOTP({ code, userId: user.id });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'totp_verification_failed', 'error', {
-      meta,
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
+  await verifyTotp(ctx, { user, code });
 
   await spendConfirmMfaToken(ctx);
 
-  await setUserSession(ctx, user, meta.strategy, meta.sessionType);
+  await setUserSession(ctx, user, 'totp', 'mfa');
 
   return ctx.body(null, 204);
 });

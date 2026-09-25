@@ -66,11 +66,13 @@ export const verifyEmail = async (ctx: DbContext, { email, verifiedAt }: VerifyE
 interface InsertTotpOpts {
   userId: string;
   secret: string;
+  /** The time step of the code that confirmed the setup. */
+  lastUsedStep: number;
 }
 
-export const insertTotp = async (ctx: DbContext, { userId, secret }: InsertTotpOpts) => {
+export const insertTotp = async (ctx: DbContext, { userId, secret, lastUsedStep }: InsertTotpOpts) => {
   const { db } = ctx.var;
-  return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret) });
+  return db.insert(totpsTable).values({ userId, secret: encryptTotpSecret(secret), lastUsedStep });
 };
 
 interface FindLatestSessionByUserOpts {

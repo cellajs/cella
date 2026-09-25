@@ -2,7 +2,6 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
-import { sendLockoutEmail } from '#/middlewares/rate-limiter/send-lockout-email';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
 /** Keyed per user when authenticated, so invite flows behind a shared NAT IP get their own budget. */
@@ -29,12 +28,10 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
   description: 'Max 2000 requests/hour per user for presigned URLs',
 });
 
-/** Keyed by IP only, since the body carries just the code; the lockout email reads the `confirm-mfa` cookie. */
-const totpLimits = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
+/** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
-  limits: totpLimits,
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
   description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
-  onBlock: (key, ctx) => sendLockoutEmail(key, 'totp-lockout', ctx, totpLimits),
 });
 
 /** Keyed per account: a session guessing authenticator codes on the MFA toggle is blocked whatever IP it uses. */

@@ -11,9 +11,6 @@ const { consumeSpy, deleteSpy } = vi.hoisted(() => ({
   deleteSpy: vi.fn().mockResolvedValue(true),
 }));
 
-// Keep the import chain lean: the lockout helper pulls in db/mailer, irrelevant here.
-vi.mock('#/middlewares/rate-limiter/send-lockout-email', () => ({ sendLockoutEmail: vi.fn() }));
-
 vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
   const original = await importOriginal<typeof import('#/middlewares/rate-limiter/helpers')>();
   return {
