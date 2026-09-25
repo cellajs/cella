@@ -11,6 +11,12 @@ import { severityLevels } from '#/schemas/api-error-schemas';
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
+/** Minimum length of a secret that signs or authenticates, the same one the CDC, relay and PII secrets carry. */
+const minSecretLength = 16;
+
+/** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
+const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
+
 export const env = createEnv({
   server: {
     NODB: z
@@ -38,14 +44,23 @@ export const env = createEnv({
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
     INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
     // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
-    UNSUBSCRIBE_SECRET: z.string().optional(),
+    UNSUBSCRIBE_SECRET: z
+      .string()
+      .min(minSecretLength, `UNSUBSCRIBE_SECRET must be at least ${minSecretLength} characters`)
+      .optional(),
 
     // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().optional(),
 
-    COOKIE_SECRET: z.string(),
+    // One secret or a comma-separated list (the first signs, any verifies). Every entry counts on its own, so a stray
+    // comma or a short entry stops the boot and never becomes a signing key.
+    COOKIE_SECRET: z
+      .string()
+      .refine((value) => value.split(',').every((entry) => entry.trim().length >= minCookieSecretLength), {
+        message: `Every COOKIE_SECRET entry must be at least ${minCookieSecretLength} characters`,
+      }),
 
     // Operator-managed runtime secret. When the secret has no version the env var is omitted and this
     // defaults to 'none' (deny), so sys-admin routes stay off until an operator sets the allowlist.

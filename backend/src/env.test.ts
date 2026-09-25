@@ -1,5 +1,8 @@
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { modeSecretNames } from '#/env-mode-secrets';
 
@@ -71,5 +74,75 @@ describe('env schema per process mode', () => {
     expect(refused.output).toContain('YJS_TOKEN_PRIVATE_KEY');
 
     expect(loadEnv({ MODE: 'api', ...common, ...modeBound }).status).toBe(0);
+  });
+});
+
+const tsx = path.join(backendDir, 'node_modules/.bin/tsx');
+
+// Built at run time: stand-ins for generated secrets.
+const strong = () => randomBytes(24).toString('base64url');
+
+/**
+ * Loads the real env module in a process of its own, as a service boots: Vitest skips its validation.
+ * @returns Whether it loaded, and what it printed.
+ */
+const boot = async (mode: 'production' | 'development', overrides: Record<string, string>) => {
+  // Vitest sets VITEST, and MODE for its own use.
+  const { VITEST: _vitest, MODE: _mode, ...inherited } = process.env;
+  const env = {
+    ...inherited,
+    NODE_ENV: mode,
+    APP_MODE: mode,
+    COOKIE_SECRET: strong(),
+    UNSUBSCRIBE_SECRET: strong(),
+    ...overrides,
+  };
+  try {
+    const script = "import('./src/env.ts').then(() => console.info('env loaded'))";
+    const { stdout } = await promisify(execFile)(tsx, ['-e', script], { cwd: backendDir, env });
+    return { loaded: stdout.includes('env loaded'), output: stdout };
+  } catch (error) {
+    const { stdout = '', stderr = '' } = error as { stdout?: string; stderr?: string };
+    return { loaded: false, output: `${stdout}${stderr}` };
+  }
+};
+
+/**
+ * `COOKIE_SECRET` signs every auth cookie and may list several secrets (the first signs, any verifies). A stray comma,
+ * a blank or a short entry must stop the boot, never become a signing key; the other secrets that sign or authenticate
+ * get the same minimum.
+ */
+describe('secret env validation', () => {
+  it('must not boot with an empty or short cookie secret entry', async () => {
+    const refused = await Promise.all(
+      [',', ' ', `${strong()},`, `${strong()}, ,${strong()}`, 'short-secret', `${strong()},short-secret`].map(
+        (COOKIE_SECRET) => boot('production', { COOKIE_SECRET }),
+      ),
+    );
+
+    for (const { loaded, output } of refused) {
+      expect(loaded).toBe(false);
+      expect(output).toContain('COOKIE_SECRET');
+    }
+  });
+
+  it('must not boot with a short unsubscribe secret', async () => {
+    const { loaded, output } = await boot('production', { UNSUBSCRIBE_SECRET: 'short-secret' });
+
+    expect(loaded).toBe(false);
+    expect(output).toContain('UNSUBSCRIBE_SECRET');
+  });
+
+  it('boots with a rotated cookie secret list, and in development on the example values (positive control)', async () => {
+    const [rotated, development, blankInDevelopment] = await Promise.all([
+      boot('production', { COOKIE_SECRET: `${strong()},${strong()}` }),
+      boot('development', { COOKIE_SECRET: 'cookie_secret', UNSUBSCRIBE_SECRET: 'some_secret_token' }),
+      boot('development', { COOKIE_SECRET: 'cookie_secret,' }),
+    ]);
+
+    expect(rotated.loaded, rotated.output).toBe(true);
+    expect(development.loaded, development.output).toBe(true);
+    // An empty entry is refused in every mode.
+    expect(blankInDevelopment.loaded).toBe(false);
   });
 });
