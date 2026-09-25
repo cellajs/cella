@@ -129,6 +129,48 @@ describe('Attachment storage keys', async () => {
     expect(await rowExists(variant)).toBe(false);
   });
 
+  it('must not reach outside the prefix behind a blob: prefix via createAttachments', async () => {
+    const vectors = [
+      `blob:x/../${keyOf(victim, 'contract.pdf')}`,
+      `blob:${attacker.organization.id}/../${keyOf(victim, 'contract.pdf')}`,
+      `blob:http://localhost:3000/../../${keyOf(victim, 'contract.pdf')}`,
+    ];
+    for (const original of vectors) {
+      const id = generateId();
+      const { error, response } = await create(bodyFor(id, { original }));
+      expect(response.status, original).toBe(400);
+      expect((error as ErrorResponse).type, original).toBe('invalid_request');
+      expect(await rowExists(id), original).toBe(false);
+    }
+  });
+
+  it('must not sign a blob: key via getPresignedUrls', async () => {
+    for (const planted of [
+      `blob:/../${keyOf(victim, 'contract.pdf')}`,
+      'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c',
+    ]) {
+      const id = generateId();
+      expect((await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }))).response.status).toBe(201);
+      await adminDb
+        .update(attachmentsTable)
+        .set({ keys: { original: planted } })
+        .where(eq(attachmentsTable.id, id));
+
+      const { data, response } = await presign(id);
+      expect(response.status).toBe(200);
+      const result = data as GetPresignedUrlsResponse;
+      expect(result.data, planted).toEqual([]);
+      expect(result.rejectedIds, planted).toEqual([id]);
+    }
+  });
+
+  it('stores an offline upload under its local blob URL (positive control)', async () => {
+    const id = generateId();
+    const original = 'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
+    expect((await create(bodyFor(id, { original }))).response.status).toBe(201);
+    expect(await rowExists(id)).toBe(true);
+  });
+
   it('must not name a bucket outside the app via createAttachments', async () => {
     const id = generateId();
     const claims = { bucketName: 'another-apps-bucket' };
