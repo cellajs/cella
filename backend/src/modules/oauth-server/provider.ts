@@ -52,20 +52,23 @@ type GrantSource = { clientId?: string; grantId?: string; resource?: unknown };
 
 /**
  * Whether a code exchange or refresh may go on for this account, by the grant policy for every tenant the token names.
- * A refused grant is deleted with every token issued under it, so the client must ask the person again. The
- * authorization endpoint asks without a token, about its session's account: the user only has to exist.
+ * A refused grant is deleted with every token issued under it, so the client must ask the person again. A code or
+ * refresh token that names none of this deployment's resources mints nothing, and its grant stays. The authorization
+ * endpoint asks without a token, about its session's account: the user only has to exist.
  */
 async function accountMayUseGrant(sub: string, source: GrantSource | undefined): Promise<boolean> {
   if (!source) {
     const [user] = await baseDb.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, sub)).limit(1);
     return !!user;
   }
+  const tenantIds = [source.resource]
+    .flat()
+    .map((uri) => (typeof uri === 'string' ? parseResource(uri)?.tenantId : null));
+  if (!tenantIds.every((tenantId): tenantId is string => !!tenantId)) return false;
+
   let refusal: string | null = null;
-  for (const uri of [source.resource].flat()) {
-    const tenantId = typeof uri === 'string' ? parseResource(uri)?.tenantId : undefined;
-    refusal ??= tenantId
-      ? await grantRefusal({ kind: 'user', userId: sub, clientId: source.clientId ?? '', tenantId })
-      : 'invalid_target';
+  for (const tenantId of tenantIds) {
+    refusal ??= await grantRefusal({ kind: 'user', userId: sub, clientId: source.clientId ?? '', tenantId });
   }
   if (!refusal) return true;
   if (source.grantId) await deleteConsentWithTokens({ var: { db: baseDb } }, { grantId: source.grantId });

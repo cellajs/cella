@@ -56,17 +56,25 @@ export async function clientCredentialsToken(
   return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }
 
-/** A path-blind cookie jar: the provider scopes its cookies by path, the server never minds receiving extras. */
-class CookieJar {
+/**
+ * One browser's cookies, path-blind: the provider scopes its cookies by path, the server never minds receiving extras.
+ * A cookie a response deletes leaves the jar, as it leaves a browser.
+ */
+export class CookieJar {
   private readonly cookies = new Map<string, string>();
   /** Each initial entry is a `Cookie` header: one pair, or several joined by `; `. */
   constructor(initial: string[] = []) {
     for (const header of initial) for (const pair of header.split('; ')) this.store(pair);
   }
   store(setCookie: string): void {
-    const [pair] = setCookie.split(';');
+    const [pair, ...attributes] = setCookie.split(';');
     const index = pair.indexOf('=');
-    if (index > 0) this.cookies.set(pair.slice(0, index).trim(), pair.slice(index + 1).trim());
+    if (index <= 0) return;
+    const name = pair.slice(0, index).trim();
+    const value = pair.slice(index + 1).trim();
+    const deleted = attributes.some((attribute) => /^\s*(max-age=0|expires=.*1970)/i.test(attribute));
+    if (deleted || !value) this.cookies.delete(name);
+    else this.cookies.set(name, value);
   }
   absorb(response: Response): void {
     for (const cookie of response.headers.getSetCookie()) this.store(cookie);
@@ -82,11 +90,55 @@ export interface AuthorizationInput {
   clientId: string;
   redirectUri: string;
   scope: string;
-  resource: string;
-  sessionCookie: string;
+  /** Left out, the request names no resource. */
+  resource?: string;
+  /** The app session a fresh browser starts with; ignored with `browser`. */
+  sessionCookie?: string;
+  /** A browser that already holds cookies, the authorization server's own included, and keeps what it receives. */
+  browser?: CookieJar;
 }
 
 type TokenResponse = { status: number; body: Record<string, unknown> };
+
+/**
+ * The authorization request with PKCE as a public client, up to where the provider sends the browser first: straight
+ * back to the client (`code`, or the error `redirect` carries) when it asks nobody, else to an interaction (`uid`).
+ */
+export async function startAuthorization(issuer: string, input: AuthorizationInput) {
+  const browser = input.browser ?? new CookieJar(input.sessionCookie ? [input.sessionCookie] : []);
+  const verifier = base64url(randomBytes(32));
+  const challenge = base64url(createHash('sha256').update(verifier).digest());
+  const state = base64url(randomBytes(8));
+
+  const authorize = new URL(`${issuer}/auth`);
+  authorize.search = new URLSearchParams({
+    client_id: input.clientId,
+    response_type: 'code',
+    redirect_uri: input.redirectUri,
+    scope: input.scope,
+    ...(input.resource && { resource: input.resource }),
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    state,
+  }).toString();
+
+  const start = await fetch(authorize, { redirect: 'manual', headers: { Cookie: browser.header() } });
+  browser.absorb(start);
+  const location = start.headers.get('location') ?? '';
+  const uid = /\/oauth\/interaction\/([^/?]+)/.exec(location)?.[1] ?? null;
+  const redirect = location.startsWith(input.redirectUri) ? new URL(location).searchParams : null;
+  if (redirect && redirect.get('state') !== state) throw new Error('state mismatch');
+  return {
+    browser,
+    verifier,
+    state,
+    status: start.status,
+    location,
+    uid,
+    redirect,
+    code: redirect?.get('code') ?? null,
+  };
+}
 
 /**
  * The authorization request with PKCE as a public client, consenting (accept) through the app's interaction routes with
@@ -98,29 +150,8 @@ export async function authorizationCode(
   input: AuthorizationInput,
 ): Promise<{ code: string | null; verifier: string; consent: Record<string, unknown>; failure: TokenResponse | null }> {
   const origin = new URL(issuer).origin;
-  const jar = new CookieJar([input.sessionCookie]);
-  const verifier = base64url(randomBytes(32));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-  const state = base64url(randomBytes(8));
-
-  const authorize = new URL(`${issuer}/auth`);
-  authorize.search = new URLSearchParams({
-    client_id: input.clientId,
-    response_type: 'code',
-    redirect_uri: input.redirectUri,
-    scope: input.scope,
-    resource: input.resource,
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
-    state,
-  }).toString();
-
-  const start = await fetch(authorize, { redirect: 'manual' });
-  jar.absorb(start);
-  const interaction = start.headers.get('location') ?? '';
-  const uid = /\/oauth\/interaction\/([^/?]+)/.exec(interaction)?.[1];
-  if (start.status !== 303 || !uid)
-    throw new Error(`Expected an interaction redirect, got ${start.status} ${interaction}`);
+  const { browser: jar, verifier, state, status, location: interaction, uid } = await startAuthorization(issuer, input);
+  if (status !== 303 || !uid) throw new Error(`Expected an interaction redirect, got ${status} ${interaction}`);
 
   const details = await fetch(`${origin}/oauth/interaction/${uid}/details`, { headers: { Cookie: jar.header() } });
   const consent = (await details.json()) as Record<string, unknown>;

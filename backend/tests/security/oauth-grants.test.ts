@@ -39,10 +39,12 @@ import {
 import {
   authorizationCode,
   authorizationCodeToken,
+  CookieJar,
   clientCredentialsToken,
   exchangeCode,
   refreshAccessToken,
   serveClientMetadataDocuments,
+  startAuthorization,
   startTestOauthServer,
   type TestOauthServer,
 } from '../oauth-helpers';
@@ -260,6 +262,35 @@ describe('OAuth grants', async () => {
       expect(refused.status).toBe(400);
       expect(refused.body.error).toBe('invalid_grant');
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
+    });
+
+    it("must not delete a person's grant via a code that names no resource", async () => {
+      const ctx = await tenantWithApp();
+      // One browser: the member consents, then the client asks again without a resource and gets a code at once.
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      const first = await authorizationCode(oauth.issuer, { ...authorization(ctx), browser });
+      const tokens = await exchangeCode(oauth.issuer, {
+        clientId: APP_ID,
+        redirectUri: REDIRECT_URI,
+        code: first.code ?? '',
+        verifier: first.verifier,
+      });
+      expect(tokens.status).toBe(200);
+
+      const unscoped = await startAuthorization(oauth.issuer, { ...authorization(ctx), resource: undefined, browser });
+      expect(unscoped.code).toBeTruthy();
+      const refused = await exchangeCode(oauth.issuer, {
+        clientId: APP_ID,
+        redirectUri: REDIRECT_URI,
+        code: unscoped.code ?? '',
+        verifier: unscoped.verifier,
+      });
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe('invalid_grant');
+
+      // The grant the member gave stays, with its refresh token.
+      expect((await grantRowsOf(ctx.member.id)).map((row) => row.type)).toContain('Grant');
+      expect((await refresh(String(tokens.body.refresh_token))).status).toBe(200);
     });
 
     it('must not act via an access token after the person revokes the connected app', async () => {
