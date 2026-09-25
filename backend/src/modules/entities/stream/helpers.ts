@@ -3,13 +3,14 @@ import type { SSEStreamingApi } from 'hono/streaming';
 /**
  * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized`,
  * `forbidden` and `tenant_revoked` as final; `session_replaced` means the browser holds a newer session to reconnect
- * with.
+ * with, and `access_changed` that the session holds but the stream's access must be computed again.
  */
 export type StreamErrorCode =
   | 'unauthorized'
   | 'forbidden'
   | 'tenant_revoked'
   | 'session_replaced'
+  | 'access_changed'
   | 'server_shutdown'
   | 'internal';
 
