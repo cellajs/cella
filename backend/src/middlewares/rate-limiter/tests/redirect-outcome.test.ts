@@ -6,9 +6,10 @@ import { AppError } from '#/core/error';
 // Undo setup.ts mock: this test drives the REAL tokenLimiter behind the real error handler.
 vi.unmock('#/middlewares/rate-limiter/core');
 
-const { consumeSpy, deleteSpy } = vi.hoisted(() => ({
+const { consumeSpy, deleteSpy, rewardSpy } = vi.hoisted(() => ({
   consumeSpy: vi.fn().mockResolvedValue({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 }),
   deleteSpy: vi.fn().mockResolvedValue(true),
+  rewardSpy: vi.fn().mockResolvedValue({ consumedPoints: 0, remainingPoints: 10, msBeforeNext: 0 }),
 }));
 
 vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
@@ -17,9 +18,11 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
     ...original,
     getRateLimiterInstance: () => ({
       points: 10,
-      get: vi.fn(async () => null),
+      // The attempt reserved before the handler, as the store reports it back.
+      get: vi.fn(async () => ({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 })),
       consume: consumeSpy,
       delete: deleteSpy,
+      reward: rewardSpy,
     }),
   };
 });
@@ -47,6 +50,7 @@ describe('rate limiter outcome behind a redirecting error', () => {
   beforeEach(() => {
     consumeSpy.mockClear();
     deleteSpy.mockClear();
+    rewardSpy.mockClear();
   });
 
   it('must not let token guesses go uncounted via an error answered with a redirect', async () => {
@@ -61,9 +65,10 @@ describe('rate limiter outcome behind a redirecting error', () => {
 
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toContain('/auth/error?error=invalid_token');
-    // One point in the 24-hour bucket and one in the failure series.
+    // One point in the 24-hour bucket and one in the failure series, which keeps it.
     expect(consumeSpy).toHaveBeenCalledTimes(2);
     expect(consumeSpy).toHaveBeenCalledWith('ip:1.2.3.4');
+    expect(rewardSpy).not.toHaveBeenCalled();
   });
 
   it('counts a failure answered as JSON the same way (positive control)', async () => {
@@ -81,6 +86,8 @@ describe('rate limiter outcome behind a redirecting error', () => {
     const res = await request(tokenRoute((ctx) => ctx.redirect('http://localhost:3000/auth/authenticate', 302)));
 
     expect(res.status).toBe(302);
-    expect(consumeSpy).not.toHaveBeenCalled();
+    // The attempt reserved before the handler goes back, and the 24-hour bucket is never touched.
+    expect(consumeSpy).toHaveBeenCalledTimes(1);
+    expect(rewardSpy).toHaveBeenCalledExactlyOnceWith('ip:1.2.3.4');
   });
 });

@@ -1,3 +1,4 @@
+import { and, between, eq, gt, lte, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
@@ -15,13 +16,18 @@ type RateLimiterOptions = {
   points: number;
   duration: number;
   blockDuration?: number;
+  /**
+   * Also block an over-limit key in this process's memory, until its window ends (default true). Fail-mode buckets
+   * pass false: their block lives in the database only, so every process holds it for the same `blockDuration`.
+   */
+  inMemoryBlock?: boolean;
 };
 
 // Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
 const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>();
 
 /** Prefix-memoized Drizzle limiter; an in-memory insurance limiter covers DB outages and blocks stay local. */
-export const getRateLimiterInstance = (options: RateLimiterOptions) => {
+export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: RateLimiterOptions) => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
   if (existing) return existing;
@@ -43,12 +49,60 @@ export const getRateLimiterInstance = (options: RateLimiterOptions) => {
       // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
       insuranceLimiter: new RateLimiterMemory(enforcedOptions),
       // Block over-limit keys in-memory so repeat offenders miss the DB; blockDuration=0 uses the remaining window
-      inMemoryBlockOnConsumed: enforcedOptions.points,
+      ...(inMemoryBlock && { inMemoryBlockOnConsumed: enforcedOptions.points }),
     });
   }
 
   limiterRegistry.set(keyPrefix, instance);
   return instance;
+};
+
+type LimiterStore = ReturnType<typeof getRateLimiterInstance>;
+
+/**
+ * Creates a fail-mode bucket's row, or restarts an expired one, in one statement, leaving a live count alone. The
+ * database store's own upsert reads the row before it writes, so the first requests of a parallel burst on a new key
+ * would each start the count at one; after this, every consume increments the row atomically.
+ * @param store - The bucket's limiter; only the database store needs the row.
+ * @param rateLimitKey - The key as the middleware passes it to the store.
+ * @param durationSeconds - The counting window a new or restarted row gets.
+ */
+export const openFailureBucket = async (store: LimiterStore, rateLimitKey: string, durationSeconds: number) => {
+  if (!(store instanceof RateLimiterDrizzle)) return;
+  const now = new Date();
+  const expire = new Date(now.getTime() + durationSeconds * 1000);
+  await db
+    .insert(rateLimitsTable)
+    .values({ key: store.getKey(rateLimitKey), points: 0, expire })
+    .onConflictDoUpdate({
+      target: rateLimitsTable.key,
+      set: { points: 0, expire },
+      setWhere: lte(rateLimitsTable.expire, now),
+    });
+};
+
+/**
+ * Gives back an attempt counted before the handler ran whose outcome was not a failure. A bucket past its budget keeps
+ * its block, and an expired one stays as it is.
+ * @param store - The bucket's limiter.
+ * @param rateLimitKey - The key as the middleware passes it to the store.
+ */
+export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) => {
+  if (store instanceof RateLimiterDrizzle) {
+    await db
+      .update(rateLimitsTable)
+      .set({ points: sql`${rateLimitsTable.points} - 1` })
+      .where(
+        and(
+          eq(rateLimitsTable.key, store.getKey(rateLimitKey)),
+          between(rateLimitsTable.points, 1, store.points),
+          gt(rateLimitsTable.expire, new Date()),
+        ),
+      );
+    return;
+  }
+  const state = await store.get(rateLimitKey);
+  if (state && state.consumedPoints >= 1 && state.consumedPoints <= store.points) await store.reward(rateLimitKey);
 };
 
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {
