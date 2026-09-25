@@ -183,7 +183,6 @@ describe('Draft context invite deferral', async () => {
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
-    // Reminders apply only to invitees with a known email; new-user invites are conflict-suppressed.
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
@@ -208,5 +207,34 @@ describe('Draft context invite deferral', async () => {
     expect(afterDueReinvite.remindedAt).not.toBeNull();
     expect(afterDueReinvite.remindedAt).not.toBe(aged.remindedAt);
     expect(new Date(afterDueReinvite.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+  });
+
+  it('reminds a pending invitation to a new address as one to an account, minting no further link', async () => {
+    const organization = await createTestOrganization();
+    const admin = await createOrganizationAdminUser(
+      'admin@example.com',
+      organization.id,
+      'admin',
+      true,
+      organization.tenantId,
+    );
+    const sessionCookie = await createTestSession(admin);
+    const newcomer = 'newcomer@example.com';
+
+    await invite(organization, [newcomer], memberRole, sessionCookie);
+    const [initial] = await getInactiveRows(organization.id);
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    await db
+      .update(inactiveMembershipsTable)
+      .set({ remindedAt: eightDaysAgo })
+      .where(eq(inactiveMembershipsTable.id, initial.id));
+
+    const { data } = await invite(organization, [newcomer], memberRole, sessionCookie);
+    expect(data).toMatchObject({ rejectedIds: [], invitesSentCount: 0 });
+    const [reminded] = await getInactiveRows(organization.id);
+    expect(new Date(reminded.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+    // The emailed link stays the one link: a reminder mints no token.
+    const links = await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer));
+    expect(links.map((link) => link.id)).toEqual([initial.tokenId]);
   });
 });
