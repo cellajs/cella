@@ -38,6 +38,11 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 
   const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
 
+  // A session alone never changes how the account is protected: the request itself proves a second factor.
+  if (!passkeyData && !totpCode) {
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
+  }
+
   const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
 
   try {
