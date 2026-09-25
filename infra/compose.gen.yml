@@ -23,6 +23,7 @@ services:
       TZ: UTC
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
+      RUN_JOBS: 'true'
       RUN_MIGRATIONS_ON_BOOT: 'false'
       API_WS_URL: ${API_WS_URL}
       CDC_HEALTH_PORT: '4001'
@@ -68,6 +69,7 @@ services:
       MODE: migrate
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
+      RUN_JOBS: 'true'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
