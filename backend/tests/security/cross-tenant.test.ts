@@ -174,9 +174,9 @@ describe('Cross-tenant API isolation', async () => {
     });
   });
 
-  // ---- Presigned URLs: the file-access boundary must never sign foreign rows ----
+  // ---- Tenant A's attachment: never listed for, nor signed for, Tenant B ----
 
-  describe('Cross-tenant presigned URL denial', () => {
+  describe("Cross-tenant reads of Tenant A's attachment", () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000a1';
 
     beforeAll(async () => {
@@ -186,6 +186,20 @@ describe('Cross-tenant API isolation', async () => {
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       expect(response.status).toBe(201);
+    });
+
+    it("must not list Tenant A's attachment via User B's own tenant path", async () => {
+      const listedIds = async (tenant: TestTenant) => {
+        const { data, response } = await call(getAttachments, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+        });
+        expect(response.status).toBe(200);
+        return (data as { items: { id: string }[] }).items.map((item) => item.id);
+      };
+      expect(await listedIds(tenantB)).not.toContain(presignAttachmentId);
+      // The owning tenant's list carries it (positive control).
+      expect(await listedIds(tenantA)).toContain(presignAttachmentId);
     });
 
     it('should sign for the owning tenant user', async () => {

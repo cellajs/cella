@@ -168,25 +168,32 @@ describe('Invitation response', async () => {
     expect(res.status).toBe(404);
   });
 
-  it("should not allow a different user to accept someone else's invitation", async () => {
+  it("must not accept someone else's invitation by id, whether bound to them or to nobody yet", async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
     const attacker = await createTestUser('attacker@example.com');
+    const attackerSession = await createTestSession(attacker);
 
-    const { inactiveMembership } = await createInvitation({
+    // GHSA-fmh4-wcc4-5jm3: by id alone an invitation is answerable by its bound user only. One sent to an address
+    // without an account is bound to nobody: only its emailed token claims it, never its id.
+    const bound = await createInvitation({
       organization,
       email: invitedUser.email,
       createdBy: invitedUser.id,
       boundTo: invitedUser.id,
       role: memberRole,
     });
-    const attackerSession = await createTestSession(attacker);
+    const unbound = await createInvitation({
+      organization,
+      email: 'nobody@example.com',
+      createdBy: invitedUser.id,
+      role: memberRole,
+    });
 
-    // GHSA-fmh4-wcc4-5jm3: invitation acceptance is bound to the invited user id,
-    // not just an email claim. A different authenticated user cannot accept it.
-    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', attackerSession);
-
-    expect(res.status).toBe(404);
+    for (const { inactiveMembership } of [bound, unbound]) {
+      const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', attackerSession);
+      expect(res.status).toBe(404);
+    }
 
     const attackerMemberships = await db
       .select()
@@ -194,11 +201,9 @@ describe('Invitation response', async () => {
       .where(eq(membershipsTable.userId, attacker.id));
     expect(attackerMemberships).toHaveLength(0);
 
-    const stillInactive = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
-    expect(stillInactive).toHaveLength(1);
+    const stillInactive = await db.select().from(inactiveMembershipsTable);
+    expect(stillInactive.find((row) => row.id === bound.inactiveMembership.id)?.userId).toBe(invitedUser.id);
+    expect(stillInactive.find((row) => row.id === unbound.inactiveMembership.id)?.userId).toBeNull();
   });
 
   it('should reject for already processed invitation', async () => {

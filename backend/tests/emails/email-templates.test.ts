@@ -50,8 +50,8 @@ describe('email template rendering', () => {
       it(`${name} contains no raw translation keys in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
         const html = await render(def.component({ ...translated, ...recipient }));
-        // Unresolved keys come back as-is, like "backend:email.foo.bar".
-        const rawKeyPattern = /(?:backend|common|error):email\.[a-z_.-]+/;
+        // i18next answers a key it cannot resolve with the key minus its namespace, like "email.foo.bar".
+        const rawKeyPattern = /\bemail\.[a-z0-9_]+(?:\.[a-z0-9_]+)+\b/;
         expect(html).not.toMatch(rawKeyPattern);
       });
     }

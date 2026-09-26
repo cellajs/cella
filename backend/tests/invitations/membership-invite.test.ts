@@ -179,13 +179,19 @@ describe('Membership Invitation', async () => {
     expect(res.status).toBe(401);
   });
 
-  it('should reject invitations from non-org members', async () => {
+  it('must not invite via a role without update on the organization', async () => {
     const organization = await createTestOrganization();
+    // Inside the tenant and the organization, so the guards admit the call and the permission check answers.
+    const member = await createOrganizationAdminUser(
+      'member@example.com',
+      organization.id,
+      memberRole,
+      true,
+      organization.tenantId,
+    );
+    const sessionCookie = await createTestSession(member);
 
-    const user = await createTestUser('user@example.com');
-    const sessionCookie = await createTestSession(user);
-
-    const { response: res } = await makeInviteRequest(
+    const { response: res, error } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
       { emails: ['newuser@example.com'], role: memberRole },
@@ -193,6 +199,8 @@ describe('Membership Invitation', async () => {
     );
 
     expect(res.status).toBe(403);
+    expect((error as { type: string }).type).toBe('forbidden');
+    expect(await getInactiveMemberships(organization.id)).toHaveLength(0);
   });
 
   it('should handle already invited users', async () => {

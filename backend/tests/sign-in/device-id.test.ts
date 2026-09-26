@@ -83,5 +83,7 @@ describe('device id on sign-in', async () => {
     const sessions = await sessionsOf(user.id);
     expect(sessions).toHaveLength(2);
     expect(sessions[0].deviceIdHash).not.toBe(sessions[1].deviceIdHash);
+    // Neither browser's sign-in ended the other's session.
+    expect(sessions.map((session) => session.revokedAt)).toEqual([null, null]);
   });
 });

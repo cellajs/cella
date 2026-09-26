@@ -1,9 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
 import { type EntityRole, hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-invites';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -17,6 +18,9 @@ import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
+// Whether an invite left as mail is the observable difference between a held and a dispatched invite.
+vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
+
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
@@ -26,7 +30,10 @@ beforeAll(async () => {
   mockFetchRequest();
 });
 
-afterEach(async () => await clearDatabase());
+afterEach(async () => {
+  vi.clearAllMocks();
+  await clearDatabase();
+});
 
 // Unpublished contexts hold invites until the publish flow calls `dispatchDeferredInvites`.
 // The template creates published contexts, so these tests explicitly clear `publishedAt`.
@@ -77,6 +84,7 @@ describe('Draft context invite deferral', async () => {
     expect(row.role).toBe(memberRole);
     expect(row.tokenId).toBeTruthy(); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
+    expect(mailer.prepareEmails).not.toHaveBeenCalled();
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, organization.id));
     expect(memberships).toHaveLength(1); // only the inviting admin
@@ -92,6 +100,7 @@ describe('Draft context invite deferral', async () => {
     expect(row).toBeDefined();
     expect(row.role).toBe('admin');
     expect(row.remindedAt).toBeNull(); // initial invite email is not a reminder stamp
+    expect(mailer.prepareEmails).toHaveBeenCalledOnce();
   });
 
   it('hides deferred invites from the invitee until dispatch', async () => {

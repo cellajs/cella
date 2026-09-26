@@ -64,9 +64,12 @@ describe('oauth provider configuration', async () => {
   });
   const call = await createAppClient();
 
-  it('should allow enabled GitHub provider', async () => {
+  it('sends the browser to the enabled GitHub provider (positive control)', async () => {
     const { response: res } = await call(github, { query: {}, headers: defaultHeaders });
-    expect(res.status).not.toBe(400);
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://github.com');
+    expect(location.searchParams.get('state')).toBeTruthy();
   });
 
   it.each([
