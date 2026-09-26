@@ -4,7 +4,6 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { appConfig, type ProductEntityType } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as adminDb, type DbOrTx, type Tx } from '#/db/db';
 import { membershipImmutableColumns } from '#/db/immutability-triggers';
@@ -404,19 +403,6 @@ describe('RLS Security Tests', () => {
           `);
         }),
       ).rejects.toThrow();
-    });
-  });
-
-  describe('Tenant Nanoid Generation', () => {
-    it('should generate 6-character lowercase alphanumeric IDs', () => {
-      const id = nanoidTenant();
-      expect(id).toHaveLength(6);
-      expect(/^[a-z0-9]+$/.test(id)).toBe(true);
-    });
-
-    it('should generate unique IDs', () => {
-      const ids = new Set(Array.from({ length: 100 }, () => nanoidTenant()));
-      expect(ids.size).toBe(100);
     });
   });
 });

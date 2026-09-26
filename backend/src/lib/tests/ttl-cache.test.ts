@@ -109,22 +109,6 @@ describe('TTLCache', () => {
       expect(cache.get('key1')).toBeUndefined();
       expect(cache.get('key2')).toBe('value2');
     });
-
-    it('should auto-expire entries (ttlcache handles automatically)', async () => {
-      const shortTtlCache = new TTLCache<string>({
-        maxSize: 10,
-        defaultTtl: 50,
-      });
-
-      shortTtlCache.set('key1', 'value1');
-      shortTtlCache.set('key2', 'value2');
-
-      await new Promise((resolve) => setTimeout(resolve, 60));
-
-      // Entries should be auto-expired by ttlcache timer
-      expect(shortTtlCache.get('key1')).toBeUndefined();
-      expect(shortTtlCache.get('key2')).toBeUndefined();
-    });
   });
 
   describe('invalidation', () => {

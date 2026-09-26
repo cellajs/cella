@@ -26,6 +26,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
 
 // Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
+const { getRetryAfter } = await import('#/middlewares/rate-limiter/helpers');
 const { clearCache } = await import('#/middlewares/rate-limiter/points-cache');
 
 /** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget. */
@@ -50,16 +51,13 @@ function buildApp(key: string, tenantId: string, ceiling: number, budget: () => 
 async function hammer(app: Hono<Env>, n: number) {
   let allowed = 0;
   let blocked = 0;
-  let lastBlockedResponse: Response | null = null;
   for (let i = 0; i < n; i++) {
     const res = await app.request('http://localhost/t', { method: 'POST' });
     if (res.status === 200) allowed++;
-    else if (res.status === 429) {
-      blocked++;
-      lastBlockedResponse = res;
-    } else throw new Error(`unexpected status ${res.status}`);
+    else if (res.status === 429) blocked++;
+    else throw new Error(`unexpected status ${res.status}`);
   }
-  return { allowed, blocked, lastBlockedResponse };
+  return { allowed, blocked };
 }
 
 describe('points budget enforcement (end to end)', () => {
@@ -131,11 +129,9 @@ describe('points budget enforcement (end to end)', () => {
     expect(smallAllowedAfterRaise).toBe(9);
   });
 
-  it('sends a Retry-After of at least 1 second on 429', async () => {
-    const app = buildApp('retry', 't1', 5, () => 5);
-    const { lastBlockedResponse } = await hammer(app, 10);
-
-    const retryAfter = Number(lastBlockedResponse!.headers.get('Retry-After'));
-    expect(retryAfter).toBeGreaterThanOrEqual(1);
+  it('floors Retry-After at one second, so a sub-second wait never reads as "retry now"', () => {
+    expect(getRetryAfter(0)).toBe('1');
+    expect(getRetryAfter(400)).toBe('1');
+    expect(getRetryAfter(1500)).toBe('2');
   });
 });

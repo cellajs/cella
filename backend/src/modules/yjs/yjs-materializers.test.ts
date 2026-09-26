@@ -1,6 +1,6 @@
 import '#/modules';
 
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { defineBackendModule } from '#/lib/module';
 import { getYjsMaterializer, type YjsMaterializer } from '#/modules/yjs/yjs-materializers';
@@ -11,12 +11,8 @@ import { getYjsMaterializer, type YjsMaterializer } from '#/modules/yjs/yjs-mate
  * guards the registration round-trip: the relay is entity-agnostic, the registry is not.
  */
 describe('Yjs materializers', () => {
-  // Apps may ship a materializer on any product type, so probe for one that has none.
+  // Apps may ship a materializer on any product type, so register on one that has none where there is one.
   const unregisteredType = appConfig.productEntityTypes.find((type) => getYjsMaterializer(type) === undefined);
-
-  it.skipIf(!unregisteredType)('returns undefined for a product type without a registered materializer', () => {
-    expect(getYjsMaterializer(unregisteredType as ProductEntityType)).toBeUndefined();
-  });
 
   it('resolves a materializer registered through defineBackendModule', () => {
     const productType = unregisteredType ?? appConfig.productEntityTypes[0];

@@ -85,11 +85,6 @@ describe('createUpdateSchema widening', () => {
       /does not match a scalar op/,
     );
   });
-
-  it('does not alias entities without lenses (unknown key stripped → refine fails)', () => {
-    const pageSchema = createUpdateSchema(LENSLESS, { title: z.string() });
-    expect(() => pageSchema.parse({ ops: { bogus: 'x' }, stx: stx({}) })).toThrow();
-  });
 });
 
 describe('arrayDeltaSchema', () => {

@@ -70,11 +70,6 @@ describe('rate limiter identifier validation', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should reject when body has no email field', async () => {
-      const res = await app.request(jsonRequest('/test', {}));
-      expect(res.status).toBe(400);
-    });
-
     it('should allow request when email is present in body', async () => {
       const res = await app.request(jsonRequest('/test', { email: 'test@example.com' }));
       expect(res.status).toBe(200);

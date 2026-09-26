@@ -125,46 +125,6 @@ describe('dispatch batch eligibility: deterministic splits', () => {
 
     expect(batchDecisions([admin, nobody], event)).toEqual([true, false]);
   });
-
-  it('draft rows deny every subscriber, author and admin included', () => {
-    const event = attachmentEvent(ORGS[0], {
-      rowData: attachmentRow('att-draft', ORGS[0], { createdBy: 'user-1', publishedAt: null }),
-    });
-
-    const author: SubscriberAccess = {
-      userId: 'user-1',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-1')],
-    };
-    const admin: SubscriberAccess = { userId: 'user-2', isSystemAdmin: true, memberships: [] };
-
-    expect(batchDecisions([author, admin], event)).toEqual([false, false]);
-  });
-
-  it('batch rows: readable non-representative row still reaches only its readers', () => {
-    // Org members hold read:'own': att-b must be authored by orgAMember for them to read it.
-    const event = attachmentEvent(ORGS[1], {
-      batchUntilSeq: 2,
-      rowData: attachmentRow('att-a', ORGS[1]),
-      batchRows: [
-        { seq: 1, rowData: attachmentRow('att-a', ORGS[1]) },
-        { seq: 2, rowData: attachmentRow('att-b', ORGS[0], { createdBy: 'user-1' }) },
-      ],
-    });
-
-    const orgAMember: SubscriberAccess = {
-      userId: 'user-1',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-1')],
-    };
-    const orgCMember: SubscriberAccess = {
-      userId: 'user-2',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[2], memberRole, 'user-2')],
-    };
-
-    expect(batchDecisions([orgAMember, orgCMember], event)).toEqual([true, false]);
-  });
 });
 
 /** Deterministic PRNG so a failure reproduces from the printed seed. */

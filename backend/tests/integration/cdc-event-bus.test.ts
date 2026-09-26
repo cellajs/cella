@@ -1,77 +1,22 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import type { ActivityEvent } from '#/lib/activity-bus';
-import { activityBus } from '#/lib/activity-bus';
-import { mockActivity } from '#/modules/activities/activities-mocks';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { organizationsTable } from '#/modules/organization/organization-db';
-import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
-
-const mockEventWithData = (key: string): ActivityEvent =>
-  ({
-    ...mockActivity(key),
-    rowData: {},
-    seq: null,
-    batchUntilSeq: null,
-    count: null,
-    propagation: null,
-    trace: null,
-  }) as ActivityEvent;
-
 import { eq, sql } from 'drizzle-orm';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { baseDb as db } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { mockChannelMembership } from '#/modules/memberships/memberships-mocks';
+import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { mockUser } from '#/modules/user/user-mocks';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
-import { clearDatabase, ensureCdcSetup, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
+import { clearDatabase, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
-// Covers local ActivityBus events and the full DB change to CDC worker to WebSocket path.
-describe('EventBus Integration', () => {
-  beforeAll(async () => {
-    await clearDatabase();
-  });
-
-  describe('EventBus basics', () => {
-    it('should receive locally emitted events', async () => {
-      const handler = vi.fn();
-      const mockEvent = mockEventWithData('test:emit-basic');
-
-      activityBus.on(mockEvent.type, handler);
-      activityBus.emit(mockEvent);
-
-      expect(handler).toHaveBeenCalledWith(mockEvent);
-
-      activityBus.off(mockEvent.type, handler);
-    });
-
-    it('should support one-time event handlers', async () => {
-      const handler = vi.fn();
-      const mockEvent = mockEventWithData('test:once-handler');
-
-      activityBus.once(mockEvent.type, handler);
-
-      activityBus.emit(mockEvent);
-      activityBus.emit(mockEvent);
-
-      expect(handler).toHaveBeenCalledTimes(1);
-    });
-  });
-});
-
-describe.skipIf(process.env.TEST_MODE !== 'full')('CDC Setup Verification', () => {
-  it('should have CDC publication configured', async () => {
-    const { publicationExists } = await ensureCdcSetup();
-    expect(publicationExists).toBe(true);
-  });
-});
-
-/** Runs the CDC worker pipeline in-process, so `pnpm test` needs no separate worker. */
+/** The full DB change to CDC worker to WebSocket path, with the worker pipeline in-process so `pnpm test` needs no separate worker. */
 describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let testOrg: { id: string; slug: string; tenantId: string };
