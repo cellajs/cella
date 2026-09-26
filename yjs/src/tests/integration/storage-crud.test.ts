@@ -1,8 +1,12 @@
+import { eq } from 'drizzle-orm';
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { DbOrTx } from '#/db/create-connection';
+import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import type { DocScope } from '../../constants';
+import { db, withRlsTx } from '../../data/db';
 import {
   appendUpdate,
   compactState,
@@ -171,9 +175,25 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     await ensureDoc(c, mapUpdate('seed', true));
     await appendUpdate(c, testUserId, mapUpdate('a', 1));
 
-    expect(await loadBase({ ...c, tenantId: 'some-other-tenant' })).toBeNull();
-    expect(await readLog({ ...c, tenantId: 'some-other-tenant' })).toEqual([]);
-    // Superuser sees both tables' rows.
+    // Selected by entity id alone on the relay's own (runtime role) pool, so the RLS policies alone decide what comes back.
+    const rowsVisible = async (tenantId: string | null): Promise<[number, number]> => {
+      const read = async (conn: DbOrTx): Promise<[number, number]> => {
+        const docs = await conn
+          .select({ id: yjsDocumentsTable.entityId })
+          .from(yjsDocumentsTable)
+          .where(eq(yjsDocumentsTable.entityId, ids.rls));
+        const log = await conn
+          .select({ id: yjsUpdatesTable.id })
+          .from(yjsUpdatesTable)
+          .where(eq(yjsUpdatesTable.entityId, ids.rls));
+        return [docs.length, log.length];
+      };
+      return tenantId === null ? read(db) : withRlsTx(tenantId, '', read);
+    };
+    expect(await rowsVisible('some-other-tenant')).toEqual([0, 0]);
+    expect(await rowsVisible(null)).toEqual([0, 0]);
+    // Positive control: the document's own tenant sees both rows, as the superuser does.
+    expect(await rowsVisible(testTenantId)).toEqual([1, 1]);
     const docs = await adminClient.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [ids.rls]);
     const log = await adminClient.query('SELECT 1 FROM yjs_updates WHERE entity_id = $1', [ids.rls]);
     expect(docs.rowCount).toBe(1);

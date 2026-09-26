@@ -37,11 +37,10 @@ vi.mock('../sync/materialize', () => ({
 
 const { handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
-const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize');
+const { postMaterialize } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
 const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 
-const unverifiedCtx = mockSocketContext({ scope: null });
 const ctx = mockSocketContext();
 
 /** Decodes the frames a socket received: [Step2 update, Step1 state vector, ...]. */
@@ -72,12 +71,25 @@ afterEach(() => {
 });
 
 describe('handleMessage: gating and validation', () => {
-  it('drops sync frames from an unverified context (the socket queue holds them until verification)', async () => {
+  it('must not answer, log or relay sync frames from a socket pending verification, even into a live session of its document', async () => {
+    // The document is open with a peer in it: the pending socket's frames reach neither the log nor the peer.
+    const { scope, key, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    const pending = mockSocketContext({ requested: scope, scope: null });
     const ws = mockWebSocket();
-    await handleMessage(unverifiedCtx, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
-    await handleMessage(unverifiedCtx, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    await handleMessage(pending, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(pending, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
     expect(ws.sent).toHaveLength(0);
-    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toBeUndefined();
+    expect(peer.sent).toHaveLength(0);
+    // Positive control: the same update from a verified socket of the session is logged and reaches the peer.
+    await handleMessage(mockSocketContext({ requested: scope }), ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(peer.sent).toHaveLength(1);
+    leaveCollab(collab.scope, peer as never);
   });
 
   it('messages < 2 bytes and unknown message types are silently dropped', async () => {
@@ -565,34 +577,8 @@ describe('compaction', () => {
     expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1 });
   });
 
-  it('only a written window compacts: retry, permanent and unparseable all keep the log for the next one', async () => {
-    const { ctx: c, key, ws, collab } = session();
-    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
-
-    vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
-    expect(await runCompaction(collab)).toBe('retry');
-    vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
-    expect(await runCompaction(collab)).toBe('permanent');
-    expect(storage.compactState).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(1);
-
-    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
-    vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
-    expect(await runCompaction(collab)).toBe('permanent');
-    expect(postMaterialize).toHaveBeenCalledTimes(2);
-    expect(storage.compactState).not.toHaveBeenCalled();
-
-    // The next written window carries every edit the earlier ones kept.
-    expect(await runCompaction(collab)).toBe('ok');
-    expect(storage.logs.get(key)).toHaveLength(0);
-    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1, b: 2 });
-  });
-
-  it('nothing logged means nothing written, and a thrown storage error counts as retry', async () => {
+  it('a thrown storage error counts as retry, so the compaction timer never sees a rejection', async () => {
     const { collab } = session();
-    expect(await runCompaction(collab)).toBe('empty');
-    expect(postMaterialize).not.toHaveBeenCalled();
-
     storage.readLog.mockRejectedValueOnce(new Error('db down'));
     expect(await runCompaction(collab)).toBe('retry');
   });

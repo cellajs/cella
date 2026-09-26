@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import pg from 'pg';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { createPgConnection, type Tx } from '#/db/create-connection';
 import type { DocScope } from '../../constants';
 import { authorizeDoc } from '../../data/permissions';
 import {
@@ -108,10 +110,34 @@ describe('Local entity authorization (authorizeDoc)', () => {
     ).resolves.toBeNull();
   });
 
-  it('denies when the tenant param does not match the entity tenant (defense-in-depth)', async () => {
-    await expect(
-      authorizeDoc(userA, requested({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA })),
-    ).resolves.toBeNull();
+  it('must not authorize a row of another tenant than the token names, on a connection RLS does not bind (defense in depth)', async () => {
+    // The relay connects as the runtime role, whose reads RLS limits to the token's tenant, so under it the row is never
+    // found. On a superuser or BYPASSRLS connection string, or an app entity table without a tenant policy, the row's
+    // own tenant check is what refuses: the same authorization, over a superuser pool.
+    const unbound = createPgConnection(testDatabaseUrl, { max: 1 });
+    vi.doMock('../../data/db', () => ({
+      withRlsTx: <T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>) =>
+        unbound.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`,
+          );
+          return fn(tx);
+        }),
+    }));
+    vi.resetModules();
+    try {
+      const { authorizeDoc: authorizeUnbound } = await import('../../data/permissions');
+      await expect(authorizeUnbound(userA, requested({ tenantId: tenantB, organizationId: orgA }))).resolves.toBeNull();
+      // Positive control on the same pool: the token naming the row's own tenant is authorized.
+      await expect(authorizeUnbound(userA, requested({}))).resolves.toMatchObject({
+        tenantId: tenantA,
+        organizationId: orgA,
+      });
+    } finally {
+      vi.doUnmock('../../data/db');
+      vi.resetModules();
+      await (unbound.$client as pg.Pool).end();
+    }
   });
 
   it("must not authorize a request that names another tenant's organization", async () => {
