@@ -88,7 +88,7 @@ Three seconds after the last received update the log is compacted, under the doc
 
 ### Disconnect and recovery
 
-After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows once the log is written or empty. A retryable failure reschedules cleanup, for up to an hour; after that, and after a permanent failure, the rows stay for the next session or the startup sweep. A client that joins while cleanup runs keeps the session and its rows.
+After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows once the log is written or empty. A retryable failure reschedules cleanup, for up to an hour; after that, and after a permanent failure, the rows stay for the next session or the startup sweep. A client that joins while cleanup runs keeps the session and its rows; one that leaves again first hands over to the cleanup its own leave starts, so what it sent is compacted before the rows go. A session leaves memory with no timer left on it, so no later cleanup can reach a newer session of the same document.
 
 A startup sweep runs the same compaction over sessions a crash orphaned: session rows older than the grace period with no younger log row. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
 

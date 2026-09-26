@@ -73,29 +73,40 @@ export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
   return collab;
 }
 
+/** Takes a session out of the map, when it is still the one there, and clears its timers: none may later run on it. */
+function dropCollab(key: string, collab: CollabSession): void {
+  clearTimeout(collab.cleanupTimer);
+  clearTimeout(collab.compactTimer);
+  collab.cleanupTimer = undefined;
+  collab.compactTimer = undefined;
+  if (collabSessions.get(key) === collab) collabSessions.delete(key);
+}
+
 /**
  * When the last client leaves, a grace period runs before the log is compacted and the session rows
  * are deleted. Rows go once the log is written or empty, or the entity is gone: a retryable failure
  * keeps them and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last failed
  * attempt keeps them for the next session or the startup sweep. A socket that joins while cleanup
- * runs keeps the session and its rows: the session leaves the map only while it has no client, so the
- * relay always finds a joined socket's session.
+ * runs keeps the session and its rows; when it leaves again first, the cleanup its leave arms takes
+ * over, so what it logged is compacted before the rows go. A session leaves the map only while it has
+ * no client and no timer armed on it, so the relay always finds a joined socket's session.
  */
 export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   const key = collabKey(doc);
   const collab = collabSessions.get(key);
-  if (!collab) return;
-
-  collab.clients.delete(ws);
+  // Only a client of the live session leaves it: a socket that never joined it, or left it already, changes nothing.
+  if (!collab?.clients.delete(ws)) return;
   for (const [clientId, owner] of collab.awarenessOwners) {
     if (owner.ws === ws) collab.awarenessOwners.delete(clientId);
   }
   if (collab.clients.size > 0) return;
 
+  // A socket joined since this cleanup started: it is still in the session, or its leave armed a newer cleanup.
+  const joinedSince = () => collab.clients.size > 0 || collab.cleanupTimer !== undefined;
   let attempts = 0;
   const cleanup = async () => {
     collab.cleanupTimer = undefined;
-    if (collab.clients.size > 0) return;
+    if (collabSessions.get(key) !== collab || collab.clients.size > 0) return;
     if (collab.compactTimer) {
       clearTimeout(collab.compactTimer);
       collab.compactTimer = undefined;
@@ -103,7 +114,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
     attempts++;
 
     const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'kept' | 'done'> => {
-      if (collab.clients.size > 0) return 'rejoined';
+      if (joinedSince()) return 'rejoined';
 
       let result: Awaited<ReturnType<typeof compactDocument>>;
       try {
@@ -113,7 +124,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
         result = 'retry';
       }
       // A socket joined while the compaction wrote: its session goes on with the rows.
-      if (collab.clients.size > 0) return 'rejoined';
+      if (joinedSince()) return 'rejoined';
       // An unwritten log keeps the rows: they hold edits the entity has not received. A gone entity's rows go.
       if (result === 'retry') return 'retry';
       if (result === 'permanent') return 'kept';
@@ -126,7 +137,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
       return 'done';
     });
 
-    if (outcome === 'rejoined' || collab.clients.size > 0) return;
+    if (outcome === 'rejoined' || joinedSince()) return;
     if (outcome === 'retry') {
       if (attempts < YJS_CLEANUP_MAX_ATTEMPTS) {
         log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
@@ -136,7 +147,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
       log.error(`Materialize failed ${attempts} times for ${key}: keeping session rows for the next session or sweep`);
     }
     if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping session rows for the next session`);
-    collabSessions.delete(key);
+    dropCollab(key, collab);
   };
 
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);

@@ -164,6 +164,83 @@ describe('joinCollab / leaveCollab', () => {
     expect(getCollab(ctx)).toBeUndefined();
   });
 
+  it('must not remove a newer live session, or delete its rows, via a cleanup a passing socket armed', async () => {
+    const ctx = uniqueCtx();
+    const compaction = deferred();
+    vi.mocked(compactDocument).mockImplementationOnce(async () => {
+      await compaction.promise;
+      return 'empty';
+    });
+    const first = mockWebSocket();
+    joinCollab(ctx, first as never);
+    leaveCollab(ctx, first as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+    expect(compactDocument).toHaveBeenCalledTimes(1);
+
+    // A socket joins while cleanup compacts and leaves again, arming a cleanup of its own.
+    const passing = mockWebSocket();
+    joinCollab(ctx, passing as never);
+    leaveCollab(ctx, passing as never);
+    compaction.release();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // An editor opens the document and stays.
+    const live = mockWebSocket();
+    const session = joinCollab(ctx, live as never);
+    const deletes = vi.mocked(deleteDoc).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(GRACE * 2);
+
+    expect(getCollab(ctx)).toBe(session);
+    expect(session.clients.has(live as never)).toBe(true);
+    expect(deleteDoc).toHaveBeenCalledTimes(deletes);
+  });
+
+  it('must not delete the rows of a socket that joined and left while cleanup compacted, before they are compacted', async () => {
+    const ctx = uniqueCtx();
+    const compaction = deferred();
+    vi.mocked(compactDocument).mockImplementationOnce(async () => {
+      await compaction.promise;
+      return 'ok';
+    });
+    const first = mockWebSocket();
+    const collab = joinCollab(ctx, first as never);
+    leaveCollab(ctx, first as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+
+    // It joins after the compaction read the log: what it logs waits for the next compaction.
+    const passing = mockWebSocket();
+    joinCollab(ctx, passing as never);
+    leaveCollab(ctx, passing as never);
+    compaction.release();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(getCollab(ctx)).toBe(collab);
+
+    // Positive control: the cleanup its leave armed compacts once more, then deletes the rows and forgets the session.
+    await vi.advanceTimersByTimeAsync(GRACE);
+    expect(compactDocument).toHaveBeenCalledTimes(2);
+    expect(deleteDoc).toHaveBeenCalledWith(ctx);
+    expect(getCollab(ctx)).toBeUndefined();
+  });
+
+  it('must not arm a second cleanup via a leave from a socket that is not in the session', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    const collab = joinCollab(ctx, ws as never);
+    leaveCollab(ctx, ws as never);
+    const armed = collab.cleanupTimer;
+
+    leaveCollab(ctx, ws as never);
+    leaveCollab(ctx, mockWebSocket() as never);
+    expect(collab.cleanupTimer).toBe(armed);
+
+    // Positive control: a join cancels the one cleanup, and none runs.
+    joinCollab(ctx, mockWebSocket() as never);
+    await vi.advanceTimersByTimeAsync(GRACE * 2);
+    expect(compactDocument).not.toHaveBeenCalled();
+    expect(getCollab(ctx)).toBe(collab);
+  });
+
   it('must not retry a refused cleanup forever: after an hour it keeps the rows for the sweep and forgets the session', async () => {
     const ctx = uniqueCtx();
     const ws = mockWebSocket();
