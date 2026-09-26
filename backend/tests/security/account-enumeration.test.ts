@@ -15,6 +15,9 @@ import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
+// The team notification a stored request sends never answers here: the form must not wait for it, or its latency would
+// tell a stored request from the one an account's address gets.
+vi.mock('#/lib/notifications/send-matrix-message', () => ({ sendMatrixMessage: () => new Promise(() => {}) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
