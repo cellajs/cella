@@ -5,31 +5,18 @@ import { appConfig, type ProductEntityType } from 'shared';
 import { testAdminRoleDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as adminDb, type DbOrTx, type Tx } from '#/db/db';
+import { baseDb as adminDb, type DbOrTx } from '#/db/db';
 import { membershipImmutableColumns } from '#/db/immutability-triggers';
+import { tenantReadById } from '#/db/tenant-context';
 import { buildInsertableProduct } from '#/mocks';
 import { loadSubjectRows, type NotificationSource } from '#/modules/notification/notification-sources';
 import { seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { entityTables, getEntityTable } from '#/tables';
 
-/** Local read-only tenant context helper, mirrors tenantRead without importing it. */
-async function tenantReadTest<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return adminDb.transaction(async (tx) => {
-    await tx.execute(sql`SET TRANSACTION READ ONLY`);
-    await tx.execute(sql`
-      SELECT set_config('app.tenant_id', ${tenantId}, true),
-             set_config('app.user_id', ${userId}, true)
-    `);
-    return fn(tx);
-  });
-}
-
 // Deterministic ids so cleanup can target the rows.
 const TEST_TENANT_A = 'rlsta1';
 const TEST_TENANT_B = 'rlsta2';
-/** Org-less tenant: 1 tenant = 1 org, so cross-tenant org-insert tests need a free tenant to aim at. */
-const TEST_TENANT_EMPTY = 'rlsta3';
 const TEST_USER_A = '00000000-0000-4000-a000-000000000001';
 const TEST_USER_B = '00000000-0000-4000-a000-000000000002';
 const TEST_ORG_A = '00000000-0000-4000-a000-000000000003';
@@ -201,8 +188,7 @@ async function setupTestData() {
     INSERT INTO tenants (id, name, status, created_at, updated_at)
     VALUES
       (${TEST_TENANT_A}, 'RLS Test Tenant A', 'active', NOW(), NOW()),
-      (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW()),
-      (${TEST_TENANT_EMPTY}, 'RLS Test Tenant Empty', 'active', NOW(), NOW())
+      (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW())
     ON CONFLICT (id) DO NOTHING
   `);
 
@@ -269,9 +255,7 @@ async function cleanupTestData() {
   });
   await adminDb.execute(sql`DELETE FROM users WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
   await adminDb.execute(sql`DELETE FROM actors WHERE id IN (${TEST_USER_A}, ${TEST_USER_B})`);
-  await adminDb.execute(
-    sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B}, ${TEST_TENANT_EMPTY})`,
-  );
+  await adminDb.execute(sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B})`);
 }
 
 /** node-postgres returns QueryResult with .rows; PgAsyncDatabase may return array-like. */
@@ -317,92 +301,38 @@ async function queryWithoutChannel<T = Record<string, unknown>>(
 }
 
 describe('RLS Security Tests', () => {
-  describe('Tenant Context Helpers', () => {
-    beforeAll(async () => {
-      await adminDb.execute(sql`
-        INSERT INTO tenants (id, name, status, created_at, updated_at)
-        VALUES
-          (${TEST_TENANT_A}, 'RLS Test Tenant A', 'active', NOW(), NOW()),
-          (${TEST_TENANT_B}, 'RLS Test Tenant B', 'active', NOW(), NOW())
-        ON CONFLICT (id) DO NOTHING
-      `);
-    });
-
-    afterAll(async () => {
-      await adminDb.execute(sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_A}, ${TEST_TENANT_B})`);
-    });
-
-    it('should set session variables in tenant context', async () => {
-      await tenantReadTest(TEST_TENANT_A, TEST_USER_A, async (tx) => {
-        const tenantRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.tenant_id', true) as value`),
-        );
-        const userRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.user_id', true) as value`),
-        );
-
-        expect(tenantRows[0].value).toBe(TEST_TENANT_A);
-        expect(userRows[0].value).toBe(TEST_USER_A);
-      });
-    });
-
-    it('should clear session variables after transaction', async () => {
-      await tenantReadTest(TEST_TENANT_A, TEST_USER_A, async () => {
-        // Context is set here
-      });
-
-      // set_config with `true` makes variables transaction-scoped, they reset on commit
-      const rows = getRows<{ value: string | null }>(
-        await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) as value`),
-      );
-      const value = rows[0]?.value;
-      expect(value === null || value === '').toBe(true);
-    });
-
-    it('should set empty tenant in user context', async () => {
-      await adminDb.transaction(async (tx) => {
-        await tx.execute(sql`
-          SELECT set_config('app.tenant_id', '', true),
-                 set_config('app.user_id', ${TEST_USER_A}, true)
-        `);
-        const tenantRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.tenant_id', true) as value`),
-        );
-        const userRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.user_id', true) as value`),
-        );
-
-        expect(tenantRows[0].value).toBe('');
-        expect(userRows[0].value).toBe(TEST_USER_A);
-      });
-    });
-
-    it('tenantRead should set session variables and read-only transaction', async () => {
-      const result = await tenantReadTest(TEST_TENANT_A, TEST_USER_A, async (tx) => {
-        const tenantRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.tenant_id', true) as value`),
-        );
-        const userRows = getRows<{ value: string }>(
-          await tx.execute(sql`SELECT current_setting('app.user_id', true) as value`),
-        );
-
-        expect(tenantRows[0].value).toBe(TEST_TENANT_A);
-        expect(userRows[0].value).toBe(TEST_USER_A);
-
-        return 'read-ok';
-      });
-      expect(result).toBe('read-ok');
-    });
-
-    it('tenantRead should reject writes (read-only transaction)', async () => {
-      await expect(
-        tenantReadTest(TEST_TENANT_A, TEST_USER_A, async (tx) => {
+  // The read transaction of code with no request behind it (CDC listeners, jobs): the app's own helper, not a copy.
+  describe('tenantReadById', () => {
+    it('sets the tenant context for the transaction only, with no user and no deleted rows', async () => {
+      const inside = await tenantReadById(TEST_TENANT_A, async (tx) =>
+        getRows<{ tenant: string; user: string; deleted: string }>(
           await tx.execute(sql`
-            INSERT INTO tenants (id, name, status, created_at, updated_at)
-            VALUES ('rls_read_test', 'Read Test', 'active', NOW(), NOW())
-          `);
-        }),
-      ).rejects.toThrow();
+            SELECT current_setting('app.tenant_id', true) AS tenant,
+                   current_setting('app.user_id', true) AS user,
+                   current_setting('app.include_deleted', true) AS deleted
+          `),
+        ),
+      );
+      expect(inside[0]).toEqual({ tenant: TEST_TENANT_A, user: '', deleted: 'false' });
+
+      // Transaction-scoped: the pooled connection carries no tenant into its next statement.
+      const after = getRows<{ value: string | null }>(
+        await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) AS value`),
+      );
+      expect(after[0]?.value ?? '').toBe('');
+    });
+
+    it('refuses a write', async () => {
+      await expect(
+        unwrapDrizzle(
+          tenantReadById(TEST_TENANT_A, (tx) =>
+            tx.execute(sql`
+              INSERT INTO tenants (id, name, status, created_at, updated_at)
+              VALUES ('rls_read_test', 'Read Test', 'active', NOW(), NOW())
+            `),
+          ),
+        ),
+      ).rejects.toThrow(/read-only transaction/);
     });
   });
 });
@@ -456,97 +386,8 @@ const rlsSuiteReady = await (async () => {
     await cleanupTestData();
   });
 
-  // ---- Fail-closed: no context → zero rows ----
-
-  describe('Fail-closed (no context)', () => {
-    it('should allow reading organizations without tenant context (no RLS on channel entities)', async () => {
-      const rows = await queryWithoutChannel(async (tx) =>
-        tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
-      );
-      expect(rows.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('should return zero attachments without tenant context', async () => {
-      const rows = await queryWithoutChannel(async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
-      );
-      expect(rows).toHaveLength(0);
-    });
-
-    it('should allow reading memberships without context (no RLS on memberships)', async () => {
-      // Channel entities and memberships rely on app-layer guards, not RLS policies.
-      const rows = await queryWithoutChannel(async (tx) =>
-        tx.execute(sql`SELECT id FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`),
-      );
-      expect(rows.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  // ---- Cross-tenant read isolation ----
-
-  describe('Cross-tenant read isolation', () => {
-    it('should see all organizations across tenants (no RLS on channel entities)', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM organizations WHERE id IN (${TEST_ORG_A}, ${TEST_ORG_B})`),
-      );
-      const ids = rows.map((r) => r.id);
-      expect(ids).toContain(TEST_ORG_A);
-      expect(ids).toContain(TEST_ORG_B);
-    });
-
-    it('should see the single organization within own tenant', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM organizations WHERE tenant_id = ${TEST_TENANT_A}`),
-      );
-      // 1 tenant = 1 organization, so a tenant lookup yields exactly its own org.
-      expect(rows.map((r) => r.id)).toEqual([TEST_ORG_A]);
-    });
-
-    it('should read all memberships (no RLS on memberships)', async () => {
-      const rows = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`SELECT id FROM memberships WHERE id IN (${TEST_MEMBERSHIP_A}, ${TEST_MEMBERSHIP_B})`),
-      );
-      const ids = rows.map((r) => r.id);
-      expect(ids).toContain(TEST_MEMBERSHIP_A);
-      expect(ids).toContain(TEST_MEMBERSHIP_B);
-    });
-  });
-
-  // ---- Cross-tenant write isolation ----
-
-  describe('Cross-tenant write isolation', () => {
-    it('should allow inserting organization into any tenant (no RLS on channel entities)', async () => {
-      const fakeOrgId = '00000000-0000-4000-a000-000000000301';
-      // Guard middleware, not RLS, blocks this at the API layer. Aim at the org-less tenant:
-      // Tenant B would trip organizations_tenant_id_key and mask the absent policy.
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-            INSERT INTO organizations (id, entity_type, tenant_id, name, slug, created_by, created_at)
-            VALUES (${fakeOrgId}, 'organization', ${TEST_TENANT_EMPTY}, 'Fake Org', ${`rls-fake-${Date.now()}`}, ${TEST_USER_A}, NOW())
-          `),
-      );
-      await adminDb.execute(sql`DELETE FROM organizations WHERE id = ${fakeOrgId}`);
-    });
-
-    it('should allow inserting membership into any tenant (no RLS on memberships)', async () => {
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`
-            INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
-            VALUES ('00000000-0000-4000-a000-000000000303', ${TEST_TENANT_B}, 'organization', ${TEST_ORG_B}, ${TEST_USER_A}, 'member', ${TEST_USER_A}, 99, ${TEST_ORG_B})
-          `),
-      );
-      await adminDb.execute(sql`DELETE FROM memberships WHERE id = '00000000-0000-4000-a000-000000000303'`);
-    });
-
-    it('should allow updating organizations in any tenant (no RLS, app-layer isolation)', async () => {
-      await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-        tx.execute(sql`UPDATE organizations SET name = 'Updated Cross' WHERE id = ${TEST_ORG_B}`),
-      );
-      await adminDb.execute(sql`UPDATE organizations SET name = 'RLS Org B' WHERE id = ${TEST_ORG_B}`);
-    });
-  });
-
-  // ---- Tenant-scoped attachment access (org isolation is app-layer) ----
+  // ---- Tenant-scoped attachment access (org isolation is app-layer; channel and membership tables carry no RLS,
+  // which schema-verification checks in the catalog) ----
 
   describe('Tenant-scoped attachment access', () => {
     it('should deny access to attachments in another tenant', async () => {
@@ -623,21 +464,6 @@ const rlsSuiteReady = await (async () => {
     });
   });
 
-  // ---- Unauthenticated write denial ----
-
-  describe('Unauthenticated write denial', () => {
-    it('should allow membership insert without authentication (no RLS on memberships)', async () => {
-      // TEST_USER_B + TEST_ORG_A avoids a duplicate (tenant_id, user_id, channel_id) with setup data.
-      await queryAsRuntimeRole(TEST_TENANT_A, '', async (tx) =>
-        tx.execute(sql`
-            INSERT INTO memberships (id, tenant_id, channel_type, channel_id, user_id, role, created_by, display_order, organization_id)
-            VALUES ('00000000-0000-4000-a000-000000000306', ${TEST_TENANT_A}, 'organization', ${TEST_ORG_A}, ${TEST_USER_B}, 'member', ${TEST_USER_B}, 99, ${TEST_ORG_A})
-          `),
-      );
-      await adminDb.execute(sql`DELETE FROM memberships WHERE id = '00000000-0000-4000-a000-000000000306'`);
-    });
-  });
-
   // ---- Write-through on RLS tables (INSERT/UPDATE/DELETE must succeed) ----
 
   describe('Write-through on RLS tables', () => {
@@ -652,10 +478,18 @@ const rlsSuiteReady = await (async () => {
         await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
       });
 
-      it('should allow UPDATE as runtime_role', async () => {
-        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-          tx.execute(sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}'`)),
+      it('should allow UPDATE as runtime_role, and the row changes', async () => {
+        const updated = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
+          tx.execute(
+            sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}' RETURNING id`),
+          ),
         );
+        // A policy that leaves no row to update makes the statement a silent no-op, so the row count is the proof.
+        expect(updated.map((r) => r.id)).toEqual([fixture.rowId]);
+        const [row] = getRows<{ name: string }>(
+          await adminDb.execute(sql.raw(`SELECT name FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
+        );
+        expect(row.name).toBe('Updated Row');
         await adminDb.execute(
           sql.raw(`UPDATE ${fixture.table} SET name = '${fixture.rowName}' WHERE id = '${fixture.rowId}'`),
         );

@@ -212,8 +212,14 @@ describe('createXRoute with x-tool', () => {
       'ops',
     ]);
 
-    await tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 'renamed' } });
+    // A sync transaction the model sends never reaches the route: the server's own replaces it.
+    await tool!.run(contextWith(null), {
+      id: 'thing-1',
+      ops: { name: 'renamed' },
+      stx: { mutationId: 'model', sourceId: 'model', fieldTimestamps: { name: '1:0001:model' } },
+    });
     expect(calls[0]).toMatchObject({ id: 'thing-1', name: 'renamed', stx: { sourceId: 'server' } });
+    expect((calls[0] as { stx: { mutationId: string } }).stx.mutationId).not.toBe('model');
     await expect(tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 7 } })).rejects.toThrow();
   });
 });

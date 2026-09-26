@@ -68,6 +68,11 @@ describe('checkAccess with a scoped key or token', () => {
     expect(checkAccess(systemAdmin(['attachment:read']), 'read', subject()).allowed).toBe(true);
     expect(checkAccess(systemAdmin(['attachment:read']), 'delete', subject()).allowed).toBe(false);
     expect(checkAccess(systemAdmin(['organization:write']), 'read', subject()).allowed).toBe(false);
+    // The batch and fan-out entry points mask the bypass alike.
+    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).results.get('a1')?.allowed).toBe(
+      false,
+    );
+    expect(checkAccessFanout([systemAdmin(['attachment:read'])], 'update', subject())[0].allowed).toBe(false);
   });
 
   it('the membership is still reported when the mask denies, so callers can tell the two apart', () => {

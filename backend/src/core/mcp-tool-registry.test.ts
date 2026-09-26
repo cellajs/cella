@@ -80,10 +80,12 @@ describe('registerMcpTool', () => {
     expect(tool.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: false });
     expect(Object.keys((tool.inputSchema as z.ZodObject<z.ZodRawShape>).shape)).toEqual(['items']);
 
-    await tool.run(ctx, { items: [{ name: 'a' }, { name: 'b' }] });
-    const { body } = calls[0] as { body: { name: string; stx: { sourceId: string } }[] };
+    // A sync transaction the model sends is replaced by the server's own, item by item.
+    await tool.run(ctx, { items: [{ name: 'a', stx: { mutationId: 'model', sourceId: 'model' } }, { name: 'b' }] });
+    const { body } = calls[0] as { body: { name: string; stx: { mutationId: string; sourceId: string } }[] };
     expect(body.map((item) => item.name)).toEqual(['a', 'b']);
-    expect(body.every((item) => item.stx.sourceId === 'server')).toBe(true);
+    expect(body.map((item) => item.stx.sourceId)).toEqual(['server', 'server']);
+    expect(body[0].stx.mutationId).not.toBe('model');
   });
 
   it('refuses a second registration of the same operation', () => {

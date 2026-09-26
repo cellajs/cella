@@ -54,6 +54,19 @@ describe('slow brute-force limiter key parity (F7)', () => {
     expect(slowCalls.get[0]).toBe('ip:1.2.3.4');
   });
 
+  it('keys an IPv6 client by its /64, so rotating addresses inside it share one bucket', async () => {
+    const limiter = rateLimiter('failseries', 'testfailv6', ['ip'], { limits: { points: 10, duration: 60 } });
+    const app = new Hono();
+    app.post('/test', limiter, (c) => c.json({ error: 'bad' }, 401));
+    slowCalls.get.length = 0;
+
+    for (const ip of ['2001:db8:aaaa:bbbb::1', '2001:db8:aaaa:bbbb:ffff:0:0:2']) {
+      await app.request('http://localhost/test', { method: 'POST', headers: { 'x-forwarded-for': ip } });
+    }
+
+    expect(slowCalls.get).toEqual(['ip:2001:db8:aaaa:bbbb::/64', 'ip:2001:db8:aaaa:bbbb::/64']);
+  });
+
   it('never creates or reads a slow bucket for non-fail modes', async () => {
     // Only fail-driven modes consume the slow bucket, so reading it elsewhere is a DB round-trip against zero
     const slowGetsBefore = slowCalls.get.length;
