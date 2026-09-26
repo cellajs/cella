@@ -123,6 +123,8 @@ describe('Account enumeration', async () => {
 
   it('must not learn whether an address has an account via check-email from an unrecognized browser', async () => {
     const { account, stranger } = await accountAndStranger();
+    // The owner signed in on a browser of their own, so the account has a devices row: for that browser only.
+    await browserOf(account);
 
     // A browser without a device id.
     expect(await checkEmail(account.email)).toEqual(await checkEmail(stranger));
