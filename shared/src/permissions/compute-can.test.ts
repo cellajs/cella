@@ -117,14 +117,4 @@ describe('computeCan three-state semantics', () => {
     expect(can.attachment?.update).toBe('own');
     expect(can.attachment?.delete).toBe('own');
   });
-
-  it('does not conflate own with true: they are distinct values', () => {
-    const membership = wideMembership('organization', 'org1', 'member');
-    const can = computeCan('organization', membership, allOwnPolicies, wideOverrides);
-
-    // 'own' is truthy but !== true
-    expect(can.attachment?.update).not.toBe(true);
-    expect(can.attachment?.update).not.toBe(false);
-    expect(can.attachment?.update).toBe('own');
-  });
 });

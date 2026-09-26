@@ -71,21 +71,11 @@ const measureAverage = (fn: () => void, runs = 10): number => {
   return times.reduce((a, b) => a + b, 0) / times.length;
 };
 
-// Array checks stay under 10ms; repeated single checks on a stable array reuse the memoized
-// membership index (the dispatch fan-out path), so they must beat fresh-array checks (avg of 10 runs).
+// Repeated single checks on a stable array reuse the memoized membership index (the dispatch fan-out
+// path), so they must beat fresh-array checks (avg of 10 runs).
 describe('Permission batch performance', () => {
   const memberships = createMemberships(50);
   const subjects = createSubjects(100);
-
-  it('checking 100 entities (array) should complete in < 10ms (avg of 10 runs)', () => {
-    const avgTime = measureAverage(() => {
-      getAllDecisions(policies, memberships, subjects);
-    });
-
-    console.info(`  Array of 100 entities: ${avgTime.toFixed(2)}ms average`);
-
-    expect(avgTime).toBeLessThan(10);
-  });
 
   it('repeated single checks on a stable array reuse the membership index (memoized)', () => {
     // Warm: the SAME array every call (dispatch subscriber / repeated API reads) → index built

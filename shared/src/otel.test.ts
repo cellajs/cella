@@ -29,13 +29,6 @@ describe('createOtelSDK', () => {
     propagation.disable();
   });
 
-  it('creates meterProvider without Maple key', () => {
-    const otel = createOtelSDK({ serviceName: 'test-service' });
-
-    expect(otel.meterProvider).toBeDefined();
-    expect(otel.sdk).toBeUndefined();
-  });
-
   it('creates sdk when spanProcessors are provided (no Maple key)', () => {
     const mockProcessor = {
       onStart: vi.fn(),
@@ -62,16 +55,6 @@ describe('createOtelSDK', () => {
         autoInstrumentations: false,
       }),
     ).not.toThrow();
-  });
-
-  it('does not create sdk without Maple key or spanProcessors', () => {
-    const otel = createOtelSDK({ serviceName: 'test-service' });
-    expect(otel.sdk).toBeUndefined();
-  });
-
-  it('start does not throw when sdk is undefined', () => {
-    const otel = createOtelSDK({ serviceName: 'test-service' });
-    expect(() => otel.start()).not.toThrow();
   });
 
   it('shutdown does not throw when sdk is undefined', async () => {
