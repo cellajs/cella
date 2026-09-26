@@ -1656,6 +1656,38 @@
    ],
    "requires": [],
    "summary": "The authorization server's session holds only while the same person keeps a live app session, and ending app sessions deletes the provider sessions; codes and refresh tokens outlive them. Every grant, API-key, installation and tenant-policy revocation reaches every process through auth_invalidate. A code naming no resource leaves its grant alone, service accounts mint only for their own tenant's resource, /oauth has a per-IP request budget, and the consent page names the tenant and organization a grant reaches."
+  },
+  {
+   "id": "20260926T0706-outages-api-keys-sign-out",
+   "version": "next",
+   "title": "Session lookups survive outages, API keys need a step-up, sign-out ends half-finished flows",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/src",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "A failed session lookup keeps the cookie, since it holds the only copy of the token; only a 401 clears it. Minting an API key needs a stepped-up session. The oauth-connect pin serves only the session that started it, and sign-out spends it and withdraws a magic link held for confirmation. An impersonation cannot revoke the user's sessions or skip their consent. A provider sign-up starts behind maySignUp, prompt=none hears login_required, and a lost interaction answers 400. Logs drop a database error's detail; the schema-bust gate compares against the merge commit's first parent."
+  },
+  {
+   "id": "20260926T0706-membership-updates",
+   "version": "next",
+   "title": "A membership update names a field, and personal fields show on the caller's own row",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "An empty membership update answers 400 and any change to another member's membership needs update on the channel. Update and invite responses carry archive, mute and order on the caller's own membership only, through membershipAsSeenBy; the SDK drops the Membership type. Verifying an address never binds a rejected invitation."
   }
  ]
 }
