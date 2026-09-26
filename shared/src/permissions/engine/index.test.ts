@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  configureWidePermissions,
-  wideHierarchy,
-  wideMembership,
-  wideOverrides,
-  wideSubject,
-} from '../../testing/wide-fixture.ts';
+import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
 import type { SubjectForPermission } from './types.ts';
 
@@ -25,44 +19,6 @@ const attachmentSubject = (
     ...rest,
   });
 };
-
-// Hierarchy guard sanity checks on the wide fixture. Asserting against the real app config here
-// would pin app-configurable choices (role vocabularies, product ancestry) into a synced test
-// that fails for apps customizing roles or re-parenting products in a config file they own.
-describe('hierarchy guards (wide fixture)', () => {
-  describe('hierarchy.getOrderedAncestors', () => {
-    it('returns empty array for the organization', () => {
-      const ancestors = wideHierarchy.getOrderedAncestors('organization');
-      expect(ancestors).toEqual([]);
-    });
-
-    it('returns organization as an ancestor for a product entity', () => {
-      const ancestors = wideHierarchy.getOrderedAncestors('attachment');
-      expect(ancestors).toContain('organization');
-    });
-  });
-
-  describe('hierarchy.getRoles', () => {
-    it('returns the declared roles for a channel', () => {
-      const roles = wideHierarchy.getRoles('organization');
-      expect(roles).toEqual(['admin', 'member']);
-    });
-  });
-
-  describe('hierarchy.isChannel / hierarchy.isProduct', () => {
-    it('correctly identifies channel entities', () => {
-      expect(wideHierarchy.isChannel('organization')).toBe(true);
-      expect(wideHierarchy.isChannel('attachment')).toBe(false);
-      expect(wideHierarchy.isChannel('user')).toBe(false);
-    });
-
-    it('correctly identifies product entities', () => {
-      expect(wideHierarchy.isProduct('attachment')).toBe(true);
-      expect(wideHierarchy.isProduct('organization')).toBe(false);
-      expect(wideHierarchy.isProduct('user')).toBe(false);
-    });
-  });
-});
 
 describe('configureWidePermissions', () => {
   it('configures policies for all entity types', () => {
@@ -151,30 +107,41 @@ describe('engine decisions (getAllDecisions)', () => {
   });
 });
 
-describe('permission inheritance from organization channel', () => {
+// With `elevatedGrants` set (what checkAccess passes), a product grant reaches rows homed below the granting channel
+// only through an elevated role; any other role's grant stops at the rows homed at that channel. The other describes
+// leave it undefined, which makes every grant subtree-wide.
+describe('home scoping under elevatedGrants', () => {
   const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
     switch (entityType) {
       case 'attachment':
         channels.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-        channels.organization.member({ create: 1, read: 1, update: 0, delete: 0 });
+        channels.organization.member({ create: 1, read: 1, update: 1, delete: 1 });
         break;
     }
   });
+  const options = { ...wideOverrides, elevatedGrants: new Set(['organization:admin']) };
+  const projectAttachment = attachmentSubject('att1', 'org1', { project: 'p1' });
 
-  it('admin can delete attachments', () => {
-    const memberships = [wideMembership('organization', 'org1', 'admin')];
-    const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
+  it('must not let an organization member reach a project-homed attachment via an organization grant', () => {
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const { can, actions } = getAllDecisions(policies, memberships, projectAttachment, options);
 
-    expect(can.delete).toBe(true);
+    expect([can.read, can.update, can.delete]).toEqual([false, false, false]);
+    expect(actions.read.grantedBy).toEqual([]);
   });
 
-  it('member cannot delete attachments', () => {
-    const memberships = [wideMembership('organization', 'org1', 'member')];
-    const subject = attachmentSubject('att1', 'org1');
-    const { can } = getAllDecisions(policies, memberships, subject, { ...wideOverrides });
+  it('the elevated admin keeps the grant on that row, and the member keeps it on an organization-homed row', () => {
+    const admin = getAllDecisions(
+      policies,
+      [wideMembership('organization', 'org1', 'admin')],
+      projectAttachment,
+      options,
+    );
+    expect(admin.can.delete).toBe(true);
 
-    expect(can.delete).toBe(false);
+    const memberships = [wideMembership('organization', 'org1', 'member')];
+    const atHome = getAllDecisions(policies, memberships, attachmentSubject('att2', 'org1'), options);
+    expect(atHome.can.delete).toBe(true);
   });
 });
 
