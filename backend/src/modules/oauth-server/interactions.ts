@@ -1,6 +1,7 @@
 import type { HttpBindings } from '@hono/node-server';
-import { type Context, Hono } from 'hono';
+import { type Context, type ErrorHandler, Hono } from 'hono';
 import type Provider from 'oidc-provider';
+import { errors } from 'oidc-provider';
 import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -32,8 +33,14 @@ interface ConsentDetails {
 /** The interaction cookie the provider set is scoped to `/oauth/interaction/<uid>`, so every route here sees it. */
 export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> {
   const app = new Hono<InteractionEnv>();
-  // The interactions app binds Node's request objects; the handler reads only what every Hono context has.
-  app.onError(appErrorHandler as never);
+  // The interactions app binds Node's request objects; the handler reads only what every Hono context has. An
+  // interaction this browser no longer holds (expired, or ended with a sign-out) is the request's refusal, not a fault.
+  app.onError((err, c) =>
+    (appErrorHandler as never as ErrorHandler<InteractionEnv>)(
+      err instanceof errors.SessionNotFound ? new AppError(400, 'oauth_consent_expired', 'info') : err,
+      c,
+    ),
+  );
   // The provider's own routes share this budget (`server.ts`); consent resolves the client again.
   app.use(oauthRequestLimiter);
 

@@ -9,6 +9,7 @@ import {
   deleteUsers,
   getAttachments,
   getConnectedApps,
+  getMe,
   revokeApiKey,
   revokeConnectedApp,
   signOut,
@@ -523,6 +524,62 @@ describe('OAuth grants', async () => {
       expect(await grantRowsOf(other.id)).toContainEqual({ type: 'Grant' });
       // The member's grant is theirs still, and untouched.
       expect((await refresh(String(memberTokens.refresh_token))).status).toBe(200);
+    });
+
+    it('must not issue a code for a person via an impersonation of them', async () => {
+      const ctx = await tenantWithApp();
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      await consentIn(ctx, browser);
+
+      // A system admin takes this browser over and impersonates the member, whose provider session is still here.
+      const admin = await createSystemAdminUser(`impersonator-${nanoid(8)}@security-test.com`);
+      const adminSession = await insertTestSession(admin);
+      const impersonation = await insertTestSession(
+        { id: ctx.member.id },
+        { type: 'impersonation', impersonatorSessionId: adminSession.id },
+      );
+      browser.store(adminSession.cookie);
+      browser.store(impersonation.cookie);
+      // Positive control: in the app, this browser now acts as the member.
+      const me = await call(getMe, { headers: { ...defaultHeaders, Cookie: browser.header() } });
+      expect((me.data as { user: { id: string } }).user.id).toBe(ctx.member.id);
+
+      const next = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser });
+      expect(next.code).toBeNull();
+      expect(next.uid).toBeTruthy();
+    });
+
+    it('answers a request that may ask nobody with login_required once the app session is someone else', async () => {
+      const ctx = await tenantWithApp();
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      await consentIn(ctx, browser);
+      // Positive control: with the member signed in here, a silent request gets a code.
+      expect(
+        (await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, prompt: 'none' })).code,
+      ).toBeTruthy();
+
+      const other = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
+      browser.store(other.sessionCookie);
+      const silent = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, prompt: 'none' });
+      expect(silent.code).toBeNull();
+      expect(silent.redirect?.get('error')).toBe('login_required');
+    });
+
+    it('answers the consent details of an interaction this browser no longer holds as expired', async () => {
+      const ctx = await tenantWithApp();
+      const started = await startAuthorization(oauth.issuer, authorization(ctx));
+      expect(started.uid).toBeTruthy();
+      const details = (cookie: string) =>
+        fetch(`${new URL(oauth.issuer).origin}/oauth/interaction/${started.uid}/details`, {
+          headers: { Cookie: cookie },
+        });
+
+      // Positive control: with the provider's interaction cookie, the details load.
+      expect((await details(started.browser.header())).status).toBe(200);
+
+      const lost = await details(ctx.member.sessionCookie);
+      expect(lost.status).toBe(400);
+      expect(((await lost.json()) as { type: string }).type).toBe('oauth_consent_expired');
     });
 
     it("ends the user's authorization server sessions with every ending where the person leaves", async () => {

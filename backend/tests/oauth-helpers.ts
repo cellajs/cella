@@ -96,6 +96,8 @@ export interface AuthorizationInput {
   sessionCookie?: string;
   /** A browser that already holds cookies, the authorization server's own included, and keeps what it receives. */
   browser?: CookieJar;
+  /** The OIDC `prompt` parameter, such as `none` for a request that may ask nobody. */
+  prompt?: string;
 }
 
 type TokenResponse = { status: number; body: Record<string, unknown> };
@@ -117,6 +119,7 @@ export async function startAuthorization(issuer: string, input: AuthorizationInp
     redirect_uri: input.redirectUri,
     scope: input.scope,
     ...(input.resource && { resource: input.resource }),
+    ...(input.prompt && { prompt: input.prompt }),
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state,

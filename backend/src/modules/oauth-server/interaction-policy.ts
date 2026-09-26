@@ -7,6 +7,7 @@ import { resolveSession } from '#/modules/auth/general/helpers/session';
 /**
  * The user of the live app session a request to the authorization server presents, or null without one. It is read as
  * the API reads it: the session cookie, an impersonation layered on it, and the system access rules for the address.
+ * An impersonation counts as nobody: it may not consent for the person, so it may not skip their consent either.
  * @param req - The request as Node delivers it; only its cookies, forwarding header and socket are read.
  * @param res - Its response, which the reader never writes.
  */
@@ -18,7 +19,8 @@ export async function appSessionUserId(req: IncomingMessage, res: ServerResponse
   }
   const ctx = new Context(new Request(appConfig.oauthUrl, { headers }), { env: { incoming: req, outgoing: res } });
   const entry = await resolveSession(ctx).catch(() => null);
-  return entry?.user.id ?? null;
+  if (!entry || entry.session.type === 'impersonation') return null;
+  return entry.user.id;
 }
 
 /**
@@ -36,6 +38,8 @@ export function appInteractionPolicy(): interactionPolicy.DefaultPolicy {
     new interactionPolicy.Check(
       'app_session',
       'the app session in this browser does not belong to the signed-in account',
+      // A request that may ask nobody (`prompt=none`) hears that someone has to sign in.
+      'login_required',
       async (ctx) => {
         const accountId = ctx.oidc.session?.accountId;
         const signedIn = accountId && (await appSessionUserId(ctx.req, ctx.res)) === accountId;
