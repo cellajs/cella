@@ -67,6 +67,14 @@ describe('CI workflows', () => {
     expect(restoresCache(pipeline?.get('build-frontend') ?? '')).toBe(true);
   });
 
+  it('must not judge a PR against a base it does not merge into via a moved base branch', () => {
+    const gate = workflows.find(({ file }) => file === 'ci.yml')?.jobs.get('schema-bust-gate') ?? '';
+
+    // The merge commit's first parent is the base GitHub merged the PR into; the branch tip may have moved since.
+    expect(gate).toMatch(/^\s+BASE=HEAD\^1$/m);
+    expect(gate).not.toContain('origin/');
+  });
+
   it('must not skip the schema-bust gate via a base spec git never tracks', () => {
     const gate = workflows.find(({ file }) => file === 'ci.yml')?.jobs.get('schema-bust-gate') ?? '';
     const spec = /^\s+SPEC=(\S+)$/m.exec(gate)?.[1] ?? '';
