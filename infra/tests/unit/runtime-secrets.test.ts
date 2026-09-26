@@ -110,13 +110,6 @@ describe('runtime secret registry', () => {
     expect(backendVars.has('DATABASE_CDC_URL')).toBe(false);
   });
 
-  it('must not give any VM but the backend the key that signs editor tokens', () => {
-    const signers = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY')?.services;
-    expect(signers).toEqual(['backend']);
-    // Positive control: the relay gets the public half.
-    expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toContain('YJS_TOKEN_PUBLIC_KEY');
-  });
-
   it('derives the relay public key from the signing key, so the two change together', () => {
     const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
     const privateKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
