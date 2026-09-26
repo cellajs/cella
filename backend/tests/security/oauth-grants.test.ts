@@ -30,6 +30,7 @@ import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
@@ -371,46 +372,105 @@ describe('OAuth grants', async () => {
     });
   });
 
-  describe('a service token follows its API key', () => {
-    it('must not act via a service token after its API key is revoked, even while its verdict is cached', async () => {
+  describe('a service token follows its API key and its account', () => {
+    /** An admin service account with one live key, and what the key does at the token endpoint and at the API. */
+    async function serviceAccountWithKey() {
       const org = await createTestOrganization();
       const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
       const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
-      const path = { tenantId: org.tenantId, organizationId: org.id };
+      const orgPath = { tenantId: org.tenantId, organizationId: org.id };
       const { data } = await call(createServiceAccount, {
-        path,
+        path: orgPath,
         body: { name: 'Sync bot', role: 'admin', key: { name: 'first', scopes: null } },
         headers,
       });
       const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string } };
       const accountId = created.serviceAccount.id;
-      const second = await call(createApiKey, { path: { ...path, id: accountId }, body: { name: 'second' }, headers });
-      const secondKey = second.data as { secret: string };
-
       const resource = resourceUri({ face: 'api', tenantId: org.tenantId });
-      const tokenFor = async (clientSecret: string) => {
-        const minted = await clientCredentialsToken(
+      const mint = (clientSecret: string) =>
+        clientCredentialsToken(
           oauth.issuer,
           { clientId: accountId, clientSecret },
           { scope: 'attachment:read', resource },
         );
+      const tokenFor = async (clientSecret: string) => {
+        const minted = await mint(clientSecret);
         expect(minted.status).toBe(200);
         return String(minted.body.access_token);
       };
-      const read = (jwt: string) => call(getAttachments, { path, headers: bearer(jwt) });
+      const read = (jwt: string) => call(getAttachments, { path: orgPath, headers: bearer(jwt) });
+      return { accountId, path: { ...orgPath, id: accountId }, headers, key: created.apiKey, mint, tokenFor, read };
+    }
 
-      const jwt = await tokenFor(created.apiKey.secret);
-      expect((await read(jwt)).response.status).toBe(200);
+    /** The token endpoint's answer to a key that no longer authenticates its account: no token. */
+    const noClient = { status: 401, body: { error: 'invalid_client' } };
 
-      const revoked = await call(revokeApiKey, { path: { ...path, id: accountId, keyId: created.apiKey.id }, headers });
+    it('must not act or mint via a service token after its API key is revoked, even while its verdict is cached', async () => {
+      const bot = await serviceAccountWithKey();
+      const second = await call(createApiKey, { path: bot.path, body: { name: 'second' }, headers: bot.headers });
+      const secondKey = second.data as { secret: string };
+
+      const jwt = await bot.tokenFor(bot.key.secret);
+      expect((await bot.read(jwt)).response.status).toBe(200);
+
+      const revoked = await call(revokeApiKey, { path: { ...bot.path, keyId: bot.key.id }, headers: bot.headers });
       expect(revoked.response.status).toBe(200);
 
-      const refused = await read(jwt);
+      const refused = await bot.read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('invalid_api_key');
-      await toldOtherProcesses({ serviceAccount: accountId });
+      await toldOtherProcesses({ serviceAccount: bot.accountId });
+      expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
       // Positive control: the account and its other key are untouched.
-      expect((await read(await tokenFor(secondKey.secret))).response.status).toBe(200);
+      expect((await bot.read(await bot.tokenFor(secondKey.secret))).response.status).toBe(200);
+    });
+
+    it('must not act via a service token after its account is disabled, even while its verdict is cached', async () => {
+      const bot = await serviceAccountWithKey();
+      const jwt = await bot.tokenFor(bot.key.secret);
+      expect((await bot.read(jwt)).response.status).toBe(200);
+
+      const disabled = await call(updateServiceAccount, {
+        path: bot.path,
+        body: { status: 'disabled' },
+        headers: bot.headers,
+      });
+      expect(disabled.response.status).toBe(200);
+
+      const refused = await bot.read(jwt);
+      expect(refused.response.status).toBe(401);
+      expect(reasonOf(refused.error)).toBe('service_account_disabled');
+      await toldOtherProcesses({ serviceAccount: bot.accountId });
+    });
+
+    it('must not mint a service token via a client cached before its account was disabled', async () => {
+      const bot = await serviceAccountWithKey();
+      // Positive control, which also caches the client, as the authorization server's process holds it.
+      await bot.tokenFor(bot.key.secret);
+
+      // A disable this process has not heard of yet: another process's write, or one outside the API.
+      await db
+        .update(serviceAccountsTable)
+        .set({ status: 'disabled' })
+        .where(eq(serviceAccountsTable.id, bot.accountId));
+
+      expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
+    });
+
+    it('must not act or mint via an API key past its expiry', async () => {
+      const bot = await serviceAccountWithKey();
+      const jwt = await bot.tokenFor(bot.key.secret);
+
+      // A rolled key's overlap ends by the clock alone: nothing announces it, and no verdict on the token is cached.
+      await db
+        .update(apiKeysTable)
+        .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
+        .where(eq(apiKeysTable.id, bot.key.id));
+
+      const refused = await bot.read(jwt);
+      expect(refused.response.status).toBe(401);
+      expect(reasonOf(refused.error)).toBe('invalid_api_key');
+      expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
     });
 
     it('must not skip the grant check via a token that names no grant or API key', async () => {
