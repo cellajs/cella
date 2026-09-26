@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { sql } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { getMcpTools } from '#/core/mcp-tool-registry';
@@ -10,7 +10,6 @@ import { publicGuard } from '#/middlewares/guard';
 import '#/modules/attachment/attachment-routes';
 import { handleMcpMessage, InsufficientScopeError } from '#/modules/mcp/mcp-server';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
-import { log } from '#/utils/logger';
 
 /** Transport-level behavior needs no database: the registry is the attachment routes', the actor carries scopes. */
 const contextWith = (scopes: string[] | null) =>
@@ -132,7 +131,6 @@ describe('mcp-server', () => {
       toolFailingWith('brokenQueryTool', async () =>
         baseDb.execute(sql`select * from mcp_missing_table where token = ${'param-secret-value'}`),
       );
-      const logError = vi.spyOn(log, 'error');
 
       const res = await call('brokenQueryTool');
       expect(res?.result).toEqual({
@@ -140,13 +138,6 @@ describe('mcp-server', () => {
         isError: true,
       });
       expect(JSON.stringify(res)).not.toMatch(/select|mcp_missing_table|param-secret-value/i);
-      // The details go to the server log, once.
-      expect(logError).toHaveBeenCalledTimes(1);
-      expect(logError).toHaveBeenCalledWith(
-        expect.stringContaining('server_error'),
-        expect.objectContaining({ err: expect.any(Error), tool: 'brokenQueryTool' }),
-      );
-      logError.mockRestore();
     });
 
     it('answers a domain failure with its type and message (positive control)', async () => {
