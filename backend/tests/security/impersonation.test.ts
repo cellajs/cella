@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
+import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { createSystemAdminUser, createTestUser, type ErrorResponse } from '../helpers';
+import { authCookie, createSystemAdminUser, createTestUser, type ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -30,7 +31,8 @@ afterEach(async () => {
 
 /**
  * An impersonation is layered on the admin session that started it, in the same browser, and holds only while that
- * session does and its admin keeps the system role. Each test keeps an intact impersonation as the positive control.
+ * session does, its admin keeps the system role and the request comes from an address the role may be used from. Each
+ * test keeps an intact impersonation as the positive control.
  */
 describe('impersonation lives on its admin', async () => {
   const call = await createAppClient();
@@ -68,8 +70,30 @@ describe('impersonation lives on its admin', async () => {
       headers: { ...defaultHeaders, Cookie: `${otherSession.cookie}; ${impersonationCookie}` },
     });
     expect(elsewhere.status).toBe(401);
+    // Its token signed as a session cookie, as a leaked cookie secret allows: an impersonation is never a session.
+    const token = decodeURIComponent(impersonationCookie.slice(impersonationCookie.indexOf('=') + 1)).split('.')[0];
+    const asSession = await meAs({
+      ...impersonation,
+      headers: { ...defaultHeaders, Cookie: authCookie('session', token) },
+    });
+    expect(asSession.status).toBe(401);
+    expect((asSession.error as ErrorResponse).type).toBe('unauthorized');
 
     expect((await meAs(impersonation)).status).toBe(200);
+  });
+
+  it('must not act as the impersonated user via an address the system role may not be used from', async () => {
+    const { target, impersonation } = await impersonating('remote');
+    const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
+    Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' });
+    onTestFinished(() => void Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistBefore }));
+    const from = (ip: string) => ({ ...impersonation, headers: { ...impersonation.headers, 'x-forwarded-for': ip } });
+
+    const refused = await meAs(from('10.0.0.2'));
+    expect(refused.status).toBe(401);
+    expect((refused.error as ErrorResponse).type).toBe('unauthorized');
+
+    expect(await meAs(from('10.0.0.1'))).toMatchObject({ status: 200, userId: target.id });
   });
 
   it('must not keep an impersonation live via its cookie or stream once the admin revokes the session behind it', async () => {
