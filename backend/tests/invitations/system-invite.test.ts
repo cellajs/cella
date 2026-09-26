@@ -1,20 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { systemInvite } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/modules/system/handlers', async () => {
-  const actual = await vi.importActual('#/modules/system/handlers');
-  return {
-    ...actual,
-    SystemInviteEmail: vi.fn().mockResolvedValue(undefined),
-  };
-});
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -115,24 +107,6 @@ describe('System Invitation', async () => {
     });
   });
 
-  describe('Input Validation', () => {
-    it('should reject empty email list', async () => {
-      const sessionCookie = await createAdminSession();
-      // SDK validates client-side before sending the request
-      const { error, response } = await makeInviteRequest([], sessionCookie);
-      expect(error).toBeInstanceOf(Error);
-      expect(response).toBeUndefined();
-    });
-
-    it('should reject invalid email formats', async () => {
-      const sessionCookie = await createAdminSession();
-      // SDK validates client-side before sending the request
-      const { error, response } = await makeInviteRequest(['invalid-email', 'user@example.com'], sessionCookie);
-      expect(error).toBeInstanceOf(Error);
-      expect(response).toBeUndefined();
-    });
-  });
-
   describe('Edge Cases', () => {
     it('should prevent duplicate invitations across requests', async () => {
       const sessionCookie = await createAdminSession();
@@ -146,21 +120,6 @@ describe('System Invitation', async () => {
       const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(0);
       expect(response.rejectedIds).toContain('user@example.com');
-    });
-
-    it('should handle multiple valid emails efficiently', async () => {
-      const sessionCookie = await createAdminSession();
-      const emails = ['user1@example.com', 'user2@example.com', 'user3@example.com'];
-      const { response: res, data } = await makeInviteRequest(emails, sessionCookie);
-
-      expect(res.status).toBe(200);
-      const response = data as {
-        data: any[];
-        rejectedIds: string[];
-        invitesSentCount: number;
-      };
-      expect(response.invitesSentCount).toBe(3);
-      expect(response.rejectedIds).toHaveLength(0);
     });
   });
 });

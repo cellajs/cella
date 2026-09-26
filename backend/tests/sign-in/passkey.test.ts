@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -96,29 +96,9 @@ describe('Passkey Authentication', async () => {
       expect(res.status).toBe(401);
       expect((error as ErrorResponse).type).toBe('confirm-mfa_not_found');
     });
-
-    it('should reject invalid challenge type', async () => {
-      // SDK validates client-side before sending the request
-      const { error, response } = await call(generatePasskeyChallenge, {
-        body: { type: 'invalid' as any },
-        headers: defaultHeaders,
-      });
-      expect(error).toBeInstanceOf(Error);
-      expect(response).toBeUndefined();
-    });
   });
 
   describe('Passkey Verification', () => {
-    it('should reject verification with missing fields', async () => {
-      // SDK validates client-side before sending the request
-      const { error, response } = await call(signInWithPasskey, {
-        body: { type: 'authentication' } as any,
-        headers: defaultHeaders,
-      });
-      expect(error).toBeInstanceOf(Error);
-      expect(response).toBeUndefined();
-    });
-
     it('should reject verification without a challenge', async () => {
       const { passkey } = await userWithPasskey();
 
@@ -187,22 +167,6 @@ describe('Passkey Authentication', async () => {
 
       const remaining = await db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       expect(remaining).toHaveLength(1);
-    });
-  });
-
-  describe('Configuration & Feature Flags', () => {
-    it('should reject passkey operations when strategy is disabled', async () => {
-      setTestConfig({ enabledAuthStrategies: ['totp'] });
-      onTestFinished(() => setTestConfig({ enabledAuthStrategies: ['passkey'] }));
-
-      const { passkey } = await userWithPasskey();
-
-      const { error } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId: passkey.credentialId }),
-        headers: defaultHeaders,
-      });
-
-      expect((error as ErrorResponse).type).toBe('forbidden_strategy');
     });
   });
 

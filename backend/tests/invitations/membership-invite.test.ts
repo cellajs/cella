@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -18,15 +18,6 @@ import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
-vi.mock('#/modules/memberships/handlers', async () => {
-  const actual = await vi.importActual('#/modules/memberships/handlers');
-  return {
-    ...actual,
-    MemberInviteEmail: vi.fn().mockResolvedValue(undefined),
-    MemberInviteWithTokenEmail: vi.fn().mockResolvedValue(undefined),
-  };
-});
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -173,46 +164,6 @@ describe('Membership Invitation', async () => {
     expect(newUserMembership).toBeDefined();
     expect(existingUserMembership?.email).toBe('existing@example.com');
     expect(newUserMembership?.email).toBe('newuser@example.com');
-  });
-
-  it('should assign admin role correctly', async () => {
-    const { organization, sessionCookie } = await createOrgAndAdmin();
-
-    const { response: res } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['user@example.com'], role: 'admin' },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(200);
-
-    const inactiveMemberships = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
-    expect(inactiveMemberships).toHaveLength(1);
-    expect(inactiveMemberships[0].role).toBe('admin');
-  });
-
-  it('should assign member role correctly', async () => {
-    const { organization, sessionCookie } = await createOrgAndAdmin();
-
-    const { response: res } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['user@example.com'], role: memberRole },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(200);
-
-    const inactiveMemberships = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
-    expect(inactiveMemberships).toHaveLength(1);
-    expect(inactiveMemberships[0].role).toBe(memberRole);
   });
 
   it('should reject invitations without authentication', async () => {

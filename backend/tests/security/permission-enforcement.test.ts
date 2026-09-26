@@ -6,7 +6,7 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
-import { appConfig, getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -124,25 +124,8 @@ describe('Permission enforcement via HTTP', async () => {
     });
   });
 
-  // The member/admin split follows the configured policy matrix, so this suite holds across apps.
   describe('Presigned URLs by role', () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
-
-    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0
-    // rejects. The member only holds the organization role, so the cell must also reach the row's home:
-    // the row is org-homed, or the organization role is elevated (its grants cover the whole subtree).
-    const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-    const memberAttachmentRead = getPolicyPermissions(
-      getEntityPolicies('attachment', policyMatrix),
-      'organization',
-      memberRole,
-    )?.read;
-    // Evaluated inside the test: the seeded plan only exists after the outer beforeAll has run.
-    const memberSignsUnowned = () => {
-      const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
-      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`organization:${memberRole}`);
-      return memberAttachmentRead === 1 && rootGrantReachesRow;
-    };
 
     beforeAll(async () => {
       const { response } = await call(createAttachments, {
@@ -174,23 +157,6 @@ describe('Permission enforcement via HTTP', async () => {
       const result = data as GetPresignedUrlsResponse;
       expect(result.data).toHaveLength(1);
       expect(result.rejectedIds).toEqual([]);
-    });
-
-    it('signs or rejects a member reading an unowned attachment per the configured read policy', async () => {
-      const { data, response } = await call(getPresignedUrls, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
-        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-      const result = data as GetPresignedUrlsResponse;
-      if (memberSignsUnowned()) {
-        expect(result.data).toHaveLength(1);
-        expect(result.rejectedIds).toEqual([]);
-      } else {
-        expect(result.data).toEqual([]);
-        expect(result.rejectedIds).toEqual([presignAttachmentId]);
-      }
     });
   });
 

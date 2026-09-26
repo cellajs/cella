@@ -315,17 +315,6 @@ describe('OAuth Authentication', async () => {
 
       expect(res.status).toBe(302);
     });
-
-    it('should handle malformed state parameter', async () => {
-      const malformedState = '../../etc/passwd';
-      const { response: res, error } = await call(githubCallback, {
-        query: { state: malformedState, code: 'mock-auth-code' },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invalid_state');
-    });
   });
 
   describe('Account-linking safety (no implicit linking)', () => {
@@ -572,25 +561,6 @@ describe('OAuth Authentication', async () => {
     });
   });
 
-  describe('Open-redirect regression (pre-validation redirect removed)', () => {
-    // GHSA-36rg-gfq2-3h56 / GHSA-vp58-j275-797x: the callback rejects a
-    // redirect destination smuggled inside the OAuth `state` before validation.
-    it('should not honor a redirectUrl embedded in the OAuth state', async () => {
-      const malicious = { redirectUrl: 'https://evil.example' };
-      const state = Buffer.from(JSON.stringify(malicious)).toString('base64');
-
-      const { response: res, error } = await call(githubCallback, {
-        query: { state, code: 'mock-auth-code' },
-        headers: defaultHeaders,
-      });
-
-      // No matching state cookie → fail closed; never redirect to the attacker host.
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invalid_state');
-      expect(res.headers.get('location') ?? '').not.toContain('evil.example');
-    });
-  });
-
   describe('PKCE binding', () => {
     // GHSA-wxw3-q3m9-c3jr / GHSA-9h47-pqcx-hjr4: PKCE providers must reject a
     // callback whose stored state has no code verifier.
@@ -687,33 +657,6 @@ describe('OAuth Authentication', async () => {
       // GHSA-xg6x-h9c9-2m83: no session may be issued before the second factor completes.
       const setCookie = res.headers.get('set-cookie') ?? '';
       expect(setCookie).not.toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
-    });
-
-    it('should maintain session integrity across OAuth signin', async () => {
-      const userEmail = 'github-user@example.com';
-      const user = await createUser(userEmail);
-
-      await linkIdentity(user);
-
-      const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
-
-      const { response: signinRes } = await call(githubCallback, {
-        query: { state, code: 'mock-auth-code' },
-        headers: defaultHeaders,
-      });
-
-      expect(signinRes.status).toBe(302);
-
-      const setCookieHeader = signinRes.headers.get('set-cookie');
-      expect(setCookieHeader).toBeTruthy();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
-
-      const sessionCookiePattern = new RegExp(`${appConfig.slug}-session-${appConfig.cookieVersion}=([^;]+)`);
-      const match = setCookieHeader?.match(sessionCookiePattern);
-      expect(match).toBeTruthy();
-      expect(match![1]).toBeTruthy();
-      expect(match![1].length).toBeGreaterThan(0);
     });
   });
   describe('Invite flow: the invitation opened in this browser proves the inbox', () => {

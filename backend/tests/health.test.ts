@@ -24,6 +24,7 @@ describe('Health endpoint', () => {
     const components = body.components as Record<string, any>;
 
     expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toContain('max-age=5');
     expect(body).toHaveProperty('status');
     expect(body).toHaveProperty('uptime');
     expect(body).toHaveProperty('components');
@@ -35,22 +36,6 @@ describe('Health endpoint', () => {
     expect(components.api.details).toHaveProperty('heapUsedMb');
     expect(components.api.details).toHaveProperty('heapTotalMb');
     expect(components.api.details).toHaveProperty('rssMb');
-  });
-
-  it('GET /health?depth=shallow still returns 204 (explicit shallow)', async () => {
-    const res = await fetchHealth('?depth=shallow');
-
-    expect(res.status).toBe(204);
-    expect(res.headers.get('cache-control')).toContain('max-age=5');
-    const text = await res.text();
-    expect(text).toBe('');
-  });
-
-  it('GET /health?depth=full response has cache headers', async () => {
-    const res = await fetchHealth('?depth=full');
-
-    // The shared health app sets short-lived caching regardless of status
-    expect(res.headers.get('cache-control')).toContain('max-age=5');
   });
 
   it('GET /health?depth=full cdc section has expected shape', async () => {

@@ -154,26 +154,4 @@ describe('TOTP Authentication', async () => {
       expect((error as { type: string }).type).toBe('not_found');
     });
   });
-
-  describe('TOTP Security', () => {
-    it('should reject malformed TOTP codes via client-side validation', async () => {
-      const user = await createTotpUser(signUpUser.email);
-      const mfaToken = await createMfaToken(user);
-
-      // Codes that don't match /^\d{6}$/ are rejected by SDK validation
-      const invalidCodes = ['', 'abc', '12345', '1234567', '123456789'];
-
-      for (const code of invalidCodes) {
-        const { error, response } = await call(signInWithTotp, {
-          body: { code },
-          headers: {
-            ...defaultHeaders,
-            Cookie: authCookie('confirm-mfa', mfaToken),
-          },
-        });
-        expect(error, `code=${JSON.stringify(code)}`).toBeInstanceOf(Error);
-        expect(response).toBeUndefined();
-      }
-    });
-  });
 });

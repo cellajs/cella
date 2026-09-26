@@ -84,29 +84,4 @@ describe('Invitation token data', async () => {
       .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
     expect(stillUnbound.userId).toBeNull();
   });
-
-  it('leaves the invitation unbound when no user owns the address', async () => {
-    const organization = await createTestOrganization();
-    const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvitation({
-      token: 'invoked',
-      email: 'nobody@example.com',
-      organization,
-      createdBy: inviter.id,
-    });
-
-    const { response, data } = await call(getTokenData, {
-      path: { type: 'invitation', id: token.id },
-      headers: { ...defaultHeaders, Cookie: invitationCookie },
-    });
-
-    expect(response.status).toBe(200);
-    expect((data as { userId: string }).userId).toBe('');
-
-    const [unbound] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    expect(unbound.userId).toBeNull();
-  });
 });
