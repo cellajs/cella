@@ -84,12 +84,13 @@ export const pointsLimiter = (cost = 1) =>
   });
 
 /**
- * Requests to the authorization server per IP, outside its discovery document and public keys. Each names a client id
- * that may be the URL of a metadata document the server fetches, so the budget also bounds that outbound traffic.
+ * Client metadata documents the authorization server fetches per IP: a client id it has not cached may be the URL of a
+ * document on a host the requester picks. Charged by the provider's fetch hook (`chargeLimiter`), so requests that fetch
+ * nothing, such as a known client's refresh, never count.
  */
-export const oauthRequestLimiter = rateLimiter('limit', 'oauthRequest', ['ip'], {
+export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFetch', ['ip'], {
   limits: { points: 60, duration: 60, blockDuration: 60 },
-  description: 'Max 60 authorization server requests per minute per IP',
+  description: 'Max 60 client metadata document fetches per minute per IP',
 });
 
 /** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */

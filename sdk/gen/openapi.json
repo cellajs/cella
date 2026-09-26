@@ -105,9 +105,9 @@
             "name": "passkeyChallenge",
             "description": "Max 30 passkey challenges/hour per IP"
           },
-          "oauthRequestLimiter": {
-            "name": "oauthRequest",
-            "description": "Max 60 authorization server requests per minute per IP"
+          "clientMetadataFetchLimiter": {
+            "name": "clientMetadataFetch",
+            "description": "Max 60 client metadata document fetches per minute per IP"
           },
           "serviceBurstLimiter": {
             "name": "serviceBurst",

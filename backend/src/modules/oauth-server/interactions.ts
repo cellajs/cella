@@ -7,7 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
-import { oauthRequestLimiter } from '#/middlewares/rate-limiter/limiters';
+import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
@@ -41,8 +41,9 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
       c,
     ),
   );
-  // The provider's own routes share this budget (`server.ts`); consent resolves the client again.
-  app.use(oauthRequestLimiter);
+  // Consent resolves the client again, which may fetch its metadata document: that fetch draws on the budget the
+  // provider's own routes charge (`server.ts`).
+  app.use(limiterScope);
 
   /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
   app.get('/oauth/interaction/:uid', (c) =>

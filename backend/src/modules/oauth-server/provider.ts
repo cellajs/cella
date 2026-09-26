@@ -2,7 +2,10 @@ import { and, eq, isNull } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
+import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
+import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
@@ -83,6 +86,22 @@ async function accountMayUseGrant(sub: string, source: GrantSource | undefined):
 }
 
 /**
+ * Asked before the provider fetches a client's metadata document: charges the per-IP fetch budget of the request the
+ * mounting bound (`server.ts`). A spent budget answers 429 with Retry-After, in the provider's error format on its own
+ * routes; a fetch outside a bound request is refused.
+ */
+async function allowClientMetadataFetch(ctx: KoaContextWithOIDC | undefined): Promise<boolean> {
+  try {
+    return await chargeLimiter(clientMetadataFetchLimiter);
+  } catch (err) {
+    // The interaction routes (no provider context) answer the limiter's own error.
+    if (!ctx || !(err instanceof AppError) || err.status !== 429) throw err;
+    ctx.set('Retry-After', String(err.meta?.retryAfter ?? 1));
+    throw new TooManyFetches();
+  }
+}
+
+/**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
  * need. Grant types: authorization code + PKCE, refresh, client credentials (service accounts only). Client auth: none
  * (CIMD public clients) and client_secret_basic (registered apps; service accounts with their secret keys). Client
@@ -101,6 +120,9 @@ export async function createProvider(): Promise<Provider> {
     // Entity scopes plus what a machine client asks for; `openid` stays out: this AS issues no id_tokens.
     scopes: [...accessScopes.all],
     pkce: { required: () => true },
+    // Subjects are public, so a sector identifier means nothing here; the provider would fetch one on every use of a
+    // client whose metadata document names it, outside the fetch budget.
+    sectorIdentifierUriValidate: () => false,
     features: {
       devInteractions: { enabled: false },
       registration: { enabled: false },
@@ -108,7 +130,7 @@ export async function createProvider(): Promise<Provider> {
       userinfo: { enabled: false },
       revocation: { enabled: true },
       clientCredentials: { enabled: true },
-      clientIdMetadataDocument: { enabled: true, ack: 'draft-02' },
+      clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch },
       resourceIndicators: {
         enabled: true,
         // Every token names its resource; a request without one gets `invalid_target` at the guard, never a broad token.
@@ -228,6 +250,18 @@ class InvalidTarget extends Error {
   constructor() {
     super('invalid_target');
     this.name = 'InvalidTarget';
+  }
+}
+
+class TooManyFetches extends Error {
+  readonly error = 'too_many_requests';
+  readonly error_description = 'too many client metadata document fetches from this address';
+  readonly status = 429;
+  readonly statusCode = 429;
+  readonly expose = true;
+  constructor() {
+    super('too_many_requests');
+    this.name = 'TooManyFetches';
   }
 }
 

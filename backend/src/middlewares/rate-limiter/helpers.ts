@@ -1,5 +1,6 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { and, eq, gt, gte, lt, lte, or, sql } from 'drizzle-orm';
-import type { Context } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -288,4 +289,27 @@ export const bulkBodyLength = async (ctx: Context<Env>): Promise<number> => {
   } catch {}
 
   return 1;
+};
+
+/** The request whose code runs now, for a limiter charged where its cost arises (`chargeLimiter`). */
+const scopedRequests = new AsyncLocalStorage<Context<Env>>();
+
+/**
+ * Binds the request to everything its handler runs, so `chargeLimiter` can charge a limiter from code that has no
+ * request context of its own: a library hook about to do the work a budget bounds.
+ */
+export const limiterScope: MiddlewareHandler<Env> = (ctx, next) => scopedRequests.run(ctx, next);
+
+/**
+ * Charges `limiter` for the request `limiterScope` bound, at the moment the work it bounds starts, as the limiter does in
+ * front of a route.
+ * @param limiter - A route limiter; its key reads the bound request.
+ * @throws AppError 429 `too_many_requests` once the budget is spent, with the wait in `meta.retryAfter`.
+ * @returns False outside a bound request, so the caller can refuse the work.
+ */
+export const chargeLimiter = async (limiter: RateLimiterHandler): Promise<boolean> => {
+  const ctx = scopedRequests.getStore();
+  if (!ctx) return false;
+  await limiter(ctx, async () => {});
+  return true;
 };
