@@ -21,28 +21,14 @@ const { getSeenChannelId } = await import('./helpers');
 const item = 'item' as ProductEntityType;
 
 describe('getSeenChannelId', () => {
-  it('resolves the declared parent id when present', () => {
+  it('resolves the deepest non-null ancestor id, down to the organization, always as a string', () => {
     const row = { organizationId: 'org-1', courseId: 'course-1', courseSectionId: 'section-1', projectId: 'project-1' };
     expect(getSeenChannelId(item, row)).toBe('project-1');
-  });
-
-  it('resolves the deepest non-null ancestor when the declared parent is null', () => {
-    const atSection = { organizationId: 'org-1', courseId: 'course-1', courseSectionId: 'section-1', projectId: null };
-    expect(getSeenChannelId(item, atSection)).toBe('section-1');
-
-    const atCourse = { organizationId: 'org-1', courseId: 'course-1', courseSectionId: null, projectId: null };
-    expect(getSeenChannelId(item, atCourse)).toBe('course-1');
-  });
-
-  it('matches mark-seen/unseen-sync grouping for org-attached rows', () => {
-    const row = { organizationId: 'org-1', courseId: null, courseSectionId: null, projectId: null };
-    expect(getSeenChannelId(item, row)).toBe('org-1');
-  });
-
-  it('returns a string even when resolution falls through to organizationId', () => {
+    expect(getSeenChannelId(item, { ...row, projectId: null })).toBe('section-1');
+    expect(getSeenChannelId(item, { ...row, courseSectionId: null, projectId: null })).toBe('course-1');
+    // Org-attached rows group under the organization, as mark-seen and unseen-sync do.
+    expect(getSeenChannelId(item, { ...row, courseId: null, courseSectionId: null, projectId: null })).toBe('org-1');
     // SeenMark falls back via `channelId ?? organizationId`; a null return would defeat it.
-    const row = { organizationId: 'org-1' };
-    expect(getSeenChannelId(item, row)).toBe('org-1');
-    expect(typeof getSeenChannelId(item, row)).toBe('string');
+    expect(getSeenChannelId(item, { organizationId: 'org-1' })).toBe('org-1');
   });
 });

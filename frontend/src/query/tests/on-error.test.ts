@@ -31,26 +31,17 @@ describe('onError network error detection', () => {
     vi.restoreAllMocks();
   });
 
-  // --- Network error variants across browsers ---
-
-  it('should trigger connectivity probe for Chrome "Failed to fetch"', () => {
-    onError(new TypeError('Failed to fetch'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe for Safari "Load failed"', () => {
-    onError(new TypeError('Load failed'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe for Firefox "NetworkError"', () => {
-    onError(new TypeError('NetworkError when attempting to fetch resource.'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe case-insensitively', () => {
-    onError(new TypeError('FAILED TO FETCH'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
+  it('should trigger the connectivity probe for the fetch failure of Chrome, Safari and Firefox, in any casing', () => {
+    const messages = [
+      'Failed to fetch',
+      'Load failed',
+      'NetworkError when attempting to fetch resource.',
+      'FAILED TO FETCH',
+    ];
+    for (const [i, message] of messages.entries()) {
+      onError(new TypeError(message));
+      expect(mockCheckConnectivity, message).toHaveBeenCalledTimes(i + 1);
+    }
   });
 
   // --- False positive protection ---
