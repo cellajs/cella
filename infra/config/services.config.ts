@@ -142,6 +142,27 @@ export const appServices = defineServices({
     },
   },
 
+  jobs: {
+    image: '${REGISTRY}/backend:${JOBS_TAG:-latest}',
+    port: 4005,
+    healthExpectStatus: 204,
+    healthTimeoutSeconds: 240,
+    startPeriod: '15s',
+    // One maintainer per deployment: pg-boss cron and queue supervision run in exactly one process, and nothing routes to it, so it never overlaps its predecessor.
+    replacementStrategy: 'stop-first',
+    // Reuses the backend image at the same SHA, so CI builds no separate jobs image.
+    reusesImageOf: 'backend',
+    instanceType: 'DEV1-S',
+    // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
+    coHosted: true,
+    env: {
+      MODE: 'jobs',
+      PORT: '4005',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
+    },
+  },
+
   frontend: {
     // Production-only reverse proxy in front of the SPA bucket, built per release from infra/caddy/Dockerfile; its runtime knobs are ORIGIN_HOST and CSP.
     image: '${REGISTRY}/frontend:${FRONTEND_TAG:-latest}',

@@ -4,8 +4,6 @@ import { devicesTable } from '#/modules/auth/devices-db';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
 /** The device id cookie lives 400 days from its last sign-in, so a row unseen for that long can never match again. */
 const DEVICE_TTL = new TimeSpan(400, 'd');
 
@@ -37,22 +35,4 @@ export async function pruneDevices(now: Date = new Date()): Promise<number> {
   const count = expired.length + excess.length;
   if (count) log.info('Pruned devices', { expired: expired.length, excess: excess.length });
   return count;
-}
-
-/** Daily in-process scheduler for {@link pruneDevices}; failures are logged and absorbed. Returns a stop function. */
-export function schedulePruneDevices(intervalMs: number = ONE_DAY_MS): () => void {
-  const run = () => {
-    pruneDevices().catch((error) => log.error('Pruning devices failed', { err: error }));
-  };
-
-  // Defer the first run so it never competes with boot-time migrations.
-  const startTimer = setTimeout(run, Math.min(intervalMs, 60 * 60 * 1000));
-  const interval = setInterval(run, intervalMs);
-  if (typeof interval.unref === 'function') interval.unref();
-  if (typeof startTimer.unref === 'function') startTimer.unref();
-
-  return () => {
-    clearTimeout(startTimer);
-    clearInterval(interval);
-  };
 }

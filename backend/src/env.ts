@@ -23,7 +23,8 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     // Admin credential (table owner, BYPASSRLS): only the migrate, seed, maintenance and mcp paths need it; the request-serving API boots without it.
     DATABASE_ADMIN_URL: z.url().optional(),
-    DATABASE_POOL_MAX: z.coerce.number().default(80),
+    // Capped for the managed instance's connection budget (about 100): the API, cdc, yjs, the job store and the migrate companion add up to about half of it.
+    DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([
@@ -95,7 +96,7 @@ export const env = createEnv({
 
     SCW_AI_API_KEY: z.string().optional(),
 
-    MODE: z.enum(['api', 'mcp', 'oauth', 'cdc', 'migrate']).default('api'),
+    MODE: z.enum(['api', 'mcp', 'oauth', 'cdc', 'jobs', 'migrate']).default('api'),
 
     // Apply migrations and roles before binding the API port. Production runs migrations in a separate mode.
     RUN_MIGRATIONS_ON_BOOT: z

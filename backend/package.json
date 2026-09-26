@@ -20,6 +20,7 @@
     "stop": "pnpm docker:down",
     "seed": "tsx scripts/seeds.ts",
     "migrate": "tsx scripts/migrate.ts",
+    "jobs": "tsx scripts/jobs.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate": "tsx scripts/generate.ts",
     "generate:openapi": "tsx scripts/generate-openapi.ts",

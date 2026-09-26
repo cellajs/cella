@@ -9,6 +9,8 @@ if (env.MODE === 'migrate') {
   await import('./main.oauth');
 } else if (env.MODE === 'cdc') {
   await import('./main.cdc');
+} else if (env.MODE === 'jobs') {
+  await import('./main.jobs');
 } else {
   await import('./main.api');
 }

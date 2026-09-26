@@ -51,7 +51,7 @@ describe('buildDeployEnv', () => {
           app: `cella-production-vm-${svc.slug}`,
           sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
           condition: serviceKeyCondition('cella', 'production', svc.slug),
-          dormant: !['backend', 'cdc', 'frontend'].includes(svc.slug),
+          dormant: !['backend', 'cdc', 'jobs', 'frontend'].includes(svc.slug),
         })),
         {
           app: 'cella-production-boot',
@@ -84,6 +84,15 @@ describe('buildDeployEnv', () => {
           primary_rollout: false,
         },
         {
+          service: 'jobs',
+          public_url: '',
+          health_url: '',
+          lb_route: '',
+          dockerfile: '',
+          reuses_image_of: 'backend',
+          primary_rollout: false,
+        },
+        {
           service: 'frontend',
           public_url: 'https://www.cella.example',
           health_url: 'https://www.cella.example',
@@ -101,6 +110,7 @@ describe('buildDeployEnv', () => {
       primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
       roll_rest_matrix: JSON.stringify([
         { service: 'cdc', health_url: '' },
+        { service: 'jobs', health_url: '' },
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     });

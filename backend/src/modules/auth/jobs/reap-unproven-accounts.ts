@@ -5,8 +5,6 @@ import { findUnprovenUserIds } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
 /** How long a sign-up may sit without its link being clicked. A magic link lives 15 minutes and a verification mail two hours, so a week is generous. */
 const UNPROVEN_ACCOUNT_TTL = new TimeSpan(7, 'd');
 const BATCH_SIZE = 500;
@@ -31,22 +29,4 @@ export async function reapUnprovenAccounts(now: Date = new Date()): Promise<numb
     log.info('Reaped unproven accounts', { count: userIds.length });
     return userIds.length;
   });
-}
-
-/** Daily in-process scheduler for {@link reapUnprovenAccounts}; failures are logged and absorbed. Returns a stop function. */
-export function scheduleReapUnprovenAccounts(intervalMs: number = ONE_DAY_MS): () => void {
-  const run = () => {
-    reapUnprovenAccounts().catch((error) => log.error('Reaping unproven accounts failed', { err: error }));
-  };
-
-  // Defer the first run so it never competes with boot-time migrations.
-  const startTimer = setTimeout(run, Math.min(intervalMs, 60 * 60 * 1000));
-  const interval = setInterval(run, intervalMs);
-  if (typeof interval.unref === 'function') interval.unref();
-  if (typeof startTimer.unref === 'function') startTimer.unref();
-
-  return () => {
-    clearTimeout(startTimer);
-    clearInterval(interval);
-  };
 }

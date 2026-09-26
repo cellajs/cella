@@ -30,6 +30,8 @@ describe('Health endpoint', () => {
     expect(components).toHaveProperty('api');
     expect(components).toHaveProperty('database');
     expect(components).toHaveProperty('cdc');
+    expect(components).toHaveProperty('jobs');
+    expect(['healthy', 'degraded']).toContain(components.jobs.status);
     expect(['healthy', 'degraded', 'unhealthy']).toContain(body.status);
     expect(['healthy', 'unhealthy']).toContain(components.database.status);
     expect(components.api.details).toHaveProperty('heapUsedMb');

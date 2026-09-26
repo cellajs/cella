@@ -56,7 +56,7 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly job registered with the API deletes expired rows and consumed rows older than thirty days. Like every backend job it starts on the instance that runs migrations at boot (`RUN_MIGRATIONS_ON_BOOT`), which production does not set on the app block; until job ownership moves, the sweep runs in development only.
+`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly cron job on the [jobs service](../jobs/README.md) (`oidc-payloads-sweep`) deletes expired rows and consumed rows older than thirty days.
 
 ## Operational constraints
 
